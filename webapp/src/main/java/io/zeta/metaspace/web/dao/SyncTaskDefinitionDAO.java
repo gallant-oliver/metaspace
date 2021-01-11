@@ -67,6 +67,7 @@ public interface SyncTaskDefinitionDAO {
             "<if test='null != parameters.query and 0 != parameters.query.length() '>" +
             " and name like '%${parameters.query}%' ESCAPE '/' " +
             "</if> " +
+            " order by update_time desc " +
             "<if test='parameters.limit!=-1'>" +
             "limit ${parameters.limit} " +
             "</if>" +

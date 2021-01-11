@@ -29,7 +29,9 @@ dev_deploy:
   stage: dev_deploy
   script:
     - "mvn $MAVEN_CLI_OPTS clean package -DskipTests"
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_1 \"rm -fr $DEPLOY_HOME/adapter/* \""
     - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$DEVELOP_SERVER_ID_1:$DEPLOY_PATH/metaspace.war"
+    - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no metaspace-adapter/target/pluginZip/*.zip $DEPLOY_USER@$DEVELOP_SERVER_ID_1:$DEPLOY_HOME/adapter/"
     - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_1 \"$DEPLOY_HOME/bin/metaspace_stop.py && rm -rf $BACKUP_DIR && mv $DEPLOY_PATH/metaspace $BACKUP_DIR  && $DEPLOY_HOME/bin/metaspace_start.py\""
     - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$DEVELOP_SERVER_ID_1 \"cd $BACKUP_DIR && rsync -av * $DEPLOY_PATH/metaspace --exclude WEB-INF\""
   when: manual
@@ -46,7 +48,9 @@ test_deploy:
   stage: test_deploy
   script:
     - "mvn $MAVEN_CLI_OPTS clean package -DskipTests"
+    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_1 \"rm -fr $DEPLOY_HOME/adapter/* \""
     - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$TEST_SERVER_ID_1:$DEPLOY_PATH/metaspace.war"
+    - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no metaspace-adapter/target/pluginZip/*.zip $DEPLOY_USER@$TEST_SERVER_ID_1:$DEPLOY_HOME/adapter/"
     - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_1 \"$DEPLOY_HOME/bin/metaspace_stop.py && rm -rf $BACKUP_DIR && mv $DEPLOY_PATH/metaspace $BACKUP_DIR  && $DEPLOY_HOME/bin/metaspace_start.py\""
     - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_1 \"cd $BACKUP_DIR && rsync -av * $DEPLOY_PATH/metaspace --exclude WEB-INF\""
   when: manual
