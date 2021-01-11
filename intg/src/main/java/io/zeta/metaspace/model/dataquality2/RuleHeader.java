@@ -16,47 +16,21 @@
  */
 package io.zeta.metaspace.model.dataquality2;
 
+import lombok.Data;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2019/7/24 15:47
  */
+@Data
 public class RuleHeader {
     private String id;
     private String name;
     private String ruleTemplateId;
     private Integer scope;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getRuleTemplateId() {
-        return ruleTemplateId;
-    }
-
-    public void setRuleTemplateId(String ruleTemplateId) {
-        this.ruleTemplateId = ruleTemplateId;
-    }
-
-    public Integer getScope() {
-        return scope;
-    }
-
-    public void setScope(Integer scope) {
-        this.scope = scope;
-    }
+    private String taskType;
+    private String sql;
+    private String categoryName;
+    private String categoryId;
 }

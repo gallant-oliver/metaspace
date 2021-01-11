@@ -124,7 +124,7 @@ public class BusinessDataREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult getTableColumnList(@PathParam("guid") String tableGuid, Parameters parameters, @DefaultValue("columnName") @QueryParam("sortAttribute") final String sortAttribute, @DefaultValue("asc") @QueryParam("sort") final String sort) throws AtlasBaseException {
         try {
-            return businessService.getTableColumnList(tableGuid, parameters, sortAttribute, sort);
+            return businessService.getTableColumnList(tableGuid, parameters, sortAttribute, sort,false);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取表字段列表");
         }

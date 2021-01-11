@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,11 +21,14 @@ package io.zeta.metaspace.web.util;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.model.sync.SyncTaskInstance;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
+import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
 import io.zeta.metaspace.web.metadata.MetaStoreBridgeUtils;
 import io.zeta.metaspace.model.TableSchema;
+import io.zeta.metaspace.web.service.DataManageService;
 import org.apache.atlas.*;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.hook.AtlasHookException;
@@ -55,12 +58,16 @@ import org.apache.hadoop.hive.ql.metadata.Table;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -68,6 +75,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static io.zeta.metaspace.web.metadata.BaseFields.ATTRIBUTE_NAME;
 import static io.zeta.metaspace.web.util.BaseHiveEvent.*;
 
 
@@ -75,45 +83,32 @@ import static io.zeta.metaspace.web.util.BaseHiveEvent.*;
  * A Bridge Utility that imports metadata from the Hive Meta Store
  * and registers them in Atlas.
  */
-@Singleton
 @Component
+@Scope(value = ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
     private static final Logger LOG = LoggerFactory.getLogger(HiveMetaStoreBridgeUtils.class);
 
-    public static final String CONF_PREFIX                     = "atlas.hook.hive.";
-    public static final String HIVE_CLUSTER_NAME               = "atlas.cluster.name";
+    public static final String CONF_PREFIX = "atlas.hook.hive.";
+    public static final String HIVE_CLUSTER_NAME = "atlas.cluster.name";
     public static final String HDFS_PATH_CONVERT_TO_LOWER_CASE = CONF_PREFIX + "hdfs_path.convert_to_lowercase";
-    public static final String DEFAULT_CLUSTER_NAME            = "ms";
-    public static final String TEMP_TABLE_PREFIX               = "_temp-";
-    public static final String SEP                             = ":".intern();
-    public static final String HDFS_PATH                       = "hdfs_path";
+    public static final String DEFAULT_CLUSTER_NAME = "ms";
+    public static final String TEMP_TABLE_PREFIX = "_temp-";
+    public static final String SEP = ":".intern();
+    public static final String HDFS_PATH = "hdfs_path";
 
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
     private Hive hiveMetaStoreClient = null;
-    private Configuration atlasConf        = null;
+    private Configuration atlasConf = null;
     private final boolean convertHdfsPathToLowerCase;
     private static final List<Pattern> hiveTablesToIgnore = new ArrayList<>();
-    public static final String HOOK_HIVE_TABLE_IGNORE_PATTERN = CONF_PREFIX + "hive_table.ignore.pattern";;
+    public static final String HOOK_HIVE_TABLE_IGNORE_PATTERN = CONF_PREFIX + "hive_table.ignore.pattern";
 
-    public AtomicInteger getTotalTables() {
-        return totalTables;
-    }
 
-    public AtomicInteger getUpdatedTables() {
-        return updatedTables;
-    }
+    @Autowired
+    private SyncTaskInstanceDAO syncTaskInstanceDAO;
 
-    public AtomicLong getStartTime() {
-        return startTime;
-    }
-
-    public AtomicLong getEndTime() {
-        return endTime;
-    }
-
-    @Inject
-    private HiveMetaStoreBridgeUtils(AtlasTypeRegistry typeRegistry, AtlasGraph atlasGraph, AtlasEntityStore atlasEntityStore) {
+    public HiveMetaStoreBridgeUtils() {
         try {
             atlasConf = ApplicationProperties.get();
         } catch (AtlasException e) {
@@ -121,11 +116,8 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         }
         clusterName = atlasConf.getString(HIVE_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
         convertHdfsPathToLowerCase = atlasConf.getBoolean(HDFS_PATH_CONVERT_TO_LOWER_CASE, true);
-        this.graph = atlasGraph;
+
         this.gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
-        this.entityRetriever = new EntityGraphRetriever(typeRegistry);
-        this.atlasTypeRegistry = typeRegistry;
-        this.atlasEntityStore = atlasEntityStore;
         String[] patternHiveTablesToIgnore = atlasConf.getStringArray(HOOK_HIVE_TABLE_IGNORE_PATTERN);
         if (patternHiveTablesToIgnore != null) {
             for (String pattern : patternHiveTablesToIgnore) {
@@ -154,24 +146,22 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
      * import all database
      * @throws Exception
      */
-    public void importDatabases(TableSchema tableSchema) throws Exception {
+    public void importDatabases(String taskInstanceId, TableSchema tableSchema) throws Exception {
         LOG.info("import metadata start at {}", simpleDateFormat.format(new Date()));
+        syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.RUN, "开始导入");
+
         List<String> databaseNames = null;
-        totalTables.set(0);
-        updatedTables.set(0);
-        getStartTime().set(System.currentTimeMillis());
-        getEndTime().set(0);
         List<String> databaseToImport = new ArrayList<>();
         String tableToImport = "";
-        boolean allDatabase=false;
+        boolean allDatabase = false;
         if (null != tableSchema) {
             databaseToImport = tableSchema.getDatabases();
             tableToImport = tableSchema.getTable();
-            allDatabase=tableSchema.isAllDatabase();
+            allDatabase = tableSchema.isAllDatabase();
         }
         initHiveMetaStoreClient();
         List<String> allDatabaseName = hiveMetaStoreClient.getAllDatabases();
-        if (allDatabase||databaseToImport==null||databaseToImport.size()==0) {
+        if (allDatabase || databaseToImport == null || databaseToImport.size() == 0) {
             databaseNames = allDatabaseName;
         } else {
             databaseNames = databaseToImport.stream().filter(name -> allDatabaseName.contains(name)).collect(Collectors.toList());
@@ -181,9 +171,9 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         int totalSize = 0;
 
         Map<String, List<String>> database2Table = Maps.newHashMap();
-        if (allDatabase){
-            totalSize=allDatabaseName.size();
-        }else{
+        if (allDatabase) {
+            totalSize = allDatabaseName.size();
+        } else {
             if (StringUtils.isEmpty(tableToImport)) {
                 for (String databaseName : databaseNames) {
                     List<String> tablesInDB = database2Table.get(databaseName);
@@ -212,7 +202,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         if (!CollectionUtils.isEmpty(databaseNames)) {
             LOG.info("Found {} databases", databaseNames.size());
 
-            if (allDatabase){
+            if (allDatabase) {
                 //删除JanusGraph中已经不存在的database,以及database中的table
                 String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_BY_STATE), AtlasEntity.Status.ACTIVE);
                 List<AtlasVertex> dbVertices = (List) graph.executeGremlinScript(databaseQuery, false);
@@ -231,7 +221,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
             }
             for (String databaseName : databaseNames) {
                 AtlasEntityWithExtInfo dbEntity = registerDatabase(databaseName);
-                if (allDatabase){
+                if (allDatabase) {
                     updatedTables.incrementAndGet();
                     continue;
                 }
@@ -242,7 +232,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         } else {
             LOG.info("No database found");
         }
-        getEndTime().set(System.currentTimeMillis());
+        syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
         LOG.info("import metadata end at {}", simpleDateFormat.format(new Date()));
     }
 
@@ -265,10 +255,10 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
      * @param failOnError
      * @throws Exception
      */
-    private int importTables(AtlasEntity dbEntity, String databaseName,List<String> tableNames, final boolean failOnError) throws Exception {
+    private int importTables(AtlasEntity dbEntity, String databaseName, List<String> tableNames, final boolean failOnError) throws Exception {
         int tablesImported = 0;
 
-        if(!CollectionUtils.isEmpty(tableNames)) {
+        if (!CollectionUtils.isEmpty(tableNames)) {
             LOG.info("Found {} tables to import in database {}", tableNames.size(), databaseName);
 
             try {
@@ -322,15 +312,15 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
             AtlasEntityWithExtInfo tableEntity = registerTable(dbEntity, table);
 
             if (table.getTableType() == TableType.EXTERNAL_TABLE) {
-                AtlasEntityWithExtInfo processEntity        = findProcessEntity(tableQualifiedName);
+                AtlasEntityWithExtInfo processEntity = findProcessEntity(tableQualifiedName);
 
                 if (processEntity == null) {
-                    String      tableLocation = isConvertHdfsPathToLowerCase() ? lower(table.getDataLocation().toString()) : table.getDataLocation().toString();
-                    String      query         = getCreateTableString(table, tableLocation);
-                    AtlasEntity pathInst      = toHdfsPathEntity(tableLocation);
-                    AtlasEntity tableInst     = tableEntity.getEntity();
-                    AtlasEntity processInst   = new AtlasEntity(HiveDataTypes.HIVE_PROCESS.getName());
-                    long        now           = System.currentTimeMillis();
+                    String tableLocation = isConvertHdfsPathToLowerCase() ? lower(table.getDataLocation().toString()) : table.getDataLocation().toString();
+                    String query = getCreateTableString(table, tableLocation);
+                    AtlasEntity pathInst = toHdfsPathEntity(tableLocation);
+                    AtlasEntity tableInst = tableEntity.getEntity();
+                    AtlasEntity processInst = new AtlasEntity(HiveDataTypes.HIVE_PROCESS.getName());
+                    long now = System.currentTimeMillis();
 
                     processInst.setAttribute(ATTRIBUTE_QUALIFIED_NAME, tableQualifiedName);
                     processInst.setAttribute(ATTRIBUTE_NAME, query);
@@ -381,7 +371,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
      */
     private AtlasEntityWithExtInfo registerDatabase(String databaseName) throws Exception {
         AtlasEntityWithExtInfo ret = null;
-        Database               db  = hiveMetaStoreClient.getDatabase(databaseName);
+        Database db = hiveMetaStoreClient.getDatabase(databaseName);
 
         if (db != null) {
             ret = findDatabase(clusterName, databaseName);
@@ -394,6 +384,8 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
                 ret.setEntity(toDbEntity(db, ret.getEntity()));
 
                 updateInstance(ret);
+
+                dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()));
             }
         }
 
@@ -413,8 +405,13 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
                 LOG.info("Table {}.{} is already registered with id {}. Updating entity.", table.getDbName(), table.getTableName(), tableEntity.getEntity().getGuid());
 
                 ret = toTableEntity(dbEntity, table, tableEntity);
-
                 updateInstance(ret);
+
+                AtlasRelatedObjectId atlasRelatedObjectId = new AtlasRelatedObjectId();
+                atlasRelatedObjectId.setDisplayText(String.valueOf(dbEntity.getAttribute(ATTRIBUTE_NAME)));
+                ret.getEntity().setRelationshipAttribute("db",atlasRelatedObjectId);
+                dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()));
+                ret.getEntity().removeRelationshipAttribute("db");
             }
 
             return ret;
@@ -436,7 +433,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
         AtlasEntitiesWithExtInfo ret = null;
         EntityMutationResponse response = atlasEntityStore.createOrUpdate(new AtlasEntityStream(entities), false);
-        List<AtlasEntityHeader>  createdEntities = response.getEntitiesByOperation(EntityMutations.EntityOperation.CREATE);
+        List<AtlasEntityHeader> createdEntities = response.getEntitiesByOperation(EntityMutations.EntityOperation.CREATE);
 
         if (CollectionUtils.isNotEmpty(createdEntities)) {
             ret = new AtlasEntitiesWithExtInfo();
@@ -493,6 +490,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
         return dbEntity;
     }
+
     /**
      * Create a new table instance in Atlas
      * @param  database AtlasEntity for Hive  {@link AtlasEntity} to which this table belongs
@@ -509,10 +507,10 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
             table = new AtlasEntityWithExtInfo(new AtlasEntity(HiveDataTypes.HIVE_TABLE.getName()));
         }
 
-        AtlasEntity tableEntity        = table.getEntity();
-        String      tableQualifiedName = getTableQualifiedName(clusterName, hiveTable);
-        long        createTime         = BaseHiveEvent.getTableCreateTime(hiveTable);
-        long        lastAccessTime     = hiveTable.getLastAccessTime() > 0 ? hiveTable.getLastAccessTime() : createTime;
+        AtlasEntity tableEntity = table.getEntity();
+        String tableQualifiedName = getTableQualifiedName(clusterName, hiveTable);
+        long createTime = BaseHiveEvent.getTableCreateTime(hiveTable);
+        long lastAccessTime = hiveTable.getLastAccessTime() > 0 ? hiveTable.getLastAccessTime() : createTime;
 
         tableEntity.setAttribute(ATTRIBUTE_DB, BaseHiveEvent.getObjectId(database));
         tableEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, tableQualifiedName);
@@ -526,6 +524,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         tableEntity.setAttribute(ATTRIBUTE_COMMENT, hiveTable.getParameters().get(ATTRIBUTE_COMMENT));
         tableEntity.setAttribute(ATTRIBUTE_TABLE_TYPE, hiveTable.getTableType().name());
         tableEntity.setAttribute(ATTRIBUTE_TEMPORARY, hiveTable.isTemporary());
+        tableEntity.setUpdateTime(new Date());
 
         if (hiveTable.getViewOriginalText() != null) {
             tableEntity.setAttribute(ATTRIBUTE_VIEW_ORIGINAL_TEXT, hiveTable.getViewOriginalText());
@@ -535,9 +534,9 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
             tableEntity.setAttribute(ATTRIBUTE_VIEW_EXPANDED_TEXT, hiveTable.getViewExpandedText());
         }
 
-        AtlasEntity       sdEntity = toStroageDescEntity(hiveTable.getSd(), tableQualifiedName, getStorageDescQFName(tableQualifiedName), tableEntity);
+        AtlasEntity sdEntity = toStroageDescEntity(hiveTable.getSd(), tableQualifiedName, getStorageDescQFName(tableQualifiedName), tableEntity);
         List<AtlasEntity> partKeys = toColumns(hiveTable.getPartitionKeys(), tableEntity, ATTRIBUTE_PARTITION_KEYS);
-        List<AtlasEntity> columns  = toColumns(hiveTable.getCols(), tableEntity, ATTRIBUTE_COLUMNS);
+        List<AtlasEntity> columns = toColumns(hiveTable.getCols(), tableEntity, ATTRIBUTE_COLUMNS);
 
         tableEntity.setAttribute(ATTRIBUTE_STORAGEDESC, BaseHiveEvent.getObjectId(sdEntity));
         tableEntity.setAttribute(ATTRIBUTE_PARTITION_KEYS, BaseHiveEvent.getObjectIds(partKeys));
@@ -563,7 +562,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         return table;
     }
 
-    private AtlasEntity toStroageDescEntity(StorageDescriptor storageDesc, String tableQualifiedName, String sdQualifiedName, AtlasEntity tableEntity ) throws AtlasHookException {
+    private AtlasEntity toStroageDescEntity(StorageDescriptor storageDesc, String tableQualifiedName, String sdQualifiedName, AtlasEntity tableEntity) throws AtlasHookException {
         AtlasEntity ret = new AtlasEntity(HiveDataTypes.HIVE_STORAGEDESC.getName());
         //保持Guid一致，如果不一致，更新元数据时会当成存在变动
         AtlasObjectId sd = (AtlasObjectId) tableEntity.getAttribute("sd");
@@ -652,9 +651,9 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
     }
 
     private AtlasEntity toHdfsPathEntity(String pathUri) {
-        AtlasEntity ret           = new AtlasEntity(HDFS_PATH);
-        String      nameServiceID = HdfsNameServiceResolver.getNameServiceIDForPath(pathUri);
-        Path        path          = new Path(pathUri);
+        AtlasEntity ret = new AtlasEntity(HDFS_PATH);
+        String nameServiceID = HdfsNameServiceResolver.getNameServiceIDForPath(pathUri);
+        Path path = new Path(pathUri);
 
         ret.setAttribute(ATTRIBUTE_NAME, Path.getPathWithoutSchemeAndAuthority(path).toString().toLowerCase());
         ret.setAttribute(ATTRIBUTE_CLUSTER_NAME, clusterName);
@@ -704,18 +703,18 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
      * @return table entity from Atlas  if exists, else null
      * @throws Exception
      */
-    private AtlasEntityWithExtInfo findTableEntity(Table hiveTable)  throws Exception {
+    private AtlasEntityWithExtInfo findTableEntity(Table hiveTable) throws Exception {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Searching Atlas for table {}.{}", hiveTable.getDbName(), hiveTable.getTableName());
         }
 
-        String typeName         = HiveDataTypes.HIVE_TABLE.getName();
+        String typeName = HiveDataTypes.HIVE_TABLE.getName();
         String tblQualifiedName = getTableQualifiedName(getClusterName(), hiveTable.getDbName(), hiveTable.getTableName());
 
         return findEntity(typeName, tblQualifiedName);
     }
 
-    private AtlasEntityWithExtInfo findProcessEntity(String qualifiedName) throws Exception{
+    private AtlasEntityWithExtInfo findProcessEntity(String qualifiedName) throws Exception {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Searching Atlas for process {}", qualifiedName);
         }
@@ -725,9 +724,9 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         return findEntity(typeName, qualifiedName);
     }
 
-    private String getCreateTableString(Table table, String location){
-        String            colString = "";
-        List<FieldSchema> colList   = table.getAllCols();
+    private String getCreateTableString(Table table, String location) {
+        String colString = "";
+        List<FieldSchema> colList = table.getAllCols();
 
         if (colList != null) {
             for (FieldSchema col : colList) {
@@ -740,7 +739,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
             }
         }
 
-        String query = "create external table " + table.getTableName() +  colString + " location '" + location + "'";
+        String query = "create external table " + table.getTableName() + colString + " location '" + location + "'";
 
         return query;
     }
@@ -802,7 +801,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
     public static String getTableProcessQualifiedName(String clusterName, Table table) {
         String tableQualifiedName = getTableQualifiedName(clusterName, table);
-        long   createdTime        = getTableCreatedTime(table);
+        long createdTime = getTableCreatedTime(table);
 
         return tableQualifiedName + SEP + createdTime;
     }
@@ -818,14 +817,15 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
     public static String getTableQualifiedName(String clusterName, String dbName, String tableName) {
         return getTableQualifiedName(clusterName, dbName, tableName, false);
     }
+
     public static String getStorageDescQFName(String tableQualifiedName) {
         return tableQualifiedName + "_storage";
     }
 
     public static String getColumnQualifiedName(final String tableQualifiedName, final String colName) {
-        final String[] parts       = tableQualifiedName.split("@");
-        final String   tableName   = parts[0];
-        final String   clusterName = parts[1];
+        final String[] parts = tableQualifiedName.split("@");
+        final String tableName = parts[0];
+        final String clusterName = parts[1];
 
         return String.format("%s.%s@%s", tableName, colName.toLowerCase(), clusterName);
     }
@@ -838,7 +838,8 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         if (entities != null) {
             if (entities.getEntities() != null) {
                 for (AtlasEntity entity : entities.getEntities()) {
-                    clearRelationshipAttributes(entity);;
+                    clearRelationshipAttributes(entity);
+                    ;
                 }
             }
 

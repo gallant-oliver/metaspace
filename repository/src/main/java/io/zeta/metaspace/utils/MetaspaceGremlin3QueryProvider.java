@@ -31,11 +31,11 @@ public class MetaspaceGremlin3QueryProvider extends AbstractMetaspaceGremlinQuer
 
             case LINEAGE_DEPTH:
                 return "g.withSack(0).V().has('__guid','%s').choose(inE().hasLabel('%s'),repeat(inE('%s').outV().outE('%s').inV()" +
-                       ".sack(sum).by(constant(1)).simplePath()).emit().sack(),constant(0)).max().toList()";
+                        ".sack(sum).by(constant(1)).simplePath()).emit().sack(),constant(0)).max().toList()";
 
             case LINEAGE_DEPTH_V2:
                 return "g.withSack(0).V().has('__guid','%s').choose(inE().hasLabel('%s').outV().outE().hasLabel('%s'),repeat(inE('%s').outV().outE('%s').inV()" +
-                       ".sack(sum).by(constant(1)).simplePath()).emit().sack(),constant(0)).max().toList()";
+                        ".sack(sum).by(constant(1)).simplePath()).emit().sack(),constant(0)).max().toList()";
 
             case DIRECT_ENTITY_NUM:
                 return "g.withSack(0).V().has('__guid','%s').inE('%s').outV().outE('%s').inV().count().toList()";
@@ -213,15 +213,15 @@ public class MetaspaceGremlin3QueryProvider extends AbstractMetaspaceGremlinQuer
                 return "g.tx().commit();g.V().has('__typeName','rdbms_instance').has('rdbms_instance.rdbms_type','%s').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__state','ACTIVE').has('__guid').dedup().count().toList()";
 
             case FULL_RDBMS_DATABASE:
-                return "g.tx().commit();g.V().has('__guid','%s').inE().outV().has('__typeName', 'rdbms_db').has('__guid').order().by('__timestamp').dedup().toList()";
+                return "g.tx().commit();g.V().has('__guid','%s').inE().outV().has('__typeName', 'rdbms_db').has('__guid').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).order().by('__timestamp').dedup().toList()";
             case RDBMS_DATABASE_BY_SOURCE:
-                return "g.tx().commit();g.V().has('__guid','%s').inE().outV().has('__typeName', 'rdbms_db').has('__guid').order().by('__timestamp').dedup().range(%s,%s).toList()";
+                return "g.tx().commit();g.V().has('__guid','%s').inE().outV().has('__typeName', 'rdbms_db').has('__guid').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).order().by('__timestamp').dedup().range(%s,%s).toList()";
             case RDBMS_DATABASE_TOTAL_BY_SOURCE:
                 return "g.tx().commit();g.V().has('__guid','%s').inE().outV().has('__typeName', 'rdbms_db').has('__guid').dedup().count().toList()";
             case ACTIVE_FULL_RDBMS_DATABASE:
-                return "g.tx().commit();g.V().has('__guid','%s').inE().outV().has('__typeName', 'rdbms_db').has('__state','ACTIVE').has('__guid').order().by('__timestamp').dedup().toList()";
+                return "g.tx().commit();g.V().has('__guid','%s').inE().outV().has('__typeName', 'rdbms_db').has('__state','ACTIVE').has('__guid').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).order().by('__timestamp').dedup().toList()";
             case ACTIVE_RDBMS_DATABASE_BY_SOURCE:
-                return "g.tx().commit();g.V().has('__guid','%s').inE().outV().has('__typeName', 'rdbms_db').has('__state','ACTIVE').has('__guid').order().by('__timestamp').dedup().range(%s,%s).toList()";
+                return "g.tx().commit();g.V().has('__guid','%s').inE().outV().has('__typeName', 'rdbms_db').has('__state','ACTIVE').has('__guid').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).order().by('__timestamp').dedup().range(%s,%s).toList()";
             case ACTIVE_RDBMS_DATABASE_TOTAL_BY_SOURCE:
                 return "g.tx().commit();g.V().has('__guid','%s').inE().outV().has('__typeName', 'rdbms_db').has('__state','ACTIVE').has('__guid').dedup().count().toList()";
 
@@ -279,6 +279,43 @@ public class MetaspaceGremlin3QueryProvider extends AbstractMetaspaceGremlinQuer
                 return "g.tx().commit();g.V().has('__typeName','hbase_table').has('__guid').has('__state', '%s').order().by('__timestamp').dedup().toList()";
             case HBASE_NS_TABLE_COLUMN_FAMILY:
                 return "g.tx().commit();g.V().has('__typeName','hbase_namespace').has('Asset.name', '%s').inE().outV().has('__typeName','hbase_table').has('Asset.name', '%s').inE().outV().has('__typeName','hbase_column_family').has('__guid').has('__state', '%s').order().by('__timestamp').dedup().toList()";
+
+
+            case FULL_ACTIVE_TABLE_DYNAMIC:
+                return "g.tx().commit();g.V().has('__typeName','hive_db').has('__guid','%s').inE().outV().has('__typeName','hive_table').has('hive_table.temporary',false).has('__state','ACTIVE').has('__guid')%s.order().by('__timestamp').dedup().toList()";
+
+
+            case ACTIVE_TABLE_BY_DB_DYNAMIC:
+                return "g.tx().commit();g.V().has('__typeName','hive_db').has('__guid','%s').inE().outV().has('__typeName','hive_table').has('hive_table.temporary',false).has('__state','ACTIVE').has('__guid')%s.order().by('__timestamp').dedup().range(%s,%s).toList()";
+
+            case FULL_TABLE_DYNAMIC:
+                return "g.tx().commit();g.V().has('__typeName','hive_db').has('__guid','%s').inE().outV().has('__typeName','hive_table').has('hive_table.temporary',false).has('__guid')%s.order().by('__timestamp').dedup().toList()";
+
+            case TABLE_BY_DB_DYNAMIC:
+                return "g.tx().commit();g.V().has('__typeName','hive_db').has('__guid','%s').inE().outV().has('__typeName','hive_table').has('hive_table.temporary',false).has('__guid')%s.order().by('__timestamp').dedup().range(%s,%s).toList()";
+
+            case ACTIVE_FULL_RDBMS_TABLE_DYNAMIC:
+                return "g.tx().commit();g.V().has('__typeName','rdbms_db').has('__guid','%s').inE().outV().has('__typeName', 'rdbms_table').has('__state','ACTIVE').has('__guid')%s.order().by('__timestamp').dedup().toList()";
+            case ACTIVE_RDBMS_TABLE_BY_DB_DYNAMIC:
+                return "g.tx().commit();g.V().has('__typeName','rdbms_db').has('__guid','%s').inE().outV().has('__typeName', 'rdbms_table').has('__state','ACTIVE').has('__guid')%s.order().by('__timestamp').range(%s,%s).dedup().toList()";
+
+            case FULL_RDBMS_TABLE_DYNAMIC:
+                return "g.tx().commit();g.V().has('__typeName','rdbms_db').has('__guid','%s').inE().outV().has('__typeName', 'rdbms_table').has('__guid')%s.order().by('__timestamp').dedup().toList()";
+
+            case RDBMS_TABLE_BY_DB_DYNAMIC:
+                return "g.tx().commit();g.V().has('__typeName','rdbms_db').has('__guid','%s').inE().outV().has('__typeName', 'rdbms_table').has('__guid')%s.order().by('__timestamp').range(%s,%s).dedup().toList()";
+
+            case ACTIVE_FULL_RDBMS_DATABASE_DYNAMIC:
+                return "g.tx().commit();g.V()%s.inE().outV().has('__typeName', 'rdbms_db').has('__state','ACTIVE').has('__guid').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).order().by('__timestamp').dedup().toList()";
+
+            case ACTIVE_RDBMS_DATABASE_BY_SOURCE_DYNAMIC:
+                return "g.tx().commit();g.V()%s.inE().outV().has('__typeName', 'rdbms_db').has('__state','ACTIVE').has('__guid').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).order().by('__timestamp').dedup().range(%s,%s).toList()";
+
+            case RDBMS_DATABASE_BY_SOURCE_DYNAMIC:
+                return "g.tx().commit();g.V()%s.inE().outV().has('__typeName', 'rdbms_db').has('__guid').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).order().by('__timestamp').dedup().range(%s,%s).toList()";
+
+            case FULL_RDBMS_DATABASE_DYNAMIC:
+                return "g.tx().commit();g.V()%s.inE().outV().has('__typeName', 'rdbms_db').has('__guid').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).order().by('__timestamp').dedup().toList()";
 
             default:
                 return null;

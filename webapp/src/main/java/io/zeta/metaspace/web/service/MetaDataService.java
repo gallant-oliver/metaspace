@@ -20,7 +20,6 @@ import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
-import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
@@ -32,14 +31,9 @@ import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.*;
-import io.zeta.metaspace.web.metadata.AbstractMetaDataProvider;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
-import io.zeta.metaspace.web.model.Progress;
-import io.zeta.metaspace.model.TableSchema;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
-import io.zeta.metaspace.web.util.HbaseMetaStoreBridgeUtils;
-import io.zeta.metaspace.web.util.HiveMetaStoreBridgeUtils;
 import io.zeta.metaspace.web.util.HivePermissionUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.discovery.AtlasLineageService;
@@ -54,7 +48,6 @@ import org.apache.atlas.store.AtlasTypeDefStore;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.hive.ql.metadata.HiveException;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
@@ -76,8 +69,6 @@ import java.sql.Connection;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -122,10 +113,6 @@ public class MetaDataService {
     @Autowired
     DataManageService dataManageService;
     private String errorMessage = "";
-    @Autowired
-    private HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
-    @Autowired
-    private HbaseMetaStoreBridgeUtils hbaseMetaStoreBridgeUtils;
 
     private Map<String, IMetaDataProvider> metaDataProviderMap = new HashMap<>();
     private Map<String, String> errorMap = new HashMap<>();
@@ -155,6 +142,86 @@ public class MetaDataService {
     private UserGroupDAO userGroupDAO;
     @Autowired
     private TenantService tenantService;
+
+
+    public Map<String, Object> getTableType(String guid) {
+        if (Objects.isNull(guid)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
+        }
+        try {
+            Map<String, Object> result = new HashMap<>();
+            AtlasEntity entity = getEntityById(guid);
+            if (Objects.isNull(entity)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到表");
+            }
+            AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
+            result.put("schemaId", relatedObject.getGuid());
+            result.put("schemaName", relatedObject.getDisplayText());
+
+            String type = entity.getTypeName();
+            String tableType = getEntityAttribute(entity, "tableType");
+            if ("hive_table".equalsIgnoreCase(type)) {
+                result.put("isHiveTable", true);
+                result.put("sourceId", "hive");
+            } else if ("rdbms_table".equalsIgnoreCase(type)) {
+                result.put("isHiveTable", false);
+                String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
+                result.put("sourceId", StringUtils.isNotEmpty(qualifiedName) ? qualifiedName.split("\\.")[0] : "");
+            } else {
+                throw new AtlasBaseException("查找节点类型不是表");
+            }
+            if (tableType != null) {
+                result.put("isView", tableType.toLowerCase().contains("view"));
+            }
+            return result;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "查询表树状信息异常");
+        }
+    }
+
+    public boolean isHiveTable(String guid) {
+        AtlasEntity entity = getEntityById(guid);
+        if (Objects.isNull(entity)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到表");
+        }
+        String type = entity.getTypeName();
+        if ("hive_table".equalsIgnoreCase(type)) {
+            return true;
+        }
+        return false;
+    }
+
+    public Database getDatabase(String guid) throws AtlasBaseException {
+        if (Objects.isNull(guid)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
+        }
+        try {
+            Database database = new Database();
+            //获取entity
+            AtlasEntity entity = getEntityById(guid);
+            if (Objects.isNull(entity)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到schema信息");
+            }
+            database.setDatabaseId(guid);
+            database.setDatabaseName(getEntityAttribute(entity, "name"));
+            database.setDatabaseDescription(entity.getAttribute("comment") == null ? "-" : entity.getAttribute("comment").toString());
+            database.setStatus(entity.getStatus().name());
+            database.setOwner(getEntityAttribute(entity, "owner"));
+
+            if (entity.getTypeName().contains("hive")) {
+                database.setSourceId("hive");
+                database.setSourceName("hive");
+            } else {
+                AtlasEntity.AtlasEntityWithExtInfo dbInfo = entitiesStore.getById(entity.getGuid());
+                AtlasRelatedObjectId relatedInstance = getRelatedInstance(dbInfo.getEntity());
+                database.setSourceId(relatedInstance.getGuid());
+                database.setSourceName(relatedInstance.getDisplayText());
+            }
+            return database;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "查询数据库信息异常");
+        }
+    }
 
     public Table getTableInfoById(String guid, String tenantId) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
@@ -194,7 +261,7 @@ public class MetaDataService {
             }
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息" );
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
         }
     }
 
@@ -213,7 +280,7 @@ public class MetaDataService {
             }
             //判断是否为虚拟表
 
-            if (Boolean.getBoolean(entity.getAttribute(temporaryAttribute).toString()) == true) {
+            if (Boolean.parseBoolean(entity.getAttribute(temporaryAttribute).toString()) == true) {
                 table.setVirtualTable(true);
             } else {
                 table.setVirtualTable(false);
@@ -1360,170 +1427,6 @@ public class MetaDataService {
     @CacheEvict(value = {"RDBMSTableByDBCache", "RDBMSTablePageCache"}, allEntries = true)
     public void refreshRDBMSTableCache() {
         LOG.info("关系型表元数据管理缓存已被清除");
-    }
-
-    /**
-     * 同步元数据
-     *
-     * @return
-     */
-    public void synchronizeMetaData(String databaseType, TableSchema tableSchema) {
-        DataSourceType dataSourceType = null;
-        try {
-            dataSourceType = DataSourceType.getType(databaseType);
-        } catch (Exception e) {
-            errorMap.put(tableSchema.getInstance(), String.format("not support database type %s", dataSourceType));
-            LOG.error(errorMap.get(tableSchema.getInstance()),e);
-            return;
-        }
-        if (DataSourceType.HIVE.equals(databaseType)) {
-            tableSchema.setInstance("hive");
-        }
-        IMetaDataProvider metaDataProvider = null;
-        errorMap.put(tableSchema.getInstance(), "");
-        try {
-            metaDataProvider = getMetaDataProviderFactory(dataSourceType, tableSchema);
-            metaDataProvider.importDatabases(tableSchema);
-        } catch (InterruptedException e) {
-            errorMap.put(tableSchema.getInstance(), e.getMessage());
-        } catch (HiveException e) {
-            errorMap.put(tableSchema.getInstance(), "同步元数据出错，无法连接到hive");
-            LOG.error("import metadata error,", e);
-        } catch (Exception e) {
-            errorMap.put(tableSchema.getInstance(), String.format("同步元数据出错，%s", e.getMessage()));
-            LOG.error("import metadata error", e);
-        }
-        if (null != metaDataProvider) {
-            metaDataProvider.getEndTime().set(System.currentTimeMillis());
-        }
-        if (metaDataProvider instanceof AbstractMetaDataProvider) {
-            ((AbstractMetaDataProvider) metaDataProvider).setThread(false);
-        }
-    }
-
-    public void stopSource(String sourceId, Thread thread) throws AtlasBaseException {
-        try {
-            if (metaDataProviderMap.get(sourceId) == null) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该数据源未采集数据");
-            } else {
-                IMetaDataProvider metaDataProvider = metaDataProviderMap.get(sourceId);
-                if (metaDataProvider.getEndTime().get() != 0) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前数据源未采集元数据");
-                }
-                if (metaDataProvider.getTotalTables().get() != 0) {
-                    if (!(metaDataProvider instanceof AbstractMetaDataProvider)) {
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前数据源非关系型数据源");
-                    }
-                    ((AbstractMetaDataProvider) metaDataProvider).setThread(true);
-                } else {
-                    metaDataProvider.getEndTime().set(System.currentTimeMillis());
-                    errorMap.put(sourceId, "终止采集元数据");
-                    thread.stop();
-                }
-            }
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "停止失败:" + e.getMessage());
-        }
-    }
-
-    IMetaDataProvider getMetaDataProviderFactory(DataSourceType dataSourceType, TableSchema tableSchema) throws Exception {
-        if (!dataSourceType.isAdapter()){
-            if (DataSourceType.HBASE.equals(dataSourceType)){
-                return hbaseMetaStoreBridgeUtils;
-            }
-        }
-        if (AdapterUtils.getAdapter(dataSourceType).isSupportMetaDataSync()) {
-            if (DataSourceType.HIVE.equals(dataSourceType)) {
-                return hiveMetaStoreBridgeUtils;
-            }else {
-                IMetaDataProvider metaDataProvider;
-                if (!metaDataProviderMap.containsKey(tableSchema.getInstance()) || metaDataProviderMap.get(tableSchema.getInstance()) == null) {
-                    metaDataProvider = new AbstractMetaDataProvider(entitiesStore, graph, atlasTypeRegistry, dataSourceService);
-                } else {
-                    metaDataProvider = metaDataProviderMap.get(tableSchema.getInstance());
-                }
-                metaDataProviderMap.put(tableSchema.getInstance(), metaDataProvider);
-                return metaDataProvider;
-            }
-        }
-        throw new Exception("不支持元数据同步的数据源类型" + dataSourceType.getName());
-    }
-
-
-    public Progress importProgress(String databaseType, String sourceId) throws Exception {
-        Progress progress = new Progress(0, 0, "");
-        DataSourceType dataSourceType = null;
-        try {
-            dataSourceType = DataSourceType.getType(databaseType);
-        } catch (Exception e) {
-            errorMap.put(sourceId, String.format("not support database type %s", databaseType));
-            LOG.error(errorMap.get(sourceId),e);
-            progress.setError(errorMap.get(sourceId));
-            return progress;
-        }
-        if (!dataSourceType.isAdapter()){
-            if (DataSourceType.HBASE.equals(dataSourceType)){
-                if (hbaseMetaStoreBridgeUtils == null) {
-                    errorMap.put(sourceId, String.format("get hbaseMetaStoreBridgeUtils instance error: init hive metastore bridge error"));
-                    LOG.error(errorMap.get(sourceId));
-                    progress.setError(errorMap.get(sourceId));
-                    return progress;
-                }
-                return getProgress(hbaseMetaStoreBridgeUtils, sourceId);
-            }
-        }
-        if (AdapterUtils.getAdapter(dataSourceType).isSupportMetaDataSync()) {
-            if (DataSourceType.HIVE.equals(databaseType)) {
-                if (hiveMetaStoreBridgeUtils == null) {
-                    errorMap.put(sourceId, String.format("get hiveMetaStoreBridgeUtils instance error: init hive metastore bridge error"));
-                    LOG.error(errorMap.get(sourceId));
-                    progress.setError(errorMap.get(sourceId));
-                    return progress;
-                }
-                progress = getProgress(hiveMetaStoreBridgeUtils, sourceId);
-            }else {
-                if (!metaDataProviderMap.containsKey(sourceId) || metaDataProviderMap.get(sourceId) == null) {
-                    if (metaDataProviderMap.get(sourceId) == null) {
-                        errorMap.put(sourceId, String.format("该数据源未开始采集元数据"));
-                        LOG.error(errorMap.get(sourceId));
-                        progress.setError(errorMap.get(sourceId));
-                        return progress;
-                    }
-                }
-                progress = getProgress(metaDataProviderMap.get(sourceId), sourceId);
-            }
-        } else {
-            progress.setError(String.format("不支持的数据源类型 %s", databaseType));
-        }
-        return progress;
-    }
-
-    private Progress getProgress(IMetaDataProvider metaDataProvider, String sourceId) throws AtlasBaseException {
-        Progress progress;
-        AtomicInteger totalTables = metaDataProvider.getTotalTables();
-        AtomicInteger updatedTables = metaDataProvider.getUpdatedTables();
-        AtomicLong startTime = metaDataProvider.getStartTime();
-        AtomicLong endTime = metaDataProvider.getEndTime();
-        progress = new Progress(totalTables.get(), updatedTables.get());
-        if (errorMap.containsKey(sourceId)) {
-            progress.setError(errorMap.get(sourceId));
-        } else {
-            progress.setError("");
-        }
-        progress.setStartTime(startTime.get());
-        progress.setEndTime(endTime.get());
-        return progress;
-    }
-
-    public enum DatabaseType {
-        HIVE,
-        MYSQL,
-        ORACLE,
-        POSTGRESQL;
-
-        public String getName() {
-            return name().toLowerCase();
-        }
     }
 
     public List<DataOwnerHeader> getDataOwner(String guid) throws AtlasBaseException {

@@ -1497,22 +1497,46 @@ CREATE TABLE "public"."data_quality_rule_template" (
   "update_time" timestamptz(0),
   "delete" bool,
   "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-  "rule_type" int2,
-  "type" int8
+  "rule_type" varchar(36) COLLATE "pg_catalog"."default",
+  "type" int8,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "creator" varchar(255) COLLATE "pg_catalog"."default",
+  "sql" text COLLATE "pg_catalog"."default",
+  "enable" varchar(255) COLLATE "pg_catalog"."default",
+  "code" varchar COLLATE "pg_catalog"."default",
+  CONSTRAINT "data_quality_rule_template_pkey" PRIMARY KEY ("id", "tenantid")
 )
 ;
 
 COMMENT ON COLUMN "public"."data_quality_rule_template"."name" IS '名字';
+
 COMMENT ON COLUMN "public"."data_quality_rule_template"."scope" IS '作用域';
+
 COMMENT ON COLUMN "public"."data_quality_rule_template"."unit" IS '返回值';
+
 COMMENT ON COLUMN "public"."data_quality_rule_template"."description" IS '描述';
+
 COMMENT ON COLUMN "public"."data_quality_rule_template"."create_time" IS '创建时间';
+
 COMMENT ON COLUMN "public"."data_quality_rule_template"."update_time" IS '更新时间';
+
 COMMENT ON COLUMN "public"."data_quality_rule_template"."delete" IS '状态';
+
 COMMENT ON COLUMN "public"."data_quality_rule_template"."id" IS 'id';
+
 COMMENT ON COLUMN "public"."data_quality_rule_template"."rule_type" IS '类型';
+
 COMMENT ON COLUMN "public"."data_quality_rule_template"."type" IS '类型';
 
+COMMENT ON COLUMN "public"."data_quality_rule_template"."tenantid" IS '租户id';
+
+COMMENT ON COLUMN "public"."data_quality_rule_template"."creator" IS '创建者';
+
+COMMENT ON COLUMN "public"."data_quality_rule_template"."sql" IS '自定义规则的sql语句';
+
+COMMENT ON COLUMN "public"."data_quality_rule_template"."enable" IS '规则状态';
+
+COMMENT ON COLUMN "public"."data_quality_rule_template"."code" IS '规则编码';
 -- ----------------------------
 -- Records of data_quality_rule_template
 -- ----------------------------
@@ -1607,13 +1631,23 @@ CREATE TABLE "public"."data_quality_sub_task" (
   "sequence" int4,
   "create_time" timestamptz(0),
   "update_time" timestamptz(0),
-  "delete" bool
+  "delete" bool,
+  "pool" varchar(255) COLLATE "pg_catalog"."default",
+  "config" varchar COLLATE "pg_catalog"."default"
 )
 ;
+
 COMMENT ON COLUMN "public"."data_quality_sub_task"."task_id" IS '所属任务id';
+
 COMMENT ON COLUMN "public"."data_quality_sub_task"."datasource_type" IS '数据源类型:1-表,2-字段';
+
 COMMENT ON COLUMN "public"."data_quality_sub_task"."sequence" IS '子任务顺序';
+
 COMMENT ON COLUMN "public"."data_quality_sub_task"."delete" IS '是否删除';
+
+COMMENT ON COLUMN "public"."data_quality_sub_task"."pool" IS '资源池';
+
+COMMENT ON COLUMN "public"."data_quality_sub_task"."config" IS 'spark配置';
 
 -- ----------------------------
 -- Table structure for data_quality_sub_task_object

@@ -19,6 +19,9 @@ public abstract class AbstractAdapterSource implements AdapterSource {
      * 连接池
      */
     protected DataSource dataSource;
+
+    private boolean initDataSource = true;
+
     /**
      * 连接池配置
      */
@@ -27,6 +30,7 @@ public abstract class AbstractAdapterSource implements AdapterSource {
      * 数据源信息
      */
     protected DataSourceInfo dataSourceInfo;
+
 
     public AbstractAdapterSource(Adapter adapter, DataSourceInfo dataSourceInfo, DataSourcePool dataSourcePool) {
         this.adapter = adapter;
@@ -37,6 +41,19 @@ public abstract class AbstractAdapterSource implements AdapterSource {
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "初始化连接池失败，请求检查数据源配置信息");
         }
+    }
+
+    public AbstractAdapterSource(Adapter adapter, DataSourceInfo dataSourceInfo) {
+        this.adapter = adapter;
+        this.dataSourceInfo = dataSourceInfo;
+        this.initDataSource = false;
+    }
+
+    public DataSource getDataSource() {
+        if (!initDataSource) {
+            throw new AtlasBaseException("数据源连接池未初始化");
+        }
+        return dataSource;
     }
 
     /**
@@ -63,7 +80,7 @@ public abstract class AbstractAdapterSource implements AdapterSource {
                 log.error("getConnection for DataSource fail :" + e.getMessage(), e);
                 try {
                     closeDataSource();
-                    initDataSource();
+                    this.dataSource = initDataSource();
                 } catch (Exception e1) {
                     log.error("Refresh the connection pool fail : " + e1.getMessage(), e);
                 }

@@ -16,6 +16,7 @@ package io.zeta.metaspace.utils;
 import java.sql.Timestamp;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.TimeZone;
 
 public class DateUtils {
@@ -163,4 +164,7 @@ public class DateUtils {
         return new Timestamp(System.currentTimeMillis());
     }
 
+    public static Date localDateTimeToDate(LocalDateTime localDateTime) {
+        return Date.from(localDateTime.atZone(ZoneId.of("+8")).toInstant());
+    }
 }

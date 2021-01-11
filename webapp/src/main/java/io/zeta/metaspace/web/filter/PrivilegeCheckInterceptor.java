@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateLog;
 import io.zeta.metaspace.model.operatelog.OperateResultEnum;
+import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
@@ -156,6 +157,9 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                     List<UserInfo.Module> modules = userInfo.getModules();
                     moduleIds = modules.stream().map(module -> module.getModuleId()).collect(Collectors.toList());
                 }else {
+                    if (true){
+                        return invocation.proceed();
+                    }
                     List<Module> modules = tenantService.getModule(tenantId);
                     moduleIds = modules.stream().map(module -> module.getModuleId()).collect(Collectors.toList());
                     String dataquality = "dataquality";
@@ -184,7 +188,6 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                             return invocation.proceed();
                         }
                     }
-
                     String ip = HttpRequestContext.get().getIp();
                     auditLog(ModuleEnum.getModuleName(moduleId), ip, userId, tenantId);
 

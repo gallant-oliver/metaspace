@@ -406,7 +406,7 @@ public class BusinessManageREST {
     @Path("/table/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Table getTableInfoById(@PathParam("guid") String guid,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public Object getTableInfoById(@PathParam("guid") String guid,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             return businessService.getTableInfoById(guid,tenantId);
         } catch (Exception e) {

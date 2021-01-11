@@ -16,13 +16,21 @@
  */
 package io.zeta.metaspace.model.dataquality2;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Data;
+import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
+
+import java.sql.Timestamp;
+
 /*
  * @description
  * @author sunhaoning
  * @date 2019/8/1 18:21
  */
+@Data
 public class TaskRuleExecutionRecord {
-    private Integer objectType;
+    private Integer scope;
+    private Integer taskType;
     private String subTaskRuleId;
     private String subtaskId;
     private Integer subTaskSequence;
@@ -30,6 +38,7 @@ public class TaskRuleExecutionRecord {
     private String ruleExecutionId;
     private String ruleName;
     private String description;
+    private String dataSourceName;
     private String dbName;
     private String tableName;
     private String objectId;
@@ -52,245 +61,47 @@ public class TaskRuleExecutionRecord {
     private Integer redCheckStatus;
     private String checkThresholdUnit;
     private Boolean filing;
+    @JsonIgnore
+    private Timestamp createTime;
+    private String tableId;
 
-    public Integer getObjectType() {
-        return objectType;
+    public TaskRuleExecutionRecord(){
+
     }
 
-    public void setObjectType(Integer objectType) {
-        this.objectType = objectType;
-    }
-
-    public String getSubTaskRuleId() {
-        return subTaskRuleId;
-    }
-
-    public void setSubTaskRuleId(String subTaskRuleId) {
-        this.subTaskRuleId = subTaskRuleId;
-    }
-
-    public Integer getSubTaskSequence() {
-        return subTaskSequence;
-    }
-
-    public void setSubTaskSequence(Integer subTaskSequence) {
-        this.subTaskSequence = subTaskSequence;
-    }
-
-    public String getExecutionId() {
-        return executionId;
-    }
-
-    public void setExecutionId(String executionId) {
-        this.executionId = executionId;
-    }
-
-    public String getSubtaskId() {
-        return subtaskId;
-    }
-
-    public void setSubtaskId(String subtaskId) {
-        this.subtaskId = subtaskId;
-    }
-
-    public String getRuleExecutionId() {
-        return ruleExecutionId;
-    }
-
-    public void setRuleExecutionId(String ruleExecutionId) {
-        this.ruleExecutionId = ruleExecutionId;
-    }
-
-    public String getRuleName() {
-        return ruleName;
-    }
-
-    public void setRuleName(String ruleName) {
-        this.ruleName = ruleName;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getDbName() {
-        return dbName;
-    }
-
-    public void setDbName(String dbName) {
-        this.dbName = dbName;
-    }
-
-
-    public String getTableName() {
-        return tableName;
-    }
-
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
-    }
-
-    public String getObjectId() {
-        return objectId;
-    }
-
-    public void setObjectId(String objectId) {
-        this.objectId = objectId;
-    }
-
-    public String getObjectName() {
-        return objectName;
-    }
-
-    public void setObjectName(String objectName) {
-        this.objectName = objectName;
-    }
-
-    public Integer getCheckType() {
-        return checkType;
-    }
-
-    public void setCheckType(Integer checkType) {
-        this.checkType = checkType;
-    }
-
-    public Integer getCheckExpression() {
-        return checkExpression;
-    }
-
-    public void setCheckExpression(Integer checkExpression) {
-        this.checkExpression = checkExpression;
-    }
-
-    public Float getResult() {
-        return result;
-    }
-
-    public void setResult(Float result) {
-        this.result = result;
-    }
-
-    public Float getCheckMinValue() {
-        return checkMinValue;
-    }
-
-    public void setCheckMinValue(Float checkMinValue) {
-        this.checkMinValue = checkMinValue;
-    }
-
-    public Float getCheckMaxValue() {
-        return checkMaxValue;
-    }
-
-    public void setCheckMaxValue(Float checkMaxValue) {
-        this.checkMaxValue = checkMaxValue;
-    }
-
-    public Integer getCheckStatus() {
-        return checkStatus;
-    }
-
-    public void setCheckStatus(Integer checkStatus) {
-        this.checkStatus = checkStatus;
-    }
-
-    public Integer getOrangeWarningCheckType() {
-        return orangeWarningCheckType;
-    }
-
-    public void setOrangeWarningCheckType(Integer orangeWarningCheckType) {
-        this.orangeWarningCheckType = orangeWarningCheckType;
-    }
-
-    public Integer getOrangeWarningCheckExpression() {
-        return orangeWarningCheckExpression;
-    }
-
-    public void setOrangeWarningCheckExpression(Integer orangeWarningCheckExpression) {
-        this.orangeWarningCheckExpression = orangeWarningCheckExpression;
-    }
-
-    public Float getOrangeWarningMinValue() {
-        return orangeWarningMinValue;
-    }
-
-    public void setOrangeWarningMinValue(Float orangeWarningMinValue) {
-        this.orangeWarningMinValue = orangeWarningMinValue;
-    }
-
-    public Float getOrangeWarningMaxValue() {
-        return orangeWarningMaxValue;
-    }
-
-    public void setOrangeWarningMaxValue(Float orangeWarningMaxValue) {
-        this.orangeWarningMaxValue = orangeWarningMaxValue;
-    }
-
-    public Integer getOrangeCheckStatus() {
-        return orangeCheckStatus;
-    }
-
-    public void setOrangeCheckStatus(Integer orangeCheckStatus) {
-        this.orangeCheckStatus = orangeCheckStatus;
-    }
-
-    public Integer getRedWarningCheckType() {
-        return redWarningCheckType;
-    }
-
-    public void setRedWarningCheckType(Integer redWarningCheckType) {
-        this.redWarningCheckType = redWarningCheckType;
-    }
-
-    public Integer getRedWarningCheckExpression() {
-        return redWarningCheckExpression;
-    }
-
-    public void setRedWarningCheckExpression(Integer redWarningCheckExpression) {
-        this.redWarningCheckExpression = redWarningCheckExpression;
-    }
-
-    public Float getRedWarningMinValue() {
-        return redWarningMinValue;
-    }
-
-    public void setRedWarningMinValue(Float redWarningMinValue) {
-        this.redWarningMinValue = redWarningMinValue;
-    }
-
-    public Float getRedWarningMaxValue() {
-        return redWarningMaxValue;
-    }
-
-    public void setRedWarningMaxValue(Float redWarningMaxValue) {
-        this.redWarningMaxValue = redWarningMaxValue;
-    }
-
-    public Integer getRedCheckStatus() {
-        return redCheckStatus;
-    }
-
-    public void setRedCheckStatus(Integer redCheckStatus) {
-        this.redCheckStatus = redCheckStatus;
-    }
-
-    public String getCheckThresholdUnit() {
-        return checkThresholdUnit;
-    }
-
-    public void setCheckThresholdUnit(String checkThresholdUnit) {
-        this.checkThresholdUnit = checkThresholdUnit;
-    }
-
-    public Boolean getFiling() {
-        return filing;
-    }
-
-    public void setFiling(Boolean filing) {
-        this.filing = filing;
+    public TaskRuleExecutionRecord(TaskRuleExecutionRecord taskRuleExecutionRecord){
+        this.scope = taskRuleExecutionRecord.scope;
+        this.taskType = taskRuleExecutionRecord.taskType;
+        this.subTaskRuleId = taskRuleExecutionRecord.subTaskRuleId;
+        this.subtaskId = taskRuleExecutionRecord.subtaskId;
+        this.subTaskSequence = taskRuleExecutionRecord.subTaskSequence;
+        this.executionId = taskRuleExecutionRecord.executionId;
+        this.ruleExecutionId = taskRuleExecutionRecord.ruleExecutionId;
+        this.ruleName = taskRuleExecutionRecord.ruleName;
+        this.description = taskRuleExecutionRecord.description;
+        this.dataSourceName = taskRuleExecutionRecord.dataSourceName;
+        this.dbName = taskRuleExecutionRecord.dbName;
+        this.tableName = taskRuleExecutionRecord.tableName;
+        this.objectId = taskRuleExecutionRecord.objectId;
+        this.objectName = taskRuleExecutionRecord.objectName;
+        this.checkType = taskRuleExecutionRecord.checkType;
+        this.checkExpression = taskRuleExecutionRecord.checkExpression;
+        this.result = taskRuleExecutionRecord.result;
+        this.checkMinValue = taskRuleExecutionRecord.checkMinValue;
+        this.checkMaxValue = taskRuleExecutionRecord.checkMaxValue;
+        this.checkStatus = taskRuleExecutionRecord.checkStatus;
+        this.orangeWarningCheckType = taskRuleExecutionRecord.orangeWarningCheckType;
+        this.orangeWarningCheckExpression = taskRuleExecutionRecord.orangeWarningCheckExpression;
+        this.orangeWarningMinValue = taskRuleExecutionRecord.orangeWarningMinValue;
+        this.orangeWarningMaxValue = taskRuleExecutionRecord.orangeWarningMaxValue;
+        this.orangeCheckStatus = taskRuleExecutionRecord.orangeCheckStatus;
+        this.redWarningCheckType = taskRuleExecutionRecord.redWarningCheckType;
+        this.redWarningCheckExpression = taskRuleExecutionRecord.redWarningCheckExpression;
+        this.redWarningMinValue = taskRuleExecutionRecord.redWarningMinValue;
+        this.redWarningMaxValue = taskRuleExecutionRecord.redWarningMaxValue;
+        this.redCheckStatus = taskRuleExecutionRecord.redCheckStatus;
+        this.checkThresholdUnit = taskRuleExecutionRecord.checkThresholdUnit;
+        this.filing = taskRuleExecutionRecord.filing;
+        this.createTime = taskRuleExecutionRecord.createTime;
     }
 }

@@ -13,10 +13,12 @@
 
 package io.zeta.metaspace.web.util;
 
+import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.security.Tenant;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
+import io.zeta.metaspace.web.dao.dataquality.RuleDAO;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -38,6 +40,8 @@ public class CategoryUtil {
     private CategoryDAO categoryDAO;
     @Autowired
     private DataShareDAO dataShareDAO;
+    @Autowired
+    private RuleDAO ruleDAO;
     private static CategoryUtil utils;
 
     @PostConstruct
@@ -66,6 +70,48 @@ public class CategoryUtil {
             add(new CategoryEntityV2("Standard-12", "业务元数据标准","业务元数据标准","Standard-7",null,"Standard-13",3,2,"1", createTime));
             add(new CategoryEntityV2("Standard-13", "技术元数据标准","技术元数据标准","Standard-7","Standard-12","Standard-14",3,2,"1", createTime));
             add(new CategoryEntityV2("Standard-14", "管理元数据标准","业管理元数据标准","Standard-7","Standard-13",null,3,2,"1", createTime));
+            add(new CategoryEntityV2("rule_1" ,"表体积" , "表体积"  ,null,null, "rule_2"   ,4 ,1,"1", createTime));
+            add(new CategoryEntityV2("rule_2"  ,"空值校验", "空值校验",null,"rule_1", "rule_3",4 ,1,"1", createTime));
+            add(new CategoryEntityV2("rule_3"  ,"唯一值校验", "唯一值校验",null,"rule_2", "rule_4",4 ,1,"1", createTime));
+            add(new CategoryEntityV2("rule_4"  ,"重复值校验", "重复值校验",null,"rule_3", "rule_5",4 ,1,"1",  createTime));
+            add(new CategoryEntityV2("rule_5"  ,"数值型校验", "数值型校验",null,"rule_4", "rule_6",4 ,1,"1",  createTime));
+            add(new CategoryEntityV2("rule_6"  ,"一致性校验", "一致性校验",null,"rule_5", null,4 ,1,"1",  createTime));
+        }
+    };
+
+    private static List<Rule> initRule = new ArrayList<Rule>(){
+        {
+            Timestamp createTime = DateUtils.currentTimestamp();
+            add(new Rule("字段汇总值变化", 1, "", "相比上一周期，字段汇总值变化", createTime, createTime, "20", "rule_5", 14));
+            add(new Rule("字段最小值变化", 1, "", "相比上一周期，字段最小值变化", createTime, createTime, "21", "rule_5", 15));
+            add(new Rule("字段最大值变化", 1, "", "相比上一周期，字段最大值变化", createTime, createTime, "22", "rule_5", 16));
+            add(new Rule("字段平均值变化率", 1, "%", "相比上一周期，字段平均值变化率", createTime, createTime, "23", "rule_5", 6));
+            add(new Rule("字段平均值", 1, null, "计算字段平均值", createTime, createTime, "24", "rule_5", 20));
+            add(new Rule("字段汇总值", 1, null, "计算字段汇总值", createTime, createTime, "25", "rule_5", 21));
+            add(new Rule("表大小变化", 0, "字节", "相比上一周期，表大小变化", createTime, createTime, "1", "rule_1", 3));
+            add(new Rule("表行数变化率", 0, "%", "相比上一周期，表行数变化率", createTime, createTime, "2", "rule_1", 0));
+            add(new Rule("表行数变化", 0, "行", "相比上一周期，表行数变化", createTime, createTime, "3", "rule_1", 2));
+            add(new Rule("表大小变化率", 0, "%", "相比上一周期，表大小变化率", createTime, createTime, "4", "rule_1", 1));
+            add(new Rule("当前表行数", 0, "行", "表行数是否符合预期", createTime, createTime, "5", "rule_1", 4));
+            add(new Rule("当前表大小", 0, "字节", "表大小是否符合预期", createTime, createTime, "6", "rule_1", 5));
+            add(new Rule("字段空值个数/总行数", 1, "%", "计算字段空值行数所占的比例", createTime, createTime, "7", "rule_2", 28));
+            add(new Rule("字段空值个数变化率", 1, "%", "相比上一周期，字段空值个数变化率", createTime, createTime, "8", "rule_2", 11));
+            add(new Rule("字段空值个数", 1, "个", "计算字段空值个数", createTime, createTime, "9", "rule_2", 25));
+            add(new Rule("字段重复值个数/总行数", 1, "%", "计算字段重复值行数所占的比例", createTime, createTime, "15", "rule_4", 29));
+            add(new Rule("字段重复值个数变化率", 1, "%", "相比上一周期，字段重复值个数变化率", createTime, createTime, "16", "rule_4", 12));
+            add(new Rule("字段空值个数变化", 1, "个", "相比上一周期，字段空值个数变化", createTime, createTime, "10", "rule_2", 18));
+            add(new Rule("字段唯一值个数/总行数", 1, "%", "计算字段唯一值行数所占的比例", createTime, createTime, "11", "rule_3", 27));
+            add(new Rule("字段唯一值个数变化率", 1, "%", "相比上一周期，字段唯一值个数变化率", createTime, createTime, "12", "rule_3", 10));
+            add(new Rule("字段重复值个数", 1, "个", "计算字段重复值个数", createTime, createTime, "17", "rule_4", 26));
+            add(new Rule("字段唯一值个数", 1, "个", "计算字段唯一值个数", createTime, createTime, "13", "rule_3", 24));
+            add(new Rule("字段唯一值个数变化", 1, "个", "相比上一周期，字段唯一值个数变化", createTime, createTime, "14", "rule_3", 17));
+            add(new Rule("字段重复值个数变化", 1, "个", "相比上一周期，字段重复值个数变化", createTime, createTime, "18", "rule_4", 19));
+            add(new Rule("字段平均值变化", 1, "", "相比上一周期，字段平均值变化", createTime, createTime, "19", "rule_5", 13));
+            add(new Rule("字段最小值", 1, null, "计算字段最小值", createTime, createTime, "26", "rule_5", 22));
+            add(new Rule("字段最大值", 1, null, "计算字段最大值", createTime, createTime, "27", "rule_5", 23));
+            add(new Rule("字段汇总值变化率", 1, "%", "相比上一周期，字段汇总值变化率", createTime, createTime, "28", "rule_5", 7));
+            add(new Rule("字段最小值变化率", 1, "%", "相比上一周期，字段最小值变化率", createTime, createTime, "29", "rule_5", 8));
+            add(new Rule("字段最大值变化率", 1, "%", "相比上一周期，字段最大值变化率", createTime, createTime, "30", "rule_5", 9));
         }
     };
 
@@ -97,6 +143,7 @@ public class CategoryUtil {
     public static void initCategorySql(List<Tenant> tenants){
         for (Tenant tenant: tenants){
             utils.categoryDAO.addAll(initCategory,tenant.getTenantId());
+            //utils.ruleDAO.insertAll(initRule,tenant.getTenantId());
         }
     }
     public static void initApiCategory(String tenantId,String projectId){

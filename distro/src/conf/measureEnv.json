@@ -1,0 +1,22 @@
+{
+  "spark": {
+    "log.level": "WARN"
+  },
+  "sinks": [
+    {
+      "name":"CONSOLE",
+      "type": "CONSOLE",
+      "config": {
+        "max.log.lines": 10
+      }
+    },
+    {
+      "name":"HDFS",
+      "type": "HDFS",
+      "config": {
+        "path": "hdfs:///tmp/griffin"
+      }
+    }
+  ],
+  "griffin.checkpoint": []
+}

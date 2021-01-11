@@ -48,6 +48,7 @@ import java.util.*;
  * @date 2019/1/17 10:17
  */
 
+@Deprecated
 public class QuartJob implements Job {
     private static final Logger LOG = LoggerFactory.getLogger(QuartJob.class);
     private static final Integer STATUS_START = 1;

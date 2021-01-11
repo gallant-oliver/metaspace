@@ -10,12 +10,5 @@ import java.util.concurrent.atomic.AtomicLong;
  * @date 2019-09-05 18:56
  */
 public interface IMetaDataProvider {
-    void importDatabases(TableSchema tableSchema) throws Exception;
-    AtomicInteger getTotalTables();
-
-    AtomicInteger getUpdatedTables();
-
-    AtomicLong getStartTime();
-
-    AtomicLong getEndTime();
+    void importDatabases(String taskInstanceId, TableSchema tableSchema) throws Exception;
 }

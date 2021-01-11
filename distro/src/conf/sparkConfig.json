@@ -1,0 +1,16 @@
+{
+  "file": "hdfs:///tmp/measure-0.6.0-SNAPSHOT.jar",
+  "className": "org.apache.griffin.measure.Application",
+  "proxyUser":"user",
+  "queue": "root.ckf1",
+  "numExecutors": 4,
+  "executorCores": 2,
+  "driverMemory": "3g",
+  "executorMemory": "5g",
+  "conf": {
+    "spark.sql.hive.real.user":"metaspace"
+  },
+  "files": [
+  ]
+
+}

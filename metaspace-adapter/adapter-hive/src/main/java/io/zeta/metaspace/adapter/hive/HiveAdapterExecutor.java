@@ -48,4 +48,18 @@ public class HiveAdapterExecutor extends AbstractAdapterExecutor {
             }
         });
     }
+
+    /**
+     * 表或者字段增加转义符号
+     */
+    @Override
+    public String addEscapeChar(String string) {
+        return "`"+string+"`";
+    }
+
+    @Override
+    public String addSchemaEscapeChar(String string) {
+        return "`"+string+"`";
+    }
+
 }
