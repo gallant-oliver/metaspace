@@ -872,7 +872,7 @@ public class TaskManageService {
                             taskRuleExecutionRecord.setResult(Float.valueOf(fileLine));
                             return taskRuleExecutionRecord;
                         }).collect(Collectors.toList());
-                        map.get(record.getSubtaskId()).setTaskRuleExecutionRecords(records);
+                        map.get(record.getSubtaskId()).getTaskRuleExecutionRecords().addAll(records);
                     }else if (TaskType.CUSTOMIZE.equals(taskType)) {
                         List<CustomizeParam> params = GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<CustomizeParam>>() {
                         }.getType());
@@ -886,7 +886,7 @@ public class TaskManageService {
                             taskRuleExecutionRecord.setTableId(tableId);
                             return taskRuleExecutionRecord;
                         }).collect(Collectors.toList());
-                        map.get(record.getSubtaskId()).setTaskRuleExecutionRecords(records);
+                        map.get(record.getSubtaskId()).getTaskRuleExecutionRecords().addAll(records);
                     }
                 }
 
