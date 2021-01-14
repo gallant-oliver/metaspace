@@ -27,6 +27,10 @@ public interface SyncTaskInstanceDAO {
     @Update("UPDATE " + TABLE_NAME + " SET status = #{status} , log = log || '\n' || now() || ' ' || #{log}, update_time = now() where id = #{id}")
     int updateStatusAndAppendLog(@Param("id") String id, @Param("status") SyncTaskInstance.Status status, @Param("log") String log);
 
+    @Update("UPDATE " + TABLE_NAME + " SET log = log || '\n' || now() || ' ' || #{log}, update_time = now() where id = #{id}")
+    int appendLog(@Param("id") String id, @Param("log") String log);
+
+
     @Select("<script>" +
             "SELECT count(*) over() as total , task.id,task.definition_id,task.name,task.executor,task.start_time,task.update_time,task.status FROM " + TABLE_NAME + " task " +
             "WHERE definition_id = #{definitionId} " +

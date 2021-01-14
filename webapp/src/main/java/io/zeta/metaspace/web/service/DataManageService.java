@@ -637,8 +637,7 @@ public class DataManageService {
             if (ids == null || ids.size() == 0) {
                 return;
             }
-            Timestamp timestamp = io.zeta.metaspace.utils.DateUtils.currentTimestamp();
-            relationDao.updateByTableGuids(ids, categoryGuid, timestamp);
+            relationDao.updateByTableGuids(ids, categoryGuid, DateUtils.getNow());
         } catch (Exception e) {
             LOG.error("添加关联失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加关联失败");

@@ -99,7 +99,9 @@ public class SearchService {
                         } else {
                             Map<String, Object> tableInfo = metaDataService.getTableType(tableEntity.getId());
                             String schema = String.valueOf(tableInfo.get("schemaName"));
-                            tableEntity.setTableSize(String.valueOf(AdapterUtils.getHiveAdapterSource().getNewAdapterExecutor().getTableSize(schema, tableEntity.getName(), "metaspace")));
+                            // 查询返回单位是字节
+                            float size = AdapterUtils.getHiveAdapterSource().getNewAdapterExecutor().getTableSize(schema, tableEntity.getName(), "metaspace");
+                            tableEntity.setTableSize(String.format("%.3f",size/1024/1024));
                         }
                     } else {
                         if (view) {

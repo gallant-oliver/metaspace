@@ -253,6 +253,9 @@ public class MetaDataService {
                 }
             });
 
+            table.setSourceId("hive");
+            table.setSourceName("hive");
+
             return table;
         } catch (AtlasBaseException e) {
             String message = "无效的实体ID";

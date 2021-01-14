@@ -1,6 +1,8 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.sync.SyncTaskInstance;
@@ -15,15 +17,13 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.janusgraph.util.datastructures.ArraysUtil;
 import org.quartz.CronExpression;
+import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
@@ -91,11 +91,12 @@ public class MetaDataTaskService {
             if (StringUtils.isEmpty(syncTaskDefinition.getId())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数不正确");
             }
-            if (syncTaskDefinitionDAO.getById(syncTaskDefinition.getId()) == null) {
+            SyncTaskDefinition oldDefinition = syncTaskDefinitionDAO.getById(syncTaskDefinition.getId());
+            if (oldDefinition == null) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务不存在");
             }
 
-            if (syncTaskDefinition.isEnable()) {
+            if (oldDefinition.isEnable()) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不能修改启用定时的任务");
             }
 
@@ -114,9 +115,17 @@ public class MetaDataTaskService {
             if (StringUtils.isEmpty(id)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数不正确");
             }
-            if (syncTaskDefinitionDAO.getById(id) == null) {
+
+            SyncTaskDefinition definition = syncTaskDefinitionDAO.getById(id);
+            if (definition == null) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务不存在");
             }
+
+            if (definition.isEnable() == enable) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "定时状态已经是" + (enable ? "启动" : "禁用"));
+            }
+
+            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(), "更新采集任务定义定时状态: " + definition.getName() + (enable ? "启动" : "禁用"));
 
             if (enable) {
                 startSyncJob(id);
@@ -126,13 +135,14 @@ public class MetaDataTaskService {
 
             return syncTaskDefinitionDAO.updateEnable(id, enable);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新任务失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新任务定时失败");
         }
     }
 
     @Transactional(rollbackFor = Exception.class)
     public int deleteSyncTaskDefinition(List<String> ids, String tenantId) {
         try {
+            List<String> name = new ArrayList<>();
             if (ids != null && !ids.isEmpty()) {
                 for (String id : ids) {
                     SyncTaskDefinition syncTaskDefinition = syncTaskDefinitionDAO.getById(id);
@@ -142,8 +152,10 @@ public class MetaDataTaskService {
                     if (syncTaskDefinition.isEnable()) {
                         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不能删除启用定时的任务");
                     }
+                    name.add(syncTaskDefinition.getName());
                 }
             }
+            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(), "删除采集任务定义: " + String.join(",",name));
             return syncTaskDefinitionDAO.delete(ids);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "删除任务失败");
@@ -153,6 +165,7 @@ public class MetaDataTaskService {
     @Transactional(rollbackFor = Exception.class)
     public int deleteSyncTaskInstance(List<String> ids, String tenantId) {
         try {
+            List<String> name = new ArrayList<>();
             if (ids != null && !ids.isEmpty()) {
                 for (String id : ids) {
                     SyncTaskInstance syncTaskInstance = syncTaskInstanceDAO.getById(id);
@@ -162,8 +175,10 @@ public class MetaDataTaskService {
                     if (SyncTaskInstance.Status.RUN.equals(syncTaskInstance.getStatus())) {
                         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不能删除运行中的任务实例");
                     }
+                    name.add(syncTaskInstance.getName());
                 }
             }
+            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(), "删除采集任务定义: " + String.join(",",name));
             return syncTaskInstanceDAO.delete(ids);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "删除任务实例失败");
@@ -247,6 +262,9 @@ public class MetaDataTaskService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务没有配置定时");
             }
         } catch (Exception e) {
+            if (e.getMessage() != null && e.getMessage().contains("will never fire")) {
+                throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "定时配置错误，任务不会触发");
+            }
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "启动定时失败");
         }
     }
@@ -306,6 +324,8 @@ public class MetaDataTaskService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务不存在");
             }
 
+            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(), "手动启动采集任务定义: " + definition.getName());
+
             String now = LocalDateTime.now().toString();
             String jobName = buildJobName(definitionId + now);
             String jobGroupName = buildJobGroupName(definitionId);
@@ -328,6 +348,7 @@ public class MetaDataTaskService {
             if (instance == null) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务实例不存在");
             }
+            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(), "停止采集任务实例: " + instance.getName());
             syncTaskInstanceDAO.updateStatusAndAppendLog(instanceId, SyncTaskInstance.Status.FAIL, "手动停止任务实例");
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "停止任务实例失败");

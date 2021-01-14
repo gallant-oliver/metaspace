@@ -882,22 +882,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         return String.format("%s@%s", instanceId, clusterName);
     }
 
-    protected String getDBQualifiedName(String instanceId, String dbName) {
-        return String.format("%s.%s@%s", instanceId, dbName.toLowerCase(), clusterName);
-    }
-
-    protected String getTableQualifiedName(String instanceId, String dbName, String tableName) {
-        return String.format("%s.%s.%s@%s", instanceId, dbName.toLowerCase(), tableName.toLowerCase(), clusterName);
-    }
-
-    protected static String getColumnQualifiedName(String tableQualifiedName, final String colName) {
-        final String[] parts = tableQualifiedName.split("@");
-        final String tableName = parts[0];
-        final String clusterName = parts[1];
-
-        return String.format("%s.%s@%s", tableName, colName.toLowerCase(), clusterName);
-    }
-
     public PageResult<Database> getSchemaList(String sourceId, boolean active, long offset, long limit, String query, String dbs, boolean queryTableCount) throws AtlasBaseException {
         PageResult<Database> databasePageResult = new PageResult<>();
         List<Database> lists = new ArrayList<>();
