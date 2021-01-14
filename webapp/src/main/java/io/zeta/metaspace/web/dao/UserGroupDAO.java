@@ -557,7 +557,7 @@ public interface UserGroupDAO {
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
             "    </foreach>) ) t" +
-            "     order by t.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}" +
+            "     order by t.tableguid <if test='limit!= -1'>limit #{limit}</if> offset #{offset}" +
             "</script>")
     public List<TechnologyInfo.Table> getTableInfosV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 

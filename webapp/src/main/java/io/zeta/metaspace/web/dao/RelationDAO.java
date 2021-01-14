@@ -280,7 +280,7 @@ public interface RelationDAO {
             " #{id}" +
             " </foreach>" +
             " </script>")
-    public int updateByTableGuids(@Param("ids") List<String> ids, @Param("categoryGuid")String categoryGuid, @Param("time") Timestamp time);
+    public int updateByTableGuids(@Param("ids") List<String> ids, @Param("categoryGuid")String categoryGuid, @Param("time") String time);
 
     @Insert("insert into table_relation values (#{item.relationshipGuid},#{item.categoryGuid},#{item.tableGuid},#{item.generateTime}) ")
     public int addRelation(@Param("item") TableRelation tableRelation);

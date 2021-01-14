@@ -7,8 +7,7 @@ import com.healthmarketscience.sqlbuilder.CustomSql;
 import com.healthmarketscience.sqlbuilder.InCondition;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.Subquery;
-import io.zeta.metaspace.adapter.AbstractAdapterExecutor;
-import io.zeta.metaspace.adapter.AdapterSource;
+import io.zeta.metaspace.adapter.*;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.metadata.Parameters;
 import com.healthmarketscience.sqlbuilder.ValueObject;
@@ -115,8 +114,9 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
     @Override
     public float getTableSize(String db, String tableName, String pool) {
         String querySQL = "select pg_relation_size('%s.%s') size; ";
-        db=db.replaceAll("'","''");
-        tableName=tableName.replaceAll("'","''");
+        AdapterTransformer adapterTransformer = getAdapter().getAdapterTransformer();
+        db=adapterTransformer.caseSensitive(db.replaceAll("'","''"));
+        tableName=adapterTransformer.caseSensitive(tableName.replaceAll("'","''"));
         querySQL=String.format(querySQL,db,tableName);
         Connection connection = getAdapterSource().getConnection();
         return queryResult(connection, querySQL, resultSet -> {

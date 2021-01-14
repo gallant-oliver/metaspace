@@ -404,7 +404,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         }
 
         entity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getDBQualifiedName(instanceId, databaseName));
-        entity.setAttribute(ATTRIBUTE_NAME, databaseName.toLowerCase());
+        entity.setAttribute(ATTRIBUTE_NAME, databaseName);
         entity.setAttribute(ATTRIBUTE_CLUSTER_NAME, clusterName);
         entity.setAttribute(ATTRIBUTE_PRODOROTHER, "");
         entity.setAttribute(ATTRIBUTE_INSTANCE, getObjectId(instanceEntity));
@@ -426,7 +426,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         }
         AtlasEntity tableAtlasEntity = tableEntity.getEntity();
         tableAtlasEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getTableQualifiedName(instanceId, databaseName, table.getName()));
-        tableAtlasEntity.setAttribute(ATTRIBUTE_NAME, table.getName().toLowerCase());
+        tableAtlasEntity.setAttribute(ATTRIBUTE_NAME, table.getName());
         tableAtlasEntity.setAttribute(ATTRIBUTE_DB, getObjectId(dbEntity));
         tableAtlasEntity.setAttribute(ATTRIBUTE_TABLE_TYPE, table.getTableType().toString().toUpperCase());
         try {
@@ -567,11 +567,11 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
      * @return Unique qualified name to identify the Database instance in Atlas.
      */
     protected String getDBQualifiedName(String instanceId, String dbName) {
-        return String.format("%s.%s@%s", instanceId, dbName.toLowerCase(), clusterName);
+        return String.format("%s.%s@%s", instanceId, dbName, clusterName);
     }
 
     protected String getTableQualifiedName(String instanceId, String dbName, String tableName) {
-        return String.format("%s.%s.%s@%s", instanceId, dbName.toLowerCase(), tableName.toLowerCase(), clusterName);
+        return String.format("%s.%s.%s@%s", instanceId, dbName, tableName, clusterName);
     }
 
     protected static String getColumnQualifiedName(String tableQualifiedName, final String colName) {
@@ -579,7 +579,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         final String tableName = parts[0];
         final String clusterName = parts[1];
 
-        return String.format("%s.%s@%s", tableName, colName.toLowerCase(), clusterName);
+        return String.format("%s.%s@%s", tableName, colName, clusterName);
     }
 
 
@@ -638,7 +638,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                     }
                     int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError, instanceGuid);
                     if (imported == 1) {
-                        syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.RUN, "成功导入表: " + tableName.getFullName());
+                        syncTaskInstanceDAO.appendLog(taskInstanceId, "成功导入表: " + tableName.getFullName());
                     }
 
                     tablesImported += imported;
@@ -704,7 +704,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     }
 
     private void deleteTableEntity(String instanceId, String databaseName, Collection<Table> tableNames) throws AtlasBaseException {
-        String tableQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_DB_TABLE_BY_STATE), instanceId, databaseName.toLowerCase(), AtlasEntity.Status.ACTIVE);
+        String tableQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_DB_TABLE_BY_STATE), instanceId, databaseName, AtlasEntity.Status.ACTIVE);
         List<AtlasVertex> vertices = (List) graph.executeGremlinScript(tableQuery, false);
         for (AtlasVertex vertex : vertices) {
             if (Objects.nonNull(vertex)) {
@@ -712,7 +712,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
                 AtlasEntity tableEntity = dbEntityWithExtInfo.getEntity();
                 String tableNameInGraph = tableEntity.getAttribute(ATTRIBUTE_NAME).toString();
-                if (tableNames.stream().noneMatch(table -> table.getName().equalsIgnoreCase(tableNameInGraph))) {
+                if (!tableNames.contains(tableNameInGraph)) {
                     LOG.info("表{}已经在数据源删除，同样在metaspace中删除之", tableNameInGraph);
                     deleteEntity(tableEntity);
                 }
