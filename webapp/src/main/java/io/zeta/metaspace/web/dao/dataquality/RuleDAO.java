@@ -111,7 +111,7 @@ public interface RuleDAO {
     public String getCategoryName(@Param("categoryId") String guid,@Param("tenantId")String tenantId);
 
     @Select({" select name " ,
-             " from data_quality_rule where delete=false and id=#{id}"})
+             " from data_quality_rule_template where delete=false and id=#{id}"})
     public String getNameById(@Param("id") String id);
 
     @Select({" select a.id,a.name,a.code,a.rule_type as categoryId,a.description,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete,a.unit as unit,type,scope" ,

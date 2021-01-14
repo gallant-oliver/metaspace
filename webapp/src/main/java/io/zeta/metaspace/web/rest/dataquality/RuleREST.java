@@ -130,11 +130,11 @@ public class RuleREST {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), rule.getName());
         List<Rule> oldList = ruleService.getByCode(rule.getCode(),tenantId);
         if (!oldList.isEmpty()) {
-            throw new AtlasBaseException("规则编号已存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"规则编号已存在");
         }
         List<Rule> oldListByName = ruleService.getByName(rule.getName(),tenantId);
         if (!oldListByName.isEmpty()) {
-            throw new AtlasBaseException("规则名字已存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"规则名字已存在");
         }
         ruleService.insert(rule,tenantId);
     }

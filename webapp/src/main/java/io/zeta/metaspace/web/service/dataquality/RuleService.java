@@ -128,17 +128,19 @@ public class RuleService {
         try {
             List<Rule> byCode = getByCodeV2(rule.getId(),rule.getCode(), tenantId);
             if (byCode.size()>0){
-                throw new AtlasBaseException("规则编号已存在");
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"规则编号已存在");
             }
             List<Rule> byName = getByNameV2(rule.getId(),rule.getCode(), tenantId);
             if (byName.size()>0){
-                throw new AtlasBaseException("规则名字已存在");
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"规则名字已存在");
             }
             rule.setUpdateTime(DateUtils.currentTimestamp());
             Rule old = getById(rule.getId(),tenantId);
             BeansUtil.copyPropertiesIgnoreNull(rule, old);
             return ruleDAO.update(old);
-        } catch (Exception e) {
+        }catch (AtlasBaseException e){
+            throw e;
+        }catch (Exception e) {
             LOG.error("更新规则失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新规则失败");
         }
