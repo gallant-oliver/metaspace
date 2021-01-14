@@ -68,7 +68,7 @@ public class RuleTemplateREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/{ruleType}/rules")
     public PageResult<RuleTemplate> getRuleTemplate(@PathParam("ruleType")String categoryId, RuleParameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        return ruleTemplateService.getRuleTemplate(categoryId, parameters,tenantId);
+         return ruleTemplateService.getRuleTemplate(categoryId, parameters,tenantId);
     }
 
     @POST
