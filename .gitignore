@@ -22,3 +22,4 @@ metaspace_1_3_0_1_91-falcon-plugin-1.1.0.1.3.0.1-91.noarch.rpm
 metaspace_1_3_0_1_91-1.1.0.1.3.0.1-91.noarch.rpm
 metaspace_1_3_0_1_91-patch-1.1.0.1.3.0.1-91.noarch.rpm
 metastore_db/
+webapp/src/main/resources/hbase-site.xml

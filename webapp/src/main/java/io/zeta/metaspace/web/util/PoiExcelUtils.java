@@ -162,7 +162,10 @@ public class PoiExcelUtils {
     }
 
     public static  void createSheet(Workbook workbook, String sheetName, List<String> attributes, List<List<String>> data) {
-        Sheet sheet = workbook.createSheet(sheetName);
+        Sheet sheet = workbook.getSheet(sheetName);
+        if(sheet==null){
+            sheet = workbook.createSheet(sheetName);
+        }
         Row row0 = sheet.createRow(0);
         for (int i = 0; i < attributes.size(); i++) {
             Cell cell = row0.createCell(i);

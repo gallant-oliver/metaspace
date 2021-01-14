@@ -757,7 +757,7 @@ public interface TaskManageDAO {
              " select id as executionId,execute_status as executeStatus,rule_error_count as errorCount, users.userName as executor,execute_time as executeTime,cost_time as costTime from data_quality_task_execute",
              " join users on users.userId=data_quality_task_execute.executor",
              " where task_id=#{taskId}",
-             " and (executor like '%${params.query}%' ESCAPE '/')",
+             " and (users.userName like '%${params.query}%' ESCAPE '/')",
              " order by executeTime desc",
              " <if test='params.limit!=null and params.limit!= -1'>",
              " limit #{params.limit}",

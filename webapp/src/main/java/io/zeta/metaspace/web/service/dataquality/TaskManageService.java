@@ -85,7 +85,9 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FileUtils;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.tinkerpop.shaded.minlog.Log;
 import org.quartz.CronExpression;
@@ -94,6 +96,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import scala.annotation.meta.param;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -1034,7 +1038,6 @@ public class TaskManageService {
         return errorData;
     }
 
-
     public File exportExcelErrorData(String executionId,String subTaskId,String tenantId) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         List<TaskRuleExecutionRecord> records = taskManageDAO.getTaskRuleExecutionRecords(executionId,subTaskId,tenantId);
@@ -1053,24 +1056,22 @@ public class TaskManageService {
             if (record.getScope()!=2) {
                 String fileName = LivyTaskSubmitHelper.getOutName("data");
                 String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(record.getRuleExecutionId(), record.getCreateTime().getTime(), fileName);
-                list = hdfsUtils.catFile(hdfsOutPath, -1);
-                if (list==null||list.size()==0){
-                    continue;
-                }
+                list = hdfsUtils.exists(hdfsOutPath)?hdfsUtils.catFile(hdfsOutPath, -1):null;
                 CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
                 sheetName = paramInfo.getTable();
-
-            } else if(!TaskType.CONSISTENCY.equals(taskType)){
-
-                String fileName = LivyTaskSubmitHelper.getOutName("data");
-                String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(record.getRuleExecutionId(), record.getCreateTime().getTime(), fileName);
-                list = hdfsUtils.catFile(hdfsOutPath, -1);
                 if (list==null||list.size()==0){
                     continue;
                 }
+            } else if(!TaskType.CONSISTENCY.equals(taskType)){
+                String fileName = LivyTaskSubmitHelper.getOutName("data");
+                String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(record.getRuleExecutionId(), record.getCreateTime().getTime(), fileName);
+                list = hdfsUtils.exists(hdfsOutPath) ? hdfsUtils.catFile(hdfsOutPath, -1):null;
                 List<CustomizeParam> paramInfo = GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<CustomizeParam>>() {
                 }.getType());
                 sheetName = paramInfo.get(0).getTable();
+                if (list==null||list.size()==0){
+                    continue;
+                }
             } else{
                 List<ConsistencyParam> params = GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<ConsistencyParam>>() {
                 }.getType());
@@ -1079,20 +1080,24 @@ public class TaskManageService {
                     String fileName = LivyTaskSubmitHelper.getOutName(tableId);
                     String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(record.getRuleExecutionId(), record.getCreateTime().getTime(), fileName);
                     try {
-                        List<String> lineList = hdfsUtils.catFile(hdfsOutPath, -1);
-                        List<Map<String, Object>> data = lineList.stream().map(line -> {
-                            Map<String, Object> map = GsonUtils.getInstance().fromJson(line, new TypeToken<Map<String, Object>>() {
-                            }.getType());
-                            return map;
-                        }).collect(Collectors.toList());
-                        List<List<String>> values = data.stream().map(map -> {
-                            List<Object> arrayList = new ArrayList();
-                            arrayList.addAll(map.values());
-                            List<String> valueList = arrayList.stream().map(object -> object.toString()).collect(Collectors.toList());
-                            return valueList;
-                        }).collect(Collectors.toList());
-
-                        PoiExcelUtils.createSheet(workbook,param.getTable(),new ArrayList<>(data.get(0).keySet()),values);
+                        List<String> lineList = hdfsUtils.exists(hdfsOutPath)? hdfsUtils.catFile(hdfsOutPath, -1):null;
+                        List<Map<String, Object>> data=null;
+                        if(lineList!=null&& lineList.size()>0){ // 有数据，生成execl数据
+                            data = lineList.stream().map(line -> {
+                                Map<String, Object> map = GsonUtils.getInstance().fromJson(line, new TypeToken<Map<String, Object>>() {
+                                }.getType());
+                                return map;
+                            }).collect(Collectors.toList());
+                        }
+                        if(data!=null&&data.size()>0){
+                            List<List<String>> values = data.stream().map(map -> {
+                                List<Object> arrayList = new ArrayList();
+                                arrayList.addAll(map.values());
+                                List<String> valueList = arrayList.stream().map(object -> object.toString()).collect(Collectors.toList());
+                                return valueList;
+                            }).collect(Collectors.toList());
+                            PoiExcelUtils.createSheet(workbook,param.getTable(),new ArrayList<>(data.get(0).keySet()),values);
+                        }
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -1101,21 +1106,27 @@ public class TaskManageService {
                 break;
             }
 
-            List<Map<String, Object>> data = list.stream().map(line -> {
-                Map<String, Object> map = GsonUtils.getInstance().fromJson(line, new TypeToken<Map<String, Object>>() {
-                }.getType());
-                return map;
-            }).collect(Collectors.toList());
-            List<List<String>> values = data.stream().map(map -> {
-                List<Object> arrayList = new ArrayList();
-                arrayList.addAll(map.values());
-                List<String> valueList = arrayList.stream().map(object -> object.toString()).collect(Collectors.toList());
-                return valueList;
-            }).collect(Collectors.toList());
-
-            PoiExcelUtils.createSheet(workbook,sheetName,new ArrayList<>(data.get(0).keySet()),values);
-
+            List<Map<String, Object>> data=null;
+            if(!CollectionUtils.isEmpty(list)){
+                data = list.stream().map(line -> {
+                    Map<String, Object> map = GsonUtils.getInstance().fromJson(line, new TypeToken<Map<String, Object>>() {
+                    }.getType());
+                    return map;
+                }).collect(Collectors.toList());
+            }
+            if(!CollectionUtils.isEmpty(data)){
+                List<List<String>> values = data.stream().map(map -> {
+                    List<Object> arrayList = new ArrayList();
+                    arrayList.addAll(map.values());
+                    List<String> valueList = arrayList.stream().map(object -> object.toString()).collect(Collectors.toList());
+                    return valueList;
+                }).collect(Collectors.toList());
+                PoiExcelUtils.createSheet(workbook,sheetName,new ArrayList<>(data.get(0).keySet()),values);
+            }
         }
+        //添加一个空的sheet页，避免空数据报错
+        workbook.createSheet();
+
         return workbook2file(workbook,"子任务"+subTaskSequence,executionId);
     }
 
