@@ -111,7 +111,8 @@ public class SearchService {
                             String sourceId = String.valueOf(tableInfo.get("sourceId"));
                             String schema = String.valueOf(tableInfo.get("schemaName"));
                             AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceService.getUnencryptedDataSourceInfo(sourceId));
-                            tableEntity.setTableSize(String.valueOf(adapterExecutor.getTableSize(schema, tableEntity.getName(), null)));
+                            float size =adapterExecutor.getTableSize(schema, tableEntity.getName(), null);
+                            tableEntity.setTableSize(String.format("%.3f",size/1024/1024));
                         }
                     }
                 }
