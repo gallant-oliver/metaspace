@@ -712,7 +712,7 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({" <script>",
-             " select c.id as ruleExecutionId,c.task_execute_id as executionId,c.subtask_id as subtaskId,c.subtask_rule_id as subTaskRuleId,c.subtask_object_id as objectId, c.result, c.check_status as checkStatus,c.orange_warning_check_status as orangeCheckStatus, c.red_warning_check_status as redCheckStatus,c.update_time as createTime,",
+             " select distinct c.id as ruleExecutionId,c.task_execute_id as executionId,c.subtask_id as subtaskId,c.subtask_rule_id as subTaskRuleId,c.subtask_object_id as objectId, c.result, c.check_status as checkStatus,c.orange_warning_check_status as orangeCheckStatus, c.red_warning_check_status as redCheckStatus,c.update_time as createTime,",
              " d.name as ruleName,d.scope,d.type as taskType,d.description,d.check_type as checkType, d.check_expression_type as checkExpression,d.check_threshold_min_value as checkMinValue,d.check_threshold_max_value as checkMaxValue,d.orange_check_type as orangeWarningCheckType,d.orange_check_expression_type as orangeWarningcheckExpression,",
              " d.orange_threshold_min_value as orangeWarningMinValue,d.orange_threshold_max_value as orangeWarningMaxValue,d.red_check_type as redWarningCheckType,d.red_check_expression_type as redWarningcheckExpression,d.red_threshold_min_value as redWarningMinValue,d.red_threshold_max_value as redWarningMaxValue,d.check_threshold_unit as checkThresholdUnit",
              " from (select * from data_quality_task_rule_execute as rule_execute where task_execute_id=#{ruleExecutionId}",
