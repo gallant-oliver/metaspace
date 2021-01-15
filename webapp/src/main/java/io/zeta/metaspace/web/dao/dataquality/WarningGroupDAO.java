@@ -208,19 +208,19 @@ public interface WarningGroupDAO {
     public List<WarningInfo.SubTaskWarning> getSubTaskWarning(@Param("executionId")String executionId);
 
     @Select({" <script>",
-             " select a.objectId,a.result,data_quality_rule.name as ruleName,data_quality_rule.check_threshold_unit as unit,0 as warningType from",
+             " select a.objectId,a.result,data_quality_rule_template.name as ruleName,data_quality_rule_template.unit as unit,0 as warningType from",
              " (select data_quality_sub_task_rule.ruleid as ruleId,data_quality_task_rule_execute.subtask_object_id as objectId,",
              " data_quality_task_rule_execute.result from data_quality_task_rule_execute ",
              " join data_quality_sub_task_rule on data_quality_sub_task_rule.id=data_quality_task_rule_execute.subtask_rule_id",
              " where data_quality_task_rule_execute.subtask_id=#{subTaskId} and orange_warning_check_status=1 and task_execute_id=#{taskExecutionId}) a",
-             " join data_quality_rule on data_quality_rule.id=a.ruleid",
+             " join data_quality_rule_template on data_quality_rule_template.id=a.ruleid",
              " UNION ALL",
-             " select a.objectId,a.result,data_quality_rule.name as ruleName,data_quality_rule.check_threshold_unit as unit,1 as warningType from",
+             " select a.objectId,a.result,data_quality_rule_template.name as ruleName,data_quality_rule_template.unit as unit,1 as warningType from",
              " (select data_quality_sub_task_rule.ruleid as ruleId,data_quality_task_rule_execute.subtask_object_id as objectId,",
              " data_quality_task_rule_execute.result from data_quality_task_rule_execute ",
              " join data_quality_sub_task_rule on data_quality_sub_task_rule.id=data_quality_task_rule_execute.subtask_rule_id",
              " where data_quality_task_rule_execute.subtask_id=#{subTaskId} and red_warning_check_status=1 and task_execute_id=#{taskExecutionId}) a",
-             " join data_quality_rule on data_quality_rule.id=a.ruleid",
+             " join data_quality_rule_template on data_quality_rule_template.id=a.ruleid",
              " </script>"})
     public List<WarningInfo.SubTaskRuleWarning> getSubTaskRuleWarning(@Param("taskExecutionId")String taskExecutionId, @Param("subTaskId")String subTaskId);
 
