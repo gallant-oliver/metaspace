@@ -327,7 +327,7 @@ public class TechnicalREST {
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
-            AtlasPerfTracer.log(perf);
+            AtlasPerfTracer.log(perf);   
         }
     }
 

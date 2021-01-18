@@ -733,7 +733,7 @@ public class SearchService {
             return tablePageResult;
         }
 
-        List<TechnologyInfo.Table> tableInfos = roleDAO.getTableInfosByDBIdByParameters(strings, databaseGuid, parameters.getOffset(), parameters.getLimit());
+        List<TechnologyInfo.Table> tableInfos = roleDAO.getTableInfosByDBIdByParameters(strings, databaseGuid, parameters.getOffset(), parameters.getLimit(),tenantId);
         List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryId);
         List<AddRelationTable> tables = getTables(tableInfos);
         supplyPath(tables, tenantId);
