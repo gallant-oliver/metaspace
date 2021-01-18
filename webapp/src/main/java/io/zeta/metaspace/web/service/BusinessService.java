@@ -1728,7 +1728,6 @@ public class BusinessService {
             row.createCell(0).setCellValue(table.getTableName());
             row.createCell(1).setCellValue(table.getDatabaseName());
             row.createCell(2).setCellValue(table.getStatus());
-
             setColumnSheet(workbook, table, attributes, cellStyle2);
         }
         return workbook2file(workbook, "business");
@@ -1743,8 +1742,11 @@ public class BusinessService {
      * @param cellStyle
      */
     public void setColumnSheet(Workbook workbook, Table table, List<String> attributes, CellStyle cellStyle) {
-
-        Sheet columnSheet = workbook.createSheet(table.getTableName());
+        String tableName=table.getTableName();
+        Sheet columnSheet = workbook.getSheet(tableName);
+        if(columnSheet==null){
+            columnSheet = workbook.createSheet(tableName);
+        }
         setAttributeRow(columnSheet, attributes, 0, cellStyle);
         int columnIndex = 1;
         for (Column column : table.getColumns()) {

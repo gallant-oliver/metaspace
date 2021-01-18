@@ -19,7 +19,7 @@
         <module>adapter-hive</module>
         <module>adapter-impala</module>
         <module>adapter-db2</module>
-      <module>adapter-postgresql</module>
+        <module>adapter-postgresql</module>
     </modules>
 
     <properties>

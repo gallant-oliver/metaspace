@@ -18,6 +18,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -132,4 +133,75 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
         });
     }
 
+    @Override
+    public String getCreateTableSql(String schema, String table) {
+        if(StringUtils.isEmpty(schema) || StringUtils.isEmpty(table)){
+            throw new AtlasBaseException("schema or table is null !");
+        }
+        String querySql="select " +
+                "col.table_schema, " +
+                "col.table_name, " +
+                "col.ordinal_position, " +
+                "col.column_name, " +
+                "col.data_type, " +
+                "col.character_maximum_length, " +
+                "col.numeric_precision, " +
+                "col.numeric_scale, " +
+                "col.is_nullable, " +
+                "col.column_default, " +
+                "des.description " +
+                "from " +
+                "information_schema.columns col left join pg_description des on " +
+                "col.table_name::regclass = des.objoid " +
+                "and col.ordinal_position = des.objsubid " +
+                "where " +
+                "col.table_schema = "+schema.replaceAll("\"","'")+
+                " and col.table_name = "+table.replaceAll("\"","'")+
+                " order by ordinal_position;";
+
+        String create_sql=queryResult(querySql, resultSet -> {
+            try {
+                StringBuffer sql =new StringBuffer();
+                sql.append("CREATE TABLE ");
+                String schema_name=schema.replaceAll("\"","");
+                String table_name=table.replaceAll("\"","");
+                sql.append(schema_name).append(".");
+                if(Character.isUpperCase(table_name.charAt(0))){
+                    sql.append("\"").append(table_name).append("\" ( \n");
+                }else {
+                    sql.append(table_name).append(" ( \n");
+                }
+                while (resultSet.next()) {
+                    StringBuilder sb=new StringBuilder();
+                    String column_name=resultSet.getString("column_name");
+                    if(Character.isUpperCase(column_name.charAt(0))){
+                        sb.append("\"").append(column_name).append("\" ");
+                    }else{
+                        sb.append(column_name).append(" ");
+                    }
+                    String data_type=resultSet.getString("data_type");
+                    sb.append(data_type);
+                    String character_maximum_length = resultSet.getString("character_maximum_length");
+                    if(!StringUtils.isEmpty(character_maximum_length)){
+                        sb.append("(").append(character_maximum_length).append(") ");
+                    }
+                    boolean is_nullable = resultSet.getBoolean("is_nullable");
+                    String nullStr= is_nullable ? " NULL " : " NOT NULL ";
+                    sb.append(nullStr);
+                    String column_default = resultSet.getString("column_default");
+                    if(column_default==null||"null".equalsIgnoreCase(column_default.trim())){
+                        sb.append(",");
+                    }else{
+                        sb.append("DEFAULT ").append(column_default).append(",");
+                    }
+                    sql.append(sb.toString());
+                }
+                sql.deleteCharAt(sql.lastIndexOf(",")).append("\n);");
+                return sql.toString().replaceAll(",",",\n");
+            } catch (SQLException e) {
+                throw new AtlasBaseException("查询建表语句失败", e);
+            }
+        });
+        return create_sql;
+    }
 }
