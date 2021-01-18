@@ -144,6 +144,11 @@ public class WarningInfo {
         private Float result;
         private String unit;
         private String objectId;
+        //scope 与 type 组合判断规则的类型 0:表 1:字段 2，31:一致性 2，32:自定义
+        private int scope;
+        private int type;
+
+
 
 
         public String getRuleName() {
@@ -216,6 +221,23 @@ public class WarningInfo {
 
         public void setObjectId(String objectId) {
             this.objectId = objectId;
+        }
+
+
+        public int getScope() {
+            return scope;
+        }
+
+        public void setScope(int scope) {
+            this.scope = scope;
+        }
+
+        public int getType() {
+            return type;
+        }
+
+        public void setType(int type) {
+            this.type = type;
         }
     }
 }

@@ -12,16 +12,14 @@
 // ======================================================================
 package io.zeta.metaspace.web.service.dataquality;
 
-import io.zeta.metaspace.model.dataquality2.ErrorInfo;
-import io.zeta.metaspace.model.dataquality2.TaskErrorHeader;
-import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
-import io.zeta.metaspace.model.dataquality2.WarningGroup;
-import io.zeta.metaspace.model.dataquality2.WarningInfo;
+import com.google.gson.reflect.TypeToken;
+import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
+import io.zeta.metaspace.utils.GsonUtils;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.dao.dataquality.WarningGroupDAO;
 import io.zeta.metaspace.web.service.CategoryRelationUtils;
@@ -41,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class WarningGroupService {
@@ -209,48 +208,63 @@ public class WarningGroupService {
         }
     }
 
-    public WarningInfo getWarningInfo(String executionId) throws AtlasBaseException {
+    public WarningInfo getWarningInfo(String executionId,String tenantId) throws AtlasBaseException {
         try {
             //任务名称、告警发生时间、告警关闭时间、告警处理人
             WarningInfo info = warningGroupDAO.getWarningBasicInfo(executionId);
-            Map<String, Table> idToTable = new HashMap<>();
-            Map<String, Column> idToColumn = new HashMap<>();
+//            Map<String, Table> idToTable = new HashMap<>();
+//            Map<String, Column> idToColumn = new HashMap<>();
             List<WarningInfo.SubTaskWarning> subTaskList =warningGroupDAO.getSubTaskWarning(executionId);
             for (WarningInfo.SubTaskWarning subTask : subTaskList) {
                 String subTaskId = subTask.getSubTaskId();
-                List<WarningInfo.SubTaskRuleWarning> subTaskRuleWarningList = warningGroupDAO.getSubTaskRuleWarning(executionId, subTaskId);
+                List<WarningInfo.SubTaskRuleWarning> subTaskRuleWarningList = warningGroupDAO.getSubTaskRuleWarning(executionId, subTaskId,tenantId);
                 for (WarningInfo.SubTaskRuleWarning subTaskRuleWarning : subTaskRuleWarningList) {
                     String objectId = subTaskRuleWarning.getObjectId();
-                    Integer dataSourceType = subTask.getRuleType();
-                    if(0 == dataSourceType) {
-                        Table table = null;
-                        if(idToTable.containsKey(objectId)) {
-                            table = idToTable.get(objectId);
-                        } else {
-                            table = taskManageDAO.getDbAndTableName(objectId);
-                            idToTable.put(objectId, table);
-                        }
-                        if(table == null) {
-                            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到表信息，当前表已被删除!");
-                        }
-                        String dbName = table.getDatabaseName();
-                        String tableName = table.getTableName();
-                        subTaskRuleWarning.setDbName(dbName);
-                        subTaskRuleWarning.setTableName(tableName);
-                    } else if(1 == dataSourceType) {
-                        Column column = null;
-                        if(idToColumn.containsKey(objectId)) {
-                            column = idToColumn.get(objectId);
-                            idToColumn.put(objectId, column);
-                        } else {
-                            column = taskManageDAO.getDbAndTableAndColumnName(objectId);
-                        }
-                        String dbName = column.getDatabaseName();
-                        String tableName = column.getTableName();
-                        String columnName = column.getColumnName();
-                        subTaskRuleWarning.setDbName(dbName);
-                        subTaskRuleWarning.setTableName(tableName);
-                        subTaskRuleWarning.setColumnName(columnName);
+//                    Integer dataSourceType = subTask.getRuleType();
+                    int scope = subTaskRuleWarning.getScope();
+                    int type = subTaskRuleWarning.getType();
+                    if(0 == scope) { //表级别检测
+                        //由于非HIVE数据源已经和任务等模块在元数据上接耦合，所以下方注释逻辑已经不适用
+//                        Table table = null;
+//                        if(idToTable.containsKey(objectId)) {
+//                            table = idToTable.get(objectId);
+//                        } else {
+//                            table = taskManageDAO.getDbAndTableName(objectId);
+//                            idToTable.put(objectId, table);
+//                        }
+//                        if(table == null) {
+//                            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到表信息，当前表已被删除!");
+//                        }
+//                        String dbName = table.getDatabaseName();
+//                        String tableName = table.getTableName();
+                        CustomizeParam paraminfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
+                        subTaskRuleWarning.setDbName(paraminfo.getSchema());
+                        subTaskRuleWarning.setTableName(paraminfo.getTable());
+                    } else if(1 == scope) { //字段检测规则
+                        //同上方注释
+//                        Column column = null;
+//                        if(idToColumn.containsKey(objectId)) {
+//                            column = idToColumn.get(objectId);
+//                            idToColumn.put(objectId, column);
+//                        } else {
+//                            column = taskManageDAO.getDbAndTableAndColumnName(objectId);
+//                        }
+//                        String dbName = column.getDatabaseName();
+//                        String tableName = column.getTableName();
+//                        String columnName = column.getColumnName();
+                        CustomizeParam paraminfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
+                        subTaskRuleWarning.setDbName(paraminfo.getSchema());
+                        subTaskRuleWarning.setTableName(paraminfo.getTable());
+                        subTaskRuleWarning.setColumnName(paraminfo.getColumn());
+                    }else if(2 ==scope && 31 == type){  // 一致性规则
+                        List<ConsistencyParam> params = GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<ConsistencyParam>>() {
+                        }.getType());
+                        ConsistencyParam consistencyParam = params.stream().filter(p -> p.isStandard()).collect(Collectors.toList()).get(0);
+                        subTaskRuleWarning.setDbName(consistencyParam.getSchema());
+                        subTaskRuleWarning.setTableName(consistencyParam.getTable());
+                        subTaskRuleWarning.setColumnName(consistencyParam.getCompareFields().stream().collect(Collectors.joining(",")));
+                    }else if(2 ==scope && 32 == type){  // 自定义规则
+                       //无法获取库表
                     }
 
                     subTaskRuleWarning.setWarningMessage(subTaskRuleWarning.getRuleName() + "为" + subTaskRuleWarning.getResult() + subTaskRuleWarning.getUnit());
