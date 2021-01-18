@@ -47,6 +47,9 @@ public enum AtlasConfiguration {
     ATLAS_CLUSTER_NAME("atlas.cluster.name", "ms"),
     METASPACE_ADAPTER_DIR("metaspace.adapter.dir", "adapters"),
 
+    //锁超时时间，分钟
+    LOCK_TIME_OUT_TIME("metaspace.zk.lock.timeout.time",1),
+
     METASPACE_API_POLY_EFFECTIVE_TIME("metaspace.api.ploy.effective.time", 60*5),
     METASPACE_QUALITY_ENGINE("metaspace.quality.engine", "impala");
 
