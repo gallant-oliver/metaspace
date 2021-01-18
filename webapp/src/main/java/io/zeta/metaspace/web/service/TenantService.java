@@ -49,6 +49,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import com.google.common.cache.Cache;
 
 /**
@@ -165,15 +167,13 @@ public class TenantService {
                         }
                         List<User> users = userDAO.getAllUser();
                         Optional<User> first = users.stream().filter(user -> user.getUserId().equals(userAndModule.getAccountGuid())).findFirst();
-
-
                         if (first.isPresent()){
                             boolean isUserName = first.get().getUsername().equals(userAndModule.getUserName());
                             boolean isEmail = first.get().getAccount().equals(userAndModule.getEmail());
                             if ((isUserName || isEmail)){
                                 userDAO.updateUser(userAndModule,new Timestamp(System.currentTimeMillis()));
                             }
-                        }else if (!first.isPresent()){
+                        }else{
                             userDAO.insertUser(userAndModule,new Timestamp(System.currentTimeMillis()));
                         }
                     }

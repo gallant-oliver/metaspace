@@ -181,7 +181,8 @@ public class TaskManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<SubTaskRecord> getTaskRuleExecutionRecordList(@PathParam("executionId")String executionId, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        return taskManageService.getTaskRuleExecutionRecordList(executionId,"all",tenantId); //查看全部子任务
+        List<SubTaskRecord> subTaskRecords=taskManageService.getTaskRuleExecutionRecordList(executionId,"all",tenantId); //查看全部子任务
+        return subTaskRecords;
     }
 
     /**

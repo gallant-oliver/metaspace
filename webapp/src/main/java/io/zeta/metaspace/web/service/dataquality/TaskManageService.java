@@ -67,6 +67,7 @@ import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.utils.GsonUtils;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
+import io.zeta.metaspace.web.dao.dataquality.RuleTemplateDAO;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataShareService;
@@ -819,7 +820,9 @@ public class TaskManageService {
         try {
             Map<String, SubTaskRecord> map = new LinkedHashMap<>(); //配置的子任务要满足顺序一致，使用LinkedHashMap保证，且查询sql要保证有序性
             List<TaskRuleExecutionRecord> list = taskManageDAO.getTaskRuleExecutionRecordList(executionId,subtaskId,tenantId);
+            Boolean filing = taskManageDAO.getFilingStatus(executionId)==0?false:true;
             for (TaskRuleExecutionRecord record : list) {
+                record.setFiling(filing);
                 if (map.containsKey(record.getSubtaskId())){
                     map.get(record.getSubtaskId()).getTaskRuleExecutionRecords().add(record);
                 }else{
@@ -891,9 +894,6 @@ public class TaskManageService {
                         map.get(record.getSubtaskId()).setTaskRuleExecutionRecords(resultList);
                     }
                 }
-
-                Boolean filing = taskManageDAO.getFilingStatus(executionId)==0?false:true;
-                record.setFiling(filing);
             }
             return new ArrayList<>(map.values());
         } catch (AtlasBaseException e) {

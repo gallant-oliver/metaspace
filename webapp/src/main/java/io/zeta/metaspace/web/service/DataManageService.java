@@ -109,6 +109,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.zeta.metaspace.model.role.SystemRole;
+import org.springframework.util.CollectionUtils;
 
 @Service
 public class DataManageService {
@@ -933,18 +934,34 @@ public class DataManageService {
 
     @Transactional(rollbackFor = Exception.class)
     public void updateStatus(List<AtlasEntity> entities) {
+        List<String> tableStatus=new ArrayList<>();
+        List<String> databaseStatus=new ArrayList<>();
+        List<String> columnStatus=new ArrayList<>();
         for (AtlasEntity entity : entities) {
             String guid = entity.getGuid();
             String typeName = entity.getTypeName();
             if (typeName.contains("table")) {
-                relationDao.updateTableStatus(guid, "DELETED");
+                tableStatus.add(guid);
             }
             if (typeName.contains("hive_db") || typeName.contains("rdbms_table")) {
-                relationDao.updateDatabaseStatus(guid, "DELETED");
+                databaseStatus.add(guid);
             }
             if (typeName.contains("hive_column") || typeName.contains("rdbms_column")) {
-                columnDAO.updateColumnStatus(guid, "DELETED");
+                columnStatus.add(guid);
             }
+        }
+
+        if(!CollectionUtils.isEmpty(tableStatus)){
+            String tableStatusStr=StringUtils.join(tableStatus,",");
+            relationDao.updateTableStatusBatch(tableStatusStr, "DELETED");
+        }
+        if(!CollectionUtils.isEmpty(databaseStatus)){
+            String databaseStatusStr=StringUtils.join(databaseStatus,",");
+            relationDao.updateDatabaseStatusBatch(databaseStatusStr, "DELETED");
+        }
+        if(!CollectionUtils.isEmpty(columnStatus)){
+            String columnStatusStr=StringUtils.join(columnStatus,",");
+            columnDAO.updateColumnStatusBatch(columnStatusStr, "DELETED");
         }
     }
 
