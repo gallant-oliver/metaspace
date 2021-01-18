@@ -888,8 +888,8 @@ public class MetaDataREST {
     @Path("/rdbms/table/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public RDBMSTable getTableInfoById(@PathParam("tableId") String tableId) throws AtlasBaseException {
-        return metadataService.getRDBMSTableInfoById(tableId);
+    public RDBMSTable getTableInfoById(@PathParam("tableId") String tableId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return metadataService.getRDBMSTableInfoById(tableId,tenantId);
     }
 
     /**

@@ -55,6 +55,8 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
         SchemaCrawlerOptions options = getAdapter().getSchemaCrawlerOptions(tableSchema);
         try (Connection connection = getAdapterSource().getConnection()) {
             Catalog catalog = SchemaCrawlerUtility.getCatalog(connection, options);
+            metaDataInfo.setJdbcUrl(catalog.getJdbcDriverInfo().getConnectionUrl());
+            metaDataInfo.setSchemas(catalog.getSchemas());
             metaDataInfo.getIncompleteTables().addAll(catalog.getTables());
             metaDataInfo.getTables().addAll(catalog.getTables());
         } catch (Exception e) {
