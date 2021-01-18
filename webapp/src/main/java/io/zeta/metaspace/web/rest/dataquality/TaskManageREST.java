@@ -341,7 +341,7 @@ public class TaskManageREST {
     @OperateType(INSERT)
     public void addTask(TaskInfo taskInfo,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), taskInfo.getTaskName());
-        String s = GsonUtils.getInstance().toJson(taskInfo);
+//        String s = GsonUtils.getInstance().toJson(taskInfo);
         taskManageService.addTask(taskInfo,tenantId);
     }
 
@@ -575,8 +575,8 @@ public class TaskManageREST {
     @Path("/{executionId}/{subtaskId}/report/data")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void downErrorData(@PathParam("executionId")String executionId, @HeaderParam("tenantId")String tenantId,
-                                @PathParam("subtaskId")String subtaskId) throws AtlasBaseException, IOException {
+    public void downErrorData(@PathParam("executionId")String executionId, @HeaderParam("tenantIds")String tenantIds,
+                                @PathParam("subtaskId")String subtaskId,@QueryParam("tenantId")String tenantId) throws AtlasBaseException, IOException {
         File exportExcel = taskManageService.exportExcelErrorData(executionId,subtaskId, tenantId);
         try {
             String filePath = exportExcel.getAbsolutePath();
