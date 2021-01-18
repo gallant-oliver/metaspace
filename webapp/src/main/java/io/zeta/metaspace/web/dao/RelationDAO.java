@@ -56,13 +56,14 @@ public interface RelationDAO {
              " open='(' separator=',' close=')'>" ,
              " #{item}" ,
              " </foreach>  or tableinfo.source_id != 'hive')" ,
+             " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') ",
              " order by tableInfo.status,table_relation.generateTime desc, tableinfo.tablename",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<RelationEntityV2> queryRelationByCategoryGuidV2(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
+    public List<RelationEntityV2> queryRelationByCategoryGuidV2(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
     @Select({"<script>",
             " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,tableInfo.description",
@@ -140,14 +141,15 @@ public interface RelationDAO {
              " <if test=\"tagName != null and tagName!=''\">",
              " and",
              " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%' ESCAPE '/') ",
-             " </if>",
+             " </if>" ,
+             " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive')",
              " order by tableinfo.tablename ",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<RelationEntityV2> queryByTableNameV2(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
+    public List<RelationEntityV2> queryByTableNameV2(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
     @Select({"<script>",
             " select count(*)over() total,* from table_relation",

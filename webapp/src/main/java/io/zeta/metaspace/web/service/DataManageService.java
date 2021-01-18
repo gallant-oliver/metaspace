@@ -704,7 +704,7 @@ public class DataManageService {
                 User user = AdminUtils.getUserData();
                 List<String> databases = tenantService.getDatabase(tenantId);
                 if (databases != null && databases.size() != 0)
-                    relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset, databases);
+                    relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset, databases,tenantId);
             }
             for (RelationEntityV2 entity : relations) {
                 String tableGuid = entity.getTableGuid();
@@ -820,7 +820,7 @@ public class DataManageService {
                 List<String> databases = tenantService.getDatabase(tenantId);
 
                 if (databases != null && databases.size() != 0 && categoryIds.size() != 0)
-                    list = relationDao.queryByTableNameV2(tableName, tag, categoryIds, limit, offset, databases);
+                    list = relationDao.queryByTableNameV2(tableName, tag, categoryIds, limit, offset, databases,tenantId);
             }
             //tag
             list.forEach(entity -> {
