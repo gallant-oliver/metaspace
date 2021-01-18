@@ -92,13 +92,17 @@ public class SearchService {
             PageResult<TableEntity> result = metaspaceEntityService.getTableList(schemaId, active, offset, limit, query, isView);
             if (queryInfo && result.getCurrentSize() > 0) {
                 for (TableEntity tableEntity : result.getLists()) {
+                    Map<String, Object> tableInfo = metaDataService.getTableType(tableEntity.getId());
+                    String sourceId = String.valueOf(tableInfo.get("sourceId"));
+                    String databasesId = String.valueOf(tableInfo.get("schemaId"));
+                    String schema = String.valueOf(tableInfo.get("schemaName"));
+                    tableEntity.setSourceId(sourceId);
+                    tableEntity.setDatabaseId(databasesId);
                     boolean view = tableEntity.getTableType().toLowerCase().contains("view");
                     if (tableEntity.isHiveTable()) {
                         if (view) {
                             tableEntity.setSql(this.getBuildTableSql(tableEntity.getId()).getSql());
                         } else {
-                            Map<String, Object> tableInfo = metaDataService.getTableType(tableEntity.getId());
-                            String schema = String.valueOf(tableInfo.get("schemaName"));
                             // 查询返回单位是字节
                             float size = AdapterUtils.getHiveAdapterSource().getNewAdapterExecutor().getTableSize(schema, tableEntity.getName(), "metaspace");
                             tableEntity.setTableSize(String.format("%.3f",size/1024/1024));
@@ -107,9 +111,6 @@ public class SearchService {
                         if (view) {
                             tableEntity.setSql(this.getBuildRDBMSTableSql(tableEntity.getId()).getSql());
                         } else {
-                            Map<String, Object> tableInfo = metaDataService.getTableType(tableEntity.getId());
-                            String sourceId = String.valueOf(tableInfo.get("sourceId"));
-                            String schema = String.valueOf(tableInfo.get("schemaName"));
                             AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceService.getUnencryptedDataSourceInfo(sourceId));
                             float size =adapterExecutor.getTableSize(schema, tableEntity.getName(), null);
                             tableEntity.setTableSize(String.format("%.3f",size/1024/1024));

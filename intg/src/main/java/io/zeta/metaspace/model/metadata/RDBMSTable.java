@@ -13,6 +13,8 @@
 
 package io.zeta.metaspace.model.metadata;
 
+import lombok.Data;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -20,6 +22,7 @@ import java.util.List;
  * @author lixiang03
  * @Data 2019/10/12 14:40
  */
+@Data
 public class RDBMSTable implements Serializable {
     private String tableId;
     private String tableName;
@@ -38,131 +41,17 @@ public class RDBMSTable implements Serializable {
     private List<RDBMSIndex> indexes;
     private boolean subscribeTo;
 
-    public boolean getSubscribeTo() {
-        return subscribeTo;
-    }
+    private String subordinateSystem;
+    private String subordinateDatabase;
+    private String systemAdmin;
 
-    public void setSubscribeTo(boolean subscribeTo) {
-        this.subscribeTo = subscribeTo;
-    }
+    private String dataWarehouseAdmin;
+    private String dataWarehouseDescription;
 
-    public List<RDBMSForeignKey> getForeignKeys() {
-        return foreignKeys;
-    }
+    private List<String> relations;
+    private String catalogAdmin;
+    private String relationTime;
 
-    public void setForeignKeys(List<RDBMSForeignKey> foreignKeys) {
-        this.foreignKeys = foreignKeys;
-    }
-
-    public List<RDBMSIndex> getIndexes() {
-        return indexes;
-    }
-
-    public void setIndexes(List<RDBMSIndex> indexes) {
-        this.indexes = indexes;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public List<RDBMSColumn> getColumns() {
-        return columns;
-    }
-
-    public void setColumns(List<RDBMSColumn> columns) {
-        this.columns = columns;
-    }
-
-    public String getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(String createTime) {
-        this.createTime = createTime;
-    }
-
-    public String getDatabaseStatus() {
-        return databaseStatus;
-    }
-
-    public void setDatabaseStatus(String databaseStatus) {
-        this.databaseStatus = databaseStatus;
-    }
-
-    public String getSourceId() {
-        return sourceId;
-    }
-
-    public void setSourceId(String sourceId) {
-        this.sourceId = sourceId;
-    }
-
-    public String getSourceName() {
-        return sourceName;
-    }
-
-    public void setSourceName(String sourceName) {
-        this.sourceName = sourceName;
-    }
-
-    public String getSourceStatus() {
-        return sourceStatus;
-    }
-
-    public void setSourceStatus(String sourceStatus) {
-        this.sourceStatus = sourceStatus;
-    }
-
-    public String getTableId() {
-        return tableId;
-    }
-
-    public void setTableId(String tableId) {
-        this.tableId = tableId;
-    }
-
-    public String getTableName() {
-        return tableName;
-    }
-
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
-    }
-
-    public String getTableDescription() {
-        return tableDescription;
-    }
-
-    public void setTableDescription(String tableDescription) {
-        this.tableDescription = tableDescription;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getDatabaseId() {
-        return databaseId;
-    }
-
-    public void setDatabaseId(String databaseId) {
-        this.databaseId = databaseId;
-    }
-
-    public String getDatabaseName() {
-        return databaseName;
-    }
-
-    public void setDatabaseName(String databaseName) {
-        this.databaseName = databaseName;
-    }
+    private List<Table.BusinessObject> businessObjects;
+    private boolean edit;
 }

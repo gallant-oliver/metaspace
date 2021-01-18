@@ -421,7 +421,7 @@ public class MetaDataService {
     }
 
 
-    public RDBMSTable getRDBMSTableInfoById(String guid) throws AtlasBaseException {
+    public RDBMSTable getRDBMSTableInfoById(String guid, String tenantId) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getRDBMSTableInfoById({})", guid);
         }
@@ -436,7 +436,7 @@ public class MetaDataService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
             //table
-            RDBMSTable table = extractRDBMSTableInfo(entity, guid, info);
+            RDBMSTable table = extractRDBMSTableInfo(entity, guid, info,tenantId);
 
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
@@ -458,7 +458,7 @@ public class MetaDataService {
         }
     }
 
-    public RDBMSTable extractRDBMSTableInfo(AtlasEntity entity, String guid, AtlasEntity.AtlasEntityWithExtInfo info) throws AtlasBaseException {
+    public RDBMSTable extractRDBMSTableInfo(AtlasEntity entity, String guid, AtlasEntity.AtlasEntityWithExtInfo info, String tenantId) throws AtlasBaseException {
         RDBMSTable table = new RDBMSTable();
         table.setTableId(guid);
         if (entity.getTypeName().contains(tableAttribute)) {
@@ -498,6 +498,66 @@ public class MetaDataService {
             table.setForeignKeys(cik.getForeignKeys());
             table.setIndexes(cik.getIndexes());
             table.setColumns(cik.getColumns());
+
+            //获取权限判断是否能编辑,默认不能
+            table.setEdit(false);
+
+                try {
+                    List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
+                    boolean edit = false;
+                    if (categoryIds.size() > 0) {
+                        int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds.get(0), tenantId);
+                        if (count > 0) {
+                            edit = true;
+                        }
+                    }
+                    table.setEdit(edit);
+                } catch (Exception e) {
+                    LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
+                }
+
+
+            try {
+                TableInfo tableInfo = tableDAO.getTableInfoByTableguid(guid);
+                //所属系统
+                table.setSubordinateSystem(tableInfo.getSubordinateSystem());
+                //所属数据库
+                table.setSubordinateDatabase(tableInfo.getSubordinateDatabase());
+                //源系统管理员
+                table.setSystemAdmin(tableInfo.getSystemAdmin());
+                //数仓管理员
+                table.setDataWarehouseAdmin(tableInfo.getDataWarehouseAdmin());
+                //数仓描述
+                table.setDataWarehouseDescription(tableInfo.getDataWarehouseDescription());
+                //目录管理员
+                table.setCatalogAdmin(tableInfo.getCatalogAdmin());
+                //创建时间
+                Object createTime = entity.getAttribute("createTime");
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String formatDateStr = sdf.format(createTime);
+                table.setCreateTime(formatDateStr);
+            } catch (Exception e) {
+                LOG.error("获取源系统维度失败,错误信息:" + e.getMessage(), e);
+            }
+
+            try {
+                //表关联信息
+                List<String> relations = getRelationList(guid, tenantId);
+                table.setRelations(relations);
+                //目录管理员
+                //关联时间
+                if (relations.size() == 1)
+                    table.setRelationTime(tableDAO.getDateByTableguid(guid));
+            } catch (Exception e) {
+                LOG.error("获取数据目录维度失败,错误信息:" + e.getMessage(), e);
+            }
+
+            try {
+                List<Table.BusinessObject> businessObjectByTableguid = tableDAO.getBusinessObjectByTableguid(guid, tenantId);
+                table.setBusinessObjects(businessObjectByTableguid);
+            } catch (Exception e) {
+                LOG.error("获取业务维度失败,错误信息:" + e.getMessage(), e);
+            }
         }
         return table;
     }
