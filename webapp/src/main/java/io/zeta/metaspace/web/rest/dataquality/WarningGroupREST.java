@@ -241,8 +241,8 @@ public class WarningGroupREST {
     @Path("/{executionId}/warning")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public WarningInfo getWarningInfo(@PathParam("executionId")String executionId) throws AtlasBaseException {
-        return warningGroupService.getWarningInfo(executionId);
+    public WarningInfo getWarningInfo(@HeaderParam("tenantId") String tenantId,@PathParam("executionId")String executionId) throws AtlasBaseException {
+        return warningGroupService.getWarningInfo(executionId,tenantId);
     }
 
     @GET
