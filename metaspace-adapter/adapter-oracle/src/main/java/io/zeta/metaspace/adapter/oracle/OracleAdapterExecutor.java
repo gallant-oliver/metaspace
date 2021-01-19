@@ -321,7 +321,7 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
             statement.setString(2, schemaName);
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
-                String time = resultSet.getString("create");
+                String time = resultSet.getString("create_time");
                 return DateUtils.parseDateTime(time);
             }
         } catch (SQLException e) {
@@ -418,9 +418,8 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
     @Override
     public float getTableSize(String db, String tableName, String pool) {
         String querySQL = "select sum(num_rows * avg_row_len) data_length from ALL_TABLES where table_name = '%s' and owner='%s'";
-        AdapterTransformer adapterTransformer = getAdapter().getAdapterTransformer();
-        db=adapterTransformer.caseSensitive(db.replaceAll("'","''"));
-        tableName=adapterTransformer.caseSensitive(tableName.replaceAll("'","''"));
+        db=db.replaceAll("'","''");
+        tableName=tableName.replaceAll("'","''");
         querySQL=String.format(querySQL,tableName,db);
         Connection connection = getAdapterSource().getConnection();
         return queryResult(connection, querySQL, resultSet -> {
