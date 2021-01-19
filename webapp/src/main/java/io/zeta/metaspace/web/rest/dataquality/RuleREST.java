@@ -338,7 +338,7 @@ public class RuleREST {
     @OperateType(UPDATE)
     //删除
     public boolean assignRuleToStandard(DataStandAndRule dataStandAndTable,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        String ruleName = ruleService.getNameById(dataStandAndTable.getRuleId());
+        String ruleName = ruleService.getNameById(dataStandAndTable.getRuleId(),tenantId);
         if(null == ruleName) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "质量规则不存在");
         }
