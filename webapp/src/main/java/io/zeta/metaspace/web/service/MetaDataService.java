@@ -478,7 +478,9 @@ public class MetaDataService {
                 table.setCreateTime("");
             }
 
-
+            String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
+            String sourceId = StringUtils.isNotEmpty(qualifiedName) ? qualifiedName.split("\\.")[0] : "";
+            
             //描述
             table.setTableDescription(getEntityAttribute(entity, "comment"));
             //数据库名
@@ -488,7 +490,8 @@ public class MetaDataService {
             table.setDatabaseId(relatedObject.getGuid());
             table.setDatabaseName(relatedObject.getDisplayText());
             table.setDatabaseStatus(relatedObject.getEntityStatus().name());
-            table.setSourceId(relatedInstance.getGuid());
+
+            table.setSourceId(sourceId);
             table.setSourceName(relatedInstance.getDisplayText());
             table.setSourceStatus(relatedInstance.getEntityStatus().name());
             ColumnQuery columnQuery = new ColumnQuery();
