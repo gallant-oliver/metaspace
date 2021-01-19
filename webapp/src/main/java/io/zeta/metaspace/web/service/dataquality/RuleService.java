@@ -278,8 +278,8 @@ public class RuleService {
         return ruleDAO.getCategoryName(categoryGuid,tenantId);
     }
 
-    public String getNameById(String id) {
-        return ruleDAO.getNameById(id);
+    public String getNameById(String id,String tenantId) {
+        return ruleDAO.getNameById(id,tenantId);
     }
 
     public List<DataTaskIdAndName> getRuleUsed(List<String> ids){
