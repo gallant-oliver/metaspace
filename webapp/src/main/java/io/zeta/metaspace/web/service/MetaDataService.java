@@ -158,12 +158,14 @@ public class MetaDataService {
             result.put("schemaId", relatedObject.getGuid());
             result.put("schemaName", relatedObject.getDisplayText());
 
+            String tableType;
             String type = entity.getTypeName();
-            String tableType = getEntityAttribute(entity, "tableType");
             if ("hive_table".equalsIgnoreCase(type)) {
+                tableType = getEntityAttribute(entity, "tableType");
                 result.put("isHiveTable", true);
                 result.put("sourceId", "hive");
             } else if ("rdbms_table".equalsIgnoreCase(type)) {
+                tableType = getEntityAttribute(entity, "type");
                 result.put("isHiveTable", false);
                 String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
                 result.put("sourceId", StringUtils.isNotEmpty(qualifiedName) ? qualifiedName.split("\\.")[0] : "");
@@ -436,7 +438,7 @@ public class MetaDataService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
             //table
-            RDBMSTable table = extractRDBMSTableInfo(entity, guid, info,tenantId);
+            RDBMSTable table = extractRDBMSTableInfo(entity, guid, info, tenantId);
 
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
@@ -505,19 +507,19 @@ public class MetaDataService {
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
 
-                try {
-                    List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
-                    boolean edit = false;
-                    if (categoryIds.size() > 0) {
-                        int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds.get(0), tenantId);
-                        if (count > 0) {
-                            edit = true;
-                        }
+            try {
+                List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
+                boolean edit = false;
+                if (categoryIds.size() > 0) {
+                    int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds.get(0), tenantId);
+                    if (count > 0) {
+                        edit = true;
                     }
-                    table.setEdit(edit);
-                } catch (Exception e) {
-                    LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
                 }
+                table.setEdit(edit);
+            } catch (Exception e) {
+                LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
+            }
 
 
             try {

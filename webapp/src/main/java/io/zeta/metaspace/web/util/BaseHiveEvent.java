@@ -65,6 +65,7 @@ public abstract class BaseHiveEvent {
     public static final String ATTRIBUTE_VIEW_ORIGINAL_TEXT        = "viewOriginalText";
     public static final String ATTRIBUTE_VIEW_EXPANDED_TEXT        = "viewExpandedText";
     public static final String ATTRIBUTE_TABLE_TYPE                = "tableType";
+    public static final String ATTRIBUTE_TYPE                = "type";
     public static final String ATTRIBUTE_TEMPORARY                 = "temporary";
     public static final String ATTRIBUTE_RETENTION                 = "retention";
     public static final String ATTRIBUTE_DB                        = "db";
