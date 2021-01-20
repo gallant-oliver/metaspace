@@ -325,7 +325,9 @@ public class BusinessService {
                 trustTable.setTrust(true);
                 tables.add(0, trustTable);
             } else {
-                tables.stream().findFirst().get().setTrust(true);
+                tables.stream().findFirst().ifPresent(table -> {
+                    table.setTrust(true);
+                });
             }
         }
         return tables;
