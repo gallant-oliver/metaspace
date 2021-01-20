@@ -482,7 +482,7 @@ public class MetaDataService {
 
             String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
             String sourceId = StringUtils.isNotEmpty(qualifiedName) ? qualifiedName.split("\\.")[0] : "";
-            
+
             //描述
             table.setTableDescription(getEntityAttribute(entity, "comment"));
             //数据库名
@@ -604,33 +604,36 @@ public class MetaDataService {
         Map<String, AtlasEntity> referredEntities = info.getReferredEntities();
         AtlasEntity entity = info.getEntity();
         List<RDBMSColumn> columns = new ArrayList<>();
-        RDBMSColumn column = null;
 
-        for (String key : referredEntities.keySet()) {
-            AtlasEntity referredEntity = referredEntities.get(key);
-            if (referredEntity.getTypeName().contains("column") && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE)) {
-                column = new RDBMSColumn();
-                //tableId
-                column.setTableId(guid);
-                //tableName
-                column.setTableName(getEntityAttribute(entity, "name"));
-                column.setTableStatus(entity.getStatus().toString());
-                //status
-                column.setStatus(referredEntity.getStatus().name());
-                //databaseId && dataBaseName
-                column.setDatabaseId(relatedDB.getGuid());
-                column.setDatabaseName(relatedDB.getDisplayText());
-                column.setDatabaseStatus(relatedDB.getEntityStatus().name());
+        List<AtlasObjectId> columnsObjectIdList = (List<AtlasObjectId>) info.getEntity().getAttribute("columns");
 
-                column.setSourceId(relatedInstance.getGuid());
-                column.setSourceName(relatedInstance.getDisplayText());
-                column.setSourceStatus(relatedInstance.getEntityStatus().name());
+        if (columnsObjectIdList != null) {
+            columnsObjectIdList.stream().map(AtlasObjectId::getGuid).forEach(key -> {
+                AtlasEntity referredEntity = referredEntities.get(key);
+                if (referredEntity.getTypeName().contains("column") && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE)) {
+                    RDBMSColumn column = new RDBMSColumn();
+                    //tableId
+                    column.setTableId(guid);
+                    //tableName
+                    column.setTableName(getEntityAttribute(entity, "name"));
+                    column.setTableStatus(entity.getStatus().toString());
+                    //status
+                    column.setStatus(referredEntity.getStatus().name());
+                    //databaseId && dataBaseName
+                    column.setDatabaseId(relatedDB.getGuid());
+                    column.setDatabaseName(relatedDB.getDisplayText());
+                    column.setDatabaseStatus(relatedDB.getEntityStatus().name());
 
-                column.setColumnId(referredEntity.getGuid());
-                //attribute
-                extractAttributeInfo(referredEntity, column);
-                columns.add(column);
-            }
+                    column.setSourceId(relatedInstance.getGuid());
+                    column.setSourceName(relatedInstance.getDisplayText());
+                    column.setSourceStatus(relatedInstance.getEntityStatus().name());
+
+                    column.setColumnId(referredEntity.getGuid());
+                    //attribute
+                    extractAttributeInfo(referredEntity, column);
+                    columns.add(column);
+                }
+            });
         }
         return columns;
     }
@@ -992,37 +995,41 @@ public class MetaDataService {
         Map<String, AtlasEntity> referredEntities = info.getReferredEntities();
         AtlasEntity entity = info.getEntity();
         List<Column> columns = new ArrayList<>();
-        Column column = null;
+
 
         List<AtlasObjectId> partitionKeys = extractPartitionKeyInfo(entity);
-        for (String key : referredEntities.keySet()) {
-            AtlasEntity referredEntity = referredEntities.get(key);
-            if (referredEntity.getTypeName().contains("column") && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE)) {
-                column = new Column();
-                //tableId
-                column.setTableId(guid);
-                //tableName
-                column.setTableName(getEntityAttribute(entity, "name"));
-                //status
-                column.setStatus(referredEntity.getStatus().name());
-                //databaseId && dataBaseName
-                AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
-                column.setDatabaseId(relatedDB.getGuid());
-                column.setDatabaseName(relatedDB.getDisplayText());
+        List<AtlasObjectId> columnsObjectIdList = (List<AtlasObjectId>) info.getEntity().getAttribute("columns");
 
-                column.setColumnId(referredEntity.getGuid());
-                column.setPartitionKey(false);
-                if (partitionKeys != null) {
-                    for (int i = 0; i < partitionKeys.size(); i++) {
-                        if (partitionKeys.get(i).getGuid().equals(column.getColumnId())) {
-                            column.setPartitionKey(true);
+        if (columnsObjectIdList != null) {
+            columnsObjectIdList.stream().map(AtlasObjectId::getGuid).forEach(key -> {
+                AtlasEntity referredEntity = referredEntities.get(key);
+                if (referredEntity.getTypeName().contains("column") && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE)) {
+                    Column column = new Column();
+                    //tableId
+                    column.setTableId(guid);
+                    //tableName
+                    column.setTableName(getEntityAttribute(entity, "name"));
+                    //status
+                    column.setStatus(referredEntity.getStatus().name());
+                    //databaseId && dataBaseName
+                    AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+                    column.setDatabaseId(relatedDB.getGuid());
+                    column.setDatabaseName(relatedDB.getDisplayText());
+
+                    column.setColumnId(referredEntity.getGuid());
+                    column.setPartitionKey(false);
+                    if (partitionKeys != null) {
+                        for (int i = 0; i < partitionKeys.size(); i++) {
+                            if (partitionKeys.get(i).getGuid().equals(column.getColumnId())) {
+                                column.setPartitionKey(true);
+                            }
                         }
                     }
+                    //attribute
+                    extractAttributeInfo(referredEntity, column);
+                    columns.add(column);
                 }
-                //attribute
-                extractAttributeInfo(referredEntity, column);
-                columns.add(column);
-            }
+            });
         }
         return columns;
     }
