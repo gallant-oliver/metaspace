@@ -342,7 +342,6 @@ public class TaskManageREST {
     @OperateType(INSERT)
     public void addTask(TaskInfo taskInfo,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), taskInfo.getTaskName());
-//        String s = GsonUtils.getInstance().toJson(taskInfo);
         taskManageService.addTask(taskInfo,tenantId);
     }
 
