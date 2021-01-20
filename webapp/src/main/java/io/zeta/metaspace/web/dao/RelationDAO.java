@@ -90,7 +90,7 @@ public interface RelationDAO {
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<RelationEntityV2> queryRelationByCategoryGuidFilterV2(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
+    public List<RelationEntityV2> queryRelationByCategoryGuidFilterV2(@Param("categoryGuid") String categoryGuid,@Param("tenantId") String tenantId, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
 
     @Select("select * from table_relation,tableInfo where table_relation.tableGuid=#{tableGuid} and tableinfo.tableGuid=#{tableGuid}")
     public List<RelationEntityV2> queryRelationByTableGuid(@Param("tableGuid") String tableGuid) throws SQLException;
