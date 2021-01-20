@@ -48,10 +48,7 @@ import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
-import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.ExportDataPathUtils;
-import io.zeta.metaspace.web.util.PoiExcelUtils;
-import io.zeta.metaspace.web.util.DateUtils;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -1733,7 +1730,7 @@ public class BusinessService {
         String tableName = table.getTableName();
         Sheet columnSheet = workbook.getSheet(tableName);
         if (columnSheet == null) {
-            columnSheet = workbook.createSheet(tableName);
+            columnSheet = workbook.createSheet(CustomStringUtils.handleExcelName(tableName));
         }
         setAttributeRow(columnSheet, attributes, 0, cellStyle);
         int columnIndex = 1;
