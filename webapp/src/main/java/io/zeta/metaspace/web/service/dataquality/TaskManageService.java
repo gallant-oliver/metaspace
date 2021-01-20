@@ -180,7 +180,9 @@ public class TaskManageService {
             List<Table> tableList = pageResult.getLists();
             if(Objects.nonNull(tableList) && tableList.size()>0) {
                 Table tmpTable = taskManageDAO.getDbAndTableName(tableList.get(0).getTableId());
-                dbName = tmpTable.getDatabaseName();
+               if(tmpTable != null) {
+                   dbName = tmpTable.getDatabaseName();
+               }
             }
             for (Table table : tableList) {
                 table.setDatabaseName(dbName);
