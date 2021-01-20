@@ -85,6 +85,7 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
     public List<SchemaCrawlerColumn> getColumns(String schemaName, String tableName) {
         String sql = "SELECT  NULL AS table_cat,\n" +
                 "       t.owner AS table_schem,\n" +
+                "       cm.comments AS column_comments," +
                 "       t.table_name AS table_name,\n" +
                 "       t.column_name AS column_name,\n" +
                 "       t.data_type\n" +
@@ -111,6 +112,7 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
                 "        case when p.COLUMN_NAME is null then 'No' else 'YES' end as is_primary_key \n" +
                 "FROM all_tab_columns t left join (select col.column_name,col.owner,col.table_name from all_constraints con,all_cons_columns col where con.constraint_name=col.constraint_name and con.constraint_type='P' and con.owner LIKE ? ESCAPE '/'\n" +
                 "  AND con.table_name LIKE ? ESCAPE '/') p on t.owner=p.owner and t.table_name=p.table_name and p.column_name=t.column_name \n" +
+                "  left join ALL_COL_COMMENTS cm on t.owner = cm.owner and t.table_name = cm.table_name and t.column_name = cm.column_name " +
                 "WHERE t.owner LIKE ? ESCAPE '/'\n" +
                 "  AND t.table_name LIKE ? ESCAPE '/'\n" +
                 "ORDER BY table_schem, table_name, ordinal_position\n";
@@ -131,7 +133,7 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
                 column.setDataType(resultSet.getString("data_type"));
                 column.setLength(resultSet.getInt("column_size"));
                 column.setDefaultValue(resultSet.getString("column_def"));
-                column.setComment(resultSet.getString("remarks"));
+                column.setComment(resultSet.getString("column_comments"));
                 column.setNullable(resultSet.getString("is_nullable").equalsIgnoreCase("YES"));
                 column.setPrimaryKey(resultSet.getString("is_primary_key").equalsIgnoreCase("YES"));
                 columns.add(column);
