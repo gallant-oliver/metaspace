@@ -217,6 +217,15 @@ public interface TaskManageDAO {
              " values(#{task.id},#{task.name},#{task.level},#{task.description},#{task.cronExpression},#{task.enable},#{task.startTime},#{task.endTime},#{task.createTime},#{task.updateTime},#{task.creator},#{task.updater},#{task.delete},#{task.orangeWarningTotalCount},#{task.redWarningTotalCount},#{task.errorTotalCount},#{task.executionCount},#{tenantId},(select (case when max(number) is null then 0 else max(number) end)+1 from data_quality_task where tenantid=#{tenantId}))"})
     public int addDataQualityTask(@Param("task")DataQualityTask task,@Param("tenantId")String tenantId);
 
+
+    /**
+     * 通过任务名称查看租户下的任务
+     * @param
+     * @return
+     */
+    @Select({" select id from data_quality_task where tenantid=#{tenantId} and name=#{taskName}"})
+    public List<String> getDataQualityTaskByName(@Param("taskName")String taskName,@Param("tenantId")String tenantId);
+
     /**
      * 记录任务告警组
      * @param taskId

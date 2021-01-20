@@ -91,7 +91,7 @@ public class WarningGroupREST {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), warningGroup.getName());
         WarningGroup old = warningGroupService.getByName(warningGroup.getName(),null,tenantId);
         if (old != null) {
-            throw new AtlasBaseException("告警组名已存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"告警组名已存在");
         }
         warningGroupService.insert(warningGroup,tenantId);
     }

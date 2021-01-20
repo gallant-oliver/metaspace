@@ -745,7 +745,6 @@ public class QuartzJob implements Job {
                     case EMPTY_VALUE_NUM_CHANGE:
                     case EMPTY_VALUE_NUM_CHANGE_RATIO:
                     case EMPTY_VALUE_NUM_RATIO:
-                        sql = String.format(query, sqlDbName,tableName, columnName);
                         writeErrorData(jobType,tableName,columnName,sqlDbName,adapterSource,adapterSource.getConnection(user, dbName, pool),hdfsOutPath);
                         sql = String.format(query, sqlDbName,tableName, columnName);
                         break;
@@ -804,7 +803,7 @@ public class QuartzJob implements Job {
 
     public void writeErrorData(TaskType jobType,String tableName,String columnName,String sqlDbName,AdapterSource adapterSource,Connection connection,String hdfsOutPath){
         String errDataSql = QuartQueryProvider.getErrData(jobType);
-        String sql=null;
+        String sql;
         switch (jobType) {
             case UNIQUE_VALUE_NUM:
             case UNIQUE_VALUE_NUM_CHANGE:
@@ -828,7 +827,7 @@ public class QuartzJob implements Job {
                 break;
         }
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
-
+        LOG.info("query sql = "+ sql);
         adapterExecutor.queryResultByFetchSize(connection, sql, resultSet -> {
             HdfsUtils hdfsUtils = new HdfsUtils();
             try (BufferedWriter fileBufferWriter = hdfsUtils.getFileBufferWriter(hdfsOutPath);){

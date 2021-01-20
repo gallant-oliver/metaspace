@@ -284,6 +284,10 @@ public class TaskManageService {
     public void addDataQualityTask(Timestamp currentTime, TaskInfo taskInfo,String tenantId) throws AtlasBaseException {
         try {
             DataQualityTask dataQualityTask = new DataQualityTask();
+            List<String> dataQualityTaskByName = taskManageDAO.getDataQualityTaskByName(taskInfo.getTaskName(), tenantId);
+            if(dataQualityTaskByName != null && dataQualityTaskByName.size() >0){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务名称已经存在");
+            }
             //id
             String guid = UUID.randomUUID().toString();
             dataQualityTask.setId(guid);
@@ -337,7 +341,11 @@ public class TaskManageService {
             taskManageDAO.updateTaskStatus(guid, 0);
             taskManageDAO.updateTaskFinishedPercent(guid, 0F);
 
-        } catch (Exception e) {
+        }catch (AtlasBaseException e){
+            LOG.error("添加任务失败", e);
+            throw e;
+        }
+        catch (Exception e) {
             LOG.error("添加任务失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加任务失败");
         }
@@ -383,7 +391,7 @@ public class TaskManageService {
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "添加子任务失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "添加任务失败");
         }
     }
 
@@ -412,7 +420,7 @@ public class TaskManageService {
                 taskManageDAO.addDataQualitySubTaskObject(dataQualitySubTaskObject);
             }
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "添加子任务对象失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "添加任务失败");
         }
     }
 
