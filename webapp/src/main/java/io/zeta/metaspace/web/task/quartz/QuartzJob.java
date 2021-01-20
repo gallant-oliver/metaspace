@@ -631,7 +631,7 @@ public class QuartzJob implements Job {
             throw new AtlasBaseException("一致性校验连接字段数目不对");
         }
 
-        if (standard.getCompareFields().size() != contrast.getJoinFields().size()) {
+        if (standard.getCompareFields().size() != contrast.getCompareFields().size()) {
             throw new AtlasBaseException("一致性校验比较字段数目不对");
         }
 
