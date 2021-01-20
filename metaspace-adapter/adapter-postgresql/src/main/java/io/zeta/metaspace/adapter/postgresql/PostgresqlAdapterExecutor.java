@@ -159,7 +159,7 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
                 " and col.table_name = "+table.replaceAll("\"","'")+
                 " order by ordinal_position;";
 
-        String create_sql=queryResult(querySql, resultSet -> {
+        String createSql=queryResult(querySql, resultSet -> {
             try {
                 StringBuffer sql =new StringBuffer();
                 sql.append("CREATE TABLE ");
@@ -203,7 +203,7 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
                     if(column_default==null||"null".equalsIgnoreCase(column_default.trim())){
                         sb.append("#");
                     }else{
-                        sb.append("DEFAULT ").append(column_default).append("##");
+                        sb.append("DEFAULT ").append(column_default).append("#");
                     }
                     sql.append(sb.toString());
                 }
@@ -213,6 +213,6 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
                 throw new AtlasBaseException("查询建表语句失败", e);
             }
         });
-        return create_sql;
+        return createSql;
     }
 }

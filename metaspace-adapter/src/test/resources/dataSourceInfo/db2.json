@@ -4,7 +4,7 @@
   "ip": "10.200.64.14",
   "port": "50000",
   "userName": "db2inst1",
-  "password": "123456",
+  "password": "yourStrong(!)Password",
   "database": "testdb",
   "jdbcParameter": ""
 }
