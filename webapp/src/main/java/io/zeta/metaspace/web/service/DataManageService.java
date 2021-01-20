@@ -752,7 +752,7 @@ public class DataManageService {
                 User user = AdminUtils.getUserData();
                 List<String> databases = tenantService.getDatabase(tenantId);
                 if (databases != null && databases.size() != 0)
-                    relations = relationDao.queryRelationByCategoryGuidFilterV2(categoryGuid, limit, offset, databases);
+                    relations = relationDao.queryRelationByCategoryGuidFilterV2(categoryGuid,tenantId, limit, offset, databases);
             }
             if (relations.size() != 0) {
                 totalNum = relations.get(0).getTotal();
