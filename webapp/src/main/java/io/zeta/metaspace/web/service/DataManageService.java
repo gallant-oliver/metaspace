@@ -905,7 +905,7 @@ public class DataManageService {
                 }
                 List<String> databases = tenantService.getDatabase(tenantId);
                 if (databases != null && databases.size() != 0 && categoryIds.size() != 0)
-                    list = relationDao.queryByTableNameFilterV2(tableName, tag, categoryIds, limit, offset, databases);
+                    list = relationDao.queryByTableNameFilterV2(tenantId,tableName, tag, categoryIds, limit, offset, databases);
             }
 
             getPath(list, tenantId);
