@@ -30,15 +30,12 @@ import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.metadata.*;
-import io.zeta.metaspace.model.operatelog.ModuleEnum;
-import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.ApiHead;
-import io.zeta.metaspace.model.share.ApiInfoV2;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
@@ -60,7 +57,6 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 
-import org.apache.poi.hssf.usermodel.HSSFFont;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Font;
@@ -85,19 +81,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.StringJoiner;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -333,8 +318,9 @@ public class BusinessService {
 
         String trustTableGuid = businessDao.getTrustTableGuid(businessId);
         if (Objects.nonNull(trustTableGuid)) {
-            TechnologyInfo.Table trustTable = tables.stream().filter(table -> table.getTableGuid().equals(trustTableGuid)).findFirst().get();
-            if (Objects.nonNull(trustTable)) {
+            Optional<TechnologyInfo.Table> trustTableOP = tables.stream().filter(table -> table.getTableGuid().equals(trustTableGuid)).findFirst();
+            if (trustTableOP.isPresent()) {
+                TechnologyInfo.Table trustTable = trustTableOP.get();
                 tables.remove(trustTable);
                 trustTable.setTrust(true);
                 tables.add(0, trustTable);
@@ -1742,9 +1728,9 @@ public class BusinessService {
      * @param cellStyle
      */
     public void setColumnSheet(Workbook workbook, Table table, List<String> attributes, CellStyle cellStyle) {
-        String tableName=table.getTableName();
+        String tableName = table.getTableName();
         Sheet columnSheet = workbook.getSheet(tableName);
-        if(columnSheet==null){
+        if (columnSheet == null) {
             columnSheet = workbook.createSheet(tableName);
         }
         setAttributeRow(columnSheet, attributes, 0, cellStyle);
