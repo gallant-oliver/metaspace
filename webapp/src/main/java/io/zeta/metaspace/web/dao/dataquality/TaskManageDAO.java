@@ -883,7 +883,7 @@ public interface TaskManageDAO {
      * @param dbName
      * @return
      */
-    @Select("select distinct databaseguid from tableInfo where dbName=#{dbName} and status='ACTIVE'")
+    @Select("select distinct databaseguid from tableInfo where dbName=#{dbName} and status='ACTIVE' and source_id='hive'")
     public String getDbIdByDbName(@Param("dbName")String dbName);
 
     /**
