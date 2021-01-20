@@ -438,7 +438,9 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
 
     @Override
     public String getCreateTableSql(String schema, String table) {
-        String querySql = "select dbms_metadata.get_ddl('TABLE','" + table + "','" + schema + "') from dual";
+        String tableName=table.replaceAll("\"","");
+        String schemaName=schema.replaceAll("\"","");
+        String querySql = "select dbms_metadata.get_ddl('TABLE','" + tableName + "','" + schemaName + "') from dual";
         return queryResult(querySql, resultSet -> {
             try {
                 String sql = null;
