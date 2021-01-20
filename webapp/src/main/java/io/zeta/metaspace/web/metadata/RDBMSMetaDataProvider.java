@@ -693,7 +693,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
 
                     tablesImported += imported;
                 }
-            } catch (InterruptedException e) {
+            } catch (AtlasBaseException e) {
                 throw e;
             } catch (Exception e) {
                 LOG.error("导入表元数据错误", e);
