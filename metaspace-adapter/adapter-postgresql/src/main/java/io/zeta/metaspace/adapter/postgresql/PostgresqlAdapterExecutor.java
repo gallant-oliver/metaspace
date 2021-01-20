@@ -159,7 +159,7 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
                 " and col.table_name = "+table.replaceAll("\"","'")+
                 " order by ordinal_position;";
 
-        String create_sql=queryResult(querySql, resultSet -> {
+        String createSql=queryResult(querySql, resultSet -> {
             try {
                 StringBuffer sql =new StringBuffer();
                 sql.append("CREATE TABLE ");
@@ -181,27 +181,38 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
                     }
                     String data_type=resultSet.getString("data_type");
                     sb.append(data_type);
-                    String character_maximum_length = resultSet.getString("character_maximum_length");
-                    if(!StringUtils.isEmpty(character_maximum_length)){
+                    int character_maximum_length = resultSet.getInt("character_maximum_length");
+                    int numeric_precision = resultSet.getInt("numeric_precision");
+                    int numeric_scale = resultSet.getInt("numeric_scale");
+                    if(character_maximum_length>0){
                         sb.append("(").append(character_maximum_length).append(") ");
+                    }else{
+                        if(numeric_precision>0){
+                            sb.append("(").append(numeric_precision);
+                            if(numeric_scale>0){
+                                sb.append(",").append(numeric_scale).append(")");
+                            }else {
+                                sb.append(")");
+                            }
+                        }
                     }
                     boolean is_nullable = resultSet.getBoolean("is_nullable");
                     String nullStr= is_nullable ? " NULL " : " NOT NULL ";
                     sb.append(nullStr);
                     String column_default = resultSet.getString("column_default");
                     if(column_default==null||"null".equalsIgnoreCase(column_default.trim())){
-                        sb.append(",");
+                        sb.append("#");
                     }else{
-                        sb.append("DEFAULT ").append(column_default).append(",");
+                        sb.append("DEFAULT ").append(column_default).append("#");
                     }
                     sql.append(sb.toString());
                 }
-                sql.deleteCharAt(sql.lastIndexOf(",")).append("\n);");
-                return sql.toString().replaceAll(",",",\n");
+                sql.deleteCharAt(sql.lastIndexOf("#")).append("\n);");
+                return sql.toString().replaceAll("#",",\n");
             } catch (SQLException e) {
                 throw new AtlasBaseException("查询建表语句失败", e);
             }
         });
-        return create_sql;
+        return createSql;
     }
 }

@@ -113,7 +113,7 @@ public class DataStandardREST {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), dataStandard.getContent());
         List<DataStandard> oldList = dataStandardService.getByNumber(dataStandard.getNumber(),tenantId);
         if (!oldList.isEmpty()) {
-            throw new AtlasBaseException("标准编号已存在");
+            throw new AtlasBaseException(AtlasErrorCode.STANDARD_NUMBER_ALREADY_EXISTS);
         }
         dataStandardService.insert(dataStandard,tenantId);
     }
