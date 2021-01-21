@@ -35,6 +35,6 @@ public interface TableTagDAO {
     @Delete("delete from table2tag where tableguid=#{tableGuid}")
     public int delAllTable2Tag(@Param("tableGuid") String tableGuid);
 
-    @Select("select tag.tagid as tagid,tag.tagname as tagname from table2tag,tag where table2tag.tagid=tag.tagid and tableguid=#{tableGuid}")
-    public List<Tag> getTable2Tag(@Param("tableGuid") String tableGuid);
+    @Select("select tag.tagid as tagid,tag.tagname as tagname from table2tag,tag where table2tag.tagid=tag.tagid and tableguid=#{tableGuid} and tenantid=#{tenantId}")
+    public List<Tag> getTable2Tag(@Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
 }

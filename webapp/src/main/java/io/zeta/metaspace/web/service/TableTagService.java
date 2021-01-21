@@ -24,6 +24,8 @@ public class TableTagService {
         Tag tag = tableTagDAO.getTag(tagName, tenantId);
         if (tag == null) {
             tableTagDAO.addTag(tagId, tagName, tenantId);
+        }else {
+            tagId = tag.getTagId();
         }
         tableTagDAO.addTable2Tag(tagId, guid);
     }
@@ -35,8 +37,8 @@ public class TableTagService {
         }
     }
 
-    public List<Tag> getTags(String guid) {
-        return tableTagDAO.getTable2Tag(guid);
+    public List<Tag> getTags(String guid,String tenantId) {
+        return tableTagDAO.getTable2Tag(guid,tenantId);
     }
 
 }
