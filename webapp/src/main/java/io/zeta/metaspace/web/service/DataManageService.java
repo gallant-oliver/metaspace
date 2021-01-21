@@ -709,7 +709,7 @@ public class DataManageService {
             }
             for (RelationEntityV2 entity : relations) {
                 String tableGuid = entity.getTableGuid();
-                List<Tag> tableTageList = tableTagDAO.getTable2Tag(tableGuid);
+                List<Tag> tableTageList = tableTagDAO.getTable2Tag(tableGuid,tenantId);
                 List<String> tableTagNameList = tableTageList.stream().map(tag -> tag.getTagName()).collect(Collectors.toList());
                 entity.setTableTagList(tableTagNameList);
                 List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
@@ -825,7 +825,7 @@ public class DataManageService {
             }
             //tag
             list.forEach(entity -> {
-                List<Tag> tableTageList = tableTagDAO.getTable2Tag(entity.getTableGuid());
+                List<Tag> tableTageList = tableTagDAO.getTable2Tag(entity.getTableGuid(),tenantId);
                 List<String> tableTagNameList = tableTageList.stream().map(tableTag -> tableTag.getTagName()).collect(Collectors.toList());
                 entity.setTableTagList(tableTagNameList);
             });
