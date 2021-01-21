@@ -615,7 +615,6 @@ public class TaskManageREST {
             response.setContentType("application/force-download");
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  fileName);
             return Response.ok().build();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"导入文件错误");

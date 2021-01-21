@@ -207,7 +207,7 @@ public interface DataStandardDAO {
     @Select({"<script>",
              "select count(*)over() total,s.ruleid,r.name as ruleName,s.createtime,u.username as operator from " +
              " data_standard2data_quality_rule as s " +
-             " inner join data_quality_rule r on s.ruleid=r.id " +
+             " inner join data_quality_rule_template r on s.ruleid=r.id " +
              " inner join users u on s.operator=u.userid " +
              " where s.number=#{number} and r.tenantid=#{tenantId}",
              " <if test='params != null'>",
