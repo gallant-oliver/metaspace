@@ -10,6 +10,7 @@ import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.datasource.DataSourcePool;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang.StringUtils;
 
@@ -126,6 +127,70 @@ public class PostgresqlAdapterSource extends AbstractAdapterSource {
             log.error("关闭数据源连接池异常", e);
             return null;
         });
+    }
+
+    /**
+     * 获取数据库连接
+     * 首先从连接池中获取获取连接，异常则重新初始化连接池，使用直接使用驱动获取连接
+     */
+    @Override
+    public Connection getConnection() {
+        try {
+            Connection conn=null;
+            try {
+                conn=dataSource.getConnection();
+                conn.setSchema("public");
+                return conn;
+            } catch (SQLException e) {
+                log.error("getConnection for DataSource fail :" + e.getMessage(), e);
+                try {
+                    closeDataSource();
+                    this.dataSource = initDataSource();
+                } catch (Exception e1) {
+                    log.error("Refresh the connection pool fail : " + e1.getMessage(), e);
+                }
+            }
+            conn=getConnectionForDriver();
+            conn.setSchema("public");
+            return conn;
+        } catch (Exception e) {
+            log.info("getConnection for " + getJdbcUrl() + "," + getDataSourceInfo().getUserName() + "," + getDataSourceInfo().getPassword() + " error:" + e.getMessage(), e);
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取连接失败，请求检查数据源配置信息");
+        }
+    }
+
+    @Override
+    public Connection getConnection(String proxyUser, String schema, String pool) {
+        try {
+            Connection conn=null;
+            try {
+                conn=dataSource.getConnection();
+                if(StringUtils.isNotEmpty(schema)){
+                    conn.setSchema(schema);
+                }else{
+                    conn.setSchema("public");
+                }
+                return conn;
+            } catch (SQLException e) {
+                log.error("getConnection for DataSource fail :" + e.getMessage(), e);
+                try {
+                    closeDataSource();
+                    this.dataSource = initDataSource();
+                } catch (Exception e1) {
+                    log.error("Refresh the connection pool fail : " + e1.getMessage(), e);
+                }
+            }
+            conn=getConnectionForDriver();
+            if(StringUtils.isNotEmpty(schema)){
+                conn.setSchema(schema);
+            }else{
+                conn.setSchema("public");
+            }
+            return conn;
+        } catch (Exception e) {
+            log.info("getConnection for " + getJdbcUrl() + "," + getDataSourceInfo().getUserName() + "," + getDataSourceInfo().getPassword() + " error:" + e.getMessage(), e);
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取连接失败，请求检查数据源配置信息");
+        }
     }
 
     @Override

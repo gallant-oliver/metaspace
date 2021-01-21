@@ -164,7 +164,7 @@ public class PoiExcelUtils {
     public static  void createSheet(Workbook workbook, String sheetName, List<String> attributes, List<List<String>> data) {
         Sheet sheet = workbook.getSheet(sheetName);
         if(sheet==null){
-            sheet = workbook.createSheet(sheetName);
+            sheet = workbook.createSheet(CustomStringUtils.handleExcelName(sheetName));
         }
         Row row0 = sheet.createRow(0);
         for (int i = 0; i < attributes.size(); i++) {
@@ -175,7 +175,7 @@ public class PoiExcelUtils {
     }
 
     public static  void createSheet(Workbook workbook, String sheetName, List<String> attributes, List<List<String>> data,CellStyle cellStyle,int column) {
-        Sheet sheet = workbook.createSheet(sheetName);
+        Sheet sheet = workbook.createSheet(CustomStringUtils.handleExcelName(sheetName));
         sheet.setDefaultColumnWidth(column);
         Row row0 = sheet.createRow(0);
         for (int i = 0; i < attributes.size(); i++) {
@@ -187,7 +187,7 @@ public class PoiExcelUtils {
     }
 
     public static  void createSheet(Workbook workbook, String sheetName, List<String> attributes, Map<String,List<List<String>>> dataMap) {
-        Sheet sheet = workbook.createSheet(sheetName);
+        Sheet sheet = workbook.createSheet(CustomStringUtils.handleExcelName(sheetName));
         Row row0 = sheet.createRow(0);
         for (int i = 0; i < attributes.size(); i++) {
             Cell cell = row0.createCell(i);

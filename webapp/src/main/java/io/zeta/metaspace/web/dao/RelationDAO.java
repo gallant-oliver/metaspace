@@ -208,7 +208,7 @@ public interface RelationDAO {
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<RelationEntityV2> queryByTableNameFilterV2(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
+    public List<RelationEntityV2> queryByTableNameFilterV2(@Param("tenantId") String tenantId,@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
 
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
     public int queryRelationNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);

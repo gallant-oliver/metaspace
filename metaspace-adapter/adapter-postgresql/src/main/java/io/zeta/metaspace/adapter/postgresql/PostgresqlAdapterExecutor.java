@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -138,6 +139,8 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
         if(StringUtils.isEmpty(schema) || StringUtils.isEmpty(table)){
             throw new AtlasBaseException("schema or table is null !");
         }
+        String schemaName=schema.replaceAll("\"","");
+        String tableName=table.replaceAll("\"","");
         String querySql="select " +
                 "col.table_schema, " +
                 "col.table_name, " +
@@ -155,21 +158,20 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
                 "col.table_name::regclass = des.objoid " +
                 "and col.ordinal_position = des.objsubid " +
                 "where " +
-                "col.table_schema = "+schema.replaceAll("\"","'")+
-                " and col.table_name = "+table.replaceAll("\"","'")+
+                "col.table_schema = '"+schemaName+"' "+
+                " and col.table_name = '"+tableName+"' "+
                 " order by ordinal_position;";
 
-        String createSql=queryResult(querySql, resultSet -> {
+        String createSql=queryResult(querySql,schemaName, resultSet -> {
             try {
                 StringBuffer sql =new StringBuffer();
                 sql.append("CREATE TABLE ");
-                String schema_name=schema.replaceAll("\"","");
-                String table_name=table.replaceAll("\"","");
-                sql.append(schema_name).append(".");
-                if(Character.isUpperCase(table_name.charAt(0))){
-                    sql.append("\"").append(table_name).append("\" ( \n");
+
+                sql.append(schemaName).append(".");
+                if(Character.isUpperCase(tableName.charAt(0))){
+                    sql.append("\"").append(tableName).append("\" ( \n");
                 }else {
-                    sql.append(table_name).append(" ( \n");
+                    sql.append(tableName).append(" ( \n");
                 }
                 while (resultSet.next()) {
                     StringBuilder sb=new StringBuilder();
@@ -215,4 +217,8 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
         });
         return createSql;
     }
+    public <T> T queryResult(String sql,String schema, Function<ResultSet, T> call) {
+        return queryResult(getAdapterSource().getConnection(null,schema,null), sql, call);
+    }
+
 }

@@ -33,6 +33,7 @@ import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.CustomStringUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import io.zeta.metaspace.web.util.HivePermissionUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -1722,7 +1723,7 @@ public class MetaDataService {
         String dbName = table.getDatabaseName();
         int rowNumber = 0;
         String sheetName = "表" + index + "-表信息";
-        Sheet sheet = workbook.createSheet(sheetName);
+        Sheet sheet = workbook.createSheet(CustomStringUtils.handleExcelName(sheetName));
 
         CellRangeAddress tableAndDbNameRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 1);
         sheet.addMergedRegion(tableAndDbNameRangeAddress);
@@ -2017,7 +2018,7 @@ public class MetaDataService {
         String dbName = table.getDatabaseName();
         int rowNumber = 0;
         String sheetName = "表" + index + "-字段信息";
-        Sheet sheet = workbook.createSheet(sheetName);
+        Sheet sheet = workbook.createSheet(CustomStringUtils.handleExcelName(sheetName));
 
         List<Column> columnList = table.getColumns();
         List<Column> normalColumnList = columnList.stream().filter(column -> column.getPartitionKey() == false).collect(Collectors.toList());
