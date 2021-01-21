@@ -23,8 +23,8 @@ public class MysqlAdapterExecutor extends AbstractAdapterExecutor {
 
         try (Connection connection = getAdapterSource().getConnection()) {
             PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setString(1, tableName);
-            statement.setString(2, schemaName);
+            statement.setString(1, schemaName);
+            statement.setString(2, tableName);
             ResultSet resultSet = statement.executeQuery();
             if (resultSet.next()) {
                 String time = resultSet.getString("create_time");
