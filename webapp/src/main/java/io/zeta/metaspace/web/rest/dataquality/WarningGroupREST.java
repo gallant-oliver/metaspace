@@ -109,7 +109,7 @@ public class WarningGroupREST {
     public void update(WarningGroup warningGroup,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         WarningGroup old = warningGroupService.getByName(warningGroup.getName(),warningGroup.getId(),tenantId);
         if (old != null) {
-            throw new AtlasBaseException("告警组名已存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"告警组名已存在");
         }
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), warningGroup.getName());
         warningGroupService.update(warningGroup);
