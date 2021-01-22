@@ -27,6 +27,9 @@ public class TableTagService {
         }else {
             tagId = tag.getTagId();
         }
+        if(tableTagDAO.ifTagExists(tagId,guid)>0){
+            throw new AtlasBaseException("标签不能重复添加");
+        }
         tableTagDAO.addTable2Tag(tagId, guid);
     }
 
