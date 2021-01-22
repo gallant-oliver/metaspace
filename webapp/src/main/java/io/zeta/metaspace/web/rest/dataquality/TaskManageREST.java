@@ -585,7 +585,6 @@ public class TaskManageREST {
             response.setContentType("application/force-download");
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  fileName);
         }catch (Exception e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST,e,"下载异常");
         }
@@ -601,7 +600,6 @@ public class TaskManageREST {
     @Path("/{executionId}/{subtaskId}/report/download")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(UPDATE)
     public Response downTaskReportData(@PathParam("executionId")String executionId, @HeaderParam("tenantId")String tenantId,
                                        @PathParam("subtaskId")String subtaskId,
                                        @FormDataParam("file") InputStream fileInputStream,
