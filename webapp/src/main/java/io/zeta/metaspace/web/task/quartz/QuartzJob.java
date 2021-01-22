@@ -772,7 +772,7 @@ public class QuartzJob implements Job {
             Connection connection = adapterSource.getConnection(user, dbName, pool);
             resultValue = adapterExecutor.queryResult(connection, sql, resultSet -> {
                 try {
-                    Float value = null;
+                    Float value = 0.0f;
                     if (Objects.nonNull(resultSet)) {
                         while (resultSet.next()) {
                             Object object = resultSet.getObject(1);
