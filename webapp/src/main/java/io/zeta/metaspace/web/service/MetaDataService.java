@@ -505,8 +505,10 @@ public class MetaDataService {
             table.setIndexes(cik.getIndexes());
             table.setColumns(cik.getColumns());
 
+
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
+
 
             try {
                 List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
@@ -521,7 +523,16 @@ public class MetaDataService {
             } catch (Exception e) {
                 LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
             }
-
+            //1.4新增
+            try {
+                //owner.name
+                List<DataOwnerHeader> owners = getDataOwner(guid);
+                table.setDataOwner(owners);
+                //更新时间
+                table.setUpdateTime(DateUtils.date2String(entity.getUpdateTime()));
+            } catch (Exception e) {
+                LOG.error("获取数据基础信息失败,错误信息:" + e.getMessage(), e);
+            }
 
             try {
                 TableInfo tableInfo = tableDAO.getTableInfoByTableguid(guid);

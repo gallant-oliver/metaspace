@@ -28,6 +28,7 @@ public class RDBMSTable implements Serializable {
     private String tableName;
     private String tableDescription;
     private String status;
+    private String updateTime;
     private String createTime;
     private String databaseId;
     private String databaseName;
@@ -54,4 +55,5 @@ public class RDBMSTable implements Serializable {
 
     private List<Table.BusinessObject> businessObjects;
     private boolean edit;
+    private List<DataOwnerHeader> dataOwner;
 }
