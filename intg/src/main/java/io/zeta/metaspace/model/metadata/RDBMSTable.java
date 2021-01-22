@@ -13,6 +13,7 @@
 
 package io.zeta.metaspace.model.metadata;
 
+import io.zeta.metaspace.model.table.Tag;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -56,4 +57,5 @@ public class RDBMSTable implements Serializable {
     private List<Table.BusinessObject> businessObjects;
     private boolean edit;
     private List<DataOwnerHeader> dataOwner;
+    private List<Tag> tags;
 }
