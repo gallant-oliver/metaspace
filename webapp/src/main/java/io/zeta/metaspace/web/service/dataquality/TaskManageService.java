@@ -1068,7 +1068,7 @@ public class TaskManageService {
                 list = hdfsUtils.exists(hdfsOutPath)?hdfsUtils.catFile(hdfsOutPath, -1):null;
                 CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
 
-                if(paramInfo.getDataSourceId()!=null && !dataSourceName.equals(paramInfo.getDataSourceId())){
+                if(paramInfo.getDataSourceId()!=null && !"hive".equals(paramInfo.getDataSourceId())){
                     dataSourceName = dataSourceDAO.getDataSourceInfo(paramInfo.getDataSourceId()).getSourceName();
                 }
 
@@ -1094,7 +1094,7 @@ public class TaskManageService {
                 for(ConsistencyParam param : params){
                     String tableId = param.getId();
                     String fileName = LivyTaskSubmitHelper.getOutName(tableId);
-                    if(param.getDataSourceId()!=null && !dataSourceName.equals(param.getDataSourceId())){  //查询数据源名称，接口传输内容需要优化
+                    if(param.getDataSourceId()!=null && !"hive".equals(param.getDataSourceId())){  //查询数据源名称，接口传输内容需要优化
                         dataSourceName = dataSourceDAO.getDataSourceInfo(param.getDataSourceId()).getSourceName();
                     }
                     String name = dataSourceName +"-" + param.getSchema() + "-" + param.getTable() + "-" + param.getCompareFields().stream().collect(Collectors.joining(","));

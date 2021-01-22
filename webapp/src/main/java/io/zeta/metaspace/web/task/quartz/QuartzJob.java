@@ -693,7 +693,7 @@ public class QuartzJob implements Job {
 
     //规则值计算
     public Float ruleResultValue(AtomicTaskExecution task, boolean record, boolean columnRule) throws Exception {
-        Float resultValue = null;
+        Float resultValue = 0.0f;
         String pool = task.getPool();
         try {
             engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf, String::valueOf);
