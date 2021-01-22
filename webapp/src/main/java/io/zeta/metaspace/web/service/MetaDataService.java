@@ -808,6 +808,7 @@ public class MetaDataService {
         } else {
             column.setColumnDescription("");
         }
+        column.setDescription(column.getColumnDescription());
         column.setDisplayName(column.getColumnName());
 
     }

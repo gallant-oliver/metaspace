@@ -22,6 +22,8 @@ import java.io.Serializable;
 public class RDBMSColumn implements Serializable {
     private String columnId;
     private String columnDescription;
+
+    private String description;
     private String columnName;
     private String status;
     private String tableId;
@@ -40,6 +42,14 @@ public class RDBMSColumn implements Serializable {
     private String defaultValue;
     private boolean isNullable;
     private boolean isPrimaryKey;
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
     public String getType() {
         return type;
