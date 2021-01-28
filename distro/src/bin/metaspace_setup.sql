@@ -1540,39 +1540,36 @@ COMMENT ON COLUMN "public"."data_quality_rule_template"."code" IS '规则编码'
 -- ----------------------------
 -- Records of data_quality_rule_template
 -- ----------------------------
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值变化', 1, '', '相比上一周期，字段汇总值变化', current_timestamp, current_timestamp, 'f', '20', 5, 14);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值变化', 1, '', '相比上一周期，字段最小值变化', current_timestamp, current_timestamp, 'f', '21', 5, 15);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('
-字段最大值变化', 1, '', '相比上一周期，字段最大值变化', current_timestamp, current_timestamp, 'f', '22', 5, 16);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段平均值变化率', 1, '%', '相比上一周期，字段平均值变化率', current_timestamp, current_timestamp, 'f', '23', 5, 6);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段平均值', 1, NULL, '计算字段平均值', current_timestamp, current_timestamp, 'f', '24', 5, 20);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值', 1, NULL, '计算字段汇总值', current_timestamp, current_timestamp, 'f', '25', 5, 21);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('表大小变化', 0, '字节', '相比上一周期，表大小变化', current_timestamp, current_timestamp, 'f', '1', 1, 3);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('表行数变化率', 0, '%', '相比上一周期，表行数变化率', current_timestamp, current_timestamp, 'f', '2', 1, 0);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('表行数变化', 0, '行', '相比上一周期，表行数变化', current_timestamp, current_timestamp, 'f', '3', 1, 2);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('表大小变化率', 0, '%', '相比上一周期，表大小变化率', current_timestamp, current_timestamp, 'f', '4', 1, 1);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('当前表行数', 0, '行', '表行数是否符合预期', current_timestamp, current_timestamp, 'f', '5', 1, 4);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('当前表大小', 0, '字节', '表大小是否符合预期', current_timestamp, current_timestamp, 'f', '6', 1, 5);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数/总行数', 1, '%', '计算字段空值行数所占的比例', current_timestamp, current_timestamp, 'f', '7', 2, 28);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数变化率', 1, '%', '相比上一周期，字段空值个数变化率', current_timestamp, current_timestamp, 'f', '8', 2, 11);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数', 1, '个', '计算字段空值个数', current_timestamp, current_timestamp, 'f', '9', 2, 25);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数/总行数', 1, '%', '计算字段重复值行数所占的比例', current_timestamp, current_timestamp, 'f', '15', 4, 29);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数变化率', 1, '%', '相比上一周期，字段重复值个数变化率', current_timestamp, current_timestamp, 'f', '16', 4, 12);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数变化', 1, '个', '相比上一周期，字段空值个数变化', current_timestamp, current_timestamp, 'f', '10', 2, 18);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数/总行数', 1, '%', '计算字段唯一值行数所占的比例', current_timestamp, current_timestamp, 'f', '11', 3, 27);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数变化率', 1, '%', '相比上一周期，字段唯一值个数变化率', current_timestamp, current_timestamp, 'f', '12', 3, 10);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数', 1, '个', '计算字段重复值个数', current_timestamp, current_timestamp, 'f', '17', 4, 26);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数', 1, '个', '计算字段唯一值个数', current_timestamp, current_timestamp, 'f', '13', 3, 24);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数变化', 1, '个', '相比上一周期，字段唯一值个数变化', current_timestamp, current_timestamp, 'f', '14', 3, 17);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数变化', 1, '个', '相比上一周期，字段重复值个数变化
-', current_timestamp, current_timestamp, 'f', '18', 4, 19);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段平均值变化', 1, '', '相比上一周期，字段平均值变化', current_timestamp, current_timestamp, 'f', '19', 5, 13);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值', 1, NULL, '计算字段最小值', current_timestamp, current_timestamp, 'f', '26', 5, 22);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最大值
-', 1, NULL, '计算字段最大值', current_timestamp, current_timestamp, 'f', '27', 5, 23);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值变化率', 1, '%', '相比上一周期，字段汇总值变化率', current_timestamp, current_timestamp, 'f', '28', 5, 7);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值变化率', 1, '%', '相比上一周期，字段最小值变化率', current_timestamp, current_timestamp, 'f', '29', 5, 8);
-INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最大值变化率', 1, '%', '相比上一周期，字段最大值变化率', current_timestamp, current_timestamp, 'f', '30', 5, 9);
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值变化', 1, '', '相比上一周期，字段汇总值变化', current_timestamp, current_timestamp, 'f', '20', 'rule_5', 14,'all',null,'',true,'20');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值变化', 1, '', '相比上一周期，字段最小值变化', current_timestamp, current_timestamp, 'f', '21', 'rule_5', 15,'all',null,'',true,'21');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最大值变化', 1, '', '相比上一周期，字段最大值变化', current_timestamp, current_timestamp, 'f', '22', 5, 16,null,'',true,'22');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段平均值变化率', 1, '%', '相比上一周期，字段平均值变化率', current_timestamp, current_timestamp, 'f', '23', 'rule_5', 6,'all',null,'',true,'23');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段平均值', 1, NULL, '计算字段平均值', current_timestamp, current_timestamp, 'f', '24', 'rule_5', 20,'all',null,'',true,'24');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值', 1, NULL, '计算字段汇总值', current_timestamp, current_timestamp, 'f', '25', 'rule_5', 21,'all',null,'',true,'25');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('表大小变化', 0, '字节', '相比上一周期，表大小变化', current_timestamp, current_timestamp, 'f', '1', 'rule_1', 3,'all',null,'',true,'1');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('表行数变化率', 0, '%', '相比上一周期，表行数变化率', current_timestamp, current_timestamp, 'f', '2', 'rule_1', 'all',null,'',true,'2');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('表行数变化', 0, '行', '相比上一周期，表行数变化', current_timestamp, current_timestamp, 'f', '3', 'rule_1', 2,'all',null,'',true,'3');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('表大小变化率', 0, '%', '相比上一周期，表大小变化率', current_timestamp, current_timestamp, 'f', '4', 'rule_1', 1,'all',null,'',true,'4');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('当前表行数', 0, '行', '表行数是否符合预期', current_timestamp, current_timestamp, 'f', '5', 'rule_1', 4,'all',null,'',true,'5');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('当前表大小', 0, '字节', '表大小是否符合预期', current_timestamp, current_timestamp, 'f', '6', 'rule_1', 5,'all',null,'',true,'6');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数/总行数', 1, '%', '计算字段空值行数所占的比例', current_timestamp, current_timestamp, 'f', '7', 'rule_2', 28,'all',null,'',true,'7');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数变化率', 1, '%', '相比上一周期，字段空值个数变化率', current_timestamp, current_timestamp, 'f', '8', 'rule_2', 11,'all',null,'',true,'8');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数', 1, '个', '计算字段空值个数', current_timestamp, current_timestamp, 'f', '9', 'rule_2', 25,'all',null,'',true,'9');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数/总行数', 1, '%', '计算字段重复值行数所占的比例', current_timestamp, current_timestamp, 'f', '15', 'rule_4', 29,'all',null,'',true,'15');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数变化率', 1, '%', '相比上一周期，字段重复值个数变化率', current_timestamp, current_timestamp, 'f', '16', 'rule_4', 12,'all',null,'',true,'16');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段空值个数变化', 1, '个', '相比上一周期，字段空值个数变化', current_timestamp, current_timestamp, 'f', '10', 'rule_2', 18,'all',null,'',true,'10');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数/总行数', 1, '%', '计算字段唯一值行数所占的比例', current_timestamp, current_timestamp, 'f', '11', 'rule_3', 27,'all',null,'',true,'11');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数变化率', 1, '%', '相比上一周期，字段唯一值个数变化率', current_timestamp, current_timestamp, 'f', '12', 'rule_3', 10,'all',null,'',true,'12');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数', 1, '个', '计算字段重复值个数', current_timestamp, current_timestamp, 'f', '17', 'rule_4', 26,'all',null,'',true,'17');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数', 1, '个', '计算字段唯一值个数', current_timestamp, current_timestamp, 'f', '13', 'rule_3', 24,'all',null,'',true,'13');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段唯一值个数变化', 1, '个', '相比上一周期，字段唯一值个数变化', current_timestamp, current_timestamp, 'f', '14', 'rule_3', 17,'all',null,'',true,'14');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段重复值个数变化', 1, '个', '相比上一周期，字段重复值个数变化', current_timestamp, current_timestamp, 'f', '18', 'rule_4', 19,'all',null,'',true,'18');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段平均值变化', 1, '', '相比上一周期，字段平均值变化', current_timestamp, current_timestamp, 'f', '19', 'rule_5', 13,'all',null,'',true,'19');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值', 1, NULL, '计算字段最小值', current_timestamp, current_timestamp, 'f', '26', 'rule_5', 22,'all',null,'',true,'26');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最大值', 1, NULL, '计算字段最大值', current_timestamp, current_timestamp, 'f', '27', 'rule_5', 23,'all',null,'',true,'27');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段汇总值变化率', 1, '%', '相比上一周期，字段汇总值变化率', current_timestamp, current_timestamp, 'f', '28', 'rule_5', 7,'all',null,'',true,'28');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最小值变化率', 1, '%', '相比上一周期，字段最小值变化率', current_timestamp, current_timestamp, 'f', '29', 'rule_5', 8,'all',null,'',true,'29');
+INSERT INTO "public"."data_quality_rule_template" VALUES ('字段最大值变化率', 1, '%', '相比上一周期，字段最大值变化率', current_timestamp, current_timestamp, 'f', '30', 'rule_5', 9,'all',null,'',true,'30');
 
 
 -- ----------------------------
@@ -1583,41 +1580,41 @@ ALTER TABLE "public"."data_quality_rule_template" ADD CONSTRAINT "data_quality_r
 
 
 -- ----------------------------
--- Table structure for data_quality_rule
+-- Table structure for data_quality_rule -- 废弃
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_quality_rule";
-CREATE TABLE "public"."data_quality_rule" (
-  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-  "rule_template_id" varchar COLLATE "pg_catalog"."default",
-  "name" varchar COLLATE "pg_catalog"."default",
-  "code" varchar COLLATE "pg_catalog"."default",
-  "category_id" varchar COLLATE "pg_catalog"."default",
-  "enable" bool,
-  "description" varchar COLLATE "pg_catalog"."default",
-  "check_type" int4,
-  "check_expression_type" int4,
-  "creator" varchar COLLATE "pg_catalog"."default",
-  "create_time" timestamptz(0),
-  "update_time" timestamptz(0),
-  "delete" bool,
-  "check_threshold_min_value" float8,
-  "check_threshold_max_value" float8,
-  "scope" int2,
-  "check_threshold_unit" varchar(255) COLLATE "pg_catalog"."default",
-  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
-)
-;
-COMMENT ON COLUMN "public"."data_quality_rule"."rule_template_id" IS '规则模版id';
-COMMENT ON COLUMN "public"."data_quality_rule"."code" IS '规则编码';
-COMMENT ON COLUMN "public"."data_quality_rule"."category_id" IS '分组id';
-COMMENT ON COLUMN "public"."data_quality_rule"."enable" IS '是否开启';
-COMMENT ON COLUMN "public"."data_quality_rule"."description" IS '描述';
-COMMENT ON COLUMN "public"."data_quality_rule"."check_type" IS '0-固定值,1-波动值';
-COMMENT ON COLUMN "public"."data_quality_rule"."check_expression_type" IS '校验表达式的类型,>=、=等的代码值';
-COMMENT ON COLUMN "public"."data_quality_rule"."check_threshold_min_value" IS '校验阈值最小值';
-COMMENT ON COLUMN "public"."data_quality_rule"."check_threshold_max_value" IS '校验阈值最大值';
-COMMENT ON COLUMN "public"."data_quality_rule"."scope" IS '作用域';
-COMMENT ON COLUMN "public"."data_quality_rule"."check_threshold_unit" IS '单位';
+-- CREATE TABLE "public"."data_quality_rule" (
+--   "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+--   "rule_template_id" varchar COLLATE "pg_catalog"."default",
+--   "name" varchar COLLATE "pg_catalog"."default",
+--   "code" varchar COLLATE "pg_catalog"."default",
+--   "category_id" varchar COLLATE "pg_catalog"."default",
+--   "enable" bool,
+--   "description" varchar COLLATE "pg_catalog"."default",
+--   "check_type" int4,
+--   "check_expression_type" int4,
+--   "creator" varchar COLLATE "pg_catalog"."default",
+--   "create_time" timestamptz(0),
+--   "update_time" timestamptz(0),
+--   "delete" bool,
+--   "check_threshold_min_value" float8,
+--   "check_threshold_max_value" float8,
+--   "scope" int2,
+--   "check_threshold_unit" varchar(255) COLLATE "pg_catalog"."default",
+--   "tenantid" varchar(36) COLLATE "pg_catalog"."default"
+-- )
+-- ;
+-- COMMENT ON COLUMN "public"."data_quality_rule"."rule_template_id" IS '规则模版id';
+-- COMMENT ON COLUMN "public"."data_quality_rule"."code" IS '规则编码';
+-- COMMENT ON COLUMN "public"."data_quality_rule"."category_id" IS '分组id';
+-- COMMENT ON COLUMN "public"."data_quality_rule"."enable" IS '是否开启';
+-- COMMENT ON COLUMN "public"."data_quality_rule"."description" IS '描述';
+-- COMMENT ON COLUMN "public"."data_quality_rule"."check_type" IS '0-固定值,1-波动值';
+-- COMMENT ON COLUMN "public"."data_quality_rule"."check_expression_type" IS '校验表达式的类型,>=、=等的代码值';
+-- COMMENT ON COLUMN "public"."data_quality_rule"."check_threshold_min_value" IS '校验阈值最小值';
+-- COMMENT ON COLUMN "public"."data_quality_rule"."check_threshold_max_value" IS '校验阈值最大值';
+-- COMMENT ON COLUMN "public"."data_quality_rule"."scope" IS '作用域';
+-- COMMENT ON COLUMN "public"."data_quality_rule"."check_threshold_unit" IS '单位';
 
 
 -- ----------------------------
@@ -2531,3 +2528,210 @@ CREATE TABLE "public"."project_group_relation" (
 -- Primary Key structure for table project_group_relation
 -- ----------------------------
 ALTER TABLE "public"."project_group_relation" ADD CONSTRAINT "project_group_relation_pkey" PRIMARY KEY ("project_id", "group_id");
+
+-- API 脱敏相关数据表结构
+
+CREATE TABLE "public"."desensitization_rule" (
+  "id" text NOT NULL,
+  "name" text ,
+  "description" text ,
+  "type" text ,
+  "params" text ,
+  "enable" bool,
+  "creator_id" text,
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6),
+  "tenant_id" text,
+  CONSTRAINT "desensitization_rule_pkey" PRIMARY KEY ("id")
+);
+
+COMMENT ON COLUMN "public"."desensitization_rule"."id" IS '脱敏规则id';
+
+COMMENT ON COLUMN "public"."desensitization_rule"."name" IS '名称';
+
+COMMENT ON COLUMN "public"."desensitization_rule"."description" IS '描述';
+
+COMMENT ON COLUMN "public"."desensitization_rule"."type" IS '脱敏算法类型';
+
+COMMENT ON COLUMN "public"."desensitization_rule"."params" IS '脱敏算法参数';
+
+COMMENT ON COLUMN "public"."desensitization_rule"."enable" IS '是否启用';
+
+comment on column ip_restriction.creator_id is '创建者Id';
+
+OMMENT ON COLUMN "public"."desensitization_rule"."create_time" IS '创建时间';
+
+COMMENT ON COLUMN "public"."desensitization_rule"."update_time" IS '升级时间';
+
+COMMENT ON COLUMN "public"."desensitization_rule"."tenant_id" IS '租户 Id';
+
+
+CREATE TABLE "public"."api_poly" (
+  "id" text  NOT NULL,
+  "api_id" text ,
+  "api_version" text ,
+  "poly" jsonb DEFAULT NULL,
+  "status" text ,
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6),
+  CONSTRAINT "api_poly_pkey" PRIMARY KEY ("id")
+)
+;
+
+COMMENT ON COLUMN "public"."api_poly"."id" IS '策略id';
+
+COMMENT ON COLUMN "public"."api_poly"."api_id" IS 'api id';
+
+COMMENT ON COLUMN "public"."api_poly"."api_version" IS 'api 版本';
+
+COMMENT ON COLUMN "public"."api_poly"."poly" IS '策略详情';
+
+COMMENT ON COLUMN "public"."api_poly"."status" IS '审核状态';
+
+COMMENT ON COLUMN "public"."api_poly"."create_time" IS '创建时间';
+
+COMMENT ON COLUMN "public"."api_poly"."update_time" IS '升级时间';
+
+
+ALTER TABLE "public"."api_audit"
+  ADD COLUMN "api_poly_id" text;
+
+COMMENT ON COLUMN "public"."api_audit"."api_poly_id" IS 'api策略id';
+
+
+ALTER TABLE "public"."api"
+  ADD COLUMN "api_poly_entity" jsonb;
+
+COMMENT ON COLUMN "public"."api"."api_poly_entity" IS '初始策略';
+
+-- API黑白名单
+create table ip_restriction
+(
+	id text not null,
+	name text,
+	description text,
+	type text,
+	ip_list text,
+	enable boolean,
+        creator_id text,
+	create_time timestamptz(6),
+	update_time timestamptz(6),
+	tenant_id text
+);
+
+comment on table ip_restriction is '黑白名单';
+
+comment on column ip_restriction.id is '黑白名单ID';
+
+comment on column ip_restriction.name is '名称';
+
+comment on column ip_restriction.description is '描述';
+
+comment on column ip_restriction.type is '类型';
+
+comment on column ip_restriction.ip_list is 'Ip 列表';
+
+comment on column ip_restriction.enable is '是否启用';
+
+comment on column ip_restriction.creator_idis '创建者Id';
+
+comment on column ip_restriction.create_time is '创建时间';
+
+comment on column ip_restriction.update_time is '更新时间';
+
+comment on column ip_restriction.tenant_id is '租户';
+
+create unique index ip_restriction_id_uindex
+	on ip_restriction (id);
+
+alter table ip_restriction
+	add constraint ip_restriction_pk
+		primary key (id);
+
+--元数据采集任务定义
+create table sync_task_definition
+(
+    id              text not null
+        constraint sync_task_definition_pk
+            primary key,
+    name            text,
+    creator         text,
+    create_time     timestamp(6) with time zone,
+    update_time     timestamp(6) with time zone,
+    enable          boolean,
+    cron_start_time timestamp(6) with time zone,
+    cron_end_time   timestamp(6) with time zone,
+    crontab         text,
+    data_source_id  text,
+    sync_all        boolean,
+    schemas         text,
+    tenant_id       text,
+    description     text
+);
+
+comment on column sync_task_definition.id is 'id';
+
+comment on column sync_task_definition.name is '名称';
+
+comment on column sync_task_definition.creator is '创建者';
+
+comment on column sync_task_definition.create_time is '创建时间';
+
+comment on column sync_task_definition.update_time is '更新时间';
+
+comment on column sync_task_definition.enable is '是否启动定时';
+
+comment on column sync_task_definition.cron_start_time is '定时开始时间';
+
+comment on column sync_task_definition.cron_end_time is '定时结束时间';
+
+comment on column sync_task_definition.crontab is '定时表达式';
+
+comment on column sync_task_definition.data_source_id is '数据源 id';
+
+comment on column sync_task_definition.sync_all is '是否同步所有数据库';
+
+comment on column sync_task_definition.schemas is '指定数据库列表';
+
+comment on column sync_task_definition.tenant_id is '租户';
+
+alter table sync_task_definition
+    owner to metaspace;
+
+--元数据采集任务执行实例
+create table sync_task_instance
+(
+    id            text not null
+        constraint sync_task_instance_pk
+            primary key,
+    name          text,
+    executor      text,
+    status        text,
+    start_time    timestamp(6) with time zone,
+    update_time   timestamp(6) with time zone,
+    log           text default ''::text,
+    definition_id text
+);
+
+comment on column sync_task_instance.id is 'id';
+
+comment on column sync_task_instance.name is '任务实例名称';
+
+comment on column sync_task_instance.executor is '执行者名称';
+
+comment on column sync_task_instance.status is '状态';
+
+comment on column sync_task_instance.start_time is '开始时间';
+
+comment on column sync_task_instance.update_time is '更新时间';
+
+comment on column sync_task_instance.log is '日志';
+
+comment on column sync_task_instance.definition_id is '租户';
+
+alter table sync_task_instance
+    owner to metaspace;
+
+
+alter table tableinfo
+	add source_id text;
