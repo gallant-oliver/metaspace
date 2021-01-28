@@ -3,6 +3,7 @@ package io.zeta.metaspace.adapter.hive;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AbstractAdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
+import io.zeta.metaspace.adapter.AdapterTransformer;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 
@@ -30,7 +31,8 @@ public class HiveAdapterExecutor extends AbstractAdapterExecutor {
 
     @Override
     public float getTableSize(String db, String tableName, String pool) {
-        String querySQL = "show tblproperties " + tableName;
+        AdapterTransformer adapterTransformer = getAdapter().getAdapterTransformer();
+        String querySQL = "show tblproperties " + adapterTransformer.caseSensitive(tableName);
         Connection connection = getAdapterSource().getConnection(MetaspaceConfig.getHiveAdmin(), db, pool);
         return queryResult(connection, querySQL, resultSet -> {
             try {

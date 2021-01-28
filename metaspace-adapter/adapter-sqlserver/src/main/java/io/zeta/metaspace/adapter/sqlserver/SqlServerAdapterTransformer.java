@@ -18,6 +18,9 @@ public class SqlServerAdapterTransformer extends AbstractAdapterTransformer {
      */
     @Override
     public SelectQuery addLimit(SelectQuery originSQL, long limit, long offset) {
+        if(!originSQL.toString().toLowerCase().contains("order")){
+            originSQL.addCustomOrderings(new CustomSql("(select 1)"));
+        }
         originSQL.addCustomization(new MssqlOffsetClause(offset)).addCustomization(new MssqlFetchClause(limit));
         return originSQL;
     }

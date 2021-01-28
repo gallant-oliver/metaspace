@@ -34,7 +34,7 @@ public interface RuleTemplateDAO {
 
     @Select({"<script>",
              " select count(*)over() total,id,name,scope,unit,description,delete,rule_type as ruleType,create_time as createTime,code from data_quality_rule_template" ,
-             " where tenantid=#{tenantId} and delete=falase " +
+             " where tenantid=#{tenantId} and delete=false " +
              "<if test=\"params.query != null and params.query!=''\">",
              " and (name like '%${params.query}%' ESCAPE '/' or description like '%${params.query}%' ESCAPE '/' )  " +
              " <if test='params.enable != null'>",

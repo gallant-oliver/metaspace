@@ -67,6 +67,7 @@ import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.utils.GsonUtils;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
+import io.zeta.metaspace.web.dao.dataquality.RuleTemplateDAO;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataShareService;
@@ -85,14 +86,19 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FileUtils;
+import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.tinkerpop.shaded.minlog.Log;
+import org.quartz.CronExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import scala.annotation.meta.param;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -102,13 +108,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -180,7 +180,9 @@ public class TaskManageService {
             List<Table> tableList = pageResult.getLists();
             if(Objects.nonNull(tableList) && tableList.size()>0) {
                 Table tmpTable = taskManageDAO.getDbAndTableName(tableList.get(0).getTableId());
-                dbName = tmpTable.getDatabaseName();
+               if(tmpTable != null) {
+                   dbName = tmpTable.getDatabaseName();
+               }
             }
             for (Table table : tableList) {
                 table.setDatabaseName(dbName);
@@ -284,6 +286,10 @@ public class TaskManageService {
     public void addDataQualityTask(Timestamp currentTime, TaskInfo taskInfo,String tenantId) throws AtlasBaseException {
         try {
             DataQualityTask dataQualityTask = new DataQualityTask();
+            List<String> dataQualityTaskByName = taskManageDAO.getDataQualityTaskByName(taskInfo.getTaskName(), tenantId);
+            if(dataQualityTaskByName != null && dataQualityTaskByName.size() >0){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务名称已经存在");
+            }
             //id
             String guid = UUID.randomUUID().toString();
             dataQualityTask.setId(guid);
@@ -337,7 +343,11 @@ public class TaskManageService {
             taskManageDAO.updateTaskStatus(guid, 0);
             taskManageDAO.updateTaskFinishedPercent(guid, 0F);
 
-        } catch (Exception e) {
+        }catch (AtlasBaseException e){
+            LOG.error("添加任务失败", e);
+            throw e;
+        }
+        catch (Exception e) {
             LOG.error("添加任务失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加任务失败");
         }
@@ -383,7 +393,7 @@ public class TaskManageService {
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "添加子任务失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "添加任务失败");
         }
     }
 
@@ -412,7 +422,7 @@ public class TaskManageService {
                 taskManageDAO.addDataQualitySubTaskObject(dataQualitySubTaskObject);
             }
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "添加子任务对象失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "添加任务失败");
         }
     }
 
@@ -632,7 +642,7 @@ public class TaskManageService {
             taskManageDAO.updateTaskEnableStatus(taskId, true);
         } catch (Exception e) {
             LOG.error("开启任务失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "开启任务失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "开启任务失败");
         }
     }
 
@@ -674,7 +684,12 @@ public class TaskManageService {
             Timestamp startTime = task.getStartTime();
             Timestamp endTime = task.getEndTime();
             Integer level = task.getLevel();
-            if(Objects.nonNull(cron)) {
+            if (Objects.nonNull(cron)) {
+                CronExpression cronExpression = new CronExpression(cron);
+                if (cronExpression.getNextValidTimeAfter(startTime).after(endTime)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "执行时间段内任务永远不会触发");
+                }
+
                 quartzManager.addCronJobWithTimeRange(jobName, jobGroupName, triggerName, triggerGroupName, QuartzJob.class, cron, level, startTime, endTime);
             } else {
                 quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class);
@@ -682,6 +697,8 @@ public class TaskManageService {
             //添加qrtzName
             taskManageDAO.updateTaskQrtzName(taskId, jobName);
 
+        } catch (AtlasBaseException e) {
+            throw e;
         } catch (Exception e) {
             LOG.error("添加任务失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加任务失败");
@@ -811,9 +828,11 @@ public class TaskManageService {
 
     public List<SubTaskRecord> getTaskRuleExecutionRecordList(String executionId,String subtaskId,String tenantId) throws AtlasBaseException {
         try {
-            Map<String, SubTaskRecord> map = new HashMap<>();
+            Map<String, SubTaskRecord> map = new LinkedHashMap<>(); //配置的子任务要满足顺序一致，使用LinkedHashMap保证，且查询sql要保证有序性
             List<TaskRuleExecutionRecord> list = taskManageDAO.getTaskRuleExecutionRecordList(executionId,subtaskId,tenantId);
+            Boolean filing = taskManageDAO.getFilingStatus(executionId)==0?false:true;
             for (TaskRuleExecutionRecord record : list) {
+                record.setFiling(filing);
                 if (map.containsKey(record.getSubtaskId())){
                     map.get(record.getSubtaskId()).getTaskRuleExecutionRecords().add(record);
                 }else{
@@ -842,50 +861,50 @@ public class TaskManageService {
                 }else if(2 == record.getScope()) {
                     TaskType taskType = TaskType.getTaskByCode(record.getTaskType());
                     if (TaskType.CONSISTENCY.equals(taskType)) {
+                        //一致性规则展示目标表结果，对比几张表就展示几个处理行为
                         List<ConsistencyParam> params = GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<ConsistencyParam>>() {
                         }.getType());
-                        List<TaskRuleExecutionRecord> records = params.stream().map(param -> {
-                            String dataSourceName = getDataSourceName(param.getDataSourceId());
-                            String tableId = param.getId();
-                            TaskRuleExecutionRecord taskRuleExecutionRecord = new TaskRuleExecutionRecord(record);
-                            taskRuleExecutionRecord.setDbName(param.getSchema());
-                            taskRuleExecutionRecord.setTableName(param.getTable());
-                            taskRuleExecutionRecord.setDataSourceName(dataSourceName);
-                            taskRuleExecutionRecord.setTableId(tableId);
-                            String fileName = LivyTaskSubmitHelper.getOutName(tableId);
-                            String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(taskRuleExecutionRecord.getRuleExecutionId(), taskRuleExecutionRecord.getCreateTime().getTime(), fileName);
-                            HdfsUtils hdfsUtils = new HdfsUtils();
-                            int fileLine = 0;
-                            try {
-                                fileLine = hdfsUtils.getFileLine(hdfsOutPath);
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                            taskRuleExecutionRecord.setResult(Float.valueOf(fileLine));
-                            return taskRuleExecutionRecord;
-                        }).collect(Collectors.toList());
-                        map.get(record.getSubtaskId()).getTaskRuleExecutionRecords().addAll(records);
+                        List<TaskRuleExecutionRecord> records = params
+                                .stream()
+                                .filter(p -> !p.isStandard())   //过滤掉基础表
+                                .map(param -> {
+                                                String dataSourceName = getDataSourceName(param.getDataSourceId()); //获取数据源
+                                                String tableId = param.getId(); //对比表ID
+                                                TaskRuleExecutionRecord taskRuleExecutionRecord = new TaskRuleExecutionRecord(record);
+                                                taskRuleExecutionRecord.setDbName(param.getSchema());
+                                                taskRuleExecutionRecord.setTableName(param.getTable());
+                                                taskRuleExecutionRecord.setDataSourceName(dataSourceName);
+                                                taskRuleExecutionRecord.setTableId(tableId);
+                                                String fileName = LivyTaskSubmitHelper.getOutName(tableId);
+                                                String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(taskRuleExecutionRecord.getRuleExecutionId(), taskRuleExecutionRecord.getCreateTime().getTime(), fileName);
+                                                HdfsUtils hdfsUtils = new HdfsUtils();
+                                                int fileLine = 0;
+                                                try {
+                                                        fileLine = hdfsUtils.getFileLine(hdfsOutPath);
+                                                    } catch (IOException e) {
+                                                        throw new RuntimeException(e);
+                                                    }
+                                                taskRuleExecutionRecord.setResult(Float.valueOf(fileLine));
+                                                return taskRuleExecutionRecord;
+                                             }).collect(Collectors.toList());
+                        map.get(record.getSubtaskId()).setTaskRuleExecutionRecords(records);
                     }else if (TaskType.CUSTOMIZE.equals(taskType)) {
                         List<CustomizeParam> params = GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<CustomizeParam>>() {
                         }.getType());
-                        List<TaskRuleExecutionRecord> records = params.stream().map(param -> {
-                            String dataSourceName = getDataSourceName(param.getDataSourceId());
-                            String tableId = param.getId();
-                            TaskRuleExecutionRecord taskRuleExecutionRecord = new TaskRuleExecutionRecord(record);
-                            taskRuleExecutionRecord.setDbName(param.getSchema());
-                            taskRuleExecutionRecord.setTableName(param.getTable());
+                        //自定义规则，只展示规则名称等基础信息，且只有一条记录
+                        TaskRuleExecutionRecord taskRuleExecutionRecord = new TaskRuleExecutionRecord(record);
+                        //取出自定义规则的数据源(保存在其参数字符串中)
+                        if(params != null && params.size() > 0){
+                            CustomizeParam customizeParam = params.get(0);
+                            String dataSourceName = getDataSourceName(customizeParam.getDataSourceId()); //获取数据源
                             taskRuleExecutionRecord.setDataSourceName(dataSourceName);
-                            taskRuleExecutionRecord.setTableId(tableId);
-                            return taskRuleExecutionRecord;
-                        }).collect(Collectors.toList());
-                        map.get(record.getSubtaskId()).getTaskRuleExecutionRecords().addAll(records);
+                        }
+                        List<TaskRuleExecutionRecord> resultList = new ArrayList<>();
+                        resultList.add(taskRuleExecutionRecord);
+                        map.get(record.getSubtaskId()).setTaskRuleExecutionRecords(resultList);
                     }
                 }
-
-                Boolean filing = taskManageDAO.getFilingStatus(executionId)==0?false:true;
-                record.setFiling(filing);
             }
-
             return new ArrayList<>(map.values());
         } catch (AtlasBaseException e) {
             throw e;
@@ -1026,87 +1045,108 @@ public class TaskManageService {
         return errorData;
     }
 
-
     public File exportExcelErrorData(String executionId,String subTaskId,String tenantId) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         List<TaskRuleExecutionRecord> records = taskManageDAO.getTaskRuleExecutionRecords(executionId,subTaskId,tenantId);
         Integer subTaskSequence = taskManageDAO.getSubTaskSequence(subTaskId);
         File tmpFile = new File("/tmp/metaspace/"+executionId,"子任务"+subTaskSequence+".xlsx");
+
         if (tmpFile.exists()){
             return tmpFile;
         }
 
         for (TaskRuleExecutionRecord record:records){
+            String dataSourceName = "hive";
             String sheetName;
             TaskType taskType = TaskType.getTaskByCode(record.getTaskType());
             List<String> list;
             String objectId = record.getObjectId();
             HdfsUtils hdfsUtils = new HdfsUtils();
-            if (record.getScope()!=2) {
+            if (record.getScope()!=2) { //内置规则
                 String fileName = LivyTaskSubmitHelper.getOutName("data");
                 String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(record.getRuleExecutionId(), record.getCreateTime().getTime(), fileName);
-                list = hdfsUtils.catFile(hdfsOutPath, -1);
-                if (list==null||list.size()==0){
-                    continue;
-                }
+                list = hdfsUtils.exists(hdfsOutPath)?hdfsUtils.catFile(hdfsOutPath, -1):null;
                 CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
-                sheetName = paramInfo.getTable();
 
-            } else if(!TaskType.CONSISTENCY.equals(taskType)){
+                if(paramInfo.getDataSourceId()!=null && !"hive".equals(paramInfo.getDataSourceId())){
+                    dataSourceName = dataSourceDAO.getDataSourceInfo(paramInfo.getDataSourceId()).getSourceName();
+                }
 
-                String fileName = LivyTaskSubmitHelper.getOutName("data");
-                String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(record.getRuleExecutionId(), record.getCreateTime().getTime(), fileName);
-                list = hdfsUtils.catFile(hdfsOutPath, -1);
+                //内置规则的sheetName应该以   规则名称+数据源名称 + schemaName + tableName + columnName 确保唯一性（sheetName唯一）
+                sheetName = record.getRuleName() + "-" + dataSourceName + "-" +paramInfo.getSchema() +"-"+paramInfo.getTable() + "-" + paramInfo.getColumn();
                 if (list==null||list.size()==0){
                     continue;
                 }
+
+            } else if(!TaskType.CONSISTENCY.equals(taskType)){ // 自定义
+                String fileName = LivyTaskSubmitHelper.getOutName("data");
+                String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(record.getRuleExecutionId(), record.getCreateTime().getTime(), fileName);
+                list = hdfsUtils.exists(hdfsOutPath) ? hdfsUtils.catFile(hdfsOutPath, -1):null;
                 List<CustomizeParam> paramInfo = GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<CustomizeParam>>() {
                 }.getType());
-                sheetName = paramInfo.get(0).getTable();
-            } else{
+                sheetName = record.getRuleName() + "-" + paramInfo != null ? paramInfo.get(0).getDataSourceName():"";
+                if (list==null||list.size()==0){
+                    continue;
+                }
+            } else{ //一致性规则,基于tableID(对标表)下载对比结果
                 List<ConsistencyParam> params = GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<ConsistencyParam>>() {
                 }.getType());
-                params.forEach( param->{
+                for(ConsistencyParam param : params){
                     String tableId = param.getId();
                     String fileName = LivyTaskSubmitHelper.getOutName(tableId);
+                    if(param.getDataSourceId()!=null && !"hive".equals(param.getDataSourceId())){  //查询数据源名称，接口传输内容需要优化
+                        dataSourceName = dataSourceDAO.getDataSourceInfo(param.getDataSourceId()).getSourceName();
+                    }
+                    String name = dataSourceName +"-" + param.getSchema() + "-" + param.getTable() + "-" + param.getCompareFields().stream().collect(Collectors.joining(","));
                     String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(record.getRuleExecutionId(), record.getCreateTime().getTime(), fileName);
                     try {
-                        List<String> lineList = hdfsUtils.catFile(hdfsOutPath, -1);
-                        List<Map<String, Object>> data = lineList.stream().map(line -> {
-                            Map<String, Object> map = GsonUtils.getInstance().fromJson(line, new TypeToken<Map<String, Object>>() {
-                            }.getType());
-                            return map;
-                        }).collect(Collectors.toList());
-                        List<List<String>> values = data.stream().map(map -> {
-                            List<Object> arrayList = new ArrayList();
-                            arrayList.addAll(map.values());
-                            List<String> valueList = arrayList.stream().map(object -> object.toString()).collect(Collectors.toList());
-                            return valueList;
-                        }).collect(Collectors.toList());
-
-                        PoiExcelUtils.createSheet(workbook,param.getTable(),new ArrayList<>(data.get(0).keySet()),values);
+                        List<String> lineList = hdfsUtils.exists(hdfsOutPath)? hdfsUtils.catFile(hdfsOutPath, -1):null;
+                        List<Map<String, Object>> data=null;
+                        if(lineList!=null&& lineList.size()>0){ // 有数据，生成execl数据
+                            data = lineList.stream().map(line -> {
+                                Map<String, Object> map = GsonUtils.getInstance().fromJson(line, new TypeToken<Map<String, Object>>() {
+                                }.getType());
+                                return map;
+                            }).collect(Collectors.toList());
+                        }
+                        if(data!=null&&data.size()>0){
+                            List<List<String>> values = data.stream().map(map -> {
+                                List<Object> arrayList = new ArrayList();
+                                arrayList.addAll(map.values());
+                                List<String> valueList = arrayList.stream().map(object -> object.toString()).collect(Collectors.toList());
+                                return valueList;
+                            }).collect(Collectors.toList());
+                            PoiExcelUtils.createSheet(workbook,name,new ArrayList<>(data.get(0).keySet()),values);
+                        }
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                });
+                }
 
                 break;
             }
 
-            List<Map<String, Object>> data = list.stream().map(line -> {
-                Map<String, Object> map = GsonUtils.getInstance().fromJson(line, new TypeToken<Map<String, Object>>() {
-                }.getType());
-                return map;
-            }).collect(Collectors.toList());
-            List<List<String>> values = data.stream().map(map -> {
-                List<Object> arrayList = new ArrayList();
-                arrayList.addAll(map.values());
-                List<String> valueList = arrayList.stream().map(object -> object.toString()).collect(Collectors.toList());
-                return valueList;
-            }).collect(Collectors.toList());
-
-            PoiExcelUtils.createSheet(workbook,sheetName,new ArrayList<>(data.get(0).keySet()),values);
-
+            List<Map<String, Object>> data=null;
+            if(!CollectionUtils.isEmpty(list)){
+                data = list.stream().map(line -> {
+                    Map<String, Object> map = GsonUtils.getInstance().fromJson(line, new TypeToken<Map<String, Object>>() {
+                    }.getType());
+                    return map;
+                }).collect(Collectors.toList());
+            }
+            if(!CollectionUtils.isEmpty(data)){
+                List<List<String>> values = data.stream().map(map -> {
+                    List<Object> arrayList = new ArrayList();
+                    arrayList.addAll(map.values());
+                    List<String> valueList = arrayList.stream().map(object -> object.toString()).collect(Collectors.toList());
+                    return valueList;
+                }).collect(Collectors.toList());
+                PoiExcelUtils.createSheet(workbook,sheetName,new ArrayList<>(data.get(0).keySet()),values);
+            }
+        }
+        //无数据结果，添加一个空的sheet页，增强健壮性
+        if(workbook.getNumberOfSheets() == 0){
+            workbook.createSheet();
         }
         return workbook2file(workbook,"子任务"+subTaskSequence,executionId);
     }

@@ -25,6 +25,7 @@ import io.swagger.models.parameters.BodyParameter;
 import io.swagger.models.parameters.Parameter;
 import io.swagger.models.properties.*;
 import io.swagger.util.Yaml;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
@@ -1810,6 +1811,7 @@ public class DataShareService {
             if (apiInfo == null) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "api不存在");
             }
+            HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "更新api策略:" + apiInfo.getName() + " " + apiInfo.getVersion());
 
             if (Stream.of(ApiStatusEnum.UP, ApiStatusEnum.DOWN).map(ApiStatusEnum::getName).noneMatch(s -> s.equals(apiInfo.getStatus()))) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未审核的api无法只编辑策略");
@@ -2069,6 +2071,16 @@ public class DataShareService {
             apiInfo.setCategoryName(categoryName);
             auditService.getParam(id, apiInfo, version);
             List<ApiGroupInfo> apiGroupByApiVersion = apiGroupDAO.getApiGroupByApiVersion(id, version);
+            Gson gson = new Gson();
+            apiGroupByApiVersion.forEach(apiGroupInfo -> {
+                String approveJson = apiGroupInfo.getApproveJson();
+                List list = gson.fromJson(approveJson, List.class);
+                List<String> userNames = new ArrayList<>();
+                if (list!=null&&list.size()!=0){
+                    userNames = userDAO.getUserNameByIds(list);
+                }
+                apiGroupInfo.setApprove(userNames);
+            });
             apiInfo.setApiGroup(apiGroupByApiVersion);
             ApiPoly apiPoly = getApiPoly(id, version);
             if (apiPoly != null) {

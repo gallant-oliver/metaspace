@@ -631,7 +631,7 @@ public class QuartzJob implements Job {
             throw new AtlasBaseException("一致性校验连接字段数目不对");
         }
 
-        if (standard.getCompareFields().size() != contrast.getJoinFields().size()) {
+        if (standard.getCompareFields().size() != contrast.getCompareFields().size()) {
             throw new AtlasBaseException("一致性校验比较字段数目不对");
         }
 
@@ -693,7 +693,7 @@ public class QuartzJob implements Job {
 
     //规则值计算
     public Float ruleResultValue(AtomicTaskExecution task, boolean record, boolean columnRule) throws Exception {
-        Float resultValue = null;
+        Float resultValue = 0.0f;
         String pool = task.getPool();
         try {
             engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf, String::valueOf);
@@ -745,7 +745,6 @@ public class QuartzJob implements Job {
                     case EMPTY_VALUE_NUM_CHANGE:
                     case EMPTY_VALUE_NUM_CHANGE_RATIO:
                     case EMPTY_VALUE_NUM_RATIO:
-                        sql = String.format(query, sqlDbName,tableName, columnName);
                         writeErrorData(jobType,tableName,columnName,sqlDbName,adapterSource,adapterSource.getConnection(user, dbName, pool),hdfsOutPath);
                         sql = String.format(query, sqlDbName,tableName, columnName);
                         break;
@@ -773,7 +772,7 @@ public class QuartzJob implements Job {
             Connection connection = adapterSource.getConnection(user, dbName, pool);
             resultValue = adapterExecutor.queryResult(connection, sql, resultSet -> {
                 try {
-                    Float value = null;
+                    Float value = 0.0f;
                     if (Objects.nonNull(resultSet)) {
                         while (resultSet.next()) {
                             Object object = resultSet.getObject(1);
@@ -804,7 +803,7 @@ public class QuartzJob implements Job {
 
     public void writeErrorData(TaskType jobType,String tableName,String columnName,String sqlDbName,AdapterSource adapterSource,Connection connection,String hdfsOutPath){
         String errDataSql = QuartQueryProvider.getErrData(jobType);
-        String sql=null;
+        String sql;
         switch (jobType) {
             case UNIQUE_VALUE_NUM:
             case UNIQUE_VALUE_NUM_CHANGE:
@@ -828,7 +827,7 @@ public class QuartzJob implements Job {
                 break;
         }
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
-
+        LOG.info("query sql = "+ sql);
         adapterExecutor.queryResultByFetchSize(connection, sql, resultSet -> {
             HdfsUtils hdfsUtils = new HdfsUtils();
             try (BufferedWriter fileBufferWriter = hdfsUtils.getFileBufferWriter(hdfsOutPath);){

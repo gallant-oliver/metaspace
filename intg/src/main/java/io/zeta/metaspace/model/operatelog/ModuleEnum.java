@@ -35,7 +35,7 @@ public enum ModuleEnum {
     DATAEDIT(2,"数据资产","数据管理",24,"数据管理","data","dataedit",1),
     COLUMNDOWN(2,"数据资产","下载管理",25,"下载管理","columns","columndown",1),
     AUDIT(8,"数据服务","审核中心",26,"审核中心","audit","audit",1),
-    APIMANAGE(8,"数据服务","api项目管理",27,"api项目管理","apimanage","apimanage",1),
+    APIMANAGE(8,"数据服务","API项目管理",27,"API项目管理","apimanage","apimanage",1),
     DESENSITIZATION(8,"数据服务","脱敏管理",28,"脱敏管理","desensitization","desensitization",1),
     IPRESTRICTION(8,"数据服务","黑白名单管理",29,"黑白名单管理","iprestriction","iprestriction",1)
     ;
@@ -128,7 +128,7 @@ public enum ModuleEnum {
     public static String getModuleName(int moduleId){
         for (ModuleEnum module : ModuleEnum.values()) {
             if(module.id==moduleId)
-                return module.getAlias();
+                return module.toString();
         }
         return null;
     }

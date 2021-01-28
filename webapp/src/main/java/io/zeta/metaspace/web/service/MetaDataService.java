@@ -33,6 +33,7 @@ import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.CustomStringUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import io.zeta.metaspace.web.util.HivePermissionUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -158,12 +159,14 @@ public class MetaDataService {
             result.put("schemaId", relatedObject.getGuid());
             result.put("schemaName", relatedObject.getDisplayText());
 
+            String tableType;
             String type = entity.getTypeName();
-            String tableType = getEntityAttribute(entity, "tableType");
             if ("hive_table".equalsIgnoreCase(type)) {
+                tableType = getEntityAttribute(entity, "tableType");
                 result.put("isHiveTable", true);
                 result.put("sourceId", "hive");
             } else if ("rdbms_table".equalsIgnoreCase(type)) {
+                tableType = getEntityAttribute(entity, "type");
                 result.put("isHiveTable", false);
                 String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
                 result.put("sourceId", StringUtils.isNotEmpty(qualifiedName) ? qualifiedName.split("\\.")[0] : "");
@@ -253,6 +256,9 @@ public class MetaDataService {
                 }
             });
 
+            table.setSourceId("hive");
+            table.setSourceName("hive");
+
             return table;
         } catch (AtlasBaseException e) {
             String message = "无效的实体ID";
@@ -316,7 +322,7 @@ public class MetaDataService {
             }
             //tag，从postgresql获取，获取不到不展示
             try {
-                List<Tag> tags = tableTagDAO.getTable2Tag(table.getTableId());
+                List<Tag> tags = tableTagDAO.getTable2Tag(table.getTableId(),tenantId);
                 table.setTags(tags);
             } catch (Exception e) {
                 LOG.error("获取标签失败,错误信息:" + e.getMessage(), e);
@@ -418,7 +424,7 @@ public class MetaDataService {
     }
 
 
-    public RDBMSTable getRDBMSTableInfoById(String guid) throws AtlasBaseException {
+    public RDBMSTable getRDBMSTableInfoById(String guid, String tenantId) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getRDBMSTableInfoById({})", guid);
         }
@@ -433,7 +439,7 @@ public class MetaDataService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
             //table
-            RDBMSTable table = extractRDBMSTableInfo(entity, guid, info);
+            RDBMSTable table = extractRDBMSTableInfo(entity, guid, info, tenantId);
 
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
@@ -455,7 +461,7 @@ public class MetaDataService {
         }
     }
 
-    public RDBMSTable extractRDBMSTableInfo(AtlasEntity entity, String guid, AtlasEntity.AtlasEntityWithExtInfo info) throws AtlasBaseException {
+    public RDBMSTable extractRDBMSTableInfo(AtlasEntity entity, String guid, AtlasEntity.AtlasEntityWithExtInfo info, String tenantId) throws AtlasBaseException {
         RDBMSTable table = new RDBMSTable();
         table.setTableId(guid);
         if (entity.getTypeName().contains(tableAttribute)) {
@@ -475,6 +481,8 @@ public class MetaDataService {
                 table.setCreateTime("");
             }
 
+            String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
+            String sourceId = StringUtils.isNotEmpty(qualifiedName) ? qualifiedName.split("\\.")[0] : "";
 
             //描述
             table.setTableDescription(getEntityAttribute(entity, "comment"));
@@ -485,7 +493,8 @@ public class MetaDataService {
             table.setDatabaseId(relatedObject.getGuid());
             table.setDatabaseName(relatedObject.getDisplayText());
             table.setDatabaseStatus(relatedObject.getEntityStatus().name());
-            table.setSourceId(relatedInstance.getGuid());
+
+            table.setSourceId(sourceId);
             table.setSourceName(relatedInstance.getDisplayText());
             table.setSourceStatus(relatedInstance.getEntityStatus().name());
             ColumnQuery columnQuery = new ColumnQuery();
@@ -495,6 +504,86 @@ public class MetaDataService {
             table.setForeignKeys(cik.getForeignKeys());
             table.setIndexes(cik.getIndexes());
             table.setColumns(cik.getColumns());
+
+
+            //获取权限判断是否能编辑,默认不能
+            table.setEdit(false);
+
+
+            try {
+                List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
+                boolean edit = false;
+                if (categoryIds.size() > 0) {
+                    int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds.get(0), tenantId);
+                    if (count > 0) {
+                        edit = true;
+                    }
+                }
+                table.setEdit(edit);
+            } catch (Exception e) {
+                LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
+            }
+
+            //tag，从postgresql获取，获取不到不展示
+            try {
+                List<Tag> tags = tableTagDAO.getTable2Tag(table.getTableId(),tenantId);
+                table.setTags(tags);
+            } catch (Exception e) {
+                LOG.error("获取标签失败,错误信息:" + e.getMessage(), e);
+            }
+
+            //1.4新增
+            try {
+                //owner.name
+                List<DataOwnerHeader> owners = getDataOwner(guid);
+                table.setDataOwner(owners);
+                //更新时间
+                table.setUpdateTime(DateUtils.date2String(entity.getUpdateTime()));
+            } catch (Exception e) {
+                LOG.error("获取数据基础信息失败,错误信息:" + e.getMessage(), e);
+            }
+
+            try {
+                TableInfo tableInfo = tableDAO.getTableInfoByTableguid(guid);
+                //所属系统
+                table.setSubordinateSystem(tableInfo.getSubordinateSystem());
+                //所属数据库
+                table.setSubordinateDatabase(tableInfo.getSubordinateDatabase());
+                //源系统管理员
+                table.setSystemAdmin(tableInfo.getSystemAdmin());
+                //数仓管理员
+                table.setDataWarehouseAdmin(tableInfo.getDataWarehouseAdmin());
+                //数仓描述
+                table.setDataWarehouseDescription(tableInfo.getDataWarehouseDescription());
+                //目录管理员
+                table.setCatalogAdmin(tableInfo.getCatalogAdmin());
+                //创建时间
+                Object createTime = entity.getAttribute("createTime");
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                String formatDateStr = sdf.format(createTime);
+                table.setCreateTime(formatDateStr);
+            } catch (Exception e) {
+                LOG.error("获取源系统维度失败,错误信息:" + e.getMessage(), e);
+            }
+
+            try {
+                //表关联信息
+                List<String> relations = getRelationList(guid, tenantId);
+                table.setRelations(relations);
+                //目录管理员
+                //关联时间
+                if (relations.size() == 1)
+                    table.setRelationTime(tableDAO.getDateByTableguid(guid));
+            } catch (Exception e) {
+                LOG.error("获取数据目录维度失败,错误信息:" + e.getMessage(), e);
+            }
+
+            try {
+                List<Table.BusinessObject> businessObjectByTableguid = tableDAO.getBusinessObjectByTableguid(guid, tenantId);
+                table.setBusinessObjects(businessObjectByTableguid);
+            } catch (Exception e) {
+                LOG.error("获取业务维度失败,错误信息:" + e.getMessage(), e);
+            }
         }
         return table;
     }
@@ -536,33 +625,36 @@ public class MetaDataService {
         Map<String, AtlasEntity> referredEntities = info.getReferredEntities();
         AtlasEntity entity = info.getEntity();
         List<RDBMSColumn> columns = new ArrayList<>();
-        RDBMSColumn column = null;
 
-        for (String key : referredEntities.keySet()) {
-            AtlasEntity referredEntity = referredEntities.get(key);
-            if (referredEntity.getTypeName().contains("column") && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE)) {
-                column = new RDBMSColumn();
-                //tableId
-                column.setTableId(guid);
-                //tableName
-                column.setTableName(getEntityAttribute(entity, "name"));
-                column.setTableStatus(entity.getStatus().toString());
-                //status
-                column.setStatus(referredEntity.getStatus().name());
-                //databaseId && dataBaseName
-                column.setDatabaseId(relatedDB.getGuid());
-                column.setDatabaseName(relatedDB.getDisplayText());
-                column.setDatabaseStatus(relatedDB.getEntityStatus().name());
+        List<AtlasObjectId> columnsObjectIdList = (List<AtlasObjectId>) info.getEntity().getAttribute("columns");
 
-                column.setSourceId(relatedInstance.getGuid());
-                column.setSourceName(relatedInstance.getDisplayText());
-                column.setSourceStatus(relatedInstance.getEntityStatus().name());
+        if (columnsObjectIdList != null) {
+            columnsObjectIdList.stream().map(AtlasObjectId::getGuid).forEach(key -> {
+                AtlasEntity referredEntity = referredEntities.get(key);
+                if (referredEntity.getTypeName().contains("column") && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE)) {
+                    RDBMSColumn column = new RDBMSColumn();
+                    //tableId
+                    column.setTableId(guid);
+                    //tableName
+                    column.setTableName(getEntityAttribute(entity, "name"));
+                    column.setTableStatus(entity.getStatus().toString());
+                    //status
+                    column.setStatus(referredEntity.getStatus().name());
+                    //databaseId && dataBaseName
+                    column.setDatabaseId(relatedDB.getGuid());
+                    column.setDatabaseName(relatedDB.getDisplayText());
+                    column.setDatabaseStatus(relatedDB.getEntityStatus().name());
 
-                column.setColumnId(referredEntity.getGuid());
-                //attribute
-                extractAttributeInfo(referredEntity, column);
-                columns.add(column);
-            }
+                    column.setSourceId(relatedInstance.getGuid());
+                    column.setSourceName(relatedInstance.getDisplayText());
+                    column.setSourceStatus(relatedInstance.getEntityStatus().name());
+
+                    column.setColumnId(referredEntity.getGuid());
+                    //attribute
+                    extractAttributeInfo(referredEntity, column);
+                    columns.add(column);
+                }
+            });
         }
         return columns;
     }
@@ -716,6 +808,7 @@ public class MetaDataService {
         } else {
             column.setColumnDescription("");
         }
+        column.setDescription(column.getColumnDescription());
         column.setDisplayName(column.getColumnName());
 
     }
@@ -924,37 +1017,41 @@ public class MetaDataService {
         Map<String, AtlasEntity> referredEntities = info.getReferredEntities();
         AtlasEntity entity = info.getEntity();
         List<Column> columns = new ArrayList<>();
-        Column column = null;
+
 
         List<AtlasObjectId> partitionKeys = extractPartitionKeyInfo(entity);
-        for (String key : referredEntities.keySet()) {
-            AtlasEntity referredEntity = referredEntities.get(key);
-            if (referredEntity.getTypeName().contains("column") && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE)) {
-                column = new Column();
-                //tableId
-                column.setTableId(guid);
-                //tableName
-                column.setTableName(getEntityAttribute(entity, "name"));
-                //status
-                column.setStatus(referredEntity.getStatus().name());
-                //databaseId && dataBaseName
-                AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
-                column.setDatabaseId(relatedDB.getGuid());
-                column.setDatabaseName(relatedDB.getDisplayText());
+        List<AtlasObjectId> columnsObjectIdList = (List<AtlasObjectId>) info.getEntity().getAttribute("columns");
 
-                column.setColumnId(referredEntity.getGuid());
-                column.setPartitionKey(false);
-                if (partitionKeys != null) {
-                    for (int i = 0; i < partitionKeys.size(); i++) {
-                        if (partitionKeys.get(i).getGuid().equals(column.getColumnId())) {
-                            column.setPartitionKey(true);
+        if (columnsObjectIdList != null) {
+            columnsObjectIdList.stream().map(AtlasObjectId::getGuid).forEach(key -> {
+                AtlasEntity referredEntity = referredEntities.get(key);
+                if (referredEntity.getTypeName().contains("column") && referredEntity.getStatus().equals(AtlasEntity.Status.ACTIVE)) {
+                    Column column = new Column();
+                    //tableId
+                    column.setTableId(guid);
+                    //tableName
+                    column.setTableName(getEntityAttribute(entity, "name"));
+                    //status
+                    column.setStatus(referredEntity.getStatus().name());
+                    //databaseId && dataBaseName
+                    AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+                    column.setDatabaseId(relatedDB.getGuid());
+                    column.setDatabaseName(relatedDB.getDisplayText());
+
+                    column.setColumnId(referredEntity.getGuid());
+                    column.setPartitionKey(false);
+                    if (partitionKeys != null) {
+                        for (int i = 0; i < partitionKeys.size(); i++) {
+                            if (partitionKeys.get(i).getGuid().equals(column.getColumnId())) {
+                                column.setPartitionKey(true);
+                            }
                         }
                     }
+                    //attribute
+                    extractAttributeInfo(referredEntity, column);
+                    columns.add(column);
                 }
-                //attribute
-                extractAttributeInfo(referredEntity, column);
-                columns.add(column);
-            }
+            });
         }
         return columns;
     }
@@ -1647,7 +1744,7 @@ public class MetaDataService {
         String dbName = table.getDatabaseName();
         int rowNumber = 0;
         String sheetName = "表" + index + "-表信息";
-        Sheet sheet = workbook.createSheet(sheetName);
+        Sheet sheet = workbook.createSheet(CustomStringUtils.handleExcelName(sheetName));
 
         CellRangeAddress tableAndDbNameRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 1);
         sheet.addMergedRegion(tableAndDbNameRangeAddress);
@@ -1942,7 +2039,7 @@ public class MetaDataService {
         String dbName = table.getDatabaseName();
         int rowNumber = 0;
         String sheetName = "表" + index + "-字段信息";
-        Sheet sheet = workbook.createSheet(sheetName);
+        Sheet sheet = workbook.createSheet(CustomStringUtils.handleExcelName(sheetName));
 
         List<Column> columnList = table.getColumns();
         List<Column> normalColumnList = columnList.stream().filter(column -> column.getPartitionKey() == false).collect(Collectors.toList());

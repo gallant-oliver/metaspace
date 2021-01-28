@@ -56,13 +56,14 @@ public interface RelationDAO {
              " open='(' separator=',' close=')'>" ,
              " #{item}" ,
              " </foreach>  or tableinfo.source_id != 'hive')" ,
+             " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') ",
              " order by tableInfo.status,table_relation.generateTime desc, tableinfo.tablename",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<RelationEntityV2> queryRelationByCategoryGuidV2(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
+    public List<RelationEntityV2> queryRelationByCategoryGuidV2(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
     @Select({"<script>",
             " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,tableInfo.description",
@@ -82,13 +83,14 @@ public interface RelationDAO {
              " open='(' separator=',' close=')'>" ,
              " #{item}" ,
              " </foreach> or tableinfo.source_id != 'hive') " ,
+             " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive')  ",
              " order by tableinfo.tablename",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<RelationEntityV2> queryRelationByCategoryGuidFilterV2(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
+    public List<RelationEntityV2> queryRelationByCategoryGuidFilterV2(@Param("categoryGuid") String categoryGuid,@Param("tenantId") String tenantId, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
 
     @Select("select * from table_relation,tableInfo where table_relation.tableGuid=#{tableGuid} and tableinfo.tableGuid=#{tableGuid}")
     public List<RelationEntityV2> queryRelationByTableGuid(@Param("tableGuid") String tableGuid) throws SQLException;
@@ -140,14 +142,15 @@ public interface RelationDAO {
              " <if test=\"tagName != null and tagName!=''\">",
              " and",
              " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%' ESCAPE '/') ",
-             " </if>",
+             " </if>" ,
+             " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive')",
              " order by tableinfo.tablename ",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<RelationEntityV2> queryByTableNameV2(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
+    public List<RelationEntityV2> queryByTableNameV2(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
     @Select({"<script>",
             " select count(*)over() total,* from table_relation",
@@ -188,7 +191,8 @@ public interface RelationDAO {
              " <foreach item='item' index='index' collection='databases'" ,
              " open='(' separator=',' close=')'>" ,
              " #{item}" ,
-             " </foreach> or tableinfo.source_id != 'hive')" ,
+             " </foreach> or tableinfo.source_id != 'hive') " ,
+             " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') ",
              " <if test=\"tableName != null and tableName!=''\">",
              " and",
              " tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
@@ -204,7 +208,7 @@ public interface RelationDAO {
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<RelationEntityV2> queryByTableNameFilterV2(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
+    public List<RelationEntityV2> queryByTableNameFilterV2(@Param("tenantId") String tenantId,@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases);
 
     @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
     public int queryRelationNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);
@@ -231,6 +235,9 @@ public interface RelationDAO {
     //@Update("update table_relation set status=#{status} where tableGuid=#{tableGuid}")
     @Update("update tableInfo set status=#{status} where tableGuid=#{tableGuid}")
     public int updateTableStatus(@Param("tableGuid") String tableGuid, @Param("status") String status);
+
+    @Update("update tableInfo set status=#{status} where tableGuid in (#{tableGuids})")
+    public int updateTableStatusBatch(@Param("tableGuids") String tableGuids, @Param("status") String status);
 
     @Select("select count(*) from tableinfo where tableGuid=#{tableGuid}")
     public int queryTableInfo(@Param("tableGuid") String tableGuid);
@@ -280,7 +287,7 @@ public interface RelationDAO {
             " #{id}" +
             " </foreach>" +
             " </script>")
-    public int updateByTableGuids(@Param("ids") List<String> ids, @Param("categoryGuid")String categoryGuid, @Param("time") Timestamp time);
+    public int updateByTableGuids(@Param("ids") List<String> ids, @Param("categoryGuid")String categoryGuid, @Param("time") String time);
 
     @Insert("insert into table_relation values (#{item.relationshipGuid},#{item.categoryGuid},#{item.tableGuid},#{item.generateTime}) ")
     public int addRelation(@Param("item") TableRelation tableRelation);
@@ -305,6 +312,9 @@ public interface RelationDAO {
 
     @Update("update tableInfo set databasestatus=#{status} where databaseGuid=#{databaseGuid}")
     public int updateDatabaseStatus(@Param("databaseGuid") String databaseGuid, @Param("status") String status);
+
+    @Update("update tableInfo set databasestatus=#{status} where databaseGuid in (#{databaseGuids})")
+    public int updateDatabaseStatusBatch(@Param("databaseGuids") String databaseGuids, @Param("status") String status);
 
     @Select({" select tableGuid from table_relation where categoryGuid=#{categoryGuid}" })
     public List<String> getAllTableGuidByCategoryGuid(@Param("categoryGuid") String categoryGuid);

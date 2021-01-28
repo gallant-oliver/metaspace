@@ -217,6 +217,15 @@ public interface TaskManageDAO {
              " values(#{task.id},#{task.name},#{task.level},#{task.description},#{task.cronExpression},#{task.enable},#{task.startTime},#{task.endTime},#{task.createTime},#{task.updateTime},#{task.creator},#{task.updater},#{task.delete},#{task.orangeWarningTotalCount},#{task.redWarningTotalCount},#{task.errorTotalCount},#{task.executionCount},#{tenantId},(select (case when max(number) is null then 0 else max(number) end)+1 from data_quality_task where tenantid=#{tenantId}))"})
     public int addDataQualityTask(@Param("task")DataQualityTask task,@Param("tenantId")String tenantId);
 
+
+    /**
+     * 通过任务名称查看租户下的任务
+     * @param
+     * @return
+     */
+    @Select({" select id from data_quality_task where tenantid=#{tenantId} and name=#{taskName}"})
+    public List<String> getDataQualityTaskByName(@Param("taskName")String taskName,@Param("tenantId")String tenantId);
+
     /**
      * 记录任务告警组
      * @param taskId
@@ -712,10 +721,10 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({" <script>",
-             " select distinct c.id as ruleExecutionId,c.task_execute_id as executionId,c.subtask_id as subtaskId,c.subtask_rule_id as subTaskRuleId,c.subtask_object_id as objectId, c.result, c.check_status as checkStatus,c.orange_warning_check_status as orangeCheckStatus, c.red_warning_check_status as redCheckStatus,c.update_time as createTime,",
+             " select c.id as ruleExecutionId,c.sequence as subTaskSequence,c.task_execute_id as executionId,c.subtask_id as subtaskId,c.subtask_rule_id as subTaskRuleId,c.subtask_object_id as objectId, c.result, c.check_status as checkStatus,c.orange_warning_check_status as orangeCheckStatus, c.red_warning_check_status as redCheckStatus,c.update_time as createTime,",
              " d.name as ruleName,d.scope,d.type as taskType,d.description,d.check_type as checkType, d.check_expression_type as checkExpression,d.check_threshold_min_value as checkMinValue,d.check_threshold_max_value as checkMaxValue,d.orange_check_type as orangeWarningCheckType,d.orange_check_expression_type as orangeWarningcheckExpression,",
              " d.orange_threshold_min_value as orangeWarningMinValue,d.orange_threshold_max_value as orangeWarningMaxValue,d.red_check_type as redWarningCheckType,d.red_check_expression_type as redWarningcheckExpression,d.red_threshold_min_value as redWarningMinValue,d.red_threshold_max_value as redWarningMaxValue,d.check_threshold_unit as checkThresholdUnit",
-             " from (select * from data_quality_task_rule_execute as rule_execute where task_execute_id=#{ruleExecutionId}",
+             " from (select a.*,b.sequence from data_quality_task_rule_execute a inner join data_quality_sub_task b on a.subtask_id = b.id and a.task_execute_id=#{ruleExecutionId}",
              " <if test=\"subtaskId!='all'.toString()\">",
              "  and subtask_id = #{subtaskId}",
              " </if>",
@@ -726,6 +735,7 @@ public interface TaskManageDAO {
              " (select subtask_id,object_id from data_quality_sub_task_object where task_id=(select task_id from data_quality_task_execute where id=#{ruleExecutionId})) b",
              " on a.subtask_id = b.subtask_id) d",
              " on d.id=c.subtask_rule_id and d.object_id=c.subtask_object_id",
+             " order by c.sequence asc",
              " </script>"})
     List<TaskRuleExecutionRecord> getTaskRuleExecutionRecordList(@Param("ruleExecutionId")String ruleExecutionId,@Param("subtaskId") String subtaskId,@Param("tenantId")String tenantId);
 
@@ -757,7 +767,7 @@ public interface TaskManageDAO {
              " select id as executionId,execute_status as executeStatus,rule_error_count as errorCount, users.userName as executor,execute_time as executeTime,cost_time as costTime from data_quality_task_execute",
              " join users on users.userId=data_quality_task_execute.executor",
              " where task_id=#{taskId}",
-             " and (executor like '%${params.query}%' ESCAPE '/')",
+             " and (users.userName like '%${params.query}%' ESCAPE '/')",
              " order by executeTime desc",
              " <if test='params.limit!=null and params.limit!= -1'>",
              " limit #{params.limit}",
@@ -873,7 +883,7 @@ public interface TaskManageDAO {
      * @param dbName
      * @return
      */
-    @Select("select distinct databaseguid from tableInfo where dbName=#{dbName} and status='ACTIVE'")
+    @Select("select distinct databaseguid from tableInfo where dbName=#{dbName} and status='ACTIVE' and source_id='hive'")
     public String getDbIdByDbName(@Param("dbName")String dbName);
 
     /**

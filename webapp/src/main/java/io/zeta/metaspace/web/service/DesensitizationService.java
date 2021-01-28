@@ -1,11 +1,13 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.datasource.DataSourceHead;
 import io.zeta.metaspace.model.desensitization.DesensitizationAlgorithm;
 import io.zeta.metaspace.model.desensitization.DesensitizationAlgorithmInfo;
 import io.zeta.metaspace.model.desensitization.DesensitizationAlgorithmTest;
 import io.zeta.metaspace.model.desensitization.DesensitizationRule;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.ApiPolyInfo;
 import io.zeta.metaspace.web.dao.DesensitizationDAO;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -62,9 +65,13 @@ public class DesensitizationService {
             if (StringUtils.isEmpty(desensitizationRule.getId()) || StringUtils.isEmpty(desensitizationRule.getName())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数不正确");
             }
-            if (desensitizationDAO.getRule(desensitizationRule.getId()) == null) {
+            DesensitizationRule dr = desensitizationDAO.getRule(desensitizationRule.getId());
+            if (dr == null) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "规则不存在");
             }
+            HttpRequestContext.get().auditLog(ModuleEnum.AUDIT.getAlias(), "更新脱敏: " + dr.getName());
+
+
             checkDuplicateName(desensitizationRule.getId(), desensitizationRule.getName(), tenantId);
 
             DesensitizationAlgorithm algorithm = desensitizationRule.getType();
@@ -87,6 +94,7 @@ public class DesensitizationService {
             if (rule == null) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "规则不存在");
             }
+            HttpRequestContext.get().auditLog(ModuleEnum.AUDIT.getAlias(), "更新脱敏启用禁用: " + rule.getName() + " " + enable);
 
             return desensitizationDAO.updateEnable(ruleId, enable);
         } catch (Exception e) {
@@ -98,13 +106,18 @@ public class DesensitizationService {
     @Transactional(rollbackFor = Exception.class)
     public int deletedDesensitizationRule(List<String> ruleIds, String tenantId) {
         try {
+            List<String> name = new ArrayList<>();
             if (ruleIds != null && !ruleIds.isEmpty()) {
                 for (String ruleId : ruleIds) {
-                    if (desensitizationDAO.getRule(ruleId) == null) {
+                    DesensitizationRule rule = desensitizationDAO.getRule(ruleId);
+                    if (rule == null) {
                         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "规则不存在 id : " + ruleId);
                     }
+                    name.add(rule.getName());
                 }
             }
+            HttpRequestContext.get().auditLog(ModuleEnum.AUDIT.getAlias(), "删除脱敏: " + String.join(",",name));
+
             return desensitizationDAO.delete(ruleIds);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "脱敏规则删除失败" );

@@ -6,6 +6,8 @@ import com.google.common.base.Joiner;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.metadata.CategoryItem;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -191,6 +193,7 @@ public class TechnicalREST {
      * @return
      * @throws Exception
      */
+    @Permission({ModuleEnum.TECHNICAL,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -218,6 +221,7 @@ public class TechnicalREST {
      * @return
      * @throws Exception
      */
+    @Permission({ModuleEnum.TECHNICAL,ModuleEnum.AUTHORIZATION})
     @DELETE
     @Path("/category/{categoryGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -248,6 +252,7 @@ public class TechnicalREST {
      * @return
      * @throws AtlasBaseException
      */
+    @Permission({ModuleEnum.TECHNICAL,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/update/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -322,7 +327,7 @@ public class TechnicalREST {
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
-            AtlasPerfTracer.log(perf);
+            AtlasPerfTracer.log(perf);   
         }
     }
 
@@ -480,14 +485,15 @@ public class TechnicalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getDownloadURL(List<String> ids) throws Exception {
+        String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/technical/export/selected";
         //全局导出
         if (ids == null || ids.size() == 0) {
             DownloadUri uri = new DownloadUri();
-            String downURL = request.getRequestURL().toString() + "/" + "all";
+            String downURL = url + "/" + "all";
             uri.setDownloadUri(downURL);
             return ReturnUtil.success(uri);
         }
-        DownloadUri downloadUri = ExportDataPathUtils.generateURL(request.getRequestURL().toString(), ids);
+        DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
         return ReturnUtil.success(downloadUri);
     }
 
@@ -532,6 +538,7 @@ public class TechnicalREST {
      * @return
      * @throws Exception
      */
+    @Permission({ModuleEnum.TECHNICAL,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -572,6 +579,7 @@ public class TechnicalREST {
      * @return
      * @throws Exception
      */
+    @Permission({ModuleEnum.TECHNICAL,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/import/{upload}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -614,6 +622,7 @@ public class TechnicalREST {
      * @param moveCategory
      * @throws Exception
      */
+    @Permission({ModuleEnum.TECHNICAL,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/move/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -643,6 +652,7 @@ public class TechnicalREST {
      * @return
      * @throws Exception
      */
+    @Permission({ModuleEnum.TECHNICAL,ModuleEnum.AUTHORIZATION})
     @GET
     @Path("/sort/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -661,6 +671,7 @@ public class TechnicalREST {
         }
     }
 
+    @Permission({ModuleEnum.TECHNICAL,ModuleEnum.AUTHORIZATION})
     @GET
     @Path("/download/category/template")
     @Valid

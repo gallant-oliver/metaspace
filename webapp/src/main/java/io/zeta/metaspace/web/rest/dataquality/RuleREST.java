@@ -21,6 +21,7 @@ import com.google.common.base.Joiner;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dataquality2.DataTaskIdAndName;
 import io.zeta.metaspace.model.dataquality2.Rule;
@@ -129,11 +130,11 @@ public class RuleREST {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), rule.getName());
         List<Rule> oldList = ruleService.getByCode(rule.getCode(),tenantId);
         if (!oldList.isEmpty()) {
-            throw new AtlasBaseException("规则编号已存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"规则编号已存在");
         }
         List<Rule> oldListByName = ruleService.getByName(rule.getName(),tenantId);
         if (!oldListByName.isEmpty()) {
-            throw new AtlasBaseException("规则名字已存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"规则名字已存在");
         }
         ruleService.insert(rule,tenantId);
     }
@@ -337,7 +338,7 @@ public class RuleREST {
     @OperateType(UPDATE)
     //删除
     public boolean assignRuleToStandard(DataStandAndRule dataStandAndTable,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        String ruleName = ruleService.getNameById(dataStandAndTable.getRuleId());
+        String ruleName = ruleService.getNameById(dataStandAndTable.getRuleId(),tenantId);
         if(null == ruleName) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "质量规则不存在");
         }
@@ -396,14 +397,15 @@ public class RuleREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getDownloadURL(List<String> ids) throws Exception {
+        String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/dataquality/rule/export/selected";
         //全局导出
         if (ids==null||ids.size()==0){
             DownloadUri uri = new DownloadUri();
-            String downURL = request.getRequestURL().toString() + "/" + "all";
+            String downURL = url + "/" + "all";
             uri.setDownloadUri(downURL);
             return  ReturnUtil.success(uri);
         }
-        DownloadUri downloadUri = ExportDataPathUtils.generateURL(request.getRequestURL().toString(), ids);
+        DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
         return ReturnUtil.success(downloadUri);
     }
 

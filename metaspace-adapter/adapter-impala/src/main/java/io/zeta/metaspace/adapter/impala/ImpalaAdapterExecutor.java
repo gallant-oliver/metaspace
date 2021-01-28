@@ -3,6 +3,7 @@ package io.zeta.metaspace.adapter.impala;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AbstractAdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
+import io.zeta.metaspace.adapter.AdapterTransformer;
 import io.zeta.metaspace.utils.ByteFormat;
 import org.apache.atlas.exception.AtlasBaseException;
 
@@ -16,7 +17,8 @@ public class ImpalaAdapterExecutor extends AbstractAdapterExecutor {
 
     @Override
     public float getTableSize(String db, String tableName, String pool) {
-        String querySQL = "show table stats " + tableName;
+        AdapterTransformer adapterTransformer = getAdapter().getAdapterTransformer();
+        String querySQL = "show table stats " + adapterTransformer.caseSensitive(tableName);
         Connection connection = getAdapterSource().getConnection(MetaspaceConfig.getHiveAdmin(), db, pool);
         return queryResult(connection, querySQL, resultSet -> {
             try {

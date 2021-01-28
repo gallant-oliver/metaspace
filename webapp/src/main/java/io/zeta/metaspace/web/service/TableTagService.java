@@ -24,8 +24,11 @@ public class TableTagService {
         Tag tag = tableTagDAO.getTag(tagName, tenantId);
         if (tag == null) {
             tableTagDAO.addTag(tagId, tagName, tenantId);
-        } else {
+        }else {
             tagId = tag.getTagId();
+        }
+        if(tableTagDAO.ifTagExists(tagId,guid)>0){
+            throw new AtlasBaseException("标签不能重复添加");
         }
         tableTagDAO.addTable2Tag(tagId, guid);
     }
@@ -37,8 +40,8 @@ public class TableTagService {
         }
     }
 
-    public List<Tag> getTags(String guid) {
-        return tableTagDAO.getTable2Tag(guid);
+    public List<Tag> getTags(String guid,String tenantId) {
+        return tableTagDAO.getTable2Tag(guid,tenantId);
     }
 
 }

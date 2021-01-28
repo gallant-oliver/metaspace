@@ -23,8 +23,8 @@ public interface TableTagDAO {
     @Delete("delete from table2tag where tableguid=#{tableGuid} and tagid=#{tagId}")
     public int deleteTable2Tag(@Param("tableGuid") String tableGuid, @Param("tagId") String tagId);
 
-    @Select("select count(1) from tag where tagname=#{tagName} and tenantid=#{tenantId}")
-    public Integer ifTagExists(@Param("tagName") String tagName, @Param("tenantId") String tenantId);
+    @Select("select count(1) from table2tag where tagid=#{tagid} and tableguid=#{tableguid}")
+    public Integer ifTagExists(@Param("tagid") String tagid, @Param("tableguid") String tableguid);
 
     @Delete("select count(1) from  table2tag where tagid=#{tagId}")
     long getTagUseCount(@Param("tagId") String tagId);
@@ -35,6 +35,6 @@ public interface TableTagDAO {
     @Delete("delete from table2tag where tableguid=#{tableGuid}")
     public int delAllTable2Tag(@Param("tableGuid") String tableGuid);
 
-    @Select("select tag.tagid as tagid,tag.tagname as tagname from table2tag,tag where table2tag.tagid=tag.tagid and tableguid=#{tableGuid}")
-    public List<Tag> getTable2Tag(@Param("tableGuid") String tableGuid);
+    @Select("select tag.tagid as tagid,tag.tagname as tagname from table2tag,tag where table2tag.tagid=tag.tagid and tableguid=#{tableGuid} and tenantid=#{tenantId}")
+    public List<Tag> getTable2Tag(@Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
 }

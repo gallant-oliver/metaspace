@@ -109,6 +109,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.zeta.metaspace.model.role.SystemRole;
+import org.springframework.util.CollectionUtils;
 
 @Service
 public class DataManageService {
@@ -637,8 +638,7 @@ public class DataManageService {
             if (ids == null || ids.size() == 0) {
                 return;
             }
-            Timestamp timestamp = io.zeta.metaspace.utils.DateUtils.currentTimestamp();
-            relationDao.updateByTableGuids(ids, categoryGuid, timestamp);
+            relationDao.updateByTableGuids(ids, categoryGuid, DateUtils.getNow());
         } catch (Exception e) {
             LOG.error("添加关联失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加关联失败");
@@ -705,11 +705,11 @@ public class DataManageService {
                 User user = AdminUtils.getUserData();
                 List<String> databases = tenantService.getDatabase(tenantId);
                 if (databases != null && databases.size() != 0)
-                    relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset, databases);
+                    relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset, databases,tenantId);
             }
             for (RelationEntityV2 entity : relations) {
                 String tableGuid = entity.getTableGuid();
-                List<Tag> tableTageList = tableTagDAO.getTable2Tag(tableGuid);
+                List<Tag> tableTageList = tableTagDAO.getTable2Tag(tableGuid,tenantId);
                 List<String> tableTagNameList = tableTageList.stream().map(tag -> tag.getTagName()).collect(Collectors.toList());
                 entity.setTableTagList(tableTagNameList);
                 List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
@@ -752,7 +752,7 @@ public class DataManageService {
                 User user = AdminUtils.getUserData();
                 List<String> databases = tenantService.getDatabase(tenantId);
                 if (databases != null && databases.size() != 0)
-                    relations = relationDao.queryRelationByCategoryGuidFilterV2(categoryGuid, limit, offset, databases);
+                    relations = relationDao.queryRelationByCategoryGuidFilterV2(categoryGuid,tenantId, limit, offset, databases);
             }
             if (relations.size() != 0) {
                 totalNum = relations.get(0).getTotal();
@@ -821,11 +821,11 @@ public class DataManageService {
                 List<String> databases = tenantService.getDatabase(tenantId);
 
                 if (databases != null && databases.size() != 0 && categoryIds.size() != 0)
-                    list = relationDao.queryByTableNameV2(tableName, tag, categoryIds, limit, offset, databases);
+                    list = relationDao.queryByTableNameV2(tableName, tag, categoryIds, limit, offset, databases,tenantId);
             }
             //tag
             list.forEach(entity -> {
-                List<Tag> tableTageList = tableTagDAO.getTable2Tag(entity.getTableGuid());
+                List<Tag> tableTageList = tableTagDAO.getTable2Tag(entity.getTableGuid(),tenantId);
                 List<String> tableTagNameList = tableTageList.stream().map(tableTag -> tableTag.getTagName()).collect(Collectors.toList());
                 entity.setTableTagList(tableTagNameList);
             });
@@ -905,7 +905,7 @@ public class DataManageService {
                 }
                 List<String> databases = tenantService.getDatabase(tenantId);
                 if (databases != null && databases.size() != 0 && categoryIds.size() != 0)
-                    list = relationDao.queryByTableNameFilterV2(tableName, tag, categoryIds, limit, offset, databases);
+                    list = relationDao.queryByTableNameFilterV2(tenantId,tableName, tag, categoryIds, limit, offset, databases);
             }
 
             getPath(list, tenantId);
@@ -934,18 +934,34 @@ public class DataManageService {
 
     @Transactional(rollbackFor = Exception.class)
     public void updateStatus(List<AtlasEntity> entities) {
+        List<String> tableStatus=new ArrayList<>();
+        List<String> databaseStatus=new ArrayList<>();
+        List<String> columnStatus=new ArrayList<>();
         for (AtlasEntity entity : entities) {
             String guid = entity.getGuid();
             String typeName = entity.getTypeName();
             if (typeName.contains("table")) {
-                relationDao.updateTableStatus(guid, "DELETED");
+                tableStatus.add(guid);
             }
             if (typeName.contains("hive_db") || typeName.contains("rdbms_table")) {
-                relationDao.updateDatabaseStatus(guid, "DELETED");
+                databaseStatus.add(guid);
             }
             if (typeName.contains("hive_column") || typeName.contains("rdbms_column")) {
-                columnDAO.updateColumnStatus(guid, "DELETED");
+                columnStatus.add(guid);
             }
+        }
+
+        if(!CollectionUtils.isEmpty(tableStatus)){
+            String tableStatusStr=StringUtils.join(tableStatus,",");
+            relationDao.updateTableStatusBatch(tableStatusStr, "DELETED");
+        }
+        if(!CollectionUtils.isEmpty(databaseStatus)){
+            String databaseStatusStr=StringUtils.join(databaseStatus,",");
+            relationDao.updateDatabaseStatusBatch(databaseStatusStr, "DELETED");
+        }
+        if(!CollectionUtils.isEmpty(columnStatus)){
+            String columnStatusStr=StringUtils.join(columnStatus,",");
+            columnDAO.updateColumnStatusBatch(columnStatusStr, "DELETED");
         }
     }
 

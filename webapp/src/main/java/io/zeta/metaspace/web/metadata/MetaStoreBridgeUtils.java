@@ -15,6 +15,8 @@ package io.zeta.metaspace.web.metadata;
 
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.util.ZkLockUtils;
+import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
@@ -63,6 +65,9 @@ public abstract class MetaStoreBridgeUtils implements IMetaDataProvider{
     protected  EntityGraphRetriever entityRetriever;
     @Autowired
     protected DataManageService dataManageService;
+    @Autowired
+    protected ZkLockUtils zkLockUtils;
+    protected static final int LOCK_TIME_OUT_TIME = AtlasConfiguration.LOCK_TIME_OUT_TIME.getInt(); //M
 
     @PostConstruct
     public void init(){

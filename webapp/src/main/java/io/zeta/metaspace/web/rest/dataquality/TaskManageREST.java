@@ -181,7 +181,8 @@ public class TaskManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<SubTaskRecord> getTaskRuleExecutionRecordList(@PathParam("executionId")String executionId, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        return taskManageService.getTaskRuleExecutionRecordList(executionId,"all",tenantId); //查看全部子任务
+        List<SubTaskRecord> subTaskRecords=taskManageService.getTaskRuleExecutionRecordList(executionId,"all",tenantId); //查看全部子任务
+        return subTaskRecords;
     }
 
     /**
@@ -341,7 +342,6 @@ public class TaskManageREST {
     @OperateType(INSERT)
     public void addTask(TaskInfo taskInfo,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), taskInfo.getTaskName());
-        String s = GsonUtils.getInstance().toJson(taskInfo);
         taskManageService.addTask(taskInfo,tenantId);
     }
 
@@ -575,8 +575,8 @@ public class TaskManageREST {
     @Path("/{executionId}/{subtaskId}/report/data")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void downErrorData(@PathParam("executionId")String executionId, @HeaderParam("tenantId")String tenantId,
-                                @PathParam("subtaskId")String subtaskId) throws AtlasBaseException, IOException {
+    public void downErrorData(@PathParam("executionId")String executionId, @HeaderParam("tenantIds")String tenantIds,
+                                @PathParam("subtaskId")String subtaskId,@QueryParam("tenantId")String tenantId) throws AtlasBaseException, IOException {
         File exportExcel = taskManageService.exportExcelErrorData(executionId,subtaskId, tenantId);
         try {
             String filePath = exportExcel.getAbsolutePath();
@@ -585,7 +585,6 @@ public class TaskManageREST {
             response.setContentType("application/force-download");
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  fileName);
         }catch (Exception e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST,e,"下载异常");
         }
@@ -601,7 +600,6 @@ public class TaskManageREST {
     @Path("/{executionId}/{subtaskId}/report/download")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(UPDATE)
     public Response downTaskReportData(@PathParam("executionId")String executionId, @HeaderParam("tenantId")String tenantId,
                                        @PathParam("subtaskId")String subtaskId,
                                        @FormDataParam("file") InputStream fileInputStream,
@@ -615,7 +613,6 @@ public class TaskManageREST {
             response.setContentType("application/force-download");
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  fileName);
             return Response.ok().build();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"导入文件错误");

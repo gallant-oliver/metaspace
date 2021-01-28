@@ -91,7 +91,7 @@ public class WarningGroupREST {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), warningGroup.getName());
         WarningGroup old = warningGroupService.getByName(warningGroup.getName(),null,tenantId);
         if (old != null) {
-            throw new AtlasBaseException("告警组名已存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"告警组名已存在");
         }
         warningGroupService.insert(warningGroup,tenantId);
     }
@@ -109,7 +109,7 @@ public class WarningGroupREST {
     public void update(WarningGroup warningGroup,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         WarningGroup old = warningGroupService.getByName(warningGroup.getName(),warningGroup.getId(),tenantId);
         if (old != null) {
-            throw new AtlasBaseException("告警组名已存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"告警组名已存在");
         }
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), warningGroup.getName());
         warningGroupService.update(warningGroup);
@@ -241,8 +241,8 @@ public class WarningGroupREST {
     @Path("/{executionId}/warning")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public WarningInfo getWarningInfo(@PathParam("executionId")String executionId) throws AtlasBaseException {
-        return warningGroupService.getWarningInfo(executionId);
+    public WarningInfo getWarningInfo(@HeaderParam("tenantId") String tenantId,@PathParam("executionId")String executionId) throws AtlasBaseException {
+        return warningGroupService.getWarningInfo(executionId,tenantId);
     }
 
     @GET

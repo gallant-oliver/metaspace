@@ -7,8 +7,7 @@ import com.healthmarketscience.sqlbuilder.CustomSql;
 import com.healthmarketscience.sqlbuilder.InCondition;
 import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.Subquery;
-import io.zeta.metaspace.adapter.AbstractAdapterExecutor;
-import io.zeta.metaspace.adapter.AdapterSource;
+import io.zeta.metaspace.adapter.*;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.metadata.Parameters;
 import com.healthmarketscience.sqlbuilder.ValueObject;
@@ -19,6 +18,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -115,8 +116,9 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
     @Override
     public float getTableSize(String db, String tableName, String pool) {
         String querySQL = "select pg_relation_size('%s.%s') size; ";
-        db=db.replaceAll("'","''");
-        tableName=tableName.replaceAll("'","''");
+        AdapterTransformer adapterTransformer = getAdapter().getAdapterTransformer();
+        db=adapterTransformer.caseSensitive(db.replaceAll("'","''"));
+        tableName=adapterTransformer.caseSensitive(tableName.replaceAll("'","''"));
         querySQL=String.format(querySQL,db,tableName);
         Connection connection = getAdapterSource().getConnection();
         return queryResult(connection, querySQL, resultSet -> {
@@ -130,6 +132,93 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
                 throw new AtlasBaseException("查询表大小失败", e);
             }
         });
+    }
+
+    @Override
+    public String getCreateTableSql(String schema, String table) {
+        if(StringUtils.isEmpty(schema) || StringUtils.isEmpty(table)){
+            throw new AtlasBaseException("schema or table is null !");
+        }
+        String schemaName=schema.replaceAll("\"","");
+        String tableName=table.replaceAll("\"","");
+        String querySql="select " +
+                "col.table_schema, " +
+                "col.table_name, " +
+                "col.ordinal_position, " +
+                "col.column_name, " +
+                "col.data_type, " +
+                "col.character_maximum_length, " +
+                "col.numeric_precision, " +
+                "col.numeric_scale, " +
+                "col.is_nullable, " +
+                "col.column_default, " +
+                "des.description " +
+                "from " +
+                "information_schema.columns col left join pg_description des on " +
+                "col.table_name::regclass = des.objoid " +
+                "and col.ordinal_position = des.objsubid " +
+                "where " +
+                "col.table_schema = '"+schemaName+"' "+
+                " and col.table_name = '"+tableName+"' "+
+                " order by ordinal_position;";
+
+        String createSql=queryResult(querySql,schemaName, resultSet -> {
+            try {
+                StringBuffer sql =new StringBuffer();
+                sql.append("CREATE TABLE ");
+
+                sql.append(schemaName).append(".");
+                if(Character.isUpperCase(tableName.charAt(0))){
+                    sql.append("\"").append(tableName).append("\" ( \n");
+                }else {
+                    sql.append(tableName).append(" ( \n");
+                }
+                while (resultSet.next()) {
+                    StringBuilder sb=new StringBuilder();
+                    String column_name=resultSet.getString("column_name");
+                    if(Character.isUpperCase(column_name.charAt(0))){
+                        sb.append("\"").append(column_name).append("\" ");
+                    }else{
+                        sb.append(column_name).append(" ");
+                    }
+                    String data_type=resultSet.getString("data_type");
+                    sb.append(data_type);
+                    int character_maximum_length = resultSet.getInt("character_maximum_length");
+                    int numeric_precision = resultSet.getInt("numeric_precision");
+                    int numeric_scale = resultSet.getInt("numeric_scale");
+                    if(character_maximum_length>0){
+                        sb.append("(").append(character_maximum_length).append(") ");
+                    }else{
+                        if(numeric_precision>0){
+                            sb.append("(").append(numeric_precision);
+                            if(numeric_scale>0){
+                                sb.append(",").append(numeric_scale).append(")");
+                            }else {
+                                sb.append(")");
+                            }
+                        }
+                    }
+                    boolean is_nullable = resultSet.getBoolean("is_nullable");
+                    String nullStr= is_nullable ? " NULL " : " NOT NULL ";
+                    sb.append(nullStr);
+                    String column_default = resultSet.getString("column_default");
+                    if(column_default==null||"null".equalsIgnoreCase(column_default.trim())){
+                        sb.append("#");
+                    }else{
+                        sb.append("DEFAULT ").append(column_default).append("#");
+                    }
+                    sql.append(sb.toString());
+                }
+                sql.deleteCharAt(sql.lastIndexOf("#")).append("\n);");
+                return sql.toString().replaceAll("#",",\n");
+            } catch (SQLException e) {
+                throw new AtlasBaseException("查询建表语句失败", e);
+            }
+        });
+        return createSql;
+    }
+    public <T> T queryResult(String sql,String schema, Function<ResultSet, T> call) {
+        return queryResult(getAdapterSource().getConnection(null,schema,null), sql, call);
     }
 
 }

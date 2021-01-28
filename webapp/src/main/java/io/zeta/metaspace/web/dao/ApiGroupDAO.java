@@ -251,7 +251,7 @@ public interface ApiGroupDAO {
             " </script>")
     public List<ApiCategory.Api> getAllApi(@Param("search")String search,@Param("projectId")String projectId);
 
-    @Select(" select u.username creator,* from api_relation a join api_group g on a.groupid=g.id left join users u on u.userid=g.creator " +
+    @Select(" select u.username creator,approve approveJson,* from api_relation a join api_group g on a.groupid=g.id left join users u on u.userid=g.creator " +
             " where a.version=#{version} and a.apiid=#{apiId}")
     public List<ApiGroupInfo> getApiGroupByApiVersion(@Param("apiId")String apiId,@Param("version")String version);
 

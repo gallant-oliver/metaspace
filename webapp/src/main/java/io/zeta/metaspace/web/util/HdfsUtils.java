@@ -109,7 +109,7 @@ public class HdfsUtils {
         }
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(fs.open(new Path(hdfsFilePath)), UTF_8))) {
             List<String> result = new ArrayList<>();
-            for (int i = 0; i <= lines || lines < 0; i++) {
+            for (int i = 0; i < lines || lines < 0; i++) {
                 String line = reader.readLine();
                 if (line == null)
                     break;

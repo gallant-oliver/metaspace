@@ -10,6 +10,7 @@ public class TableSchema {
     String instance;
     //指定数据库
     List<String> databases;
+    //指定数据表
     String table;
     //只同步数据库
     boolean allDatabase;

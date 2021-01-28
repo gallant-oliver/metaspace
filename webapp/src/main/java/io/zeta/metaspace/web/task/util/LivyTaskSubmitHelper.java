@@ -119,7 +119,11 @@ public class LivyTaskSubmitHelper {
 
 
     public static String getOutName(String name) {
-        return "_OUT_" + name.replace("-", "_");
+        String tmp=null;
+        if(!StringUtils.isEmpty(name)){
+            tmp=name.replace("-", "_");
+        }
+        return "_OUT_" + tmp;
     }
 
     private String escapeCharacter(String str, String regex) {

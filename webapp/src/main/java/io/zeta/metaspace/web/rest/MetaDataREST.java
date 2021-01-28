@@ -13,6 +13,7 @@
 package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datasource.DataSourceHead;
@@ -506,9 +507,9 @@ public class MetaDataREST {
     @Path("/tag/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Tag> getTag(@PathParam("guid") String guid) throws AtlasBaseException {
+    public List<Tag> getTag(@PathParam("guid") String guid, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            return tableTagService.getTags(guid);
+            return tableTagService.getTags(guid,tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取标签失败");
         }
@@ -628,7 +629,8 @@ public class MetaDataREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public DownloadUri downloadExcelTemplate(List<String> tableGuidList) throws AtlasBaseException {
         try {
-            return ExportDataPathUtils.generateURL(httpServletRequest.getRequestURL().toString(), tableGuidList);
+            String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/metadata/export";
+            return ExportDataPathUtils.generateURL(url, tableGuidList);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "下载报告失败");
         }
@@ -886,8 +888,8 @@ public class MetaDataREST {
     @Path("/rdbms/table/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public RDBMSTable getTableInfoById(@PathParam("tableId") String tableId) throws AtlasBaseException {
-        return metadataService.getRDBMSTableInfoById(tableId);
+    public RDBMSTable getTableInfoById(@PathParam("tableId") String tableId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return metadataService.getRDBMSTableInfoById(tableId,tenantId);
     }
 
     /**

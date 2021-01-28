@@ -485,7 +485,9 @@ public interface UserGroupDAO {
 
     @Select("<script>select count(*) over() as total , t.* from ( select DISTINCT tableinfo.source_id as sourceId,(case tableinfo.source_id = 'hive' when true then  'hive' else  data_source.source_name end) as sourceName ,( case (select count(*)>0  from data_source where source_id = tableinfo.source_id) or (tableinfo.source_id = 'hive') when true then 'ACTIVE' else 'DELETED' end ) as sourceStatus from category,table_relation,tableinfo " +
             " left join data_source on data_source.source_id = tableinfo.source_id " +
-            " where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and databasestatus='ACTIVE' and category.tenantid=#{tenantId} and category.guid in " +
+            " where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and databasestatus='ACTIVE' and category.tenantid=#{tenantId} " +
+            " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive')" +
+            "  and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
@@ -519,6 +521,7 @@ public interface UserGroupDAO {
             "    #{item}" +
             "    </foreach>" +
             "    and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/' " +
+            "    and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') " +
             "    and ( tableinfo.source_id != 'hive' or tableinfo.dbname in " +
             "    <foreach item='item' index='index' collection='databases'" +
             "    open='(' separator=',' close=')'>" +
@@ -552,12 +555,13 @@ public interface UserGroupDAO {
             "    #{item}" +
             "    </foreach>" +
             "     and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/' " +
+            "    and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') " +
             "    and ( tableinfo.source_id != 'hive' or tableinfo.dbname in " +
             "    <foreach item='item' index='index' collection='databases'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
             "    </foreach>) ) t" +
-            "     order by t.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}" +
+            "     order by t.tableguid <if test='limit!= -1'>limit #{limit}</if> offset #{offset}" +
             "</script>")
     public List<TechnologyInfo.Table> getTableInfosV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 

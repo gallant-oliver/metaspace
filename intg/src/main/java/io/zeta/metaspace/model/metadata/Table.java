@@ -20,6 +20,7 @@ import lombok.Data;
 import java.io.Serializable;
 import java.util.List;
 
+@Data
 public class Table implements Serializable {
     private String tableId;
     private String tableName;
@@ -49,6 +50,9 @@ public class Table implements Serializable {
     private String dataWarehouseDescription;
     @JsonIgnore
     private int total;
+
+    private String sourceId;
+    private String sourceName;
 
     public int getTotal() {
         return total;

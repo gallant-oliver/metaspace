@@ -21,33 +21,28 @@ package io.zeta.metaspace.web.util;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.zeta.metaspace.MetaspaceConfig;
-import io.zeta.metaspace.model.sync.SyncTaskInstance;
-import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
-import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
-import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
-import io.zeta.metaspace.web.metadata.IMetaDataProvider;
-import io.zeta.metaspace.web.metadata.MetaStoreBridgeUtils;
 import io.zeta.metaspace.model.TableSchema;
-import io.zeta.metaspace.web.service.DataManageService;
-import org.apache.atlas.*;
+import io.zeta.metaspace.model.sync.SyncTaskInstance;
+import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
+import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
+import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
+import io.zeta.metaspace.web.metadata.MetaStoreBridgeUtils;
+import org.apache.atlas.ApplicationProperties;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.hook.AtlasHookException;
 import org.apache.atlas.model.instance.*;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
-import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
-import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStream;
-import org.apache.atlas.repository.store.graph.v2.EntityGraphRetriever;
-import org.apache.atlas.type.AtlasEntityType;
-import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.utils.HdfsNameServiceResolver;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.TableType;
@@ -63,15 +58,11 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -144,6 +135,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
     /**
      * import all database
+     *
      * @throws Exception
      */
     public void importDatabases(String taskInstanceId, TableSchema tableSchema) throws Exception {
@@ -250,6 +242,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
     /**
      * Imports all tables for the given db
+     *
      * @param dbEntity
      * @param databaseName
      * @param failOnError
@@ -309,52 +302,66 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
                 LOG.info("ignoring table {}", tableQualifiedName);
                 return 1;
             }
-            AtlasEntityWithExtInfo tableEntity = registerTable(dbEntity, table);
 
-            if (table.getTableType() == TableType.EXTERNAL_TABLE) {
-                AtlasEntityWithExtInfo processEntity = findProcessEntity(tableQualifiedName);
+            InterProcessMutex lock = zkLockUtils.getInterProcessMutex(tableQualifiedName);
 
-                if (processEntity == null) {
-                    String tableLocation = isConvertHdfsPathToLowerCase() ? lower(table.getDataLocation().toString()) : table.getDataLocation().toString();
-                    String query = getCreateTableString(table, tableLocation);
-                    AtlasEntity pathInst = toHdfsPathEntity(tableLocation);
-                    AtlasEntity tableInst = tableEntity.getEntity();
-                    AtlasEntity processInst = new AtlasEntity(HiveDataTypes.HIVE_PROCESS.getName());
-                    long now = System.currentTimeMillis();
+            try {
+                LOG.info("尝试拿锁 : " + Thread.currentThread().getName() + " " + tableQualifiedName);
+                if (lock.acquire(LOCK_TIME_OUT_TIME, TimeUnit.MINUTES)) {
+                    LOG.info("拿锁成功 : " + Thread.currentThread().getName() + " " + tableQualifiedName);
+                    AtlasEntityWithExtInfo tableEntity = registerTable(dbEntity, table);
 
-                    processInst.setAttribute(ATTRIBUTE_QUALIFIED_NAME, tableQualifiedName);
-                    processInst.setAttribute(ATTRIBUTE_NAME, query);
-                    processInst.setAttribute(ATTRIBUTE_CLUSTER_NAME, clusterName);
-                    processInst.setAttribute(ATTRIBUTE_INPUTS, Collections.singletonList(BaseHiveEvent.getObjectId(pathInst)));
-                    processInst.setAttribute(ATTRIBUTE_OUTPUTS, Collections.singletonList(BaseHiveEvent.getObjectId(tableInst)));
-                    processInst.setAttribute(ATTRIBUTE_USER_NAME, table.getOwner());
-                    processInst.setAttribute(ATTRIBUTE_START_TIME, now);
-                    processInst.setAttribute(ATTRIBUTE_END_TIME, now);
-                    processInst.setAttribute(ATTRIBUTE_OPERATION_TYPE, "CREATETABLE");
-                    processInst.setAttribute(ATTRIBUTE_QUERY_TEXT, query);
-                    processInst.setAttribute(ATTRIBUTE_QUERY_ID, query);
-                    processInst.setAttribute(ATTRIBUTE_QUERY_PLAN, "{}");
-                    processInst.setAttribute(ATTRIBUTE_RECENT_QUERIES, Collections.singletonList(query));
+                    if (table.getTableType() == TableType.EXTERNAL_TABLE) {
+                        AtlasEntityWithExtInfo processEntity = findProcessEntity(tableQualifiedName);
 
-                    AtlasEntitiesWithExtInfo createTableProcess = new AtlasEntitiesWithExtInfo();
+                        if (processEntity == null) {
+                            String tableLocation = isConvertHdfsPathToLowerCase() ? lower(table.getDataLocation().toString()) : table.getDataLocation().toString();
+                            String query = getCreateTableString(table, tableLocation);
+                            AtlasEntity pathInst = toHdfsPathEntity(tableLocation);
+                            AtlasEntity tableInst = tableEntity.getEntity();
+                            AtlasEntity processInst = new AtlasEntity(HiveDataTypes.HIVE_PROCESS.getName());
+                            long now = System.currentTimeMillis();
 
-                    createTableProcess.addEntity(processInst);
-                    createTableProcess.addEntity(pathInst);
+                            processInst.setAttribute(ATTRIBUTE_QUALIFIED_NAME, tableQualifiedName);
+                            processInst.setAttribute(ATTRIBUTE_NAME, query);
+                            processInst.setAttribute(ATTRIBUTE_CLUSTER_NAME, clusterName);
+                            processInst.setAttribute(ATTRIBUTE_INPUTS, Collections.singletonList(BaseHiveEvent.getObjectId(pathInst)));
+                            processInst.setAttribute(ATTRIBUTE_OUTPUTS, Collections.singletonList(BaseHiveEvent.getObjectId(tableInst)));
+                            processInst.setAttribute(ATTRIBUTE_USER_NAME, table.getOwner());
+                            processInst.setAttribute(ATTRIBUTE_START_TIME, now);
+                            processInst.setAttribute(ATTRIBUTE_END_TIME, now);
+                            processInst.setAttribute(ATTRIBUTE_OPERATION_TYPE, "CREATETABLE");
+                            processInst.setAttribute(ATTRIBUTE_QUERY_TEXT, query);
+                            processInst.setAttribute(ATTRIBUTE_QUERY_ID, query);
+                            processInst.setAttribute(ATTRIBUTE_QUERY_PLAN, "{}");
+                            processInst.setAttribute(ATTRIBUTE_RECENT_QUERIES, Collections.singletonList(query));
 
-                    registerInstances(createTableProcess);
-                } else {
-                    LOG.info("Process {} is already registered", tableQualifiedName);
+                            AtlasEntitiesWithExtInfo createTableProcess = new AtlasEntitiesWithExtInfo();
+
+                            createTableProcess.addEntity(processInst);
+                            createTableProcess.addEntity(pathInst);
+
+                            registerInstances(createTableProcess);
+                        } else {
+                            LOG.info("Process {} is already registered", tableQualifiedName);
+                        }
+                    }
+                    return 1;
+                }
+                throw new AtlasBaseException("获取锁超时：" + tableQualifiedName);
+            } finally {
+                try {
+                    lock.release();
+                } catch (Exception e) {
+                    LOG.error("lock release error",e);
                 }
             }
-
-            return 1;
         } catch (Exception e) {
             LOG.error("Import failed for hive_table {}", tableName, e);
 
             if (failOnError) {
                 throw e;
             }
-
             return 0;
         }
     }
@@ -365,6 +372,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
     /**
      * Checks if db is already registered, else creates and registers db entity
+     *
      * @param databaseName
      * @return
      * @throws Exception
@@ -374,18 +382,36 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         Database db = hiveMetaStoreClient.getDatabase(databaseName);
 
         if (db != null) {
-            ret = findDatabase(clusterName, databaseName);
+            String dbQualifiedName = getDBQualifiedName(clusterName, databaseName);
 
-            if (ret == null) {
-                ret = registerInstance(new AtlasEntityWithExtInfo(toDbEntity(db)));
-            } else {
-                LOG.info("Database {} is already registered - id={}. Updating it.", databaseName, ret.getEntity().getGuid());
+            InterProcessMutex lock = zkLockUtils.getInterProcessMutex(dbQualifiedName);
 
-                ret.setEntity(toDbEntity(db, ret.getEntity()));
+            try {
+                LOG.info("尝试拿锁 : " + Thread.currentThread().getName() + " " + dbQualifiedName);
+                if (lock.acquire(LOCK_TIME_OUT_TIME, TimeUnit.MINUTES)) {
+                    LOG.info("拿锁成功 : " + Thread.currentThread().getName() + " " + dbQualifiedName);
+                    ret = findDatabase(clusterName, databaseName);
 
-                updateInstance(ret);
+                    if (ret == null) {
+                        ret = registerInstance(new AtlasEntityWithExtInfo(toDbEntity(db)));
+                    } else {
+                        LOG.info("Database {} is already registered - id={}. Updating it.", databaseName, ret.getEntity().getGuid());
 
-                dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()));
+                        ret.setEntity(toDbEntity(db, ret.getEntity()));
+
+                        updateInstance(ret);
+
+                        dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()));
+                    }
+                    return ret;
+                }
+                throw new AtlasBaseException("获取锁超时：" + dbQualifiedName);
+            } finally {
+                try {
+                    lock.release();
+                } catch (Exception e) {
+                    LOG.error("lock release error",e);
+                }
             }
         }
 
@@ -409,7 +435,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
                 AtlasRelatedObjectId atlasRelatedObjectId = new AtlasRelatedObjectId();
                 atlasRelatedObjectId.setDisplayText(String.valueOf(dbEntity.getAttribute(ATTRIBUTE_NAME)));
-                ret.getEntity().setRelationshipAttribute("db",atlasRelatedObjectId);
+                ret.getEntity().setRelationshipAttribute("db", atlasRelatedObjectId);
                 dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()));
                 ret.getEntity().removeRelationshipAttribute("db");
             }
@@ -422,6 +448,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
     /**
      * Registers an entity in atlas
+     *
      * @param entities
      * @return
      * @throws Exception
@@ -460,6 +487,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
     /**
      * Create a Hive Database entity
+     *
      * @param hiveDB The Hive {@link Database} object from which to map properties
      * @return new Hive Database AtlasEntity
      * @throws HiveException
@@ -493,7 +521,8 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
     /**
      * Create a new table instance in Atlas
-     * @param  database AtlasEntity for Hive  {@link AtlasEntity} to which this table belongs
+     *
+     * @param database  AtlasEntity for Hive  {@link AtlasEntity} to which this table belongs
      * @param hiveTable reference to the Hive {@link Table} from which to map properties
      * @return Newly created Hive AtlasEntity
      * @throws Exception
@@ -681,8 +710,9 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
     /**
      * Gets the atlas entity for the database
-     * @param databaseName  database Name
-     * @param clusterName    cluster name
+     *
+     * @param databaseName database Name
+     * @param clusterName  cluster name
      * @return AtlasEntity for database if exists, else null
      * @throws Exception
      */
@@ -755,8 +785,9 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
     /**
      * Construct the qualified name used to uniquely identify a Table instance in Atlas.
+     *
      * @param clusterName Name of the cluster to which the Hive component belongs
-     * @param table hive table for which the qualified name is needed
+     * @param table       hive table for which the qualified name is needed
      * @return Unique qualified name to identify the Table instance in Atlas.
      */
     private static String getTableQualifiedName(String clusterName, Table table) {
@@ -769,8 +800,9 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
     /**
      * Construct the qualified name used to uniquely identify a Database instance in Atlas.
+     *
      * @param clusterName Name of the cluster to which the Hive component belongs
-     * @param dbName Name of the Hive database
+     * @param dbName      Name of the Hive database
      * @return Unique qualified name to identify the Database instance in Atlas.
      */
     public static String getDBQualifiedName(String clusterName, String dbName) {
@@ -779,9 +811,10 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
     /**
      * Construct the qualified name used to uniquely identify a Table instance in Atlas.
-     * @param clusterName Name of the cluster to which the Hive component belongs
-     * @param dbName Name of the Hive database to which the Table belongs
-     * @param tableName Name of the Hive table
+     *
+     * @param clusterName      Name of the cluster to which the Hive component belongs
+     * @param dbName           Name of the Hive database to which the Table belongs
+     * @param tableName        Name of the Hive table
      * @param isTemporaryTable is this a temporary table
      * @return Unique qualified name to identify the Table instance in Atlas.
      */
@@ -809,9 +842,10 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
     /**
      * Construct the qualified name used to uniquely identify a Table instance in Atlas.
+     *
      * @param clusterName Name of the cluster to which the Hive component belongs
-     * @param dbName Name of the Hive database to which the Table belongs
-     * @param tableName Name of the Hive table
+     * @param dbName      Name of the Hive database to which the Table belongs
+     * @param tableName   Name of the Hive table
      * @return Unique qualified name to identify the Table instance in Atlas.
      */
     public static String getTableQualifiedName(String clusterName, String dbName, String tableName) {

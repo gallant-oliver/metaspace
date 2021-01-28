@@ -290,6 +290,19 @@
             <url>http://maven.gridsum.com:8081/nexus/content/repositories/gridsum-releases</url>
         </repository>
     </distributionManagement>
+    <repositories>
+        <repository>
+            <id>gridsum</id>
+            <name>gridsum maven</name>
+            <url>http://repository.gridsum.com/repository/maven-public/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 
     <dependencyManagement>
         <dependencies>
