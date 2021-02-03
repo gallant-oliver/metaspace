@@ -215,28 +215,31 @@ public class TechnicalREST {
     }
 
     /**
-     * 删除目录 V2
+     * 单个或批量删除目录 V2
      *
-     * @param categoryGuid
+     * @param categoryGuids
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.TECHNICAL,ModuleEnum.AUTHORIZATION})
+    @Permission({ModuleEnum.TECHNICAL, ModuleEnum.AUTHORIZATION})
     @DELETE
-    @Path("/category/{categoryGuid}")
+    @Path("/category/batch")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
-    public Result deleteCategory(@PathParam("categoryGuid") String categoryGuid, @HeaderParam("tenantId") String tenantId) throws Exception {
-        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
+    public Result deleteCategory(List<String> categoryGuids, @HeaderParam("tenantId") String tenantId) throws Exception {
         AtlasPerfTracer perf = null;
+        CategoryDeleteReturn deleteReturn = null;
         try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteCategory(" + categoryGuid + ")");
+            for (String categoryGuid : categoryGuids) {
+                Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
+                if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                    perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteCategory(" + categoryGuid + ")");
+                }
+                CategoryEntityV2 category = dataManageService.getCategory(categoryGuid, tenantId);
+                HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), category.getName());
+                deleteReturn = dataManageService.deleteCategory(categoryGuid, tenantId, CATEGORY_TYPE);
             }
-            CategoryEntityV2 category = dataManageService.getCategory(categoryGuid, tenantId);
-            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), category.getName());
-            CategoryDeleteReturn deleteReturn = dataManageService.deleteCategory(categoryGuid, tenantId, CATEGORY_TYPE);
             return ReturnUtil.success(deleteReturn);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
