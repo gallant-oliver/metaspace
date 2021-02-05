@@ -51,6 +51,7 @@ public interface RelationDAO {
     @Select({"<script>",
              " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description",
              " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid ",
+             " and status = 'ACTIVE' " ,
              " and ( tableinfo.dbname in " ,
              " <foreach item='item' index='index' collection='databases'" ,
              " open='(' separator=',' close=')'>" ,
