@@ -443,26 +443,30 @@ public class BusinessREST {
     }
 
     /**
-     * 删除目录
-     * @param categoryGuid
+     * 单个或批量删除目录
+     *
+     * @param categoryGuids
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.BUSINESS,ModuleEnum.AUTHORIZATION})
+    @Permission({ModuleEnum.BUSINESS, ModuleEnum.AUTHORIZATION})
     @DELETE
-    @Path("/categories/{categoryGuid}")
+    @Path("/categories/batch")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result deleteCategory(@PathParam("categoryGuid") String categoryGuid,@HeaderParam("tenantId")String tenantId) throws Exception {
-        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
+    public Result deleteCategory(List<String> categoryGuids, @HeaderParam("tenantId") String tenantId) throws Exception {
         AtlasPerfTracer perf = null;
+        CategoryDeleteReturn deleteReturn = null;
         try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.deleteCategory(" + categoryGuid + ")");
+            for (String categoryGuid : categoryGuids) {
+                Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
+                if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                    perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.deleteCategory(" + categoryGuid + ")");
+                }
+                deleteReturn = dataManageService.deleteCategory(categoryGuid, tenantId, CATEGORY_TYPE);
             }
-            CategoryDeleteReturn deleteReturn = dataManageService.deleteCategory(categoryGuid, tenantId, CATEGORY_TYPE);
             return ReturnUtil.success(deleteReturn);
-        }  catch (CannotCreateTransactionException e) {
+        } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
             AtlasPerfTracer.log(perf);
