@@ -78,6 +78,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.net.ntp.TimeStamp;
 import org.apache.directory.api.util.Strings;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -304,6 +305,8 @@ public class DataManageService {
             entity.setGuid(newCategoryGuid);
             //name
             entity.setName(name);
+            //创建人
+            entity.setCreator(user.getUserId());
             //createtime
             entity.setCreateTime(io.zeta.metaspace.utils.DateUtils.currentTimestamp());
             //description
@@ -382,7 +385,9 @@ public class DataManageService {
         entity.setLevel(1);
         entity.setUpBrotherCategoryGuid(lastCategoryId);
         categoryDao.add(entity, tenantId);
-        categoryDao.updateDownBrotherCategoryGuid(lastCategoryId, entity.getGuid(), tenantId);
+        User user = AdminUtils.getUserData();
+        Timestamp timestamp=new Timestamp(System.currentTimeMillis());
+        categoryDao.updateDownBrotherCategoryGuid(lastCategoryId, entity.getGuid(), tenantId,user.getUserId(),timestamp);
         CategoryPrivilege returnEntity = new CategoryPrivilege();
         returnEntity.setGuid(entity.getGuid());
         returnEntity.setName(entity.getName());
@@ -469,12 +474,14 @@ public class DataManageService {
         //qualifiedName
         entity.setQualifiedName(qualifiedName.toString());
 
+        User user = AdminUtils.getUserData();
+        Timestamp timestamp=new Timestamp(System.currentTimeMillis());
         //子目录
         if (StringUtils.isNotEmpty(newCategoryParentGuid)) {
             String lastChildGuid = categoryDao.queryLastChildCategory(info.getGuid(), tenantId);
             if (StringUtils.isNotEmpty(lastChildGuid)) {
                 entity.setUpBrotherCategoryGuid(lastChildGuid);
-                categoryDao.updateDownBrotherCategoryGuid(lastChildGuid, newCategoryGuid, tenantId);
+                categoryDao.updateDownBrotherCategoryGuid(lastChildGuid, newCategoryGuid, tenantId,user.getUserId(),timestamp);
             }
         } else {
             //同级目录
@@ -485,17 +492,17 @@ public class DataManageService {
                 String upBrotherGuid = currentEntity.getUpBrotherCategoryGuid();
                 if (StringUtils.isNotEmpty(upBrotherGuid)) {
                     entity.setUpBrotherCategoryGuid(upBrotherGuid);
-                    categoryDao.updateDownBrotherCategoryGuid(upBrotherGuid, newCategoryGuid, tenantId);
+                    categoryDao.updateDownBrotherCategoryGuid(upBrotherGuid, newCategoryGuid, tenantId,user.getUserId(),timestamp);
                 }
-                categoryDao.updateUpBrotherCategoryGuid(info.getGuid(), newCategoryGuid, tenantId);
+                categoryDao.updateUpBrotherCategoryGuid(info.getGuid(), newCategoryGuid, tenantId,user.getUserId(),timestamp);
             } else if (StringUtils.isNotEmpty(info.getGuid()) && Strings.equals(info.getDirection(), down)) {
                 entity.setUpBrotherCategoryGuid(info.getGuid());
                 String downBrotherGuid = currentEntity.getDownBrotherCategoryGuid();
                 if (StringUtils.isNotEmpty(downBrotherGuid)) {
                     entity.setDownBrotherCategoryGuid(downBrotherGuid);
-                    categoryDao.updateUpBrotherCategoryGuid(downBrotherGuid, newCategoryGuid, tenantId);
+                    categoryDao.updateUpBrotherCategoryGuid(downBrotherGuid, newCategoryGuid, tenantId,user.getUserId(),timestamp);
                 }
-                categoryDao.updateDownBrotherCategoryGuid(info.getGuid(), newCategoryGuid, tenantId);
+                categoryDao.updateDownBrotherCategoryGuid(info.getGuid(), newCategoryGuid, tenantId,user.getUserId(),timestamp);
             }
         }
         if (type == 3 || type == 4) {
@@ -559,14 +566,15 @@ public class DataManageService {
         }
         String upBrotherCategoryGuid = currentCatalog.getUpBrotherCategoryGuid();
         String downBrotherCategoryGuid = currentCatalog.getDownBrotherCategoryGuid();
+        User user = AdminUtils.getUserData();
+        Timestamp timestamp=new Timestamp(System.currentTimeMillis());
         if (StringUtils.isNotEmpty(upBrotherCategoryGuid)) {
-            categoryDao.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid, tenantId);
+            categoryDao.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid, tenantId,user.getUserId(),timestamp);
         }
         if (StringUtils.isNotEmpty(downBrotherCategoryGuid)) {
-            categoryDao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid, tenantId);
+            categoryDao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid, tenantId,user.getUserId(),timestamp);
         }
         if (TenantService.defaultTenant.equals(tenantId)) {
-            User user = AdminUtils.getUserData();
             List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
             if (roles.stream().allMatch(role -> role.getStatus() == 0)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
@@ -614,7 +622,9 @@ public class DataManageService {
             entity.setQualifiedName(qualifiedName.toString());
             entity.setDescription(info.getDescription());
             entity.setSafe(info.getSafe());
-            categoryDao.updateCategoryInfo(entity, tenantId);
+            User user = AdminUtils.getUserData();
+            Timestamp timestamp=new Timestamp(System.currentTimeMillis());
+            categoryDao.updateCategoryInfo(entity, tenantId,user.getUserId(),timestamp);
             return "success";
         } catch (SQLException e) {
             LOG.error("数据库服务异常", e);
@@ -1814,7 +1824,8 @@ public class DataManageService {
             upChild = new CategoryEntityV2();
         }
         newCategorys.put(upGuid, upChild);
-        Timestamp createTime = io.zeta.metaspace.utils.DateUtils.currentTimestamp();
+        Timestamp timestamp = io.zeta.metaspace.utils.DateUtils.currentTimestamp();
+        User user = AdminUtils.getUserData();
         String upId = upGuid;
         for (CategoryExport categoryExport : categoryExports) {
             StringBuffer qualifiedName = new StringBuffer();
@@ -1827,7 +1838,8 @@ public class DataManageService {
             categoryEntityV2.setGuid(categoryExport.getGuid());
             categoryEntityV2.setParentCategoryGuid(parentCategoryGuid);
             categoryEntityV2.setLevel(level + 1);
-            categoryEntityV2.setCreateTime(createTime);
+            categoryEntityV2.setCreateTime(timestamp);
+            categoryEntityV2.setCreator(user.getUserId());
 
             if (StringUtils.isNotEmpty(parentQualifiedName) && parentQualifiedName.length() > 0)
                 qualifiedName.append(parentQualifiedName + ".");
@@ -1843,11 +1855,12 @@ public class DataManageService {
         if (newCategorys.get(upId) != null) {
             newCategorys.get(upId).setDownBrotherCategoryGuid(downGuid);
         }
+
         if (upGuid != null) {
-            categoryDao.updateDownBrotherCategoryGuid(upGuid, upChild.getDownBrotherCategoryGuid(), tenantId);
+            categoryDao.updateDownBrotherCategoryGuid(upGuid, upChild.getDownBrotherCategoryGuid(), tenantId,user.getUserId(),timestamp);
         }
         if (downGuid != null) {
-            categoryDao.updateUpBrotherCategoryGuid(downGuid, upId, tenantId);
+            categoryDao.updateUpBrotherCategoryGuid(downGuid, upId, tenantId,user.getUserId(),timestamp);
         }
 
         CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
@@ -2040,24 +2053,25 @@ public class DataManageService {
 
             String oldUpBrotherCategoryGuid = categoryEntityV2.getUpBrotherCategoryGuid();
             String oldDownBrotherCategoryGuid = categoryEntityV2.getDownBrotherCategoryGuid();
-
+            User user=AdminUtils.getUserData();
+            Timestamp timestamp=new Timestamp(System.currentTimeMillis());
             //修改原所在位置目录结构
             if (oldUpBrotherCategoryGuid != null && oldUpBrotherCategoryGuid.length() != 0) {
-                categoryDao.updateDownBrotherCategoryGuid(oldUpBrotherCategoryGuid, oldDownBrotherCategoryGuid, tenantId);
+                categoryDao.updateDownBrotherCategoryGuid(oldUpBrotherCategoryGuid, oldDownBrotherCategoryGuid, tenantId,user.getUserId(),timestamp);
             }
             if (oldDownBrotherCategoryGuid != null && oldDownBrotherCategoryGuid.length() != 0) {
-                categoryDao.updateUpBrotherCategoryGuid(oldDownBrotherCategoryGuid, oldUpBrotherCategoryGuid, tenantId);
+                categoryDao.updateUpBrotherCategoryGuid(oldDownBrotherCategoryGuid, oldUpBrotherCategoryGuid, tenantId,user.getUserId(),timestamp);
             }
             //修改移动后的结构
             if (newUpBrotherCategoryGuid != null && newUpBrotherCategoryGuid.length() != 0) {
-                categoryDao.updateDownBrotherCategoryGuid(newUpBrotherCategoryGuid, category.getGuid(), tenantId);
+                categoryDao.updateDownBrotherCategoryGuid(newUpBrotherCategoryGuid, category.getGuid(), tenantId,user.getUserId(),timestamp);
             }
             if (newDownBrotherCategoryGuid != null && newDownBrotherCategoryGuid.length() != 0) {
-                categoryDao.updateUpBrotherCategoryGuid(newDownBrotherCategoryGuid, category.getGuid(), tenantId);
+                categoryDao.updateUpBrotherCategoryGuid(newDownBrotherCategoryGuid, category.getGuid(), tenantId,user.getUserId(),timestamp);
             }
             //修改自己的目录结构
-            categoryDao.updateUpBrotherCategoryGuid(category.getGuid(), newUpBrotherCategoryGuid, tenantId);
-            categoryDao.updateDownBrotherCategoryGuid(category.getGuid(), newDownBrotherCategoryGuid, tenantId);
+            categoryDao.updateUpBrotherCategoryGuid(category.getGuid(), newUpBrotherCategoryGuid, tenantId,user.getUserId(),timestamp);
+            categoryDao.updateDownBrotherCategoryGuid(category.getGuid(), newDownBrotherCategoryGuid, tenantId,user.getUserId(),timestamp);
         } catch (SQLException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "移动目录失败");
         }
@@ -2082,7 +2096,9 @@ public class DataManageService {
             childCategorys = userGroupDAO.getChildCategorysAndSort(Arrays.asList(sortCategory.getGuid()), type, sortCategory.getSort(), sortCategory.getOrder(), tenantId);
         }
         if (childCategorys != null && childCategorys.size() != 0) {
-            categoryDao.updateCategoryTree(childCategorys, tenantId);
+            User user=AdminUtils.getUserData();
+            Timestamp timestamp=new Timestamp(System.currentTimeMillis());
+            categoryDao.updateCategoryTree(childCategorys, tenantId,user.getUserId(),timestamp);
         }
     }
 
@@ -2142,7 +2158,9 @@ public class DataManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "文件异常：" + e.getMessage());
         }
         if (systemCategory.size() != 0) {
-            categoryDao.updateCategoryEntityV2Tree(systemCategory, tenantId);
+            User user=AdminUtils.getUserData();
+            Timestamp timestamp=new Timestamp(System.currentTimeMillis());
+            categoryDao.updateCategoryEntityV2Tree(systemCategory, tenantId,user.getUserId(),timestamp);
         }
         try {
             if (categories.size() != 0) {
@@ -2252,6 +2270,8 @@ public class DataManageService {
 
             category.setCategoryType(type);
             category.setCreateTime(createTime);
+            User user=AdminUtils.getUserData();
+            category.setCreator(user.getUserId());
             if (systemCategoryGuids.contains(category.getGuid())) {
                 systemCategoryGuids.remove(category.getGuid());
                 systemCategory.add(category);
@@ -2400,10 +2420,12 @@ public class DataManageService {
         String upId = category.getUpBrotherCategoryGuid();
         String downId = category.getDownBrotherCategoryGuid();
         String lastChildGuid = categoryDao.queryLastChildCategory(parentId, tenantId);
-        categoryDao.updateDownBrotherCategoryGuid(upId, downId, tenantId);
-        categoryDao.updateUpBrotherCategoryGuid(downId, upId, tenantId);
-        categoryDao.updateDownBrotherCategoryGuid(lastChildGuid, categoryId, tenantId);
-        categoryDao.updateParentCategoryGuid(categoryId, parentId, lastChildGuid, null, tenantId);
+        Timestamp timestamp=new Timestamp(System.currentTimeMillis());
+        User user=AdminUtils.getUserData();
+        categoryDao.updateDownBrotherCategoryGuid(upId, downId, tenantId,user.getUserId(),timestamp);
+        categoryDao.updateUpBrotherCategoryGuid(downId, upId, tenantId,user.getUserId(),timestamp);
+        categoryDao.updateDownBrotherCategoryGuid(lastChildGuid, categoryId, tenantId,user.getUserId(),timestamp);
+        categoryDao.updateParentCategoryGuid(categoryId, parentId, lastChildGuid, null, tenantId,user.getUserId(),timestamp);
     }
 
     /**

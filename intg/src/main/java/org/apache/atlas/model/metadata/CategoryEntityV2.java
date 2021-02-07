@@ -46,6 +46,13 @@ public class CategoryEntityV2 {
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
 
+    @JsonIgnore
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp updateTime;
+
+    private String creator;
+    private String updater;
+
     public Timestamp getCreateTime() {
         return createTime;
     }
@@ -85,6 +92,26 @@ public class CategoryEntityV2 {
         this.safe=safe;
         this.createTime=createTime;
     }
+
+    public CategoryEntityV2(String guid, String name, String description, String parentCategoryGuid, String upBrotherCategoryGuid, String downBrotherCategoryGuid, Integer categoryType,
+                            Integer level,String safe,Timestamp createTime,String qualifiedName,Timestamp updateTime,String creator,String updater) {
+        this.guid = guid;
+        this.name = name;
+        this.description = description;
+        this.upBrotherCategoryGuid = upBrotherCategoryGuid;
+        this.downBrotherCategoryGuid = downBrotherCategoryGuid;
+        this.parentCategoryGuid = parentCategoryGuid;
+        this.categoryType = categoryType;
+        this.level=level;
+        this.safe=safe;
+        this.createTime=createTime;
+        this.qualifiedName=qualifiedName;
+        this.updateTime=updateTime;
+        this.creator=creator;
+        this.updater=updater;
+    }
+
+
 
     public String getGuid() {
         return guid;
@@ -172,5 +199,29 @@ public class CategoryEntityV2 {
 
     public void setShow(boolean show) {
         this.show = show;
+    }
+
+    public Timestamp getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(Timestamp updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public String getCreator() {
+        return creator;
+    }
+
+    public void setCreator(String creator) {
+        this.creator = creator;
+    }
+
+    public String getUpdater() {
+        return updater;
+    }
+
+    public void setUpdater(String updater) {
+        this.updater = updater;
     }
 }
