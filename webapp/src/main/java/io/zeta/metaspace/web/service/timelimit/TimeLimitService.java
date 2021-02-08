@@ -1,5 +1,7 @@
 package io.zeta.metaspace.web.service.timelimit;
 
+import io.zeta.metaspace.model.apigroup.ApiGroupV2;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.timelimit.TimeLimitRequest;
 import io.zeta.metaspace.model.timelimit.TimeLimitSearch;
 import io.zeta.metaspace.model.timelimit.TimelimitEntity;
@@ -17,10 +19,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * 时间限定服务层
+ */
 @Service
 public class TimeLimitService implements TimeLimitServiceImp{
 
@@ -46,13 +52,12 @@ public class TimeLimitService implements TimeLimitServiceImp{
             timelimitEntity.setEndTime(req.getEndTimeTimestamp());
             timelimitEntity.setName(req.getName());
             timelimitEntity.setState("1");//新建
-            timelimitEntity.setType(req.getGrade());
+            timelimitEntity.setGrade(req.getGrade());
             timelimitEntity.setUpdater(userData.getUserId());
             timelimitEntity.setUpdateTime(new Timestamp(new Date().getTime()));
             timelimitEntity.setDesc(req.getDesc());
             timelimitEntity.setTenantId(tenantId);
-
-
+            timelimitEntity.setAppreveId(req.getAppreveId());//审批组ID
             timeLimitDAO.addTimeLimit(timelimitEntity, tenantId);
         }catch (AtlasBaseException e){
             LOG.error(e.getMessage());
@@ -66,8 +71,47 @@ public class TimeLimitService implements TimeLimitServiceImp{
     }
 
     @Override
-    public TimelimitEntity search(TimeLimitSearch search, String tenantId) {
-        // TODO: 2021-02-07 实现时间限定的搜索业务
-        return null;
+    public void delTimeLimit(TimeLimitRequest req, String tenantId) {
+        timeLimitDAO.deleteTimeLimit(req.getIds());
+    }
+
+    @Override
+    public PageResult<TimelimitEntity> search(TimeLimitSearch search, String tenantId) {
+        try{
+            PageResult<TimelimitEntity> result = new PageResult<>();
+            List<TimelimitEntity> timeLimitList = timeLimitDAO.getTimeLimitList(search, tenantId);
+            if (timeLimitList==null||timeLimitList.size()==0){
+                return result;
+            }
+            result.setLists(timeLimitList);
+            result.setCurrentSize(timeLimitList.size());
+            result.setTotalSize(timeLimitList.get(0).getTotal());
+            return result;
+        }catch (Exception e){
+            LOG.error(e.getMessage(),"查询时间列表失败");
+            throw e;
+        }
+    }
+
+    @Override
+    public void editTimeLimit(TimeLimitRequest request, String tenantId) {
+        try{
+            User userData = AdminUtils.getUserData(); //获取当前用户信息
+            TimelimitEntity timelimitEntity = new TimelimitEntity(); //数据实体
+            timelimitEntity.setId(request.getId());
+            timelimitEntity.setStartTime(request.getStartTimeTimestamp());
+            timelimitEntity.setEndTime(request.getEndTimeTimestamp());
+            timelimitEntity.setName(request.getName());
+            timelimitEntity.setGrade(request.getGrade());
+            timelimitEntity.setDesc(request.getDesc());
+            timelimitEntity.setTenantId(tenantId);
+            timelimitEntity.setVersion(request.getVersion());
+            timelimitEntity.setAppreveId(request.getAppreveId());//审批组ID
+            timelimitEntity.setUpdater(userData.getUserId());
+            timeLimitDAO.updateTimeLimit(timelimitEntity, tenantId);
+        }catch (Exception e){
+            LOG.error(e.getMessage(),"查询时间列表失败");
+            throw e;
+        }
     }
 }

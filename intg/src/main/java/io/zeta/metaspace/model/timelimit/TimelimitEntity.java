@@ -21,6 +21,12 @@ public class TimelimitEntity {
     private int version;
 
     /**
+     * 时间限定版本
+     */
+
+    private int total;
+
+    /**
      * 时间限定名称
      */
     private String name;
@@ -35,7 +41,7 @@ public class TimelimitEntity {
      * 时间限定类型
      */
 
-    private String type;
+    private String grade;
 
     /**
      * 开始时间
@@ -64,6 +70,12 @@ public class TimelimitEntity {
      */
 
     private String state; //初始化为新建
+
+    /**
+     * 审批组ID
+     */
+
+    private String appreveId;
 
     /**
      * delete flag

@@ -3,6 +3,7 @@ package io.zeta.metaspace.model.timelimit;
 import io.zeta.metaspace.model.metadata.Parameters;
 import org.apache.commons.net.ntp.TimeStamp;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 /**
@@ -10,9 +11,35 @@ import java.util.List;
  */
 public class TimeLimitSearch extends Parameters {
 
-    private String startTime;
+    public Timestamp getStartTime() {
+        return new Timestamp(Long.valueOf(startTime));
+    }
 
-    private String endTime;
+    public Timestamp getEndTime() {
+        return new Timestamp(Long.valueOf(endTime));
+    }
+
+    public List<String> getStatus() {
+        return status;
+    }
+
+    public void setStartTime(String startTime) {
+        this.startTime = startTime;
+    }
+
+    public void setEndTime(String endTime) {
+        this.endTime = endTime;
+    }
+
+    public void setStatus(List<String> status) {
+        this.status = status;
+    }
+
+    private String startTime; //查询时间戳
+
+    private String endTime; //查询时间戳
 
     private List<String> status;
+
+
 }

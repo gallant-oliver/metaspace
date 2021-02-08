@@ -25,6 +25,7 @@ package io.zeta.metaspace.web.rest.timelimit;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.share.QueryInfo;
 import io.zeta.metaspace.model.share.QueryResult;
+import io.zeta.metaspace.model.timelimit.TimeLimitOperEnum;
 import io.zeta.metaspace.model.timelimit.TimeLimitRequest;
 import io.zeta.metaspace.model.timelimit.TimeLimitSearch;
 import io.zeta.metaspace.web.service.DataShareService;
@@ -33,6 +34,7 @@ import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
+import org.restlet.resource.Patch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -70,6 +72,38 @@ public class TimeLimitREST {
     public Result list(TimeLimitSearch search, @HeaderParam("tenantId")String tenantId) throws Exception {
         try {
             return ReturnUtil.success(timeLimitService.search(search,tenantId)); //无异常返回成功信息
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @Patch
+    @Path("/timelimit/edit")
+    @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    public Result edit(TimeLimitRequest request, @HeaderParam("tenantId")String tenantId) throws Exception {
+        try {
+            timeLimitService.editTimeLimit(request,tenantId);
+            return ReturnUtil.success(); //无异常返回成功信息
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @POST
+    @Path("/timelimit/operate")
+    @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    public Result operate(TimeLimitRequest request, @HeaderParam("tenantId")String tenantId) throws Exception {
+        try {
+            if(TimeLimitOperEnum.PUBLISH.getCode().equals(request.getType())){  //发布操作
+
+            }else if(TimeLimitOperEnum.CANCEL.getCode().equals(request.getType())){ //下线
+
+            }else{ //删除
+                timeLimitService.delTimeLimit(request,tenantId);
+            }
+            return ReturnUtil.success(); //无异常返回成功信息
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
