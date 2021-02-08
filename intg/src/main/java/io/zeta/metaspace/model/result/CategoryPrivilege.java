@@ -37,7 +37,8 @@ public class CategoryPrivilege {
     private int level;
     private Integer objectCount;
     private String safe;
-    private String qualifiedName;
+    private String code;
+
 
     public CategoryPrivilege(CategoryPrivilegeV2 category){
         this.guid=category.getGuid();
@@ -175,12 +176,12 @@ public class CategoryPrivilege {
         this.objectCount = objectCount;
     }
 
-    public String getQualifiedName() {
-        return qualifiedName;
+    public String getCode() {
+        return code;
     }
 
-    public void setQualifiedName(String qualifiedName) {
-        this.qualifiedName = qualifiedName;
+    public void setCode(String code) {
+        this.code = code;
     }
 
     public static class Privilege{

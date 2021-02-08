@@ -52,6 +52,8 @@ public class CategoryEntityV2 {
 
     private String creator;
     private String updater;
+    //编码
+    private String code;
 
     public Timestamp getCreateTime() {
         return createTime;
@@ -94,7 +96,7 @@ public class CategoryEntityV2 {
     }
 
     public CategoryEntityV2(String guid, String name, String description, String parentCategoryGuid, String upBrotherCategoryGuid, String downBrotherCategoryGuid, Integer categoryType,
-                            Integer level,String safe,Timestamp createTime,String qualifiedName,Timestamp updateTime,String creator,String updater) {
+                            Integer level,String safe,Timestamp createTime,String qualifiedName,Timestamp updateTime,String creator,String updater,String code) {
         this.guid = guid;
         this.name = name;
         this.description = description;
@@ -109,6 +111,7 @@ public class CategoryEntityV2 {
         this.updateTime=updateTime;
         this.creator=creator;
         this.updater=updater;
+        this.code=code;
     }
 
 
@@ -223,5 +226,13 @@ public class CategoryEntityV2 {
 
     public void setUpdater(String updater) {
         this.updater = updater;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 }

@@ -285,6 +285,7 @@ public class DataManageService {
     @Transactional(rollbackFor = Exception.class)
     public CategoryPrivilege createCategory(CategoryInfoV2 info, Integer type, String tenantId) throws Exception {
         try {
+
             String currentCategoryGuid = info.getGuid();
             boolean authorized = info.isAuthorized();
             CategoryEntityV2 entity = new CategoryEntityV2();
@@ -316,9 +317,17 @@ public class DataManageService {
             if (StringUtils.isEmpty(entity.getSafe())) {
                 entity.setSafe("1");
             }
+            entity.setCode(info.getCode());
 
             //创建一级目录
             if (StringUtils.isEmpty(currentCategoryGuid)) {
+                if(type==5){
+                    //判断一级指标域是否已经存在
+                    Set<CategoryEntityV2> ces=categoryDao.getCategoryByNameOrCode(tenantId,type,info.getName(),info.getCode(),1);
+                    if(ces!=null && ces.size()>0){
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录名称或编码已被使用");
+                    }
+                }
                 if (TenantService.defaultTenant.equals(tenantId)) {
                     List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
                     if (!roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))) {
@@ -346,6 +355,13 @@ public class DataManageService {
             if (Objects.isNull(categoryDao.queryByGuidV2(currentCategoryGuid, tenantId))) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录已被删除，请刷新后重新操作");
             }
+            if(type==5){
+                //判断二级指标域是否已经存在
+                Set<CategoryEntityV2> ces=categoryDao.getCategoryByNameOrCode(tenantId,type,info.getName(),info.getCode(),2);
+                if(ces!=null && ces.size()>0){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录名称或编码已被使用");
+                }
+            }
             CategoryPrivilege.Privilege privilege = createOtherCategory(entity, type, info, tenantId);
             categoryDao.add(entity, tenantId);
             CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid, tenantId);
@@ -363,6 +379,9 @@ public class DataManageService {
                 if (typeBoolean && isAdmin && isPrivilege) {
                     privilege.setAsh(true);
                 }
+            }
+            if(type==5){
+                privilege.setAddChildren(false);
             }
             returnEntity.setPrivilege(privilege);
             return returnEntity;
@@ -622,6 +641,7 @@ public class DataManageService {
             entity.setQualifiedName(qualifiedName.toString());
             entity.setDescription(info.getDescription());
             entity.setSafe(info.getSafe());
+            entity.setCode(info.getCode());
             User user = AdminUtils.getUserData();
             Timestamp timestamp=new Timestamp(System.currentTimeMillis());
             categoryDao.updateCategoryInfo(entity, tenantId,user.getUserId(),timestamp);
