@@ -2,12 +2,15 @@ package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Permission;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.metadata.CategoryDeleteReturn;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
@@ -17,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
@@ -88,4 +92,49 @@ public class IndexREST {
             AtlasPerfTracer.log(perf);
         }
     }
+
+    /**
+     * 删除指标域
+     *
+     * @param categoryGuid
+     * @return
+     * @throws Exception
+     */
+    //@Permission({ModuleEnum.INDEX, ModuleEnum.AUTHORIZATION})
+    @DELETE
+    @Path("/categories/{categoryGuid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result deleteCategory(@PathParam("categoryGuid") String categoryGuid,@QueryParam("deleteIndex") boolean deleteIndex, @HeaderParam("tenantId") String tenantId) throws Exception {
+        AtlasPerfTracer perf = null;
+        CategoryDeleteReturn deleteReturn = null;
+        try {
+            Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.deleteCategory(" + categoryGuid + ")");
+            }
+            deleteReturn = deleteIndexField(categoryGuid, tenantId, CATEGORY_TYPE,deleteIndex);
+            return ReturnUtil.success(deleteReturn);
+        } catch (CannotCreateTransactionException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 删除指标域
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public CategoryDeleteReturn deleteIndexField(String guid,String tenantId,int type,boolean deleteIndex) throws Exception {
+        if(deleteIndex){
+            //删除目录下所有指标
+        }else {
+            //将目录下所有指标都转移到默认域
+        }
+        //删除目录
+        CategoryDeleteReturn deleteReturn =dataManageService.deleteCategory(guid,tenantId,type);
+        return deleteReturn;
+    }
+
 }
