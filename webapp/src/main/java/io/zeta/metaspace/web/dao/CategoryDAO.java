@@ -53,7 +53,7 @@ public interface CategoryDAO {
     @Select("select * from category where categoryType=#{categoryType} and (tenantid=#{tenantId})")
     public Set<CategoryEntityV2> getAll(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId) throws SQLException;
 
-    @Select("select * from category where categoryType=#{categoryType} and tenantid=#{tenantId} and level=#{level} and (name=#{name} or code=#{code})")
+    @Select("select * from category where categoryType=#{categoryType} and tenantid=#{tenantId} and (code=#{code} or (level=#{level} and name=#{name}))")
     public Set<CategoryEntityV2> getCategoryByNameOrCode(@Param("tenantId")String tenantId,@Param("categoryType") int categoryType,@Param("name") String name,@Param("code") String code,@Param("level") int level) throws SQLException;
 
     @Select("select * from category where guid=#{guid} and tenantid=#{tenantId}")

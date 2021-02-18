@@ -325,7 +325,7 @@ public class DataManageService {
                     //判断一级指标域是否已经存在
                     Set<CategoryEntityV2> ces=categoryDao.getCategoryByNameOrCode(tenantId,type,info.getName(),info.getCode(),1);
                     if(ces!=null && ces.size()>0){
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录名称或编码已被使用");
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前指标域名称或编码已被使用");
                     }
                 }
                 if (TenantService.defaultTenant.equals(tenantId)) {
@@ -1681,7 +1681,8 @@ public class DataManageService {
      */
     public File exportExcelAll(int categoryType, String tenantId) throws IOException, SQLException {
         Set<CategoryEntityV2> data = categoryDao.getAll(categoryType, tenantId);
-        Workbook workbook = allData2workbook(data);
+
+        Workbook workbook = allData2workbook(userDAO,categoryType,data);
         return workbook2file(workbook);
     }
 
@@ -1716,14 +1717,36 @@ public class DataManageService {
     }
 
     //全局导出
-    private Workbook allData2workbook(Set<CategoryEntityV2> list) {
-        List<List<String>> dataList = list.stream().map(categoryEntityV2 -> {
-            List<String> data = Lists.newArrayList(categoryEntityV2.getGuid(), categoryEntityV2.getName(), categoryEntityV2.getDescription(), categoryEntityV2.getUpBrotherCategoryGuid(), categoryEntityV2.getDownBrotherCategoryGuid(), categoryEntityV2.getParentCategoryGuid(), categoryEntityV2.getQualifiedName(), new Integer(categoryEntityV2.getLevel()).toString());
-            return data;
-        }).collect(Collectors.toList());
+    private Workbook allData2workbook(UserDAO userDAO,int categoryType,Set<CategoryEntityV2> list) {
 
         Workbook workbook = new XSSFWorkbook();
-        PoiExcelUtils.createSheet(workbook, "目录", Lists.newArrayList("目录id", "目录名字", "目录描述", "同级的上方目录id", "同级的下方目录id", "父目录id", "全名称", "级别"), dataList);
+        if(categoryType==5){
+            List<String> creatorAndUpdaters = list.stream().map(categoryEntityV2 -> {
+                List<String> caus = Lists.newArrayList(categoryEntityV2.getCreator(), categoryEntityV2.getUpdater());
+                return caus;
+            }).flatMap(pList -> pList.stream()).distinct().collect(Collectors.toList());
+            Map<String ,String> idNameMap=new HashMap<String,String>();
+            if(!CollectionUtils.isEmpty(creatorAndUpdaters)){
+                List<User> users = userDAO.getUsersByIds(creatorAndUpdaters);
+                if(!CollectionUtils.isEmpty(users)){
+                    idNameMap=users.stream().collect(Collectors.toMap(User::getUserId,User::getUsername));
+                }
+            }
+            Map<String, String> finalIdNameMap = idNameMap;
+            List<List<String>> dataList = list.stream().map(categoryEntityV2 -> {
+                List<String> data = Lists.newArrayList(categoryEntityV2.getCode(), categoryEntityV2.getName(),categoryEntityV2.getQualifiedName(), categoryEntityV2.getDescription(),
+                        finalIdNameMap.get(categoryEntityV2.getCreator()), DateUtils.timestampToString(categoryEntityV2.getCreateTime()),finalIdNameMap.get(categoryEntityV2.getUpdater()),
+                        DateUtils.timestampToString(categoryEntityV2.getUpdateTime()));
+                return data;
+            }).collect(Collectors.toList());
+            PoiExcelUtils.createSheet(workbook, "指标域", Lists.newArrayList("编码", "名称", "路径", "描述", "创建人", "创建时间", "更新人", "更新时间"), dataList);
+        }else{
+            List<List<String>> dataList = list.stream().map(categoryEntityV2 -> {
+                List<String> data = Lists.newArrayList(categoryEntityV2.getGuid(), categoryEntityV2.getName(), categoryEntityV2.getDescription(), categoryEntityV2.getUpBrotherCategoryGuid(), categoryEntityV2.getDownBrotherCategoryGuid(), categoryEntityV2.getParentCategoryGuid(), categoryEntityV2.getQualifiedName(), new Integer(categoryEntityV2.getLevel()).toString());
+                return data;
+            }).collect(Collectors.toList());
+            PoiExcelUtils.createSheet(workbook, "目录", Lists.newArrayList("目录id", "目录名字", "目录描述", "同级的上方目录id", "同级的下方目录id", "父目录id", "全名称", "级别"), dataList);
+        }
         return workbook;
     }
 
