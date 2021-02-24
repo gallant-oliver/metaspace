@@ -104,6 +104,7 @@ public class CategoryPrivilege {
         this.level = category.getLevel();
         this.safe=category.getSafe();
         this.count=category.getCount();
+        this.code=category.getCode();
     }
 
 

@@ -37,8 +37,11 @@ public enum ModuleEnum {
     AUDIT(8,"数据服务","审核中心",26,"审核中心","audit","audit",1),
     APIMANAGE(8,"数据服务","API项目管理",27,"API项目管理","apimanage","apimanage",1),
     DESENSITIZATION(8,"数据服务","脱敏管理",28,"脱敏管理","desensitization","desensitization",1),
-    IPRESTRICTION(8,"数据服务","黑白名单管理",29,"黑白名单管理","iprestriction","iprestriction",1)
-    //INDEX(9,"规范定义","指标管理",30,"指标管理","index","index",1)
+    IPRESTRICTION(8,"数据服务","黑白名单管理",29,"黑白名单管理","iprestriction","iprestriction",1),
+    INDEXDESIGN(9,"指标管理","指标设计",30,"指标设计","indexdesign","indexdesign",1),
+    TIMELIMIT(9,"指标管理","时间限定",31,"时间限定","timelimit","timelimit",1),
+    QUALIFIER(9,"指标管理","修饰词",32,"修饰词","qualifier","qualifier",1),
+    APPROVEGROUP(10,"审批管理","审批组管理",33,"审批组管理","approvegroup","approvegroup",1)
     ;
 
     private int id;

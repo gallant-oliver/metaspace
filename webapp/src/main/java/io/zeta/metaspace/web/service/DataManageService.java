@@ -28,6 +28,8 @@ import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
+import io.zeta.metaspace.model.dto.indices.IndexFieldExport;
+import io.zeta.metaspace.model.dto.indices.IndexFieldNode;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.CategoryExport;
 import io.zeta.metaspace.model.metadata.Column;
@@ -42,7 +44,6 @@ import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
-import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
 import io.zeta.metaspace.model.result.GroupPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
@@ -55,11 +56,7 @@ import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.*;
-import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.CategoryUtil;
-import io.zeta.metaspace.web.util.DateUtils;
-import io.zeta.metaspace.web.util.ExportDataPathUtils;
-import io.zeta.metaspace.web.util.PoiExcelUtils;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -73,12 +70,10 @@ import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.atlas.model.metadata.MoveCategory;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.metadata.SortCategory;
-import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.net.ntp.TimeStamp;
 import org.apache.directory.api.util.Strings;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
@@ -106,8 +101,8 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import io.zeta.metaspace.model.role.SystemRole;
 import org.springframework.util.CollectionUtils;
@@ -210,10 +205,10 @@ public class DataManageService {
             List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
             List<CategoryPrivilege> valueList = null;
             List<Module> modules = tenantService.getModule(tenantId);
-            if (type != 1 && type != 0) {
+            if (type != 1 && type != 0 && type !=5) {
                 valueList = userGroupService.getUserCategory(null, type, modules, tenantId);
             } else {
-                //无用户组
+                //是否无用户组
                 boolean isUserGroup = userGroups == null || userGroups.size() == 0;
                 //目录管理权限
                 boolean isAdmin = modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId() == module.getModuleId());
@@ -406,7 +401,7 @@ public class DataManageService {
         categoryDao.add(entity, tenantId);
         User user = AdminUtils.getUserData();
         Timestamp timestamp=new Timestamp(System.currentTimeMillis());
-        categoryDao.updateDownBrotherCategoryGuid(lastCategoryId, entity.getGuid(), tenantId,user.getUserId(),timestamp);
+        categoryDao.updateDownBrotherCategoryGuid(lastCategoryId, entity.getGuid(), tenantId);
         CategoryPrivilege returnEntity = new CategoryPrivilege();
         returnEntity.setGuid(entity.getGuid());
         returnEntity.setName(entity.getName());
@@ -500,7 +495,7 @@ public class DataManageService {
             String lastChildGuid = categoryDao.queryLastChildCategory(info.getGuid(), tenantId);
             if (StringUtils.isNotEmpty(lastChildGuid)) {
                 entity.setUpBrotherCategoryGuid(lastChildGuid);
-                categoryDao.updateDownBrotherCategoryGuid(lastChildGuid, newCategoryGuid, tenantId,user.getUserId(),timestamp);
+                categoryDao.updateDownBrotherCategoryGuid(lastChildGuid, newCategoryGuid, tenantId);
             }
         } else {
             //同级目录
@@ -511,17 +506,17 @@ public class DataManageService {
                 String upBrotherGuid = currentEntity.getUpBrotherCategoryGuid();
                 if (StringUtils.isNotEmpty(upBrotherGuid)) {
                     entity.setUpBrotherCategoryGuid(upBrotherGuid);
-                    categoryDao.updateDownBrotherCategoryGuid(upBrotherGuid, newCategoryGuid, tenantId,user.getUserId(),timestamp);
+                    categoryDao.updateDownBrotherCategoryGuid(upBrotherGuid, newCategoryGuid, tenantId);
                 }
-                categoryDao.updateUpBrotherCategoryGuid(info.getGuid(), newCategoryGuid, tenantId,user.getUserId(),timestamp);
+                categoryDao.updateUpBrotherCategoryGuid(info.getGuid(), newCategoryGuid, tenantId);
             } else if (StringUtils.isNotEmpty(info.getGuid()) && Strings.equals(info.getDirection(), down)) {
                 entity.setUpBrotherCategoryGuid(info.getGuid());
                 String downBrotherGuid = currentEntity.getDownBrotherCategoryGuid();
                 if (StringUtils.isNotEmpty(downBrotherGuid)) {
                     entity.setDownBrotherCategoryGuid(downBrotherGuid);
-                    categoryDao.updateUpBrotherCategoryGuid(downBrotherGuid, newCategoryGuid, tenantId,user.getUserId(),timestamp);
+                    categoryDao.updateUpBrotherCategoryGuid(downBrotherGuid, newCategoryGuid, tenantId);
                 }
-                categoryDao.updateDownBrotherCategoryGuid(info.getGuid(), newCategoryGuid, tenantId,user.getUserId(),timestamp);
+                categoryDao.updateDownBrotherCategoryGuid(info.getGuid(), newCategoryGuid, tenantId);
             }
         }
         if (type == 3 || type == 4) {
@@ -590,10 +585,10 @@ public class DataManageService {
         User user = AdminUtils.getUserData();
         Timestamp timestamp=new Timestamp(System.currentTimeMillis());
         if (StringUtils.isNotEmpty(upBrotherCategoryGuid)) {
-            categoryDao.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid, tenantId,user.getUserId(),timestamp);
+            categoryDao.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid, tenantId);
         }
         if (StringUtils.isNotEmpty(downBrotherCategoryGuid)) {
-            categoryDao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid, tenantId,user.getUserId(),timestamp);
+            categoryDao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid, tenantId);
         }
         if (TenantService.defaultTenant.equals(tenantId)) {
             List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
@@ -633,10 +628,19 @@ public class DataManageService {
             if (StringUtils.isNotEmpty(parentQualifiedName))
                 qualifiedName.append(parentQualifiedName + ".");
             qualifiedName.append(name);
-            int count = categoryDao.querySameNameNum(name, currentEntity.getParentCategoryGuid(), type, tenantId);
-            if (count > 0 && !currentEntity.getName().equals(info.getName())) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
+
+            if(type==5){
+                Set<CategoryEntityV2> otherCategorys = categoryDao.getOtherCategoryByCodeOrName(tenantId, info.getGuid(), type,info.getName(),info.getCode(),currentEntity.getLevel());
+                if(otherCategorys!=null&&otherCategorys.size()>0){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的指标域编码或指标域名称");
+                }
+            }else{
+                int count = categoryDao.querySameNameNum(name, currentEntity.getParentCategoryGuid(), type, tenantId);
+                if (count > 0 && !currentEntity.getName().equals(info.getName())) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
+                }
             }
+
             CategoryEntity entity = new CategoryEntity();
             entity.setGuid(info.getGuid());
             entity.setName(info.getName());
@@ -1792,6 +1796,8 @@ public class DataManageService {
 
     }
 
+
+
     /**
      * 导入目录
      *
@@ -1902,10 +1908,10 @@ public class DataManageService {
         }
 
         if (upGuid != null) {
-            categoryDao.updateDownBrotherCategoryGuid(upGuid, upChild.getDownBrotherCategoryGuid(), tenantId,user.getUserId(),timestamp);
+            categoryDao.updateDownBrotherCategoryGuid(upGuid, upChild.getDownBrotherCategoryGuid(), tenantId);
         }
         if (downGuid != null) {
-            categoryDao.updateUpBrotherCategoryGuid(downGuid, upId, tenantId,user.getUserId(),timestamp);
+            categoryDao.updateUpBrotherCategoryGuid(downGuid, upId, tenantId);
         }
 
         CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
@@ -2046,6 +2052,336 @@ public class DataManageService {
         return categoryExports;
     }
 
+    /**
+     * 文件转化为指标域
+     *
+     * @param file
+     * @return
+     * @throws Exception
+     */
+    private List<IndexFieldExport> file2IndexField(File file) throws Exception {
+        Map<String,List<String>> names = new HashMap<>();
+        names.put(null,new ArrayList<>());
+        List<String> codes = new ArrayList<>();
+        List<IndexFieldExport> indexFieldExports = new ArrayList<>();
+        Workbook workbook = WorkbookFactory.create(file);
+        Sheet sheet = workbook.getSheetAt(0);
+
+        //文件格式校验
+        Row first = sheet.getRow(0);
+        ArrayList<String> strings = Lists.newArrayList("注释", "编码","名称","父指标域编码","描述");
+
+        for (int i = 0; i < strings.size(); i++) {
+            Cell cell = first.getCell(i);
+            if (Objects.isNull(cell)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+            } else {
+                if (!strings.get(i).equals(cell.getStringCellValue())) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+                }
+            }
+        }
+
+        int rowNum = sheet.getLastRowNum() + 1;
+        for (int i = 2; i < rowNum; i++) {
+            Row row = sheet.getRow(i);
+            IndexFieldExport indexFieldExport = new IndexFieldExport();
+            Cell codeCell = row.getCell(1);
+            if (Objects.isNull(codeCell)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码不能为空");
+            }
+            if(codes.contains(codeCell.getStringCellValue())){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中存在相同指标域编码");
+            }
+            Cell nameCell = row.getCell(2);
+            if (Objects.isNull(nameCell)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不能为空");
+            }
+            Cell parentCode=row.getCell(3);
+            if(Objects.isNull(parentCode)){
+                //一级指标域
+                List<String> nameList = names.get(null);
+                if(nameList.contains(nameCell.getStringCellValue())){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中的一级指标域中存在重名");
+                }else {
+                    nameList.add(nameCell.getStringCellValue());
+                }
+            }else {
+                //二级指标域
+                String pc=parentCode.getStringCellValue();
+                List<String> nameList = names.get(pc);
+                if(nameList!=null){
+                    if(nameList.contains(nameCell.getStringCellValue())){
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中父指标域编码为"+pc+"的指标域中存在重名");
+                    }else{
+                        nameList.add(nameCell.getStringCellValue());
+                    }
+                }else{
+                    nameList=new ArrayList<>();
+                    nameList.add(nameCell.getStringCellValue());
+                    names.put(pc,nameList);
+                }
+                indexFieldExport.setParentCode(pc);
+            }
+            indexFieldExport.setCode(codeCell.getStringCellValue());
+            indexFieldExport.setName(nameCell.getStringCellValue());
+            Cell descriptionCell = row.getCell(1);
+            if (!Objects.isNull(descriptionCell)) {
+                indexFieldExport.setDescription(descriptionCell.getStringCellValue());
+            }
+            indexFieldExports.add(indexFieldExport);
+            codes.add(codeCell.getStringCellValue());
+        }
+        return indexFieldExports;
+    }
+
+    /**
+     * 编码与名称校验
+     * @param indexFieldExports
+     */
+    public List<IndexFieldExport> checkSameNameCode(List<IndexFieldExport> indexFieldExports, int type, String tenantId) throws SQLException {
+
+        //过滤指标域编码已存在的指标域
+        List<String> codes=indexFieldExports.stream().map(x->x.getCode()).distinct().collect(Collectors.toList());
+        List<CategoryEntityV2> indexFields = categoryDao.getCategoryByCodes(codes, tenantId, type);
+        if(!CollectionUtils.isEmpty(indexFields)){
+            for(IndexFieldExport indexFieldExport : indexFieldExports){
+                if(indexFields.contains(indexFieldExport.getCode())){
+                    indexFieldExports.remove(indexFieldExport);
+                }
+            }
+        }
+        //获取数据库中已有的一级指标域
+        List<CategoryEntityV2> oneLevelCategorys = categoryDao.getAllCategory(type, tenantId, 1);
+        //获取文件中的一级指标域
+        List<String> parentCodes = indexFieldExports.stream().filter(x -> Objects.isNull(x.getParentCode())).map(x -> x.getCode()).distinct().collect(Collectors.toList());
+        if(CollectionUtils.isEmpty(parentCodes)){
+            parentCodes=new ArrayList<>();
+        }
+        List<String> parentNames = indexFieldExports.stream().filter(x -> Objects.isNull(x.getParentCode())).map(x->x.getName()).distinct().collect(Collectors.toList());
+        if(CollectionUtils.isEmpty(parentNames)){
+            parentNames=new ArrayList<>();
+        }
+        if(!CollectionUtils.isEmpty(oneLevelCategorys)&&!CollectionUtils.isEmpty(parentCodes)){
+            for(IndexFieldExport indexFieldExport : indexFieldExports){
+                String parentCode=indexFieldExport.getParentCode();
+                if(Objects.isNull(parentCode)){
+                    //一级指标域，名称已被使用
+                    if(parentNames.contains(indexFieldExport.getName())){
+                        indexFieldExports.remove(indexFieldExport);
+                    }
+                }else{
+                    //过滤文件中父指标域编码不存在的指标域
+                    if(!oneLevelCategorys.contains(parentCode)&&!parentCodes.contains(parentCode)){
+                        indexFieldExports.remove(indexFieldExport);
+                    }
+                }
+
+
+            }
+        }
+        Map<String,List<String>> names = new HashMap<>();
+        for(IndexFieldExport indexFieldExport : indexFieldExports){
+            List<String> nameLists = names.get(indexFieldExport.getParentCode());
+            if(CollectionUtils.isEmpty(nameLists)){
+                nameLists=new ArrayList<>();
+                nameLists.add(indexFieldExport.getName());
+                names.put(indexFieldExport.getParentCode(),nameLists);
+            }else{
+                nameLists.add(indexFieldExport.getName());
+            }
+        }
+        //过滤同二级指标域下名称已存在的指标域
+        Set<String> keys = names.keySet();
+        if(!CollectionUtils.isEmpty(keys)){
+            for(String key:keys){
+                if(Objects.isNull(key)){
+                    continue;
+                }else {
+                    List<String> nameList = names.get(key);
+                    if(!CollectionUtils.isEmpty(nameList)){
+                        //获取一级指标域
+                        CategoryEntityV2 categoryByCode = categoryDao.getCategoryByCode(key, tenantId, type);
+                        if(!Objects.isNull(categoryByCode)){
+                            //获取已使用的名称
+                            List<String> categoryNames=categoryDao.getChildCategoryName(categoryByCode.getGuid(),tenantId);
+                            if(!CollectionUtils.isEmpty(categoryNames)){
+                                //取交集
+                                List<String> joinNames = nameList.stream().filter(x -> categoryNames.contains(x)).distinct().collect(Collectors.toList());
+                                if(!CollectionUtils.isEmpty(joinNames)){
+                                    for(String joinName:joinNames){
+                                        IndexFieldExport indexFieldExport = indexFieldExports.stream().filter(x -> key.equals(x.getParentCode()) && joinName.equals(x.getName())).findFirst().orElse(null);
+                                        if(!Objects.isNull(indexFieldExport)){
+                                            indexFieldExports.remove(indexFieldExport);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return indexFieldExports;
+    }
+
+    /**
+     * 指标域批量导入
+     *
+     * @param fileInputStream
+     * @param type
+     * @throws Exception
+     */
+    public void importBatchIndexField(File fileInputStream, int type, String tenantId) throws Exception {
+        if (!fileInputStream.exists()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件丢失，请重新上传");
+        }
+        List<IndexFieldExport> indexFieldExports;
+        try {
+            indexFieldExports = file2IndexField(fileInputStream);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("数据转换失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件异常：" + e.getMessage());
+        }
+        //根据指标域编码和名称进行过滤
+        indexFieldExports=checkSameNameCode(indexFieldExports, type, tenantId);
+        //构建指标域树
+        List<IndexFieldNode> roots=getIndexFieldTree(indexFieldExports,type,tenantId);
+        if(!CollectionUtils.isEmpty(roots)){
+            //完善指标域信息
+            for(IndexFieldNode node:roots){
+                optimizeIndexFieldInfo(roots,type);
+            }
+            //获取新增的指标域
+            List<CategoryEntityV2> addIndexFields=new ArrayList<>();
+            getIndexFields(roots,true,addIndexFields);
+            //获取需更新的指标域
+            List<CategoryEntityV2> updateIndexFields=new ArrayList<>();
+            getIndexFields(roots,false,updateIndexFields);
+            importIndexFields(addIndexFields,updateIndexFields,tenantId);
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void importIndexFields(List<CategoryEntityV2> addIndexFields, List<CategoryEntityV2> updateIndexFields, String tenantId){
+        if(!CollectionUtils.isEmpty(addIndexFields)){
+            categoryDao.addAll(addIndexFields,tenantId);
+        }
+        if(!CollectionUtils.isEmpty(updateIndexFields)) {
+            categoryDao.updateCategoryEntityV2(updateIndexFields, tenantId);
+        }
+    }
+
+    private void getIndexFields(List<IndexFieldNode> roots,boolean add,List<CategoryEntityV2> indexFields) {
+        for(IndexFieldNode node : roots){
+            if(node.isAdd()==add){
+                indexFields.add(node.getCurrent());
+            }
+            List<IndexFieldNode> childNodes = node.getChildNodes();
+            if(!CollectionUtils.isEmpty(childNodes)){
+                getIndexFields(childNodes,add,indexFields);
+            }
+        }
+    }
+
+    private void optimizeIndexFieldInfo(List<IndexFieldNode> roots, int type) {
+        for(IndexFieldNode node:roots){
+            CategoryEntityV2 current = node.getCurrent();
+            if(!Objects.isNull(node.getPreNode())){
+                current.setUpBrotherCategoryGuid(node.getPreNode().getCurrent().getGuid());
+            }
+            if(!Objects.isNull(node.getNextNode())){
+                current.setDownBrotherCategoryGuid(node.getNextNode().getCurrent().getGuid());
+            }
+            if(!Objects.isNull(node.getParentNode())){
+                current.setParentCategoryGuid(node.getParentNode().getCurrent().getGuid());
+            }
+            current.setSafe("1");
+            current.setCategoryType(type);
+            List<IndexFieldNode> childNodes = node.getChildNodes();
+            User user = AdminUtils.getUserData();
+            Timestamp timestamp=new Timestamp(System.currentTimeMillis());
+            if(node.isAdd()){
+                current.setCreator(user.getUserId());
+                current.setCreateTime(timestamp);
+            }
+            if(!CollectionUtils.isEmpty(childNodes)){
+                optimizeIndexFieldInfo(childNodes,type);
+            }
+        }
+    }
+
+    private List<IndexFieldNode> getIndexFieldTree(List<IndexFieldExport> indexFieldExports, int type, String tenantId) {
+        if(!CollectionUtils.isEmpty(indexFieldExports)){
+            //新增一级指标域
+            /*Stream<IndexFieldExport> indexFieldExportStream = indexFieldExports.stream().filter(x -> Objects.isNull(x.getParentCode()));*/
+            List<IndexFieldExport> oneLevelsInFile = indexFieldExports.stream().filter(x -> Objects.isNull(x.getParentCode())).collect(Collectors.toList());
+            /*List<String> oneLevelCodesInFile = indexFieldExportStream.map(x -> x.getCode()).distinct().collect(Collectors.toList());
+            List<String> parentCodesInFile = indexFieldExports.stream().filter(x -> !Objects.isNull(x.getParentCode())).map(x -> x.getParentCode()).distinct().collect(Collectors.toList());*/
+            //构建指标域树
+            List<IndexFieldNode> roots=new ArrayList<>();
+            if(!CollectionUtils.isEmpty(oneLevelsInFile)){
+                CategoryEntityV2 lastCategory = categoryDao.getLastCategory(null, type, tenantId);
+                IndexFieldNode preNode=new IndexFieldNode(null,null,lastCategory,null,new ArrayList<>(),false,lastCategory.getCode());
+                //将一级指标域映射为roots的节点
+                for (IndexFieldExport indexFieldExport:oneLevelsInFile){
+                    CategoryEntityV2 current=BeanMapper.map(indexFieldExport,CategoryEntityV2.class);
+                    current.setGuid(UUID.randomUUID().toString());
+                    current.setLevel(1);
+                    current.setQualifiedName(current.getName());
+                    IndexFieldNode currentNode=new IndexFieldNode(null,preNode,current,null,new ArrayList<>(),true,current.getCode());
+                    preNode.setNextNode(currentNode);
+                    roots.add(currentNode);
+                    preNode=currentNode;
+                }
+            }
+            Map<String, IndexFieldNode> oneLevel = roots.stream().collect(Collectors.toMap(IndexFieldNode::getCode, Function.identity(), (key1, key2) -> key2));
+            //二级指标域
+            Map<String,List<IndexFieldExport>> imports = new HashMap<>();
+            for(IndexFieldExport indexFieldExport : indexFieldExports){
+                if(StringUtils.isNotEmpty(indexFieldExport.getParentCode())){
+                    List<IndexFieldExport> ifes = imports.get(indexFieldExport.getParentCode());
+                    if(CollectionUtils.isEmpty(ifes)){
+                        ifes=new ArrayList<>();
+                        ifes.add(indexFieldExport);
+                        imports.put(indexFieldExport.getParentCode(),ifes);
+                    }else {
+                        ifes.add(indexFieldExport);
+                    }
+                }
+            }
+            //将二级指标域映射为roots节点
+            imports.forEach((k,v)->{
+                IndexFieldNode parentNode=oneLevel.get(k);
+                if(Objects.isNull(parentNode)){
+                    CategoryEntityV2 parent=categoryDao.getCategoryByCode(k,tenantId,type);
+                    if(Objects.isNull(parent)){
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "父指标域编码不存在");
+                    }else{
+                        parentNode=new IndexFieldNode(null,null,parent,null,new ArrayList<>(),false,parent.getCode());
+                        roots.add(parentNode);
+                    }
+                }
+                IndexFieldNode preNode=null;
+                for(IndexFieldExport ife:v){
+                    CategoryEntityV2 current=BeanMapper.map(ife,CategoryEntityV2.class);
+                    current.setGuid(UUID.randomUUID().toString());
+                    current.setLevel(2);
+                    current.setQualifiedName(parentNode.getCurrent().getName()+"."+current.getName());
+                    IndexFieldNode currentNode=new IndexFieldNode(parentNode,preNode,current,null,new ArrayList<>(),true,current.getCode());
+                    if(!Objects.isNull(preNode)){
+                        preNode.setNextNode(currentNode);
+                    }
+                    parentNode.getChildNodes().add(currentNode);
+                    preNode=currentNode;
+                }
+            });
+            return roots;
+        }
+        return null;
+    }
 
     /**
      * 变更目录结构
@@ -2102,21 +2438,21 @@ public class DataManageService {
             Timestamp timestamp=new Timestamp(System.currentTimeMillis());
             //修改原所在位置目录结构
             if (oldUpBrotherCategoryGuid != null && oldUpBrotherCategoryGuid.length() != 0) {
-                categoryDao.updateDownBrotherCategoryGuid(oldUpBrotherCategoryGuid, oldDownBrotherCategoryGuid, tenantId,user.getUserId(),timestamp);
+                categoryDao.updateDownBrotherCategoryGuid(oldUpBrotherCategoryGuid, oldDownBrotherCategoryGuid, tenantId);
             }
             if (oldDownBrotherCategoryGuid != null && oldDownBrotherCategoryGuid.length() != 0) {
-                categoryDao.updateUpBrotherCategoryGuid(oldDownBrotherCategoryGuid, oldUpBrotherCategoryGuid, tenantId,user.getUserId(),timestamp);
+                categoryDao.updateUpBrotherCategoryGuid(oldDownBrotherCategoryGuid, oldUpBrotherCategoryGuid, tenantId);
             }
             //修改移动后的结构
             if (newUpBrotherCategoryGuid != null && newUpBrotherCategoryGuid.length() != 0) {
-                categoryDao.updateDownBrotherCategoryGuid(newUpBrotherCategoryGuid, category.getGuid(), tenantId,user.getUserId(),timestamp);
+                categoryDao.updateDownBrotherCategoryGuid(newUpBrotherCategoryGuid, category.getGuid(), tenantId);
             }
             if (newDownBrotherCategoryGuid != null && newDownBrotherCategoryGuid.length() != 0) {
-                categoryDao.updateUpBrotherCategoryGuid(newDownBrotherCategoryGuid, category.getGuid(), tenantId,user.getUserId(),timestamp);
+                categoryDao.updateUpBrotherCategoryGuid(newDownBrotherCategoryGuid, category.getGuid(), tenantId);
             }
             //修改自己的目录结构
-            categoryDao.updateUpBrotherCategoryGuid(category.getGuid(), newUpBrotherCategoryGuid, tenantId,user.getUserId(),timestamp);
-            categoryDao.updateDownBrotherCategoryGuid(category.getGuid(), newDownBrotherCategoryGuid, tenantId,user.getUserId(),timestamp);
+            categoryDao.updateUpBrotherCategoryGuid(category.getGuid(), newUpBrotherCategoryGuid, tenantId);
+            categoryDao.updateDownBrotherCategoryGuid(category.getGuid(), newDownBrotherCategoryGuid, tenantId);
         } catch (SQLException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "移动目录失败");
         }
@@ -2141,9 +2477,7 @@ public class DataManageService {
             childCategorys = userGroupDAO.getChildCategorysAndSort(Arrays.asList(sortCategory.getGuid()), type, sortCategory.getSort(), sortCategory.getOrder(), tenantId);
         }
         if (childCategorys != null && childCategorys.size() != 0) {
-            User user=AdminUtils.getUserData();
-            Timestamp timestamp=new Timestamp(System.currentTimeMillis());
-            categoryDao.updateCategoryTree(childCategorys, tenantId,user.getUserId(),timestamp);
+            categoryDao.updateCategoryTree(childCategorys, tenantId);
         }
     }
 
@@ -2185,13 +2519,17 @@ public class DataManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件丢失，请重新上传");
         }
         Set<CategoryEntityV2> all = categoryDao.getAll(type, tenantId);
-        if (all.size() != 0 && type != 0 && type != dataStandType) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在目录，无法全局导入");
-        } else if (type == technicalType && all.size() != technicalCount) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在初始目录之外的目录，无法全局导入");
-        } else if (type == dataStandType && all.size() > dataStandCount) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在初始目录之外的目录，无法全局导入");
+        if(all!=null){
+            int size=all.size();
+            if (size!=0 && type != technicalType && type != dataStandType) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在目录，无法全局导入");
+            } else if (type == technicalType && size != technicalCount) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在初始目录之外的目录，无法全局导入");
+            } else if (type == dataStandType && size > dataStandCount) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在初始目录之外的目录，无法全局导入");
+            }
         }
+
         List<CategoryEntityV2> categories;
         List<CategoryEntityV2> systemCategory = new ArrayList<>();
         try {
@@ -2203,9 +2541,7 @@ public class DataManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "文件异常：" + e.getMessage());
         }
         if (systemCategory.size() != 0) {
-            User user=AdminUtils.getUserData();
-            Timestamp timestamp=new Timestamp(System.currentTimeMillis());
-            categoryDao.updateCategoryEntityV2Tree(systemCategory, tenantId,user.getUserId(),timestamp);
+            categoryDao.updateCategoryEntityV2Tree(systemCategory, tenantId);
         }
         try {
             if (categories.size() != 0) {
@@ -2347,6 +2683,26 @@ public class DataManageService {
         return ExportDataPathUtils.transferTo(fileInputStream);
     }
 
+    //指标域
+    public String uploadIndexField(File fileInputStream, int type, String tenantId) throws Exception {
+        List<IndexFieldExport> indexFieldExports;
+        try {
+            indexFieldExports = file2IndexField(fileInputStream);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("数据转换失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件异常：" + e.getMessage());
+        }
+        if(CollectionUtils.isEmpty(indexFieldExports)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "上传数据为空或均为重复数据");
+        }
+        /*else{
+            checkSameNameCode(indexFieldExports, type, tenantId);
+        }*/
+        return ExportDataPathUtils.transferTo(fileInputStream);
+    }
+
     public String uploadAllCategory(File fileInputStream, int type, String tenantId) throws Exception {
         Set<CategoryEntityV2> all = categoryDao.getAll(type, tenantId);
         if (all.size() != 0 && type != 0 && type != dataStandType) {
@@ -2467,10 +2823,10 @@ public class DataManageService {
         String lastChildGuid = categoryDao.queryLastChildCategory(parentId, tenantId);
         Timestamp timestamp=new Timestamp(System.currentTimeMillis());
         User user=AdminUtils.getUserData();
-        categoryDao.updateDownBrotherCategoryGuid(upId, downId, tenantId,user.getUserId(),timestamp);
-        categoryDao.updateUpBrotherCategoryGuid(downId, upId, tenantId,user.getUserId(),timestamp);
-        categoryDao.updateDownBrotherCategoryGuid(lastChildGuid, categoryId, tenantId,user.getUserId(),timestamp);
-        categoryDao.updateParentCategoryGuid(categoryId, parentId, lastChildGuid, null, tenantId,user.getUserId(),timestamp);
+        categoryDao.updateDownBrotherCategoryGuid(upId, downId, tenantId);
+        categoryDao.updateUpBrotherCategoryGuid(downId, upId, tenantId);
+        categoryDao.updateDownBrotherCategoryGuid(lastChildGuid, categoryId, tenantId);
+        categoryDao.updateParentCategoryGuid(categoryId, parentId, lastChildGuid, null, tenantId);
     }
 
     /**

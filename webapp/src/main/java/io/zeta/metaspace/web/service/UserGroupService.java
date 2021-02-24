@@ -611,6 +611,7 @@ public class UserGroupService {
 
     public List<CategoryPrivilege> getAdminCategory(int categorytype,String tenantId) throws AtlasBaseException {
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
+
         List<RoleModulesCategories.Category> allCategorys;
         if (categorytype==0){
             List<String> dbNames = tenantService.getDatabase(tenantId);

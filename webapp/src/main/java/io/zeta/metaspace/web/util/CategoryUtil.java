@@ -77,7 +77,7 @@ public class CategoryUtil {
             add(new CategoryEntityV2("rule_4"  ,"重复值校验", "重复值校验",null,"rule_3", "rule_5",4 ,1,"1",  createTime));
             add(new CategoryEntityV2("rule_5"  ,"数值型校验", "数值型校验",null,"rule_4", "rule_6",4 ,1,"1",  createTime));
             add(new CategoryEntityV2("rule_6"  ,"一致性校验", "一致性校验",null,"rule_5", null,4 ,1,"1",  createTime));
-            add(new CategoryEntityV2("index_field_default","默认域",null,null,null,null,5,1,"1",createTime));
+            add(new CategoryEntityV2("index_field_default","默认域","默认域",null,null,null,5,1,"1",createTime));
         }
     };
 
@@ -140,6 +140,9 @@ public class CategoryUtil {
         add("Standard-13");
         add("Standard-14");
     }};
+    //默认指标域
+    public static final String indexFieldId="index_field_default";
+
     public static final String apiCategoryName = "默认目录";
 
     public static void initCategorySql(List<Tenant> tenants){
