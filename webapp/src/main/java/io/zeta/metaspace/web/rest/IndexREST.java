@@ -183,15 +183,6 @@ public class IndexREST {
             InputStream inputStream = PoiExcelUtils.getTemplateInputStream(TemplateEnum.INDEX_FIELD_TEMPLATE);
             response.setContentType("application/force-download");
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
-            /*FileOutputStream fos = new FileOutputStream("F:\\work\\metaspace\\1.11.0\\index_field_template.xlsx");
-
-            byte[] b = new byte[1024];
-            int length;
-            while((length= inputStream.read(b))>0){
-                fos.write(b,0,length);
-            }
-            inputStream.close();
-            fos.close();*/
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
         }catch (Exception e){
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"下载模板文件异常");
@@ -215,14 +206,6 @@ public class IndexREST {
             InputStream inputStream = new FileInputStream(filePath);
             response.setContentType("application/force-download");
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
-            /*FileOutputStream fos = new FileOutputStream("F:\\work\\metaspace\\1.11.0\\index_field_all.xlsx");
-            byte[] b = new byte[1024];
-            int length;
-            while((length= inputStream.read(b))>0){
-                fos.write(b,0,length);
-            }
-            inputStream.close();
-            fos.close();*/
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
         } finally {
             exportExcel.delete();
