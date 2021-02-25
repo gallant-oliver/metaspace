@@ -37,6 +37,8 @@ public class CategoryPrivilege {
     private int level;
     private Integer objectCount;
     private String safe;
+    private String code;
+
 
     public CategoryPrivilege(CategoryPrivilegeV2 category){
         this.guid=category.getGuid();
@@ -102,6 +104,7 @@ public class CategoryPrivilege {
         this.level = category.getLevel();
         this.safe=category.getSafe();
         this.count=category.getCount();
+        this.code=category.getCode();
     }
 
 
@@ -172,6 +175,14 @@ public class CategoryPrivilege {
 
     public void setObjectCount(Integer objectCount) {
         this.objectCount = objectCount;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 
     public static class Privilege{

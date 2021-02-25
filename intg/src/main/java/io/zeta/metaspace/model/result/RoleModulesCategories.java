@@ -59,6 +59,15 @@ public class RoleModulesCategories {
         private Timestamp createTime;
         private String qualifiedName;
         private int count;
+        private String code;
+
+        public String getCode() {
+            return code;
+        }
+
+        public void setCode(String code) {
+            this.code = code;
+        }
 
         public int getCount() {
             return count;

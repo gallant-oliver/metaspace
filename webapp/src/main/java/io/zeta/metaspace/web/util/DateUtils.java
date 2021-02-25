@@ -1,5 +1,7 @@
 package io.zeta.metaspace.web.util;
 
+import java.sql.Timestamp;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -91,5 +93,19 @@ public class DateUtils {
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         return calendar.getTime().getTime();
+    }
+
+    public static String timestampToString(Timestamp tt){
+        String str=null;
+        if(tt==null){
+            return str;
+        }
+        DateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        try {
+            str=sdf.format(tt);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return str;
     }
 }

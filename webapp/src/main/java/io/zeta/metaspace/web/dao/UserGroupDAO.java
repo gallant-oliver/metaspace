@@ -269,6 +269,15 @@ public interface UserGroupDAO {
             "        </if>" +
             "        )" +
             "    </when>" +
+            "    <when test=\"categoryType==5\">" +
+            "        guid from ( " +
+            "        select index_field_id as guid,index_id ,max(version) as version from index_atomic_info where  tenant_id=#{tenantId} group by index_field_id,index_id " +
+            "        union all " +
+            "        select index_field_id as guid,index_id ,max(version) as version from index_atomic_info where  tenant_id=#{tenantId} group by index_field_id,index_id " +
+            "        union all " +
+            "        select index_field_id as guid,index_id ,max(version) as version from index_atomic_info where  tenant_id=#{tenantId} group by index_field_id,index_id " +
+            "        ) adc " +
+            "    </when>" +
             "    <when test=\"categoryType==1\">" +
             "        categoryguid as guid from business_relation " +
             "    </when>" +
