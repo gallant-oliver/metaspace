@@ -183,7 +183,7 @@ public class IndexREST {
             InputStream inputStream = PoiExcelUtils.getTemplateInputStream(TemplateEnum.INDEX_FIELD_TEMPLATE);
             response.setContentType("application/force-download");
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
-            /*FileOutputStream fos = new FileOutputStream("F:\\work\\metaspace\\1.11.0\\index_field_template.xlsx");
+            FileOutputStream fos = new FileOutputStream("F:\\work\\metaspace\\1.11.0\\index_field_template.xlsx");
 
             byte[] b = new byte[1024];
             int length;
@@ -191,7 +191,7 @@ public class IndexREST {
                 fos.write(b,0,length);
             }
             inputStream.close();
-            fos.close();*/
+            fos.close();
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
         }catch (Exception e){
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"下载模板文件异常");
@@ -265,8 +265,7 @@ public class IndexREST {
     @Path("/upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result uploadIndexField(@FormDataParam("direction") String direction,
-                                 @HeaderParam("tenantId") String tenantId, @FormDataParam("file") InputStream fileInputStream,
+    public Result uploadIndexField(@HeaderParam("tenantId") String tenantId, @FormDataParam("file") InputStream fileInputStream,
                                  @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
         File file = null;
         try {
@@ -288,7 +287,7 @@ public class IndexREST {
     }
 
     /**
-     * 根据文件导入目录
+     * 根据文件导入指标域
      *
      * @param upload
      * @return

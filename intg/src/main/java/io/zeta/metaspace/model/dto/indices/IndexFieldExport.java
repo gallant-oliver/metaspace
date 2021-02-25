@@ -13,22 +13,11 @@ public class IndexFieldExport {
      * 父指标域编码
      */
     private String parentCode;
-    /**
-     * 父指标域guid
-     */
-    private String parentGuid;
+
     /**
      * 描述
      */
     private String description;
-
-    public String getParentGuid() {
-        return parentGuid;
-    }
-
-    public void setParentGuid(String parentGuid) {
-        this.parentGuid = parentGuid;
-    }
 
     public String getCode() {
         return code;

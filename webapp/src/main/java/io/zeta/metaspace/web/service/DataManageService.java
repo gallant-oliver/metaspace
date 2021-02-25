@@ -2083,7 +2083,7 @@ public class DataManageService {
         }
 
         int rowNum = sheet.getLastRowNum() + 1;
-        for (int i = 2; i < rowNum; i++) {
+        for (int i = 3; i < rowNum; i++) {
             Row row = sheet.getRow(i);
             IndexFieldExport indexFieldExport = new IndexFieldExport();
             Cell codeCell = row.getCell(1);
@@ -2125,7 +2125,7 @@ public class DataManageService {
             }
             indexFieldExport.setCode(codeCell.getStringCellValue());
             indexFieldExport.setName(nameCell.getStringCellValue());
-            Cell descriptionCell = row.getCell(1);
+            Cell descriptionCell = row.getCell(4);
             if (!Objects.isNull(descriptionCell)) {
                 indexFieldExport.setDescription(descriptionCell.getStringCellValue());
             }
@@ -2141,44 +2141,45 @@ public class DataManageService {
      */
     public List<IndexFieldExport> checkSameNameCode(List<IndexFieldExport> indexFieldExports, int type, String tenantId) throws SQLException {
 
-        //过滤指标域编码已存在的指标域
+        //1.过滤指标域编码已存在的指标域
         List<String> codes=indexFieldExports.stream().map(x->x.getCode()).distinct().collect(Collectors.toList());
         List<CategoryEntityV2> indexFields = categoryDao.getCategoryByCodes(codes, tenantId, type);
         if(!CollectionUtils.isEmpty(indexFields)){
+            List<IndexFieldExport> removeList=new ArrayList<>();
+            List<String> allExistCodes = indexFields.stream().map(x -> x.getCode()).distinct().collect(Collectors.toList());
             for(IndexFieldExport indexFieldExport : indexFieldExports){
-                if(indexFields.contains(indexFieldExport.getCode())){
-                    indexFieldExports.remove(indexFieldExport);
+                if(allExistCodes.contains(indexFieldExport.getCode())){
+                    removeList.add(indexFieldExport);
                 }
             }
+            indexFieldExports.removeAll(removeList);
         }
         //获取数据库中已有的一级指标域
-        List<CategoryEntityV2> oneLevelCategorys = categoryDao.getAllCategory(type, tenantId, 1);
+        List<CategoryEntityV2> dbOneLevelCategorys = categoryDao.getAllCategoryByLevel(type, tenantId, 1);
         //获取文件中的一级指标域
-        List<String> parentCodes = indexFieldExports.stream().filter(x -> Objects.isNull(x.getParentCode())).map(x -> x.getCode()).distinct().collect(Collectors.toList());
-        if(CollectionUtils.isEmpty(parentCodes)){
-            parentCodes=new ArrayList<>();
+        List<String> fileOneLevelCodes = indexFieldExports.stream().filter(x -> Objects.isNull(x.getParentCode())).map(x -> x.getCode()).distinct().collect(Collectors.toList());
+        if(CollectionUtils.isEmpty(fileOneLevelCodes)){
+            fileOneLevelCodes=new ArrayList<>();
         }
-        List<String> parentNames = indexFieldExports.stream().filter(x -> Objects.isNull(x.getParentCode())).map(x->x.getName()).distinct().collect(Collectors.toList());
-        if(CollectionUtils.isEmpty(parentNames)){
-            parentNames=new ArrayList<>();
-        }
-        if(!CollectionUtils.isEmpty(oneLevelCategorys)&&!CollectionUtils.isEmpty(parentCodes)){
+        if(!CollectionUtils.isEmpty(dbOneLevelCategorys)&&!CollectionUtils.isEmpty(fileOneLevelCodes)){
+            List<String> dbOneLevelNames = dbOneLevelCategorys.stream().map(x -> x.getName()).distinct().collect(Collectors.toList());
+            List<String> dbOneLevelCodes = dbOneLevelCategorys.stream().map(x -> x.getCode()).distinct().collect(Collectors.toList());
+            List<IndexFieldExport> removeList=new ArrayList<>();
             for(IndexFieldExport indexFieldExport : indexFieldExports){
                 String parentCode=indexFieldExport.getParentCode();
                 if(Objects.isNull(parentCode)){
-                    //一级指标域，名称已被使用
-                    if(parentNames.contains(indexFieldExport.getName())){
-                        indexFieldExports.remove(indexFieldExport);
+                    if(dbOneLevelNames.contains(indexFieldExport.getName())){
+                        //2. 过滤文件中名称已被使用的一级指标域
+                        removeList.add(indexFieldExport);
                     }
                 }else{
-                    //过滤文件中父指标域编码不存在的指标域
-                    if(!oneLevelCategorys.contains(parentCode)&&!parentCodes.contains(parentCode)){
-                        indexFieldExports.remove(indexFieldExport);
+                    //3. 过滤文件中父指标域编码不存在的二级指标域
+                    if(!dbOneLevelCodes.contains(parentCode)&&!fileOneLevelCodes.contains(parentCode)){
+                        removeList.add(indexFieldExport);
                     }
                 }
-
-
             }
+            indexFieldExports.removeAll(removeList);
         }
         Map<String,List<String>> names = new HashMap<>();
         for(IndexFieldExport indexFieldExport : indexFieldExports){
@@ -2191,9 +2192,10 @@ public class DataManageService {
                 nameLists.add(indexFieldExport.getName());
             }
         }
-        //过滤同二级指标域下名称已存在的指标域
+        //4. 过滤同一个一级指标域下名称已存在的二级指标域
         Set<String> keys = names.keySet();
         if(!CollectionUtils.isEmpty(keys)){
+            List<IndexFieldExport> removeList=new ArrayList<>();
             for(String key:keys){
                 if(Objects.isNull(key)){
                     continue;
@@ -2212,7 +2214,7 @@ public class DataManageService {
                                     for(String joinName:joinNames){
                                         IndexFieldExport indexFieldExport = indexFieldExports.stream().filter(x -> key.equals(x.getParentCode()) && joinName.equals(x.getName())).findFirst().orElse(null);
                                         if(!Objects.isNull(indexFieldExport)){
-                                            indexFieldExports.remove(indexFieldExport);
+                                            removeList.add(indexFieldExport);
                                         }
                                     }
                                 }
@@ -2221,6 +2223,7 @@ public class DataManageService {
                     }
                 }
             }
+            indexFieldExports.removeAll(removeList);
         }
         return indexFieldExports;
     }
@@ -2232,6 +2235,7 @@ public class DataManageService {
      * @param type
      * @throws Exception
      */
+    @Transactional(rollbackFor = Exception.class)
     public void importBatchIndexField(File fileInputStream, int type, String tenantId) throws Exception {
         if (!fileInputStream.exists()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件丢失，请重新上传");
@@ -2316,10 +2320,7 @@ public class DataManageService {
     private List<IndexFieldNode> getIndexFieldTree(List<IndexFieldExport> indexFieldExports, int type, String tenantId) {
         if(!CollectionUtils.isEmpty(indexFieldExports)){
             //新增一级指标域
-            /*Stream<IndexFieldExport> indexFieldExportStream = indexFieldExports.stream().filter(x -> Objects.isNull(x.getParentCode()));*/
             List<IndexFieldExport> oneLevelsInFile = indexFieldExports.stream().filter(x -> Objects.isNull(x.getParentCode())).collect(Collectors.toList());
-            /*List<String> oneLevelCodesInFile = indexFieldExportStream.map(x -> x.getCode()).distinct().collect(Collectors.toList());
-            List<String> parentCodesInFile = indexFieldExports.stream().filter(x -> !Objects.isNull(x.getParentCode())).map(x -> x.getParentCode()).distinct().collect(Collectors.toList());*/
             //构建指标域树
             List<IndexFieldNode> roots=new ArrayList<>();
             if(!CollectionUtils.isEmpty(oneLevelsInFile)){
