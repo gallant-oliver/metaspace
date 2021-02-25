@@ -2283,6 +2283,10 @@ public class DataManageService {
             if(node.isAdd()==add){
                 indexFields.add(node.getCurrent());
             }
+            IndexFieldNode preNode = node.getPreNode();
+            if(!add&&!Objects.isNull(preNode)&&!roots.contains(preNode)){
+                indexFields.add(preNode.getCurrent());
+            }
             List<IndexFieldNode> childNodes = node.getChildNodes();
             if(!CollectionUtils.isEmpty(childNodes)){
                 getIndexFields(childNodes,add,indexFields);
@@ -2326,6 +2330,7 @@ public class DataManageService {
             if(!CollectionUtils.isEmpty(oneLevelsInFile)){
                 CategoryEntityV2 lastCategory = categoryDao.getLastCategory(null, type, tenantId);
                 IndexFieldNode preNode=new IndexFieldNode(null,null,lastCategory,null,new ArrayList<>(),false,lastCategory.getCode());
+                roots.add(preNode);
                 //将一级指标域映射为roots的节点
                 for (IndexFieldExport indexFieldExport:oneLevelsInFile){
                     CategoryEntityV2 current=BeanMapper.map(indexFieldExport,CategoryEntityV2.class);
@@ -2356,8 +2361,8 @@ public class DataManageService {
             //将二级指标域映射为roots节点
             imports.forEach((k,v)->{
                 IndexFieldNode parentNode=oneLevel.get(k);
+                CategoryEntityV2 parent=categoryDao.getCategoryByCode(k,tenantId,type);
                 if(Objects.isNull(parentNode)){
-                    CategoryEntityV2 parent=categoryDao.getCategoryByCode(k,tenantId,type);
                     if(Objects.isNull(parent)){
                         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "父指标域编码不存在");
                     }else{
@@ -2366,6 +2371,12 @@ public class DataManageService {
                     }
                 }
                 IndexFieldNode preNode=null;
+                if(!Objects.isNull(parent)){
+                    CategoryEntityV2 lastCategory = categoryDao.getLastCategory(parent.getGuid(), type, tenantId);
+                    if(!Objects.isNull(lastCategory)){
+                        preNode=new IndexFieldNode(null,null,lastCategory,null,null,false,lastCategory.getCode());
+                    }
+                }
                 for(IndexFieldExport ife:v){
                     CategoryEntityV2 current=BeanMapper.map(ife,CategoryEntityV2.class);
                     current.setGuid(UUID.randomUUID().toString());
