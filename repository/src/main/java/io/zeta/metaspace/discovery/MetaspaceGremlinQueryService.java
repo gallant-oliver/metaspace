@@ -886,7 +886,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         PageResult<Database> databasePageResult = new PageResult<>();
         List<Database> lists = new ArrayList<>();
 
-        String activeQuery = active ? ".has('__state','ACTIVE')" : "";
+        String activeQuery = ".has('__state','ACTIVE')" ;
         String nameQuery = StringUtils.isEmpty(query) ? "" : ".has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*" + query + ".*'))";
         String pageQuery = (offset == 0 && limit == -1) ? "" : ".range(" + offset + "," + (offset + limit) + ")";
 
