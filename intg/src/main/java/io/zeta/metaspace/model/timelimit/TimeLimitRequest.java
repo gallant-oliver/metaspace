@@ -2,6 +2,7 @@ package io.zeta.metaspace.model.timelimit;
 
 
 import lombok.Data;
+import org.apache.commons.lang.StringUtils;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -51,13 +52,13 @@ public class TimeLimitRequest {
      * 审批组ID
      */
 
-    private String appreveId;
+    private String approveId;
 
     /**
      * desc
      */
 
-    private String desc;
+    private String description;
 
     /**
      * version
@@ -77,13 +78,32 @@ public class TimeLimitRequest {
 
     private String type;
 
+    /**
+     * 操作类型 1.绝对时间 2.相对时间
+     */
+
+    private String timeType;
+
+    /**
+     * 相对时间偏移量
+     * @return
+     */
+
+
+    private int timeRange;
 
 
     public Timestamp getStartTimeTimestamp(){
+        if(StringUtils.isBlank(this.startTime)){
+            return null;
+        }
         return new Timestamp(Long.parseLong(this.startTime));
     }
 
     public Timestamp getEndTimeTimestamp(){
+        if(StringUtils.isBlank(this.endTime)){
+            return null;
+        }
         return new Timestamp(Long.parseLong(this.endTime));
     }
 }

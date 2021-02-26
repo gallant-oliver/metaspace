@@ -35,6 +35,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.restlet.resource.Patch;
+import org.restlet.resource.Post;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -44,7 +45,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
-@Path("")
+@Path("timelimit")
 @Singleton
 @Service
 public class TimeLimitREST {
@@ -53,7 +54,7 @@ public class TimeLimitREST {
     private TimeLimitService timeLimitService;
 
     @PUT
-    @Path("/timelimit/add")
+    @Path("/add")
     @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public Result add(TimeLimitRequest request, @HeaderParam("tenantId")String tenantId) throws Exception {
@@ -66,7 +67,7 @@ public class TimeLimitREST {
     }
 
     @POST
-    @Path("/timelimit/list")
+    @Path("/list")
     @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public Result list(TimeLimitSearch search, @HeaderParam("tenantId")String tenantId) throws Exception {
@@ -77,8 +78,8 @@ public class TimeLimitREST {
         }
     }
 
-    @Patch
-    @Path("/timelimit/edit")
+    @POST
+    @Path("/edit")
     @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public Result edit(TimeLimitRequest request, @HeaderParam("tenantId")String tenantId) throws Exception {
@@ -91,19 +92,50 @@ public class TimeLimitREST {
     }
 
     @POST
-    @Path("/timelimit/operate")
+    @Path("/operate")
     @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public Result operate(TimeLimitRequest request, @HeaderParam("tenantId")String tenantId) throws Exception {
         try {
-            if(TimeLimitOperEnum.PUBLISH.getCode().equals(request.getType())){  //发布操作
-
-            }else if(TimeLimitOperEnum.CANCEL.getCode().equals(request.getType())){ //下线
-
+            if(TimeLimitOperEnum.PUBLISH.getCode().equals(request.getType())){  //发布操作，暂时不需要
+                timeLimitService.publish(request,tenantId);
+            }else if(TimeLimitOperEnum.CANCEL.getCode().equals(request.getType())){ //下线，暂时不需要
+                timeLimitService.cancel(request,tenantId);
             }else{ //删除
                 timeLimitService.delTimeLimit(request,tenantId);
             }
             return ReturnUtil.success(); //无异常返回成功信息
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    @POST
+    @Path("/relation")
+    @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    public Result relation(TimeLimitSearch request, @HeaderParam("tenantId")String tenantId) throws Exception {
+        try {
+            return ReturnUtil.success(timeLimitService.realtion(request,tenantId)); //无异常返回成功信息
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    /**
+     * 此接口为发布历史接口，暂时不需要
+     * @param request
+     * @param tenantId
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("/history")
+    @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    public Result history(TimeLimitSearch request, @HeaderParam("tenantId")String tenantId) throws Exception {
+        try {
+            return ReturnUtil.success(timeLimitService.history(request,tenantId)); //无异常返回成功信息
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }

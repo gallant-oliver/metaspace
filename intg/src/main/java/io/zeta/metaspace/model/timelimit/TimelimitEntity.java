@@ -24,6 +24,12 @@ public class TimelimitEntity {
      * 时间限定版本
      */
 
+    private String mark;
+
+    /**
+     * 时间限定版本
+     */
+
     private int total;
 
     /**
@@ -35,7 +41,7 @@ public class TimelimitEntity {
      * desc
      */
 
-    private String desc;
+    private String description;
 
     /**
      * 时间限定类型
@@ -75,7 +81,7 @@ public class TimelimitEntity {
      * 审批组ID
      */
 
-    private String appreveId;
+    private String approveId;
 
     /**
      * delete flag
@@ -89,7 +95,30 @@ public class TimelimitEntity {
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp updateTime;
 
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp publishTime;
+
     private String tenantId;
+
+    /**
+     * 发布人
+     */
+    private String publisher;
+
+    /**
+     * 操作类型 1.绝对时间 2.相对时间
+     */
+
+    private String timeType;
+
+    /**
+     * 相对时间偏移量
+     * @return
+     */
+
+
+    private int timeRange;
+
 
 
 }

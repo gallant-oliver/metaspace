@@ -27,6 +27,15 @@ public class Module {
     private int moduleId;
     private String moduleName;
     private int type;
+    private int approve;
+
+    public int getApprove() {
+        return approve;
+    }
+
+    public void setApprove(int approve) {
+        this.approve = approve;
+    }
 
     public int getModuleId() {
         return moduleId;

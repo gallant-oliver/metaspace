@@ -12,11 +12,11 @@ import java.util.List;
 public class TimeLimitSearch extends Parameters {
 
     public Timestamp getStartTime() {
-        return new Timestamp(Long.valueOf(startTime));
+        return startTime == null ? null :new Timestamp(Long.valueOf(startTime));
     }
 
     public Timestamp getEndTime() {
-        return new Timestamp(Long.valueOf(endTime));
+        return endTime == null ? null : new Timestamp(Long.valueOf(endTime));
     }
 
     public List<String> getStatus() {
@@ -40,6 +40,16 @@ public class TimeLimitSearch extends Parameters {
     private String endTime; //查询时间戳
 
     private List<String> status;
+    /**
+     * 时间限定ID
+     */
+    private String id;
 
+    public String getId() {
+        return id;
+    }
 
+    public void setId(String id) {
+        this.id = id;
+    }
 }
