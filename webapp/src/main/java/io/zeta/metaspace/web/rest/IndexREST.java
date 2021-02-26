@@ -5,6 +5,7 @@ import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.dto.indices.IndexDTO;
 import io.zeta.metaspace.model.dto.indices.IndexFieldDTO;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -22,6 +23,7 @@ import org.apache.atlas.model.metadata.CategoryDeleteReturn;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
@@ -319,6 +321,35 @@ public class IndexREST {
             }
             return dataManageService.getAllByUserGroup(CATEGORY_TYPE, tenantId);
         }  finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 添加指标
+     *
+     * @return
+     * @throws Exception
+     */
+    @Permission({ModuleEnum.INDEXDESIGN,ModuleEnum.AUTHORIZATION})
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(INSERT)
+    public Result addIndex(IndexDTO indexDTO, @HeaderParam("tenantId")String tenantId) throws Exception {
+        if(Objects.isNull(indexDTO)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数错误");
+        }
+        HttpRequestContext.get().auditLog(ModuleEnum.INDEXDESIGN.getAlias(), indexDTO.getIndexName());
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.addIndex()");
+            }
+            return indexService.addIndex(indexDTO,tenantId);
+        } catch (CannotCreateTransactionException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据添加失败");
+        } finally {
             AtlasPerfTracer.log(perf);
         }
     }

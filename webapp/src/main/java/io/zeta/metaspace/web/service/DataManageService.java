@@ -2709,9 +2709,6 @@ public class DataManageService {
         if(CollectionUtils.isEmpty(indexFieldExports)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "上传数据为空或均为重复数据");
         }
-        /*else{
-            checkSameNameCode(indexFieldExports, type, tenantId);
-        }*/
         return ExportDataPathUtils.transferTo(fileInputStream);
     }
 
