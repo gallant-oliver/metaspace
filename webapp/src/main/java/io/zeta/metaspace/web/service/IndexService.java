@@ -4,10 +4,7 @@ import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dto.indices.IndexDTO;
 import io.zeta.metaspace.model.dto.indices.IndexFieldDTO;
 import io.zeta.metaspace.model.enums.IndexType;
-import io.zeta.metaspace.model.po.indices.IndexAtomicPO;
-import io.zeta.metaspace.model.po.indices.IndexCompositePO;
-import io.zeta.metaspace.model.po.indices.IndexDeriveModifierRelationPO;
-import io.zeta.metaspace.model.po.indices.IndexDerivePO;
+import io.zeta.metaspace.model.po.indices.*;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.IndexDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
@@ -80,6 +77,7 @@ public class IndexService {
     @Transactional(rollbackFor = Exception.class)
     public Result addIndex(IndexDTO indexDTO, String tenantId) throws Exception {
         int indexType=indexDTO.getIndexType();
+        //名称和标识重名校验
         User user= AdminUtils.getUserData();
         Timestamp timestamp=new Timestamp(System.currentTimeMillis());
         if(indexType == IndexType.INDEXATOMIC.getValue()){
@@ -90,6 +88,7 @@ public class IndexService {
             iap.setVersion(0);
             iap.setCreator(user.getUserId());
             iap.setCreateTime(timestamp);
+            iap.setUpdateTime(timestamp);
             indexDAO.addAtomicIndex(iap);
         }else if(indexType == IndexType.INDEXDERIVE.getValue()){
             IndexDerivePO idp=BeanMapper.map(indexDTO,IndexDerivePO.class);
@@ -99,6 +98,7 @@ public class IndexService {
             idp.setVersion(0);
             idp.setCreator(user.getUserId());
             idp.setCreateTime(timestamp);
+            idp.setUpdateTime(timestamp);
             idp.setIndexAtomicId(indexDTO.getDependentIndices().get(0));
             List<String> modifiers = indexDTO.getModifiers();
             indexDAO.addDeriveIndex(idp);
@@ -111,11 +111,42 @@ public class IndexService {
             icp.setVersion(0);
             icp.setCreator(user.getUserId());
             icp.setCreateTime(timestamp);
+            icp.setUpdateTime(timestamp);
             indexDAO.addCompositeIndex(icp);
+            List<String> deriveIds=indexDTO.getDependentIndices();
+            addDeriveCompositeRelations(icp.getIndexId(),deriveIds);
         }else {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域类型错误");
         }
+        return null;
     }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void addDeriveCompositeRelations(String indexId, List<String> deriveIds) throws SQLException {
+        List<IndexDeriveCompositeRelationPO> idcrPOS=getDeriveCompositeRelationPOS(indexId,deriveIds);
+        if(!CollectionUtils.isEmpty(idcrPOS)){
+            indexDAO.addDeriveCompositeRelations(idcrPOS);
+        }
+    }
+    /**
+     * 组装复合指标与派生指标关系
+     * @param indexId
+     * @return
+     */
+    private List<IndexDeriveCompositeRelationPO> getDeriveCompositeRelationPOS(String indexId, List<String> deriveIds) {
+        List<IndexDeriveCompositeRelationPO> idcrPOS=null;
+        if(!CollectionUtils.isEmpty(idcrPOS)){
+            idcrPOS=new ArrayList<>();
+            for(String deriveId:deriveIds){
+                IndexDeriveCompositeRelationPO idcr=new IndexDeriveCompositeRelationPO();
+                idcr.setCompositeIndexId(indexId);
+                idcr.setDeriveIndexId(deriveId);
+                idcrPOS.add(idcr);
+            }
+        }
+        return idcrPOS;
+    }
+
     @Transactional(rollbackFor = Exception.class)
     public void addDeriveModifierRelations(String indexId, List<String> modifiers) throws Exception{
         List<IndexDeriveModifierRelationPO> idmrPOS=getDeriveModifierRelationPOS(indexId,modifiers);
