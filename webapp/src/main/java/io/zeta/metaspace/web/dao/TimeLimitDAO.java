@@ -139,7 +139,7 @@ public interface TimeLimitDAO {
             " from index_derive_info c where index_derive_info.time_limit_id = #{param.id} and index_derive_info.tenantid = #{tenantId} inner join (select index_id ,max(version) as version from index_derive_info where tenantid = #{tenantId} group by id) t on c.index_id = t.index_id and c.version = t.version )) a" ,
             " join users on users.userid = a.business_leader",
             " join (select * from time_limit where id = #{params.id} and version = ( select max(version) from time_limit where id = #{params.id}) and tenantid = #{tenantId}) b",
-            " on.a.time_limit_id = b.id and index ",
+            " on.a.time_limit_id = b.id ",
             " <if test=\"params.query != null and params.query!=''\">",
             " time_limit.name like '%${params.query}%' ESCAPE '/' or time_limit.mark like '%${params.query}%' ESCAPE '/'",
             " </if>",
