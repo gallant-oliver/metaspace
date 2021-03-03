@@ -51,6 +51,10 @@ public class IndexAtomicPO {
      */
     private  String  sourceId ;
     /**
+     * 数据库名称
+     */
+    private  String  dbName;
+    /**
      *表id
      */
     private  String  tableId ;
@@ -98,6 +102,14 @@ public class IndexAtomicPO {
      *发布时间
      */
     private  Timestamp  publishTime ;
+
+    public String getDbName() {
+        return dbName;
+    }
+
+    public void setDbName(String dbName) {
+        this.dbName = dbName;
+    }
 
     public String getIndexId() {
         return indexId;

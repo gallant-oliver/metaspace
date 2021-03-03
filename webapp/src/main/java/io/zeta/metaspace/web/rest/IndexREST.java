@@ -5,6 +5,7 @@ import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.dto.indices.IndexResposeDTO;
 import io.zeta.metaspace.model.dto.indices.IndexDTO;
 import io.zeta.metaspace.model.dto.indices.IndexFieldDTO;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
@@ -23,7 +24,6 @@ import org.apache.atlas.model.metadata.CategoryDeleteReturn;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
@@ -336,7 +336,7 @@ public class IndexREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public Result addIndex(IndexDTO indexDTO, @HeaderParam("tenantId")String tenantId) throws Exception {
+    public Result addIndex(IndexDTO indexDTO, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         if(Objects.isNull(indexDTO)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数错误");
         }
@@ -346,9 +346,43 @@ public class IndexREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.addIndex()");
             }
-            return indexService.addIndex(indexDTO,tenantId);
-        } catch (CannotCreateTransactionException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据添加失败");
+            IndexResposeDTO iard=indexService.addIndex(indexDTO,tenantId);
+            return ReturnUtil.success("添加成功",iard);
+        } catch (Exception e) {
+            PERF_LOG.error("指标添加失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标添加失败");
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 添加指标
+     *
+     * @return
+     * @throws Exception
+     */
+    @Permission({ModuleEnum.INDEXDESIGN,ModuleEnum.AUTHORIZATION})
+    @Path("/{indexId}")
+    @PUT
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public Result editIndex(IndexDTO indexDTO,@PathParam("indexId") String indexId, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        if(Objects.isNull(indexDTO)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数错误");
+        }
+        HttpRequestContext.get().auditLog(ModuleEnum.INDEXDESIGN.getAlias(), indexDTO.getIndexName());
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.editIndex()");
+            }
+            IndexResposeDTO iard=indexService.editIndex(indexDTO,tenantId);
+            return ReturnUtil.success("编辑成功",iard);
+        } catch (Exception e) {
+            PERF_LOG.error("编辑指标失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编辑指标失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }

@@ -1,6 +1,6 @@
 package io.zeta.metaspace.web.service;
 
-import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.dto.indices.IndexResposeDTO;
 import io.zeta.metaspace.model.dto.indices.IndexDTO;
 import io.zeta.metaspace.model.dto.indices.IndexFieldDTO;
 import io.zeta.metaspace.model.enums.IndexType;
@@ -75,12 +75,17 @@ public class IndexService {
      * @throws Exception
      */
     @Transactional(rollbackFor = Exception.class)
-    public Result addIndex(IndexDTO indexDTO, String tenantId) throws Exception {
+    public IndexResposeDTO addIndex(IndexDTO indexDTO, String tenantId) throws Exception {
         int indexType=indexDTO.getIndexType();
-        //名称和标识重名校验
         User user= AdminUtils.getUserData();
         Timestamp timestamp=new Timestamp(System.currentTimeMillis());
+        IndexResposeDTO iard=null;
         if(indexType == IndexType.INDEXATOMIC.getValue()){
+            //名称和标识重名校验
+            IndexAtomicPO exits=indexDAO.getAtomicIndexByNameOrIdentification(tenantId,indexDTO.getIndexName(),indexDTO.getIndexIdentification());
+            if(!Objects.isNull(exits)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称或标识已经存在");
+            }
             IndexAtomicPO iap=BeanMapper.map(indexDTO,IndexAtomicPO.class);
             iap.setIndexId(UUID.randomUUID().toString());
             iap.setTenantId(tenantId);
@@ -90,7 +95,13 @@ public class IndexService {
             iap.setCreateTime(timestamp);
             iap.setUpdateTime(timestamp);
             indexDAO.addAtomicIndex(iap);
+            iard=BeanMapper.map(iap, IndexResposeDTO.class);
         }else if(indexType == IndexType.INDEXDERIVE.getValue()){
+            //名称和标识重名校验
+            IndexAtomicPO exits=indexDAO.getDeriveIndexByNameOrIdentification(tenantId,indexDTO.getIndexName(),indexDTO.getIndexIdentification());
+            if(!Objects.isNull(exits)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称或标识已经存在");
+            }
             IndexDerivePO idp=BeanMapper.map(indexDTO,IndexDerivePO.class);
             idp.setIndexId(UUID.randomUUID().toString());
             idp.setTenantId(tenantId);
@@ -103,7 +114,13 @@ public class IndexService {
             List<String> modifiers = indexDTO.getModifiers();
             indexDAO.addDeriveIndex(idp);
             addDeriveModifierRelations(idp.getIndexId(),modifiers);
+            iard=BeanMapper.map(idp, IndexResposeDTO.class);
         }else if(indexType == IndexType.INDEXCOMPOSITE.getValue()){
+            //名称和标识重名校验
+            IndexAtomicPO exits=indexDAO.getCompositeIndexByNameOrIdentification(tenantId,indexDTO.getIndexName(),indexDTO.getIndexIdentification());
+            if(!Objects.isNull(exits)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称或标识已经存在");
+            }
             IndexCompositePO icp=BeanMapper.map(indexDTO,IndexCompositePO.class);
             icp.setIndexId(UUID.randomUUID().toString());
             icp.setTenantId(tenantId);
@@ -115,10 +132,11 @@ public class IndexService {
             indexDAO.addCompositeIndex(icp);
             List<String> deriveIds=indexDTO.getDependentIndices();
             addDeriveCompositeRelations(icp.getIndexId(),deriveIds);
+            iard=BeanMapper.map(icp, IndexResposeDTO.class);
         }else {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域类型错误");
         }
-        return null;
+        return iard;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -173,5 +191,17 @@ public class IndexService {
             }
         }
         return idmrPOS;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public IndexResposeDTO editIndex(IndexDTO indexDTO, String tenantId) {
+        int indexType=indexDTO.getIndexType();
+        User user= AdminUtils.getUserData();
+        Timestamp timestamp=new Timestamp(System.currentTimeMillis());
+        IndexResposeDTO iard=null;
+        if(indexType == IndexType.INDEXATOMIC.getValue()){
+
+        }
+        return null;
     }
 }

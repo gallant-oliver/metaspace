@@ -52,6 +52,10 @@ public class IndexDTO {
      */
     private  String  sourceId ;
     /**
+     * 数据库名称
+     */
+    private  String  dbName;
+    /**
      *表id
      */
     private  String  tableId ;
@@ -75,6 +79,14 @@ public class IndexDTO {
      *技术负责人id
      */
     private  String  technicalLeader ;
+
+    public String getDbName() {
+        return dbName;
+    }
+
+    public void setDbName(String dbName) {
+        this.dbName = dbName;
+    }
 
     public String getIndexId() {
         return indexId;
