@@ -357,8 +357,7 @@ public class IndexREST {
     }
 
     /**
-     * 添加指标
-     *
+     * 编辑指标
      * @return
      * @throws Exception
      */

@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.dto.indices.IndexDTO;
 import io.zeta.metaspace.model.po.indices.*;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -52,16 +53,31 @@ public interface IndexDAO {
     /**
      *根据名称或者标识查询原子指标
      */
-    @Select("select * from index_atomic_info where tenant_id=#{tenantId} and (index_name=#{indexName} or index_identification=#{indexIdentification})")
-    IndexAtomicPO getAtomicIndexByNameOrIdentification(@Param("tenantId")String tenantId, @Param("indexName")String indexName, @Param("indexIdentification")String indexIdentification);
+    @Select({"<script>" ,
+            " select * from index_atomic_info where tenant_id=#{tenantId} and (index_name=#{indexDTO.indexName} or index_identification=#{indexDTO.indexIdentification})",
+            " <if test='indexDTO.indexId != null'>",
+            " and index_id != #{indexDTO.indexId} ",
+            " </if>",
+            "</script>"})
+    IndexAtomicPO getAtomicIndexByNameOrIdentification(@Param("tenantId")String tenantId, @Param("indexDTO") IndexDTO indexDTO);
     /**
      *根据名称或者标识查询派生指标
      */
-    @Select("select * from index_derive_info where tenant_id=#{tenantId} and (index_name=#{indexName} or index_identification=#{indexIdentification})")
-    IndexAtomicPO getDeriveIndexByNameOrIdentification(@Param("tenantId")String tenantId, @Param("indexName")String indexName, @Param("indexIdentification")String indexIdentification);
+    @Select({"<script>" ,
+            " select * from index_derive_info where tenant_id=#{tenantId} and (index_name=#{indexDTO.indexName} or index_identification=#{indexDTO.indexIdentification})",
+            " <if test='indexDTO.indexId != null'>",
+            " and index_id != #{indexDTO.indexId} ",
+            " </if>",
+            "</script>"})
+    IndexAtomicPO getDeriveIndexByNameOrIdentification(@Param("tenantId")String tenantId, @Param("indexDTO") IndexDTO indexDTO);
     /**
      *根据名称或者标识查询复合指标
      */
-    @Select("select * from index_composite_info where tenant_id=#{tenantId} and (index_name=#{indexName} or index_identification=#{indexIdentification})")
-    IndexAtomicPO getCompositeIndexByNameOrIdentification(@Param("tenantId")String tenantId, @Param("indexName")String indexName, @Param("indexIdentification")String indexIdentification);
+    @Select({"<script>" ,
+            " select * from index_composite_info where tenant_id=#{tenantId} and (index_name=#{indexDTO.indexName} or index_identification=#{indexDTO.indexIdentification})",
+            " <if test='indexDTO.indexId != null'>",
+            " and index_id != #{indexDTO.indexId} ",
+            " </if>",
+            "</script>"})
+    IndexAtomicPO getCompositeIndexByNameOrIdentification(@Param("tenantId")String tenantId, @Param("indexDTO") IndexDTO indexDTO);
 }

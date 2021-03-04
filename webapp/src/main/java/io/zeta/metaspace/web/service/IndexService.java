@@ -82,7 +82,7 @@ public class IndexService {
         IndexResposeDTO iard=null;
         if(indexType == IndexType.INDEXATOMIC.getValue()){
             //名称和标识重名校验
-            IndexAtomicPO exits=indexDAO.getAtomicIndexByNameOrIdentification(tenantId,indexDTO.getIndexName(),indexDTO.getIndexIdentification());
+            IndexAtomicPO exits=indexDAO.getAtomicIndexByNameOrIdentification(tenantId,indexDTO);
             if(!Objects.isNull(exits)){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称或标识已经存在");
             }
@@ -98,7 +98,7 @@ public class IndexService {
             iard=BeanMapper.map(iap, IndexResposeDTO.class);
         }else if(indexType == IndexType.INDEXDERIVE.getValue()){
             //名称和标识重名校验
-            IndexAtomicPO exits=indexDAO.getDeriveIndexByNameOrIdentification(tenantId,indexDTO.getIndexName(),indexDTO.getIndexIdentification());
+            IndexAtomicPO exits=indexDAO.getDeriveIndexByNameOrIdentification(tenantId,indexDTO);
             if(!Objects.isNull(exits)){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称或标识已经存在");
             }
@@ -117,7 +117,7 @@ public class IndexService {
             iard=BeanMapper.map(idp, IndexResposeDTO.class);
         }else if(indexType == IndexType.INDEXCOMPOSITE.getValue()){
             //名称和标识重名校验
-            IndexAtomicPO exits=indexDAO.getCompositeIndexByNameOrIdentification(tenantId,indexDTO.getIndexName(),indexDTO.getIndexIdentification());
+            IndexAtomicPO exits=indexDAO.getCompositeIndexByNameOrIdentification(tenantId,indexDTO);
             if(!Objects.isNull(exits)){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称或标识已经存在");
             }
@@ -200,7 +200,25 @@ public class IndexService {
         Timestamp timestamp=new Timestamp(System.currentTimeMillis());
         IndexResposeDTO iard=null;
         if(indexType == IndexType.INDEXATOMIC.getValue()){
-
+            //名称和标识重名校验
+            IndexAtomicPO exits=indexDAO.getAtomicIndexByNameOrIdentification(tenantId,indexDTO);
+            if(!Objects.isNull(exits)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称或标识已经存在");
+            }
+        }else if(indexType == IndexType.INDEXDERIVE.getValue()){
+            //名称和标识重名校验
+            IndexAtomicPO exits=indexDAO.getDeriveIndexByNameOrIdentification(tenantId,indexDTO);
+            if(!Objects.isNull(exits)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称或标识已经存在");
+            }
+        }else if(indexType == IndexType.INDEXCOMPOSITE.getValue()){
+            //名称和标识重名校验
+            IndexAtomicPO exits=indexDAO.getCompositeIndexByNameOrIdentification(tenantId,indexDTO);
+            if(!Objects.isNull(exits)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称或标识已经存在");
+            }
+        }else{
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域类型错误");
         }
         return null;
     }
