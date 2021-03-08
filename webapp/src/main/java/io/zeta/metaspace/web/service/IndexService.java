@@ -112,8 +112,7 @@ public class IndexService {
             idp.setUpdateTime(timestamp);
             idp.setIndexAtomicId(indexDTO.getDependentIndices().get(0));
             List<String> modifiers = indexDTO.getModifiers();
-            indexDAO.addDeriveIndex(idp);
-            addDeriveModifierRelations(idp.getIndexId(),modifiers);
+            addDeriveModifierRelations(idp,modifiers);
             iard=BeanMapper.map(idp, IndexResposeDTO.class);
         }else if(indexType == IndexType.INDEXCOMPOSITE.getValue()){
             //名称和标识重名校验
@@ -129,9 +128,8 @@ public class IndexService {
             icp.setCreator(user.getUserId());
             icp.setCreateTime(timestamp);
             icp.setUpdateTime(timestamp);
-            indexDAO.addCompositeIndex(icp);
             List<String> deriveIds=indexDTO.getDependentIndices();
-            addDeriveCompositeRelations(icp.getIndexId(),deriveIds);
+            addDeriveCompositeRelations(icp,deriveIds);
             iard=BeanMapper.map(icp, IndexResposeDTO.class);
         }else {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域类型错误");
@@ -140,7 +138,9 @@ public class IndexService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void addDeriveCompositeRelations(String indexId, List<String> deriveIds) throws SQLException {
+    public void addDeriveCompositeRelations(IndexCompositePO icp, List<String> deriveIds) throws SQLException {
+        String indexId=icp.getIndexId();
+        indexDAO.addCompositeIndex(icp);
         List<IndexDeriveCompositeRelationPO> idcrPOS=getDeriveCompositeRelationPOS(indexId,deriveIds);
         if(!CollectionUtils.isEmpty(idcrPOS)){
             indexDAO.addDeriveCompositeRelations(idcrPOS);
@@ -166,7 +166,9 @@ public class IndexService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void addDeriveModifierRelations(String indexId, List<String> modifiers) throws Exception{
+    public void addDeriveModifierRelations(IndexDerivePO idp, List<String> modifiers) throws Exception{
+        String indexId=idp.getIndexId();
+        indexDAO.addDeriveIndex(idp);
         List<IndexDeriveModifierRelationPO> idmrPOS=getDeriveModifierRelationPOS(indexId,modifiers);
         if(!CollectionUtils.isEmpty(idmrPOS)){
             indexDAO.addDeriveModifierRelations(idmrPOS);
@@ -205,21 +207,56 @@ public class IndexService {
             if(!Objects.isNull(exits)){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称或标识已经存在");
             }
+            IndexAtomicPO iap=BeanMapper.map(indexDTO,IndexAtomicPO.class);
+            iap.setUpdater(user.getUserId());
+            iap.setUpdateTime(timestamp);
+            indexDAO.editAtomicIndex(iap);
+            iard=BeanMapper.map(iap, IndexResposeDTO.class);
         }else if(indexType == IndexType.INDEXDERIVE.getValue()){
             //名称和标识重名校验
             IndexAtomicPO exits=indexDAO.getDeriveIndexByNameOrIdentification(tenantId,indexDTO);
             if(!Objects.isNull(exits)){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称或标识已经存在");
             }
+            IndexDerivePO idp=BeanMapper.map(indexDTO,IndexDerivePO.class);
+            idp.setUpdater(user.getUserId());
+            idp.setUpdateTime(timestamp);
+            //获取已经存在的派生指标与修饰词关系
+            List<IndexDeriveModifierRelationPO> modifierRelations=indexDAO.getDeriveModifierRelations(idp.getIndexId());
+            editDerivIndex(idp,indexDTO.getModifiers(),modifierRelations);
+            iard=BeanMapper.map(idp, IndexResposeDTO.class);
         }else if(indexType == IndexType.INDEXCOMPOSITE.getValue()){
             //名称和标识重名校验
             IndexAtomicPO exits=indexDAO.getCompositeIndexByNameOrIdentification(tenantId,indexDTO);
             if(!Objects.isNull(exits)){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称或标识已经存在");
             }
+            IndexCompositePO icp=BeanMapper.map(indexDTO,IndexCompositePO.class);
+            icp.setUpdater(user.getUserId());
+            icp.setUpdateTime(timestamp);
+            List<IndexDeriveCompositeRelationPO> compositeRelations=indexDAO.getDeriveCompositeRelations(icp.getIndexId());
+            editCompositeIndex(icp,indexDTO.getDependentIndices(),compositeRelations);
+            iard=BeanMapper.map(icp, IndexResposeDTO.class);
         }else{
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域类型错误");
         }
         return null;
     }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void editDerivIndex(IndexDerivePO idp, List<IndexDeriveModifierRelationPO> modifierRelations) {
+        //1.编辑派生指标
+        indexDAO.editDerivIndex(idp);
+        //2.编辑派生指标与修饰词关系
+
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void editCompositeIndex(IndexCompositePO icp, List<IndexDeriveCompositeRelationPO> compositeRelations) {
+        //1.编辑复合指标
+        indexDAO.editCompositeIndex(icp);
+        //2.编辑复合指标与派生指标关系
+    }
+
+
 }

@@ -44,14 +44,14 @@ public interface IndexDAO {
      *添加派生指标与复合指标关系
      */
     @Update({" <script>",
-            " insert into index_derive_modifier_relation(derive_index_id, modifier_id)values",
-            " <foreach item='idmrPO' index='index' collection='idmrPOS' separator=',' close=';'>",
-            " (#{idmrPO.deriveIndexId},#{idmrPO.modifierId})",
+            " insert into index_derive_composite_relation(derive_index_id, composite_index_id)values",
+            " <foreach item='idcrPO' index='index' collection='idcrPOS' separator=',' close=';'>",
+            " (#{idcrPO.deriveIndexId},#{idcrPO.compositeIndexId})",
             " </foreach>",
             " </script>"})
     void addDeriveCompositeRelations(@Param("idcrPOS")List<IndexDeriveCompositeRelationPO> idcrPOS) throws SQLException;
     /**
-     *根据名称或者标识查询原子指标
+     *校验原子指标名称或者标识是否已存在
      */
     @Select({"<script>" ,
             " select * from index_atomic_info where tenant_id=#{tenantId} and (index_name=#{indexDTO.indexName} or index_identification=#{indexDTO.indexIdentification})",
@@ -61,7 +61,7 @@ public interface IndexDAO {
             "</script>"})
     IndexAtomicPO getAtomicIndexByNameOrIdentification(@Param("tenantId")String tenantId, @Param("indexDTO") IndexDTO indexDTO);
     /**
-     *根据名称或者标识查询派生指标
+     *校验派生指标名称或者标识是否已存在
      */
     @Select({"<script>" ,
             " select * from index_derive_info where tenant_id=#{tenantId} and (index_name=#{indexDTO.indexName} or index_identification=#{indexDTO.indexIdentification})",
@@ -71,7 +71,7 @@ public interface IndexDAO {
             "</script>"})
     IndexAtomicPO getDeriveIndexByNameOrIdentification(@Param("tenantId")String tenantId, @Param("indexDTO") IndexDTO indexDTO);
     /**
-     *根据名称或者标识查询复合指标
+     *校验复合指标名称或者标识是否已存在
      */
     @Select({"<script>" ,
             " select * from index_composite_info where tenant_id=#{tenantId} and (index_name=#{indexDTO.indexName} or index_identification=#{indexDTO.indexIdentification})",
@@ -80,4 +80,31 @@ public interface IndexDAO {
             " </if>",
             "</script>"})
     IndexAtomicPO getCompositeIndexByNameOrIdentification(@Param("tenantId")String tenantId, @Param("indexDTO") IndexDTO indexDTO);
+
+    /**
+     * 编辑原子指标
+     */
+    @Update("update index_atomic_info set index_name=#{iap.indexName}, index_identification=#{iap.indexIdentification}, description=#{iap.description}, central=#{iap.central}, " +
+            "index_field_id=#{iap.indexFieldId}, approval_group_id=#{iap.approvalGroupId}, source_id=#{iap.sourceId}, " +
+            "db_name=#{iap.dbName}, table_id=#{iap.tableId}, column_id=#{iap.columnId}, business_caliber=#{iap.businessCaliber}, business_leader=#{iap.businessLeader}, " +
+            "technical_caliber=#{iap.technicalCaliber}, technical_leader={iap.technicalLeader}, updater=#{iap.updater}, update_time=#{iap.updateTime} where index_id=#{iap.indexId}")
+    int editAtomicIndex(@Param("iap") IndexAtomicPO iap);
+
+    @Select("select * from index_derive_modifier_relation where derive_index_id=#{indexId}")
+    List<IndexDeriveModifierRelationPO> getDeriveModifierRelations(@Param("indexId") String indexId);
+
+    @Select("select * from index_derive_composite_relation where composite_index_id=#{indexId}")
+    List<IndexDeriveCompositeRelationPO> getDeriveCompositeRelations(@Param("indexId") String indexId);
+
+    @Update("update index_derive_info set index_atomic_id=#{idp.indexAtomicId},time_limit_id=#{idp.timeLimitId},index_name=#{idp.indexName}, index_identification=#{idp.indexIdentification}, description=#{idp.description}, central=#{idp.central}, " +
+            "index_field_id=#{idp.indexFieldId}, approval_group_id=#{idp.approvalGroupId},  " +
+            "business_caliber=#{idp.businessCaliber}, business_leader=#{idp.businessLeader}, " +
+            "technical_caliber=#{idp.technicalCaliber}, technical_leader={idp.technicalLeader}, updater=#{idp.updater}, update_time=#{idp.updateTime} where index_id=#{idp.indexId}")
+    void editDerivIndex(IndexDerivePO idp);
+
+    @Update("update index_derive_info set index_name=#{icp.indexName}, index_identification=#{icp.indexIdentification}, description=#{icp.description}, central=#{icp.central}, " +
+            "index_field_id=#{icp.indexFieldId}, approval_group_id=#{icp.approvalGroupId}, expression=#{icp.expression}, " +
+            "business_caliber=#{icp.businessCaliber}, business_leader=#{icp.businessLeader}, " +
+            "technical_caliber=#{icp.technicalCaliber}, technical_leader={icp.technicalLeader}, updater=#{icp.updater}, update_time=#{icp.updateTime} where index_id=#{icp.indexId}")
+    void editCompositeIndex(IndexCompositePO icp);
 }
