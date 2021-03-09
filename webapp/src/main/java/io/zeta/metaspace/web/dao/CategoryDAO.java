@@ -16,10 +16,13 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.dto.indices.IndexDTO;
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.metadata.TableOwner;
+import io.zeta.metaspace.model.po.indices.IndexAtomicPO;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.usergroup.UserGroup;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.atlas.model.metadata.RelationEntityV2;
@@ -324,5 +327,13 @@ public interface CategoryDAO {
             " ORDER BY PATH" +
             " </script>")
     public List<CategoryPath> getPathByIds(@Param("ids")List<String> ids,@Param("categoryType") int categoryType, @Param("tenantId")String tenantId);
+
+    @Select({" <script> ",
+            " select distinct c.guid from category c join category_group_relation cgr on c.guid=cgr.category_id where c.categorytype=#{categoryType} and c.tenantid=#{tenantId} and cgr.group_id in  ",
+            " <foreach item='groupId' index='index' collection='groupIds' separator=',' open='(' close=')'>",
+            " #{groupId} ",
+            " </foreach>",
+            " </script>"})
+    List<String> getCategorysByGroup(@Param("groupIds") List<String> groupIds,@Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
 
 }

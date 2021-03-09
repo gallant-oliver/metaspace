@@ -2,10 +2,7 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.dto.indices.IndexDTO;
 import io.zeta.metaspace.model.po.indices.*;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.*;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -87,24 +84,95 @@ public interface IndexDAO {
     @Update("update index_atomic_info set index_name=#{iap.indexName}, index_identification=#{iap.indexIdentification}, description=#{iap.description}, central=#{iap.central}, " +
             "index_field_id=#{iap.indexFieldId}, approval_group_id=#{iap.approvalGroupId}, source_id=#{iap.sourceId}, " +
             "db_name=#{iap.dbName}, table_id=#{iap.tableId}, column_id=#{iap.columnId}, business_caliber=#{iap.businessCaliber}, business_leader=#{iap.businessLeader}, " +
-            "technical_caliber=#{iap.technicalCaliber}, technical_leader={iap.technicalLeader}, updater=#{iap.updater}, update_time=#{iap.updateTime} where index_id=#{iap.indexId}")
+            "technical_caliber=#{iap.technicalCaliber}, technical_leader={iap.technicalLeader}, updater=#{iap.updater}, update_time=#{iap.updateTime} where index_id=#{iap.indexId} and version=#{iap.version}")
     int editAtomicIndex(@Param("iap") IndexAtomicPO iap);
 
+    /**
+     *根据派生指标id获取派生指标与修饰词关系
+     */
     @Select("select * from index_derive_modifier_relation where derive_index_id=#{indexId}")
     List<IndexDeriveModifierRelationPO> getDeriveModifierRelations(@Param("indexId") String indexId);
-
+    /**
+     *根据复合指标id获取复合指标与派生指标关系
+     */
     @Select("select * from index_derive_composite_relation where composite_index_id=#{indexId}")
     List<IndexDeriveCompositeRelationPO> getDeriveCompositeRelations(@Param("indexId") String indexId);
-
+    /**
+     *编辑派生指标
+     */
     @Update("update index_derive_info set index_atomic_id=#{idp.indexAtomicId},time_limit_id=#{idp.timeLimitId},index_name=#{idp.indexName}, index_identification=#{idp.indexIdentification}, description=#{idp.description}, central=#{idp.central}, " +
             "index_field_id=#{idp.indexFieldId}, approval_group_id=#{idp.approvalGroupId},  " +
             "business_caliber=#{idp.businessCaliber}, business_leader=#{idp.businessLeader}, " +
-            "technical_caliber=#{idp.technicalCaliber}, technical_leader={idp.technicalLeader}, updater=#{idp.updater}, update_time=#{idp.updateTime} where index_id=#{idp.indexId}")
-    void editDerivIndex(IndexDerivePO idp);
-
+            "technical_caliber=#{idp.technicalCaliber}, technical_leader={idp.technicalLeader}, updater=#{idp.updater}, update_time=#{idp.updateTime} where index_id=#{idp.indexId} and version=#{idp.version")
+    void editDerivIndex(@Param("idp") IndexDerivePO idp);
+    /**
+     *编辑复合指标
+     */
     @Update("update index_derive_info set index_name=#{icp.indexName}, index_identification=#{icp.indexIdentification}, description=#{icp.description}, central=#{icp.central}, " +
             "index_field_id=#{icp.indexFieldId}, approval_group_id=#{icp.approvalGroupId}, expression=#{icp.expression}, " +
             "business_caliber=#{icp.businessCaliber}, business_leader=#{icp.businessLeader}, " +
-            "technical_caliber=#{icp.technicalCaliber}, technical_leader={icp.technicalLeader}, updater=#{icp.updater}, update_time=#{icp.updateTime} where index_id=#{icp.indexId}")
-    void editCompositeIndex(IndexCompositePO icp);
+            "technical_caliber=#{icp.technicalCaliber}, technical_leader={icp.technicalLeader}, updater=#{icp.updater}, update_time=#{icp.updateTime} where index_id=#{icp.indexId} and version=#{icp.version")
+    void editCompositeIndex(@Param("icp") IndexCompositePO icp);
+    /**
+     *删除派生指标的其所有修饰词
+     */
+    @Delete("delete from index_derive_modifier_relation where derive_index_id=#{deriveIndexId}")
+    void deleteDeriveModifierRelationsByDeriveId(@Param("deriveIndexId") String deriveIndexId);
+    /**
+     *根据派生指标id与修饰词id进行部分删除
+     */
+    @Delete({" <script>",
+            " delete from index_derive_modifier_relation where derive_index_id=#{deriveIndexId} and modifier_id in",
+            " <foreach item='delId' index='index' collection='delIds' separator=',' open='(' close=')'>",
+            " #{delId} ",
+            " </foreach>",
+            " </script>"})
+    void deleteDeriveModifierRelationsByDeriveModifierId(@Param("deriveIndexId") String deriveIndexId,@Param("delIds") List<String> delIds);
+
+    /**
+     * 删除复合指标的所有派生指标
+     */
+    @Delete("delete from index_derive_composite_relation where composite_index_id=#{compositeIndexId}")
+    void deleteDeriveCompositeRelationsByDeriveId(@Param("compositeIndexId") String compositeIndexId);
+
+    /**
+     * 根据复合指标id和派生指标id进行部分删除
+     */
+    @Delete({" <script>",
+            " delete from index_derive_composite_relation where composite_index_id=#{compositeIndexId} and derive_index_id in",
+            " <foreach item='delId' index='index' collection='delIds' separator=',' open='(' close=')'>",
+            " #{delId} ",
+            " </foreach>",
+            " </script>"})
+    void deleteDeriveCompositeRelationsByDeriveCompositeId(@Param("compositeIndexId") String compositeIndexId,@Param("delIds")  List<String> delIds);
+    /**
+     * 批量删除原子指标
+     */
+    @Delete({" <script>",
+            " delete from index_atomic_info where index_id in",
+            " <foreach item='delId' index='index' collection='delIds' separator=',' open='(' close=')'>",
+            " #{delId} ",
+            " </foreach>",
+            " </script>"})
+    void deleteAtomicIndices(@Param("delIds") List<String> delIds);
+    /**
+     * 批量删除派生指标
+     */
+    @Delete({" <script>",
+            " delete from index_derive_info where index_id in",
+            " <foreach item='delId' index='index' collection='delIds' separator=',' open='(' close=')'>",
+            " #{delId} ",
+            " </foreach>",
+            " </script>"})
+    void deleteDeriveIndices(@Param("delIds") List<String> delIds);
+    /**
+     * 批量删除复合指标
+     */
+    @Delete({" <script>",
+            " delete from index_composite_info where index_id in",
+            " <foreach item='delId' index='index' collection='delIds' separator=',' open='(' close=')'>",
+            " #{delId} ",
+            " </foreach>",
+            " </script>"})
+    void deleteCompositeIndices(@Param("delIds") List<String> delIds);
 }

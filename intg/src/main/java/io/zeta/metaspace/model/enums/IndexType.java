@@ -40,5 +40,8 @@ public enum IndexType {
         return (IndexType)getMappings().get(value);
     }
 
+    public static boolean contains(int value){
+        return getMappings().containsKey(value);
+    }
 
 }

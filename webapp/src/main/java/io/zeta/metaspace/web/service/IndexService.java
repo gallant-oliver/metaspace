@@ -1,13 +1,14 @@
 package io.zeta.metaspace.web.service;
 
-import io.zeta.metaspace.model.dto.indices.IndexResposeDTO;
-import io.zeta.metaspace.model.dto.indices.IndexDTO;
-import io.zeta.metaspace.model.dto.indices.IndexFieldDTO;
+import io.zeta.metaspace.model.dto.indices.*;
 import io.zeta.metaspace.model.enums.IndexType;
 import io.zeta.metaspace.model.po.indices.*;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.usergroup.UserGroup;
+import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.IndexDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeanMapper;
 import io.zeta.metaspace.web.util.DateUtils;
@@ -24,10 +25,8 @@ import org.springframework.util.CollectionUtils;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class IndexService {
@@ -40,6 +39,10 @@ public class IndexService {
     private UserDAO userDAO;
     @Autowired
     private IndexDAO indexDAO;
+    @Autowired
+    private UserGroupDAO userGroupDAO;
+    @Autowired
+    private CategoryDAO categoryDAO;
 
     public IndexFieldDTO getIndexFieldInfo(String categoryId, String tenantId, int categoryType) throws SQLException {
         CategoryEntityV2 category = dataManageService.getCategory(categoryId, tenantId);
@@ -132,7 +135,7 @@ public class IndexService {
             addDeriveCompositeRelations(icp,deriveIds);
             iard=BeanMapper.map(icp, IndexResposeDTO.class);
         }else {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域类型错误");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标类型错误");
         }
         return iard;
     }
@@ -196,7 +199,7 @@ public class IndexService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public IndexResposeDTO editIndex(IndexDTO indexDTO, String tenantId) {
+    public IndexResposeDTO editIndex(IndexDTO indexDTO, String tenantId) throws SQLException {
         int indexType=indexDTO.getIndexType();
         User user= AdminUtils.getUserData();
         Timestamp timestamp=new Timestamp(System.currentTimeMillis());
@@ -238,25 +241,132 @@ public class IndexService {
             editCompositeIndex(icp,indexDTO.getDependentIndices(),compositeRelations);
             iard=BeanMapper.map(icp, IndexResposeDTO.class);
         }else{
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域类型错误");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标类型错误");
         }
-        return null;
+        return iard;
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void editDerivIndex(IndexDerivePO idp, List<IndexDeriveModifierRelationPO> modifierRelations) {
+    public void editDerivIndex(IndexDerivePO idp, List<String> modifiers, List<IndexDeriveModifierRelationPO> modifierRelations) throws SQLException {
         //1.编辑派生指标
         indexDAO.editDerivIndex(idp);
         //2.编辑派生指标与修饰词关系
+        if(CollectionUtils.isEmpty(modifierRelations)){
+            if(!CollectionUtils.isEmpty(modifiers)){
+                //增加派生指标与修饰词关系
+                List<IndexDeriveModifierRelationPO> idmrPOS = getDeriveModifierRelationPOS(idp.getIndexId(), modifiers);
+                indexDAO.addDeriveModifierRelations(idmrPOS);
+            }
+        }else{
+            if(!CollectionUtils.isEmpty(modifiers)){
+                List<String> exits=modifierRelations.stream().map(x->x.getModifierId()).distinct().collect(Collectors.toList());
+                //增加的派生指标与修饰词关系
+                List<String> adds = modifiers.stream().filter(x -> !exits.contains(x)).distinct().collect(Collectors.toList());
+                if(!CollectionUtils.isEmpty(adds)){
+                    List<IndexDeriveModifierRelationPO> addPOS = getDeriveModifierRelationPOS(idp.getIndexId(), adds);
+                    indexDAO.addDeriveModifierRelations(addPOS);
+                }
+                //删除的派生指标与修饰词关系
+                List<String> dels = exits.stream().filter(x -> !modifiers.contains(x)).distinct().collect(Collectors.toList());
+                if(!CollectionUtils.isEmpty(dels)){
+                    indexDAO.deleteDeriveModifierRelationsByDeriveModifierId(idp.getIndexId(),dels);
+                }
+            }else{
+                //删除已存在的派生指标与修饰词关系
+                indexDAO.deleteDeriveModifierRelationsByDeriveId(idp.getIndexId());
+            }
+        }
 
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void editCompositeIndex(IndexCompositePO icp, List<IndexDeriveCompositeRelationPO> compositeRelations) {
+    public void editCompositeIndex(IndexCompositePO icp, List<String> dependentIndices, List<IndexDeriveCompositeRelationPO> compositeRelations) throws SQLException {
         //1.编辑复合指标
         indexDAO.editCompositeIndex(icp);
         //2.编辑复合指标与派生指标关系
+        if(CollectionUtils.isEmpty(compositeRelations)){
+            if(!CollectionUtils.isEmpty(dependentIndices)){
+                //增加派生指标与修饰词关系
+                List<IndexDeriveCompositeRelationPO> idcrPOS = getDeriveCompositeRelationPOS(icp.getIndexId(), dependentIndices);
+                indexDAO.addDeriveCompositeRelations(idcrPOS);
+            }
+        }else{
+            if(!CollectionUtils.isEmpty(dependentIndices)){
+                List<String> exits=compositeRelations.stream().map(x->x.getCompositeIndexId()).distinct().collect(Collectors.toList());
+                //增加的派生指标与修饰词关系
+                List<String> adds = dependentIndices.stream().filter(x -> !exits.contains(x)).distinct().collect(Collectors.toList());
+                if(!CollectionUtils.isEmpty(adds)){
+                    List<IndexDeriveCompositeRelationPO> addPOS = getDeriveCompositeRelationPOS(icp.getIndexId(), adds);
+                    indexDAO.addDeriveCompositeRelations(addPOS);
+                }
+                //删除的派生指标与修饰词关系
+                List<String> dels = exits.stream().filter(x -> !dependentIndices.contains(x)).distinct().collect(Collectors.toList());
+                if(!CollectionUtils.isEmpty(dels)){
+                    indexDAO.deleteDeriveCompositeRelationsByDeriveCompositeId(icp.getIndexId(),dels);
+                }
+            }else{
+                //删除已存在的派生指标与修饰词关系
+                indexDAO.deleteDeriveCompositeRelationsByDeriveId(icp.getIndexId());
+            }
+        }
     }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteIndex(DeleteRequestDTO<DeleteIndexInfoDTO> deleteList, String tenantId) {
+        if(!CollectionUtils.isEmpty((Collection<DeleteIndexInfoDTO>) deleteList)){
+            Map<Integer,List<String>> deleteMap=new HashMap<>();
+            ((Collection<DeleteIndexInfoDTO>) deleteList).forEach(x->{
+                List<String> deleteIds = deleteMap.get(x.getIndexType());
+                if(CollectionUtils.isEmpty(deleteIds)){
+                    deleteIds=new ArrayList<>();
+                    deleteMap.put(x.getIndexType(),deleteIds);
+                }
+                deleteIds.add(x.getIndexId());
+            });
+            deleteIndexMap(deleteMap);
+        }
+    }
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteIndexMap(Map<Integer, List<String>> deleteMap) {
+        if(!CollectionUtils.isEmpty(deleteMap)){
+            deleteMap.forEach((k,v)->{
+                if(k==IndexType.INDEXATOMIC.getValue()){
+                    indexDAO.deleteAtomicIndices(v);
+                }else if(k==IndexType.INDEXDERIVE.getValue()){
+                    indexDAO.deleteDeriveIndices(v);
+                }else if(k==IndexType.INDEXCOMPOSITE.getValue()){
+                    indexDAO.deleteCompositeIndices(v);
+                }else{
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标类型错误");
+                }
+            });
+        }
+    }
+
+    public List<OptionalIndexDTO> getOptionalIndex(int indexType, int categoryType, String tenantId) {
+        //1.获取当前租户下用户所属用户组
+        User user= AdminUtils.getUserData();
+        List<UserGroup> groups=userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId);
+        List<OptionalIndexDTO> optionalIndexDTOS=null;
+        if(!CollectionUtils.isEmpty(groups)){
+            //2.获取被授权给用户组的目录
+            List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
+            List<String> indexFieldIds=categoryDAO.getCategorysByGroup(groupIds,categoryType,tenantId);
+            //3.获取目录下的指标
+            if(!CollectionUtils.isEmpty(indexFieldIds)){
+                if(indexType==IndexType.INDEXATOMIC.getValue()){
+
+                }else if(indexType==IndexType.INDEXDERIVE.getValue()){
+
+                }else if(indexType==IndexType.INDEXCOMPOSITE.getValue()){
+
+                }
+            }
+        }
+        return optionalIndexDTOS;
+    }
+
+
 
 
 }
