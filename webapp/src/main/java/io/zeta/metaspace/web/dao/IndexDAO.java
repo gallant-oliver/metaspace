@@ -175,4 +175,29 @@ public interface IndexDAO {
             " </foreach>",
             " </script>"})
     void deleteCompositeIndices(@Param("delIds") List<String> delIds);
+
+    @Select({" <script>",
+            " select * from index_atomic_info where tenant_id=#{tenantId} and index_state=#{indexState} and index_field_id in ",
+            " <foreach item='indexFieldId' index='index' collection='indexFieldIds' separator=',' open='(' close=')'>",
+            " #{indexFieldId} ",
+            " </foreach>",
+            " order by update_time desc ",
+            " </script>"})
+    List<IndexAtomicPO> getAtomicByIndexFields(@Param("indexFieldIds") List<String> indexFieldIds, @Param("tenantId") String tenantId, @Param("indexState") int indexState);
+    @Select({" <script>",
+            " select * from index_derive_info where tenant_id=#{tenantId} and index_state=#{indexState} and index_field_id in ",
+            " <foreach item='indexFieldId' index='index' collection='indexFieldIds' separator=',' open='(' close=')'>",
+            " #{indexFieldId} ",
+            " </foreach>",
+            " order by update_time desc ",
+            " </script>"})
+    List<IndexDerivePO> getDeriveByIndexFields(@Param("indexFieldIds") List<String> indexFieldIds, @Param("tenantId") String tenantId, @Param("indexState") int indexState);
+    @Select({" <script>",
+            " select * from index_composite_info where tenant_id=#{tenantId} and index_state=#{indexState} and index_field_id in ",
+            " <foreach item='indexFieldId' index='index' collection='indexFieldIds' separator=',' open='(' close=')'>",
+            " #{indexFieldId} ",
+            " </foreach>",
+            " order by update_time desc ",
+            " </script>"})
+    List<IndexCompositePO> getCompositeByIndexFields(@Param("indexFieldIds") List<String> indexFieldIds, @Param("tenantId") String tenantId, @Param("indexState") int indexState);
 }

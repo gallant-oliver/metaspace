@@ -442,4 +442,52 @@ public class IndexREST {
         }
     }
 
+    @Permission({ModuleEnum.INDEXDESIGN, ModuleEnum.AUTHORIZATION})
+    @GET
+    @Path("/dataSource")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
+    public Result getOptionalDataSource(@HeaderParam("tenantId") String tenantId) throws Exception {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.getOptionalDataSource()");
+            }
+            List<OptionalDataSourceDTO> optionalIndexDTOs=indexService.getOptionalDataSource(tenantId);
+            return ReturnUtil.success(optionalIndexDTOs);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    @Permission({ModuleEnum.INDEXDESIGN, ModuleEnum.AUTHORIZATION})
+    @GET
+    @Path("/{dataSourceId}/db")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
+    public Result getOptionalDb(@PathParam("dataSourceId") String dataSourceId,@HeaderParam("tenantId") String tenantId) throws Exception {
+        if(Objects.isNull(dataSourceId)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源id为空");
+        }
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.getOptionalDb("+dataSourceId+")");
+            }
+            List<String> optionalIndexDTOs=indexService.getOptionalDb(dataSourceId);
+            return ReturnUtil.success(optionalIndexDTOs);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+
+
+
 }

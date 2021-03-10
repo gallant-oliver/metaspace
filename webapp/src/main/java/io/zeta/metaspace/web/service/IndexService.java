@@ -1,14 +1,12 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.model.datasource.DataSourceBody;
 import io.zeta.metaspace.model.dto.indices.*;
 import io.zeta.metaspace.model.enums.IndexType;
 import io.zeta.metaspace.model.po.indices.*;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
-import io.zeta.metaspace.web.dao.CategoryDAO;
-import io.zeta.metaspace.web.dao.IndexDAO;
-import io.zeta.metaspace.web.dao.UserDAO;
-import io.zeta.metaspace.web.dao.UserGroupDAO;
+import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeanMapper;
 import io.zeta.metaspace.web.util.DateUtils;
@@ -43,6 +41,10 @@ public class IndexService {
     private UserGroupDAO userGroupDAO;
     @Autowired
     private CategoryDAO categoryDAO;
+    @Autowired
+    private DataSourceDAO dataSourceDAO;
+    @Autowired
+    private TableDAO tableDAO;
 
     public IndexFieldDTO getIndexFieldInfo(String categoryId, String tenantId, int categoryType) throws SQLException {
         CategoryEntityV2 category = dataManageService.getCategory(categoryId, tenantId);
@@ -343,6 +345,13 @@ public class IndexService {
         }
     }
 
+    /**
+     * 获取可选指标列表
+     * @param indexType 指标类型
+     * @param categoryType 目录类型  5  指标域
+     * @param tenantId 租户id
+     * @return
+     */
     public List<OptionalIndexDTO> getOptionalIndex(int indexType, int categoryType, String tenantId) {
         //1.获取当前租户下用户所属用户组
         User user= AdminUtils.getUserData();
@@ -352,21 +361,63 @@ public class IndexService {
             //2.获取被授权给用户组的目录
             List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
             List<String> indexFieldIds=categoryDAO.getCategorysByGroup(groupIds,categoryType,tenantId);
-            //3.获取目录下的指标
+            //3.获取目录下的已发布的指标
             if(!CollectionUtils.isEmpty(indexFieldIds)){
+                //已发布
+                int indexState=2;
                 if(indexType==IndexType.INDEXATOMIC.getValue()){
-
+                    List<IndexAtomicPO> atomicPOS = indexDAO.getAtomicByIndexFields(indexFieldIds, tenantId, indexState);
+                    if(!CollectionUtils.isEmpty(atomicPOS)){
+                        optionalIndexDTOS=atomicPOS.stream().map(x->BeanMapper.map(x,OptionalIndexDTO.class)).distinct().collect(Collectors.toList());
+                    }
                 }else if(indexType==IndexType.INDEXDERIVE.getValue()){
-
+                    List<IndexDerivePO> derivePOS = indexDAO.getDeriveByIndexFields(indexFieldIds, tenantId, indexState);
+                    if(!CollectionUtils.isEmpty(derivePOS)){
+                        optionalIndexDTOS=derivePOS.stream().map(x->BeanMapper.map(x,OptionalIndexDTO.class)).distinct().collect(Collectors.toList());
+                    }
                 }else if(indexType==IndexType.INDEXCOMPOSITE.getValue()){
-
+                    List<IndexCompositePO> compositePOS = indexDAO.getCompositeByIndexFields(indexFieldIds, tenantId, indexState);
+                    if(!CollectionUtils.isEmpty(compositePOS)){
+                        optionalIndexDTOS=compositePOS.stream().map(x->BeanMapper.map(x,OptionalIndexDTO.class)).distinct().collect(Collectors.toList());
+                    }
                 }
             }
         }
         return optionalIndexDTOS;
     }
 
+    /**
+     * 获取可选数据源列表
+     * @param tenantId
+     * @return
+     */
+    public List<OptionalDataSourceDTO> getOptionalDataSource(String tenantId) {
+        //1.获取当前租户下用户所属用户组
+        User user= AdminUtils.getUserData();
+        List<UserGroup> groups=userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId);
+        List<OptionalDataSourceDTO> odsds=new ArrayList<>();
+        OptionalDataSourceDTO ods=new OptionalDataSourceDTO();
+        ods.setSourceId("hive");
+        ods.setSourceName("hive");
+        odsds.add(ods);
+        if(!CollectionUtils.isEmpty(groups)){
+            //2. 获取被授权给用户组的数据源
+            List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
+            List<DataSourceBody>  dataSourceBodies=dataSourceDAO.getDataSourcesByGroups(groupIds,tenantId);
+            if(!CollectionUtils.isEmpty(dataSourceBodies)){
+                List<OptionalDataSourceDTO> rdbms=dataSourceBodies.stream().map(x->BeanMapper.map(x,OptionalDataSourceDTO.class)).collect(Collectors.toList());
+                odsds.addAll(rdbms);
+            }
+        }
+        return odsds;
+    }
 
+    public List<OptionalDataSourceDTO> getOptionalDb(String dataSourceId) {
 
+        if("hive".equalsIgnoreCase(dataSourceId)){
 
+        }
+        tableDAO.getOptionalDbBySourceId(dataSourceId,"ACTIVE");
+        List<String> databases = tenantService.getDatabase(tenantId);
+    }
 }
