@@ -478,7 +478,7 @@ public class IndexREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.getOptionalDb("+dataSourceId+")");
             }
-            List<String> optionalIndexDTOs=indexService.getOptionalDb(dataSourceId);
+            List<String> optionalIndexDTOs=indexService.getOptionalDb(dataSourceId,tenantId);
             return ReturnUtil.success(optionalIndexDTOs);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());

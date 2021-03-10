@@ -45,6 +45,8 @@ public class IndexService {
     private DataSourceDAO dataSourceDAO;
     @Autowired
     private TableDAO tableDAO;
+    @Autowired
+    private TenantService tenantService;
 
     public IndexFieldDTO getIndexFieldInfo(String categoryId, String tenantId, int categoryType) throws SQLException {
         CategoryEntityV2 category = dataManageService.getCategory(categoryId, tenantId);
@@ -412,12 +414,14 @@ public class IndexService {
         return odsds;
     }
 
-    public List<OptionalDataSourceDTO> getOptionalDb(String dataSourceId) {
-
+    public List<String> getOptionalDb(String dataSourceId,String tenantId) {
+        List<String> databases=null;
         if("hive".equalsIgnoreCase(dataSourceId)){
-
+            databases = tenantService.getDatabase(tenantId);
+        }else{
+            tableDAO.getOptionalDbBySourceId(dataSourceId,"ACTIVE");
         }
-        tableDAO.getOptionalDbBySourceId(dataSourceId,"ACTIVE");
-        List<String> databases = tenantService.getDatabase(tenantId);
+
+
     }
 }
