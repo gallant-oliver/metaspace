@@ -75,11 +75,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.directory.api.util.Strings;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
@@ -330,7 +326,7 @@ public class DataManageService {
                     }
 
                 } else {
-                    boolean bool = type == 1 || type == 0;
+                    boolean bool = type == 1 || type == 0 || type==5;
                     if (!modules.contains(ModuleEnum.AUTHORIZATION.getId()) && bool) {
                         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有目录授权模块权限，无法创建一级目录");
                     }
@@ -2089,6 +2085,8 @@ public class DataManageService {
             Cell codeCell = row.getCell(1);
             if (Objects.isNull(codeCell)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码不能为空");
+            }else{
+                codeCell.setCellType(CellType.STRING);
             }
             if(codes.contains(codeCell.getStringCellValue())){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中存在相同指标域编码");
@@ -2096,6 +2094,8 @@ public class DataManageService {
             Cell nameCell = row.getCell(2);
             if (Objects.isNull(nameCell)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不能为空");
+            }else{
+                nameCell.setCellType(CellType.STRING);
             }
             Cell parentCode=row.getCell(3);
             if(Objects.isNull(parentCode)){
@@ -2107,6 +2107,7 @@ public class DataManageService {
                     nameList.add(nameCell.getStringCellValue());
                 }
             }else {
+                parentCode.setCellType(CellType.STRING);
                 //二级指标域
                 String pc=parentCode.getStringCellValue();
                 List<String> nameList = names.get(pc);
@@ -2127,6 +2128,7 @@ public class DataManageService {
             indexFieldExport.setName(nameCell.getStringCellValue());
             Cell descriptionCell = row.getCell(4);
             if (!Objects.isNull(descriptionCell)) {
+                descriptionCell.setCellType(CellType.STRING);
                 indexFieldExport.setDescription(descriptionCell.getStringCellValue());
             }
             indexFieldExports.add(indexFieldExport);

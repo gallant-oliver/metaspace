@@ -14,13 +14,10 @@ public class IndexFieldDTO {
     private Integer categoryType;
     private int level;
 
-    @JsonIgnore
     private String safe;
 
-    @JsonIgnore
     private String createTime;
 
-    @JsonIgnore
     private String updateTime;
 
     private String creator;

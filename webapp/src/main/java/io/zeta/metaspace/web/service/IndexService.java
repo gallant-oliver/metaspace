@@ -29,8 +29,8 @@ public class IndexService {
         CategoryEntityV2 category = dataManageService.getCategory(categoryId, tenantId);
         if(category!=null){
             IndexFieldDTO indexFieldDTO= BeanMapper.map(category, IndexFieldDTO.class);
-            String creatorId=indexFieldDTO.getCreator();
-            String updaterId=indexFieldDTO.getUpdater();
+            String creatorId=category.getCreator();
+            String updaterId=category.getUpdater();
             Timestamp createTime=category.getCreateTime();
             Timestamp updateTime=category.getUpdateTime();
             if(StringUtils.isNotEmpty(creatorId)){
