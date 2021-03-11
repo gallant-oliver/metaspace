@@ -31,10 +31,19 @@ public class CategoryPrivilegeV2 {
     private Boolean read;
     private Boolean editCategory;
     private Boolean editItem;
+    private String code;
     private int count;
 
     @JsonIgnore
     private int total;
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
 
     public int getCount() {
         return count;
