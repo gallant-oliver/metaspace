@@ -653,7 +653,7 @@ public class DataManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } catch (Exception e) {
             LOG.error("更新目录失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新目录失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 
@@ -2087,6 +2087,12 @@ public class DataManageService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码不能为空");
             }else{
                 codeCell.setCellType(CellType.STRING);
+                if(!codeCell.getStringCellValue().matches("^[0-9A-Za-z]+$")){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码仅支持英文、数字");
+                }
+                if(codeCell.getStringCellValue().length()>128){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码长度不能超过128个字符");
+                }
             }
             if(codes.contains(codeCell.getStringCellValue())){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中存在相同指标域编码");
@@ -2096,6 +2102,9 @@ public class DataManageService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不能为空");
             }else{
                 nameCell.setCellType(CellType.STRING);
+                if(nameCell.getStringCellValue().length()>128){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称长度不能超过128个字符");
+                }
             }
             Cell parentCode=row.getCell(3);
             if(Objects.isNull(parentCode)){
@@ -2110,6 +2119,12 @@ public class DataManageService {
                 parentCode.setCellType(CellType.STRING);
                 //二级指标域
                 String pc=parentCode.getStringCellValue();
+                if(!pc.matches("^[0-9A-Za-z]+$")){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码仅支持英文、数字");
+                }
+                if(pc.length()>128){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码长度不能超过128个字符");
+                }
                 List<String> nameList = names.get(pc);
                 if(nameList!=null){
                     if(nameList.contains(nameCell.getStringCellValue())){
@@ -2129,7 +2144,11 @@ public class DataManageService {
             Cell descriptionCell = row.getCell(4);
             if (!Objects.isNull(descriptionCell)) {
                 descriptionCell.setCellType(CellType.STRING);
-                indexFieldExport.setDescription(descriptionCell.getStringCellValue());
+                String description=descriptionCell.getStringCellValue();
+                if(description.length()>200){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域描述长度不能超过200个字符");
+                }
+                indexFieldExport.setDescription(description);
             }
             indexFieldExports.add(indexFieldExport);
             codes.add(codeCell.getStringCellValue());
