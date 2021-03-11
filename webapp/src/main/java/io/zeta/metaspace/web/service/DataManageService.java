@@ -2315,30 +2315,31 @@ public class DataManageService {
         }
     }
 
-    private void optimizeIndexFieldInfo(List<IndexFieldNode> roots, int type) {
+    private void optimizeIndexFieldInfo(List<IndexFieldNode> node, int type) {
         for(IndexFieldNode node:roots){
-            CategoryEntityV2 current = node.getCurrent();
-            if(!Objects.isNull(node.getPreNode())){
-                current.setUpBrotherCategoryGuid(node.getPreNode().getCurrent().getGuid());
-            }
-            if(!Objects.isNull(node.getNextNode())){
-                current.setDownBrotherCategoryGuid(node.getNextNode().getCurrent().getGuid());
-            }
-            if(!Objects.isNull(node.getParentNode())){
-                current.setParentCategoryGuid(node.getParentNode().getCurrent().getGuid());
-            }
-            current.setSafe("1");
-            current.setCategoryType(type);
-            List<IndexFieldNode> childNodes = node.getChildNodes();
-            User user = AdminUtils.getUserData();
-            Timestamp timestamp=new Timestamp(System.currentTimeMillis());
-            if(node.isAdd()){
-                current.setCreator(user.getUserId());
-                current.setCreateTime(timestamp);
-            }
-            if(!CollectionUtils.isEmpty(childNodes)){
-                optimizeIndexFieldInfo(childNodes,type);
-            }
+
+        }
+        CategoryEntityV2 current = node.getCurrent();
+        if(!Objects.isNull(node.getPreNode())){
+            current.setUpBrotherCategoryGuid(node.getPreNode().getCurrent().getGuid());
+        }
+        if(!Objects.isNull(node.getNextNode())){
+            current.setDownBrotherCategoryGuid(node.getNextNode().getCurrent().getGuid());
+        }
+        if(!Objects.isNull(node.getParentNode())){
+            current.setParentCategoryGuid(node.getParentNode().getCurrent().getGuid());
+        }
+        current.setSafe("1");
+        current.setCategoryType(type);
+        List<IndexFieldNode> childNodes = node.getChildNodes();
+        User user = AdminUtils.getUserData();
+        Timestamp timestamp=new Timestamp(System.currentTimeMillis());
+        if(node.isAdd()){
+            current.setCreator(user.getUserId());
+            current.setCreateTime(timestamp);
+        }
+        if(!CollectionUtils.isEmpty(childNodes)){
+            optimizeIndexFieldInfo(childNodes,type);
         }
     }
 
