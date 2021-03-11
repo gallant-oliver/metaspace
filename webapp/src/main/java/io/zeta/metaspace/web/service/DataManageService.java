@@ -2277,7 +2277,7 @@ public class DataManageService {
         if(!CollectionUtils.isEmpty(roots)){
             //完善指标域信息
             for(IndexFieldNode node:roots){
-                optimizeIndexFieldInfo(roots,type);
+                optimizeIndexFieldInfo(node,type);
             }
             //获取新增的指标域
             List<CategoryEntityV2> addIndexFields=new ArrayList<>();
@@ -2315,13 +2315,11 @@ public class DataManageService {
         }
     }
 
-    private void optimizeIndexFieldInfo(List<IndexFieldNode> node, int type) {
-        for(IndexFieldNode node:roots){
-
-        }
+    private void optimizeIndexFieldInfo(IndexFieldNode node, int type) {
         CategoryEntityV2 current = node.getCurrent();
         if(!Objects.isNull(node.getPreNode())){
             current.setUpBrotherCategoryGuid(node.getPreNode().getCurrent().getGuid());
+            node.getPreNode().getCurrent().setDownBrotherCategoryGuid(current.getGuid());
         }
         if(!Objects.isNull(node.getNextNode())){
             current.setDownBrotherCategoryGuid(node.getNextNode().getCurrent().getGuid());
@@ -2339,7 +2337,9 @@ public class DataManageService {
             current.setCreateTime(timestamp);
         }
         if(!CollectionUtils.isEmpty(childNodes)){
-            optimizeIndexFieldInfo(childNodes,type);
+            for(IndexFieldNode childNode:childNodes){
+                optimizeIndexFieldInfo(childNode,type);
+            }
         }
     }
 
@@ -2381,37 +2381,41 @@ public class DataManageService {
                 }
             }
             //将二级指标域映射为roots节点
-            imports.forEach((k,v)->{
-                IndexFieldNode parentNode=oneLevel.get(k);
-                CategoryEntityV2 parent=categoryDao.getCategoryByCode(k,tenantId,type);
-                if(Objects.isNull(parentNode)){
-                    if(Objects.isNull(parent)){
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "父指标域编码不存在");
-                    }else{
-                        parentNode=new IndexFieldNode(null,null,parent,null,new ArrayList<>(),false,parent.getCode());
-                        roots.add(parentNode);
+            if(!CollectionUtils.isEmpty(imports)){
+                for(Map.Entry<String,List<IndexFieldExport>> entry:imports.entrySet()){
+                    String k=entry.getKey();
+                    List<IndexFieldExport> v=entry.getValue();
+                    IndexFieldNode parentNode=oneLevel.get(k);
+                    CategoryEntityV2 parent=categoryDao.getCategoryByCode(k,tenantId,type);
+                    if(Objects.isNull(parentNode)){
+                        if(Objects.isNull(parent)){
+                            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "父指标域编码不存在");
+                        }else{
+                            parentNode=new IndexFieldNode(null,null,parent,null,new ArrayList<>(),false,parent.getCode());
+                            roots.add(parentNode);
+                        }
+                    }
+                    IndexFieldNode preNode=null;
+                    if(!Objects.isNull(parent)){
+                        CategoryEntityV2 lastCategory = categoryDao.getLastCategory(parent.getGuid(), type, tenantId);
+                        if(!Objects.isNull(lastCategory)){
+                            preNode=new IndexFieldNode(null,null,lastCategory,null,null,false,lastCategory.getCode());
+                        }
+                    }
+                    for(IndexFieldExport ife:v){
+                        CategoryEntityV2 current=BeanMapper.map(ife,CategoryEntityV2.class);
+                        current.setGuid(UUID.randomUUID().toString());
+                        current.setLevel(2);
+                        current.setQualifiedName(parentNode.getCurrent().getName()+"."+current.getName());
+                        IndexFieldNode currentNode=new IndexFieldNode(parentNode,preNode,current,null,new ArrayList<>(),true,current.getCode());
+                        if(!Objects.isNull(preNode)){
+                            preNode.setNextNode(currentNode);
+                        }
+                        parentNode.getChildNodes().add(currentNode);
+                        preNode=currentNode;
                     }
                 }
-                IndexFieldNode preNode=null;
-                if(!Objects.isNull(parent)){
-                    CategoryEntityV2 lastCategory = categoryDao.getLastCategory(parent.getGuid(), type, tenantId);
-                    if(!Objects.isNull(lastCategory)){
-                        preNode=new IndexFieldNode(null,null,lastCategory,null,null,false,lastCategory.getCode());
-                    }
-                }
-                for(IndexFieldExport ife:v){
-                    CategoryEntityV2 current=BeanMapper.map(ife,CategoryEntityV2.class);
-                    current.setGuid(UUID.randomUUID().toString());
-                    current.setLevel(2);
-                    current.setQualifiedName(parentNode.getCurrent().getName()+"."+current.getName());
-                    IndexFieldNode currentNode=new IndexFieldNode(parentNode,preNode,current,null,new ArrayList<>(),true,current.getCode());
-                    if(!Objects.isNull(preNode)){
-                        preNode.setNextNode(currentNode);
-                    }
-                    parentNode.getChildNodes().add(currentNode);
-                    preNode=currentNode;
-                }
-            });
+            }
             return roots;
         }
         return null;
