@@ -121,4 +121,6 @@ public interface TableDAO {
              "select tableguid from tableinfo " +
              "</script>"})
     public List<String> getTables();
+    @Select("")
+    List<String> getOptionalDbBySourceId(@Param("dataSourceId")String dataSourceId, @Param("active")String active);
 }

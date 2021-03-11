@@ -415,13 +415,13 @@ public class IndexService {
     }
 
     public List<String> getOptionalDb(String dataSourceId,String tenantId) {
-        List<String> databases=null;
+        List<String> dataBases=null;
         if("hive".equalsIgnoreCase(dataSourceId)){
-            databases = tenantService.getDatabase(tenantId);
+            dataBases = tenantService.getDatabase(tenantId);
         }else{
-            tableDAO.getOptionalDbBySourceId(dataSourceId,"ACTIVE");
+            dataBases=tableDAO.getOptionalDbBySourceId(dataSourceId,"ACTIVE");
         }
 
-
+        return dataBases;
     }
 }
