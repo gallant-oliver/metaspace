@@ -6,7 +6,8 @@ import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
-import io.zeta.metaspace.model.dto.indices.IndexFieldDTO;
+import io.zeta.metaspace.model.dto.indices.*;
+import io.zeta.metaspace.model.enums.IndexType;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
@@ -347,5 +348,171 @@ public class IndexREST {
             AtlasPerfTracer.log(perf);
         }
     }
+
+    /**
+     * 添加指标
+     *
+     * @return
+     * @throws Exception
+     */
+    @Permission({ModuleEnum.INDEXDESIGN,ModuleEnum.AUTHORIZATION})
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(INSERT)
+    public Result addIndex(IndexDTO indexDTO, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        if(Objects.isNull(indexDTO)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数错误");
+        }
+        HttpRequestContext.get().auditLog(ModuleEnum.INDEXDESIGN.getAlias(), indexDTO.getIndexName());
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.addIndex()");
+            }
+            IndexResposeDTO iard=indexService.addIndex(indexDTO,tenantId);
+            return ReturnUtil.success("添加成功",iard);
+        } catch (Exception e) {
+            PERF_LOG.error("指标添加失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标添加失败");
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 编辑指标
+     * @return
+     * @throws Exception
+     */
+    @Permission({ModuleEnum.INDEXDESIGN,ModuleEnum.AUTHORIZATION})
+    @Path("/{indexId}")
+    @PUT
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public Result editIndex(IndexDTO indexDTO,@PathParam("indexId") String indexId, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        if(Objects.isNull(indexDTO)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数错误");
+        }
+        HttpRequestContext.get().auditLog(ModuleEnum.INDEXDESIGN.getAlias(), indexDTO.getIndexName());
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.editIndex()");
+            }
+            IndexResposeDTO iard=indexService.editIndex(indexDTO,tenantId);
+            return ReturnUtil.success("编辑成功",iard);
+        } catch (Exception e) {
+            PERF_LOG.error("编辑指标失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编辑指标失败");
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 删除指标
+     *
+     * @return
+     * @throws Exception
+     */
+    @Permission({ModuleEnum.INDEXDESIGN, ModuleEnum.AUTHORIZATION})
+    @DELETE
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
+    public Result deleteIndex(DeleteRequestDTO<DeleteIndexInfoDTO> deleteList, @HeaderParam("tenantId") String tenantId) throws Exception {
+        AtlasPerfTracer perf = null;
+        try {
+            Servlets.validateQueryParamLength("deleteList", deleteList.toString());
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.deleteIndex(" + deleteList.toString() + ")");
+            }
+            indexService.deleteIndex(deleteList, tenantId);
+            return ReturnUtil.success("删除成功");
+        } catch (CannotCreateTransactionException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 可选指标列表
+     *
+     * @return
+     * @throws Exception
+     */
+    @Permission({ModuleEnum.INDEXDESIGN, ModuleEnum.AUTHORIZATION})
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
+    public Result getOptionalIndex(@QueryParam("indexType") int indexType, @HeaderParam("tenantId") String tenantId) throws Exception {
+        if(!IndexType.contains(indexType)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标类型参数错误");
+        }
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.getOptionalIndex(" + indexType + ")");
+            }
+            List<OptionalIndexDTO> optionalIndexDTOs=indexService.getOptionalIndex(indexType,CATEGORY_TYPE, tenantId);
+            return ReturnUtil.success(optionalIndexDTOs);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    @Permission({ModuleEnum.INDEXDESIGN, ModuleEnum.AUTHORIZATION})
+    @GET
+    @Path("/dataSource")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
+    public Result getOptionalDataSource(@HeaderParam("tenantId") String tenantId) throws Exception {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.getOptionalDataSource()");
+            }
+            List<OptionalDataSourceDTO> optionalIndexDTOs=indexService.getOptionalDataSource(tenantId);
+            return ReturnUtil.success(optionalIndexDTOs);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    @Permission({ModuleEnum.INDEXDESIGN, ModuleEnum.AUTHORIZATION})
+    @GET
+    @Path("/{dataSourceId}/db")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
+    public Result getOptionalDb(@PathParam("dataSourceId") String dataSourceId,@HeaderParam("tenantId") String tenantId) throws Exception {
+        if(Objects.isNull(dataSourceId)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源id为空");
+        }
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.getOptionalDb("+dataSourceId+")");
+            }
+            List<String> optionalIndexDTOs=indexService.getOptionalDb(dataSourceId,tenantId);
+            return ReturnUtil.success(optionalIndexDTOs);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+
+
 
 }

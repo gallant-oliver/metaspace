@@ -121,4 +121,6 @@ public interface TableDAO {
              "select tableguid from tableinfo " +
              "</script>"})
     public List<String> getTables();
+    @Select("select distinct dbname from tableinfo where source_id=#{dataSourceId} and databasestatus=#{dataBaseStatus}")
+    List<String> getOptionalDbBySourceId(@Param("dataSourceId")String dataSourceId, @Param("dataBaseStatus")String dataBaseStatus);
 }
