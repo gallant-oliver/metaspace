@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.rest;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dto.indices.IndexFieldDTO;
@@ -10,6 +11,7 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
+import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.IndexService;
@@ -188,18 +190,41 @@ public class IndexREST {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"下载模板文件异常");
         }
     }
-
     /**
-     * 指标域全局导出
-     * @param tenantId
+     * 导出目录
+     * @param ids
+     * @return
      * @throws Exception
      */
-    @GET
-    @Path("/export/indexField/all")
-    @Valid
-    public void exportSelected(@HeaderParam("tenantId")String tenantId) throws Exception {
-        File exportExcel = dataManageService.exportExcelAll(CATEGORY_TYPE,tenantId);
+    @POST
+    @Path("/export/selected")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDownloadURL(List<String> ids) throws Exception {
+        String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/indices/export/selected";
         //全局导出
+        if (ids==null||ids.size()==0){
+            DownloadUri uri = new DownloadUri();
+            String downURL = url + "/" + "all";
+            uri.setDownloadUri(downURL);
+            return  ReturnUtil.success(uri);
+        }
+        DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
+        return ReturnUtil.success(downloadUri);
+    }
+
+    @GET
+    @Path("/export/selected/{downloadId}")
+    @Valid
+    public void exportSelected(@PathParam("downloadId") String downloadId,@QueryParam("tenantId")String tenantId) throws Exception {
+        File exportExcel;
+        //全局导出
+        String all = "all";
+        if (all.equals(downloadId)){
+            exportExcel = dataManageService.exportExcelAll(CATEGORY_TYPE,tenantId);
+        }else{
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域当前只支持全局导出");
+        }
         try {
             String filePath = exportExcel.getAbsolutePath();
             String fileName = filename(filePath);

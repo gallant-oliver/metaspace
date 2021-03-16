@@ -49,6 +49,7 @@ public class CategoryPrivilege {
         this.description=category.getDescription();
         this.level=category.getLevel();
         this.count=category.getCount();
+        this.code=category.getCode();
     };
     public CategoryPrivilege(CategoryEntityV2 categoryEntityV2){
         this.guid = categoryEntityV2.getGuid();
