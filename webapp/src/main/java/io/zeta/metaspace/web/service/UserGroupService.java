@@ -40,8 +40,8 @@ import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
 import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
-import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
+import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -611,6 +611,7 @@ public class UserGroupService {
 
     public List<CategoryPrivilege> getAdminCategory(int categorytype,String tenantId) throws AtlasBaseException {
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
+
         List<RoleModulesCategories.Category> allCategorys;
         if (categorytype==0){
             List<String> dbNames = tenantService.getDatabase(tenantId);
