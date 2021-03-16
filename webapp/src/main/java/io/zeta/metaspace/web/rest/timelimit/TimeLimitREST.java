@@ -22,28 +22,28 @@ package io.zeta.metaspace.web.rest.timelimit;
  * @date 2019/4/12 17:14
  */
 
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
-import io.zeta.metaspace.model.share.QueryInfo;
-import io.zeta.metaspace.model.share.QueryResult;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.timelimit.TimeLimitOperEnum;
 import io.zeta.metaspace.model.timelimit.TimeLimitRequest;
 import io.zeta.metaspace.model.timelimit.TimeLimitSearch;
-import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.timelimit.TimeLimitService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
-import org.restlet.resource.Patch;
-import org.restlet.resource.Post;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import io.zeta.metaspace.model.operatelog.OperateType;
 import javax.inject.Singleton;
-import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 @Path("timelimit")
 @Singleton
@@ -57,9 +57,11 @@ public class TimeLimitREST {
     @Path("/add")
     @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @OperateType(INSERT)
     public Result add(TimeLimitRequest request, @HeaderParam("tenantId")String tenantId) throws Exception {
         try {
             timeLimitService.addTimeLimit(request,tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.TIMELIMITEDIT.getAlias(), "添加时间限定"+request.getName());
             return ReturnUtil.success(); //无异常返回成功信息
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e.getMessage());
@@ -70,6 +72,7 @@ public class TimeLimitREST {
     @Path("/list")
     @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @OperateType(UPDATE)
     public Result list(TimeLimitSearch search, @HeaderParam("tenantId")String tenantId) throws Exception {
         try {
             return ReturnUtil.success(timeLimitService.search(search,tenantId)); //无异常返回成功信息
@@ -85,6 +88,7 @@ public class TimeLimitREST {
     public Result edit(TimeLimitRequest request, @HeaderParam("tenantId")String tenantId) throws Exception {
         try {
             timeLimitService.editTimeLimit(request,tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.TIMELIMITEDIT.getAlias(), "编辑时间限定"+request.getName());
             return ReturnUtil.success(); //无异常返回成功信息
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e.getMessage());
@@ -95,6 +99,7 @@ public class TimeLimitREST {
     @Path("/operate")
     @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
+    @OperateType(OperateTypeEnum.DELETE)
     public Result operate(TimeLimitRequest request, @HeaderParam("tenantId")String tenantId) throws Exception {
         try {
             if(TimeLimitOperEnum.PUBLISH.getCode().equals(request.getType())){  //发布操作，暂时不需要
@@ -103,6 +108,7 @@ public class TimeLimitREST {
                 timeLimitService.cancel(request,tenantId);
             }else{ //删除
                 timeLimitService.delTimeLimit(request,tenantId);
+                HttpRequestContext.get().auditLog(ModuleEnum.TIMELIMITEDIT.getAlias(), "删除时间限定"+request.getName());
             }
             return ReturnUtil.success(); //无异常返回成功信息
         } catch (Exception e) {

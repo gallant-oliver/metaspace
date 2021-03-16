@@ -13,9 +13,12 @@
 
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.approve.ApproveItem;
+import io.zeta.metaspace.model.approve.ApproveParas;
 import io.zeta.metaspace.model.approvegroup.ApproveGroup;
 import io.zeta.metaspace.model.approvegroup.ApproveGroupListAndSearchResult;
 import io.zeta.metaspace.model.approvegroup.ApproveGroupMemberSearch;
+import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
 import org.apache.ibatis.annotations.*;
@@ -34,221 +37,78 @@ public interface ApproveDAO {
 
     //实现用户组列表及搜索
     @Select("<script>" +
-            "select count(*) over() totalSize,u.id,u.name,u.description,case when m.member is NULL then '0' else m.member end member,u.creator,u.create_time as createTime,u.update_time as updateTime " +
-            " from approval_group u left join " +
-            " (select g.id id,count(*) member " +
-            " from approval_group  g " +
-            " join approval_group_relation r " +
-            " on g.id=r.group_id  where r.user_id in " +
-            "<foreach collection='ids' item='id' index='index' separator=',' open='(' close=')'>" +
-            "#{id}" +
-            "</foreach>" +
-            " GROUP BY g.id) m " +
-            " on u.id=m.id " +
-            " where u.tenantid=#{tenantId} and valid=true" +
-            "<if test='search!=null'>" +
-            " and u.name like '%${search}%' ESCAPE '/' " +
-            "</if>" +
-            "<if test='sortBy!=null'>" +
-            "order by ${sortBy} " +
-            "</if>" +
-            "<if test='order!=null '>" +
-            " ${order} " +
-            "</if>" +
-            "<if test='limit!=-1'>" +
-            " limit ${limit} " +
-            "</if>" +
-            "<if test='offset!=0'>" +
-            " offset ${offset} " +
-            "</if>" +
-            "</script>")
-    public List<ApproveGroupListAndSearchResult> getApproveGroup(@Param("tenantId") String tenantId, @Param("offset") int offset, @Param("limit") int limit,
-                                                                 @Param("sortBy") String sortBy, @Param("order") String order, @Param("search") String search,
-                                                                 @Param("ids") List<String> ids);
-
-
-    @Select("select username from users where userid=#{userId}")
-    public String getUserNameById(@Param("userId") String userId);
-
-
-    /**
-     * 审批组详情
-     */
-    @Select("select name,description from approval_group where id=#{id}")
-    public ApproveGroup getApproveGroupByID(@Param("id") String id);
-
-
-    @Select("<script>" +
-            " select name,description from approval_group where id in " +
-            "    <foreach item='id' index='index' collection='ids'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{id}" +
-            "    </foreach>" +
-            "</script>")
-    public List<ApproveGroup> getApproveGroupByIDs(@Param("ids") List<String> ids);
-
-
-
-
-    /**
-     * 三.新建用户组
-     */
-
-    @Insert("insert into approval_group (id,name,creator,description,create_time,update_time,valid,tenantid) values (#{group.id},#{group.name},#{group.creator},#{group.description},#{group.createTime},#{group.updateTime},true,#{tenantId})")
-    public Integer addGroup(@Param("tenantId") String tenantId, @Param("group") ApproveGroup group);
-
-    @Select("select count(*) from approval_group where name=#{name} and id!=#{id} and tenantid=#{tenantId} and valid=true")
-    public Integer isNameById(@Param("tenantId") String tenantId, @Param("name") String name, @Param("id") String id);
-
-
-    /**
-     * 四.删除用户组信息
-     */
-    @Delete("<script>" +
-            " delete from approval_group  " +
-            " where id in " +
-            "<foreach collection='ids' item='groupId' index='index' separator=',' open='(' close=')'>" +
-            " #{groupId}" +
+            "select count(*) over() totalSize,a.id,a.object_id as objectId,a.object_name as objectName,a.business_type as businessType,a.commit_time as commitTime,a.approve_type as approveType, " +
+            "a.status,a.approve_group as approveGroup,users.username as approver,a.approve_time as approveTime,a.submitter as submitter,a.reason as reason,a.module_id as moduleId,a.version as version,a.tenant_id as tenantId"+
+            " from approval_item a join users on a.approver = users.userid " +
+            " where a.tenant_id=#{tenantId}" +
+            "<if test='modules!=null and modules.size()!=0'>" +
+            " and module_id in " +
+            " <foreach collection='modules' item='moduleId' index='index' separator=',' open='(' close=')'>" +
+            " #{moduleId}" +
             " </foreach>"+
+            "</if>"+
+            "<if test='paras.approveStatus!=null and paras.approveStatus.size()!=0'>" +
+            " and status in " +
+            " <foreach collection='paras.status' item='stat' index='index' separator=',' open='(' close=')'>" +
+            " #{stat}" +
+            " </foreach>" +
+            "</if>" +
+            "<if test='paras.startTime!=null and paras.endTime!=null'>"+
+            " and a.approve_time between #{paras.startTime} and #{paras.endTime} "+
+            "</if>"+
+            "<if test='paras.userId!=null'>" +
+            " and a.submitter = #{paras.userId} " +
+            "</if>" +
+            "<if test='paras.approveType!=null'>" +
+            " and a.approve_type = #{paras.approveType} " +
+            "</if>" +
+            "<if test='paras.businessType!=null'>" +
+            " and a.business_type = #{paras.businessType} " +
+            "</if>" +
+            "<if test='paras.query!=null'>" +
+            " and a.object_name like '%${paras.query}%' ESCAPE '/' " +
+            "</if>" +
+            "<if test='paras.sortBy!=null'>" +
+            "order by ${paras.sortBy} " +
+            "</if>" +
+            "<if test='paras.order!=null '>" +
+            " ${paras.order} " +
+            "</if>" +
+            "<if test='paras.limit!=-1'>" +
+            " limit ${paras.limit} " +
+            "</if>" +
+            "<if test='paras.offset!=0'>" +
+            " offset ${paras.offset} " +
+            "</if>" +
             "</script>")
-    public void deleteApproveGroupByIDs(@Param("ids") List<String> ids);
+    public List<ApproveItem> getApproveItems(@Param("tenantId") String tenantId, @Param("paras") ApproveParas paras,
+                                                   @Param("modules") List<String> modules);
 
-
-    /**
-     * 删除审批组与模块关系
-     * @param ids
-     */
-    @Delete("<script>" +
-            "delete from approval_group_module_relation " +
-            " where group_id in " +
-            "<foreach collection='ids' item='id' index='index' separator=',' open='(' close=')'>" +
-            " #{id}" +
-            " </foreach>"+
-            "</script>")
-    public void deleteApproveGroupModule(@Param("ids") List<String> ids);
 
     /**
      * 审批组与模块关系
-     * @param id
+     * @param userId
      */
-    @Select("select module_id from approval_group_module_relation " +
-            " where group_id = #{id} "
-           )
-    public List<String> selectApproveGroupModule(@Param("id") String id);
+    @Select("select distinct(module_id) from (select group_id from approval_group_relation a join approval_group b on a.group_id = b.id and a.user_id = #{userId} and b.tenantid = #{tenantId} ) a join (select group_id,module_id from approval_group_module_relation) b on  a.group_id = b.group_id")
+    public List<String> selectApproveModuleByUserId(@Param("userId") String userId,@Param("tenantId") String tenantId);
+
 
 
 
     /**
-     * 审批组成员列表及搜索
-     */
-    @Select("<script>" +
-            "select count(*)over() totalSize,u.userid,u.username,u.account from users u join approval_group_relation g on u.userid=g.user_id " +
-            "where g.group_id=#{id} and u.userid in " +
-            "<foreach collection='ids' item='userId' index='index' separator=',' open='(' close=')'>" +
-            "#{userId}" +
-            "</foreach>" +
-            "<if test='search!=null'>" +
-            " and u.username like '%${search}%' ESCAPE '/' " +
-            "</if>" +
-            "<if test='limit!=-1'>" +
-            " limit ${limit} " +
-            "</if>" +
-            "<if test='offset!=0'>" +
-            " offset ${offset} " +
-            "</if>" +
-            "</script>")
-    public List<MemberListAndSearchResult> getMemberListAndSearch(@Param("id") String id, @Param("offset") int offset,
-                                                                  @Param("limit") int limit, @Param("search") String search, @Param("ids") List<String> ids);
-
-
-    /**
-     * 六.审批组已有成员列表
+     * 添加审批条目
      */
 
-
-    @Select("<script>" +
-            " select u.username  " +
-            " from approval_group_relation g  " +
-            " join users u " +
-            " on g.user_id=u.userid " +
-            " join approval_group  r " +
-            " on g.group_id=r.id " +
-            " where g.group_id=#{groupId} " +
-            " and r.tenantid=#{tenantId} " +
-            "</script>")
-    public List<String> getUserNameByGroupId(@Param("tenantId") String tenantId, @Param("groupId") String groupId);
-
-
-    @Select("<script>" +
-            "select count(*)over() totalSize,u.userid,u.username,u.account email from users u " +
-            " where u.username in " +
-            "<foreach collection='userNameList' item='userName' index='index' separator=',' open='(' close=')'>" +
-            "#{userName}" +
-            "</foreach>" +
-            "<if test='limit!=-1'>" +
-            " limit ${limit} " +
-            "</if>" +
-            "<if test='offset!=0'>" +
-            " offset ${offset} " +
-            "</if>" +
-            "</script>")
-    public List<ApproveGroupMemberSearch> getApproveGroupMemberSearch(@Param("userNameList") List<String> userNameList, @Param("offset") int offset, @Param("limit") int limit);
-
-
-    /**
-     * 审批组添加成员
-     */
-
-    @Insert({"<script> insert into approval_group_relation (group_id,user_id) values ",
-             "<foreach item='item' index='index' collection='userIds'",
-             "open='(' separator='),(' close=')'>",
-             "#{groupId},#{item}",
-             "</foreach>",
+    @Insert({"<script> insert into approval_item (id,object_id,object_name,business_type,approve_type,status,approve_group,approver,approve_time,submitter,commit_time,reason,module_id,version,tenant_id) values ",
+            "(#{item.id},#{item.objectId},#{item.objectName},#{item.businessType},#{item.approveType},'1',#{item.approveGroup},#{item.approver},#{item.approveTime},#{item.submitter},now(),#{item.reason},#{item.moduleId},#{item.version},#{item.tenantId})",
              "</script>"})
-    public void addUserGroupByID(@Param("groupId") String groupId, @Param("userIds") List<String> userIds);
+    public void addApproveItem(@Param("approveItem") ApproveItem item);
 
 
-    @Insert({"<script>insert into approval_group_module_relation (group_id,module_id) values ",
-            "<foreach item='item' index='index' collection='moduleIds'",
-            "open='(' separator='),(' close=')'>",
-            "#{groupId},#{item}",
-            "</foreach>",
-            "</script>"})
-    public void addModuleToGroupByIDs(@Param("groupId") String groupId, @Param("moduleIds") List<String> moduleIds);
+    //更新业务信息
+    @Update("update approval_item set status=#{item.status},approver=#{item.approver},approve_time=now(),reason=#{item.reason} where id=#{item.id} and tenant_id=#{item.tenantId}")
+    public int updateStatus(@Param("approveItem") ApproveItem item);
 
-    /**
-     * 审批组移除成员
-     */
-    @Delete({"<script>",
-             "delete from approval_group_relation where group_id=#{groupId} and user_id in ",
-             "<foreach collection='userIds' item='userId' index='index' separator=',' open='(' close=')'>",
-             "#{userId}",
-             "</foreach>",
-             "</script>"})
-    public void deleteUserByGroupId(@Param("groupId") String groupId, @Param("userIds") List<String> userIds);
-
-    /**
-     * 十五.修改用户组管理信息
-     */
-    @Update("update approval_group set " +
-            "name=#{group.name} ," +
-            "description=#{group.description} ," +
-            "updatetime=#{updateTime} " +
-            "where id=#{groupId}")
-    public void updateApproveGroupInformation(@Param("groupId") String groupId, @Param("group") ApproveGroup group, @Param("updateTime") Timestamp updateTime);
-
-
-    //判断用户组Id是否已经存在，true为存在，false为不存在
-    @Select("select count(*) from approval_group where id=#{groupId}")
-    public Integer existGroupId(@Param("groupId") String groupId);
-
-    @Select("select g.*,g.tenant tenantId from approval_group g join user_group_relation u on g.id=u.group_id where u.user_id=#{userId} and g.valid=true and tenant=#{tenantId}")
-    public List<UserGroup> getapproveGroupByUsersId(@Param("userId") String userId, @Param("tenantId") String tenantId);
-
-
-    //获取审批组的用户id
-    @Select("select user_id from approval_group_relation where group_id=#{groupId}")
-    public List<String> getUserIdByApproveGroup(@Param("groupId") String groupId);
 
 
 

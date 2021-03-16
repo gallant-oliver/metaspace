@@ -98,7 +98,7 @@ public class ApproveGroupREST {
     @OperateType(INSERT)
     public Result addGroup(@HeaderParam("tenantId") String tenantId, ApproveGroup approveGroup) throws AtlasBaseException {
         try {
-            HttpRequestContext.get().auditLog(ModuleEnum.APPROVEGROUP.getAlias(), "新建审批组："+approveGroup.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.APPROVERMANAGE.getAlias(), "新建审批组："+approveGroup.getName());
             approveGroupService.addApproveGroup(tenantId, approveGroup);
             return ReturnUtil.success();
         } catch (Exception e) {
@@ -118,7 +118,7 @@ public class ApproveGroupREST {
         try {
             //查询审批组，生成审计日志
             List<ApproveGroup> groupsByIDs = approveGroupService.getApproveGroupByIDs(map.get("groupIds"));
-            HttpRequestContext.get().auditLog(ModuleEnum.APPROVEGROUP.getAlias(), "删除审批组："+groupsByIDs.stream().map(group->group.getName()).collect(Collectors.joining(",")));
+            HttpRequestContext.get().auditLog(ModuleEnum.APPROVERMANAGE.getAlias(), "删除审批组："+groupsByIDs.stream().map(group->group.getName()).collect(Collectors.joining(",")));
             approveGroupService.deleteApproveGroupByIDs(map.get("groupIds"));
             return ReturnUtil.success();
         } catch (Exception e) {
@@ -187,7 +187,7 @@ public class ApproveGroupREST {
             String id = map.get("id").toString(); //审批组ID
             List<String> userIds = (List<String>)map.get("userIds");  //用户ID
             ApproveGroup approveGroupByID = approveGroupService.getApproveGroupById(id);
-            HttpRequestContext.get().auditLog(ModuleEnum.APPROVEGROUP.getAlias(), "审批组添加成员："+approveGroupByID.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.APPROVERMANAGE.getAlias(), "审批组添加成员："+approveGroupByID.getName());
             approveGroupService.addUserGroupByID(id, userIds);
             return ReturnUtil.success();
         } catch (Exception e) {
@@ -233,17 +233,13 @@ public class ApproveGroupREST {
             String id = map.get("id").toString(); //审批组ID
             List<String> userIds = (List<String>)map.get("userIds");  //用户ID
             ApproveGroup approveGroupByID = approveGroupService.getApproveGroupById(id);
-            HttpRequestContext.get().auditLog(ModuleEnum.APPROVEGROUP.getAlias(), "审批组移除成员："+approveGroupByID.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.APPROVERMANAGE.getAlias(), "审批组移除成员："+approveGroupByID.getName());
             approveGroupService.deleteUserByGroupId(id, userIds);
             return ReturnUtil.success();
         }catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"审批组移除成员失败");
         }
     }
-
-
-
-
 
     /**
      * 审批组编辑
@@ -256,8 +252,7 @@ public class ApproveGroupREST {
     @OperateType(UPDATE)
     public Result updateUserGroupInformation(ApproveGroup approveGroup,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            HttpRequestContext.get().auditLog(ModuleEnum.APPROVEGROUP.getAlias(), "修改审批组信息"+approveGroup.getName());
-
+            HttpRequestContext.get().auditLog(ModuleEnum.APPROVERMANAGE.getAlias(), "修改审批组信息"+approveGroup.getName());
             approveGroupService.updateUserGroupInformation(approveGroup.getId(), approveGroup,tenantId);
             return ReturnUtil.success();
         }catch (AtlasBaseException e){
