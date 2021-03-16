@@ -15,7 +15,7 @@ import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.DataManageService;
-import io.zeta.metaspace.web.service.IndexService;
+import io.zeta.metaspace.web.service.indexmanager.IndexServiceImpl;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
@@ -62,7 +62,7 @@ public class IndexREST {
     @Autowired
     private DataManageService dataManageService;
     @Autowired
-    private IndexService indexService;
+    private IndexServiceImpl indexService;
 
     @Context
     private HttpServletResponse response;
@@ -78,14 +78,14 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.INDEXDESIGN,ModuleEnum.AUTHORIZATION})
+    @Permission({ModuleEnum.NORMDESIGN,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     public CategoryPrivilege createCategory(CategoryInfoV2 categoryInfo, @HeaderParam("tenantId")String tenantId) throws Exception {
-        HttpRequestContext.get().auditLog(ModuleEnum.INDEXDESIGN.getAlias(), categoryInfo.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), categoryInfo.getName());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -105,7 +105,7 @@ public class IndexREST {
      * @return
      * @throws AtlasBaseException
      */
-    @Permission({ModuleEnum.INDEXDESIGN,ModuleEnum.AUTHORIZATION})
+    @Permission({ModuleEnum.NORMDESIGN,ModuleEnum.AUTHORIZATION})
     @PUT
     @Path("/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -133,7 +133,7 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.INDEXDESIGN, ModuleEnum.AUTHORIZATION})
+    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @DELETE
     @Path("/categories/{categoryGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -269,7 +269,7 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.INDEXDESIGN,ModuleEnum.AUTHORIZATION})
+    @Permission({ModuleEnum.NORMDESIGN,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -279,7 +279,7 @@ public class IndexREST {
         File file = null;
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-            HttpRequestContext.get().auditLog(ModuleEnum.INDEXDESIGN.getAlias(), name);
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), name);
             file = ExportDataPathUtils.fileCheck(name, fileInputStream);
             String upload = dataManageService.uploadIndexField(file, CATEGORY_TYPE, tenantId);
             HashMap<String, String> map = new HashMap<String, String>() {{
@@ -302,7 +302,7 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.INDEXDESIGN,ModuleEnum.AUTHORIZATION})
+    @Permission({ModuleEnum.NORMDESIGN,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/import/{upload}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -312,7 +312,7 @@ public class IndexREST {
         File file = null;
         try {
 
-            HttpRequestContext.get().auditLog(ModuleEnum.INDEXDESIGN.getAlias(), "指标域批量导入" );
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), "指标域批量导入" );
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
 
             dataManageService.importBatchIndexField(file,CATEGORY_TYPE,tenantId);
@@ -355,7 +355,7 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.INDEXDESIGN,ModuleEnum.AUTHORIZATION})
+    @Permission({ModuleEnum.NORMDESIGN,ModuleEnum.AUTHORIZATION})
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -364,7 +364,7 @@ public class IndexREST {
         if(Objects.isNull(indexDTO)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数错误");
         }
-        HttpRequestContext.get().auditLog(ModuleEnum.INDEXDESIGN.getAlias(), indexDTO.getIndexName());
+        HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), indexDTO.getIndexName());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -385,7 +385,7 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.INDEXDESIGN,ModuleEnum.AUTHORIZATION})
+    @Permission({ModuleEnum.NORMDESIGN,ModuleEnum.AUTHORIZATION})
     @Path("/{indexId}")
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -395,7 +395,7 @@ public class IndexREST {
         if(Objects.isNull(indexDTO)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数错误");
         }
-        HttpRequestContext.get().auditLog(ModuleEnum.INDEXDESIGN.getAlias(), indexDTO.getIndexName());
+        HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), indexDTO.getIndexName());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -417,7 +417,7 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.INDEXDESIGN, ModuleEnum.AUTHORIZATION})
+    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @DELETE
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -444,7 +444,7 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.INDEXDESIGN, ModuleEnum.AUTHORIZATION})
+    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @GET
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -467,7 +467,7 @@ public class IndexREST {
         }
     }
 
-    @Permission({ModuleEnum.INDEXDESIGN, ModuleEnum.AUTHORIZATION})
+    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @GET
     @Path("/dataSource")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -488,7 +488,7 @@ public class IndexREST {
         }
     }
 
-    @Permission({ModuleEnum.INDEXDESIGN, ModuleEnum.AUTHORIZATION})
+    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @GET
     @Path("/{dataSourceId}/db")
     @Consumes(Servlets.JSON_MEDIA_TYPE)

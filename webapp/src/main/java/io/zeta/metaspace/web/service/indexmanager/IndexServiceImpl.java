@@ -1,4 +1,4 @@
-package io.zeta.metaspace.web.service;
+package io.zeta.metaspace.web.service.indexmanager;
 
 import io.zeta.metaspace.model.datasource.DataSourceBody;
 import io.zeta.metaspace.model.dto.indices.*;
@@ -7,6 +7,8 @@ import io.zeta.metaspace.model.po.indices.*;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeanMapper;
 import io.zeta.metaspace.web.util.DateUtils;
@@ -26,9 +28,9 @@ import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Service
-public class IndexService {
-    private static final Logger LOG = LoggerFactory.getLogger(IndexService.class);
+@Service("indexService")
+public class IndexServiceImpl implements IndexService{
+    private static final Logger LOG = LoggerFactory.getLogger(IndexServiceImpl.class);
 
     @Autowired
     private DataManageService dataManageService;
@@ -423,5 +425,15 @@ public class IndexService {
         }
 
         return dataBases;
+    }
+
+    @Override
+    public Object getObjectDetail(String objectId, String type, int version) {
+        return null;
+    }
+
+    @Override
+    public void changeObjectStatus(String objectId, String type, int version, String approveResult) {
+
     }
 }
