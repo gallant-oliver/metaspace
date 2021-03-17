@@ -17,6 +17,7 @@
  */
 package org.apache.atlas.repository.store.graph.v2;
 
+import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
@@ -27,6 +28,11 @@ public class AtlasEntityStream implements EntityStream {
     protected final AtlasEntitiesWithExtInfo entitiesWithExtInfo;
     protected final EntityStream             entityStream;
     private         Iterator<AtlasEntity>    iterator;
+    private SyncTaskDefinition definition;
+
+    public SyncTaskDefinition getDefinition(){
+        return this.definition;
+    }
 
 
     public AtlasEntityStream(AtlasEntity entity) {
@@ -35,6 +41,10 @@ public class AtlasEntityStream implements EntityStream {
 
     public AtlasEntityStream(AtlasEntityWithExtInfo entityWithExtInfo) {
         this(new AtlasEntitiesWithExtInfo(entityWithExtInfo));
+    }
+    public AtlasEntityStream(AtlasEntityWithExtInfo entityWithExtInfo, SyncTaskDefinition definition) {
+        this(new AtlasEntitiesWithExtInfo(entityWithExtInfo));
+        this.definition = definition;
     }
 
     public AtlasEntityStream(AtlasEntitiesWithExtInfo entitiesWithExtInfo) {

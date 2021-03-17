@@ -17,6 +17,7 @@
  */
 package org.apache.atlas.repository.audit;
 
+import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import org.apache.atlas.EntityAuditEvent.EntityAuditAction;
 import org.apache.atlas.RequestContext;
 import org.apache.atlas.model.audit.EntityAuditEventV2;
@@ -77,7 +78,7 @@ public class EntityAuditListenerV2 implements EntityChangeListenerV2 {
     }
 
     @Override
-    public void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
+    public void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition) throws AtlasBaseException {
         List<EntityAuditEventV2> events = new ArrayList<>();
 
         for (AtlasEntity entity : entities) {

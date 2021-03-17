@@ -6,6 +6,7 @@ import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.sync.SyncTaskInstance;
 import io.zeta.metaspace.web.dao.SyncTaskDefinitionDAO;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
+import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.metadata.RDBMSMetaDataProvider;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.util.HiveMetaStoreBridgeUtils;
@@ -34,6 +35,8 @@ public class SyncTaskJob implements Job {
     private SyncTaskDefinitionDAO syncTaskDefinitionDAO;
     @Autowired
     private DataSourceService dataSourceService;
+    @Autowired
+    TableDAO tableDAO;
 
     @Override
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
@@ -48,6 +51,10 @@ public class SyncTaskJob implements Job {
             if (definition == null) {
                 throw new AtlasBaseException("采集任务找不到任务定义");
             }
+            String categoryGuid = definition.getCategoryGuid();
+            if(null != categoryGuid){
+                tableDAO.updateTableRelation(categoryGuid,definitionId);
+            }
             SyncTaskInstance instance = new SyncTaskInstance();
             instance.setId(instanceId);
             instance.setDefinitionId(definitionId);
@@ -61,7 +68,7 @@ public class SyncTaskJob implements Job {
             schema.setInstance(dataSourceId);
             schema.setAll(definition.isSyncAll());
             schema.setDatabases(definition.getSchemas());
-
+            schema.setDefinition(definition);
             if ("hive".equalsIgnoreCase(dataSourceId)) {
                 hiveMetaStoreBridgeUtils.importDatabases(instance.getId(), schema);
             } else {

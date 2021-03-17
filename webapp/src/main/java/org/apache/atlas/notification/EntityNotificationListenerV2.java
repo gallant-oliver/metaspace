@@ -17,6 +17,7 @@
  */
 package org.apache.atlas.notification;
 
+import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.service.MetadataHistoryService;
 import org.apache.atlas.AtlasErrorCode;
@@ -83,16 +84,16 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     }
 
     @Override
-    public void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
+    public void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition) throws AtlasBaseException {
         //notifyEntityEvents(entities, ENTITY_CREATE);
-        dataManageService.addEntity(entities);
+        dataManageService.addEntity(entities, definition);
         metadataHistoryService.storeHistoryMetadata(entities);
     }
 
     @Override
     public void onEntitiesUpdated(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
         //notifyEntityEvents(entities, ENTITY_UPDATE);
-        dataManageService.updateEntityInfo(entities);
+        dataManageService.updateEntityInfo(entities, null);
         metadataHistoryService.storeHistoryMetadata(entities);
     }
 

@@ -22,6 +22,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import org.apache.atlas.model.PList;
 import org.apache.atlas.model.SearchFilter.SortType;
 import org.apache.atlas.model.glossary.relations.AtlasTermAssignmentHeader;
@@ -87,7 +88,6 @@ public class AtlasEntity extends AtlasStruct implements Serializable {
     private Map<String, Object>             relationshipAttributes;
     private List<AtlasClassification>       classifications;
     private List<AtlasTermAssignmentHeader> meanings;
-
     @JsonIgnore
     private static AtomicLong s_nextId = new AtomicLong(System.nanoTime());
 

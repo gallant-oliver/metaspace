@@ -19,9 +19,10 @@ public interface SyncTaskDefinitionDAO {
     int countByName(@Param("id") String id, @Param("name") String name, @Param("tenantId") String tenantId);
 
 
-    @Insert("INSERT INTO " + TABLE_NAME + " (id, name,description, creator, create_time, update_time, enable, cron_start_time, cron_end_time, crontab, data_source_id, sync_all, schemas, tenant_id)\n" +
+    @Insert("INSERT INTO " + TABLE_NAME + " (id, name,description, creator, create_time, update_time, enable, " +
+            "cron_start_time, cron_end_time, crontab, data_source_id, sync_all, schemas, tenant_id, category_guid)\n" +
             "VALUES (#{definition.id}, #{definition.name}, #{definition.description}, #{definition.creator}, now(),now(),#{definition.enable}, #{definition.cronStartTime}, #{definition.cronEndTime}, #{definition.crontab}, #{definition.dataSourceId}, #{definition.syncAll}," +
-            "#{definition.schemas,typeHandler=io.zeta.metaspace.web.typeHandler.ListStringTypeHandler},#{definition.tenantId})")
+            "#{definition.schemas,typeHandler=io.zeta.metaspace.web.typeHandler.ListStringTypeHandler},#{definition.tenantId}, #{definition.categoryGuid})")
     int insert(@Param("definition") SyncTaskDefinition syncTaskDefinition);
 
     @Delete({"<script>",
@@ -42,6 +43,7 @@ public interface SyncTaskDefinitionDAO {
             "    crontab         = #{definition.crontab},\n" +
             "    data_source_id  = #{definition.dataSourceId},\n" +
             "    sync_all        = #{definition.syncAll},\n" +
+            "    category_guid   = #{definition.categoryGuid},\n" +
             "    schemas         = #{definition.schemas,typeHandler=io.zeta.metaspace.web.typeHandler.ListStringTypeHandler} \n" +
             "WHERE id = #{definition.id} "
     )

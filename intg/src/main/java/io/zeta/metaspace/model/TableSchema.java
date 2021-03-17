@@ -1,5 +1,6 @@
 package io.zeta.metaspace.model;
 
+import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import lombok.Data;
 
 import java.util.List;
@@ -16,4 +17,6 @@ public class TableSchema {
     boolean allDatabase;
     //同步所有数据库和表
     boolean all = false;
+
+    private SyncTaskDefinition definition;
 }

@@ -26,7 +26,8 @@ public interface TableDAO {
     @Select("select businessinfo.businessid,businessinfo.name businessObject,category.name department,businessinfo.submitter businessLeader from business2table,businessinfo,category where businessinfo.businessid=business2table.businessid and businessinfo.departmentid=category.guid and business2table.tableguid=#{guid} and category.tenantid=#{tenantId}")
     public List<Table.BusinessObject> getBusinessObjectByTableguid(@Param("guid") String guid,@Param("tenantId") String tenantId);
 
-    @Insert("insert into tableinfo(tableguid,tablename,dbname,status,createtime,databaseguid,databasestatus,description,source_id) values(#{table.tableGuid},#{table.tableName},#{table.dbName},#{table.status},#{table.createTime},#{table.databaseGuid},#{table.databaseStatus},#{table.description},#{table.sourceId})")
+    @Insert("insert into tableinfo(tableguid,tablename,dbname,status,createtime,databaseguid,databasestatus,description,source_id, task_id)\n" +
+            "values(#{table.tableGuid},#{table.tableName},#{table.dbName},#{table.status},#{table.createTime},#{table.databaseGuid},#{table.databaseStatus},#{table.description},#{table.sourceId},#{table.taskId})")
     public int addTable(@Param("table") TableInfo table);
 
     @Update("update tableinfo set tablename=#{table.tableName},dbname=#{table.dbName},description=#{table.description} where tableguid=#{table.tableGuid}")
@@ -42,6 +43,9 @@ public interface TableDAO {
             "</foreach>",
             "</script>"})
     public int addRelations(@Param("tableRelations") List<TableRelation> tableRelations);
+
+    @Update("update table_relation set categoryguid = #{categoryGuid} WHERE tableguid in (select tableguid from tableinfo WHERE task_id = #{taskId})")
+    public void updateTableRelation(@Param("categoryGuid")String categoryGuid, @Param("taskId")String taskId);
 
     @Select("select count(1) from tableinfo where tableguid=#{tableGuid}")
     public Integer ifTableExists(String tableGuid);
