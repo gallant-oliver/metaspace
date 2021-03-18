@@ -57,4 +57,6 @@ public class SyncTaskDefinition {
     private long total;
 
     private String categoryGuid;
+
+    private String categoryName;
 }

@@ -63,8 +63,11 @@ public interface SyncTaskDefinitionDAO {
     @Select("<script>" +
             "SELECT count(*) over() as total , definition.*," +
             "( case definition.data_source_id when 'hive' then 'hive' else  db.source_name end ) as dataSourceName," +
-            "( case definition.data_source_id when 'hive' then 'HIVE' else  db.source_type end ) as dataSourceType FROM " + TABLE_NAME + " definition " +
+            "( case definition.data_source_id when 'hive' then 'HIVE' else  db.source_type end ) as dataSourceType " +
+            "category.name as categoryName " +
+            "FROM " + TABLE_NAME + " definition " +
             "left join data_source db on  db.source_id =  definition.data_source_id " +
+            "left join category on  (definition.category_guid = category.guid and category.categorytype = 0 and category.tenantid = #{tenantId}) " +
             "WHERE tenant_id = #{tenantId} " +
             "<if test='null != parameters.query and 0 != parameters.query.length() '>" +
             " and name like '%${parameters.query}%' ESCAPE '/' " +
