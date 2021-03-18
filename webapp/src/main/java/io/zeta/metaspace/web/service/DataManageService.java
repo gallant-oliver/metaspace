@@ -99,6 +99,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.zeta.metaspace.model.role.SystemRole;
 import org.springframework.util.CollectionUtils;
@@ -232,8 +233,24 @@ public class DataManageService {
     public List<CategoryPrivilegeV2> getUserCategories(String tenantId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         List<CategoryPrivilegeV2> userCategories = userGroupDAO.getUserCategories(tenantId, user.getUserId());
-        userCategories.stream().forEach(c -> c.setRead(true));
+        if(!CollectionUtils.isEmpty(userCategories)){
+            userCategories.stream().forEach(c -> c.setRead(true));
+            List<String> guids = userCategories.stream().map(c -> c.getParentCategoryGuid()).collect(Collectors.toList());
+            getParentGuids(userCategories,guids,tenantId);
+        }
         return userCategories;
+    }
+
+    public void getParentGuids(List<CategoryPrivilegeV2> userCategories, List<String> guids, String tenantId){
+        guids = guids.stream().filter(g -> g != null).distinct().collect(Collectors.toList());
+        if(CollectionUtils.isEmpty(guids)){
+            return;
+        }
+        List<CategoryPrivilegeV2> parentCategories = userGroupDAO.getUserCategoriesByIds(guids, tenantId);
+        parentCategories.stream().forEach(c -> c.setRead(false));
+        userCategories.addAll(parentCategories);
+        guids = parentCategories.stream().map(p -> p.getParentCategoryGuid()).collect(Collectors.toList());
+        getParentGuids(userCategories,guids, tenantId);
     }
 
     /**
