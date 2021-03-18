@@ -51,10 +51,10 @@ public class SyncTaskJob implements Job {
             if (definition == null) {
                 throw new AtlasBaseException("采集任务找不到任务定义");
             }
-            String categoryGuid = definition.getCategoryGuid();
-            if(null != categoryGuid){
-                tableDAO.updateTableRelation(categoryGuid,definitionId);
+            if(null == definition.getCategoryGuid()){
+                definition.setCategoryGuid("1");
             }
+            tableDAO.updateTableRelation(definition.getCategoryGuid(),definitionId);
             SyncTaskInstance instance = new SyncTaskInstance();
             instance.setId(instanceId);
             instance.setDefinitionId(definitionId);

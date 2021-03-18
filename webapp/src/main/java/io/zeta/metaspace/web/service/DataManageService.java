@@ -246,6 +246,14 @@ public class DataManageService {
         if(CollectionUtils.isEmpty(guids)){
             return;
         }
+        for(CategoryPrivilegeV2 userCategory :userCategories){
+            if(guids.contains(userCategory.getGuid())){
+                guids.remove(userCategory.getGuid());
+            }
+        }
+        if(CollectionUtils.isEmpty(guids)){
+            return;
+        }
         List<CategoryPrivilegeV2> parentCategories = userGroupDAO.getUserCategoriesByIds(guids, tenantId);
         parentCategories.stream().forEach(c -> c.setRead(false));
         userCategories.addAll(parentCategories);
@@ -1471,10 +1479,11 @@ public class DataManageService {
     }
 
     public void updateRelations(SyncTaskDefinition definition){
-        if(null != definition&&null != definition.getCategoryGuid()){
-            String categoryGuid = definition.getCategoryGuid();
-            String id = definition.getId();
-            tableDAO.updateTableRelation(categoryGuid,id);
+        if(null != definition){
+            if(null == definition.getCategoryGuid()){
+                definition.setCategoryGuid("1");
+            }
+            tableDAO.updateTableRelation(definition.getCategoryGuid(),definition.getId());
         }
     }
 
