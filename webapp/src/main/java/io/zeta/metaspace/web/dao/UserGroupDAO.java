@@ -297,7 +297,7 @@ public interface UserGroupDAO {
             "</script>")
     public List<RoleModulesCategories.Category> getAllCategorysAndCount(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId,@Param("dbNames") List<String> dbNames);
 
-    @Select("select DISTINCT t1.read,t1.edit_category,t1.edit_item,t2.guid, t2.name, t2.level, t2.qualifiedname, t2.parentcategoryguid, t2.upbrothercategoryguid, t2.downbrothercategoryguid,t2.description, t2.safe FROM category_group_relation t1 JOIN category t2 ON t1.category_id = t2.guid\n" +
+    @Select("select DISTINCT t2.guid, t2.name, t2.level, t2.qualifiedname, t2.parentcategoryguid, t2.upbrothercategoryguid, t2.downbrothercategoryguid,t2.description, t2.safe FROM category_group_relation t1 JOIN category t2 ON t1.category_id = t2.guid\n" +
             "JOIN user_group t3 ON (t1.group_id = t3.id and t3.valid = true)\n" +
             "JOIN user_group_relation t4 ON t3.id = t4.group_id\n" +
             "WHERE t2.tenantid = #{tenantId}\n" +

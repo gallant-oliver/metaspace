@@ -231,7 +231,9 @@ public class DataManageService {
 
     public List<CategoryPrivilegeV2> getUserCategories(String tenantId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
-        return userGroupDAO.getUserCategories(tenantId,user.getUserId());
+        List<CategoryPrivilegeV2> userCategories = userGroupDAO.getUserCategories(tenantId, user.getUserId());
+        userCategories.stream().forEach(c -> c.setRead(true));
+        return userCategories;
     }
 
     /**
