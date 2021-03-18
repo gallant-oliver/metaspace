@@ -200,4 +200,74 @@ public interface IndexDAO {
             " order by update_time desc ",
             " </script>"})
     List<IndexCompositePO> getCompositeByIndexFields(@Param("indexFieldIds") List<String> indexFieldIds, @Param("tenantId") String tenantId, @Param("indexState") int indexState);
+    /**
+     *根据指标域id删除原子指标
+     */
+    @Delete("delete from index_atomic_info where index_field_id=#{guid} and tenant_id=#{tenantId}")
+    void deleteAtomicByIndexFieldId(@Param("guid") String guid,@Param("tenantId") String tenantId);
+    /**
+     *根据指标域id删除派生指标
+     */
+    @Delete("delete from index_derive_info where index_field_id=#{guid} and tenant_id=#{tenantId}")
+    void deleteDeriveByIndexFieldId(@Param("guid") String guid,@Param("tenantId") String tenantId);
+    /**
+     *根据指标域id删除复合指标
+     */
+    @Delete("delete from index_composite_info where index_field_id=#{guid} and tenant_id=#{tenantId}")
+    void deleteCompositeByIndexFieldId(@Param("guid") String guid,@Param("tenantId") String tenantId);
+    @Update("update index_atomic_info set index_field_id=#{targetGuid} where index_field_id=#{sourceGuid} and  tenant_id=#{tenantId}")
+    void updateAtomicIndexFieldId(@Param("sourceGuid") String sourceGuid,@Param("tenantId")  String tenantId,@Param("targetGuid")  String targetGuid);
+    @Update("update index_derive_info set index_field_id=#{targetGuid} where index_field_id=#{sourceGuid} and  tenant_id=#{tenantId}")
+    void updateDeriveIndexFieldId(@Param("sourceGuid") String sourceGuid,@Param("tenantId")  String tenantId,@Param("targetGuid")  String targetGuid);
+    @Update("update index_composite_info set index_field_id=#{targetGuid} where index_field_id=#{sourceGuid} and  tenant_id=#{tenantId}")
+    void updateCompositeIndexFieldId(@Param("sourceGuid") String sourceGuid,@Param("tenantId")  String tenantId,@Param("targetGuid")  String targetGuid);
+    @Select({" <script>",
+            " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName,ds.source_name as sourceName,ti.tablename as tableName,ci.column_name as columnName, " ,
+            " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
+            " from index_atomic_info iai " ,
+            " left join category ca on iai.index_field_id=ca.guid " ,
+            " left join approval_group ag on iai.approval_group_id=ag.id " ,
+            " left join data_source ds on iai.source_id=ds.source_id " ,
+            " left join tableinfo ti on iai.table_id=ti.tableguid and iai.source_id= ti.source_id and iai.db_name=ti.dbname" ,
+            " left join column_info ci on iai.column_id=ci.column_guid " ,
+            " left join users bl on iai.business_leader=bl.userid " ,
+            " left join users tl on iai.technical_leader=tl.userid " ,
+            " left join users c on iai.creator=c.userid " ,
+            " left join users u on iai.updater=u.userid " ,
+            " left join users p on iai.updater=p.userid " ,
+            " where iai.index_id=#{indexId} and ca.categorytype=#{categoryType} ",
+            " iai.tenant_id=#{tenantId} and ca.tenantid=#{tenantId} and ag.tenantid=#{tenantId} and ds.tenantid=#{tenantId}",
+            " </script>"})
+    IndexInfoPO getAtomicIndexInfoPO(@Param("indexId")String indexId,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
+    @Select({" <script>",
+            " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, t.name as timeLimitName " ,
+            " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
+            " from index_derive_info iai " ,
+            " left join time_limit t on iai.time_limit_id=t.id " ,
+            " left join category ca on iai.index_field_id=ca.guid " ,
+            " left join approval_group ag on iai.approval_group_id=ag.id " ,
+            " left join users bl on iai.business_leader=bl.userid " ,
+            " left join users tl on iai.technical_leader=tl.userid " ,
+            " left join users c on iai.creator=c.userid " ,
+            " left join users u on iai.updater=u.userid " ,
+            " left join users p on iai.updater=p.userid " ,
+            " where iai.index_id=#{indexId} and ca.categorytype=#{categoryType} ",
+            " iai.tenant_id=#{tenantId} and ca.tenantid=#{tenantId} and ag.tenantid=#{tenantId} and t.tenantid=#{tenantId} ",
+            " </script>"})
+    IndexInfoPO getDeriveIndexInfoPO(@Param("indexId")String indexId,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
+    @Select({" <script>",
+            " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, " ,
+            " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
+            " from index_composite_info iai " ,
+            " left join category ca on iai.index_field_id=ca.guid " ,
+            " left join approval_group ag on iai.approval_group_id=ag.id " ,
+            " left join users bl on iai.business_leader=bl.userid " ,
+            " left join users tl on iai.technical_leader=tl.userid " ,
+            " left join users c on iai.creator=c.userid " ,
+            " left join users u on iai.updater=u.userid " ,
+            " left join users p on iai.updater=p.userid " ,
+            " where iai.index_id=#{indexId} and ca.categorytype=#{categoryType} ",
+            " iai.tenant_id=#{tenantId} and ca.tenantid=#{tenantId} and ag.tenantid=#{tenantId} ",
+            " </script>"})
+    IndexInfoPO getCompositeIndexInfoPO(@Param("indexId")String indexId,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
 }

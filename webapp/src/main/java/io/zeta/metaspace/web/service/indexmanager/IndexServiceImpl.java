@@ -3,7 +3,9 @@ package io.zeta.metaspace.web.service.indexmanager;
 import io.zeta.metaspace.model.datasource.DataSourceBody;
 import io.zeta.metaspace.model.dto.indices.*;
 import io.zeta.metaspace.model.enums.IndexType;
+import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.po.indices.*;
+import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.*;
@@ -49,7 +51,10 @@ public class IndexServiceImpl implements IndexService{
     private TableDAO tableDAO;
     @Autowired
     private TenantService tenantService;
+    @Autowired
+    private ColumnDAO columnDAO;
 
+    @Override
     public IndexFieldDTO getIndexFieldInfo(String categoryId, String tenantId, int categoryType) throws SQLException {
         CategoryEntityV2 category = dataManageService.getCategory(categoryId, tenantId);
         if(category!=null){
@@ -83,6 +88,7 @@ public class IndexServiceImpl implements IndexService{
      * @return
      * @throws Exception
      */
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public IndexResposeDTO addIndex(IndexDTO indexDTO, String tenantId) throws Exception {
         int indexType=indexDTO.getIndexType();
@@ -204,6 +210,7 @@ public class IndexServiceImpl implements IndexService{
         return idmrPOS;
     }
 
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public IndexResposeDTO editIndex(IndexDTO indexDTO, String tenantId) throws SQLException {
         int indexType=indexDTO.getIndexType();
@@ -317,6 +324,7 @@ public class IndexServiceImpl implements IndexService{
         }
     }
 
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteIndex(DeleteRequestDTO<DeleteIndexInfoDTO> deleteList, String tenantId) {
         if(!CollectionUtils.isEmpty((Collection<DeleteIndexInfoDTO>) deleteList)){
@@ -356,6 +364,7 @@ public class IndexServiceImpl implements IndexService{
      * @param tenantId 租户id
      * @return
      */
+    @Override
     public List<OptionalIndexDTO> getOptionalIndex(int indexType, int categoryType, String tenantId) {
         //1.获取当前租户下用户所属用户组
         User user= AdminUtils.getUserData();
@@ -395,6 +404,7 @@ public class IndexServiceImpl implements IndexService{
      * @param tenantId
      * @return
      */
+    @Override
     public List<OptionalDataSourceDTO> getOptionalDataSource(String tenantId) {
         //1.获取当前租户下用户所属用户组
         User user= AdminUtils.getUserData();
@@ -416,7 +426,8 @@ public class IndexServiceImpl implements IndexService{
         return odsds;
     }
 
-    public List<String> getOptionalDb(String dataSourceId,String tenantId) {
+    @Override
+    public List<String> getOptionalDb(String dataSourceId, String tenantId) {
         List<String> dataBases=null;
         if("hive".equalsIgnoreCase(dataSourceId)){
             dataBases = tenantService.getDatabase(tenantId);
@@ -428,12 +439,71 @@ public class IndexServiceImpl implements IndexService{
     }
 
     @Override
+    public List<OptionalTableDTO> getOptionalTable(String dataSourceId, String dbName) {
+        List<TableInfo> tableInfos=tableDAO.getTableByDataSourceAndDb(dataSourceId,dbName,"ACTIVE");
+        List<OptionalTableDTO> optionalTableDTOS=null;
+        if(!CollectionUtils.isEmpty(tableInfos)){
+            optionalTableDTOS = tableInfos.stream().map(x -> BeanMapper.map(x, OptionalTableDTO.class)).collect(Collectors.toList());
+        }
+        return optionalTableDTOS;
+    }
+
+    @Override
+    public List<OptionalColumnDTO> getOptionalColumn(String tableId) {
+        List<Column> columnInfoList = columnDAO.getColumnInfoList(tableId);
+        List<OptionalColumnDTO> optionalColumnDTOS=null;
+        if(!CollectionUtils.isEmpty(columnInfoList)){
+            optionalColumnDTOS = columnInfoList.stream().map(x -> BeanMapper.map(x, OptionalColumnDTO.class)).collect(Collectors.toList());
+        }
+        return optionalColumnDTOS;
+    }
+
+    @Override
+    public IndexInfoDTO getIndexInfo(String indexId, int indexType,int categoryType, String tenantId) {
+        IndexInfoDTO indexInfoDTO=null;
+        if(indexType==IndexType.INDEXATOMIC.getValue()){
+            IndexInfoPO indexInfoPO=indexDAO.getAtomicIndexInfoPO(indexId,categoryType,tenantId);
+            indexInfoDTO=BeanMapper.map(indexInfoPO,IndexInfoDTO.class);
+            indexInfoDTO.setIndexType(IndexType.INDEXATOMIC.getValue());
+        }else if(indexType==IndexType.INDEXDERIVE.getValue()){
+            IndexInfoPO indexInfoPO=indexDAO.getDeriveIndexInfoPO(indexId,categoryType,tenantId);
+            indexInfoDTO=BeanMapper.map(indexInfoPO,IndexInfoDTO.class);
+            indexInfoDTO.setIndexType(IndexType.INDEXDERIVE.getValue());
+            //设置原子指标名称
+            //
+        }else if(indexType==IndexType.INDEXCOMPOSITE.getValue()){
+            IndexInfoPO indexInfoPO=indexDAO.getCompositeIndexInfoPO(indexId,categoryType,tenantId);
+            indexInfoDTO=BeanMapper.map(indexInfoPO,IndexInfoDTO.class);
+            indexInfoDTO.setIndexType(IndexType.INDEXCOMPOSITE.getValue());
+        }else {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标类型错误");
+        }
+        return indexInfoDTO;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteIndexByIndexFieldId(String guid, String tenantId) {
+        indexDAO.deleteAtomicByIndexFieldId(guid,tenantId);
+        indexDAO.deleteDeriveByIndexFieldId(guid,tenantId);
+        indexDAO.deleteCompositeByIndexFieldId(guid,tenantId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void removeIndexToAnotherIndexField(String sourceGuid, String tenantId, String targetGuid) {
+        indexDAO.updateAtomicIndexFieldId(sourceGuid,tenantId,targetGuid);
+        indexDAO.updateDeriveIndexFieldId(sourceGuid,tenantId,targetGuid);
+        indexDAO.updateCompositeIndexFieldId(sourceGuid,tenantId,targetGuid);
+    }
+
+    @Override
     public Object getObjectDetail(String objectId, String type, int version) {
         return null;
     }
 
     @Override
     public void changeObjectStatus(String objectId, String type, int version, String approveResult) {
-
+        
     }
 }

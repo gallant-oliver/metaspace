@@ -123,4 +123,12 @@ public interface TableDAO {
     public List<String> getTables();
     @Select("select distinct dbname from tableinfo where source_id=#{dataSourceId} and databasestatus=#{dataBaseStatus}")
     List<String> getOptionalDbBySourceId(@Param("dataSourceId")String dataSourceId, @Param("dataBaseStatus")String dataBaseStatus);
+
+    /**
+     * 获取可选的表
+     */
+    @Select("select * from tableinfo where source_id=#{dataSourceId} and dbname=#{dbName} and status=#{status}")
+    List<TableInfo> getTableByDataSourceAndDb(@Param("dataSourceId") String dataSourceId, @Param("dbName") String dbName,@Param("status") String status);
+
+
 }
