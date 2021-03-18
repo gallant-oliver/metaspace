@@ -61,7 +61,7 @@ public class TimeLimitREST {
     public Result add(TimeLimitRequest request, @HeaderParam("tenantId")String tenantId) throws Exception {
         try {
             timeLimitService.addTimeLimit(request,tenantId);
-            HttpRequestContext.get().auditLog(ModuleEnum.TIMELIMITEDIT.getAlias(), "添加时间限定"+request.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.TIMELIMIT.getAlias(), "添加时间限定"+request.getName());
             return ReturnUtil.success(); //无异常返回成功信息
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e.getMessage());
@@ -88,7 +88,7 @@ public class TimeLimitREST {
     public Result edit(TimeLimitRequest request, @HeaderParam("tenantId")String tenantId) throws Exception {
         try {
             timeLimitService.editTimeLimit(request,tenantId);
-            HttpRequestContext.get().auditLog(ModuleEnum.TIMELIMITEDIT.getAlias(), "编辑时间限定"+request.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.TIMELIMIT.getAlias(), "编辑时间限定"+request.getName());
             return ReturnUtil.success(); //无异常返回成功信息
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e.getMessage());
@@ -108,7 +108,7 @@ public class TimeLimitREST {
                 timeLimitService.cancel(request,tenantId);
             }else{ //删除
                 timeLimitService.delTimeLimit(request,tenantId);
-                HttpRequestContext.get().auditLog(ModuleEnum.TIMELIMITEDIT.getAlias(), "删除时间限定"+request.getName());
+                HttpRequestContext.get().auditLog(ModuleEnum.TIMELIMIT.getAlias(), "删除时间限定"+request.getName());
             }
             return ReturnUtil.success(); //无异常返回成功信息
         } catch (Exception e) {
