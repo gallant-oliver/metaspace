@@ -19,6 +19,7 @@ import io.zeta.metaspace.model.approvegroup.ApproveGroup;
 import io.zeta.metaspace.model.approvegroup.ApproveGroupListAndSearchResult;
 import io.zeta.metaspace.model.approvegroup.ApproveGroupMemberSearch;
 import io.zeta.metaspace.model.business.BusinessInfo;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
 import org.apache.ibatis.annotations.*;
@@ -109,8 +110,17 @@ public interface ApproveDAO {
     @Update("update approval_item set status=#{item.status},approver=#{item.approver},approve_time=now(),reason=#{item.reason} where id=#{item.id} and tenant_id=#{item.tenantId}")
     public int updateStatus(@Param("approveItem") ApproveItem item);
 
-
-
-
-
+    /**
+     * 获取审批成员
+     */
+    /**
+     * 复合指标依赖的派生指标
+     */
+    @Select({" <script>",
+            " select * from users where userid in " ,
+            " ( " ,
+            " select  user_id from approval_group_relation where group_id=#{approvalGroupId}" ,
+            " ) " ,
+            " </script>"})
+    List<User> getApproveUsers(@Param("approvalGroupId")String approvalGroupId);
 }

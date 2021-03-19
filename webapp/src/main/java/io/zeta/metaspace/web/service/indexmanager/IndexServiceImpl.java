@@ -1,14 +1,19 @@
 package io.zeta.metaspace.web.service.indexmanager;
 
+import io.zeta.metaspace.model.approve.ApproveItem;
+import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.datasource.DataSourceBody;
 import io.zeta.metaspace.model.dto.indices.*;
 import io.zeta.metaspace.model.enums.IndexType;
 import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.modifiermanage.Qualifier;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.po.indices.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.service.Approve.ApproveService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -18,6 +23,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.net.ntp.TimeStamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,6 +59,10 @@ public class IndexServiceImpl implements IndexService{
     private TenantService tenantService;
     @Autowired
     private ColumnDAO columnDAO;
+    @Autowired
+    private ApproveDAO approveDAO;
+    @Autowired
+    private ApproveService approveServiceImpl;
 
     @Override
     public IndexFieldDTO getIndexFieldInfo(String categoryId, String tenantId, int categoryType) throws SQLException {
@@ -326,10 +336,10 @@ public class IndexServiceImpl implements IndexService{
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void deleteIndex(DeleteRequestDTO<DeleteIndexInfoDTO> deleteList, String tenantId) {
+    public void deleteIndex(RequestDTO<DeleteIndexInfoDTO> deleteList, String tenantId) {
         if(!CollectionUtils.isEmpty((Collection<DeleteIndexInfoDTO>) deleteList)){
             Map<Integer,List<String>> deleteMap=new HashMap<>();
-            ((Collection<DeleteIndexInfoDTO>) deleteList).forEach(x->{
+            deleteList.getDtoList().forEach(x->{
                 List<String> deleteIds = deleteMap.get(x.getIndexType());
                 if(CollectionUtils.isEmpty(deleteIds)){
                     deleteIds=new ArrayList<>();
@@ -459,26 +469,129 @@ public class IndexServiceImpl implements IndexService{
     }
 
     @Override
-    public IndexInfoDTO getIndexInfo(String indexId, int indexType,int categoryType, String tenantId) {
+    public IndexInfoDTO getIndexInfo(String indexId, int indexType,int version,int categoryType, String tenantId) {
         IndexInfoDTO indexInfoDTO=null;
         if(indexType==IndexType.INDEXATOMIC.getValue()){
-            IndexInfoPO indexInfoPO=indexDAO.getAtomicIndexInfoPO(indexId,categoryType,tenantId);
+            IndexInfoPO indexInfoPO=indexDAO.getAtomicIndexInfoPO(indexId,version,categoryType,tenantId);
             indexInfoDTO=BeanMapper.map(indexInfoPO,IndexInfoDTO.class);
             indexInfoDTO.setIndexType(IndexType.INDEXATOMIC.getValue());
         }else if(indexType==IndexType.INDEXDERIVE.getValue()){
-            IndexInfoPO indexInfoPO=indexDAO.getDeriveIndexInfoPO(indexId,categoryType,tenantId);
+            IndexInfoPO indexInfoPO=indexDAO.getDeriveIndexInfoPO(indexId,version,categoryType,tenantId);
             indexInfoDTO=BeanMapper.map(indexInfoPO,IndexInfoDTO.class);
             indexInfoDTO.setIndexType(IndexType.INDEXDERIVE.getValue());
-            //设置原子指标名称
-            //
+            //添加依赖的原子指标
+            List<IndexAtomicPO> indexAtomicPOs=indexDAO.getDependentAtomicIndex(indexInfoPO.getIndexAtomicId(),tenantId);
+            if(!CollectionUtils.isEmpty(indexAtomicPOs)){
+                List<IndexInfoDTO.DependentIndex> dependentIndices=indexAtomicPOs.stream().map(x->BeanMapper.map(x,IndexInfoDTO.DependentIndex.class)).collect(Collectors.toList());
+                indexInfoDTO.setDependentIndices(dependentIndices);
+            }
+            //添加修饰词
+            List<Qualifier> qualifiers=indexDAO.getModifiers(indexInfoPO.getIndexId(),tenantId);
+            if(!CollectionUtils.isEmpty(qualifiers)){
+                List<IndexInfoDTO.Modifier> modifiers=qualifiers.stream().map(x->BeanMapper.map(x,IndexInfoDTO.Modifier.class)).collect(Collectors.toList());
+                indexInfoDTO.setModifiers(modifiers);
+            }
         }else if(indexType==IndexType.INDEXCOMPOSITE.getValue()){
-            IndexInfoPO indexInfoPO=indexDAO.getCompositeIndexInfoPO(indexId,categoryType,tenantId);
+            IndexInfoPO indexInfoPO=indexDAO.getCompositeIndexInfoPO(indexId,version,categoryType,tenantId);
             indexInfoDTO=BeanMapper.map(indexInfoPO,IndexInfoDTO.class);
             indexInfoDTO.setIndexType(IndexType.INDEXCOMPOSITE.getValue());
+            //添加依赖的派生指标
+            List<IndexDerivePO> indexDerivePOS=indexDAO.getDependentDeriveIndex(indexInfoPO.getIndexId(),tenantId);
+            if(!CollectionUtils.isEmpty(indexDerivePOS)){
+                List<IndexInfoDTO.DependentIndex> dependentIndices=indexDerivePOS.stream().map(x->BeanMapper.map(x,IndexInfoDTO.DependentIndex.class)).collect(Collectors.toList());
+                indexInfoDTO.setDependentIndices(dependentIndices);
+            }
         }else {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标类型错误");
         }
+        //添加审批组成员
+        List<User> users=approveDAO.getApproveUsers(indexInfoDTO.getApprovalGroupId());
+        if(!CollectionUtils.isEmpty(users)){
+            List<IndexInfoDTO.ApprovalGroupMember> approvalGroupMembers=users.stream().map(x->BeanMapper.map(x,IndexInfoDTO.ApprovalGroupMember.class)).collect(Collectors.toList());
+            indexInfoDTO.setApprovalGroupMembers(approvalGroupMembers);
+        }
         return indexInfoDTO;
+    }
+
+    @Override
+    public void indexSendApprove(List<PublishIndexDTO> dtoList, String tenantId) throws AtlasBaseException{
+        for (PublishIndexDTO pid : dtoList) {
+            if(Objects.isNull(pid.getIndexId())||Objects.isNull(pid.getIndexName())|| Objects.isNull(ApproveType.getApproveTypeByCode(pid.getApproveType()))||Objects.isNull(pid.getApprovalGroupId())){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数错误");
+            }
+            ApproveItem approveItem=new ApproveItem();
+            approveItem.setId(UUID.randomUUID().toString());
+            approveItem.setObjectId(pid.getIndexId());
+            approveItem.setObjectName(pid.getIndexName());
+            approveItem.setBusinessType(pid.getIndexType()+"");
+            approveItem.setApproveType(pid.getApproveType());
+            approveItem.setApproveGroup(pid.getApprovalGroupId());
+            User user= AdminUtils.getUserData();
+            approveItem.setSubmitter(user.getUserId());
+            TimeStamp timeStamp=new TimeStamp(System.currentTimeMillis());
+            approveItem.setCommitTime(timeStamp);
+            approveItem.setModule_id(ModuleEnum.NORMDESIGN.getId()+"");
+            approveItem.setVersion(pid.getVersion());
+            approveItem.setTenant_id(tenantId);
+            approveServiceImpl.addApproveItem(approveItem);
+        }
+    }
+
+    @Override
+    public List<IndexInfoDTO> publishHistory(String indexId, int indexType, int categoryType, String tenantId) {
+
+        List<IndexInfoDTO> indexInfoDTOs=null;
+        if(indexType==IndexType.INDEXATOMIC.getValue()){
+            List<IndexInfoPO> indexInfoPOs=indexDAO.getAtomicIndexHistory(indexId,categoryType,tenantId);
+            indexInfoDTOs=indexInfoPOs.stream().map(x->{
+                IndexInfoDTO indexInfoDTO=BeanMapper.map(x,IndexInfoDTO.class);
+                indexInfoDTO.setIndexType(IndexType.INDEXATOMIC.getValue());
+                return indexInfoDTO;
+            }).collect(Collectors.toList());
+        }else if(indexType==IndexType.INDEXDERIVE.getValue()){
+            List<IndexInfoPO> indexInfoPOs=indexDAO.getDeriveIndexHistory(indexId,categoryType,tenantId);
+            String indexAtomicId="";
+            indexInfoDTOs=indexInfoPOs.stream().map(x->{
+                IndexInfoDTO indexInfoDTO=BeanMapper.map(x,IndexInfoDTO.class);
+                indexInfoDTO.setIndexType(IndexType.INDEXDERIVE.getValue());
+                if(indexAtomicId.equals())
+                //添加依赖的原子指标
+                List<IndexAtomicPO> indexAtomicPOs=indexDAO.getDependentAtomicIndex(x.getIndexAtomicId(),tenantId);
+
+                if(!CollectionUtils.isEmpty(indexAtomicPOs)){
+                    List<IndexInfoDTO.DependentIndex> dependentIndices=indexAtomicPOs.stream().map(x->BeanMapper.map(x,IndexInfoDTO.DependentIndex.class)).collect(Collectors.toList());
+                    indexInfoDTO.setDependentIndices(dependentIndices);
+                }
+                return indexInfoDTO;
+            }).collect(Collectors.toList());
+
+
+            //添加修饰词
+            List<Qualifier> qualifiers=indexDAO.getModifiers(indexInfoPO.getIndexId(),tenantId);
+            if(!CollectionUtils.isEmpty(qualifiers)){
+                List<IndexInfoDTO.Modifier> modifiers=qualifiers.stream().map(x->BeanMapper.map(x,IndexInfoDTO.Modifier.class)).collect(Collectors.toList());
+                indexInfoDTO.setModifiers(modifiers);
+            }
+        }else if(indexType==IndexType.INDEXCOMPOSITE.getValue()){
+            List<IndexInfoPO> indexInfoPOs=indexDAO.getCompositeIndexHistory(indexId,categoryType,tenantId);
+            indexInfoDTO=BeanMapper.map(indexInfoPO,IndexInfoDTO.class);
+            indexInfoDTO.setIndexType(IndexType.INDEXCOMPOSITE.getValue());
+            //添加依赖的派生指标
+            List<IndexDerivePO> indexDerivePOS=indexDAO.getDependentDeriveIndex(indexInfoPO.getIndexId(),tenantId);
+            if(!CollectionUtils.isEmpty(indexDerivePOS)){
+                List<IndexInfoDTO.DependentIndex> dependentIndices=indexDerivePOS.stream().map(x->BeanMapper.map(x,IndexInfoDTO.DependentIndex.class)).collect(Collectors.toList());
+                indexInfoDTO.setDependentIndices(dependentIndices);
+            }
+        }else {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标类型错误");
+        }
+        //添加审批组成员
+        List<User> users=approveDAO.getApproveUsers(indexInfoDTO.getApprovalGroupId());
+        if(!CollectionUtils.isEmpty(users)){
+            List<IndexInfoDTO.ApprovalGroupMember> approvalGroupMembers=users.stream().map(x->BeanMapper.map(x,IndexInfoDTO.ApprovalGroupMember.class)).collect(Collectors.toList());
+            indexInfoDTO.setApprovalGroupMembers(approvalGroupMembers);
+        }
+        return indexInfoDTOs;
     }
 
     @Override

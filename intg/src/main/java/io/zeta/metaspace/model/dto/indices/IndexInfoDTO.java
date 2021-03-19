@@ -1,5 +1,7 @@
 package io.zeta.metaspace.model.dto.indices;
 
+import io.zeta.metaspace.model.po.indices.IndexAtomicPO;
+
 import java.util.List;
 
 public class IndexInfoDTO {
@@ -473,7 +475,27 @@ public class IndexInfoDTO {
         this.publishTime = publishTime;
     }
 
-    class ApprovalGroupMember{
+    public class ApprovalGroupMember{
+        private String userId;
+        private String username;
+
+        public String getUserId() {
+            return userId;
+        }
+
+        public void setUserId(String userId) {
+            this.userId = userId;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public void setUsername(String username) {
+            this.username = username;
+        }
+    }
+    public class Modifier{
         private String id;
         private String name;
 
@@ -493,27 +515,7 @@ public class IndexInfoDTO {
             this.name = name;
         }
     }
-    class Modifier{
-        private String id;
-        private String name;
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-    }
-    class DependentIndex{
+    public static class DependentIndex{
         private String indexId;
         private String indexName;
         private String indexIdentification;
