@@ -9,6 +9,7 @@ import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerColumn;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerForeignKey;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerIndex;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerTable;
+import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.sync.SyncTaskInstance;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.AdapterUtils;
@@ -123,7 +124,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         String instanceId = tableSchema.getInstance();
 
         //根据数据源id获取图数据库中的数据源，如果有，则更新，如果没有，则创建
-        AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(instanceId, tableSchema.isAll());
+        AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(instanceId, tableSchema.isAll(), tableSchema.getDefinition());
         String instanceGuid = atlasEntityWithExtInfo.getEntity().getGuid();
         if (!CollectionUtils.isEmpty(metaDataInfo.getSchemas()) && !tableSchema.isAllDatabase()) {
             LOG.info("Found {} databases", metaDataInfo.getSchemas().size());
@@ -139,7 +140,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                     clearRelationshipAttributes(dbEntity);
                     metaDataContext.putEntity(dbQualifiedName, dbEntity);
                 }
-                importTables(dbEntity.getEntity(), instanceId, database.getFullName(), getTables(database), false, instanceGuid, taskInstanceId);
+                importTables(dbEntity.getEntity(), instanceId, database.getFullName(), getTables(database), false, instanceGuid, taskInstanceId, tableSchema.getDefinition());
             }
 
         } else {
@@ -150,7 +151,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     }
 
 
-    protected AtlasEntity.AtlasEntityWithExtInfo registerInstance(String instanceId, boolean allDatabase) throws Exception {
+    protected AtlasEntity.AtlasEntityWithExtInfo registerInstance(String instanceId, boolean allDatabase, SyncTaskDefinition definition) throws Exception {
         AtlasEntity.AtlasEntityWithExtInfo ret;
         String instanceQualifiedName = getInstanceQualifiedName(instanceId);
 
@@ -170,12 +171,12 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 AtlasEntity.AtlasEntityWithExtInfo instanceEntity;
                 if (ret == null) {
                     instanceEntity = toInstanceEntity(null, instanceId, allDatabase);
-                    ret = registerEntity(instanceEntity);
+                    ret = registerEntity(instanceEntity, definition);
                     isSource = false;
                 } else {
                     LOG.info("Instance {} is already registered - id={}. Updating it.", instanceId, ret.getEntity().getGuid());
                     ret = toInstanceEntity(ret, instanceId, allDatabase);
-                    createOrUpdateEntity(ret);
+                    entitiesStore.createOrUpdate(new AtlasEntityStream(ret, definition), false);
                     isSource = true;
                 }
                 return ret;
@@ -246,9 +247,10 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     }
 
 
-    protected int importTable(AtlasEntity dbEntity, String instanceId, String databaseName, Table tableName, final boolean failOnError, String instanceGuid) throws Exception {
+    protected int importTable(AtlasEntity dbEntity, String instanceId, String databaseName, Table tableName, final boolean failOnError,
+                              String instanceGuid, SyncTaskDefinition definition) throws Exception {
         try {
-            registerTable(dbEntity, instanceId, databaseName, tableName, instanceGuid);
+            registerTable(dbEntity, instanceId, databaseName, tableName, instanceGuid, definition);
             return 1;
         } catch (Exception e) {
             LOG.error("Import failed for {} {}", getTableTypeName(), tableName, e);
@@ -337,7 +339,8 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         return ret;
     }
 
-    protected List<AtlasEntity> toForeignKeys(Collection<SchemaCrawlerForeignKey> foreignKeys, List<AtlasEntity> columns, AtlasEntity.AtlasEntityWithExtInfo tableEntity, String databaseName) throws AtlasBaseException {
+    protected List<AtlasEntity> toForeignKeys(Collection<SchemaCrawlerForeignKey> foreignKeys, List<AtlasEntity> columns,
+                                              AtlasEntity.AtlasEntityWithExtInfo tableEntity, String databaseName,SyncTaskDefinition definition) throws AtlasBaseException {
         AtlasEntity table = tableEntity.getEntity();
         List<AtlasEntity> ret = new ArrayList<>();
         for (SchemaCrawlerForeignKey foreignKey : foreignKeys) {
@@ -368,7 +371,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                     foreignEntity.setAttribute(ATTRIBUTE_REFERENCES_COLUMNS, getPrimaryKeyColumns(foreignKey, primaryColumns));
                     tableInfo.addReferredEntity(foreignEntity);
                     ((List<AtlasObjectId>) tableInfo.getEntity().getAttribute(ATTRIBUTE_FOREIGN_KEYS)).add(getObjectId(foreignEntity));
-                    createOrUpdateEntity(tableInfo);
+                    entitiesStore.createOrUpdate(new AtlasEntityStream(tableInfo, definition), false);
                 }
                 foreignEntity.setAttribute(ATTRIBUTE_TABLE, getObjectId(table));
                 foreignEntity.setAttribute(ATTRIBUTE_KEY_COLUMNS, getKeyColumns(foreignKey, columns));
@@ -455,7 +458,8 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
      * @param tableEntity
      * @return
      */
-    protected AtlasEntity.AtlasEntityWithExtInfo toTableEntity(AtlasEntity dbEntity, String instanceId, String databaseName, Table table, AtlasEntity.AtlasEntityWithExtInfo tableEntity, String instanceGuid) throws AtlasBaseException {
+    protected AtlasEntity.AtlasEntityWithExtInfo toTableEntity(AtlasEntity dbEntity, String instanceId, String databaseName,
+                                                               Table table, AtlasEntity.AtlasEntityWithExtInfo tableEntity, String instanceGuid, SyncTaskDefinition definition ) throws AtlasBaseException {
         if (null == tableEntity) {
             tableEntity = new AtlasEntity.AtlasEntityWithExtInfo(new AtlasEntity(getTableTypeName()));
         }
@@ -481,7 +485,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
 
         List<AtlasEntity> columns = toColumns(schemaCrawlerTable.getColumns(), tableEntity);
         List<AtlasEntity> indexes = toIndexes(schemaCrawlerTable.getIndexes(), columns, tableEntity, databaseName, instanceGuid);
-        List<AtlasEntity> foreignKeys = toForeignKeys(schemaCrawlerTable.getForeignKeys(), columns, tableEntity, databaseName);
+        List<AtlasEntity> foreignKeys = toForeignKeys(schemaCrawlerTable.getForeignKeys(), columns, tableEntity, databaseName, definition);
 
         tableAtlasEntity.setAttribute(ATTRIBUTE_COLUMNS, getObjectIds(columns));
         for (AtlasEntity column : columns) {
@@ -512,11 +516,6 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         for (AtlasEntity foreignKey : foreignKeys) {
             tableEntity.addReferredEntity(foreignKey);
         }
-    }
-
-
-    protected void createOrUpdateEntity(AtlasEntity.AtlasEntityWithExtInfo dbEntity) throws AtlasBaseException {
-        entitiesStore.createOrUpdate(new AtlasEntityStream(dbEntity), false);
     }
 
 
@@ -555,7 +554,8 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         return RMDB_TABLE;
     }
 
-    protected AtlasEntity.AtlasEntityWithExtInfo registerTable(AtlasEntity dbEntity, String instanceId, String databaseName, Table tableName, String instanceGuid) throws Exception {
+    protected AtlasEntity.AtlasEntityWithExtInfo registerTable(AtlasEntity dbEntity, String instanceId, String databaseName,
+                                                               Table tableName, String instanceGuid, SyncTaskDefinition definition) throws Exception {
         String tableQualifiedName = getTableQualifiedName(instanceId, databaseName, tableName.getName());
         AtlasEntity.AtlasEntityWithExtInfo ret = findEntity(getTableTypeName(), tableQualifiedName);
 
@@ -567,17 +567,17 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 LOG.info("拿锁成功 : " + Thread.currentThread().getName() + " " + tableQualifiedName);
                 AtlasEntity.AtlasEntityWithExtInfo tableEntity;
                 if (ret == null) {
-                    tableEntity = toTableEntity(dbEntity, instanceId, databaseName, tableName, null, instanceGuid);
-                    ret = registerEntity(tableEntity);
+                    tableEntity = toTableEntity(dbEntity, instanceId, databaseName, tableName, null, instanceGuid, definition);
+                    ret = registerEntity(tableEntity, definition);
                 } else {
                     LOG.info("Table {}.{} is already registered with id {}. Updating entity.", databaseName, tableName, ret.getEntity().getGuid());
-                    ret = toTableEntity(dbEntity, instanceId, databaseName, tableName, ret, instanceGuid);
+                    ret = toTableEntity(dbEntity, instanceId, databaseName, tableName, ret, instanceGuid, definition);
 
-                    createOrUpdateEntity(ret);
+                    entitiesStore.createOrUpdate(new AtlasEntityStream(ret, definition), false);
                     AtlasRelatedObjectId atlasRelatedObjectId = new AtlasRelatedObjectId();
                     atlasRelatedObjectId.setDisplayText(String.valueOf(dbEntity.getAttribute(ATTRIBUTE_NAME)));
                     ret.getEntity().setRelationshipAttribute("db", atlasRelatedObjectId);
-                    dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()));
+                    dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()), definition);
                 }
                 return ret;
             }
@@ -665,7 +665,8 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
      * @param failOnError
      * @throws Exception
      */
-    private int importTables(AtlasEntity dbEntity, String instanceId, String databaseName, Collection<Table> tableNames, final boolean failOnError, String instanceGuid, String taskInstanceId) throws Exception {
+    private int importTables(AtlasEntity dbEntity, String instanceId, String databaseName, Collection<Table> tableNames,
+                             final boolean failOnError, String instanceGuid, String taskInstanceId, SyncTaskDefinition definition) throws Exception {
         int tablesImported = 0;
 
         if (!CollectionUtils.isEmpty(tableNames)) {
@@ -686,7 +687,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                     if (LOG.isDebugEnabled()) {
                         LOG.debug("导入{}表的元数据", tableName.getFullName());
                     }
-                    int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError, instanceGuid);
+                    int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError, instanceGuid, definition);
                     if (imported == 1) {
                         syncTaskInstanceDAO.appendLog(taskInstanceId, "成功导入表: " + tableName.getFullName());
                     }
@@ -718,20 +719,20 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
      * @return
      * @throws Exception
      */
-    protected AtlasEntity.AtlasEntityWithExtInfo registerEntity(AtlasEntity.AtlasEntityWithExtInfo entity) throws Exception {
+    protected AtlasEntity.AtlasEntityWithExtInfo registerEntity(AtlasEntity.AtlasEntityWithExtInfo entity, SyncTaskDefinition definition) throws Exception {
         if (LOG.isDebugEnabled()) {
             LOG.debug("creating {} entity: {}", entity.getEntity().getTypeName(), entity);
         }
 
         AtlasEntity.AtlasEntityWithExtInfo ret = null;
-        EntityMutationResponse response = atlasEntityStore.createOrUpdate(new AtlasEntityStream(entity), false);
+        EntityMutationResponse response = atlasEntityStore.createOrUpdate(new AtlasEntityStream(entity, definition), false);
         List<AtlasEntityHeader> createdEntities = response.getEntitiesByOperation(EntityMutations.EntityOperation.CREATE);
 
         if (CollectionUtils.isNotEmpty(createdEntities)) {
             for (AtlasEntityHeader createdEntity : createdEntities) {
                 if (ret == null) {
                     ret = atlasEntityStore.getById(createdEntity.getGuid());
-                    dataManageService.addEntity(Arrays.asList(ret.getEntity()));
+                    dataManageService.addEntity(Arrays.asList(ret.getEntity()),definition);
                     LOG.info("Created {} entity: name={}, guid={}", ret.getEntity().getTypeName(), ret.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), ret.getEntity().getGuid());
                 } else if (ret.getEntity(createdEntity.getGuid()) == null) {
                     AtlasEntity.AtlasEntityWithExtInfo newEntity = atlasEntityStore.getById(createdEntity.getGuid());
@@ -743,7 +744,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                             ret.addReferredEntity(entry.getKey(), entry.getValue());
                         }
                     }
-                    dataManageService.addEntity(Arrays.asList(newEntity.getEntity()));
+                    dataManageService.addEntity(Arrays.asList(newEntity.getEntity()), definition);
                     LOG.info("Created {} entity: name={}, guid={}", newEntity.getEntity().getTypeName(), newEntity.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), newEntity.getEntity().getGuid());
                 }
             }

@@ -26,7 +26,8 @@ public interface TableDAO {
     @Select("select businessinfo.businessid,businessinfo.name businessObject,category.name department,businessinfo.submitter businessLeader from business2table,businessinfo,category where businessinfo.businessid=business2table.businessid and businessinfo.departmentid=category.guid and business2table.tableguid=#{guid} and category.tenantid=#{tenantId}")
     public List<Table.BusinessObject> getBusinessObjectByTableguid(@Param("guid") String guid,@Param("tenantId") String tenantId);
 
-    @Insert("insert into tableinfo(tableguid,tablename,dbname,status,createtime,databaseguid,databasestatus,description,source_id) values(#{table.tableGuid},#{table.tableName},#{table.dbName},#{table.status},#{table.createTime},#{table.databaseGuid},#{table.databaseStatus},#{table.description},#{table.sourceId})")
+    @Insert("insert into tableinfo(tableguid,tablename,dbname,status,createtime,databaseguid,databasestatus,description,source_id)\n" +
+            "values(#{table.tableGuid},#{table.tableName},#{table.dbName},#{table.status},#{table.createTime},#{table.databaseGuid},#{table.databaseStatus},#{table.description},#{table.sourceId})")
     public int addTable(@Param("table") TableInfo table);
 
     @Update("update tableinfo set tablename=#{table.tableName},dbname=#{table.dbName},description=#{table.description} where tableguid=#{table.tableGuid}")
@@ -42,6 +43,19 @@ public interface TableDAO {
             "</foreach>",
             "</script>"})
     public int addRelations(@Param("tableRelations") List<TableRelation> tableRelations);
+
+    @Update("update table_relation set categoryguid = #{categoryGuid} WHERE tableguid in (select tableguid from tableinfo where source_id = #{sourceId})")
+    public void updateTableRelationBySourceId(@Param("categoryGuid")String categoryGuid, @Param("sourceId")String sourceId);
+
+    @Update({"<script>",
+            "update table_relation set categoryguid = #{categoryGuid} WHERE tableguid in (",
+                "SELECT tableguid FROM tableinfo WHERE source_id = #{sourceId} and dbname in ",
+                "<foreach item='database' collection='databases' open='(' separator=',' close=')'>",
+                    "#{database}",
+                "</foreach>",
+            ")",
+            "</script>"})
+    public void updateTableRelationByDb(@Param("categoryGuid")String categoryGuid, @Param("sourceId")String sourceId,@Param("databases")List<String> databases);
 
     @Select("select count(1) from tableinfo where tableguid=#{tableGuid}")
     public Integer ifTableExists(String tableGuid);

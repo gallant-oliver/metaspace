@@ -62,6 +62,9 @@ public class MetaDataTaskService {
         if (!definition.isSyncAll() && CollectionUtils.isEmpty(definition.getSchemas())) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "自定义数据库不能为空");
         }
+        if (null == definition.getCategoryGuid()) {
+            definition.setCategoryGuid("1");
+        }
     }
 
 
@@ -94,6 +97,9 @@ public class MetaDataTaskService {
             SyncTaskDefinition oldDefinition = syncTaskDefinitionDAO.getById(syncTaskDefinition.getId());
             if (oldDefinition == null) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务不存在");
+            }
+            if(syncTaskDefinition.getCategoryGuid() == null){
+                syncTaskDefinition.setCategoryGuid(oldDefinition.getCategoryGuid());
             }
 
             if (oldDefinition.isEnable()) {

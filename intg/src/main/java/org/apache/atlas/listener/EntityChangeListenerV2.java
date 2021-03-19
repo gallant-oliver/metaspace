@@ -18,6 +18,7 @@
 
 package org.apache.atlas.listener;
 
+import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.glossary.AtlasGlossaryTerm;
 import org.apache.atlas.model.instance.AtlasClassification;
@@ -36,7 +37,7 @@ public interface EntityChangeListenerV2 {
      * @param entities the created entities
      * @param isImport
      */
-    void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException;
+    void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition) throws AtlasBaseException;
 
     /**
      * This is upon updating an entity.

@@ -43,14 +43,12 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.privilege.Module;
-import io.zeta.metaspace.model.result.CategoryPrivilege;
-import io.zeta.metaspace.model.result.GroupPrivilege;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.share.APIDataOwner;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.Organization;
+import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
@@ -70,6 +68,7 @@ import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.atlas.model.metadata.MoveCategory;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.metadata.SortCategory;
+import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
@@ -89,6 +88,7 @@ import javax.mail.Session;
 import javax.mail.Transport;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
+import javax.ws.rs.HeaderParam;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -99,6 +99,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.zeta.metaspace.model.role.SystemRole;
 import org.springframework.util.CollectionUtils;
@@ -227,6 +228,37 @@ public class DataManageService {
         } catch (AtlasBaseException e) {
             throw e;
         }
+    }
+
+    public List<CategoryPrivilegeV2> getUserCategories(String tenantId) throws AtlasBaseException {
+        User user = AdminUtils.getUserData();
+        List<CategoryPrivilegeV2> userCategories = userGroupDAO.getUserCategories(tenantId, user.getUserId());
+        if(!CollectionUtils.isEmpty(userCategories)){
+            userCategories.stream().forEach(c -> c.setRead(true));
+            List<String> guids = userCategories.stream().map(c -> c.getParentCategoryGuid()).collect(Collectors.toList());
+            getParentGuids(userCategories,guids,tenantId);
+        }
+        return userCategories;
+    }
+
+    public void getParentGuids(List<CategoryPrivilegeV2> userCategories, List<String> guids, String tenantId){
+        guids = guids.stream().filter(g -> g != null).distinct().collect(Collectors.toList());
+        if(CollectionUtils.isEmpty(guids)){
+            return;
+        }
+        for(CategoryPrivilegeV2 userCategory :userCategories){
+            if(guids.contains(userCategory.getGuid())){
+                guids.remove(userCategory.getGuid());
+            }
+        }
+        if(CollectionUtils.isEmpty(guids)){
+            return;
+        }
+        List<CategoryPrivilegeV2> parentCategories = userGroupDAO.getUserCategoriesByIds(guids, tenantId);
+        parentCategories.stream().forEach(c -> c.setRead(false));
+        userCategories.addAll(parentCategories);
+        guids = parentCategories.stream().map(p -> p.getParentCategoryGuid()).collect(Collectors.toList());
+        getParentGuids(userCategories,guids, tenantId);
     }
 
     /**
@@ -1317,7 +1349,7 @@ public class DataManageService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void addEntity(List<AtlasEntity> entities) {
+    public void addEntity(List<AtlasEntity> entities, SyncTaskDefinition definition) {
         List<Column> columnList = new ArrayList<>();
         try {
             //添加到tableinfo
@@ -1362,7 +1394,6 @@ public class DataManageService {
                         tableInfo.setDbName(relatedDB.getDisplayText());
                         tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
                         tableInfo.setDescription(getEntityAttribute(entity, "comment"));
-
                         String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
                         tableInfo.setSourceId(qualifiedName.split("\\.")[0]);
 
@@ -1418,6 +1449,7 @@ public class DataManageService {
                 columnDAO.addColumnDisplayInfo(columnList);
             }
             addFullRelation();
+            updateRelations(definition);
         } catch (Exception e) {
             LOG.error("添加entity失败", e);
         }
@@ -1438,6 +1470,20 @@ public class DataManageService {
         }
         if (tableRelations.size() > 0)
             tableDAO.addRelations(tableRelations);
+    }
+
+    public void updateRelations(SyncTaskDefinition definition){
+        if(null != definition){
+            if(null == definition.getCategoryGuid()){
+                definition.setCategoryGuid("1");
+            }
+            List<String> schemas = definition.getSchemas();
+            if(CollectionUtils.isEmpty(schemas)&&definition.isSyncAll()){
+                tableDAO.updateTableRelationBySourceId(definition.getCategoryGuid(),definition.getDataSourceId());
+            }else{
+                tableDAO.updateTableRelationByDb(definition.getCategoryGuid(),definition.getDataSourceId(),schemas);
+            }
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -1500,7 +1546,7 @@ public class DataManageService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void updateEntityInfo(List<AtlasEntity> entities) {
+    public void updateEntityInfo(List<AtlasEntity> entities, SyncTaskDefinition definition) {
         try {
             Configuration configuration = ApplicationProperties.get();
             Boolean enableEmail = configuration.getBoolean("metaspace.mail.enable", false);
@@ -1546,6 +1592,8 @@ public class DataManageService {
                     columnDAO.updateColumnBasicInfo(guid, name, type, status, description);
                 }
             }
+            addFullRelation();
+            updateRelations(definition);
         } catch (Exception e) {
             LOG.error("更新tableinfo表失败", e);
         }

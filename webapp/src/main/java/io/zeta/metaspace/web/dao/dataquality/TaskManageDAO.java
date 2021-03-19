@@ -73,7 +73,7 @@ public interface TaskManageDAO {
              " <if test='my==0'>",
              " and data_quality_task.creator=#{creator}",
              " </if>",
-             " order by data_quality_task.number",
+             " order by data_quality_task.create_time desc",
              " <if test='params.limit!=null and params.limit!= -1'>",
              " limit #{params.limit}",
              " </if>",

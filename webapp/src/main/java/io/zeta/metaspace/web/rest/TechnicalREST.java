@@ -14,11 +14,7 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.operatelog.OperateType;
-import io.zeta.metaspace.model.result.AddRelationTable;
-import io.zeta.metaspace.model.result.CategoryPrivilege;
-import io.zeta.metaspace.model.result.DownloadUri;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.DataSourceHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
@@ -181,6 +177,28 @@ public class TechnicalREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getCategories()");
             }
             return TenantService.defaultTenant.equals(tenantId) ? dataManageService.getAll(CATEGORY_TYPE) : dataManageService.getAllByUserGroup(CATEGORY_TYPE, tenantId);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 获取全部目录
+     *
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/user/category")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<CategoryPrivilegeV2> getUserCategories(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getUserCategories()");
+            }
+            return dataManageService.getUserCategories(tenantId);
         } finally {
             AtlasPerfTracer.log(perf);
         }

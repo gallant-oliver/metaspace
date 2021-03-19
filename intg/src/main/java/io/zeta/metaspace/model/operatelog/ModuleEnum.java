@@ -22,7 +22,7 @@ public enum ModuleEnum {
     COLUMNDOWN(2,"数据资产","业务目录",5,"字段下载", "columndown", "columndown",0),
     BUSINESSEDIT(2,"数据资产","业务目录",6,"数据编辑", "businessedit", "businessedit",0),
     METADATA(2,"数据资产","元数据管理",7,"元数据管理", "metadata", "metadata",1),
-    //一下数据资产在安全中心不存在
+    //以下数据资产在安全中心不存在
     TECHNICALEDIT(2,"数据资产","技术数据关联",8,"技术数据关联", "technicaledit", "technicaledit",0),
     TECHNICALADMIN(2,"数据资产","技术目录编辑",9,"技术目录编辑", "technicaladmin", "technicaladmin",0),
     DATAEDIT(2,"数据资产","数据管理",10,"数据管理","data","dataedit",1),
@@ -31,42 +31,41 @@ public enum ModuleEnum {
 
     //规范定义
     NORMDESIGN(3,"规范定义","指标管理",13,"指标设计", "normdesign", "normdesign",0),
-    MODIFIERVIEW(3,"规范定义","指标管理",14,"修饰词查看", "modifierview", "modifierview",0),
-    MODIFIEREDIT(3,"规范定义","指标管理",15,"修饰词编辑", "modifieredit", "modifieredit",0),
-    TIMELIMITVIEW(3,"规范定义","指标管理",16,"时间限定查看", "timelimitview", "timelimitview",0),
-    TIMELIMITEDIT(3,"规范定义","指标管理",17,"时间限定编辑", "timelimitedit", "timelimitedit",0),
-    DATASTANDARD(3,"规范定义","标准管理",18,"数据标准", "datastandard", "datastandard",0),
-    APPROVERMANAGE(3,"规范定义","审批中心",19,"审批人管理", "approvermanage", "approvermanage",0),
-    MYAPPLICATION(3,"规范定义","审批中心",20,"我的申请", "myapplication", "myapplication",0),
-    APPROVALMANAGE(3,"规范定义","审批中心",21,"审批管理", "approvalmanage", "approvalmanage",0),
+    MODIFIER (3,"规范定义","指标管理",14,"修饰词", "modifier", "modifier",0),
+    TIMELIMIT(3,"规范定义","指标管理",15,"时间限定", "timelimit", "timelimit",0),
+    DATASTANDARD(3,"规范定义","标准管理",16,"数据标准", "datastandard", "datastandard",0),
+    APPROVERMANAGE(3,"规范定义","审批中心",17,"审批人管理", "approvermanage", "approvermanage",0),
+    MYAPPLICATION(3,"规范定义","审批中心",18,"我的申请", "myapplication", "myapplication",0),
+    APPROVALMANAGE(3,"规范定义","审批中心",19,"审批管理", "approvalmanage", "approvalmanage",0),
 
     //数据质量
-    RULEMANAGE(4,"数据质量","规则管理",22,"规则管理", "rulemanage", "rulemanage",1),
-    TASKMANAGE(4,"数据质量","任务管理",23,"任务管理", "taskmanage", "taskmanage",1),
-    WARNINGGROUP(4,"数据质量","告警处理",24,"告警处理", "warninggroup", "warninggroup",1),
-    RULETEMPLATE(4,"数据质量","问题库",25,"问题库", "ruletemplate", "ruletemplate",1),
+    RULEMANAGE(4,"数据质量","规则管理",20,"规则管理", "rulemanage", "rulemanage",1),
+    TASKMANAGE(4,"数据质量","任务管理",21,"任务管理", "taskmanage", "taskmanage",1),
+    WARNINGGROUP(4,"数据质量","告警处理",22,"告警处理", "warninggroup", "warninggroup",1),
+    RULETEMPLATE(4,"数据质量","问题库",23,"问题库", "ruletemplate", "ruletemplate",1),
     //以下数据质量在安全中心不存在
-    DATAQUALITY(4,"数据质量","查看",26,"数据质量", "dataquality", "dataquality",1),
+    DATAQUALITY(4,"数据质量","查看",24,"数据质量", "dataquality", "dataquality",1),
 
     //数据服务
-    APIMANAGE(5,"数据服务","API项目管理",27,"API项目管理", "apimanage", "apimanage",1),
-    AUDIT(5,"数据服务","API审核中心",28,"API审核中心", "audit", "audit",1),
-    DESENSITIZATION(5,"数据服务","脱敏管理",29,"脱敏管理","desensitization","desensitization",1),
-    IPRESTRICTION(5,"数据服务","黑白名单管理",30,"黑白名单管理","iprestriction","iprestriction",1),
+    APIMANAGE(5,"数据服务","API项目管理",25,"API项目管理", "apimanage", "apimanage",1),
+    AUDIT(5,"数据服务","API审核中心",26,"API审核中心", "audit", "audit",1),
+    DESENSITIZATION(5,"数据服务","脱敏管理",27,"脱敏管理","desensitization","desensitization",1),
+    IPRESTRICTION(5,"数据服务","黑白名单管理",28,"黑白名单管理","iprestriction","iprestriction",1),
 
 
 
     //角色管理和权限在安全中心不存在
-    ROLE(6,"角色管理","查看",31,"角色管理", "role", "role",0),
-    PRIVILEGE(7,"权限","查看",32,"权限", "privilege", "privilege",0),
+    ROLE(6,"角色管理","查看",29,"角色管理", "role", "role",0),
+    PRIVILEGE(7,"权限","查看",30,"权限", "privilege", "privilege",0),
 
     //系统管理
-    USER(8,"系统管理","用户管理",33,"用户管理", "user", "user",1),
-    USERGROUP(8,"系统管理","用户组管理",34,"用户组管理", "usergroup", "usergroup",1),
-    ALARMGROUPMANAGE(8,"系统管理","告警组管理",35,"告警组管理", "alarmgroupmanage", "alarmgroupmanage",1),
-    DATASOURCE(8,"系统管理","数据源管理",36,"数据源管理", "dataSource", "dataSource",1),
-    OPERATELOG(8,"系统管理","日志审计",37,"日志审计", "operatelog", "operatelog",1),
-    AUTHORIZATION(8,"系统管理","目录管理",38,"目录管理授权", "authorization", "authorization",1);
+    USER(8,"系统管理","用户管理",31,"用户管理", "user", "user",1),
+    USERGROUP(8,"系统管理","用户组管理",32,"用户组管理", "usergroup", "usergroup",1),
+    ALARMGROUPMANAGE(8,"系统管理","告警组管理",33,"告警组管理", "alarmgroupmanage", "alarmgroupmanage",1),
+    DATASOURCE(8,"系统管理","数据源管理",34,"数据源管理", "dataSource", "dataSource",1),
+    OPERATELOG(8,"系统管理","日志审计",35,"日志审计", "operatelog", "operatelog",1),
+    AUTHORIZATION(8,"系统管理","目录管理",36,"目录管理", "authorization", "authorization",1),
+    INDEXAREAAUTH(8,"系统管理","指标域授权",37,"指标域授权", "indexareaauth", "authorization",1);
 
 
     private int id;
