@@ -16,8 +16,10 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -54,7 +56,14 @@ public class SyncTaskJob implements Job {
             if(null == definition.getCategoryGuid()){
                 definition.setCategoryGuid("1");
             }
-            tableDAO.updateTableRelation(definition.getCategoryGuid(),definitionId);
+            List<String> schemas = definition.getSchemas();
+            if(CollectionUtils.isEmpty(schemas)&&definition.isSyncAll()){
+                tableDAO.updateTableRelationBySourceId(definition.getCategoryGuid(),definition.getDataSourceId());
+            }else{
+                tableDAO.updateTableRelationByDb(definition.getCategoryGuid(),definition.getDataSourceId(),schemas);
+            }
+
+
             SyncTaskInstance instance = new SyncTaskInstance();
             instance.setId(instanceId);
             instance.setDefinitionId(definitionId);

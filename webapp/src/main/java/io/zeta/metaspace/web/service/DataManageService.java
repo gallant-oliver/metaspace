@@ -1374,9 +1374,6 @@ public class DataManageService {
                             tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
                             tableInfo.setDescription(getEntityAttribute(entity, "comment"));
                             tableInfo.setSourceId("hive");
-                            if(null != definition){
-                                tableInfo.setTaskId(definition.getId());
-                            }
                             tableDAO.addTable(tableInfo);
                         }
                     }
@@ -1397,9 +1394,6 @@ public class DataManageService {
                         tableInfo.setDbName(relatedDB.getDisplayText());
                         tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
                         tableInfo.setDescription(getEntityAttribute(entity, "comment"));
-                        if(null != definition){
-                            tableInfo.setTaskId(definition.getId());
-                        }
                         String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
                         tableInfo.setSourceId(qualifiedName.split("\\.")[0]);
 
@@ -1483,7 +1477,12 @@ public class DataManageService {
             if(null == definition.getCategoryGuid()){
                 definition.setCategoryGuid("1");
             }
-            tableDAO.updateTableRelation(definition.getCategoryGuid(),definition.getId());
+            List<String> schemas = definition.getSchemas();
+            if(CollectionUtils.isEmpty(schemas)&&definition.isSyncAll()){
+                tableDAO.updateTableRelationBySourceId(definition.getCategoryGuid(),definition.getDataSourceId());
+            }else{
+                tableDAO.updateTableRelationByDb(definition.getCategoryGuid(),definition.getDataSourceId(),schemas);
+            }
         }
     }
 

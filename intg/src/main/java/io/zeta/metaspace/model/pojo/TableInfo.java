@@ -23,7 +23,6 @@ public class TableInfo {
     private String displayName;
     private String description;
     private String sourceId;
-    private String taskId;
 
     public String getDescription() {
         return description;
