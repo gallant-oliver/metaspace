@@ -263,11 +263,12 @@ public class TenantService {
     public List<Module> getModule(String tenantId) throws AtlasBaseException {
         Object status=null;
         Object msgDesc=null;
-        String cacheKey = getCacheKey(tenantId);
-        List<Module> modules = modulesCache.getIfPresent(cacheKey);
-        if (modules!=null) {
-            return modules;
-        }
+        //String cacheKey = getCacheKey(tenantId);
+        //List<Module> modules = modulesCache.getIfPresent(cacheKey);
+        List<Module> modules = new ArrayList<>();
+//        if (modules!=null) {
+//            return modules;
+//        }
         Gson gson = new Gson();
         HashMap<String,String> hashMap = new HashMap<>();
         hashMap.put(TICKET_KEY,AdminUtils.getSSOTicket());
@@ -300,7 +301,7 @@ public class TenantService {
                     modules.add(moduleEnum.getModule());
                 }
                 Collections.sort(modules);
-                modulesCache.put(cacheKey, modules);
+//                modulesCache.put(cacheKey, modules);
                 return modules;
             }
         }catch (AtlasBaseException e){
