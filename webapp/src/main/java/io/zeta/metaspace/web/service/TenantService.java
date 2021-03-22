@@ -41,12 +41,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -304,6 +299,7 @@ public class TenantService {
                     }
                     modules.add(moduleEnum.getModule());
                 }
+                Collections.sort(modules);
                 modulesCache.put(cacheKey, modules);
                 return modules;
             }
