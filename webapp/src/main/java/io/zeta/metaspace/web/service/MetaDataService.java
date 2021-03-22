@@ -113,6 +113,8 @@ public class MetaDataService {
     MetadataSubscribeDAO metadataSubscribeDAO;
     @Autowired
     DataManageService dataManageService;
+    @Autowired
+    DataSourceDAO dataSourceDAO;
     private String errorMessage = "";
 
     private Map<String, IMetaDataProvider> metaDataProviderMap = new HashMap<>();
@@ -474,7 +476,6 @@ public class MetaDataService {
             if (entity.hasAttribute(createTimeAttribute) && Objects.nonNull(entity.getAttribute(createTimeAttribute))) {
 
                 Date createTime = (Date) entity.getAttribute("createTime");
-                ;
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 table.setCreateTime(sdf.format(createTime));
             } else {
@@ -504,7 +505,7 @@ public class MetaDataService {
             table.setForeignKeys(cik.getForeignKeys());
             table.setIndexes(cik.getIndexes());
             table.setColumns(cik.getColumns());
-
+            table.setOwner((getEntityAttribute(entity, "owner")==null)?dataSourceDAO.getDataSourceInfo(sourceId).getSourceType():getEntityAttribute(entity, "owner"));
 
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);

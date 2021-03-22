@@ -464,6 +464,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         tableAtlasEntity.setAttribute(ATTRIBUTE_NAME, table.getName());
         tableAtlasEntity.setAttribute(ATTRIBUTE_DB, getObjectId(dbEntity));
         tableAtlasEntity.setAttribute(ATTRIBUTE_TYPE, table.getTableType().toString().toUpperCase());
+        tableAtlasEntity.setAttribute(ATTRIBUTE_OWNER, table.getSchema());
         try {
             long time = adapterExecutor.getTableCreateTime(databaseName, table.getName()).toInstant(ZoneOffset.of("+8")).toEpochMilli();
             tableAtlasEntity.setAttribute(ATTRIBUTE_CREATE_TIME, time);
