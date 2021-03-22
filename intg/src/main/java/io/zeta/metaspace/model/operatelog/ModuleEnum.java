@@ -16,8 +16,8 @@ public enum ModuleEnum {
     OVERVIEW(1,"概览","全部",1,"概览", "overview", "overview",1, 1),
 
     //数据资产
-    TECHNICAL(2,"数据资产","技术目录",2,"技术目录", "technical", "technicalview",1, 2),
-    BUSINESS(2,"数据资产","业务目录",3,"业务目录", "business", "businessview",1, 3),
+    TECHNICAL(2,"数据资产","技术目录",2,"技术目录", "technical", "technical",1, 2),
+    BUSINESS(2,"数据资产","业务目录",3,"业务对象", "business", "business",1, 3),
     BUSINESSMANAGE(2,"数据资产","业务目录",4,"业务对象挂载", "businessmanage", "businessmanage",1, 4),
     COLUMNDOWN(2,"数据资产","业务目录",5,"字段下载", "columndown", "columndown",0, 5),
     BUSINESSEDIT(2,"数据资产","业务目录",6,"数据编辑", "businessedit", "businessedit",0, 6),
@@ -64,7 +64,7 @@ public enum ModuleEnum {
     DATASOURCE(8,"系统管理","数据源管理",34,"数据源管理", "dataSource", "dataSource",1, 34),
     OPERATELOG(8,"系统管理","日志审计",35,"日志审计", "operatelog", "operatelog",1, 35),
     AUTHORIZATION(8,"系统管理","目录管理",36,"目录管理", "authorization", "authorization",1, 36),
-    INDEXAREAAUTH(8,"系统管理","指标域授权",37,"指标域授权", "indexareaauth", "authorization",1, 37);
+    INDEXAREAAUTH(8,"系统管理","指标域授权",37,"指标域授权", "indexareaauth", "indexareaauth",1, 37);
 
 
     private int id;

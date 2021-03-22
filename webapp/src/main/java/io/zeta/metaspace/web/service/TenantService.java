@@ -265,6 +265,7 @@ public class TenantService {
         Object msgDesc=null;
         String cacheKey = getCacheKey(tenantId);
         List<Module> modules = modulesCache.getIfPresent(cacheKey);
+
         if (modules!=null) {
             return modules;
         }
