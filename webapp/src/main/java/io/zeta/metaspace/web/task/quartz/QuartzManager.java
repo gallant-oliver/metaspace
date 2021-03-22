@@ -123,7 +123,6 @@ public class QuartzManager {
             if (executor != null) {
                 jobDetail.getJobDataMap().put("executor", executor);
             }
-
             Trigger trigger = TriggerBuilder.newTrigger()
                     .withSchedule(SimpleScheduleBuilder.simpleSchedule().withRepeatCount(0))
                     .startNow().build();

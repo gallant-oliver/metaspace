@@ -277,7 +277,8 @@ public interface TaskManageDAO {
      * @param taskId
      * @return
      */
-    @Select("select id,name as taskName,level,description,'TID-'||number as taskID, start_time as startTime,end_time as endTime,cron_expression as cronExpression,pool,tenantid from data_quality_task where id=#{taskId}")
+    @Select("select id,name as taskName,level,description,'TID-'||number as taskID, start_time as startTime,end_time as endTime," +
+            "cron_expression as cronExpression,pool,tenantid from data_quality_task where id=#{taskId}")
     public EditionTaskInfo getTaskInfo(@Param("taskId")String taskId);
 
     /**
