@@ -42,6 +42,7 @@ public class RDBMSTable implements Serializable {
     private List<RDBMSForeignKey> foreignKeys;
     private List<RDBMSIndex> indexes;
     private boolean subscribeTo;
+    private String owner;
 
     private String subordinateSystem;
     private String subordinateDatabase;

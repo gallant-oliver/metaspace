@@ -948,7 +948,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         List<TableEntity> lists = new ArrayList<>();
 
         String schemaIdQuery = StringUtils.isEmpty(schemaId) ? "" : ".has('__guid','" + schemaId + "')";
-        String activeQuery = active ? ".has('__state','ACTIVE')" : "";
+        String activeQuery = ".has('__state','ACTIVE')" ;
         String pageQuery = (offset == 0 && limit == -1) ? "" : ".range(" + offset + "," + (offset + limit) + ")";
         String nameQuery = StringUtils.isEmpty(query) ? "" : ".has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*" + query + ".*'))";
         String viewQuery = isView == null ? "" : (isView ? ".or(has('hive_table.tableType',org.janusgraph.core.attribute.Text.textRegex('.*(?i)VIEW.*')),has('rdbms_table.type',org.janusgraph.core.attribute.Text.textRegex('.*(?i)VIEW.*')))"
