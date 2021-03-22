@@ -81,28 +81,7 @@ public interface SyncTaskDefinitionDAO {
             "</if>" +
             "</script>")
     List<SyncTaskDefinition> pageList(@Param("parameters") Parameters parameters, @Param("tenantId") String tenantId);
-
-
-    @Select("<script>" +
-            "SELECT count(*) over() as total , definition.*," +
-            "( case definition.data_source_id when 'hive' then 'hive' else  db.source_name end ) as dataSourceName," +
-            "( case definition.data_source_id when 'hive' then 'HIVE' else  db.source_type end ) as dataSourceType FROM " + TABLE_NAME + " definition " +
-            "left join data_source db on  db.source_id =  definition.data_source_id " +
-            "WHERE tenant_id = #{tenantId} " +
-            "<if test='null != parameters.query and 0 != parameters.query.length() '>" +
-            " and name like '%${parameters.query}%' ESCAPE '/' " +
-            "</if> " +
-            " order by update_time desc " +
-            "<if test='parameters.limit!=-1'>" +
-            "limit ${parameters.limit} " +
-            "</if>" +
-            "<if test='parameters.offset!=0'>" +
-            "offset ${parameters.offset}" +
-            "</if>" +
-            "</script>")
-    List<SyncTaskDefinition> pageLists(@Param("parameters") Parameters parameters, @Param("tenantId") String tenantId);
-
-
+    
     @ResultMap("base")
     @Select("select * from " + TABLE_NAME + " where id = #{id}")
     SyncTaskDefinition getById(@Param("id") String id);
