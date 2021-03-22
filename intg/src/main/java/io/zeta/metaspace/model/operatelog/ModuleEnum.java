@@ -18,7 +18,7 @@ public enum ModuleEnum {
     //数据资产
     TECHNICAL(2,"数据资产","技术目录",2,"技术目录", "technical", "technicalview",1, 2),
     BUSINESS(2,"数据资产","业务目录",3,"业务目录", "business", "businessview",1, 3),
-    BUSINESSMANAGE(2,"数据资产","业务目录",4,"业务对象挂载", "businessmanage", "businessmanage",0, 4),
+    BUSINESSMANAGE(2,"数据资产","业务目录",4,"业务对象挂载", "businessmanage", "businessmanage",1, 4),
     COLUMNDOWN(2,"数据资产","业务目录",5,"字段下载", "columndown", "columndown",0, 5),
     BUSINESSEDIT(2,"数据资产","业务目录",6,"数据编辑", "businessedit", "businessedit",0, 6),
     METADATA(2,"数据资产","元数据管理",7,"元数据管理", "metadata", "metadata",1, 7),
