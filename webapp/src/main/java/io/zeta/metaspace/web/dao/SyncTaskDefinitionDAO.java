@@ -68,6 +68,26 @@ public interface SyncTaskDefinitionDAO {
             "FROM " + TABLE_NAME + " definition " +
             "left join data_source db on  db.source_id =  definition.data_source_id " +
             "left join category on  (definition.category_guid = category.guid and category.categorytype = 0 and category.tenantid = #{tenantId}) " +
+            "WHERE definition.tenant_id = #{tenantId} " +
+            "<if test='null != parameters.query and 0 != parameters.query.length() '>" +
+            " and definition.name like '%${parameters.query}%' ESCAPE '/' " +
+            "</if> " +
+            " order by update_time desc " +
+            "<if test='parameters.limit!=-1'>" +
+            "limit ${parameters.limit} " +
+            "</if>" +
+            "<if test='parameters.offset!=0'>" +
+            "offset ${parameters.offset}" +
+            "</if>" +
+            "</script>")
+    List<SyncTaskDefinition> pageList(@Param("parameters") Parameters parameters, @Param("tenantId") String tenantId);
+
+
+    @Select("<script>" +
+            "SELECT count(*) over() as total , definition.*," +
+            "( case definition.data_source_id when 'hive' then 'hive' else  db.source_name end ) as dataSourceName," +
+            "( case definition.data_source_id when 'hive' then 'HIVE' else  db.source_type end ) as dataSourceType FROM " + TABLE_NAME + " definition " +
+            "left join data_source db on  db.source_id =  definition.data_source_id " +
             "WHERE tenant_id = #{tenantId} " +
             "<if test='null != parameters.query and 0 != parameters.query.length() '>" +
             " and name like '%${parameters.query}%' ESCAPE '/' " +
@@ -80,7 +100,8 @@ public interface SyncTaskDefinitionDAO {
             "offset ${parameters.offset}" +
             "</if>" +
             "</script>")
-    List<SyncTaskDefinition> pageList(@Param("parameters") Parameters parameters, @Param("tenantId") String tenantId);
+    List<SyncTaskDefinition> pageLists(@Param("parameters") Parameters parameters, @Param("tenantId") String tenantId);
+
 
     @ResultMap("base")
     @Select("select * from " + TABLE_NAME + " where id = #{id}")
