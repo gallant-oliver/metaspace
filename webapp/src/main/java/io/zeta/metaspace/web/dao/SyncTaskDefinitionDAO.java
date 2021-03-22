@@ -68,9 +68,9 @@ public interface SyncTaskDefinitionDAO {
             "FROM " + TABLE_NAME + " definition " +
             "left join data_source db on  db.source_id =  definition.data_source_id " +
             "left join category on  (definition.category_guid = category.guid and category.categorytype = 0 and category.tenantid = #{tenantId}) " +
-            "WHERE tenant_id = #{tenantId} " +
+            "WHERE definition.tenant_id = #{tenantId} " +
             "<if test='null != parameters.query and 0 != parameters.query.length() '>" +
-            " and name like '%${parameters.query}%' ESCAPE '/' " +
+            " and definition.name like '%${parameters.query}%' ESCAPE '/' " +
             "</if> " +
             " order by update_time desc " +
             "<if test='parameters.limit!=-1'>" +
@@ -81,7 +81,7 @@ public interface SyncTaskDefinitionDAO {
             "</if>" +
             "</script>")
     List<SyncTaskDefinition> pageList(@Param("parameters") Parameters parameters, @Param("tenantId") String tenantId);
-
+    
     @ResultMap("base")
     @Select("select * from " + TABLE_NAME + " where id = #{id}")
     SyncTaskDefinition getById(@Param("id") String id);

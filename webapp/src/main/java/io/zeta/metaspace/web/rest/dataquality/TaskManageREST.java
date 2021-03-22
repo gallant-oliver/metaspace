@@ -423,6 +423,19 @@ public class TaskManageREST {
     }
 
     /**
+     * 立即关闭任务
+     * @param taskId
+     * @throws AtlasBaseException
+     */
+    @PUT
+    @Path("/{taskId}/cancel")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void stopTaskNow(@PathParam("taskId")String taskId) throws AtlasBaseException {
+        taskManageService.stopTaskNow(taskId);
+    }
+
+    /**
      * 任务规则列表
      * @param taskId
      * @param parameters

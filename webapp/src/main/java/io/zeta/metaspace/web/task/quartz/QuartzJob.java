@@ -56,9 +56,7 @@ import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobKey;
+import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -102,9 +100,12 @@ public class QuartzJob implements Job {
 
     Map<String, Float> columnType2Result = new HashMap<>();
 
+    public static final Map<String,Boolean> CANCEL_STATE_MAP = new HashMap<>();
+
     private static Configuration conf;
     private static String engine;
     public final static String hiveId="hive";
+
 
     static {
         try {
@@ -136,6 +137,7 @@ public class QuartzJob implements Job {
             taskManageDAO.initTaskExecuteInfo(taskExecute);
             taskManageDAO.updateTaskExecutionCount(taskId);
             taskManageDAO.updateTaskExecuteStatus(taskId, 1);
+            taskManageDAO.updateTaskStatus(taskId, 1);
             return id;
         } catch (Exception e) {
             LOG.error(e.toString());
@@ -143,15 +145,36 @@ public class QuartzJob implements Job {
         return null;
     }
 
+    public boolean canceled(String taskId, String taskExecuteId){
+        if(CANCEL_STATE_MAP.get(taskId)) {
+            taskManageDAO.updateTaskExecuteStatus(taskId, 4);
+            taskManageDAO.updateTaskStatus(taskId, 4);
+            taskManageDAO.updateTaskFinishedPercent(taskId, 0F);
+            taskManageDAO.updateTaskExecutionFinishedPercent(taskExecuteId, 0F);
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public void execute(JobExecutionContext jobExecutionContext) {
+        String taskId = "";
         try {
             JobKey key = jobExecutionContext.getTrigger().getJobKey();
             LOG.warn("任务名为" + key.getName() + "开始执行");
-            String taskId = taskManageDAO.getTaskIdByQrtzName(key.getName());
+            taskId = taskManageDAO.getTaskIdByQrtzName(key.getName());
             EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
+            if(CANCEL_STATE_MAP.containsKey(taskId)){
+                //任务正在运行中，跳过本次执行
+                return;
+            }else{
+                CANCEL_STATE_MAP.put(taskId,false);
+            }
             String tenantId = taskInfo.getTenantId();
             String taskExecuteId = initExecuteInfo(taskId);
+            if(canceled(taskId, taskExecuteId)){
+                return;
+            };
             //获取原子任务列表，包含子任务关联对象，子任务使用规则，子任务使用规则模板
             List<AtomicTaskExecution> taskList = taskManageDAO.getObjectWithRuleRelation(taskId, tenantId);
             if (Objects.isNull(taskList)) {
@@ -161,10 +184,14 @@ public class QuartzJob implements Job {
             }
             //补全数据
             completeTaskInformation(taskId, taskExecuteId, taskList);
-
+            if(canceled(taskId, taskExecuteId)){
+                return;
+            };
             executeAtomicTaskList(taskId, taskExecuteId, taskList, tenantId);
         } catch (Exception e) {
             LOG.error(e.toString(), e);
+        }finally {
+            CANCEL_STATE_MAP.remove(taskId);
         }
     }
 
@@ -225,6 +252,9 @@ public class QuartzJob implements Job {
         long startTime = System.currentTimeMillis();
         String errorMsg = null;
         for (int i = 0; i < totalStep; i++) {
+            if(canceled(taskId,taskExecuteId)){
+                taskManageDAO.updateDataTaskCostTime(taskExecuteId, System.currentTimeMillis() - startTime);
+            }
             //根据模板状态判断是否继续运行
             int retryCount = 0;
             AtomicTaskExecution task = taskList.get(i);
@@ -234,12 +264,6 @@ public class QuartzJob implements Job {
             taskManageDAO.initRuleExecuteInfo(task.getId(), taskExecuteId, taskId, task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(), currentTimeStamp, currentTimeStamp, 0, 0, task.getRuleId());
             do {
                 try {
-                    //运行中途停止模板
-                    if (!taskManageDAO.isRuning(taskId)) {
-                        taskManageDAO.updateTaskFinishedPercent(taskId, 0F);
-                        taskManageDAO.updateTaskExecutionFinishedPercent(taskExecuteId, 0F);
-                        return;
-                    }
                     runJob(task);
                     float ratio = (float) (i + 1) / totalStep;
                     LOG.info("raion=" + ratio);

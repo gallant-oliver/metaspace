@@ -646,17 +646,6 @@ public class TaskManageService {
         }
     }
 
-    public void startTaskNow(String taskId) throws AtlasBaseException {
-        try {
-            String jobName = taskManageDAO.getJobName(taskId);
-            String jobGroupName = JOB_GROUP_NAME + System.currentTimeMillis();
-            quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class);
-        } catch (Exception e) {
-            LOG.error("开启任务失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "开启任务失败");
-        }
-    }
-
     public void stopTask(String taskId) throws AtlasBaseException {
         try {
             String jobName = taskManageDAO.getQrtzJobByTaskId(taskId);
@@ -667,6 +656,33 @@ public class TaskManageService {
         } catch (Exception e) {
             LOG.error("关闭模板失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭模板失败");
+        }
+    }
+
+
+    public void startTaskNow(String taskId) throws AtlasBaseException {
+        EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
+        if(QuartzJob.CANCEL_STATE_MAP.containsKey(taskId)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务正在执行中");
+        }
+        try {
+            String jobName = taskManageDAO.getJobName(taskId);
+            String jobGroupName = JOB_GROUP_NAME + System.currentTimeMillis();
+            quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class);
+        } catch (Exception e) {
+            LOG.error("开启任务失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "开启任务失败");
+        }
+    }
+
+    public void stopTaskNow(String taskId) throws AtlasBaseException {
+
+        if(!QuartzJob.CANCEL_STATE_MAP.containsKey(taskId)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前任务目前没有在执行");
+        }else if(QuartzJob.CANCEL_STATE_MAP.get(taskId)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前任务已经退出");
+        }else{
+            QuartzJob.CANCEL_STATE_MAP.put(taskId,true);
         }
     }
 
