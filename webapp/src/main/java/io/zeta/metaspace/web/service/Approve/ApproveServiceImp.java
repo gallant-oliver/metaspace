@@ -74,7 +74,7 @@ public class ApproveServiceImp implements ApproveService{
         String serviceName = moduleServiceClass.get(ModuleEnum.getModuleById(Integer.parseInt(paras.getModuleId())));
         try {
              Approvable obj = (Approvable)applicationContext.getBean(serviceName);
-             obj.changeObjectStatus(paras.getId(),paras.getBusinessType(),paras.getVersion(),result.code);
+             obj.changeObjectStatus(paras.getId(),paras.getBusinessType(),paras.getVersion(),result.code,tenant_id,paras.getApproveType());
         } catch (Exception e) {
             LOG.error("审批失败", e);
             throw e;
@@ -101,7 +101,7 @@ public class ApproveServiceImp implements ApproveService{
         Object objectDetail;
         try {
             Approvable obj = (Approvable)applicationContext.getBean(serviceName);
-            objectDetail = obj.getObjectDetail(objectId, objectType, version);
+            objectDetail = obj.getObjectDetail(objectId, objectType, version,tenantId);
         } catch (Exception e) {
             LOG.error("查询审批对象详情失败", e);
             throw e;

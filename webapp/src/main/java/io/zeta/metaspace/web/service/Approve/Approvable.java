@@ -11,9 +11,10 @@ public interface Approvable {
      * @param objectId  对象ID
      * @param type 业务对象类型
      * @param version 查看版本
+     * @param tenantId 租户id
      * @return
      */
-    Object getObjectDetail(String objectId,String type,int version);
+    Object getObjectDetail(String objectId,String type,int version,String tenantId);
 
 
 
@@ -23,8 +24,9 @@ public interface Approvable {
      * @param type 业务对象类型
      * @param version 查看版本
      * @param approveResult 审批结果，通过或驳回
+     * @param tenantId 租户id
      * @return
      */
-    void changeObjectStatus(String objectId,String type,int version,String approveResult);
+    void changeObjectStatus(String objectId,String type,int version,String approveResult,String tenantId,String approveType);
 
 }

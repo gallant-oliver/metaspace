@@ -352,4 +352,29 @@ public interface IndexDAO {
             " ) " ,
             " </script>"})
     List<IndexDerivePO> getDependentDeriveIndex(@Param("indexId")String indexId, @Param("tenantId")String tenantId);
+
+    @Select({" <script>",
+            " select * from index_atomic_info as a where tenant_id=#{tenantId} ",
+            " and version=( select max(b.version) from index_atomic_info as b where a.index_id=b.index_id) ",
+            " and  index_id in ",
+            " <foreach item='indexId' index='index' collection='indexIds' separator=',' open='(' close=')'>",
+            " #{indexId} ",
+            " </foreach> ",
+            " </script>"})
+    List<IndexAtomicPO> getAtomicIndexInfoPOs(@Param("indexIds")List<String> indexIds, @Param("tenantId")String tenantId);
+    @Update("update index_atomic_info set index_state=#{state} " +
+            " where index_id=#{indexId} and version=#{version} and tenant_id=#{tenantId} ")
+    void editAtomicState(@Param("indexId")String indexId,@Param("version") int version,@Param("tenantId") String tenantId,@Param("state") int state);
+    @Update("update index_derive_info set index_state=#{state} " +
+            " where index_id=#{indexId} and version=#{version} and tenant_id=#{tenantId} ")
+    void editDeriveState(@Param("indexId")String indexId,@Param("version") int version,@Param("tenantId") String tenantId,@Param("state") int state);
+    @Update("update index_composite_info set index_state=#{state} " +
+            " where index_id=#{indexId} and version=#{version} and tenant_id=#{tenantId} ")
+    void editCompositeState(@Param("indexId")String indexId,@Param("version") int version,@Param("tenantId") String tenantId,@Param("state") int state);
+    @Select(" select * from index_atomic_info where index_id=#{indexId} and version=#{version} and tenant_id=#{tenantId}")
+    IndexAtomicPO getAtomicIndexPO(@Param("indexId")String indexId, @Param("version")int version, @Param("tenantId")String tenantId);
+    @Select(" select * from index_derive_info where index_id=#{indexId} and version=#{version} and tenant_id=#{tenantId}")
+    IndexDerivePO getDeriveIndexPO(@Param("indexId")String indexId, @Param("version")int version, @Param("tenantId")String tenantId);
+    @Select(" select * from index_composite_info where index_id=#{indexId} and version=#{version} and tenant_id=#{tenantId}")
+    IndexCompositePO getCompositeIndexPO(@Param("indexId")String indexId, @Param("version")int version, @Param("tenantId")String tenantId);
 }
