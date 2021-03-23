@@ -620,9 +620,13 @@ public class IndexServiceImpl implements IndexService{
     }
 
     @Override
-    public List<IndexInfoDTO> pageQuery(String indexFieldId, PageQueryDTO pageQueryDTO, int categoryType, String tenantId) {
-        List<IndexInfoPO> indexInfoPOS=indexDAO.pageQuery(indexFieldId,pageQueryDTO,categoryType,tenantId);
-        return null;
+    public List<IndexInfoDTO> pageQuery(PageQueryDTO pageQueryDTO, int categoryType, String tenantId) {
+        List<IndexInfoPO> indexInfoPOS=indexDAO.pageQuery(pageQueryDTO,categoryType,tenantId);
+        List<IndexInfoDTO> indexInfoDTOS=null;
+        if(!CollectionUtils.isEmpty(indexInfoPOS)){
+            indexInfoDTOS = indexInfoPOS.stream().map(x -> BeanMapper.map(x, IndexInfoDTO.class)).collect(Collectors.toList());
+        }
+        return indexInfoDTOS;
     }
 
     @Override

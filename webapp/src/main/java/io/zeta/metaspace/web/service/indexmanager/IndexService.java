@@ -134,11 +134,10 @@ public interface IndexService extends Approvable {
 
     /**
      * 指标分页查询
-     * @param indexFieldId 指标域id
      * @param pageQueryDTO 查询条件
      * @param categoryType 目录类型
      * @param tenantId 租户id
      * @return
      */
-    List<IndexInfoDTO> pageQuery(String indexFieldId, PageQueryDTO pageQueryDTO, int categoryType, String tenantId);
+    List<IndexInfoDTO> pageQuery(PageQueryDTO pageQueryDTO, int categoryType, String tenantId);
 }

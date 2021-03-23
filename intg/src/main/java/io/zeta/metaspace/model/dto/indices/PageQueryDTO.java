@@ -3,8 +3,13 @@ package io.zeta.metaspace.model.dto.indices;
 import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 public class PageQueryDTO {
+    /**
+     * 目录列表
+     */
+    private List<String> indexFieldIds;
     /**
      * 指标类型 （1 原子，2 派生，3 复合，4 跨类型，默认4）
      */
@@ -109,5 +114,13 @@ public class PageQueryDTO {
 
     public void setEndTime(Timestamp endTime) {
         this.endTime = endTime;
+    }
+
+    public List<String> getIndexFieldIds() {
+        return indexFieldIds;
+    }
+
+    public void setIndexFieldIds(List<String> indexFieldIds) {
+        this.indexFieldIds = indexFieldIds;
     }
 }
