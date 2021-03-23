@@ -17,7 +17,11 @@ public enum IndexType {
     /**
      * 复合指标
      */
-    INDEXCOMPOSITE(3);
+    INDEXCOMPOSITE(3),
+    /**
+     * 原子、派生、复合指标
+     */
+    ALL(4);
 
     private int intValue;
     private static HashMap<Integer, IndexType> mappings;

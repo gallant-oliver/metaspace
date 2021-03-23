@@ -631,6 +631,12 @@ public class IndexServiceImpl implements IndexService{
     }
 
     @Override
+    public List<IndexInfoDTO> pageQuery(String indexFieldId, PageQueryDTO pageQueryDTO, int categoryType, String tenantId) {
+        List<IndexInfoPO> indexInfoPOS=indexDAO.pageQuery(indexFieldId,pageQueryDTO,categoryType,tenantId);
+        return null;
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteIndexByIndexFieldId(String guid, String tenantId) {
         indexDAO.deleteAtomicByIndexFieldId(guid,tenantId);

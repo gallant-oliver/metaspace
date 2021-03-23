@@ -122,5 +122,23 @@ public interface IndexService extends Approvable {
      */
     void indexSendApprove(List<PublishIndexDTO> dtoList, String tenantId)  throws AtlasBaseException;
 
+    /**
+     * 发布历史
+     * @param indexId 指标id
+     * @param indexType 指标类型
+     * @param categoryType 目录类型
+     * @param tenantId 租户id
+     * @return
+     */
     List<IndexInfoDTO> publishHistory(String indexId, int indexType, int categoryType, String tenantId);
+
+    /**
+     * 指标分页查询
+     * @param indexFieldId 指标域id
+     * @param pageQueryDTO 查询条件
+     * @param categoryType 目录类型
+     * @param tenantId 租户id
+     * @return
+     */
+    List<IndexInfoDTO> pageQuery(String indexFieldId, PageQueryDTO pageQueryDTO, int categoryType, String tenantId);
 }

@@ -643,6 +643,28 @@ public class IndexREST {
         }
     }
 
+    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
+    @GET
+    @Path("/{indexFieldId}}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result pageQuery(@PathParam("indexFieldId") String indexFieldId,PageQueryDTO pageQueryDTO, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        if(Objects.isNull(pageQueryDTO)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数错误");
+        }
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.pageQuery("+indexFieldId+")");
+            }
+            List<IndexInfoDTO> indexInfoDTOS = indexService.pageQuery(indexFieldId,pageQueryDTO,CATEGORY_TYPE,tenantId);
+            return ReturnUtil.success(indexInfoDTOS);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
 
 
 }

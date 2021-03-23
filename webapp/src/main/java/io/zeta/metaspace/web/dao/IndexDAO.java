@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.dto.indices.IndexDTO;
+import io.zeta.metaspace.model.dto.indices.PageQueryDTO;
 import io.zeta.metaspace.model.modifiermanage.Qualifier;
 import io.zeta.metaspace.model.po.indices.*;
 import org.apache.ibatis.annotations.*;
@@ -377,4 +378,13 @@ public interface IndexDAO {
     IndexDerivePO getDeriveIndexPO(@Param("indexId")String indexId, @Param("version")int version, @Param("tenantId")String tenantId);
     @Select(" select * from index_composite_info where index_id=#{indexId} and version=#{version} and tenant_id=#{tenantId}")
     IndexCompositePO getCompositeIndexPO(@Param("indexId")String indexId, @Param("version")int version, @Param("tenantId")String tenantId);
+    @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
+            "(SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH " +
+            "FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId}" +
+            "UNION ALL " +
+            "SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH " +
+            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=#{tenantId}) " +
+            "SELECT  PATH FROM T WHERE guid=#{guid} " +
+            "ORDER BY PATH")
+    List<IndexInfoPO> pageQuery(String indexFieldId, PageQueryDTO pageQueryDTO, int categoryType, String tenantId);
 }
