@@ -15,13 +15,11 @@ import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.*;
-import io.zeta.metaspace.web.rest.IndexREST;
 import io.zeta.metaspace.web.service.Approve.ApproveService;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeanMapper;
-import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -39,7 +37,6 @@ import java.sql.Timestamp;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service("indexService")
 public class IndexServiceImpl implements IndexService{
@@ -76,19 +73,11 @@ public class IndexServiceImpl implements IndexService{
             IndexFieldDTO indexFieldDTO= BeanMapper.map(category, IndexFieldDTO.class);
             String creatorId=category.getCreator();
             String updaterId=category.getUpdater();
-            Timestamp createTime=category.getCreateTime();
-            Timestamp updateTime=category.getUpdateTime();
             if(StringUtils.isNotEmpty(creatorId)){
                 indexFieldDTO.setCreator(userDAO.getUserName(creatorId));
             }
             if(StringUtils.isNotEmpty(updaterId)){
                 indexFieldDTO.setUpdater(userDAO.getUserName(updaterId));
-            }
-            if(!Objects.isNull(createTime)){
-                indexFieldDTO.setCreateTime(DateUtils.timestampToString(createTime));
-            }
-            if(!Objects.isNull(updateTime)){
-                indexFieldDTO.setUpdateTime(DateUtils.timestampToString(updateTime));
             }
             return indexFieldDTO;
         }else {

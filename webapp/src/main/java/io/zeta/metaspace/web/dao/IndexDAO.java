@@ -378,13 +378,65 @@ public interface IndexDAO {
     IndexDerivePO getDeriveIndexPO(@Param("indexId")String indexId, @Param("version")int version, @Param("tenantId")String tenantId);
     @Select(" select * from index_composite_info where index_id=#{indexId} and version=#{version} and tenant_id=#{tenantId}")
     IndexCompositePO getCompositeIndexPO(@Param("indexId")String indexId, @Param("version")int version, @Param("tenantId")String tenantId);
-    @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
-            "(SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH " +
-            "FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId}" +
-            "UNION ALL " +
-            "SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH " +
-            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=#{tenantId}) " +
-            "SELECT  PATH FROM T WHERE guid=#{guid} " +
-            "ORDER BY PATH")
+
+    @Select({"<script>" ,
+            " <if test='pageQueryDTO.indexType == 1'>",
+            " select T.*,bl.username as businessLeaderName, c.username as creatorName,u.username as updaterName from ",
+            " (select index_id, index_name,1 as indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time, update_time ",
+            " ,row_number() over(partition by index_id order by version desc) rn ",
+            " from index_atomic_info) T ",
+            " </if>",
+            " <if test='pageQueryDTO.indexType == 2'>",
+            " select T.*,bl.username as businessLeaderName, c.username as creatorName,u.username as updaterName from ",
+            " (select index_id, index_name,2 as indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time, update_time ",
+            " ,row_number() over(partition by index_id order by version desc) rn ",
+            " from index_derive_info) T ",
+            " </if>",
+            " <if test='pageQueryDTO.indexType == 3'>",
+            " select T.*,bl.username as businessLeaderName, c.username as creatorName,u.username as updaterName from ",
+            " (select index_id, index_name,3 as indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time, update_time ",
+            " ,row_number() over(partition by index_id order by version desc) rn ",
+            " from index_composite_info) T ",
+            " </if>",
+            " <if test='pageQueryDTO.indexType == 4'>",
+            " WITH RECURSIVE T (index_id, index_name,indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time, update_time,rn) AS ",
+            " (",
+            " select index_id, index_name,1 as indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time, update_time ",
+            " ,row_number() over(partition by index_id order by version desc) rn ",
+            " from index_atomic_info where index_field_id = #{indexFieldId} and tenant_id=#{tenantId}",
+            " UNION ALL ",
+            " select index_id, index_name,2 as indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time, update_time ",
+            " ,row_number() over(partition by index_id order by version desc) rn ",
+            " from index_derive_info where index_field_id = #{indexFieldId} and tenant_id=#{tenantId}",
+            " UNION ALL ",
+            " select index_id, index_name,3 as indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time, update_time ",
+            " ,row_number() over(partition by index_id order by version desc) rn ",
+            " from index_composite_info where index_field_id = #{indexFieldId} and tenant_id=#{tenantId}",
+            " ) ",
+            " select *,bl.username as businessLeaderName, c.username as creatorName,u.username as updaterName from T ",
+            " </if>",
+            " left join users bl on T.business_leader=bl.userid " ,
+            " left join users c on iai.creator=c.userid " ,
+            " left join users u on iai.updater=u.userid " ,
+            " where T.index_field_id = #{indexFieldId} and T.tenant_id=#{tenantId} ",
+            " <if test='pageQueryDTO.startTime != null'>",
+            " and T.update_time>=#{pageQueryDTO.startTime}",
+            " </if>",
+            " <if test='pageQueryDTO.endTime != null'>",
+            " and T.update_time<=#{pageQueryDTO.startTime}",
+            " </if>",
+            " <if test='pageQueryDTO.central == true'>",
+            " and T.central<=#{pageQueryDTO.central}",
+            " </if>",
+            " <if test='pageQueryDTO.searchContent != null'>",
+            " and (T.index_name==#{pageQueryDTO.searchContent} or T.index_identification==#{pageQueryDTO.searchContent})",
+            " </if>",
+            " <if test='pageQueryDTO.indexState != 0'>",
+            " and T.index_state<=#{pageQueryDTO.indexState}",
+            " </if>",
+            " order by T.update_time #{pageQueryDTO.order}",
+            " limit #{pageQueryDTO.limit}",
+            " offset #{pageQueryDTO.offset}",
+            "</script>"})
     List<IndexInfoPO> pageQuery(String indexFieldId, PageQueryDTO pageQueryDTO, int categoryType, String tenantId);
 }

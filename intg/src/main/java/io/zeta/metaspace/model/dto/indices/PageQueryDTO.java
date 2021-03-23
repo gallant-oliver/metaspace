@@ -1,11 +1,18 @@
 package io.zeta.metaspace.model.dto.indices;
+
+import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
+
+import java.sql.Timestamp;
+
 public class PageQueryDTO {
     /**
      * 指标类型 （1 原子，2 派生，3 复合，4 跨类型，默认4）
      */
     private int indexType;
-    private String startTime;
-    private String endTime;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp startTime;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp endTime;
     /**
      * true：核心指标，false：核心指标+非核心指标
      */
@@ -39,21 +46,6 @@ public class PageQueryDTO {
         this.indexType = indexType;
     }
 
-    public String getStartTime() {
-        return startTime;
-    }
-
-    public void setStartTime(String startTime) {
-        this.startTime = startTime;
-    }
-
-    public String getEndTime() {
-        return endTime;
-    }
-
-    public void setEndTime(String endTime) {
-        this.endTime = endTime;
-    }
 
     public boolean isCentral() {
         return central;
@@ -101,5 +93,21 @@ public class PageQueryDTO {
 
     public void setLimit(int limit) {
         this.limit = limit;
+    }
+
+    public Timestamp getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(Timestamp startTime) {
+        this.startTime = startTime;
+    }
+
+    public Timestamp getEndTime() {
+        return endTime;
+    }
+
+    public void setEndTime(Timestamp endTime) {
+        this.endTime = endTime;
     }
 }

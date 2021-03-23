@@ -1,7 +1,9 @@
 package io.zeta.metaspace.model.dto.indices;
 
 import io.zeta.metaspace.model.po.indices.IndexAtomicPO;
+import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 public class IndexInfoDTO {
@@ -136,7 +138,8 @@ public class IndexInfoDTO {
     /**
      * 创建时间
      */
-    private String createTime;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp createTime;
     /**
      * 更新人id
      */
@@ -148,7 +151,8 @@ public class IndexInfoDTO {
     /**
      *更新时间
      */
-    private String updateTime;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp updateTime;
     /**
      *发布人id
      */
@@ -161,7 +165,8 @@ public class IndexInfoDTO {
      *发布时间
      *
      */
-    private String publishTime;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp publishTime;
 
     public String getIndexId() {
         return indexId;
@@ -419,14 +424,6 @@ public class IndexInfoDTO {
         this.creatorName = creatorName;
     }
 
-    public String getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(String createTime) {
-        this.createTime = createTime;
-    }
-
     public String getUpdater() {
         return updater;
     }
@@ -441,14 +438,6 @@ public class IndexInfoDTO {
 
     public void setUpdaterName(String updaterName) {
         this.updaterName = updaterName;
-    }
-
-    public String getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(String updateTime) {
-        this.updateTime = updateTime;
     }
 
     public String getPublisher() {
@@ -467,11 +456,27 @@ public class IndexInfoDTO {
         this.publisherName = publisherName;
     }
 
-    public String getPublishTime() {
+    public Timestamp getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Timestamp createTime) {
+        this.createTime = createTime;
+    }
+
+    public Timestamp getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(Timestamp updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public Timestamp getPublishTime() {
         return publishTime;
     }
 
-    public void setPublishTime(String publishTime) {
+    public void setPublishTime(Timestamp publishTime) {
         this.publishTime = publishTime;
     }
 

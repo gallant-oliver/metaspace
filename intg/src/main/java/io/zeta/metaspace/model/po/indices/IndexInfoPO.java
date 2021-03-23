@@ -1,4 +1,7 @@
 package io.zeta.metaspace.model.po.indices;
+
+import java.sql.Timestamp;
+
 public class IndexInfoPO {
     /**
      * 指标id
@@ -127,7 +130,7 @@ public class IndexInfoPO {
     /**
      * 创建时间
      */
-    private String createTime;
+    private Timestamp createTime;
     /**
      * 更新人id
      */
@@ -139,7 +142,7 @@ public class IndexInfoPO {
     /**
      *更新时间
      */
-    private String updateTime;
+    private Timestamp updateTime;
     /**
      *发布人id
      */
@@ -152,7 +155,7 @@ public class IndexInfoPO {
      *发布时间
      *
      */
-    private String publishTime;
+    private Timestamp publishTime;
 
     public String getIndexId() {
         return indexId;
@@ -402,14 +405,6 @@ public class IndexInfoPO {
         this.creatorName = creatorName;
     }
 
-    public String getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(String createTime) {
-        this.createTime = createTime;
-    }
-
     public String getUpdater() {
         return updater;
     }
@@ -424,14 +419,6 @@ public class IndexInfoPO {
 
     public void setUpdaterName(String updaterName) {
         this.updaterName = updaterName;
-    }
-
-    public String getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(String updateTime) {
-        this.updateTime = updateTime;
     }
 
     public String getPublisher() {
@@ -450,11 +437,27 @@ public class IndexInfoPO {
         this.publisherName = publisherName;
     }
 
-    public String getPublishTime() {
+    public Timestamp getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Timestamp createTime) {
+        this.createTime = createTime;
+    }
+
+    public Timestamp getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(Timestamp updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public Timestamp getPublishTime() {
         return publishTime;
     }
 
-    public void setPublishTime(String publishTime) {
+    public void setPublishTime(Timestamp publishTime) {
         this.publishTime = publishTime;
     }
 }
