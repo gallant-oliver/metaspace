@@ -994,8 +994,10 @@ public interface UserGroupDAO {
             "        category_id as guid from data_quality_rule where delete=false" +
             "    </otherwise>" +
             "</choose>" +
+            " and tableinfo.status='ACTIVE'"+
+            " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive')" +
             " group by guid" +
-            ") item on c.guid=item.guid " +
+            " )item on c.guid=item.guid " +
             " where c.tenantid=#{tenantId} and c.categorytype=#{categoryType}" +
             " and g.group_id in " +
             "    <foreach item='id' index='index' collection='userGroupIds'" +

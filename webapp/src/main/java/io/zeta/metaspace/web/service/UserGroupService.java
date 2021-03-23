@@ -40,6 +40,7 @@ import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
 import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
+import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -53,12 +54,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
+
 
 
 /**
@@ -80,6 +78,8 @@ public class UserGroupService {
     TenantService tenantService;
     @Autowired
     CategoryDAO categoryDAO;
+    @Autowired
+    RelationDAO relationDAO;
 
     public PageResult<UserGroupListAndSearchResult> getUserGroupListAndSearch(String tenantId, int offset, int limit, String sortBy, String order, String query) throws AtlasBaseException {
         PageResult<UserGroupListAndSearchResult> commonResult = new PageResult<>();
@@ -1310,8 +1310,15 @@ public class UserGroupService {
                 dbNames=new ArrayList<>();
             }
             userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type,dbNames);
-            List<String> categoryIds = userCategories.stream().map(category->category.getGuid()).collect(Collectors.toList());
 
+            List<String> categoryIds = userCategories.stream().map(category->category.getGuid()).collect(Collectors.toList());
+            List<String> allDBNames = relationDAO.queryAllDBNameByCategoryGuidV2(categoryIds, dbNames, tenantId);
+            //去重
+            dbNames.addAll(allDBNames);
+            Set<String> set = new HashSet(dbNames);
+            dbNames = new ArrayList<>(set);
+
+            userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type,dbNames);
             if (categoryIds==null||categoryIds.size()==0){
                 return userMap;
             }
