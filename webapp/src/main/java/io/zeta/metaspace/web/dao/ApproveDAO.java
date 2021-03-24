@@ -82,7 +82,7 @@ public interface ApproveDAO {
             " offset ${paras.offset} " +
             "</if>" +
             "</script>")
-    public List<ApproveItem> getApproveItems(@Param("tenantId") String tenantId, @Param("paras") ApproveParas paras,
+    List<ApproveItem> getApproveItems(@Param("tenantId") String tenantId, @Param("paras") ApproveParas paras,
                                                    @Param("modules") List<String> modules);
 
 
@@ -91,7 +91,7 @@ public interface ApproveDAO {
      * @param userId
      */
     @Select("select distinct(module_id) from (select group_id from approval_group_relation a join approval_group b on a.group_id = b.id and a.user_id = #{userId} and b.tenantid = #{tenantId} ) a join (select group_id,module_id from approval_group_module_relation) b on  a.group_id = b.group_id")
-    public List<String> selectApproveModuleByUserId(@Param("userId") String userId,@Param("tenantId") String tenantId);
+    List<String> selectApproveModuleByUserId(@Param("userId") String userId,@Param("tenantId") String tenantId);
 
 
 
@@ -103,12 +103,12 @@ public interface ApproveDAO {
     @Insert({"<script> insert into approval_item (id,object_id,object_name,business_type,approve_type,status,approve_group,approver,approve_time,submitter,commit_time,reason,module_id,version,tenant_id) values ",
             "(#{item.id},#{item.objectId},#{item.objectName},#{item.businessType},#{item.approveType},'1',#{item.approveGroup},#{item.approver},#{item.approveTime},#{item.submitter},now(),#{item.reason},#{item.moduleId},#{item.version},#{item.tenantId})",
              "</script>"})
-    public void addApproveItem(@Param("item") ApproveItem item);
+    void addApproveItem(@Param("item") ApproveItem item);
 
 
     //更新业务信息
     @Update("update approval_item set status=#{item.status},approver=#{item.approver},approve_time=now(),reason=#{item.reason} where id=#{item.id} and tenant_id=#{item.tenantId}")
-    public int updateStatus(@Param("item") ApproveItem item);
+    int updateStatus(@Param("item") ApproveItem item);
 
     /**
      * 获取审批成员
