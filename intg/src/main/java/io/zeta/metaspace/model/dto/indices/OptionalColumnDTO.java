@@ -1,21 +1,21 @@
 package io.zeta.metaspace.model.dto.indices;
 public class OptionalColumnDTO {
-    private String tableId;
-    private String tableName;
+    private String columnId;
+    private String columnName;
 
-    public String getTableId() {
-        return tableId;
+    public String getColumnId() {
+        return columnId;
     }
 
-    public void setTableId(String tableId) {
-        this.tableId = tableId;
+    public void setColumnId(String columnId) {
+        this.columnId = columnId;
     }
 
-    public String getTableName() {
-        return tableName;
+    public String getColumnName() {
+        return columnName;
     }
 
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
+    public void setColumnName(String columnName) {
+        this.columnName = columnName;
     }
 }

@@ -37,6 +37,7 @@ import java.sql.Timestamp;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service("indexService")
 public class IndexServiceImpl implements IndexService{
@@ -423,7 +424,11 @@ public class IndexServiceImpl implements IndexService{
             List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
             List<DataSourceBody>  dataSourceBodies=dataSourceDAO.getDataSourcesByGroups(groupIds,tenantId);
             if(!CollectionUtils.isEmpty(dataSourceBodies)){
-                List<OptionalDataSourceDTO> rdbms=dataSourceBodies.stream().map(x->BeanMapper.map(x,OptionalDataSourceDTO.class)).collect(Collectors.toList());
+                //根据id去重
+                List<DataSourceBody> unique=dataSourceBodies.stream().collect(
+                        Collectors.collectingAndThen(
+                                Collectors.toCollection(()->new TreeSet<>(Comparator.comparing(DataSourceBody::getSourceId))),ArrayList::new));
+                List<OptionalDataSourceDTO> rdbms=unique.stream().map(x->BeanMapper.map(x,OptionalDataSourceDTO.class)).collect(Collectors.toList());
                 odsds.addAll(rdbms);
             }
         }
@@ -529,7 +534,17 @@ public class IndexServiceImpl implements IndexService{
             approveItem.setModuleId(ModuleEnum.NORMDESIGN.getId()+"");
             approveItem.setVersion(pid.getVersion());
             approveItem.setTenantId(tenantId);
+
             approveServiceImpl.addApproveItem(approveItem);
+
+            int indexType=pid.getIndexType();
+            if(indexType==IndexType.INDEXATOMIC.getValue()){
+                indexDAO.editAtomicState(pid.getIndexId(),pid.getVersion(),tenantId,IndexState.APPROVAL.getValue());
+            }else if(indexType==IndexType.INDEXDERIVE.getValue()){
+                indexDAO.editDeriveState(pid.getIndexId(),pid.getVersion(),tenantId,IndexState.APPROVAL.getValue());
+            }else if(indexType==IndexType.INDEXCOMPOSITE.getValue()){
+                indexDAO.editCompositeState(pid.getIndexId(),pid.getVersion(),tenantId,IndexState.APPROVAL.getValue());
+            }
         }
     }
 

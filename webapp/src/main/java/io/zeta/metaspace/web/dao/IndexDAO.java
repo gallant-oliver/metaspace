@@ -86,7 +86,7 @@ public interface IndexDAO {
     @Update("update index_atomic_info set index_name=#{iap.indexName}, index_identification=#{iap.indexIdentification}, description=#{iap.description}, central=#{iap.central}, " +
             "index_field_id=#{iap.indexFieldId}, approval_group_id=#{iap.approvalGroupId}, source_id=#{iap.sourceId}, " +
             "db_name=#{iap.dbName}, table_id=#{iap.tableId}, column_id=#{iap.columnId}, business_caliber=#{iap.businessCaliber}, business_leader=#{iap.businessLeader}, " +
-            "technical_caliber=#{iap.technicalCaliber}, technical_leader={iap.technicalLeader}, updater=#{iap.updater}, update_time=#{iap.updateTime} where index_id=#{iap.indexId} and version=#{iap.version}")
+            "technical_caliber=#{iap.technicalCaliber}, technical_leader=#{iap.technicalLeader}, updater=#{iap.updater}, update_time=#{iap.updateTime} where index_id=#{iap.indexId} and version=#{iap.version}")
     int editAtomicIndex(@Param("iap") IndexAtomicPO iap);
 
     /**

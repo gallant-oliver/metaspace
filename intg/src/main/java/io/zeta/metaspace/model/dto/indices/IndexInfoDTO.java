@@ -76,6 +76,10 @@ public class IndexInfoDTO {
      */
     private int version;
     /**
+     * 表达式
+     */
+    private String expression;
+    /**
      *数据源id
      */
     private  String  sourceId ;
@@ -478,6 +482,14 @@ public class IndexInfoDTO {
 
     public void setPublishTime(Timestamp publishTime) {
         this.publishTime = publishTime;
+    }
+
+    public String getExpression() {
+        return expression;
+    }
+
+    public void setExpression(String expression) {
+        this.expression = expression;
     }
 
     public class ApprovalGroupMember{

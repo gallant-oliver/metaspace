@@ -1,14 +1,14 @@
 package io.zeta.metaspace.model.dto.indices;
 public class OptionalTableDTO {
-    private String tableId;
+    private String tableGuid;
     private String tableName;
 
-    public String getTableId() {
-        return tableId;
+    public String getTableGuid() {
+        return tableGuid;
     }
 
-    public void setTableId(String tableId) {
-        this.tableId = tableId;
+    public void setTableGuid(String tableGuid) {
+        this.tableGuid = tableGuid;
     }
 
     public String getTableName() {

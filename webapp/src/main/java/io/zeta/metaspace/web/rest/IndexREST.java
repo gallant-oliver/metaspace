@@ -391,12 +391,11 @@ public class IndexREST {
      * @throws Exception
      */
     @Permission({ModuleEnum.NORMDESIGN,ModuleEnum.AUTHORIZATION})
-    @Path("/{indexId}")
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result editIndex(IndexDTO indexDTO,@PathParam("indexId") String indexId, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public Result editIndex(IndexDTO indexDTO, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         if(Objects.isNull(indexDTO)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数错误");
         }
@@ -567,7 +566,7 @@ public class IndexREST {
     @Path("/{indexId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public IndexInfoDTO getIndexInfo(@PathParam("indexId") String indexId,@QueryParam("indexType") int indexType,@QueryParam("indexType") int version,@HeaderParam("tenantId") String tenantId) throws Exception {
+    public IndexInfoDTO getIndexInfo(@PathParam("indexId") String indexId,@QueryParam("indexType") int indexType,@QueryParam("version") int version,@HeaderParam("tenantId") String tenantId) throws Exception {
         if(Objects.isNull(indexId)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标id不能为空");
         }
