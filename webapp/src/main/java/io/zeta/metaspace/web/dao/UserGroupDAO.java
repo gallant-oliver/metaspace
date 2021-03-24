@@ -971,7 +971,10 @@ public interface UserGroupDAO {
             " select count(*) count," +
             "<choose>" +
             "    <when test=\"categoryType==0\">" +
-            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and (dbname is null " +
+            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and " +
+            "        tableinfo.status='ACTIVE' and "+
+            "        ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') and " +
+            "        (dbname is null " +
             "        <if test='dbNames!=null and dbNames.size()>0'>" +
             "          or dbname in " +
             "          <foreach item='item' index='index' collection='dbNames'" +
@@ -995,7 +998,7 @@ public interface UserGroupDAO {
             "    </otherwise>" +
             "</choose>" +
             " group by guid" +
-            ") item on c.guid=item.guid " +
+            " )item on c.guid=item.guid " +
             " where c.tenantid=#{tenantId} and c.categorytype=#{categoryType}" +
             " and g.group_id in " +
             "    <foreach item='id' index='index' collection='userGroupIds'" +
