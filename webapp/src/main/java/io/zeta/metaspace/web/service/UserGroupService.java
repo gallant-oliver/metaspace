@@ -1310,15 +1310,15 @@ public class UserGroupService {
                 dbNames=new ArrayList<>();
             }
             userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type,dbNames);
-
             List<String> categoryIds = userCategories.stream().map(category->category.getGuid()).collect(Collectors.toList());
-            List<String> allDBNames = relationDAO.queryAllDBNameByCategoryGuidV2(categoryIds, dbNames, tenantId);
-            //去重
-            dbNames.addAll(allDBNames);
-            Set<String> set = new HashSet(dbNames);
-            dbNames = new ArrayList<>(set);
-
-            userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type,dbNames);
+            if (type==0 && dbNames.size()!=0) {
+                List<String> allDBNames  = relationDAO.queryAllDBNameByCategoryGuidV2(categoryIds, dbNames, tenantId);
+                //去重
+                dbNames.addAll(allDBNames);
+                Set<String> set = new HashSet(dbNames);
+                dbNames = new ArrayList<>(set);
+                userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type,dbNames);
+            }
             if (categoryIds==null||categoryIds.size()==0){
                 return userMap;
             }
