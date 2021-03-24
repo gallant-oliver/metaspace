@@ -103,18 +103,15 @@ public interface ApproveDAO {
     @Insert({"<script> insert into approval_item (id,object_id,object_name,business_type,approve_type,status,approve_group,approver,approve_time,submitter,commit_time,reason,module_id,version,tenant_id) values ",
             "(#{item.id},#{item.objectId},#{item.objectName},#{item.businessType},#{item.approveType},'1',#{item.approveGroup},#{item.approver},#{item.approveTime},#{item.submitter},now(),#{item.reason},#{item.moduleId},#{item.version},#{item.tenantId})",
              "</script>"})
-    public void addApproveItem(@Param("approveItem") ApproveItem item);
+    public void addApproveItem(@Param("item") ApproveItem item);
 
 
     //更新业务信息
     @Update("update approval_item set status=#{item.status},approver=#{item.approver},approve_time=now(),reason=#{item.reason} where id=#{item.id} and tenant_id=#{item.tenantId}")
-    public int updateStatus(@Param("approveItem") ApproveItem item);
+    public int updateStatus(@Param("item") ApproveItem item);
 
     /**
      * 获取审批成员
-     */
-    /**
-     * 复合指标依赖的派生指标
      */
     @Select({" <script>",
             " select * from users where userid in " ,

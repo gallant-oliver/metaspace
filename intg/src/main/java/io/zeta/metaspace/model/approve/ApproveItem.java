@@ -57,7 +57,7 @@ public class ApproveItem {
      /**
       * 模块id
       */
-     private String module_id;
+     private String moduleId;
      /**
       * 审批对象版本
       */
@@ -65,7 +65,7 @@ public class ApproveItem {
      /**
       * 租户id
       */
-     private String tenant_id;
+     private String tenantId;
      /**
       * 审批时间
       */

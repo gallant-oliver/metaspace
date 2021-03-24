@@ -526,9 +526,9 @@ public class IndexServiceImpl implements IndexService{
             approveItem.setSubmitter(user.getUserId());
             TimeStamp timeStamp=new TimeStamp(System.currentTimeMillis());
             approveItem.setCommitTime(timeStamp);
-            approveItem.setModule_id(ModuleEnum.NORMDESIGN.getId()+"");
+            approveItem.setModuleId(ModuleEnum.NORMDESIGN.getId()+"");
             approveItem.setVersion(pid.getVersion());
-            approveItem.setTenant_id(tenantId);
+            approveItem.setTenantId(tenantId);
             approveServiceImpl.addApproveItem(approveItem);
         }
     }
