@@ -271,11 +271,11 @@ public interface UserGroupDAO {
             "    </when>" +
             "    <when test=\"categoryType==5\">" +
             "        guid from ( " +
-            "        select index_field_id as guid,index_id ,max(version) as version from index_atomic_info where  tenant_id=#{tenantId} group by index_field_id,index_id " +
-            "        union all " +
-            "        select index_field_id as guid,index_id ,max(version) as version from index_atomic_info where  tenant_id=#{tenantId} group by index_field_id,index_id " +
-            "        union all " +
-            "        select index_field_id as guid,index_id ,max(version) as version from index_atomic_info where  tenant_id=#{tenantId} group by index_field_id,index_id " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_atomic_info where  tenant_id=#{tenantId}  " +
+            "        union  " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_atomic_info where  tenant_id=#{tenantId}  " +
+            "        union  " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_atomic_info where  tenant_id=#{tenantId}  " +
             "        ) adc " +
             "    </when>" +
             "    <when test=\"categoryType==1\">" +
@@ -293,7 +293,10 @@ public interface UserGroupDAO {
             "</choose>" +
             " group by guid" +
             ") item on category.guid=item.guid " +
-            "where categoryType=#{categoryType} and tenantid=#{tenantId}" +
+            " where categoryType=#{categoryType} and tenantid=#{tenantId}" +
+            "    <when test=\"categoryType==5\">" +
+            "        and adc.rn=1 " +
+            "    </when>" +
             "</script>")
     public List<RoleModulesCategories.Category> getAllCategorysAndCount(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId,@Param("dbNames") List<String> dbNames);
 
@@ -962,6 +965,15 @@ public interface UserGroupDAO {
             "        </if>" +
             "        )" +
             "    </when>" +
+            "    <when test=\"categoryType==5\">" +
+            "        guid from ( " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_atomic_info where  tenant_id=#{tenantId}  " +
+            "        union  " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_atomic_info where  tenant_id=#{tenantId}  " +
+            "        union  " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_atomic_info where  tenant_id=#{tenantId}  " +
+            "        ) adc " +
+            "    </when>" +
             "    <when test=\"categoryType==1\">" +
             "        categoryguid as guid from business_relation " +
             "    </when>" +
@@ -978,6 +990,9 @@ public interface UserGroupDAO {
             " group by guid" +
             ") item on c.guid=item.guid " +
             " where c.tenantid=#{tenantId} and c.categorytype=#{categoryType}" +
+            " <when test=\"categoryType==5\">" +
+            "        and  adc.rn=1 " +
+            "    </when>" +
             " and g.group_id in " +
             "    <foreach item='id' index='index' collection='userGroupIds'" +
             "    open='(' separator=',' close=')'>" +
