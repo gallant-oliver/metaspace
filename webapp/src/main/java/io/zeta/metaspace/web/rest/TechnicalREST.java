@@ -248,6 +248,8 @@ public class TechnicalREST {
     public Result deleteCategory(List<String> categoryGuids, @HeaderParam("tenantId") String tenantId) throws Exception {
         AtlasPerfTracer perf = null;
         CategoryDeleteReturn deleteReturn = null;
+        int item = 0;
+        int categorys = 0;
         try {
             for (String categoryGuid : categoryGuids) {
                 Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
@@ -257,7 +259,12 @@ public class TechnicalREST {
                 CategoryEntityV2 category = dataManageService.getCategory(categoryGuid, tenantId);
                 HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), category.getName());
                 deleteReturn = dataManageService.deleteCategory(categoryGuid, tenantId, CATEGORY_TYPE);
+                item += deleteReturn.getItem();
+                categorys += deleteReturn.getCategory();
             }
+            //设置删除的条数
+            deleteReturn.setItem(item);
+            deleteReturn.setCategory(categorys);
             return ReturnUtil.success(deleteReturn);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
