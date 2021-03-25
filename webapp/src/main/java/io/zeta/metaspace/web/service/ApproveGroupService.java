@@ -14,10 +14,7 @@
 package io.zeta.metaspace.web.service;
 
 
-import io.zeta.metaspace.model.approvegroup.ApproveGroup;
-import io.zeta.metaspace.model.approvegroup.ApproveGroupListAndSearchResult;
-import io.zeta.metaspace.model.approvegroup.ApproveGroupMemberSearch;
-import io.zeta.metaspace.model.approvegroup.ModuleSelect;
+import io.zeta.metaspace.model.approvegroup.*;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.*;
@@ -90,6 +87,18 @@ public class ApproveGroupService {
         commonResult.setCurrentSize(lists.size());
         return commonResult;
 
+    }
+
+    /**
+     * 审批组组详情
+     */
+    public PageResult<ApproveGroupListAndSearchResult> getApproveGroupByModuleId(ApproveGroupParas paras,String tenantId) {
+        List<ApproveGroupListAndSearchResult> lists = approveGroupDAO.getApproveGroupByModuleId(tenantId, paras);
+        PageResult<ApproveGroupListAndSearchResult> result = new PageResult<>();
+        result.setTotalSize(lists.get(0).getTotalSize());
+        result.setLists(lists);
+        result.setCurrentSize(lists.size());
+        return result;
     }
 
 

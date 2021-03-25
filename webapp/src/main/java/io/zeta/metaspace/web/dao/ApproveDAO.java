@@ -40,16 +40,14 @@ public interface ApproveDAO {
     @Select("<script>" +
             "select count(*) over() totalSize,a.id,a.object_id as objectId,a.object_name as objectName,a.business_type as businessType,a.commit_time as commitTime,a.approve_type as approveType, " +
             "a.status,a.approve_group as approveGroup,users.username as approver,a.approve_time as approveTime,a.submitter as submitter,a.reason as reason,a.module_id as moduleId,a.version as version,a.tenant_id as tenantId"+
-            " from approval_item a join users on a.approver = users.userid " +
+            " from approval_item a left join users on a.approver = users.userid " +
             " where a.tenant_id=#{tenantId}" +
-            "<if test='modules!=null and modules.size()!=0'>" +
-            " and module_id in " +
-            " <foreach collection='modules' item='moduleId' index='index' separator=',' open='(' close=')'>" +
-            " #{moduleId}" +
-            " </foreach>"+
-            "</if>"+
+            " and a.approve_group in " +
+            "<foreach collection='groups' item='groupId' index='index' separator=',' open='(' close=')'>" +
+            " #{groupId}" +
+            "</foreach>"+
             "<if test='paras.approveStatus!=null and paras.approveStatus.size()!=0'>" +
-            " and status in " +
+            " and a.status in " +
             " <foreach collection='paras.status' item='stat' index='index' separator=',' open='(' close=')'>" +
             " #{stat}" +
             " </foreach>" +
@@ -83,7 +81,7 @@ public interface ApproveDAO {
             "</if>" +
             "</script>")
     List<ApproveItem> getApproveItems(@Param("tenantId") String tenantId, @Param("paras") ApproveParas paras,
-                                                   @Param("modules") List<String> modules);
+                                                   @Param("groups") List<String> groups);
 
 
     /**
@@ -92,6 +90,14 @@ public interface ApproveDAO {
      */
     @Select("select distinct(module_id) from (select group_id from approval_group_relation a join approval_group b on a.group_id = b.id and a.user_id = #{userId} and b.tenantid = #{tenantId} ) a join (select group_id,module_id from approval_group_module_relation) b on  a.group_id = b.group_id")
     List<String> selectApproveModuleByUserId(@Param("userId") String userId,@Param("tenantId") String tenantId);
+
+
+    /**
+     * 用户所在审批组
+     * @param userId
+     */
+    @Select("select a.id from approval_group a inner join approval_group_relation b on a.id = b.group_id where a.tenantid = #{tenantId} and b.user_id = #{userId}")
+    List<String> selectApproveGroupoByUserId(@Param("userId") String userId,@Param("tenantId") String tenantId);
 
 
 

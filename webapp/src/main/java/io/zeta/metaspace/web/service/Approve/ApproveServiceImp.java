@@ -38,21 +38,21 @@ public class ApproveServiceImp implements ApproveService{
     @Override
     public List<ApproveItem> search(ApproveParas paras, String tenantId) {
         String userId = AdminUtils.getUserData().getUserId();
-        List<String> modules = null;
+        List<String> groups = null;
         if("1".equals(paras.getReferer())){  //我的申请
             paras.setUserId(userId);
         }else if("2".equals(paras.getReferer())){   //待审批
-            modules = approveDao.selectApproveModuleByUserId(userId, tenantId);
+            groups = approveDao.selectApproveGroupoByUserId(userId, tenantId);
             List<String> status = new LinkedList<>();
             status.add(ApproveStatus.WAITING.getCode());
             paras.setApproveStatus(status);
         }else{  //已审批
-            modules = approveDao.selectApproveModuleByUserId(userId, tenantId);
+            groups = approveDao.selectApproveGroupoByUserId(userId, tenantId);
             List<String> status = new LinkedList<>();
             status.add(ApproveStatus.FINISH.getCode());
             paras.setApproveStatus(status);
         }
-        return approveDao.getApproveItems(tenantId,paras,modules);
+        return approveDao.getApproveItems(tenantId,paras,groups);
     }
 
     @Override
@@ -61,12 +61,15 @@ public class ApproveServiceImp implements ApproveService{
         if(ApproveOperate.APPROVE.equals(ApproveOperate.getOprateByCode(paras.getResult()))){  //审批通过
             result = ApproveOperate.APPROVE;
             ApproveItem item = new ApproveItem();
+            item.setTenantId(tenant_id);
             item.setStatus(ApproveStatus.FINISH.code);  //更新为已通过状态
             item.setApprover(AdminUtils.getUserData().getUserId()); //写入审批人
             approveDao.updateStatus(item);
         }else if(ApproveOperate.REJECTED.equals(ApproveOperate.getOprateByCode(paras.getResult()))){ //驳回
             result = ApproveOperate.REJECTED;
             ApproveItem item = new ApproveItem();
+            item.setTenantId(tenant_id);
+            item.setReason(paras.getDesc());  //驳回需要原因
             item.setStatus(ApproveStatus.REJECTED.code);  //更新为驳回状态
             item.setApprover(AdminUtils.getUserData().getUserId()); //写入审批人
             approveDao.updateStatus(item);
