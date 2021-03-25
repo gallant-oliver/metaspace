@@ -16,6 +16,7 @@ package io.zeta.metaspace.web.dao;
 import io.zeta.metaspace.model.approvegroup.ApproveGroup;
 import io.zeta.metaspace.model.approvegroup.ApproveGroupListAndSearchResult;
 import io.zeta.metaspace.model.approvegroup.ApproveGroupMemberSearch;
+import io.zeta.metaspace.model.approvegroup.ApproveGroupParas;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
@@ -79,6 +80,32 @@ public interface ApproveGroupDAO {
     public List<ApproveGroupListAndSearchResult> getApproveGroup(@Param("tenantId") String tenantId, @Param("offset") int offset, @Param("limit") int limit,
                                                                  @Param("sortBy") String sortBy, @Param("order") String order, @Param("search") String search,
                                                                  @Param("ids") List<String> ids);
+
+    //基于模块获取对应审批组
+    @Select("<script>" +
+            "select count(*) over() totalSize,u.id,u.name,u.description" +
+            " from approval_group u inner join " +
+            " approval_group_module_relation m"+
+            " on u.id=m.group_id " +
+            " where u.tenantid=#{tenantId} and valid=true and m.module_id = #{paras.moduleId}" +
+            "<if test=\"params.query!='' and params.query!=null\">"+
+            " and u.name like '%${params.query}%' ESCAPE '/' " +
+            "</if>" +
+            "<if test='params.sortBy!=null'>" +
+            " order by ${params.sortBy} " +
+            "</if>" +
+            "<if test='params.order!=null '>" +
+            " ${params.order} " +
+            "</if>" +
+            "<if test='params.limit!=-1'>" +
+            " limit ${params.limit} " +
+            "</if>" +
+            "<if test='params.offset!=0'>" +
+            " offset ${params.offset} " +
+            "</if>" +
+            "</script>")
+    public List<ApproveGroupListAndSearchResult> getApproveGroupByModuleId(@Param("tenantId") String tenantId, @Param("params") ApproveGroupParas approveGroupParas);
+
 
 
     @Select("select username from users where userid=#{userId}")

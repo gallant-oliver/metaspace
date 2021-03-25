@@ -55,7 +55,7 @@ public class CategoryUtil {
             add(new CategoryEntityV2("1", "贴源层", null, null, null, "2", 0, 1, "1", createTime));
             add(new CategoryEntityV2("2","基础层",null,null,"1","3",0,1,"1",createTime));
             add(new CategoryEntityV2("3","规范层",null,null,"2","4",0,1,"1", createTime));
-            add(new CategoryEntityV2("4","通过层",null,null,"3","5",0,1,"1", createTime));
+            add(new CategoryEntityV2("4","通用层",null,null,"3","5",0,1,"1", createTime));
             add(new CategoryEntityV2("5","应用层",null,null,"4",null,0,1,"1", createTime));
             add(new CategoryEntityV2("Standard-1", "基础类数据标准","基础类数据标准",null,null,"Standard-2",3,1,"1", createTime));
             add(new CategoryEntityV2("Standard-2", "指标类数据标准","指标类数据标准",null,"Standard-1",null,3,1,"1", createTime));
