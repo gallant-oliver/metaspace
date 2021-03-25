@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.approve.ApproveItem;
 import io.zeta.metaspace.model.dto.indices.IndexDTO;
 import io.zeta.metaspace.model.dto.indices.PageQueryDTO;
 import io.zeta.metaspace.model.modifiermanage.Qualifier;
@@ -227,9 +228,9 @@ public interface IndexDAO {
             " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName,ds.source_name as sourceName,ti.tablename as tableName,ci.column_name as columnName, " ,
             " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
             " from index_atomic_info iai " ,
-            " left join category ca on iai.index_field_id=ca.guid " ,
-            " left join approval_group ag on iai.approval_group_id=ag.id " ,
-            " left join data_source ds on iai.source_id=ds.source_id " ,
+            " left join category ca on iai.index_field_id=ca.guid and ca.categorytype=#{categoryType} and ca.tenantid=#{tenantId} " ,
+            " left join approval_group ag on iai.approval_group_id=ag.id   and ag.tenantid=#{tenantId}" ,
+            " left join data_source ds on iai.source_id=ds.source_id  and ds.tenantid=#{tenantId}" ,
             " left join tableinfo ti on iai.table_id=ti.tableguid and iai.source_id= ti.source_id and iai.db_name=ti.dbname" ,
             " left join column_info ci on iai.column_id=ci.column_guid " ,
             " left join users bl on iai.business_leader=bl.userid " ,
@@ -237,8 +238,8 @@ public interface IndexDAO {
             " left join users c on iai.creator=c.userid " ,
             " left join users u on iai.updater=u.userid " ,
             " left join users p on iai.updater=p.userid " ,
-            " where iai.index_id=#{indexId} and iai.version=#{version} and ca.categorytype=#{categoryType} ",
-            " and iai.tenant_id=#{tenantId} and ca.tenantid=#{tenantId} and ag.tenantid=#{tenantId} and ds.tenantid=#{tenantId}",
+            " where iai.index_id=#{indexId} and iai.version=#{version} ",
+            " and iai.tenant_id=#{tenantId}",
             " </script>"})
 
     IndexInfoPO getAtomicIndexInfoPO(@Param("indexId")String indexId,@Param("version")int version,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
@@ -246,31 +247,31 @@ public interface IndexDAO {
             " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, t.name as timeLimitName " ,
             " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
             " from index_derive_info iai " ,
-            " left join time_limit t on iai.time_limit_id=t.id " ,
-            " left join category ca on iai.index_field_id=ca.guid " ,
-            " left join approval_group ag on iai.approval_group_id=ag.id " ,
+            " left join time_limit t on iai.time_limit_id=t.id and t.tenantid=#{tenantId} " ,
+            " left join category ca on iai.index_field_id=ca.guid and ca.categorytype=#{categoryType} and ca.tenantid=#{tenantId} " ,
+            " left join approval_group ag on iai.approval_group_id=ag.id and ag.tenantid=#{tenantId} " ,
             " left join users bl on iai.business_leader=bl.userid " ,
             " left join users tl on iai.technical_leader=tl.userid " ,
             " left join users c on iai.creator=c.userid " ,
             " left join users u on iai.updater=u.userid " ,
             " left join users p on iai.updater=p.userid " ,
-            " where iai.index_id=#{indexId} and iai.version=#{version} and ca.categorytype=#{categoryType} ",
-            " and iai.tenant_id=#{tenantId} and ca.tenantid=#{tenantId} and ag.tenantid=#{tenantId} and t.tenantid=#{tenantId} ",
+            " where iai.index_id=#{indexId} and iai.version=#{version} ",
+            " and iai.tenant_id=#{tenantId}   ",
             " </script>"})
     IndexInfoPO getDeriveIndexInfoPO(@Param("indexId")String indexId,@Param("version")int version,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
     @Select({" <script>",
             " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, " ,
             " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
             " from index_composite_info iai " ,
-            " left join category ca on iai.index_field_id=ca.guid " ,
-            " left join approval_group ag on iai.approval_group_id=ag.id " ,
+            " left join category ca on iai.index_field_id=ca.guid and ca.categorytype=#{categoryType} and ca.tenantid=#{tenantId} " ,
+            " left join approval_group ag on iai.approval_group_id=ag.id and ag.tenantid=#{tenantId} " ,
             " left join users bl on iai.business_leader=bl.userid " ,
             " left join users tl on iai.technical_leader=tl.userid " ,
             " left join users c on iai.creator=c.userid " ,
             " left join users u on iai.updater=u.userid " ,
             " left join users p on iai.updater=p.userid " ,
-            " where iai.index_id=#{indexId} and iai.version=#{version} and ca.categorytype=#{categoryType} ",
-            " and iai.tenant_id=#{tenantId} and ca.tenantid=#{tenantId} and ag.tenantid=#{tenantId} ",
+            " where iai.index_id=#{indexId} and iai.version=#{version} ",
+            " and iai.tenant_id=#{tenantId} ",
             " </script>"})
     IndexInfoPO getCompositeIndexInfoPO(@Param("indexId")String indexId,@Param("version")int version,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
 
@@ -278,9 +279,9 @@ public interface IndexDAO {
             " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName,ds.source_name as sourceName,ti.tablename as tableName,ci.column_name as columnName, " ,
             " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
             " from index_atomic_info iai " ,
-            " left join category ca on iai.index_field_id=ca.guid " ,
-            " left join approval_group ag on iai.approval_group_id=ag.id " ,
-            " left join data_source ds on iai.source_id=ds.source_id " ,
+            " left join category ca on iai.index_field_id=ca.guid and ca.categorytype=#{categoryType} and ca.tenantid=#{tenantId} " ,
+            " left join approval_group ag on iai.approval_group_id=ag.id and ag.tenantid=#{tenantId} " ,
+            " left join data_source ds on iai.source_id=ds.source_id and ds.tenantid=#{tenantId} " ,
             " left join tableinfo ti on iai.table_id=ti.tableguid and iai.source_id= ti.source_id and iai.db_name=ti.dbname" ,
             " left join column_info ci on iai.column_id=ci.column_guid " ,
             " left join users bl on iai.business_leader=bl.userid " ,
@@ -288,8 +289,8 @@ public interface IndexDAO {
             " left join users c on iai.creator=c.userid " ,
             " left join users u on iai.updater=u.userid " ,
             " left join users p on iai.updater=p.userid " ,
-            " where iai.index_id=#{indexId} and ca.categorytype=#{categoryType} ",
-            " and iai.tenant_id=#{tenantId} and ca.tenantid=#{tenantId} and ag.tenantid=#{tenantId} and ds.tenantid=#{tenantId} ",
+            " where iai.index_id=#{indexId} ",
+            " and iai.tenant_id=#{tenantId} ",
             " order by iai.version ",
             " </script>"})
     List<IndexInfoPO> getAtomicIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
@@ -297,16 +298,16 @@ public interface IndexDAO {
             " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, t.name as timeLimitName " ,
             " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
             " from index_derive_info iai " ,
-            " left join time_limit t on iai.time_limit_id=t.id " ,
-            " left join category ca on iai.index_field_id=ca.guid " ,
-            " left join approval_group ag on iai.approval_group_id=ag.id " ,
+            " left join time_limit t on iai.time_limit_id=t.id and t.tenantid=#{tenantId} " ,
+            " left join category ca on iai.index_field_id=ca.guid and ca.categorytype=#{categoryType} and ca.tenantid=#{tenantId} " ,
+            " left join approval_group ag on iai.approval_group_id=ag.id and ag.tenantid=#{tenantId} " ,
             " left join users bl on iai.business_leader=bl.userid " ,
             " left join users tl on iai.technical_leader=tl.userid " ,
             " left join users c on iai.creator=c.userid " ,
             " left join users u on iai.updater=u.userid " ,
             " left join users p on iai.updater=p.userid " ,
-            " where iai.index_id=#{indexId} and ca.categorytype=#{categoryType} ",
-            " and iai.tenant_id=#{tenantId} and ca.tenantid=#{tenantId} and ag.tenantid=#{tenantId} and t.tenantid=#{tenantId} ",
+            " where iai.index_id=#{indexId} ",
+            " and iai.tenant_id=#{tenantId}  ",
             " order by iai.version ",
             " </script>"})
     List<IndexInfoPO> getDeriveIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
@@ -314,15 +315,15 @@ public interface IndexDAO {
             " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, " ,
             " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
             " from index_composite_info iai " ,
-            " left join category ca on iai.index_field_id=ca.guid " ,
-            " left join approval_group ag on iai.approval_group_id=ag.id " ,
+            " left join category ca on iai.index_field_id=ca.guid and ca.categorytype=#{categoryType} and ca.tenantid=#{tenantId} " ,
+            " left join approval_group ag on iai.approval_group_id=ag.id and ag.tenantid=#{tenantId} " ,
             " left join users bl on iai.business_leader=bl.userid " ,
             " left join users tl on iai.technical_leader=tl.userid " ,
             " left join users c on iai.creator=c.userid " ,
             " left join users u on iai.updater=u.userid " ,
             " left join users p on iai.updater=p.userid " ,
-            " where iai.index_id=#{indexId} and ca.categorytype=#{categoryType} ",
-            " and iai.tenant_id=#{tenantId} and ca.tenantid=#{tenantId} and ag.tenantid=#{tenantId} ",
+            " where iai.index_id=#{indexId} ",
+            " and iai.tenant_id=#{tenantId} ",
             " order by iai.version ",
             " </script>"})
     List<IndexInfoPO> getCompositeIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
@@ -452,4 +453,20 @@ public interface IndexDAO {
             " offset #{pageQueryDTO.offset}",
             "</script>"})
     List<IndexInfoPO> pageQuery(@Param("pageQueryDTO")PageQueryDTO pageQueryDTO,@Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
+
+
+    @Update({" <script>",
+            " <if test='approveItem.indexType == 1'>",
+            " update index_atomic_info  ",
+            " </if>",
+            " <if test='approveItem.indexType == 2'>",
+            " update index_derive_info  ",
+            " </if>",
+            " <if test='approveItem.indexType == 3'>",
+            " update index_composite_info  ",
+            " </if>",
+            " set index_state=#{state},publisher=#{approveItem.submitter},publish_time=#{approveItem.commitTime} ",
+            " where  index_id=#{approveItem.objectId} and version=#{approveItem.version} and tenant_id=#{tenantId} ",
+            " </script>"})
+    void updatePublishInfo(@Param("approveItem")ApproveItem approveItem, @Param("tenantId")String tenantId,@Param("state") int state);
 }

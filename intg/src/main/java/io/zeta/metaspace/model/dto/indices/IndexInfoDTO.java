@@ -492,73 +492,7 @@ public class IndexInfoDTO {
         this.expression = expression;
     }
 
-    public class ApprovalGroupMember{
-        private String userId;
-        private String username;
 
-        public String getUserId() {
-            return userId;
-        }
 
-        public void setUserId(String userId) {
-            this.userId = userId;
-        }
 
-        public String getUsername() {
-            return username;
-        }
-
-        public void setUsername(String username) {
-            this.username = username;
-        }
-    }
-    public class Modifier{
-        private String id;
-        private String name;
-
-        public String getId() {
-            return id;
-        }
-
-        public void setId(String id) {
-            this.id = id;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-    }
-    public static class DependentIndex{
-        private String indexId;
-        private String indexName;
-        private String indexIdentification;
-
-        public String getIndexId() {
-            return indexId;
-        }
-
-        public void setIndexId(String indexId) {
-            this.indexId = indexId;
-        }
-
-        public String getIndexName() {
-            return indexName;
-        }
-
-        public void setIndexName(String indexName) {
-            this.indexName = indexName;
-        }
-
-        public String getIndexIdentification() {
-            return indexIdentification;
-        }
-
-        public void setIndexIdentification(String indexIdentification) {
-            this.indexIdentification = indexIdentification;
-        }
-    }
 }
