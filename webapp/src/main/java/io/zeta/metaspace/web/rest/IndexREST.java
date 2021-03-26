@@ -28,6 +28,7 @@ import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.hadoop.io.IOUtils;
 import org.mybatis.spring.MyBatisSystemException;
+import org.restlet.resource.Post;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -643,7 +644,7 @@ public class IndexREST {
     }
 
     @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
-    @GET
+    @Post
     @Path("/pagequery")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
