@@ -57,22 +57,22 @@ public interface ApproveDAO {
             "<if test='paras.startTime!=null and paras.endTime!=null'>"+
             " and a.approve_time between #{paras.startTime} and #{paras.endTime} "+
             "</if>"+
-            "<if test='paras.userId!=null'>" +
+            "<if test=\"paras.userId!=null and paras.userId!=''\">"+
             " and a.submitter = #{paras.userId} " +
             "</if>" +
-            "<if test='paras.approveType!=null'>" +
+            "<if test=\"paras.approveType!=null and paras.approveType!=''\">"+
             " and a.approve_type = #{paras.approveType} " +
             "</if>" +
-            "<if test='paras.businessType!=null'>" +
+            "<if test=\"paras.businessType!=null and paras.businessType!=''\">"+
             " and a.business_type = #{paras.businessType} " +
             "</if>" +
             "<if test='paras.query!=null'>" +
             " and a.object_name like '%${paras.query}%' ESCAPE '/' " +
             "</if>" +
-            "<if test='paras.sortBy!=null'>" +
+            "<if test=\"paras.sortBy!=null and paras.sortBy!=''\">"+
             "order by ${paras.sortBy} " +
             "</if>" +
-            "<if test='paras.order!=null '>" +
+            "<if test=\"paras.order!=null and paras.order!=''\">"+
             " ${paras.order} " +
             "</if>" +
             "<if test='paras.limit!=-1'>" +
