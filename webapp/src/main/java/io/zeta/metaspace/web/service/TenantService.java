@@ -293,7 +293,6 @@ public class TenantService {
                     continue;
                 }
                 modules = getModules(list);
-                Collections.sort(modules);
                 modulesCache.put(cacheKey, modules);
                 return modules;
             }
