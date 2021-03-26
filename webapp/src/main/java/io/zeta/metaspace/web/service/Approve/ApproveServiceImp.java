@@ -61,6 +61,7 @@ public class ApproveServiceImp implements ApproveService{
         if(ApproveOperate.APPROVE.equals(ApproveOperate.getOprateByCode(paras.getResult()))){  //审批通过
             result = ApproveOperate.APPROVE;
             ApproveItem item = new ApproveItem();
+            item.setId(paras.getId());
             item.setTenantId(tenant_id);
             item.setStatus(ApproveStatus.FINISH.code);  //更新为已通过状态
             item.setApprover(AdminUtils.getUserData().getUserId()); //写入审批人
@@ -68,16 +69,21 @@ public class ApproveServiceImp implements ApproveService{
         }else if(ApproveOperate.REJECTED.equals(ApproveOperate.getOprateByCode(paras.getResult()))){ //驳回
             result = ApproveOperate.REJECTED;
             ApproveItem item = new ApproveItem();
+            item.setId(paras.getId());
             item.setTenantId(tenant_id);
             item.setReason(paras.getDesc());  //驳回需要原因
             item.setStatus(ApproveStatus.REJECTED.code);  //更新为驳回状态
             item.setApprover(AdminUtils.getUserData().getUserId()); //写入审批人
             approveDao.updateStatus(item);
         }
+        //获取审批模块所对应的服务层对象名称
         String serviceName = moduleServiceClass.get(ModuleEnum.getModuleById(Integer.parseInt(paras.getModuleId())));
         try {
-             Approvable obj = (Approvable)applicationContext.getBean(serviceName);
-             obj.changeObjectStatus(paras.getId(),paras.getBusinessType(),paras.getVersion(),result.code,tenant_id,paras.getApproveType());
+            ApproveItem approveItemById = approveDao.getApproveItemById(paras.getId(), tenant_id);
+            //从容器中获取实现审批业务接口的服务对象
+            Approvable obj = (Approvable)applicationContext.getBean(serviceName);
+            //调用接口方法，继续状态变更业务
+            obj.changeObjectStatus(approveItemById.getId(),paras.getBusinessType(),paras.getVersion(),result.code,tenant_id,paras.getApproveType());
         } catch (Exception e) {
             LOG.error("审批失败", e);
             throw e;

@@ -126,4 +126,13 @@ public interface ApproveDAO {
             " ) " ,
             " </script>"})
     List<User> getApproveUsers(@Param("approvalGroupId")String approvalGroupId);
+
+
+    @Select("<script>" +
+            "select a.id,a.object_id as objectId,a.object_name as objectName,a.business_type as businessType,a.commit_time as commitTime,a.approve_type as approveType, " +
+            "a.status,a.approve_group as approveGroup,a.approve_time as approveTime,a.submitter as submitter,a.reason as reason,a.module_id as moduleId,a.version as version,a.tenant_id as tenantId"+
+            " from approval_item a" +
+            " where a.tenant_id=#{tenantId} and a.id = #{id}" +
+            "</script>")
+    ApproveItem getApproveItemById(@Param("id") String id,@Param("tenantId") String tenantId);
 }
