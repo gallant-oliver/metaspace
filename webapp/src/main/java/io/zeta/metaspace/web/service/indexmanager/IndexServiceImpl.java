@@ -628,7 +628,7 @@ public class IndexServiceImpl implements IndexService{
     }
 
     @Override
-    public List<IndexInfoDTO> pageQuery(PageQueryDTO pageQueryDTO, int categoryType, String tenantId) {
+    public List<IndexInfoDTO> pageQuery(PageQueryDTO pageQueryDTO, int categoryType, String tenantId) throws Exception {
         List<IndexInfoPO> indexInfoPOS=indexDAO.pageQuery(pageQueryDTO,categoryType,tenantId);
         List<IndexInfoDTO> indexInfoDTOS=null;
         if(!CollectionUtils.isEmpty(indexInfoPOS)){

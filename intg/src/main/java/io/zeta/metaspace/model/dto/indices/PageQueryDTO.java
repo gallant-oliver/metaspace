@@ -33,7 +33,7 @@ public class PageQueryDTO {
     /**
      * 更新时间排序方向（asc ，desc）
      */
-    private String order;
+    private int order;
     /**
      * 偏移量
      */
@@ -76,11 +76,11 @@ public class PageQueryDTO {
         this.indexState = indexState;
     }
 
-    public String getOrder() {
+    public int getOrder() {
         return order;
     }
 
-    public void setOrder(String order) {
+    public void setOrder(int order) {
         this.order = order;
     }
 

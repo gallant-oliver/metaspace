@@ -382,7 +382,7 @@ public interface IndexDAO {
 
     @Select({"<script>" ,
             " <if test='pageQueryDTO.indexType == 1'>",
-            " select T.*,bl.username as businessLeaderName, c.username as creatorName,u.username as updaterName,ca.name as indexFieldName from ",
+            " select T.* from ",
             " (select index_id, index_name,1 as indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time,updater, update_time ",
             " ,row_number() over(partition by index_id order by version desc) as rn ",
             " from index_atomic_info) T ",
@@ -448,11 +448,16 @@ public interface IndexDAO {
             " <if test='pageQueryDTO.indexState != 0'>",
             " and T.index_state=#{pageQueryDTO.indexState}",
             " </if>",
-            " order by T.update_time #{pageQueryDTO.order}",
+            " <if test='pageQueryDTO.order == 1'>",
+            " order by T.update_time asc ",
+            " </if>",
+            " <if test='pageQueryDTO.order == 2'>",
+            " order by T.update_time desc ",
+            " </if>",
             " limit #{pageQueryDTO.limit}",
             " offset #{pageQueryDTO.offset}",
             "</script>"})
-    List<IndexInfoPO> pageQuery(@Param("pageQueryDTO")PageQueryDTO pageQueryDTO,@Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
+    List<IndexInfoPO> pageQuery(@Param("pageQueryDTO")PageQueryDTO pageQueryDTO,@Param("categoryType") int categoryType,@Param("tenantId") String tenantId) throws Exception;
 
 
     @Update({" <script>",
