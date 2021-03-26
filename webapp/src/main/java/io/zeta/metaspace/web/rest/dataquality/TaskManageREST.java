@@ -431,7 +431,7 @@ public class TaskManageREST {
     @Path("/{taskId}/cancel")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void stopTaskNow(@PathParam("taskId")String taskId) throws AtlasBaseException {
+    public void stopTaskNow(@PathParam("taskId")String taskId) throws AtlasBaseException, InterruptedException {
         taskManageService.stopTaskNow(taskId);
     }
 

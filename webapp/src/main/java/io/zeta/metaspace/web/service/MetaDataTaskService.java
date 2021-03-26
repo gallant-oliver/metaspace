@@ -8,6 +8,7 @@ import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.sync.SyncTaskInstance;
 import io.zeta.metaspace.web.dao.SyncTaskDefinitionDAO;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
+import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.task.quartz.QuartzManager;
 import io.zeta.metaspace.web.task.sync.SyncTaskJob;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -36,6 +37,8 @@ public class MetaDataTaskService {
     private SyncTaskInstanceDAO syncTaskInstanceDAO;
     @Autowired
     private QuartzManager quartzManager;
+    @Autowired
+    TableDAO tableDAO;
 
     public void checkDuplicateName(String id, String name, String tenantId) {
         if (syncTaskDefinitionDAO.countByName(id, name, tenantId) != 0) {
@@ -335,7 +338,12 @@ public class MetaDataTaskService {
             String now = LocalDateTime.now().toString();
             String jobName = buildJobName(definitionId + now);
             String jobGroupName = buildJobGroupName(definitionId);
-
+            List<String> schemas = definition.getSchemas();
+            if(org.springframework.util.CollectionUtils.isEmpty(schemas)&&definition.isSyncAll()){
+                tableDAO.updateTableRelationBySourceId(definition.getCategoryGuid(),definition.getDataSourceId());
+            }else{
+                tableDAO.updateTableRelationByDb(definition.getCategoryGuid(),definition.getDataSourceId(),schemas);
+            }
             quartzManager.addSimpleJob(jobName, jobGroupName, SyncTaskJob.class, AdminUtils.getUserName());
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "手动触发失败");

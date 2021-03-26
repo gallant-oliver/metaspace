@@ -13,6 +13,7 @@ import io.zeta.metaspace.web.util.HiveMetaStoreBridgeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.quartz.Job;
+import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,8 +48,9 @@ public class SyncTaskJob implements Job {
             String group = jobExecutionContext.getJobDetail().getKey().getGroup();
             String definitionId = group.replace("job_group_", "");
 
-            String executor = (String) jobExecutionContext.getJobDetail().getJobDataMap().getOrDefault("executor", null);
-
+            JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
+            String executor =  (String)jobDataMap.getOrDefault("executor", null);
+            Boolean isSimple =  (Boolean)jobDataMap.getOrDefault("isSimple", false);
             SyncTaskDefinition definition = syncTaskDefinitionDAO.getById(definitionId);
             if (definition == null) {
                 throw new AtlasBaseException("采集任务找不到任务定义");
@@ -57,10 +59,12 @@ public class SyncTaskJob implements Job {
                 definition.setCategoryGuid("1");
             }
             List<String> schemas = definition.getSchemas();
-            if(CollectionUtils.isEmpty(schemas)&&definition.isSyncAll()){
-                tableDAO.updateTableRelationBySourceId(definition.getCategoryGuid(),definition.getDataSourceId());
-            }else{
-                tableDAO.updateTableRelationByDb(definition.getCategoryGuid(),definition.getDataSourceId(),schemas);
+            if(!isSimple){
+                if(CollectionUtils.isEmpty(schemas)&&definition.isSyncAll()){
+                    tableDAO.updateTableRelationBySourceId(definition.getCategoryGuid(),definition.getDataSourceId());
+                }else{
+                    tableDAO.updateTableRelationByDb(definition.getCategoryGuid(),definition.getDataSourceId(),schemas);
+                }
             }
 
 

@@ -122,6 +122,7 @@ public class QuartzManager {
             JobDetail jobDetail = JobBuilder.newJob(jobClass).withIdentity(jobName, jobGroupName).build();
             if (executor != null) {
                 jobDetail.getJobDataMap().put("executor", executor);
+                jobDetail.getJobDataMap().put("isSimple", true);
             }
             Trigger trigger = TriggerBuilder.newTrigger()
                     .withSchedule(SimpleScheduleBuilder.simpleSchedule().withRepeatCount(0))

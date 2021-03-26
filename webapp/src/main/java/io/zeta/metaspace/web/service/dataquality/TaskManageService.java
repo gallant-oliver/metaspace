@@ -675,7 +675,7 @@ public class TaskManageService {
         }
     }
 
-    public void stopTaskNow(String taskId) throws AtlasBaseException {
+    public void stopTaskNow(String taskId) throws AtlasBaseException, InterruptedException {
 
         if(!QuartzJob.CANCEL_STATE_MAP.containsKey(taskId)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前任务目前没有在执行");
@@ -683,6 +683,9 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前任务已经退出");
         }else{
             QuartzJob.CANCEL_STATE_MAP.put(taskId,true);
+            while(QuartzJob.CANCEL_STATE_MAP.containsKey(taskId)){
+                Thread.sleep(1000L);
+            }
         }
     }
 

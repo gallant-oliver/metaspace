@@ -163,13 +163,13 @@ public class QuartzJob implements Job {
             JobKey key = jobExecutionContext.getTrigger().getJobKey();
             LOG.warn("任务名为" + key.getName() + "开始执行");
             taskId = taskManageDAO.getTaskIdByQrtzName(key.getName());
-            EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
             if(CANCEL_STATE_MAP.containsKey(taskId)){
                 //任务正在运行中，跳过本次执行
                 return;
             }else{
                 CANCEL_STATE_MAP.put(taskId,false);
             }
+            EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
             String tenantId = taskInfo.getTenantId();
             String taskExecuteId = initExecuteInfo(taskId);
             if(canceled(taskId, taskExecuteId)){
