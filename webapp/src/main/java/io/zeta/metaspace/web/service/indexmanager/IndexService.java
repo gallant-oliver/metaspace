@@ -139,5 +139,5 @@ public interface IndexService extends Approvable {
      * @param tenantId 租户id
      * @return
      */
-    List<IndexInfoDTO> pageQuery(PageQueryDTO pageQueryDTO, int categoryType, String tenantId);
+    List<IndexInfoDTO> pageQuery(PageQueryDTO pageQueryDTO, int categoryType, String tenantId) throws Exception;
 }
