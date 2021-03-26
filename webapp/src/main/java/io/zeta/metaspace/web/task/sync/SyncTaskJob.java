@@ -47,7 +47,6 @@ public class SyncTaskJob implements Job {
         try {
             String group = jobExecutionContext.getJobDetail().getKey().getGroup();
             String definitionId = group.replace("job_group_", "");
-
             JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
             String executor =  (String)jobDataMap.getOrDefault("executor", null);
             Boolean isSimple =  (Boolean)jobDataMap.getOrDefault("isSimple", false);
@@ -66,7 +65,6 @@ public class SyncTaskJob implements Job {
                     tableDAO.updateTableRelationByDb(definition.getCategoryGuid(),definition.getDataSourceId(),schemas);
                 }
             }
-
 
             SyncTaskInstance instance = new SyncTaskInstance();
             instance.setId(instanceId);
