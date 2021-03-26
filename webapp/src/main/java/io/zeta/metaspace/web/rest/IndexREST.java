@@ -495,16 +495,17 @@ public class IndexREST {
     @Path("/dataSource/db")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getOptionalDb(@QueryParam("dataSourceId") String dataSourceId,@HeaderParam("tenantId") String tenantId) throws Exception {
-        if(Objects.isNull(dataSourceId)){
+    public Result getOptionalDb(OptionalRequestDTO optionalRequestDTO,@HeaderParam("tenantId") String tenantId) throws Exception {
+        //@QueryParam("dataSourceId") String dataSourceId
+        if(Objects.isNull(optionalRequestDTO)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源id不能为空");
         }
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.getOptionalDb("+dataSourceId+")");
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.getOptionalDb("+optionalRequestDTO.getDataSourceId()+")");
             }
-            List<String> optionalDbs=indexService.getOptionalDb(dataSourceId,tenantId);
+            List<String> optionalDbs=indexService.getOptionalDb(optionalRequestDTO.getDataSourceId(),tenantId);
             return ReturnUtil.success(optionalDbs);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
@@ -518,19 +519,16 @@ public class IndexREST {
     @Path("/dataSource/db/table")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getOptionalTable(@QueryParam("dataSourceId") String dataSourceId,@QueryParam("dbName") String dbName,@HeaderParam("tenantId") String tenantId) throws Exception {
-        if(Objects.isNull(dataSourceId)){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源id不能为空");
-        }
-        if(Objects.isNull(dbName)){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库名称不能为空");
+    public Result getOptionalTable(OptionalRequestDTO optionalRequestDTO,@HeaderParam("tenantId") String tenantId) throws Exception {
+        if(Objects.isNull(optionalRequestDTO)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数不能为空");
         }
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.getOptionalTable("+dataSourceId+","+dbName+")");
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.getOptionalTable("+optionalRequestDTO.getDataSourceId()+","+optionalRequestDTO.getDbName()+")");
             }
-            List<OptionalTableDTO> optionalTableDTOs=indexService.getOptionalTable(dataSourceId,dbName);
+            List<OptionalTableDTO> optionalTableDTOs=indexService.getOptionalTable(optionalRequestDTO.getDataSourceId(),optionalRequestDTO.getDbName());
             return ReturnUtil.success(optionalTableDTOs);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
@@ -544,16 +542,16 @@ public class IndexREST {
     @Path("/dataSource/db/table/column")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getOptionalColumn(@QueryParam("tableId") String tableId,@HeaderParam("tenantId") String tenantId) throws Exception {
-        if(Objects.isNull(tableId)){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表id不能为空");
+    public Result getOptionalColumn(OptionalRequestDTO optionalRequestDTO,@HeaderParam("tenantId") String tenantId) throws Exception {
+        if(Objects.isNull(optionalRequestDTO)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数不能为空");
         }
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.getOptionalColumn("+tableId+")");
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.getOptionalColumn("+optionalRequestDTO.getTableId()+")");
             }
-            List<OptionalColumnDTO> optionalColumnDTOs=indexService.getOptionalColumn(tableId);
+            List<OptionalColumnDTO> optionalColumnDTOs=indexService.getOptionalColumn(optionalRequestDTO.getTableId());
             return ReturnUtil.success(optionalColumnDTOs);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
