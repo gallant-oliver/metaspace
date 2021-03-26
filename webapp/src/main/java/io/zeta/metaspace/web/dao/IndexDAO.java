@@ -382,7 +382,7 @@ public interface IndexDAO {
 
     @Select({"<script>" ,
             " <if test='pageQueryDTO.indexType == 1'>",
-            " select T.* from ",
+            " select T.*,bl.username as businessLeaderName, c.username as creatorName,u.username as updaterName,ca.name as indexFieldName from ",
             " (select index_id, index_name,1 as indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time,updater, update_time ",
             " ,row_number() over(partition by index_id order by version desc) as rn ",
             " from index_atomic_info) T ",
@@ -445,7 +445,7 @@ public interface IndexDAO {
             " <if test='pageQueryDTO.searchContent != null'>",
             " and (T.index_name like '%#{pageQueryDTO.searchContent}%' or T.index_identification like '%#{pageQueryDTO.searchContent}%')",
             " </if>",
-            " <if test='pageQueryDTO.indexStates != null'>",
+            " <if test='pageQueryDTO.indexStates != null and pageQueryDTO.indexStates.size > 0'>",
             " and T.index_state in ",
             " <foreach item='indexState' index='index' collection='pageQueryDTO.indexStates' separator=',' open='(' close=')'>",
             " #{indexState} ",
