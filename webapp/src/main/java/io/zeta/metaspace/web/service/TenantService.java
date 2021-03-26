@@ -292,14 +292,7 @@ public class TenantService {
                     retryCount++;
                     continue;
                 }
-                modules = new ArrayList<>();
-                for (RoleResource roleResource : list) {
-                    ModuleEnum moduleEnum = ModuleEnum.getModuleEnum(roleResource);
-                    if (moduleEnum == null) {
-                        continue;
-                    }
-                    modules.add(moduleEnum.getModule());
-                }
+                modules = getModules(list);
                 Collections.sort(modules);
                 modulesCache.put(cacheKey, modules);
                 return modules;
@@ -311,6 +304,39 @@ public class TenantService {
         }
         throw getAtlasBaseException(status,msgDesc,"从安全中心获取当前用户的功能权限错误");
     }
+
+    /**
+     * 遍历匹配菜单对象。如果勾选了“规范定义”中的任一子菜单，则默认授予“规范定义”的子菜单“我的申请”权限
+     * @param list
+     * @return
+     */
+    private List<Module> getModules(List<RoleResource> list) {
+        List<Module> modules = new ArrayList<>();
+        //-1-没有发现“规范定义”中的任何子菜单；0-发现了“规范定义”中的子菜单，但是没有发现规范定义”的子菜单“我的申请”；1-发现了规范定义”的子菜单“我的申请”
+        int flag = -1;
+        for (RoleResource roleResource : list) {
+            ModuleEnum moduleEnum = ModuleEnum.getModuleEnum(roleResource);
+            if (moduleEnum == null) {
+                continue;
+            }
+            //规范定义中的菜单groupId=3
+            if(moduleEnum.getGroupId() == 3){
+                //是否为“规范定义”的子菜单“我的申请”
+                if(moduleEnum == ModuleEnum.MYAPPLICATION){
+                    flag = 1;
+                }else if(flag == -1){
+                    flag = 0;
+                }
+            }
+            modules.add(moduleEnum.getModule());
+        }
+        if(flag == 0){
+            modules.add(ModuleEnum.MYAPPLICATION.getModule());
+        }
+        Collections.sort(modules);
+        return modules;
+    }
+
 
     /**
      * 获取yarn队列

@@ -125,6 +125,10 @@ public enum ModuleEnum {
         return alias;
     }
 
+    public int getGroupId() {
+        return groupId;
+    }
+
     public void setAlias(String alias) {
         this.alias = alias;
     }
