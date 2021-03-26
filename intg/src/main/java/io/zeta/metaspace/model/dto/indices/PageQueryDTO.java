@@ -29,7 +29,7 @@ public class PageQueryDTO {
     /**
      * 指标状态(1 新建，2 已发布，3 已下线，4 审核中)
      */
-    private int indexState;
+    private List<Integer> indexStates;
     /**
      * 更新时间排序方向（asc ，desc）
      */
@@ -68,12 +68,12 @@ public class PageQueryDTO {
         this.searchContent = searchContent;
     }
 
-    public int getIndexState() {
-        return indexState;
+    public List<Integer> getIndexStates() {
+        return indexStates;
     }
 
-    public void setIndexState(int indexState) {
-        this.indexState = indexState;
+    public void setIndexStates(List<Integer> indexStates) {
+        this.indexStates = indexStates;
     }
 
     public int getOrder() {
