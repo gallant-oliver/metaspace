@@ -481,13 +481,13 @@ public class IndexServiceImpl implements IndexService{
             //添加依赖的原子指标
             List<IndexAtomicPO> indexAtomicPOs=indexDAO.getDependentAtomicIndex(indexInfoPO.getIndexAtomicId(),tenantId);
             if(!CollectionUtils.isEmpty(indexAtomicPOs)){
-                List<IndexInfoDTO.DependentIndex> dependentIndices=indexAtomicPOs.stream().map(x->BeanMapper.map(x,IndexInfoDTO.DependentIndex.class)).collect(Collectors.toList());
+                List<DependentIndex> dependentIndices=indexAtomicPOs.stream().map(x->BeanMapper.map(x,DependentIndex.class)).collect(Collectors.toList());
                 indexInfoDTO.setDependentIndices(dependentIndices);
             }
             //添加修饰词
             List<Qualifier> qualifiers=indexDAO.getModifiers(indexInfoPO.getIndexId(),tenantId);
             if(!CollectionUtils.isEmpty(qualifiers)){
-                List<IndexInfoDTO.Modifier> modifiers=qualifiers.stream().map(x->BeanMapper.map(x,IndexInfoDTO.Modifier.class)).collect(Collectors.toList());
+                List<Modifier> modifiers=qualifiers.stream().map(x->BeanMapper.map(x,Modifier.class)).collect(Collectors.toList());
                 indexInfoDTO.setModifiers(modifiers);
             }
         }else if(indexType==IndexType.INDEXCOMPOSITE.getValue()){
@@ -497,7 +497,7 @@ public class IndexServiceImpl implements IndexService{
             //添加依赖的派生指标
             List<IndexDerivePO> indexDerivePOS=indexDAO.getDependentDeriveIndex(indexInfoPO.getIndexId(),tenantId);
             if(!CollectionUtils.isEmpty(indexDerivePOS)){
-                List<IndexInfoDTO.DependentIndex> dependentIndices=indexDerivePOS.stream().map(x->BeanMapper.map(x,IndexInfoDTO.DependentIndex.class)).collect(Collectors.toList());
+                List<DependentIndex> dependentIndices=indexDerivePOS.stream().map(x->BeanMapper.map(x,DependentIndex.class)).collect(Collectors.toList());
                 indexInfoDTO.setDependentIndices(dependentIndices);
             }
         }else {
@@ -507,7 +507,7 @@ public class IndexServiceImpl implements IndexService{
             //添加审批组成员
             List<User> users=approveDAO.getApproveUsers(indexInfoDTO.getApprovalGroupId());
             if(!CollectionUtils.isEmpty(users)){
-                List<IndexInfoDTO.ApprovalGroupMember> approvalGroupMembers=users.stream().map(x->BeanMapper.map(x,IndexInfoDTO.ApprovalGroupMember.class)).collect(Collectors.toList());
+                List<ApprovalGroupMember> approvalGroupMembers=users.stream().map(x->BeanMapper.map(x, ApprovalGroupMember.class)).collect(Collectors.toList());
                 indexInfoDTO.setApprovalGroupMembers(approvalGroupMembers);
             }
         }
@@ -538,13 +538,7 @@ public class IndexServiceImpl implements IndexService{
             approveServiceImpl.addApproveItem(approveItem);
 
             int indexType=pid.getIndexType();
-            if(indexType==IndexType.INDEXATOMIC.getValue()){
-                indexDAO.editAtomicState(pid.getIndexId(),pid.getVersion(),tenantId,IndexState.APPROVAL.getValue());
-            }else if(indexType==IndexType.INDEXDERIVE.getValue()){
-                indexDAO.editDeriveState(pid.getIndexId(),pid.getVersion(),tenantId,IndexState.APPROVAL.getValue());
-            }else if(indexType==IndexType.INDEXCOMPOSITE.getValue()){
-                indexDAO.editCompositeState(pid.getIndexId(),pid.getVersion(),tenantId,IndexState.APPROVAL.getValue());
-            }
+            indexDAO.updatePublishInfo(approveItem,tenantId,IndexState.APPROVAL.getValue());
         }
     }
 
@@ -565,20 +559,20 @@ public class IndexServiceImpl implements IndexService{
                 List<String> dependentIndexIds = indexInfoPOs.stream().map(x -> x.getIndexAtomicId()).distinct().collect(Collectors.toList());
                 //获取依赖原子指标
                 List<IndexAtomicPO> indexAtomicPOS=indexDAO.getAtomicIndexInfoPOs(dependentIndexIds,tenantId);
-                Map<String, IndexInfoDTO.DependentIndex> maps = indexAtomicPOS.stream().map(x->BeanMapper.map(x,IndexInfoDTO.DependentIndex.class)).collect(Collectors.toMap(IndexInfoDTO.DependentIndex::getIndexId, Function.identity(), (key1, key2) -> key2));
+                Map<String, DependentIndex> maps = indexAtomicPOS.stream().map(x->BeanMapper.map(x,DependentIndex.class)).collect(Collectors.toMap(DependentIndex::getIndexId, Function.identity(), (key1, key2) -> key2));
                 //获取依赖的修饰词
                 List<Qualifier> qualifiers=indexDAO.getModifiers(indexId,tenantId);
-                List<IndexInfoDTO.Modifier> modifiers=null;
+                List<Modifier> modifiers=null;
                 if(!CollectionUtils.isEmpty(qualifiers)){
-                    modifiers=qualifiers.stream().map(x->BeanMapper.map(x,IndexInfoDTO.Modifier.class)).collect(Collectors.toList());
+                    modifiers=qualifiers.stream().map(x->BeanMapper.map(x,Modifier.class)).collect(Collectors.toList());
                 }
-                List<IndexInfoDTO.Modifier> finalModifiers = modifiers;
+                List<Modifier> finalModifiers = modifiers;
                 indexInfoDTOs = indexInfoPOs.stream().map(x -> {
                     IndexInfoDTO indexInfoDTO = BeanMapper.map(x, IndexInfoDTO.class);
                     indexInfoDTO.setIndexType(IndexType.INDEXDERIVE.getValue());
-                    IndexInfoDTO.DependentIndex dependentIndex = maps.get(x.getIndexAtomicId());
+                    DependentIndex dependentIndex = maps.get(x.getIndexAtomicId());
                     if (!Objects.isNull(dependentIndex)) {
-                        List<IndexInfoDTO.DependentIndex> dependentIndices = new ArrayList<>();
+                        List<DependentIndex> dependentIndices = new ArrayList<>();
                         dependentIndices.add(dependentIndex);
                         //添加指标依赖
                         indexInfoDTO.setDependentIndices(dependentIndices);
@@ -592,11 +586,11 @@ public class IndexServiceImpl implements IndexService{
             List<IndexInfoPO> indexInfoPOs=indexDAO.getCompositeIndexHistory(indexId,categoryType,tenantId);
             if(!CollectionUtils.isEmpty(indexInfoPOs)){
                 List<IndexDerivePO> indexDerivePOS = indexDAO.getDependentDeriveIndex(indexId, tenantId);
-                List<IndexInfoDTO.DependentIndex> dependentIndices=null;
+                List<DependentIndex> dependentIndices=null;
                 if(!CollectionUtils.isEmpty(indexDerivePOS)){
-                    dependentIndices=indexDerivePOS.stream().map(x->BeanMapper.map(x,IndexInfoDTO.DependentIndex.class)).collect(Collectors.toList());
+                    dependentIndices=indexDerivePOS.stream().map(x->BeanMapper.map(x,DependentIndex.class)).collect(Collectors.toList());
                 }
-                List<IndexInfoDTO.DependentIndex> finalDependentIndices = dependentIndices;
+                List<DependentIndex> finalDependentIndices = dependentIndices;
                 indexInfoDTOs = indexInfoPOs.stream().map(x -> {
                     IndexInfoDTO indexInfoDTO = BeanMapper.map(x, IndexInfoDTO.class);
                     indexInfoDTO.setIndexType(IndexType.INDEXCOMPOSITE.getValue());
@@ -609,28 +603,27 @@ public class IndexServiceImpl implements IndexService{
         }
         if(!CollectionUtils.isEmpty(indexInfoDTOs)){
             List<String> approvalGroupIds = indexInfoDTOs.stream().map(x -> x.getApprovalGroupId()).distinct().collect(Collectors.toList());
-            Map<String,List<IndexInfoDTO.ApprovalGroupMember>> usersMap=null;
+            Map<String,List<ApprovalGroupMember>> usersMap=new HashMap<>();
             if(!CollectionUtils.isEmpty(approvalGroupIds)){
-                approvalGroupIds.stream().forEach(x ->{
-                    List<User> approveUsers = approveDAO.getApproveUsers(x);
+                for(String str:approvalGroupIds){
+                    List<User> approveUsers = approveDAO.getApproveUsers(str);
                     if(!CollectionUtils.isEmpty(approveUsers)){
-                        List<IndexInfoDTO.ApprovalGroupMember> approvalGroupMembers=approveUsers.stream().map(u->BeanMapper.map(u,IndexInfoDTO.ApprovalGroupMember.class)).collect(Collectors.toList());
-                        usersMap.put(x,approvalGroupMembers);
+                        List<ApprovalGroupMember> approvalGroupMembers=approveUsers.stream().map(u->BeanMapper.map(u,ApprovalGroupMember.class)).collect(Collectors.toList());
+                        usersMap.put(str,approvalGroupMembers);
                     }
-                });
+                }
             }
             //添加审批组成员
-            indexInfoDTOs.stream().forEach(x->{
+            indexInfoDTOs.forEach(x->{
                 String approvalGroupId = x.getApprovalGroupId();
                 if(StringUtils.isNotEmpty(approvalGroupId)){
-                    List<IndexInfoDTO.ApprovalGroupMember> approvalGroupMembers= usersMap.get(approvalGroupId);
+                    List<ApprovalGroupMember> approvalGroupMembers= usersMap.get(approvalGroupId);
                     if(!CollectionUtils.isEmpty(approvalGroupMembers)){
                         x.setApprovalGroupMembers(approvalGroupMembers);
                     }
                 }
             });
         }
-
         return indexInfoDTOs;
     }
 
@@ -736,10 +729,4 @@ public class IndexServiceImpl implements IndexService{
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标类型错误");
         }
     }
-
-
-
-
-
-
 }
