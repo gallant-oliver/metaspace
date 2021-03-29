@@ -633,7 +633,17 @@ public class IndexREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.publishHistory("+indexId+","+pageQueryDTO.getIndexType()+")");
             }
             List<IndexInfoDTO> indexInfoDTOS = indexService.publishHistory(indexId,pageQueryDTO,CATEGORY_TYPE,tenantId);
-            return ReturnUtil.success(indexInfoDTOS);
+            DataDTO<IndexInfoDTO> data=new DataDTO<>();
+            if(CollectionUtils.isEmpty(indexInfoDTOS)){
+                data.setTotalSize(0);
+                data.setCurrentSize(0);
+            }else{
+                data.setLists(indexInfoDTOS);
+                data.setTotalSize(indexInfoDTOS.get(0).getTotal());
+                data.setCurrentSize(indexInfoDTOS.size());
+            }
+            data.setOffset(pageQueryDTO.getOffset());
+            return ReturnUtil.success(data);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         } finally {
@@ -656,7 +666,17 @@ public class IndexREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.pageQuery("+pageQueryDTO+")");
             }
             List<IndexInfoDTO> indexInfoDTOS = indexService.pageQuery(pageQueryDTO,CATEGORY_TYPE,tenantId);
-            return ReturnUtil.success(indexInfoDTOS);
+            DataDTO<IndexInfoDTO> data=new DataDTO<>();
+            if(CollectionUtils.isEmpty(indexInfoDTOS)){
+                data.setTotalSize(0);
+                data.setCurrentSize(0);
+            }else{
+                data.setLists(indexInfoDTOS);
+                data.setTotalSize(indexInfoDTOS.get(0).getTotal());
+                data.setCurrentSize(indexInfoDTOS.size());
+            }
+            data.setOffset(pageQueryDTO.getOffset());
+            return ReturnUtil.success(data);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         } finally {

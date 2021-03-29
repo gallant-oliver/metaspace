@@ -273,9 +273,9 @@ public interface UserGroupDAO {
             "        guid from ( " +
             "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_atomic_info where  tenant_id=#{tenantId}  " +
             "        union  " +
-            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_atomic_info where  tenant_id=#{tenantId}  " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_derive_info where  tenant_id=#{tenantId}  " +
             "        union  " +
-            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_atomic_info where  tenant_id=#{tenantId}  " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_composite_info where  tenant_id=#{tenantId}  " +
             "        ) adc where adc.rn=1 " +
             "    </when>" +
             "    <when test=\"categoryType==1\">" +
@@ -966,9 +966,9 @@ public interface UserGroupDAO {
             "        guid from ( " +
             "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_atomic_info where  tenant_id=#{tenantId}  " +
             "        union  " +
-            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_atomic_info where  tenant_id=#{tenantId}  " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_derive_info where  tenant_id=#{tenantId}  " +
             "        union  " +
-            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_atomic_info where  tenant_id=#{tenantId}  " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_composite_info where  tenant_id=#{tenantId}  " +
             "        ) adc where adc.rn=1 " +
             "    </when>" +
             "    <when test=\"categoryType==1\">" +
