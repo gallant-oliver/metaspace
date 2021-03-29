@@ -616,23 +616,23 @@ public class IndexREST {
         }
     }
     @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
-    @GET
+    @POST
     @Path("/{indexId}/history")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result publishHistory(@PathParam("indexId") String indexId,@QueryParam("indexType") int indexType, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public Result publishHistory(PageQueryDTO pageQueryDTO,@PathParam("indexId") String indexId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         if(Objects.isNull(indexId)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标id不能为空");
         }
-        if(!IndexType.contains(indexType)){
+        if(!IndexType.contains(pageQueryDTO.getIndexType())){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标类型不存在");
         }
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.publishHistory("+indexId+","+indexType+")");
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.publishHistory("+indexId+","+pageQueryDTO.getIndexType()+")");
             }
-            List<IndexInfoDTO> indexInfoDTOS = indexService.publishHistory(indexId,indexType,CATEGORY_TYPE,tenantId);
+            List<IndexInfoDTO> indexInfoDTOS = indexService.publishHistory(indexId,pageQueryDTO,CATEGORY_TYPE,tenantId);
             return ReturnUtil.success(indexInfoDTOS);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());

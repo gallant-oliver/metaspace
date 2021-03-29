@@ -276,7 +276,7 @@ public interface IndexDAO {
     IndexInfoPO getCompositeIndexInfoPO(@Param("indexId")String indexId,@Param("version")int version,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
 
     @Select({" <script>",
-            " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName,ds.source_name as sourceName,ti.tablename as tableName,ci.column_name as columnName, " ,
+            " select count(1)over() total,iai.*,ca.name as indexFieldName,ag.name as approvalGroupName,ds.source_name as sourceName,ti.tablename as tableName,ci.column_name as columnName, " ,
             " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
             " from index_atomic_info iai " ,
             " left join category ca on iai.index_field_id=ca.guid and ca.categorytype=#{categoryType} and ca.tenantid=#{tenantId} " ,
@@ -291,11 +291,14 @@ public interface IndexDAO {
             " left join users p on iai.updater=p.userid " ,
             " where iai.index_id=#{indexId} ",
             " and iai.tenant_id=#{tenantId} ",
+            " and iai.index_state in (2,3) ",
             " order by iai.version ",
+            " limit #{limit}",
+            " offset #{offset}",
             " </script>"})
-    List<IndexInfoPO> getAtomicIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
+    List<IndexInfoPO> getAtomicIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType,@Param("offset")int offset,@Param("limit")int limit, @Param("tenantId")String tenantId);
     @Select({" <script>",
-            " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, t.name as timeLimitName " ,
+            " select count(1)over() total,iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, t.name as timeLimitName " ,
             " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
             " from index_derive_info iai " ,
             " left join time_limit t on iai.time_limit_id=t.id and t.tenantid=#{tenantId} " ,
@@ -308,11 +311,14 @@ public interface IndexDAO {
             " left join users p on iai.updater=p.userid " ,
             " where iai.index_id=#{indexId} ",
             " and iai.tenant_id=#{tenantId}  ",
+            " and iai.index_state in (2,3) ",
             " order by iai.version ",
+            " limit #{limit}",
+            " offset #{offset}",
             " </script>"})
-    List<IndexInfoPO> getDeriveIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
+    List<IndexInfoPO> getDeriveIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType,@Param("offset")int offset,@Param("limit")int limit, @Param("tenantId")String tenantId);
     @Select({" <script>",
-            " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, " ,
+            " select count(1)over() total,iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, " ,
             " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
             " from index_composite_info iai " ,
             " left join category ca on iai.index_field_id=ca.guid and ca.categorytype=#{categoryType} and ca.tenantid=#{tenantId} " ,
@@ -324,9 +330,12 @@ public interface IndexDAO {
             " left join users p on iai.updater=p.userid " ,
             " where iai.index_id=#{indexId} ",
             " and iai.tenant_id=#{tenantId} ",
+            " and iai.index_state in (2,3) ",
             " order by iai.version ",
+            " limit #{limit}",
+            " offset #{offset}",
             " </script>"})
-    List<IndexInfoPO> getCompositeIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
+    List<IndexInfoPO> getCompositeIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType,@Param("offset")int offset,@Param("limit")int limit, @Param("tenantId")String tenantId);
 
     /**
      *获取依赖的原子指标
@@ -382,19 +391,19 @@ public interface IndexDAO {
 
     @Select({"<script>" ,
             " <if test='pageQueryDTO.indexType == 1'>",
-            " select T.*,bl.username as businessLeaderName, c.username as creatorName,u.username as updaterName,ca.name as indexFieldName from ",
+            " select count(1)over() total,T.*,bl.username as businessLeaderName, c.username as creatorName,u.username as updaterName,ca.name as indexFieldName from ",
             " (select index_id, index_name,1 as indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time,updater, update_time ",
             " ,row_number() over(partition by index_id order by version desc) as rn ",
             " from index_atomic_info) T ",
             " </if>",
             " <if test='pageQueryDTO.indexType == 2'>",
-            " select T.*,bl.username as businessLeaderName, c.username as creatorName,u.username as updaterName,ca.name as indexFieldName from ",
+            " select count(1)over() total,T.*,bl.username as businessLeaderName, c.username as creatorName,u.username as updaterName,ca.name as indexFieldName from ",
             " (select index_id, index_name,2 as indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time,updater, update_time ",
             " ,row_number() over(partition by index_id order by version desc) as rn ",
             " from index_derive_info) T ",
             " </if>",
             " <if test='pageQueryDTO.indexType == 3'>",
-            " select T.*,bl.username as businessLeaderName, c.username as creatorName,u.username as updaterName,ca.name as indexFieldName from ",
+            " select count(1)over() total,T.*,bl.username as businessLeaderName, c.username as creatorName,u.username as updaterName,ca.name as indexFieldName from ",
             " (select index_id, index_name,3 as indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time,updater, update_time ",
             " ,row_number() over(partition by index_id order by version desc) as rn ",
             " from index_composite_info) T ",
@@ -423,7 +432,7 @@ public interface IndexDAO {
             " #{indexFieldId} ",
             " </foreach> ",
             " ) ",
-            " select T.*,bl.username as businessLeaderName, c.username as creatorName,u.username as updaterName,ca.name as indexFieldName from T ",
+            " select count(1)over() total,T.*,bl.username as businessLeaderName, c.username as creatorName,u.username as updaterName,ca.name as indexFieldName from T ",
             " </if>",
             " left join category ca on T.index_field_id=ca.guid and ca.categorytype=#{categoryType} and ca.tenantid=#{tenantId} " ,
             " left join users bl on T.business_leader=bl.userid " ,
@@ -442,8 +451,8 @@ public interface IndexDAO {
             " <if test='pageQueryDTO.central == true'>",
             " and T.central=#{pageQueryDTO.central}",
             " </if>",
-            " <if test='pageQueryDTO.searchContent != null'>",
-            " and (T.index_name like '%#{pageQueryDTO.searchContent}%' or T.index_identification like '%#{pageQueryDTO.searchContent}%')",
+            " <if test=\"pageQueryDTO.searchContent != null and pageQueryDTO.searchContent !=''\">",
+            " and (T.index_name like '%${pageQueryDTO.searchContent}%' or T.index_identification like '%${pageQueryDTO.searchContent}%' )",
             " </if>",
             " <if test='pageQueryDTO.indexStates != null and pageQueryDTO.indexStates.size > 0'>",
             " and T.index_state in ",
@@ -451,10 +460,10 @@ public interface IndexDAO {
             " #{indexState} ",
             " </foreach> ",
             " </if>",
-            " <if test='pageQueryDTO.order == 1'>",
+            " <if test=\"pageQueryDTO.order == 'asc'.toString() \">",
             " order by T.update_time asc ",
             " </if>",
-            " <if test='pageQueryDTO.order == 2'>",
+            " <if test=\"pageQueryDTO.order == 'desc'.toString()\">",
             " order by T.update_time desc ",
             " </if>",
             " limit #{pageQueryDTO.limit}",
@@ -464,13 +473,13 @@ public interface IndexDAO {
 
 
     @Update({" <script>",
-            " <if test='approveItem.indexType == 1'>",
+            " <if test=\"approveItem.businessType == '1'.toString()\">",
             " update index_atomic_info  ",
             " </if>",
-            " <if test='approveItem.indexType == 2'>",
+            " <if test=\"approveItem.businessType == '2'.toString()\">",
             " update index_derive_info  ",
             " </if>",
-            " <if test='approveItem.indexType == 3'>",
+            " <if test=\"approveItem.businessType == '3'.toString()\">",
             " update index_composite_info  ",
             " </if>",
             " set index_state=#{state},publisher=#{approveItem.submitter},publish_time=#{approveItem.commitTime} ",

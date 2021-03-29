@@ -1,6 +1,5 @@
 package io.zeta.metaspace.model.dto.indices;
 
-import io.zeta.metaspace.model.po.indices.IndexAtomicPO;
 import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
 
 import java.sql.Timestamp;
@@ -171,6 +170,15 @@ public class IndexInfoDTO {
      */
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp publishTime;
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
 
     public String getIndexId() {
         return indexId;
