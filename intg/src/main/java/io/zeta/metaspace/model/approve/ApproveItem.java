@@ -74,5 +74,7 @@ public class ApproveItem {
      @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
      private Timestamp approveTime;
 
+     private int totalSize;
+
 
 }

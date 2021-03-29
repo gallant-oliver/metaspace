@@ -1,13 +1,14 @@
 package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.approve.ApproveItem;
 import io.zeta.metaspace.model.approve.ApproveParas;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.Approve.ApproveService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
-import org.restlet.resource.Patch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import javax.inject.Singleton;
@@ -30,7 +31,8 @@ public class ApproveREST {
     public Result getApproveList(
             @HeaderParam("tenantId") String tenantId, ApproveParas params) throws AtlasBaseException {
         try {
-            return ReturnUtil.success(approveService.search(params, tenantId));
+            PageResult<ApproveItem> pageResult =  approveService.search(params, tenantId);
+            return ReturnUtil.success(pageResult);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"审批项列表及搜索失败");
         }
