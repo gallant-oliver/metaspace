@@ -2,7 +2,8 @@ package io.zeta.metaspace.model.approve;
 
 
 import lombok.Data;
-import org.apache.commons.net.ntp.TimeStamp;
+import java.sql.Timestamp;
+import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
 
 /**
  * 审批条目实体
@@ -33,7 +34,7 @@ public class ApproveItem {
      /**
       * 审批状态
       */
-     private String status;
+     private String approveStatus;
      /**
       * 审批组
       */
@@ -49,7 +50,8 @@ public class ApproveItem {
      /**
       * 提交时间
       */
-     private TimeStamp commitTime;
+     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+     private Timestamp commitTime;
      /**
       * 驳回原因
       */
@@ -69,7 +71,8 @@ public class ApproveItem {
      /**
       * 审批时间
       */
-     private TimeStamp approveTime;
+     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+     private Timestamp approveTime;
 
 
 }

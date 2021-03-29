@@ -24,7 +24,6 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.net.ntp.TimeStamp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -529,14 +528,12 @@ public class IndexServiceImpl implements IndexService{
             approveItem.setApproveGroup(pid.getApprovalGroupId());
             User user= AdminUtils.getUserData();
             approveItem.setSubmitter(user.getUserId());
-            TimeStamp timeStamp=new TimeStamp(System.currentTimeMillis());
+            Timestamp timeStamp=new Timestamp(System.currentTimeMillis());
             approveItem.setCommitTime(timeStamp);
             approveItem.setModuleId(ModuleEnum.NORMDESIGN.getId()+"");
             approveItem.setVersion(pid.getVersion());
             approveItem.setTenantId(tenantId);
-
             approveServiceImpl.addApproveItem(approveItem);
-
             int indexType=pid.getIndexType();
             indexDAO.updatePublishInfo(approveItem,tenantId,IndexState.APPROVAL.getValue());
         }

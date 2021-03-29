@@ -83,11 +83,11 @@ public interface ApproveGroupDAO {
 
     //基于模块获取对应审批组
     @Select("<script>" +
-            "select count(*) over() totalSize,u.id,u.name,u.description" +
+            "select count(*) over() totalSize,u.id,u.name,u.description,u.create_time as createTime" +
             " from approval_group u inner join " +
             " approval_group_module_relation m"+
             " on u.id=m.group_id " +
-            " where u.tenantid=#{tenantId} and valid=true and m.module_id = #{paras.moduleId}" +
+            " where u.tenantid=#{tenantId} and valid=true and m.module_id = #{params.moduleId}" +
             "<if test=\"params.query!='' and params.query!=null\">"+
             " and u.name like '%${params.query}%' ESCAPE '/' " +
             "</if>" +

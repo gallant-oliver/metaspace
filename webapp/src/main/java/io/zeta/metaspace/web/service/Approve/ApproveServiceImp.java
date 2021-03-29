@@ -63,7 +63,7 @@ public class ApproveServiceImp implements ApproveService{
             ApproveItem item = new ApproveItem();
             item.setId(paras.getId());
             item.setTenantId(tenant_id);
-            item.setStatus(ApproveStatus.FINISH.code);  //更新为已通过状态
+            item.setApproveStatus(ApproveStatus.FINISH.code);  //更新为已通过状态
             item.setApprover(AdminUtils.getUserData().getUserId()); //写入审批人
             approveDao.updateStatus(item);
         }else if(ApproveOperate.REJECTED.equals(ApproveOperate.getOprateByCode(paras.getResult()))){ //驳回
@@ -72,7 +72,7 @@ public class ApproveServiceImp implements ApproveService{
             item.setId(paras.getId());
             item.setTenantId(tenant_id);
             item.setReason(paras.getDesc());  //驳回需要原因
-            item.setStatus(ApproveStatus.REJECTED.code);  //更新为驳回状态
+            item.setApproveStatus(ApproveStatus.REJECTED.code); //更新为驳回状态
             item.setApprover(AdminUtils.getUserData().getUserId()); //写入审批人
             approveDao.updateStatus(item);
         }
