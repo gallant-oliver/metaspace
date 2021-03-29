@@ -1,6 +1,5 @@
 package io.zeta.metaspace.model.dto.indices;
 
-import io.zeta.metaspace.model.po.indices.IndexAtomicPO;
 import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
 
 import java.sql.Timestamp;

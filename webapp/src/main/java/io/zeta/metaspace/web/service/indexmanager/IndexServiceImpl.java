@@ -417,6 +417,7 @@ public class IndexServiceImpl implements IndexService{
         OptionalDataSourceDTO ods=new OptionalDataSourceDTO();
         ods.setSourceId("hive");
         ods.setSourceName("hive");
+        ods.setSourceType("HIVE");
         odsds.add(ods);
         if(!CollectionUtils.isEmpty(groups)){
             //2. 获取被授权给用户组的数据源
