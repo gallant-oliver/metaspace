@@ -668,37 +668,45 @@ public class IndexServiceImpl implements IndexService{
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void changeObjectStatus(String objectId, String type, int version, String approveResult,String tenantId,String approveType){
+    public void changeObjectStatus(String approveResult, String tenantId, List<ApproveItem> items) {
+        if(!CollectionUtils.isEmpty(items)){
+            for(ApproveItem item:items){
+                int indexType=Integer.parseInt(item.getBusinessType());
+                String objectId=item.getObjectId();
+                int version=item.getVersion();
+                String approveType=item.getApproveType();
 
-        int indexType = Integer.parseInt(type);
-        if(approveType.equals(ApproveType.PUBLISH.getCode())){
-            //发布
-            if(approveResult.equals(ApproveOperate.APPROVE.getCode())){
-                //通过
-                editIndexState(objectId,indexType,version,tenantId,IndexState.PUBLISH.getValue());
-            }else if(approveResult.equals(ApproveOperate.REJECTED.getCode())){
-                //驳回,回退指标状态
-                if(version==0){
-                    editIndexState(objectId,indexType,version,tenantId,IndexState.CREATE.getValue());
-                }else{
-                    editIndexState(objectId,indexType,version,tenantId,IndexState.OFFLINE.getValue());
+                if(approveType.equals(ApproveType.PUBLISH.getCode())){
+                    //发布
+                    if(approveResult.equals(ApproveOperate.APPROVE.getCode())){
+                        //通过
+                        editIndexState(objectId,indexType,version,tenantId,IndexState.PUBLISH.getValue());
+                    }else if(approveResult.equals(ApproveOperate.REJECTED.getCode())){
+                        //驳回,回退指标状态
+                        if(version==0){
+                            editIndexState(objectId,indexType,version,tenantId,IndexState.CREATE.getValue());
+                        }else{
+                            editIndexState(objectId,indexType,version,tenantId,IndexState.OFFLINE.getValue());
+                        }
+                    }
+                }else if(approveType.equals(ApproveType.OFFLINE.getCode())){
+                    //下线
+                    if(approveResult.equals(ApproveOperate.APPROVE.getCode())){
+                        //通过
+                        try {
+                            offlineApprove(objectId,indexType,version,tenantId,IndexState.OFFLINE.getValue());
+                        }catch (Exception e){
+                            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e);
+                        }
+                    }else if(approveResult.equals(ApproveOperate.REJECTED.getCode())){
+                        //驳回,回退指标状态
+                        editIndexState(objectId,indexType,version,tenantId,IndexState.PUBLISH.getValue());
+                    }
                 }
-            }
-        }else if(approveType.equals(ApproveType.OFFLINE.getCode())){
-            //下线
-            if(approveResult.equals(ApproveOperate.APPROVE.getCode())){
-                //通过
-                try {
-                    offlineApprove(objectId,indexType,version,tenantId,IndexState.OFFLINE.getValue());
-                }catch (Exception e){
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e);
-                }
-            }else if(approveResult.equals(ApproveOperate.REJECTED.getCode())){
-                //驳回,回退指标状态
-                editIndexState(objectId,indexType,version,tenantId,IndexState.PUBLISH.getValue());
             }
         }
     }
+
     private void editIndexState(String indexId, int indexType, int version, String tenantId, int state) {
         if(indexType==IndexType.INDEXATOMIC.getValue()){
             indexDAO.editAtomicState(indexId,version,tenantId,state);
