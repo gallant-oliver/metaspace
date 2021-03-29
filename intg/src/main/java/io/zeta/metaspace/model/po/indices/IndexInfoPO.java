@@ -15,6 +15,7 @@ public class IndexInfoPO {
      *指标名称
      */
     private  String  indexName ;
+    private int indexType;
     /**
      *指标标识
      */
@@ -156,6 +157,23 @@ public class IndexInfoPO {
      *
      */
     private Timestamp publishTime;
+    private int total;
+
+    public int getTotal() {
+        return total;
+    }
+
+    public void setTotal(int total) {
+        this.total = total;
+    }
+
+    public int getIndexType() {
+        return indexType;
+    }
+
+    public void setIndexType(int indexType) {
+        this.indexType = indexType;
+    }
 
     public String getIndexId() {
         return indexId;
