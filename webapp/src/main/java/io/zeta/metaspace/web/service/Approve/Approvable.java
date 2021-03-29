@@ -1,6 +1,10 @@
 package io.zeta.metaspace.web.service.Approve;
 
 
+import io.zeta.metaspace.model.approve.ApproveItem;
+
+import java.util.List;
+
 /**
  * 各业务模块的可审批能力，用于回调业务对象详情，和审批后的对象状态变更
  */
@@ -17,16 +21,12 @@ public interface Approvable {
     Object getObjectDetail(String objectId,String type,int version,String tenantId);
 
 
-
     /**
      *
-     * @param objectId  对象ID
-     * @param type 业务对象类型
-     * @param version 查看版本
-     * @param approveResult 审批结果，通过或驳回
-     * @param tenantId 租户id
-     * @return
+     * @param approveResult
+     * @param tenantId
+     * @param items
      */
-    void changeObjectStatus(String objectId,String type,int version,String approveResult,String tenantId,String approveType);
+    void changeObjectStatus(String approveResult, String tenantId, List<ApproveItem> items);
 
 }
