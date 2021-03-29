@@ -125,12 +125,12 @@ public interface IndexService extends Approvable {
     /**
      * 发布历史
      * @param indexId 指标id
-     * @param indexType 指标类型
+     * @param pageQueryDTO 分页查询参数
      * @param categoryType 目录类型
      * @param tenantId 租户id
      * @return
      */
-    List<IndexInfoDTO> publishHistory(String indexId, int indexType, int categoryType, String tenantId);
+    List<IndexInfoDTO> publishHistory(String indexId,PageQueryDTO pageQueryDTO, int categoryType, String tenantId);
 
     /**
      * 指标分页查询

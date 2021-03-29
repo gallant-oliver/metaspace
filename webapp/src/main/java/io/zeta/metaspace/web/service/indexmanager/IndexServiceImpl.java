@@ -541,18 +541,21 @@ public class IndexServiceImpl implements IndexService{
     }
 
     @Override
-    public List<IndexInfoDTO> publishHistory(String indexId, int indexType, int categoryType, String tenantId) {
+    public List<IndexInfoDTO> publishHistory(String indexId, PageQueryDTO pageQueryDTO, int categoryType, String tenantId) {
 
+        int indexType=pageQueryDTO.getIndexType();
+        int offset=pageQueryDTO.getOffset();
+        int limit=pageQueryDTO.getLimit();
         List<IndexInfoDTO> indexInfoDTOs=null;
         if(indexType==IndexType.INDEXATOMIC.getValue()){
-            List<IndexInfoPO> indexInfoPOs=indexDAO.getAtomicIndexHistory(indexId,categoryType,tenantId);
+            List<IndexInfoPO> indexInfoPOs=indexDAO.getAtomicIndexHistory(indexId,categoryType,offset,limit,tenantId);
             indexInfoDTOs=indexInfoPOs.stream().map(x->{
                 IndexInfoDTO indexInfoDTO=BeanMapper.map(x,IndexInfoDTO.class);
                 indexInfoDTO.setIndexType(IndexType.INDEXATOMIC.getValue());
                 return indexInfoDTO;
             }).collect(Collectors.toList());
         }else if(indexType==IndexType.INDEXDERIVE.getValue()){
-            List<IndexInfoPO> indexInfoPOs=indexDAO.getDeriveIndexHistory(indexId,categoryType,tenantId);
+            List<IndexInfoPO> indexInfoPOs=indexDAO.getDeriveIndexHistory(indexId,categoryType,offset,limit,tenantId);
             if(!CollectionUtils.isEmpty(indexInfoPOs)){
                 List<String> dependentIndexIds = indexInfoPOs.stream().map(x -> x.getIndexAtomicId()).distinct().collect(Collectors.toList());
                 //获取依赖原子指标
@@ -581,7 +584,7 @@ public class IndexServiceImpl implements IndexService{
                 }).collect(Collectors.toList());
             }
         }else if(indexType==IndexType.INDEXCOMPOSITE.getValue()){
-            List<IndexInfoPO> indexInfoPOs=indexDAO.getCompositeIndexHistory(indexId,categoryType,tenantId);
+            List<IndexInfoPO> indexInfoPOs=indexDAO.getCompositeIndexHistory(indexId,categoryType,offset,limit,tenantId);
             if(!CollectionUtils.isEmpty(indexInfoPOs)){
                 List<IndexDerivePO> indexDerivePOS = indexDAO.getDependentDeriveIndex(indexId, tenantId);
                 List<DependentIndex> dependentIndices=null;

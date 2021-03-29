@@ -276,7 +276,7 @@ public interface IndexDAO {
     IndexInfoPO getCompositeIndexInfoPO(@Param("indexId")String indexId,@Param("version")int version,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
 
     @Select({" <script>",
-            " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName,ds.source_name as sourceName,ti.tablename as tableName,ci.column_name as columnName, " ,
+            " select count(1)over() total,iai.*,ca.name as indexFieldName,ag.name as approvalGroupName,ds.source_name as sourceName,ti.tablename as tableName,ci.column_name as columnName, " ,
             " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
             " from index_atomic_info iai " ,
             " left join category ca on iai.index_field_id=ca.guid and ca.categorytype=#{categoryType} and ca.tenantid=#{tenantId} " ,
@@ -291,11 +291,14 @@ public interface IndexDAO {
             " left join users p on iai.updater=p.userid " ,
             " where iai.index_id=#{indexId} ",
             " and iai.tenant_id=#{tenantId} ",
+            " and iai.index_state in (2,3) ",
             " order by iai.version ",
+            " limit #{limit}",
+            " offset #{offset}",
             " </script>"})
-    List<IndexInfoPO> getAtomicIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
+    List<IndexInfoPO> getAtomicIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType,@Param("offset")int offset,@Param("limit")int limit, @Param("tenantId")String tenantId);
     @Select({" <script>",
-            " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, t.name as timeLimitName " ,
+            " select count(1)over() total,iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, t.name as timeLimitName " ,
             " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
             " from index_derive_info iai " ,
             " left join time_limit t on iai.time_limit_id=t.id and t.tenantid=#{tenantId} " ,
@@ -308,11 +311,14 @@ public interface IndexDAO {
             " left join users p on iai.updater=p.userid " ,
             " where iai.index_id=#{indexId} ",
             " and iai.tenant_id=#{tenantId}  ",
+            " and iai.index_state in (2,3) ",
             " order by iai.version ",
+            " limit #{limit}",
+            " offset #{offset}",
             " </script>"})
-    List<IndexInfoPO> getDeriveIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
+    List<IndexInfoPO> getDeriveIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType,@Param("offset")int offset,@Param("limit")int limit, @Param("tenantId")String tenantId);
     @Select({" <script>",
-            " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, " ,
+            " select count(1)over() total,iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, " ,
             " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
             " from index_composite_info iai " ,
             " left join category ca on iai.index_field_id=ca.guid and ca.categorytype=#{categoryType} and ca.tenantid=#{tenantId} " ,
@@ -324,9 +330,12 @@ public interface IndexDAO {
             " left join users p on iai.updater=p.userid " ,
             " where iai.index_id=#{indexId} ",
             " and iai.tenant_id=#{tenantId} ",
+            " and iai.index_state in (2,3) ",
             " order by iai.version ",
+            " limit #{limit}",
+            " offset #{offset}",
             " </script>"})
-    List<IndexInfoPO> getCompositeIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
+    List<IndexInfoPO> getCompositeIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType,@Param("offset")int offset,@Param("limit")int limit, @Param("tenantId")String tenantId);
 
     /**
      *获取依赖的原子指标
