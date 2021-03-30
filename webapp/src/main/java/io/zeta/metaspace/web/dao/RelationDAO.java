@@ -39,8 +39,8 @@ public interface RelationDAO {
     public int delete(@Param("relationshipGuid") String guid);
 
     @Select({"<script>",
-            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description,tableInfo.source_name sourceName",
-            " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid order by tableInfo.status,table_relation.generateTime desc, tableinfo.tablename",
+            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description,data_source.source_name sourceName",
+            " from table_relation,tableInfo,data_source where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and tableinfo.source_id = data_source.source_id order by tableInfo.status,table_relation.generateTime desc, tableinfo.tablename",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",
@@ -49,8 +49,8 @@ public interface RelationDAO {
     public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select({"<script>",
-             " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description,tableInfo.source_name sourceName",
-             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid ",
+             " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description,data_source.source_name sourceName",
+             " from table_relation,tableInfo,data_source where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and tableinfo.source_id = data_source.source_id",
              " and status = 'ACTIVE' " ,
              " and ( tableinfo.dbname in " ,
              " <foreach item='item' index='index' collection='databases'" ,
@@ -88,8 +88,8 @@ public interface RelationDAO {
     public List<String> queryAllDBNameByCategoryGuidV2(@Param("categoryGuids") List<String> categoryGuids,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
     @Select({"<script>",
-            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,tableInfo.description,tableInfo.source_name sourceName",
-            " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and status !='DELETED' order by tableinfo.tablename",
+            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,tableInfo.description,data_source.source_name sourceName",
+            " from table_relation,tableInfo,data_source where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and tableinfo.source_id = data_source.source_id and status !='DELETED' order by tableinfo.tablename",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",
@@ -98,8 +98,8 @@ public interface RelationDAO {
     public List<RelationEntityV2> queryRelationByCategoryGuidFilter(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select({"<script>",
-             " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,tableInfo.description,tableInfo.source_name sourceName",
-             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and status !='DELETED' ",
+             " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,tableInfo.description,data_source.source_name sourceName",
+             " from table_relation,tableInfo ,data_source where categoryGuid=#{categoryGuid} and tableinfo.source_id = data_source.source_id and tableInfo.tableGuid=table_relation.tableGuid and status !='DELETED' ",
              " and ( tableinfo.dbname in " ,
              " <foreach item='item' index='index' collection='databases'" ,
              " open='(' separator=',' close=')'>" ,
