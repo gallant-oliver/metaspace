@@ -51,6 +51,7 @@ public class ApproveServiceImp implements ApproveService{
             groups = approveDao.selectApproveGroupoByUserId(userId, tenantId);
             List<String> status = new LinkedList<>();
             status.add(ApproveStatus.FINISH.getCode());
+            status.add(ApproveStatus.REJECTED.getCode());
             paras.setApproveStatus(status);
         }
 
@@ -74,7 +75,7 @@ public class ApproveServiceImp implements ApproveService{
             result = ApproveOperate.APPROVE;
             List<ApproveItem> approveList = paras.getApproveList(); //批量审批列表
             for(ApproveItem item : approveList) {
-                item.setId(paras.getId());
+                item.setId(item.getId());
                 item.setTenantId(tenant_id);
                 item.setApproveStatus(ApproveStatus.FINISH.code);  //更新为已通过状态
                 item.setApprover(AdminUtils.getUserData().getUserId()); //写入审批人
@@ -85,7 +86,7 @@ public class ApproveServiceImp implements ApproveService{
             result = ApproveOperate.REJECTED;
             List<ApproveItem> approveList = paras.getApproveList(); //批量审批列表
             for(ApproveItem item : approveList) {
-                item.setId(paras.getId());
+                item.setId(item.getId());
                 item.setTenantId(tenant_id);
                 item.setReason(paras.getDesc());  //驳回需要原因
                 item.setApproveStatus(ApproveStatus.REJECTED.code); //更新为驳回状态
