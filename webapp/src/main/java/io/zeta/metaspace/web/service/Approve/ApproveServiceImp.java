@@ -51,6 +51,7 @@ public class ApproveServiceImp implements ApproveService{
             groups = approveDao.selectApproveGroupoByUserId(userId, tenantId);
             List<String> status = new LinkedList<>();
             status.add(ApproveStatus.FINISH.getCode());
+            status.add(ApproveStatus.REJECTED.getCode());
             paras.setApproveStatus(status);
         }
 
