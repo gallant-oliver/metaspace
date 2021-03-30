@@ -172,7 +172,7 @@ public class IndexServiceImpl implements IndexService{
      */
     private List<IndexDeriveCompositeRelationPO> getDeriveCompositeRelationPOS(String indexId, List<String> deriveIds) {
         List<IndexDeriveCompositeRelationPO> idcrPOS=null;
-        if(!CollectionUtils.isEmpty(idcrPOS)){
+        if(!CollectionUtils.isEmpty(deriveIds)){
             idcrPOS=new ArrayList<>();
             for(String deriveId:deriveIds){
                 IndexDeriveCompositeRelationPO idcr=new IndexDeriveCompositeRelationPO();
@@ -330,18 +330,21 @@ public class IndexServiceImpl implements IndexService{
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void deleteIndex(RequestDTO<DeleteIndexInfoDTO> deleteList, String tenantId) {
-        if(!CollectionUtils.isEmpty((Collection<DeleteIndexInfoDTO>) deleteList)){
-            Map<Integer,List<String>> deleteMap=new HashMap<>();
-            deleteList.getDtoList().forEach(x->{
-                List<String> deleteIds = deleteMap.get(x.getIndexType());
-                if(CollectionUtils.isEmpty(deleteIds)){
-                    deleteIds=new ArrayList<>();
-                    deleteMap.put(x.getIndexType(),deleteIds);
-                }
-                deleteIds.add(x.getIndexId());
-            });
-            deleteIndexMap(deleteMap);
+    public void deleteIndex(RequestDTO<DeleteIndexInfoDTO> requestDTO, String tenantId) {
+        if(!Objects.isNull(requestDTO)){
+            List<DeleteIndexInfoDTO> deleteList = requestDTO.getDtoList();
+            if(!CollectionUtils.isEmpty(deleteList)){
+                Map<Integer,List<String>> deleteMap=new HashMap<>();
+                deleteList.forEach(x->{
+                    List<String> deleteIds = deleteMap.get(x.getIndexType());
+                    if(CollectionUtils.isEmpty(deleteIds)){
+                        deleteIds=new ArrayList<>();
+                        deleteMap.put(x.getIndexType(),deleteIds);
+                    }
+                    deleteIds.add(x.getIndexId());
+                });
+                deleteIndexMap(deleteMap);
+            }
         }
     }
     @Transactional(rollbackFor = Exception.class)
