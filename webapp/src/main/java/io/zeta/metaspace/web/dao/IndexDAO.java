@@ -244,7 +244,7 @@ public interface IndexDAO {
 
     IndexInfoPO getAtomicIndexInfoPO(@Param("indexId")String indexId,@Param("version")int version,@Param("categoryType")int categoryType, @Param("tenantId")String tenantId);
     @Select({" <script>",
-            " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, t.name as timeLimitName " ,
+            " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, t.name as timeLimitName," ,
             " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
             " from index_derive_info iai " ,
             " left join time_limit t on iai.time_limit_id=t.id and t.tenantid=#{tenantId} " ,

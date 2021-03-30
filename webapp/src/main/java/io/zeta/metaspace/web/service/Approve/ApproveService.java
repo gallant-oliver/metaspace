@@ -2,10 +2,7 @@ package io.zeta.metaspace.web.service.Approve;
 
 import io.zeta.metaspace.model.approve.ApproveItem;
 import io.zeta.metaspace.model.approve.ApproveParas;
-import io.zeta.metaspace.model.approvegroup.ApproveGroupMemberSearch;
 import io.zeta.metaspace.model.result.PageResult;
-
-import java.util.List;
 
 public interface ApproveService {
     /**
