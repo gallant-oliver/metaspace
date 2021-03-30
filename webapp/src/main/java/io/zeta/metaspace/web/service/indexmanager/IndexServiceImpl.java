@@ -4,6 +4,7 @@ import io.zeta.metaspace.model.approve.ApproveItem;
 import io.zeta.metaspace.model.approve.ApproveOperate;
 import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.datasource.DataSourceBody;
+import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.dto.indices.*;
 import io.zeta.metaspace.model.enums.IndexState;
 import io.zeta.metaspace.model.enums.IndexType;
@@ -419,8 +420,8 @@ public class IndexServiceImpl implements IndexService{
         List<OptionalDataSourceDTO> odsds=new ArrayList<>();
         OptionalDataSourceDTO ods=new OptionalDataSourceDTO();
         ods.setSourceId("hive");
-        ods.setSourceName("hive");
-        ods.setSourceType("HIVE");
+        ods.setSourceName(DataSourceType.HIVE.getName());
+        ods.setSourceType(DataSourceType.HIVE.getName());
         odsds.add(ods);
         if(!CollectionUtils.isEmpty(groups)){
             //2. 获取被授权给用户组的数据源
@@ -507,6 +508,10 @@ public class IndexServiceImpl implements IndexService{
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标类型错误");
         }
         if(!Objects.isNull(indexInfoDTO)){
+            //hive数据源单独处理
+            if("hive".equalsIgnoreCase(indexInfoDTO.getSourceId())){
+                indexInfoDTO.setSourceName(DataSourceType.HIVE.getName());
+            }
             //添加审批组成员
             List<User> users=approveDAO.getApproveUsers(indexInfoDTO.getApprovalGroupId());
             if(!CollectionUtils.isEmpty(users)){
