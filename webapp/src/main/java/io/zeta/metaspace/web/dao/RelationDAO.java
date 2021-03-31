@@ -70,22 +70,12 @@ public interface RelationDAO {
             " select tableInfo.dbName ",
             " from table_relation,tableInfo where ",
             " tableInfo.tableGuid=table_relation.tableGuid ",
-            " and (categoryGuid in ",
-            " <foreach item='categoryGuid' index='index' collection='categoryGuids'" ,
-            " open='(' separator=',' close=')'>" ,
-            " #{categoryGuid}" ,
-            " </foreach> " ,
-            " ) ",
             " and status = 'ACTIVE' " ,
-            " and ( tableinfo.dbname in " ,
-            " <foreach item='item' index='index' collection='databases'" ,
-            " open='(' separator=',' close=')'>" ,
-            " #{item}" ,
-            " </foreach>  or tableinfo.source_id != 'hive')" ,
+            " and ( tableinfo.source_id != 'hive')" ,
             " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') ",
             " GROUP BY tableInfo.dbName ",
             " </script>"})
-    public List<String> queryAllDBNameByCategoryGuidV2(@Param("categoryGuids") List<String> categoryGuids,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
+    public List<String> queryRDBNameByCategoryGuidV2(@Param("tenantId") String tenantId);
 
     @Select({"<script>",
             " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,tableInfo.description,tableInfo.source_name sourceName",

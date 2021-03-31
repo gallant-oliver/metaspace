@@ -1312,9 +1312,9 @@ public class UserGroupService {
             userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type,dbNames);
             List<String> categoryIds = userCategories.stream().map(category->category.getGuid()).collect(Collectors.toList());
             if (type==0 && dbNames.size()!=0) {
-                List<String> allDBNames  = relationDAO.queryAllDBNameByCategoryGuidV2(categoryIds, dbNames, tenantId);
+                List<String> RMDBNames  = relationDAO.queryRDBNameByCategoryGuidV2(tenantId);
                 //去重
-                dbNames.addAll(allDBNames);
+                dbNames.addAll(RMDBNames);
                 Set<String> set = new HashSet(dbNames);
                 dbNames = new ArrayList<>(set);
                 userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type,dbNames);
