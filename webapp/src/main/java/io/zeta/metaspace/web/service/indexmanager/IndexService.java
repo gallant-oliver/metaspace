@@ -65,7 +65,7 @@ public interface IndexService extends Approvable {
      * @param deleteList
      * @param tenantId
      */
-    void deleteIndex(RequestDTO<DeleteIndexInfoDTO> deleteList, String tenantId);
+    void deleteIndex(List<DeleteIndexInfoDTO> deleteList, String tenantId);
 
     /**
      * 获取可选指标

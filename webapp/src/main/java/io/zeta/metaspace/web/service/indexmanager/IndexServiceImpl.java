@@ -331,21 +331,18 @@ public class IndexServiceImpl implements IndexService{
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void deleteIndex(RequestDTO<DeleteIndexInfoDTO> requestDTO, String tenantId) {
-        if(!Objects.isNull(requestDTO)){
-            List<DeleteIndexInfoDTO> deleteList = requestDTO.getDtoList();
-            if(!CollectionUtils.isEmpty(deleteList)){
-                Map<Integer,List<String>> deleteMap=new HashMap<>();
-                deleteList.forEach(x->{
-                    List<String> deleteIds = deleteMap.get(x.getIndexType());
-                    if(CollectionUtils.isEmpty(deleteIds)){
-                        deleteIds=new ArrayList<>();
-                        deleteMap.put(x.getIndexType(),deleteIds);
-                    }
-                    deleteIds.add(x.getIndexId());
-                });
-                deleteIndexMap(deleteMap);
-            }
+    public void deleteIndex(List<DeleteIndexInfoDTO> deleteList, String tenantId) {
+        if(!CollectionUtils.isEmpty(deleteList)){
+            Map<Integer,List<String>> deleteMap=new HashMap<>();
+            deleteList.forEach(x->{
+                List<String> deleteIds = deleteMap.get(x.getIndexType());
+                if(CollectionUtils.isEmpty(deleteIds)){
+                    deleteIds=new ArrayList<>();
+                    deleteMap.put(x.getIndexType(),deleteIds);
+                }
+                deleteIds.add(x.getIndexId());
+            });
+            deleteIndexMap(deleteMap);
         }
     }
     @Transactional(rollbackFor = Exception.class)
@@ -523,7 +520,9 @@ public class IndexServiceImpl implements IndexService{
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void indexSendApprove(List<PublishIndexDTO> dtoList, String tenantId) throws AtlasBaseException{
+        List<ApproveItem> approveItems=new ArrayList<>();
         for (PublishIndexDTO pid : dtoList) {
             if(Objects.isNull(pid.getIndexId())||Objects.isNull(pid.getIndexName())|| Objects.isNull(ApproveType.getApproveTypeByCode(pid.getApproveType()))||Objects.isNull(pid.getApprovalGroupId())){
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数错误");
@@ -542,11 +541,22 @@ public class IndexServiceImpl implements IndexService{
             approveItem.setModuleId(ModuleEnum.NORMDESIGN.getId()+"");
             approveItem.setVersion(pid.getVersion());
             approveItem.setTenantId(tenantId);
-            approveServiceImpl.addApproveItem(approveItem);
-            int indexType=pid.getIndexType();
-            indexDAO.updatePublishInfo(approveItem,tenantId,IndexState.APPROVAL.getValue());
+            approveItems.add(approveItem);
+        }
+        batchSendApprove(approveItems,tenantId);
+
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    private void batchSendApprove(List<ApproveItem> approveItems, String tenantId) {
+        if(!CollectionUtils.isEmpty(approveItems)){
+            for(ApproveItem approveItem:approveItems){
+                approveServiceImpl.addApproveItem(approveItem);
+                indexDAO.updatePublishInfo(approveItem,tenantId,IndexState.APPROVAL.getValue());
+            }
         }
     }
+
 
     @Override
     public List<IndexInfoDTO> publishHistory(String indexId, PageQueryDTO pageQueryDTO, int categoryType, String tenantId) {
