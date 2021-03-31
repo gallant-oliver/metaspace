@@ -298,7 +298,7 @@ public interface IndexDAO {
             " </script>"})
     List<IndexInfoPO> getAtomicIndexHistory(@Param("indexId")String indexId,@Param("categoryType")int categoryType,@Param("offset")int offset,@Param("limit")int limit, @Param("tenantId")String tenantId);
     @Select({" <script>",
-            " select count(1)over() total,iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, t.name as timeLimitName " ,
+            " select count(1)over() total,iai.*,ca.name as indexFieldName,ag.name as approvalGroupName, t.name as timeLimitName, " ,
             " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
             " from index_derive_info iai " ,
             " left join time_limit t on iai.time_limit_id=t.id and t.tenantid=#{tenantId} " ,
