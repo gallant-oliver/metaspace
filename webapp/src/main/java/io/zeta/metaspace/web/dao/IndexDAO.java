@@ -55,7 +55,7 @@ public interface IndexDAO {
      */
     @Select({"<script>" ,
             " select * from index_atomic_info where tenant_id=#{tenantId} and (index_name=#{indexDTO.indexName} or index_identification=#{indexDTO.indexIdentification})",
-            " <if test='indexDTO.indexId != null'>",
+            " <if test=\"indexDTO.indexId != null and indexDTO.indexId !=''\">",
             " and index_id != #{indexDTO.indexId} ",
             " </if>",
             "</script>"})
@@ -65,7 +65,7 @@ public interface IndexDAO {
      */
     @Select({"<script>" ,
             " select * from index_derive_info where tenant_id=#{tenantId} and (index_name=#{indexDTO.indexName} or index_identification=#{indexDTO.indexIdentification})",
-            " <if test='indexDTO.indexId != null'>",
+            " <if test=\"indexDTO.indexId != null and indexDTO.indexId !=''\">",
             " and index_id != #{indexDTO.indexId} ",
             " </if>",
             "</script>"})
@@ -75,7 +75,7 @@ public interface IndexDAO {
      */
     @Select({"<script>" ,
             " select * from index_composite_info where tenant_id=#{tenantId} and (index_name=#{indexDTO.indexName} or index_identification=#{indexDTO.indexIdentification})",
-            " <if test='indexDTO.indexId != null'>",
+            " <if test=\"indexDTO.indexId != null and indexDTO.indexId !=''\">",
             " and index_id != #{indexDTO.indexId} ",
             " </if>",
             "</script>"})
