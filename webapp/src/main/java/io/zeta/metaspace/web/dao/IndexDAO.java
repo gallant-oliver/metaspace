@@ -111,7 +111,7 @@ public interface IndexDAO {
     /**
      *编辑复合指标
      */
-    @Update("update index_derive_info set index_name=#{icp.indexName}, index_identification=#{icp.indexIdentification}, description=#{icp.description}, central=#{icp.central}, " +
+    @Update("update index_composite_info set index_name=#{icp.indexName}, index_identification=#{icp.indexIdentification}, description=#{icp.description}, central=#{icp.central}, " +
             "index_field_id=#{icp.indexFieldId}, approval_group_id=#{icp.approvalGroupId}, expression=#{icp.expression}, " +
             "business_caliber=#{icp.businessCaliber}, business_leader=#{icp.businessLeader}, " +
             "technical_caliber=#{icp.technicalCaliber}, technical_leader=#{icp.technicalLeader}, updater=#{icp.updater}, update_time=#{icp.updateTime} where index_id=#{icp.indexId} and version=#{icp.version}")
