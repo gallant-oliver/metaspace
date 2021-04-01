@@ -2,8 +2,7 @@ package io.zeta.metaspace.web.service.Approve;
 
 import io.zeta.metaspace.model.approve.ApproveItem;
 import io.zeta.metaspace.model.approve.ApproveParas;
-
-import java.util.List;
+import io.zeta.metaspace.model.result.PageResult;
 
 public interface ApproveService {
     /**
@@ -12,7 +11,7 @@ public interface ApproveService {
      * @param tenant_id
      * @return
      */
-    List<ApproveItem> search(ApproveParas paras,String tenant_id);
+    PageResult<ApproveItem> search(ApproveParas paras,String tenant_id);
 
 
     /**

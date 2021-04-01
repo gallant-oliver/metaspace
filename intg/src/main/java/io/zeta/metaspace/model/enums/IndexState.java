@@ -5,33 +5,40 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 import java.util.HashMap;
 
-public enum IndexType {
+/**
+ * @author : zlt
+ * @className : IndexState
+ * @package: io.zeta.metaspace.model.enums
+ * @Description : TODO
+ * @date : 2021/3/18 15:22
+ */
+public enum IndexState {
     /**
-     * 原子指标
+     * 新建
      */
-    INDEXATOMIC(1),
+    CREATE(1),
     /**
-     * 派生指标
+     * 已发布
      */
-    INDEXDERIVE(2),
+    PUBLISH(2),
     /**
-     * 复合指标
+     * 已下线
      */
-    INDEXCOMPOSITE(3),
+    OFFLINE(3),
     /**
-     * 原子、派生、复合指标
+     * 审核中
      */
-    ALL(4);
+    APPROVAL(4);
 
     private int intValue;
-    private static HashMap<Integer, IndexType> mappings;
-    private static synchronized HashMap<Integer, IndexType> getMappings() {
+    private static HashMap<Integer, IndexState> mappings;
+    private static synchronized HashMap<Integer, IndexState> getMappings() {
         if (mappings == null) {
             mappings = new HashMap();
         }
         return mappings;
     }
-    private IndexType(int intValue) {
+    private IndexState(int intValue) {
         this.intValue = intValue;
         getMappings().put(intValue, this);
     }
@@ -40,12 +47,11 @@ public enum IndexType {
         return this.intValue;
     }
     @JsonCreator
-    public static IndexType forValue(int value) {
-        return (IndexType)getMappings().get(value);
+    public static IndexState forValue(int value) {
+        return (IndexState)getMappings().get(value);
     }
 
     public static boolean contains(int value){
         return getMappings().containsKey(value);
     }
-
 }

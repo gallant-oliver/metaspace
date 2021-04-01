@@ -534,7 +534,7 @@ public interface DataSourceDAO {
     public int deleteRelationBySourceId(@Param("sourceIds") List<String> sourceIds);
 
     @Select({" <script> ",
-            " select d.* from datasource d join datasource_group_relation dgr on d.source_id=dgr.source_id where d.tenantid=#{tenantId} and dgr.group_id in  ",
+            " select d.* from data_source d join datasource_group_relation dgr on d.source_id=dgr.source_id where d.tenantid=#{tenantId} and dgr.group_id in  ",
             " <foreach item='groupId' index='index' collection='groupIds' separator=',' open='(' close=')'>",
             " #{groupId} ",
             " </foreach>",
