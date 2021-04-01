@@ -95,6 +95,9 @@ public class ApproveGroupService {
     public PageResult<ApproveGroupListAndSearchResult> getApproveGroupByModuleId(ApproveGroupParas paras,String tenantId) {
         List<ApproveGroupListAndSearchResult> lists = approveGroupDAO.getApproveGroupByModuleId(tenantId, paras);
         PageResult<ApproveGroupListAndSearchResult> result = new PageResult<>();
+        if(lists == null || lists.size() ==0 ){
+            return result;
+        }
         result.setTotalSize(lists.get(0).getTotalSize());
         result.setLists(lists);
         result.setCurrentSize(lists.size());
