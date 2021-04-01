@@ -21,4 +21,6 @@ public class QualifierParameters extends Parameters {
     //结束创建时间
     // @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp endTime;
+    //是否全局
+    private Boolean isGlobal;
 }
