@@ -100,6 +100,26 @@ public interface QualifierDAO {
             " </script>"})
     public List<Data> getQualifierList(@Param("params") QualifierParameters params, @Param("tenantId") String tenantId);
 
+    //获取全部修饰词
+    @Select({"<script>",
+            " select count(*) over() total,qualifier.id,qualifier.mark,qualifier.name",
+            " from qualifier ",
+            " where ",
+            " qualifier.tenantId=#{tenantId} ",
+            " <if test=\"params.query != null and params.query!=''\">",
+            " and (qualifier.name like '%${params.query}%' ESCAPE '/' )",
+            " </if>",
+            " order by create_time ",
+            " <if test='params.limit!=null and params.limit!= -1'>",
+            " limit #{params.limit}",
+            " </if>",
+            " <if test='params.offset!=null'>",
+            " offset #{params.offset}",
+            " </if>",
+            " </script>"})
+    public List<Data> getAllQualifierList(@Param("params") QualifierParameters params, @Param("tenantId") String tenantId);
+
+
     //获取修饰词引用列表
     @Select({"<script>",
             " select count(*) over() total,qualifier.name qualifierName,index_derive_info.index_name indexName,index_derive_info.business_leader interfaceUser",

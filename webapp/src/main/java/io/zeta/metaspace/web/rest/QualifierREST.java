@@ -127,6 +127,26 @@ public class QualifierREST {
     }
 
     /**
+     * 获取全部修饰词
+     *
+     * @param tenantId
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/all")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getAllQualifierList(QualifierParameters parameters, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        try {
+            return ReturnUtil.success(qualifierService.getAllQualifierList(parameters, tenantId));
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取全部修饰词失败");
+        }
+    }
+
+    /**
      * 获取修饰词列表
      *
      * @param tenantId
