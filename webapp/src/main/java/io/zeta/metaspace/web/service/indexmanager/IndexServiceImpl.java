@@ -242,6 +242,10 @@ public class IndexServiceImpl implements IndexService{
             IndexDerivePO idp=BeanMapper.map(indexDTO,IndexDerivePO.class);
             idp.setUpdater(user.getUserId());
             idp.setUpdateTime(timestamp);
+            List<String> dependentIndices = indexDTO.getDependentIndices();
+            if(!CollectionUtils.isEmpty(dependentIndices)){
+                idp.setIndexAtomicId(dependentIndices.get(0));
+            }
             //获取已经存在的派生指标与修饰词关系
             List<IndexDeriveModifierRelationPO> modifierRelations=indexDAO.getDeriveModifierRelations(idp.getIndexId());
             editDerivIndex(idp,indexDTO.getModifiers(),modifierRelations);
@@ -548,7 +552,7 @@ public class IndexServiceImpl implements IndexService{
     }
 
     @Transactional(rollbackFor = Exception.class)
-    private void batchSendApprove(List<ApproveItem> approveItems, String tenantId) {
+    public void batchSendApprove(List<ApproveItem> approveItems, String tenantId) {
         if(!CollectionUtils.isEmpty(approveItems)){
             for(ApproveItem approveItem:approveItems){
                 approveServiceImpl.addApproveItem(approveItem);

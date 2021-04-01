@@ -106,7 +106,7 @@ public interface IndexDAO {
     @Update("update index_derive_info set index_atomic_id=#{idp.indexAtomicId},time_limit_id=#{idp.timeLimitId},index_name=#{idp.indexName}, index_identification=#{idp.indexIdentification}, description=#{idp.description}, central=#{idp.central}, " +
             "index_field_id=#{idp.indexFieldId}, approval_group_id=#{idp.approvalGroupId},  " +
             "business_caliber=#{idp.businessCaliber}, business_leader=#{idp.businessLeader}, " +
-            "technical_caliber=#{idp.technicalCaliber}, technical_leader={idp.technicalLeader}, updater=#{idp.updater}, update_time=#{idp.updateTime} where index_id=#{idp.indexId} and version=#{idp.version")
+            "technical_caliber=#{idp.technicalCaliber}, technical_leader=#{idp.technicalLeader}, updater=#{idp.updater}, update_time=#{idp.updateTime} where index_id=#{idp.indexId} and version=#{idp.version}")
     void editDerivIndex(@Param("idp") IndexDerivePO idp);
     /**
      *编辑复合指标
@@ -114,7 +114,7 @@ public interface IndexDAO {
     @Update("update index_derive_info set index_name=#{icp.indexName}, index_identification=#{icp.indexIdentification}, description=#{icp.description}, central=#{icp.central}, " +
             "index_field_id=#{icp.indexFieldId}, approval_group_id=#{icp.approvalGroupId}, expression=#{icp.expression}, " +
             "business_caliber=#{icp.businessCaliber}, business_leader=#{icp.businessLeader}, " +
-            "technical_caliber=#{icp.technicalCaliber}, technical_leader={icp.technicalLeader}, updater=#{icp.updater}, update_time=#{icp.updateTime} where index_id=#{icp.indexId} and version=#{icp.version")
+            "technical_caliber=#{icp.technicalCaliber}, technical_leader=#{icp.technicalLeader}, updater=#{icp.updater}, update_time=#{icp.updateTime} where index_id=#{icp.indexId} and version=#{icp.version}")
     void editCompositeIndex(@Param("icp") IndexCompositePO icp);
     /**
      *删除派生指标的其所有修饰词
