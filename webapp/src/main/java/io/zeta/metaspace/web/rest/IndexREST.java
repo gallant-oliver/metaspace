@@ -7,6 +7,7 @@ import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dto.indices.*;
+import io.zeta.metaspace.model.enums.IndexState;
 import io.zeta.metaspace.model.enums.IndexType;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -52,6 +53,7 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
@@ -433,7 +435,15 @@ public class IndexREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.deleteIndex(" + requestDTO.getDtoList().toString() + ")");
             }
-            indexService.deleteIndex(requestDTO, tenantId);
+            if(!Objects.isNull(requestDTO)){
+                List<DeleteIndexInfoDTO> deleteList = requestDTO.getDtoList();
+                if(!CollectionUtils.isEmpty(deleteList)){
+                    List<DeleteIndexInfoDTO> deleteIndexInfoDTOs = deleteList.stream().filter(x -> (IndexState.CREATE.getValue() == x.getIndexState() || IndexState.OFFLINE.getValue() == x.getIndexState())).collect(Collectors.toList());
+                    if(!CollectionUtils.isEmpty(deleteIndexInfoDTOs)){
+                        indexService.deleteIndex(deleteIndexInfoDTOs, tenantId);
+                    }
+                }
+            }
             return ReturnUtil.success("删除成功");
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -603,10 +613,10 @@ public class IndexREST {
             }
             List<PublishIndexDTO> dtoList = requestDTO.getDtoList();
             if(!CollectionUtils.isEmpty(dtoList)){
-                if(dtoList.size()>1){
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持批量发布");
+                List<PublishIndexDTO> publisList = dtoList.stream().filter(x -> (IndexState.CREATE.getValue() == x.getIndexState() || IndexState.OFFLINE.getValue() == x.getIndexState())).collect(Collectors.toList());
+                if(!CollectionUtils.isEmpty(publisList)){
+                    indexService.indexSendApprove(publisList,tenantId);
                 }
-                indexService.indexSendApprove(dtoList,tenantId);
             }
             return ReturnUtil.success("success");
         } catch (Exception e) {

@@ -3,9 +3,18 @@ public class PublishIndexDTO {
     private String indexId;
     private String indexName;
     private int indexType;
+    private int indexState;
     private String approveType;
     private String approvalGroupId;
     private int version;
+
+    public int getIndexState() {
+        return indexState;
+    }
+
+    public void setIndexState(int indexState) {
+        this.indexState = indexState;
+    }
 
     public String getIndexId() {
         return indexId;
