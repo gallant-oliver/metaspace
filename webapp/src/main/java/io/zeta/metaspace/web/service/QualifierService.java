@@ -149,9 +149,9 @@ public class QualifierService {
 
 
     //获取修饰词引用列表
-    public PageResult<ReferenceIndex> getQualifierRelationList(String id, String tenantId, Integer offset, int limit) throws AtlasBaseException {
+    public PageResult<ReferenceIndex> getQualifierRelationList(String id, String tenantId, int offset, int limit) throws AtlasBaseException {
         try {
-            List<ReferenceIndex> list = qualifierDAO.getQualifierRelationListById(id, tenantId, offset, limit);
+            List<ReferenceIndex> list = qualifierDAO.getQualifierRelationListById(id, tenantId, limit, offset);
             long totalSize = 0;
             if (list.size() != 0) {
                 totalSize = list.get(0).getTotal();
