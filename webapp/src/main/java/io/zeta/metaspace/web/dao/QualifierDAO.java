@@ -134,10 +134,10 @@ public interface QualifierDAO {
             " where qualifier.tenantId=#{tenantId}",
             " and qualifier.id=#{id}",
             " <if test='limit!=null and limit!= -1 '>",
-            " limit #{limit}",
+            " limit ${limit}",
             " </if>",
             " <if test='offset != null'>",
-            " offset #{offset}",
+            " offset ${offset}",
             " </if>",
             " </script>"})
     public List<ReferenceIndex> getQualifierRelationListById(@Param("id") String id, @Param("tenantId") String tenantId, @Param("limit") int limit, @Param("offset") int offset);
