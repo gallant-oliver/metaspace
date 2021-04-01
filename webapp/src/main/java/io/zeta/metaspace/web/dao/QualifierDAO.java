@@ -125,12 +125,14 @@ public interface QualifierDAO {
 
     //获取修饰词引用列表
     @Select({"<script>",
-            " select count(*) over() total,qualifier.name qualifierName,index_derive_info.index_name indexName,index_derive_info.business_leader interfaceUser",
+            " select count(*) over() total,qualifier.name as name,index_derive_info.index_name  as indexName,users.username as interfaceUser",
             " from qualifier",
             " join index_derive_modifier_relation",
             " on qualifier.id = index_derive_modifier_relation.modifier_id",
             " join index_derive_info",
             " on index_derive_modifier_relation.derive_index_id = index_derive_info.index_id",
+            " join users",
+            " on users.userid = index_derive_info.business_leader",
             " where qualifier.tenantId=#{tenantId}",
             " and qualifier.id=#{id}",
             " <if test='limit!=null and limit!= -1 '>",
