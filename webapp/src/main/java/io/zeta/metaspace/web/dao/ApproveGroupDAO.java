@@ -120,7 +120,7 @@ public interface ApproveGroupDAO {
 
 
     @Select("<script>" +
-            " select name,description from approval_group where id in " +
+            " select name,description from approval_group where valid = true and id in " +
             "    <foreach item='id' index='index' collection='ids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{id}" +
@@ -146,7 +146,7 @@ public interface ApproveGroupDAO {
      * 四.删除用户组信息
      */
     @Delete("<script>" +
-            " delete from approval_group  " +
+            " update approval_group set valid = false  " +
             " where id in " +
             "<foreach collection='ids' item='groupId' index='index' separator=',' open='(' close=')'>" +
             " #{groupId}" +
@@ -184,7 +184,7 @@ public interface ApproveGroupDAO {
      * @param id
      */
     @Select("select module_id from approval_group_module_relation " +
-            " where group_id = #{id} "
+            " where valid = true and group_id = #{id} "
            )
     public List<String> selectApproveGroupModule(@Param("id") String id);
 

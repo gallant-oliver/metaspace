@@ -209,8 +209,8 @@ public class ApproveGroupService {
     @Transactional(rollbackFor=Exception.class)
     public void deleteApproveGroupByIDs(List<String> ids) {
         approveGroupDAO.deleteApproveGroupModule(ids); //删除审批组对应模块关系
-        approveGroupDAO.deleteGroupUserRelation(ids); //删除审批组对应用户关系
-        approveGroupDAO.deleteApproveGroupByIDs(ids); //删除审批组
+        approveGroupDAO.deleteGroupUserRelation(ids);  //删除审批组对应用户关系
+        approveGroupDAO.deleteApproveGroupByIDs(ids);  //删除审批组
     }
 
     /**
