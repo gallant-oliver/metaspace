@@ -72,10 +72,10 @@ public interface UserGroupDAO {
             "<if test='search!=null'>" +
             " and u.name like '%${search}%' ESCAPE '/' " +
             "</if>" +
-            "<if test='sortBy!=null'>" +
+            "<if test=\"sortBy!=null and sortBy!=''\">" +
             "order by ${sortBy} " +
             "</if>" +
-            "<if test='order!=null '>" +
+            "<if test=\"order!=null and order!=''\">" +
             " ${order} " +
             "</if>" +
             "<if test='limit!=-1'>" +
