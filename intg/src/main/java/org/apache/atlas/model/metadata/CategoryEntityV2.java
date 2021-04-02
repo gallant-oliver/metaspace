@@ -82,7 +82,8 @@ public class CategoryEntityV2 {
         this.parentCategoryGuid = parentCategoryGuid;
         this.categoryType = categoryType;
     }
-    public CategoryEntityV2(String guid, String name, String description, String parentCategoryGuid, String upBrotherCategoryGuid, String downBrotherCategoryGuid, Integer categoryType, Integer level,String safe,Timestamp createTime) {
+    public CategoryEntityV2(String guid, String name, String description, String parentCategoryGuid, String upBrotherCategoryGuid, String downBrotherCategoryGuid, Integer categoryType, Integer level,String safe,Timestamp createTime,
+                            String code) {
         this.guid = guid;
         this.name = name;
         this.description = description;
@@ -93,6 +94,7 @@ public class CategoryEntityV2 {
         this.level=level;
         this.safe=safe;
         this.createTime=createTime;
+        this.code=code;
     }
 
     public CategoryEntityV2(String guid, String name, String description, String parentCategoryGuid, String upBrotherCategoryGuid, String downBrotherCategoryGuid, Integer categoryType,

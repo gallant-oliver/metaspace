@@ -6,6 +6,7 @@ import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.dto.indices.*;
 import io.zeta.metaspace.model.enums.IndexState;
 import io.zeta.metaspace.model.enums.IndexType;
@@ -351,7 +352,15 @@ public class IndexREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.getCategories()");
             }
-            return dataManageService.getAllByUserGroup(CATEGORY_TYPE, tenantId);
+            List<CategoryPrivilege> allByUserGroup = dataManageService.getAllByUserGroup(CATEGORY_TYPE, tenantId);
+            if(!CollectionUtils.isEmpty(allByUserGroup)){
+                allByUserGroup.forEach(x->{
+                    if(CategoryUtil.indexFieldId.equals(x.getGuid())){
+                        x.setPrivilege(new CategoryPrivilege.Privilege(false, false, true, true, false, false, false, false, false,false));
+                    }
+                });
+            }
+            return allByUserGroup;
         }  finally {
             AtlasPerfTracer.log(perf);
         }
@@ -613,9 +622,17 @@ public class IndexREST {
             }
             List<PublishIndexDTO> dtoList = requestDTO.getDtoList();
             if(!CollectionUtils.isEmpty(dtoList)){
-                List<PublishIndexDTO> publisList = dtoList.stream().filter(x -> (IndexState.CREATE.getValue() == x.getIndexState() || IndexState.OFFLINE.getValue() == x.getIndexState())).collect(Collectors.toList());
-                if(!CollectionUtils.isEmpty(publisList)){
-                    indexService.indexSendApprove(publisList,tenantId);
+                List<PublishIndexDTO> approveList=null;
+                String approveType = dtoList.get(0).getApproveType();
+                if(ApproveType.PUBLISH.getCode().equals(approveType)){
+                    approveList=dtoList.stream().filter(x -> (IndexState.CREATE.getValue() == x.getIndexState() || IndexState.OFFLINE.getValue() == x.getIndexState())).collect(Collectors.toList());
+                }else if(ApproveType.OFFLINE.getCode().equals(approveType)){
+                    approveList=dtoList.stream().filter(x-> IndexState.PUBLISH.getValue()==x.getIndexState()).collect(Collectors.toList());
+                }else{
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"送审类型错误");
+                }
+                if(!CollectionUtils.isEmpty(approveList)){
+                    indexService.indexSendApprove(approveList,tenantId);
                 }
             }
             return ReturnUtil.success("success");
