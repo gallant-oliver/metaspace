@@ -87,7 +87,7 @@ public interface ApproveGroupDAO {
             " from approval_group u inner join " +
             " approval_group_module_relation m"+
             " on u.id=m.group_id " +
-            " where u.tenantid=#{tenantId} and valid=true and m.module_id = #{params.moduleId}" +
+            " where u.tenantid=#{tenantId} and u.valid=true and m.module_id = #{params.moduleId}" +
             "<if test=\"params.query!='' and params.query!=null\">"+
             " and u.name like '%${params.query}%' ESCAPE '/' " +
             "</if>" +
@@ -184,7 +184,7 @@ public interface ApproveGroupDAO {
      * @param id
      */
     @Select("select module_id from approval_group_module_relation " +
-            " where valid = true and group_id = #{id} "
+            " where group_id = #{id} "
            )
     public List<String> selectApproveGroupModule(@Param("id") String id);
 
