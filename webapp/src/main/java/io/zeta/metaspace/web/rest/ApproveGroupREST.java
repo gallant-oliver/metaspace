@@ -143,8 +143,8 @@ public class ApproveGroupREST {
         try {
             //查询审批组，生成审计日志
             List<ApproveGroup> groupsByIDs = approveGroupService.getApproveGroupByIDs(map.get("groupIds"));
-            HttpRequestContext.get().auditLog(ModuleEnum.APPROVERMANAGE.getAlias(), "删除审批组："+groupsByIDs.stream().map(group->group.getName()).collect(Collectors.joining(",")));
             approveGroupService.deleteApproveGroupByIDs(map.get("groupIds"));
+            HttpRequestContext.get().auditLog(ModuleEnum.APPROVERMANAGE.getAlias(), "删除审批组："+groupsByIDs.stream().map(group->group.getName()).collect(Collectors.joining(",")));
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"删除用户组信息失败");

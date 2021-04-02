@@ -168,6 +168,17 @@ public interface ApproveGroupDAO {
             "</script>")
     public void deleteApproveGroupModule(@Param("ids") List<String> ids);
 
+
+    /**
+     * 删除审批组与模块关系
+     * @param id
+     */
+    @Delete("<script>" +
+            "delete from approval_group_module_relation " +
+            " where group_id = #{id}" +
+            "</script>")
+    public void deleteApproveGroupModuleById(@Param("id") String id);
+
     /**
      * 审批组与模块关系
      * @param id
@@ -269,12 +280,23 @@ public interface ApproveGroupDAO {
     public void deleteUserByGroupId(@Param("groupId") String groupId, @Param("userIds") List<String> userIds);
 
     /**
+     * 审批组移除成员
+     */
+    @Delete({"<script>",
+            "delete from approval_group_relation where group_id in",
+            "<foreach collection='groups' item='group' index='index' separator=',' open='(' close=')'>",
+            "#{group}",
+            "</foreach>",
+            "</script>"})
+    public void deleteGroupUserRelation(@Param("groups") List<String> groups);
+
+    /**
      * 十五.修改用户组管理信息
      */
     @Update("update approval_group set " +
             "name=#{group.name} ," +
             "description=#{group.description} ," +
-            "updatetime=#{updateTime} " +
+            "update_time=#{updateTime} " +
             "where id=#{groupId}")
     public void updateApproveGroupInformation(@Param("groupId") String groupId, @Param("group") ApproveGroup group, @Param("updateTime") Timestamp updateTime);
 
