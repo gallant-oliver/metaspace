@@ -3,6 +3,15 @@ public class DeleteIndexInfoDTO {
 
     private String indexId;
     private int indexType;
+    private int indexState;
+
+    public int getIndexState() {
+        return indexState;
+    }
+
+    public void setIndexState(int indexState) {
+        this.indexState = indexState;
+    }
 
     public String getIndexId() {
         return indexId;

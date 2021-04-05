@@ -18,6 +18,7 @@ import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.approvegroup.ApproveGroup;
 import io.zeta.metaspace.model.approvegroup.ApproveGroupListAndSearchResult;
 import io.zeta.metaspace.model.approvegroup.ApproveGroupMemberSearch;
+import io.zeta.metaspace.model.approvegroup.ApproveGroupParas;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -73,11 +74,35 @@ public class ApproveGroupREST {
                 params.setOrder("desc");  //默认降序排列
             }
 
+            PageResult<ApproveGroupListAndSearchResult> pageResult = approveGroupService.getApproveGroupListAndSearch(tenantId, params);
+            return ReturnUtil.success(pageResult);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"用户组列表及搜索失败，您的租户ID为:" + tenantId + ",请检查好是否配置正确");
+        }
+    }
+
+    /**
+     * 审批组列表及搜索 OK
+     */
+
+    @POST
+    @Path("/moduleList")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getApproveGroupListByModule(
+            @HeaderParam("tenantId") String tenantId, ApproveGroupParas params) throws AtlasBaseException {
+        try {
+            //参数检查
+            if(StringUtils.isBlank(params.getSortBy())){
+                params.setSortBy("createTime");  //默认排序字段
+            }
+            if(StringUtils.isBlank(params.getOrder())){
+                params.setOrder("desc");  //默认降序排列
+            }
             if(params.getLimit() ==0){
                 params.setLimit(10);  //默认分页条数
             }
-
-            PageResult<ApproveGroupListAndSearchResult> pageResult = approveGroupService.getApproveGroupListAndSearch(tenantId, params);
+            PageResult<ApproveGroupListAndSearchResult> pageResult = approveGroupService.getApproveGroupByModuleId(params,tenantId);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"用户组列表及搜索失败，您的租户ID为:" + tenantId + ",请检查好是否配置正确");
@@ -118,8 +143,8 @@ public class ApproveGroupREST {
         try {
             //查询审批组，生成审计日志
             List<ApproveGroup> groupsByIDs = approveGroupService.getApproveGroupByIDs(map.get("groupIds"));
-            HttpRequestContext.get().auditLog(ModuleEnum.APPROVERMANAGE.getAlias(), "删除审批组："+groupsByIDs.stream().map(group->group.getName()).collect(Collectors.joining(",")));
             approveGroupService.deleteApproveGroupByIDs(map.get("groupIds"));
+            HttpRequestContext.get().auditLog(ModuleEnum.APPROVERMANAGE.getAlias(), "删除审批组："+groupsByIDs.stream().map(group->group.getName()).collect(Collectors.joining(",")));
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"删除用户组信息失败");

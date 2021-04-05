@@ -57,5 +57,6 @@ public class ApproveParas {
 
     private String moduleId;
 
+    private List<ApproveItem> approveList;
 
 }
