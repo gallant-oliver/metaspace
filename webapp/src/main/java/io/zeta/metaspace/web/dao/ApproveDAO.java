@@ -42,12 +42,10 @@ public interface ApproveDAO {
             "a.status as approveStatus,a.approve_group as approveGroup,users.username as approver,a.approve_time as approveTime,a.submitter as submitter,a.reason as reason,a.module_id as moduleId,a.version as version,a.tenant_id as tenantId"+
             " from approval_item a left join users on a.approver = users.userid " +
             " where a.tenant_id=#{tenantId}" +
-            "<if test='groups!=null and groups.size()!=0'>" +
             " and a.approve_group in " +
             "<foreach collection='groups' item='groupId' index='index' separator=',' open='(' close=')'>" +
             " #{groupId}" +
             "</foreach>"+
-            "</if>" +
             "<if test='paras.approveStatus!=null and paras.approveStatus.size()!=0'>" +
             " and a.status in " +
             " <foreach collection='paras.status' item='stat' index='index' separator=',' open='(' close=')'>" +
@@ -117,6 +115,19 @@ public interface ApproveDAO {
     //更新业务信息
     @Update("update approval_item set status=#{item.approveStatus},approver=#{item.approver},approve_time=now(),reason=#{item.reason} where id=#{item.id} and tenant_id=#{item.tenantId}")
     int updateStatus(@Param("item") ApproveItem item);
+
+    //更新业务信息
+    @Update("delete approval_item where id=#{item.id} and tenant_id=#{item.tenantId}")
+    int deleteItemById(@Param("item") ApproveItem item);
+
+    @Delete("<script>" +
+            "delete from approval_item " +
+            "where tenant_id=#{item.tenantId} and id in " +
+            "<foreach collection='item' item='id' index='index' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            "</foreach>"+
+            "</script>")
+    int deleteItem(@Param("item") List<String> item);
 
     /**
      * 获取审批成员
