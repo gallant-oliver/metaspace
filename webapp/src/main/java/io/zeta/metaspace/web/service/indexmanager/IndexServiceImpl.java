@@ -95,7 +95,7 @@ public class IndexServiceImpl implements IndexService{
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public IndexResposeDTO addIndex(IndexDTO indexDTO, String tenantId) throws Exception {
+    public IndexResposeDTO addIndex(IndexDTO indexDTO, String tenantId) {
         int indexType=indexDTO.getIndexType();
         User user= AdminUtils.getUserData();
         Timestamp timestamp=new Timestamp(System.currentTimeMillis());
@@ -114,7 +114,12 @@ public class IndexServiceImpl implements IndexService{
             iap.setCreator(user.getUserId());
             iap.setCreateTime(timestamp);
             iap.setUpdateTime(timestamp);
-            indexDAO.addAtomicIndex(iap);
+            try {
+                indexDAO.addAtomicIndex(iap);
+            } catch (SQLException e) {
+                LOG.error("添加原子指标失败",e);
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加原子指标失败");
+            }
             iard=BeanMapper.map(iap, IndexResposeDTO.class);
         }else if(indexType == IndexType.INDEXDERIVE.getValue()){
             //名称和标识重名校验
@@ -132,7 +137,12 @@ public class IndexServiceImpl implements IndexService{
             idp.setUpdateTime(timestamp);
             idp.setIndexAtomicId(indexDTO.getDependentIndices().get(0));
             List<String> modifiers = indexDTO.getModifiers();
-            addDeriveModifierRelations(idp,modifiers);
+            try {
+                addDeriveModifierRelations(idp,modifiers);
+            } catch (Exception e) {
+                LOG.error("添加派生指标失败",e);
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加派生指标失败");
+            }
             iard=BeanMapper.map(idp, IndexResposeDTO.class);
         }else if(indexType == IndexType.INDEXCOMPOSITE.getValue()){
             //名称和标识重名校验
@@ -149,7 +159,12 @@ public class IndexServiceImpl implements IndexService{
             icp.setCreateTime(timestamp);
             icp.setUpdateTime(timestamp);
             List<String> deriveIds=indexDTO.getDependentIndices();
-            addDeriveCompositeRelations(icp,deriveIds);
+            try {
+                addDeriveCompositeRelations(icp,deriveIds);
+            } catch (SQLException e) {
+                LOG.error("添加复合指标失败",e);
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加复合指标失败");
+            }
             iard=BeanMapper.map(icp, IndexResposeDTO.class);
         }else {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标类型错误");
@@ -217,7 +232,7 @@ public class IndexServiceImpl implements IndexService{
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public IndexResposeDTO editIndex(IndexDTO indexDTO, String tenantId) throws SQLException {
+    public IndexResposeDTO editIndex(IndexDTO indexDTO, String tenantId){
         int indexType=indexDTO.getIndexType();
         User user= AdminUtils.getUserData();
         Timestamp timestamp=new Timestamp(System.currentTimeMillis());
@@ -269,67 +284,79 @@ public class IndexServiceImpl implements IndexService{
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void editDerivIndex(IndexDerivePO idp, List<String> modifiers, List<IndexDeriveModifierRelationPO> modifierRelations) throws SQLException {
+    public void editDerivIndex(IndexDerivePO idp, List<String> modifiers, List<IndexDeriveModifierRelationPO> modifierRelations){
         //1.编辑派生指标
         indexDAO.editDerivIndex(idp);
-        //2.编辑派生指标与修饰词关系
-        if(CollectionUtils.isEmpty(modifierRelations)){
-            if(!CollectionUtils.isEmpty(modifiers)){
-                //增加派生指标与修饰词关系
-                List<IndexDeriveModifierRelationPO> idmrPOS = getDeriveModifierRelationPOS(idp.getIndexId(), modifiers);
-                indexDAO.addDeriveModifierRelations(idmrPOS);
-            }
-        }else{
-            if(!CollectionUtils.isEmpty(modifiers)){
-                List<String> exits=modifierRelations.stream().map(x->x.getModifierId()).distinct().collect(Collectors.toList());
-                //增加的派生指标与修饰词关系
-                List<String> adds = modifiers.stream().filter(x -> !exits.contains(x)).distinct().collect(Collectors.toList());
-                if(!CollectionUtils.isEmpty(adds)){
-                    List<IndexDeriveModifierRelationPO> addPOS = getDeriveModifierRelationPOS(idp.getIndexId(), adds);
-                    indexDAO.addDeriveModifierRelations(addPOS);
-                }
-                //删除的派生指标与修饰词关系
-                List<String> dels = exits.stream().filter(x -> !modifiers.contains(x)).distinct().collect(Collectors.toList());
-                if(!CollectionUtils.isEmpty(dels)){
-                    indexDAO.deleteDeriveModifierRelationsByDeriveModifierId(idp.getIndexId(),dels);
+        try{
+            //2.编辑派生指标与修饰词关系
+            if(CollectionUtils.isEmpty(modifierRelations)){
+                if(!CollectionUtils.isEmpty(modifiers)){
+                    //增加派生指标与修饰词关系
+                    List<IndexDeriveModifierRelationPO> idmrPOS = getDeriveModifierRelationPOS(idp.getIndexId(), modifiers);
+                    indexDAO.addDeriveModifierRelations(idmrPOS);
                 }
             }else{
-                //删除已存在的派生指标与修饰词关系
-                indexDAO.deleteDeriveModifierRelationsByDeriveId(idp.getIndexId());
+                if(!CollectionUtils.isEmpty(modifiers)){
+                    List<String> exits=modifierRelations.stream().map(x->x.getModifierId()).distinct().collect(Collectors.toList());
+                    //增加的派生指标与修饰词关系
+                    List<String> adds = modifiers.stream().filter(x -> !exits.contains(x)).distinct().collect(Collectors.toList());
+                    if(!CollectionUtils.isEmpty(adds)){
+                        List<IndexDeriveModifierRelationPO> addPOS = getDeriveModifierRelationPOS(idp.getIndexId(), adds);
+                        indexDAO.addDeriveModifierRelations(addPOS);
+                    }
+                    //删除的派生指标与修饰词关系
+                    List<String> dels = exits.stream().filter(x -> !modifiers.contains(x)).distinct().collect(Collectors.toList());
+                    if(!CollectionUtils.isEmpty(dels)){
+                        indexDAO.deleteDeriveModifierRelationsByDeriveModifierId(idp.getIndexId(),dels);
+                    }
+                }else{
+                    //删除已存在的派生指标与修饰词关系
+                    indexDAO.deleteDeriveModifierRelationsByDeriveId(idp.getIndexId());
+                }
             }
+        }catch (SQLException e){
+            LOG.error(e.getMessage());
+            LOG.error("编辑派生指标失败",e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
+
 
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void editCompositeIndex(IndexCompositePO icp, List<String> dependentIndices, List<IndexDeriveCompositeRelationPO> compositeRelations) throws SQLException {
+    public void editCompositeIndex(IndexCompositePO icp, List<String> dependentIndices, List<IndexDeriveCompositeRelationPO> compositeRelations) {
         //1.编辑复合指标
         indexDAO.editCompositeIndex(icp);
         //2.编辑复合指标与派生指标关系
-        if(CollectionUtils.isEmpty(compositeRelations)){
-            if(!CollectionUtils.isEmpty(dependentIndices)){
-                //增加派生指标与修饰词关系
-                List<IndexDeriveCompositeRelationPO> idcrPOS = getDeriveCompositeRelationPOS(icp.getIndexId(), dependentIndices);
-                indexDAO.addDeriveCompositeRelations(idcrPOS);
-            }
-        }else{
-            if(!CollectionUtils.isEmpty(dependentIndices)){
-                List<String> exits=compositeRelations.stream().map(x->x.getCompositeIndexId()).distinct().collect(Collectors.toList());
-                //增加的派生指标与修饰词关系
-                List<String> adds = dependentIndices.stream().filter(x -> !exits.contains(x)).distinct().collect(Collectors.toList());
-                if(!CollectionUtils.isEmpty(adds)){
-                    List<IndexDeriveCompositeRelationPO> addPOS = getDeriveCompositeRelationPOS(icp.getIndexId(), adds);
-                    indexDAO.addDeriveCompositeRelations(addPOS);
-                }
-                //删除的派生指标与修饰词关系
-                List<String> dels = exits.stream().filter(x -> !dependentIndices.contains(x)).distinct().collect(Collectors.toList());
-                if(!CollectionUtils.isEmpty(dels)){
-                    indexDAO.deleteDeriveCompositeRelationsByDeriveCompositeId(icp.getIndexId(),dels);
+        try{
+            if(CollectionUtils.isEmpty(compositeRelations)){
+                if(!CollectionUtils.isEmpty(dependentIndices)){
+                    //增加派生指标与修饰词关系
+                    List<IndexDeriveCompositeRelationPO> idcrPOS = getDeriveCompositeRelationPOS(icp.getIndexId(), dependentIndices);
+                    indexDAO.addDeriveCompositeRelations(idcrPOS);
                 }
             }else{
-                //删除已存在的派生指标与修饰词关系
-                indexDAO.deleteDeriveCompositeRelationsByDeriveId(icp.getIndexId());
+                if(!CollectionUtils.isEmpty(dependentIndices)){
+                    List<String> exits=compositeRelations.stream().map(x->x.getCompositeIndexId()).distinct().collect(Collectors.toList());
+                    //增加的派生指标与修饰词关系
+                    List<String> adds = dependentIndices.stream().filter(x -> !exits.contains(x)).distinct().collect(Collectors.toList());
+                    if(!CollectionUtils.isEmpty(adds)){
+                        List<IndexDeriveCompositeRelationPO> addPOS = getDeriveCompositeRelationPOS(icp.getIndexId(), adds);
+                        indexDAO.addDeriveCompositeRelations(addPOS);
+                    }
+                    //删除的派生指标与修饰词关系
+                    List<String> dels = exits.stream().filter(x -> !dependentIndices.contains(x)).distinct().collect(Collectors.toList());
+                    if(!CollectionUtils.isEmpty(dels)){
+                        indexDAO.deleteDeriveCompositeRelationsByDeriveCompositeId(icp.getIndexId(),dels);
+                    }
+                }else{
+                    //删除已存在的派生指标与修饰词关系
+                    indexDAO.deleteDeriveCompositeRelationsByDeriveId(icp.getIndexId());
+                }
             }
+        } catch (SQLException e) {
+           LOG.error("编辑复合指标失败",e);
+           throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 
@@ -477,33 +504,45 @@ public class IndexServiceImpl implements IndexService{
         IndexInfoDTO indexInfoDTO=null;
         if(indexType==IndexType.INDEXATOMIC.getValue()){
             IndexInfoPO indexInfoPO=indexDAO.getAtomicIndexInfoPO(indexId,version,categoryType,tenantId);
-            indexInfoDTO=BeanMapper.map(indexInfoPO,IndexInfoDTO.class);
-            indexInfoDTO.setIndexType(IndexType.INDEXATOMIC.getValue());
+            if(!Objects.isNull(indexInfoPO)){
+                indexInfoDTO=BeanMapper.map(indexInfoPO,IndexInfoDTO.class);
+                indexInfoDTO.setIndexType(IndexType.INDEXATOMIC.getValue());
+            }
         }else if(indexType==IndexType.INDEXDERIVE.getValue()){
             IndexInfoPO indexInfoPO=indexDAO.getDeriveIndexInfoPO(indexId,version,categoryType,tenantId);
-            indexInfoDTO=BeanMapper.map(indexInfoPO,IndexInfoDTO.class);
-            indexInfoDTO.setIndexType(IndexType.INDEXDERIVE.getValue());
-            //添加依赖的原子指标
-            List<IndexAtomicPO> indexAtomicPOs=indexDAO.getDependentAtomicIndex(indexInfoPO.getIndexAtomicId(),tenantId);
-            if(!CollectionUtils.isEmpty(indexAtomicPOs)){
-                List<DependentIndex> dependentIndices=indexAtomicPOs.stream().map(x->BeanMapper.map(x,DependentIndex.class)).collect(Collectors.toList());
-                indexInfoDTO.setDependentIndices(dependentIndices);
-            }
-            //添加修饰词
-            List<Qualifier> qualifiers=indexDAO.getModifiers(indexInfoPO.getIndexId(),tenantId);
-            if(!CollectionUtils.isEmpty(qualifiers)){
-                List<Modifier> modifiers=qualifiers.stream().map(x->BeanMapper.map(x,Modifier.class)).collect(Collectors.toList());
-                indexInfoDTO.setModifiers(modifiers);
+            if(!Objects.isNull(indexInfoPO)){
+                indexInfoDTO=BeanMapper.map(indexInfoPO,IndexInfoDTO.class);
+                indexInfoDTO.setIndexType(IndexType.INDEXDERIVE.getValue());
+                //添加依赖的原子指标
+                List<IndexAtomicPO> indexAtomicPOs=indexDAO.getDependentAtomicIndex(indexInfoPO.getIndexAtomicId(),tenantId);
+                if(!CollectionUtils.isEmpty(indexAtomicPOs)){
+                    List<DependentIndex> dependentIndices=indexAtomicPOs.stream().map(x->BeanMapper.map(x,DependentIndex.class)).collect(Collectors.toList());
+                    indexInfoDTO.setDependentIndices(dependentIndices);
+                }else{
+                    indexInfoDTO.setDependentIndices(new ArrayList<>());
+                }
+                //添加修饰词
+                List<Qualifier> qualifiers=indexDAO.getModifiers(indexInfoPO.getIndexId(),tenantId);
+                if(!CollectionUtils.isEmpty(qualifiers)){
+                    List<Modifier> modifiers=qualifiers.stream().map(x->BeanMapper.map(x,Modifier.class)).collect(Collectors.toList());
+                    indexInfoDTO.setModifiers(modifiers);
+                }else{
+                    indexInfoDTO.setModifiers(new ArrayList<>());
+                }
             }
         }else if(indexType==IndexType.INDEXCOMPOSITE.getValue()){
             IndexInfoPO indexInfoPO=indexDAO.getCompositeIndexInfoPO(indexId,version,categoryType,tenantId);
-            indexInfoDTO=BeanMapper.map(indexInfoPO,IndexInfoDTO.class);
-            indexInfoDTO.setIndexType(IndexType.INDEXCOMPOSITE.getValue());
-            //添加依赖的派生指标
-            List<IndexDerivePO> indexDerivePOS=indexDAO.getDependentDeriveIndex(indexInfoPO.getIndexId(),tenantId);
-            if(!CollectionUtils.isEmpty(indexDerivePOS)){
-                List<DependentIndex> dependentIndices=indexDerivePOS.stream().map(x->BeanMapper.map(x,DependentIndex.class)).collect(Collectors.toList());
-                indexInfoDTO.setDependentIndices(dependentIndices);
+            if(!Objects.isNull(indexInfoPO)){
+                indexInfoDTO=BeanMapper.map(indexInfoPO,IndexInfoDTO.class);
+                indexInfoDTO.setIndexType(IndexType.INDEXCOMPOSITE.getValue());
+                //添加依赖的派生指标
+                List<IndexDerivePO> indexDerivePOS=indexDAO.getDependentDeriveIndex(indexInfoPO.getIndexId(),tenantId);
+                if(!CollectionUtils.isEmpty(indexDerivePOS)){
+                    List<DependentIndex> dependentIndices=indexDerivePOS.stream().map(x->BeanMapper.map(x,DependentIndex.class)).collect(Collectors.toList());
+                    indexInfoDTO.setDependentIndices(dependentIndices);
+                }else{
+                    indexInfoDTO.setDependentIndices(new ArrayList<>());
+                }
             }
         }else {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标类型错误");
@@ -518,6 +557,8 @@ public class IndexServiceImpl implements IndexService{
             if(!CollectionUtils.isEmpty(users)){
                 List<ApprovalGroupMember> approvalGroupMembers=users.stream().map(x->BeanMapper.map(x, ApprovalGroupMember.class)).collect(Collectors.toList());
                 indexInfoDTO.setApprovalGroupMembers(approvalGroupMembers);
+            }else {
+                indexInfoDTO.setApprovalGroupMembers(new ArrayList<>());
             }
         }
         return indexInfoDTO;

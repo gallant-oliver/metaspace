@@ -58,7 +58,7 @@ public interface IndexService extends Approvable {
      * @param tenantId
      * @return
      */
-    IndexResposeDTO editIndex(IndexDTO indexDTO, String tenantId) throws SQLException;
+    IndexResposeDTO editIndex(IndexDTO indexDTO, String tenantId);
 
     /**
      * 删除指标
