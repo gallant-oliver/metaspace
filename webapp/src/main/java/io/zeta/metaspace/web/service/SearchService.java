@@ -609,17 +609,19 @@ public class SearchService {
         databaseHeaders.forEach(e -> {
             String sourceId = e.getSourceId();
             List<String> table = collect.get(sourceId).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
-            if (relationTableGuids.containsAll(table)) {
-                //全被勾选
-                e.setCheck(1);
-            } else {
-                table.retainAll(relationTableGuids);
-                if (table.size() > 0) {
-                    //勾选了部分
-                    e.setCheck(2);
+            if (collect.size() > 0 && collect != null) {
+                if (relationTableGuids.containsAll(table)) {
+                    //全被勾选
+                    e.setCheck(1);
                 } else {
-                    //全部未勾选
-                    e.setCheck(0);
+                    table.retainAll(relationTableGuids);
+                    if (table.size() > 0) {
+                        //勾选了部分
+                        e.setCheck(2);
+                    } else {
+                        //全部未勾选
+                        e.setCheck(0);
+                    }
                 }
             }
         });

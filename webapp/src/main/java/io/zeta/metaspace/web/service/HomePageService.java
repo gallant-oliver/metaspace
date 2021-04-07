@@ -140,8 +140,8 @@ public class HomePageService {
         }
 
     }
-
-    //@Cacheable(value = "TimeAndDbCache", key = "'TimeAndDbCache'+#tenantId")
+    
+    @Cacheable(value = "TimeAndDbCache", key = "'TimeAndDbCache'+#tenantId")
     public TimeDBTB getTimeDbTb(String tenantId) throws AtlasBaseException {
         try {
             String date = DateUtils.getNow2();
@@ -189,7 +189,6 @@ public class HomePageService {
                 });
             }
 
-
             CompletableFuture<Long> subSystemFuture = CompletableFuture.supplyAsync(() -> {
                 try {
                     return homePageDAO.getSubSystemTotal(sourceLayerCategoryGuid,tenantId);
@@ -211,10 +210,14 @@ public class HomePageService {
             //获取数据库总数
             List<String> dbs = tenantService.getDatabase(tenantId);
             List<String> rdbs = relationDAO.queryRDBNameByCategoryGuidV2(tenantId);
+            List<String> allDBNames = new ArrayList<>();
+            if (dbs != null && dbs.size() > 0) {
+                allDBNames.addAll(dbs);
+            }
             if (rdbs != null && rdbs.size() > 0) {
-                dbs.addAll(rdbs);
-                Set<String> set = new HashSet(dbs);
-                dbs = new ArrayList<>(set);
+                allDBNames.addAll(rdbs);
+                Set<String> set = new HashSet(allDBNames);
+                allDBNames = new ArrayList<>(set);
             }
             int tbTotal = 0;
             List<CategoryPrivilege> userCategories = dataManageService.getAllByUserGroup(0, tenantId);
@@ -224,7 +227,7 @@ public class HomePageService {
                 }
             }
             future.join();
-            int dbTotal = dbs.size();
+            int dbTotal = allDBNames.size();
             Long subSystemTotal = subSystemFuture.get();
             List<CategoryDBInfo> categoryRelatedDBCount = categoryRelatedDBCountFuture.get();
             long entityDBTotal=0;
