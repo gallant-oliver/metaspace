@@ -373,6 +373,9 @@ public class DataManageService {
                     CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, false, true, true, true, true, true, true, false);
                     oneLevelCategory.setPrivilege(privilege);
                 }
+                if(!Objects.isNull(oneLevelCategory)){
+                    oneLevelCategory.setCode(entity.getCode());
+                }
                 return oneLevelCategory;
             }
             if (Objects.isNull(categoryDao.queryByGuidV2(currentCategoryGuid, tenantId))) {
