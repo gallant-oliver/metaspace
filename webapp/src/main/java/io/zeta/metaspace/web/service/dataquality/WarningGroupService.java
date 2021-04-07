@@ -14,6 +14,7 @@ package io.zeta.metaspace.web.service.dataquality;
 
 import com.google.gson.reflect.TypeToken;
 import io.zeta.metaspace.model.dataquality2.*;
+import io.zeta.metaspace.model.datasource.DataSource;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
@@ -361,11 +362,28 @@ public class WarningGroupService {
             if(0 == scope || 1 == scope) {
                 //表列级别检测
                 CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(warn.getObjectId(), CustomizeParam.class);
+                if(!"hive".equalsIgnoreCase(paramInfo.getDataSourceId())){
+                    DataSource dataSource = warningGroupDAO.getDataSource(paramInfo.getDataSourceId());
+                    paramInfo.setDataSourceName(dataSource.getSourceName());
+                    paramInfo.setSchema(paramInfo.getSchema() + "." + dataSource.getDatabase());
+                }else{
+                    paramInfo.setDataSourceName("hive");
+                }
                 warn.setObject(paramInfo);
             } else if(2 ==scope && 31 == warn.getType()){
                 // 一致性规则
                 List<ConsistencyParam> params = GsonUtils.getInstance().fromJson(warn.getObjectId(), new TypeToken<List<ConsistencyParam>>() {
                 }.getType());
+                for (ConsistencyParam param: params) {
+                    if(!"hive".equalsIgnoreCase(param.getDataSourceId())){
+                        DataSource dataSource = warningGroupDAO.getDataSource(param.getDataSourceId());
+                        param.setDataSourceName(dataSource.getSourceName());
+                        param.setSchema(param.getSchema() + "." + dataSource.getDatabase());
+                    }else{
+                        param.setDataSourceName("hive");
+                    }
+                }
+
                 warn.setObject(params);
             }else{
                 warn.setObject(warn.getSql());

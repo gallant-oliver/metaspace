@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.dao.dataquality;
 
 import io.zeta.metaspace.model.dataquality2.*;
+import io.zeta.metaspace.model.datasource.DataSource;
 import io.zeta.metaspace.model.metadata.Parameters;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -239,10 +240,11 @@ public interface WarningGroupDAO {
     public List<WarningInfo.SubTaskRuleWarning> getSubTaskRuleWarning(@Param("taskExecutionId")String taskExecutionId, @Param("subTaskId")String subTaskId,@Param("tenantId")String tenantId);
 
 
-    @Select("select task_execute_id as taskExecuteId,create_time as executeTime,error_msg as errorMessage from data_quality_task_rule_execute where task_execute_id=#{executionId} and error_status!=0  ORDER BY create_time desc limit 1;")
+    @Select("select task_execute_id as taskExecuteId,create_time as executeTime,error_msg as errorMessage from data_quality_task_rule_execute where task_execute_id=#{executionId} and error_status!=0  ORDER BY create_time desc limit 1")
     public ErrorInfo getErrorInfo(@Param("executionId")String executionId);
 
-
+    @Select("select source_id,source_name, database from data_source where source_id = #{sourceId}")
+    public DataSource getDataSource(@Param("sourceId")String sourceId);
 
 
     @Select({" <script>",
