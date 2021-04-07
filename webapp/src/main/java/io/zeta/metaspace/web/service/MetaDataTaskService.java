@@ -9,6 +9,7 @@ import io.zeta.metaspace.model.sync.SyncTaskInstance;
 import io.zeta.metaspace.web.dao.SyncTaskDefinitionDAO;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
+import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.task.quartz.QuartzManager;
 import io.zeta.metaspace.web.task.sync.SyncTaskJob;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -39,6 +40,8 @@ public class MetaDataTaskService {
     private QuartzManager quartzManager;
     @Autowired
     TableDAO tableDAO;
+    @Autowired
+    UserDAO userDAO;
 
     public void checkDuplicateName(String id, String name, String tenantId) {
         if (syncTaskDefinitionDAO.countByName(id, name, tenantId) != 0) {
@@ -78,7 +81,8 @@ public class MetaDataTaskService {
             checkDuplicateName(syncTaskDefinition.getId(), syncTaskDefinition.getName(), tenantId);
             checkSyncTaskDefinition(syncTaskDefinition);
 
-            syncTaskDefinition.setCreator(AdminUtils.getUserName());
+            String userId=AdminUtils.getUserData().getUserId();
+            syncTaskDefinition.setCreator(userDAO.getUserInfo(userId).getUsername());
             syncTaskDefinition.setTenantId(tenantId);
             syncTaskDefinitionDAO.insert(syncTaskDefinition);
 
