@@ -391,7 +391,7 @@ public class IndexREST {
             return ReturnUtil.success("添加成功",iard);
         } catch (Exception e) {
             PERF_LOG.error("指标添加失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标添加失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -419,9 +419,9 @@ public class IndexREST {
             }
             IndexResposeDTO iard=indexService.editIndex(indexDTO,tenantId);
             return ReturnUtil.success("编辑成功",iard);
-        } catch (Exception e) {
+        } catch (AtlasBaseException e) {
             PERF_LOG.error("编辑指标失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编辑指标失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         } finally {
             AtlasPerfTracer.log(perf);
         }
