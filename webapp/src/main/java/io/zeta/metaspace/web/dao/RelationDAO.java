@@ -67,6 +67,25 @@ public interface RelationDAO {
     public List<RelationEntityV2> queryRelationByCategoryGuidV2(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
     @Select({"<script>",
+            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description",
+            " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid ",
+            " and status = 'ACTIVE' " ,
+            " and ( tableinfo.dbname in " ,
+            " <foreach item='item' index='index' collection='databases'" ,
+            " open='(' separator=',' close=')'>" ,
+            " #{item}" ,
+            " </foreach> )" ,
+            " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') ",
+            " order by tableInfo.status,table_relation.generateTime desc, tableinfo.tablename",
+            " <if test='limit!= -1'>",
+            " limit #{limit}",
+            " </if>",
+            " offset #{offset}",
+            " </script>"})
+    public List<RelationEntityV2> queryHiveRelationByCategoryGuidV2(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
+
+    //获取非关系型数据库
+    @Select({"<script>",
             " select tableInfo.dbName ",
             " from table_relation,tableInfo where ",
             " tableInfo.tableGuid=table_relation.tableGuid ",
