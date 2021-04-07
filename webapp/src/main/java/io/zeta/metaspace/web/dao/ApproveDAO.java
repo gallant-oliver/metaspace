@@ -99,7 +99,7 @@ public interface ApproveDAO {
      * @param userId
      */
     @Select("select a.id from approval_group a inner join approval_group_relation b on a.id = b.group_id where a.tenantid = #{tenantId} and b.user_id = #{userId}")
-    List<String> selectApproveGroupoByUserId(@Param("userId") String userId,@Param("tenantId") String tenantId);
+    List<String> selectApproveGroupByUserId(@Param("userId") String userId,@Param("tenantId") String tenantId);
 
 
 
@@ -117,6 +117,19 @@ public interface ApproveDAO {
     //更新业务信息
     @Update("update approval_item set status=#{item.approveStatus},approver=#{item.approver},approve_time=now(),reason=#{item.reason} where id=#{item.id} and tenant_id=#{item.tenantId}")
     int updateStatus(@Param("item") ApproveItem item);
+
+    //更新业务信息
+    @Update("delete from approval_item where id=#{item.id} and tenant_id=#{item.tenantId}")
+    int deleteItemById(@Param("item") ApproveItem item);
+
+    @Delete("<script>" +
+            "delete from approval_item " +
+            "where tenant_id=#{item.tenantId} and id in " +
+            "<foreach collection='item' item='id' index='index' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            "</foreach>"+
+            "</script>")
+    int deleteItem(@Param("item") List<String> item);
 
     /**
      * 获取审批成员
