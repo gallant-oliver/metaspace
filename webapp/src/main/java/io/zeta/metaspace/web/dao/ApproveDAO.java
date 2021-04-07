@@ -42,10 +42,12 @@ public interface ApproveDAO {
             "a.status as approveStatus,a.approve_group as approveGroup,users.username as approver,a.approve_time as approveTime,a.submitter as submitter,a.reason as reason,a.module_id as moduleId,a.version as version,a.tenant_id as tenantId"+
             " from approval_item a left join users on a.approver = users.userid " +
             " where a.tenant_id=#{tenantId}" +
+            "<if test='groups!=null and groups.size()!=0'>" +
             " and a.approve_group in " +
             "<foreach collection='groups' item='groupId' index='index' separator=',' open='(' close=')'>" +
             " #{groupId}" +
             "</foreach>"+
+            "</if>" +
             "<if test='paras.approveStatus!=null and paras.approveStatus.size()!=0'>" +
             " and a.status in " +
             " <foreach collection='paras.status' item='stat' index='index' separator=',' open='(' close=')'>" +
@@ -97,7 +99,7 @@ public interface ApproveDAO {
      * @param userId
      */
     @Select("select a.id from approval_group a inner join approval_group_relation b on a.id = b.group_id where a.tenantid = #{tenantId} and b.user_id = #{userId}")
-    List<String> selectApproveGroupoByUserId(@Param("userId") String userId,@Param("tenantId") String tenantId);
+    List<String> selectApproveGroupByUserId(@Param("userId") String userId,@Param("tenantId") String tenantId);
 
 
 
@@ -117,7 +119,7 @@ public interface ApproveDAO {
     int updateStatus(@Param("item") ApproveItem item);
 
     //更新业务信息
-    @Update("delete approval_item where id=#{item.id} and tenant_id=#{item.tenantId}")
+    @Update("delete from approval_item where id=#{item.id} and tenant_id=#{item.tenantId}")
     int deleteItemById(@Param("item") ApproveItem item);
 
     @Delete("<script>" +

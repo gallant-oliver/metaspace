@@ -40,23 +40,27 @@ public class ApproveServiceImp implements ApproveService{
     public PageResult<ApproveItem> search(ApproveParas paras, String tenantId) {
         String userId = AdminUtils.getUserData().getUserId();
         List<String> groups = null;
+        PageResult<ApproveItem> result = new PageResult<>();
         if("1".equals(paras.getReferer())){  //我的申请
             paras.setUserId(userId);
         }else if("2".equals(paras.getReferer())){   //待审批
-            groups = approveDao.selectApproveGroupoByUserId(userId, tenantId);
+            groups = approveDao.selectApproveGroupByUserId(userId, tenantId);
             List<String> status = new LinkedList<>();
             status.add(ApproveStatus.WAITING.getCode());
             paras.setApproveStatus(status);
         }else{  //已审批
-            groups = approveDao.selectApproveGroupoByUserId(userId, tenantId);
+            groups = approveDao.selectApproveGroupByUserId(userId, tenantId);
             List<String> status = new LinkedList<>();
-            status.add(ApproveStatus.FINISH.getCode());
-            status.add(ApproveStatus.REJECTED.getCode());
+            status.add(ApproveStatus.FINISH.getCode()); //审批通过
+            status.add(ApproveStatus.REJECTED.getCode()); //驳回
             paras.setApproveStatus(status);
         }
+        if(groups!=null && groups.size() ==0 ){
+            return result;
+        }   //用户不属于任何审批组，无匹配审批项目
+
 
         List<ApproveItem> approveItems = approveDao.getApproveItems(tenantId, paras, groups);
-        PageResult<ApproveItem> result = new PageResult<>();
         if (approveItems == null || approveItems.size() == 0) {
             return result;
         }
@@ -82,7 +86,7 @@ public class ApproveServiceImp implements ApproveService{
                 approveDao.updateStatus(item);
                 addToMapByClass(moduleItemMap,item);
             }
-        }else if(ApproveOperate.REJECTED.equals(ApproveOperate.getOprateByCode(paras.getResult()))){ //驳回
+        }else if(ApproveOperate.REJECTED.equals(ApproveOperate.getOprateByCode(paras.getResult())) || ApproveOperate.CANCEL.equals(ApproveOperate.getOprateByCode(paras.getResult()))){ //驳回或者取回
             result = ApproveOperate.REJECTED;
             List<ApproveItem> approveList = paras.getApproveList(); //批量审批列表
             for(ApproveItem item : approveList) {
@@ -91,7 +95,11 @@ public class ApproveServiceImp implements ApproveService{
                 item.setReason(paras.getDesc());  //驳回需要原因
                 item.setApproveStatus(ApproveStatus.REJECTED.code); //更新为驳回状态
                 item.setApprover(AdminUtils.getUserData().getUserId()); //写入审批人
-                approveDao.updateStatus(item);  //todo 批量优化
+                if(ApproveOperate.REJECTED.equals(ApproveOperate.getOprateByCode(paras.getResult()))){
+                    approveDao.updateStatus(item);  //todo 批量优化
+                }else{
+                    approveDao.deleteItemById(item); //取回与驳回对业务模块操作一致
+                }
                 addToMapByClass(moduleItemMap,item);
             }
         }
