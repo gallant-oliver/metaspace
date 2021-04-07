@@ -37,6 +37,7 @@ public class DataQualityTaskExecute {
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp closeTime;
     private Integer costTime;
+    private Integer generalWarningCount;
     private Integer orangeWarningCount;
     private Integer redWarningCount;
     private Integer ruleErrorCount;
@@ -123,6 +124,14 @@ public class DataQualityTaskExecute {
 
     public void setOrangeWarningCount(Integer orangeWarningCount) {
         this.orangeWarningCount = orangeWarningCount;
+    }
+
+    public Integer getGeneralWarningCount() {
+        return generalWarningCount;
+    }
+
+    public void setGeneralWarningCount(Integer generalWarningCount) {
+        this.generalWarningCount = generalWarningCount;
     }
 
     public Integer getRedWarningCount() {

@@ -27,6 +27,7 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeansUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,10 +35,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -199,6 +197,8 @@ public class WarningGroupService {
         }
     }
 
+
+
     public void closeTaskExecutionWarning(Integer warningType, List<String> taskIdList) throws AtlasBaseException {
         try {
             warningGroupDAO.closeTaskExecutionWarning(warningType, taskIdList);
@@ -206,6 +206,68 @@ public class WarningGroupService {
             LOG.error("关闭失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭失败");
         }
+    }
+    public void closeWarns(List<String> warnNos) throws AtlasBaseException {
+        try {
+            if(CollectionUtils.isEmpty(warnNos)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭告警失败，告警编号为空");
+            }
+            Map<String, List<Integer>> idAndGrades = new HashMap<>();
+            warnNos.stream().forEach(warnNo -> {
+                String[] idAndGrade = warnNo.split("_");
+                if(idAndGrade.length != 2){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭失败,告警编号【" + warnNo + "】错误，格式应为id_warnGrade");
+                }
+                if(!idAndGrades.containsKey(idAndGrade[0])){
+                    List<Integer> grades = new ArrayList<>();
+                    idAndGrades.put(idAndGrade[0],grades);
+                }
+                idAndGrades.get(idAndGrade[0]).add(Integer.valueOf(idAndGrade[1]));
+            });
+
+            Set<Map.Entry<String, List<Integer>>> entries = idAndGrades.entrySet();
+            for (Map.Entry<String, List<Integer>> entry: entries){
+                String id = entry.getKey();
+                RuleExecute currentRuleExecute = warningGroupDAO.getRuleExecute(id);
+                List<Integer> grades = entry.getValue();
+                grades.stream().forEach(grade ->{
+                    switch (grade){
+                        case 0:currentRuleExecute.setGeneralWarningCheckStatus(2);
+                            break;
+                        case 1:currentRuleExecute.setOrangeWarningCheckStatus(2);
+                            break;
+                        default:currentRuleExecute.setRedWarningCheckStatus(2);
+                    }
+                });
+                warningGroupDAO.closeRuleExecuteWarn(currentRuleExecute);
+                if(!haveWarn(currentRuleExecute)){
+                    warningGroupDAO.closeExecutionWarning(currentRuleExecute.getTaskExecuteId());
+                }
+            }
+        } catch (Exception e) {
+            LOG.error("关闭失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭失败");
+        }
+    }
+
+    public boolean haveWarn(RuleExecute currentRuleExecute){
+        List<RuleExecute> ruleExecutes = warningGroupDAO.getRuleExecutes(currentRuleExecute.getTaskExecuteId());
+        for (RuleExecute ruleExecute: ruleExecutes){
+            if(ruleExecute.getGeneralWarningCheckStatus() != null && ruleExecute.getGeneralWarningCheckStatus() == 1){
+                //有普通告警
+                return true;
+            }
+            if(ruleExecute.getOrangeWarningCheckStatus() != null && ruleExecute.getOrangeWarningCheckStatus()== 1){
+                //有黄色告警
+                return true;
+            }
+            if(ruleExecute.getRedWarningCheckStatus() != null && ruleExecute.getRedWarningCheckStatus()== 1){
+                //有红色告警
+                return true;
+            }
+        }
+        //没有任何告警了
+        return false;
     }
 
     public WarningInfo getWarningInfo(String executionId,String tenantId) throws AtlasBaseException {
@@ -281,6 +343,40 @@ public class WarningGroupService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警信息失败");
         }
     }
+
+    public PageResult<WarnInformation> getWarns(Parameters parameters,String tenantId){
+        PageResult<WarnInformation> pageResult = new PageResult<>();
+        pageResult.setOffset(parameters.getOffset());
+        List<WarnInformation> warns = warningGroupDAO.getWarns(parameters, tenantId);
+        if(CollectionUtils.isEmpty(warns)){
+            pageResult.setTotalSize(0);
+            pageResult.setCurrentSize(0);
+            return pageResult;
+        }
+        for (WarnInformation warn : warns) {
+            warn.setWarnNo(warn.getWarnNo() + "_" + warn.getWarnGrade());
+            List<TaskWarningHeader.WarningGroupHeader> groupHeaderList = warningGroupDAO.getWarningGroupList(warn.getTaskId(), 0);
+            warn.setWarnGroupNames(groupHeaderList);
+            int scope = warn.getScope();
+            if(0 == scope || 1 == scope) {
+                //表列级别检测
+                CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(warn.getObjectId(), CustomizeParam.class);
+                warn.setObject(paramInfo);
+            } else if(2 ==scope && 31 == warn.getType()){
+                // 一致性规则
+                List<ConsistencyParam> params = GsonUtils.getInstance().fromJson(warn.getObjectId(), new TypeToken<List<ConsistencyParam>>() {
+                }.getType());
+                warn.setObject(params);
+            }else{
+                warn.setObject(warn.getSql());
+            }
+        }
+        pageResult.setTotalSize(warns.get(0).getTotal());
+        pageResult.setLists(warns);
+        pageResult.setCurrentSize(warns.size());
+        return pageResult;
+    }
+
 
     public ErrorInfo getErrorInfo(String executionRuleId) throws AtlasBaseException {
         try {
