@@ -3,7 +3,7 @@ package io.zeta.metaspace.model.approve;
 
 public enum ApproveOperate {
 
-    APPROVE("1","审批") , REJECTED("2","驳回");
+    APPROVE("1","审批") , REJECTED("2","驳回"), CANCEL("3","驳回");
     public String code;
 
     public String getCode() {
