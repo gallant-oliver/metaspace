@@ -10,6 +10,8 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.ApproveDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -152,6 +154,9 @@ public class ApproveServiceImp implements ApproveService{
         try {
             Approvable obj = (Approvable)applicationContext.getBean(serviceName);
             objectDetail = obj.getObjectDetail(objectId, objectType, version,tenantId);
+            if(objectDetail == null){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取指标详情失败,对应审批对象已删除");
+            }
         } catch (Exception e) {
             LOG.error("查询审批对象详情失败", e);
             throw e;
