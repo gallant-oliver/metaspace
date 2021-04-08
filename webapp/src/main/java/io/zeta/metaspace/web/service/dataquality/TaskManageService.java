@@ -319,6 +319,8 @@ public class TaskManageService {
             //是否开启
             dataQualityTask.setEnable(false);
             //orangeWarningCount
+            dataQualityTask.setGeneralWarningTotalCount(0);
+            //orangeWarningCount
             dataQualityTask.setOrangeWarningTotalCount(0);
             //redWarningCount
             dataQualityTask.setRedWarningTotalCount(0);

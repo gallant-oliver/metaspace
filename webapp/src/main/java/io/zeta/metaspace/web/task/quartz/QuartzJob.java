@@ -130,6 +130,7 @@ public class QuartzJob implements Job {
             taskExecute.setRedWarningCount(0);
             taskExecute.setRuleErrorCount(0);
             taskExecute.setWarningStatus(0);
+            taskExecute.setGeneralWarningCount(0);
             taskExecute.setErrorStatus(0);
             taskExecute.setNumber(String.valueOf(System.currentTimeMillis()));
             Integer counter = taskManageDAO.getMaxCounter(taskId);
@@ -1137,6 +1138,13 @@ public class QuartzJob implements Job {
                     Objects.isNull(redWarningcheckStatus) ? null : redWarningcheckStatus.getCode(), WarningMessageStatus.WAITING.getCode(), currentTime, currentTime);
 
             taskManageDAO.updateRuleExecutionWarningInfo(taskRuleExecute);
+
+            //普通告警数量
+            if (Objects.nonNull(checkStatus) && checkStatus == RuleExecuteStatus.WARNING) {
+                taskManageDAO.updateTaskExecuteGeneralWarningNum(task.getTaskExecuteId());
+                taskManageDAO.updateTaskGeneralWarningCount(task.getTaskId());
+                taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
+            }
             //橙色告警数量
             if (Objects.nonNull(orangeWarningcheckStatus) && orangeWarningcheckStatus == RuleExecuteStatus.WARNING) {
                 taskManageDAO.updateTaskExecuteOrangeWarningNum(task.getTaskExecuteId());
