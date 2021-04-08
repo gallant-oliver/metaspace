@@ -213,8 +213,8 @@ public interface TaskManageDAO {
      * @param task
      * @return
      */
-    @Insert({" insert into data_quality_task(id,name,level,description,cron_expression,enable,start_time,end_time,create_time,update_time,creator,updater,delete,orange_warning_total_count,red_warning_total_count,error_total_count,execution_count,tenantId,number) ",
-             " values(#{task.id},#{task.name},#{task.level},#{task.description},#{task.cronExpression},#{task.enable},#{task.startTime},#{task.endTime},#{task.createTime},#{task.updateTime},#{task.creator},#{task.updater},#{task.delete},#{task.orangeWarningTotalCount},#{task.redWarningTotalCount},#{task.errorTotalCount},#{task.executionCount},#{tenantId},(select (case when max(number) is null then 0 else max(number) end)+1 from data_quality_task where tenantid=#{tenantId}))"})
+    @Insert({" insert into data_quality_task(id,name,level,description,cron_expression,enable,start_time,end_time,create_time,update_time,creator,updater,delete,general_warning_total_count,orange_warning_total_count,red_warning_total_count,error_total_count,execution_count,tenantId,number) ",
+             " values(#{task.id},#{task.name},#{task.level},#{task.description},#{task.cronExpression},#{task.enable},#{task.startTime},#{task.endTime},#{task.createTime},#{task.updateTime},#{task.creator},#{task.updater},#{task.delete},#{task.generalWarningTotalCount},#{task.orangeWarningTotalCount},#{task.redWarningTotalCount},#{task.errorTotalCount},#{task.executionCount},#{tenantId},(select (case when max(number) is null then 0 else max(number) end)+1 from data_quality_task where tenantid=#{tenantId}))"})
     public int addDataQualityTask(@Param("task")DataQualityTask task,@Param("tenantId")String tenantId);
 
 
@@ -413,7 +413,10 @@ public interface TaskManageDAO {
      * 添加任务执行信息
      * @param taskExecute
      */
-    @Insert("insert into data_quality_task_execute(id,task_id,percent,execute_status,executor,execute_time,orange_warning_count,red_warning_count,rule_error_count,number,counter,warning_status,error_status)values(#{task.id},#{task.taskId},#{task.percent},#{task.executeStatus},#{task.executor},#{task.executeTime},#{task.orangeWarningCount},#{task.redWarningCount},#{task.ruleErrorCount},#{task.number},#{task.counter},#{task.warningStatus},#{task.errorStatus})")
+    @Insert("insert into data_quality_task_execute(id,task_id,percent,execute_status,executor,execute_time,general_warning_count,orange_warning_count,red_warning_count，" +
+            "rule_error_count,number,counter,warning_status,error_status)" +
+            "values(#{task.id},#{task.taskId},#{task.percent},#{task.executeStatus},#{task.executor},#{task.executeTime},#{task.generalWarningCount},#{task.orangeWarningCount},#{task.redWarningCount}," +
+            "#{task.ruleErrorCount},#{task.number},#{task.counter},#{task.warningStatus},#{task.errorStatus})")
     public void initTaskExecuteInfo(@Param("task")DataQualityTaskExecute taskExecute);
 
     /**
@@ -518,6 +521,15 @@ public interface TaskManageDAO {
      */
     @Update("update data_quality_task_execute set red_warning_count=red_warning_count+1 where id=#{id}")
     public int updateTaskExecuteRedWarningNum(@Param("id")String id);
+
+    /**
+     * 更新任务红色告警数量
+     * @param id
+     * @return
+     */
+    @Update("update data_quality_task_execute set general_warning_count=general_warning_count+1 where id=#{id}")
+    public int updateTaskExecuteGeneralWarningNum(@Param("id")String id);
+
 
     /**
      * 更新执行失败规则数量
@@ -699,6 +711,14 @@ public interface TaskManageDAO {
      */
     @Update("update data_quality_task set red_warning_total_count=red_warning_total_count+1 where id=#{taskId}")
     public int updateTaskRedWarningCount(@Param("taskId")String id);
+
+    /**
+     * 更新任务红色告警总量
+     * @param id
+     * @return
+     */
+    @Update("update data_quality_task set general_warning_total_count=general_warning_total_count+1 where id=#{taskId}")
+    public int updateTaskGeneralWarningCount(@Param("taskId")String id);
 
     /**
      * 更新任务异常执行总量

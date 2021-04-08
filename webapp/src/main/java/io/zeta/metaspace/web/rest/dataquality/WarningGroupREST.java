@@ -190,6 +190,19 @@ public class WarningGroupREST {
     }
 
     /**
+     * 获取告警列表
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/warning/list")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult getWarningList(Parameters parameters,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return warningGroupService.getWarns(parameters,tenantId);
+    }
+
+    /**
      * 获取异常列表
      * @param parameters
      * @return
@@ -205,15 +218,15 @@ public class WarningGroupREST {
 
     /**
      * 关闭任务告警
-     * @param executionIdList
+     * @param warnNos
      * @throws AtlasBaseException
      */
     @PUT
     @Path("/warnings")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void closeTaskWarning(List<String> executionIdList) throws AtlasBaseException {
-        warningGroupService.closeTaskExecutionWarning(0, executionIdList);
+    public void closeTaskWarning(List<String> warnNos) throws AtlasBaseException {
+        warningGroupService.closeWarns(warnNos);
     }
 
 
