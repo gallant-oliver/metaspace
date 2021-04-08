@@ -63,9 +63,10 @@ public class RuleTemplateType {
 
     public static List<RuleTemplateType> all() {
         return Lists.newArrayList(new RuleTemplateType("rule_1", "表体积"),
-                                  new RuleTemplateType("rule_2", "空值校验"),
-                                  new RuleTemplateType("rule_3", "唯一值校验"),
-                                  new RuleTemplateType("rule_4", "重复值校验"),
-                                  new RuleTemplateType("rule_5", "数值型校验"));
+                new RuleTemplateType("rule_2", "空值校验"),
+                new RuleTemplateType("rule_3", "唯一值校验"),
+                new RuleTemplateType("rule_4", "重复值校验"),
+                new RuleTemplateType("rule_5", "数值型校验"),
+                new RuleTemplateType("rule_6", "一致性校验"));
     }
 }
