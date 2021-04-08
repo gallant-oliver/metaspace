@@ -3,19 +3,19 @@ package io.zeta.metaspace.model.modifiermanage;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class ReferenceIndex {
-    private String qualifierName;
+    private String name;
     private String indexName;
     //业务负责人
     private String interfaceUser;
     @JsonIgnore
     private Integer total;
 
-    public String getQualifierName() {
-        return qualifierName;
+    public String getName() {
+        return name;
     }
 
-    public void setQualifierName(String qualifierName) {
-        this.qualifierName = qualifierName;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getIndexName() {
@@ -42,8 +42,8 @@ public class ReferenceIndex {
         this.total = total;
     }
 
-    public ReferenceIndex(String qualifierName, String indexName, String interfaceUser, Integer total) {
-        this.qualifierName = qualifierName;
+    public ReferenceIndex(String name, String indexName, String interfaceUser, Integer total) {
+        this.name = name;
         this.indexName = indexName;
         this.interfaceUser = interfaceUser;
         this.total = total;

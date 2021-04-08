@@ -73,7 +73,10 @@ public interface QualifierDAO {
             " select count(*) over() total,qualifier.id,qualifier.mark,qualifier.name,qualifier.desc,qualifier.creator,qualifier.typeId,qualifier.create_time as createTime",
             " from qualifier ",
             " where ",
-            " qualifier.tenantId=#{tenantId} and qualifier.typeId=#{params.typeId} ",
+            " qualifier.tenantId=#{tenantId} ",
+            " <if test=\"params.isGlobal!=true\">",
+            " and qualifier.typeId=#{params.typeId} ",
+            " </if>",
             " <if test=\"params.query != null and params.query!=''\">",
             " and (qualifier.name like '%${params.query}%' ESCAPE '/' or qualifier.mark like '%${params.query}%' ESCAPE '/')",
             " </if>",
@@ -100,21 +103,43 @@ public interface QualifierDAO {
             " </script>"})
     public List<Data> getQualifierList(@Param("params") QualifierParameters params, @Param("tenantId") String tenantId);
 
+    //获取全部修饰词
+    @Select({"<script>",
+            " select count(*) over() total,qualifier.id,qualifier.mark,qualifier.name",
+            " from qualifier ",
+            " where ",
+            " qualifier.tenantId=#{tenantId} ",
+            " <if test=\"params.query != null and params.query!=''\">",
+            " and (qualifier.name like '%${params.query}%' ESCAPE '/' )",
+            " </if>",
+            " order by create_time ",
+            " <if test='params.limit!=null and params.limit!= -1'>",
+            " limit #{params.limit}",
+            " </if>",
+            " <if test='params.offset!=null'>",
+            " offset #{params.offset}",
+            " </if>",
+            " </script>"})
+    public List<Data> getAllQualifierList(@Param("params") QualifierParameters params, @Param("tenantId") String tenantId);
+
+
     //获取修饰词引用列表
     @Select({"<script>",
-            " select count(*) over() total,qualifier.name qualifierName,index_derive_info.index_name indexName,index_derive_info.business_leader interfaceUser",
+            " select count(*) over() total,qualifier.name as name,index_derive_info.index_name  as indexName,users.username as interfaceUser",
             " from qualifier",
             " join index_derive_modifier_relation",
             " on qualifier.id = index_derive_modifier_relation.modifier_id",
             " join index_derive_info",
             " on index_derive_modifier_relation.derive_index_id = index_derive_info.index_id",
+            " join users",
+            " on users.userid = index_derive_info.business_leader",
             " where qualifier.tenantId=#{tenantId}",
             " and qualifier.id=#{id}",
             " <if test='limit!=null and limit!= -1 '>",
-            " limit #{limit}",
+            " limit ${limit}",
             " </if>",
             " <if test='offset != null'>",
-            " offset #{offset}",
+            " offset ${offset}",
             " </if>",
             " </script>"})
     public List<ReferenceIndex> getQualifierRelationListById(@Param("id") String id, @Param("tenantId") String tenantId, @Param("limit") int limit, @Param("offset") int offset);

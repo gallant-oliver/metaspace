@@ -16,6 +16,7 @@ package io.zeta.metaspace.web.dao;
 import io.zeta.metaspace.model.approvegroup.ApproveGroup;
 import io.zeta.metaspace.model.approvegroup.ApproveGroupListAndSearchResult;
 import io.zeta.metaspace.model.approvegroup.ApproveGroupMemberSearch;
+import io.zeta.metaspace.model.approvegroup.ApproveGroupParas;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
@@ -80,6 +81,32 @@ public interface ApproveGroupDAO {
                                                                  @Param("sortBy") String sortBy, @Param("order") String order, @Param("search") String search,
                                                                  @Param("ids") List<String> ids);
 
+    //基于模块获取对应审批组
+    @Select("<script>" +
+            "select count(*) over() totalSize,u.id,u.name,u.description,u.create_time as createTime" +
+            " from approval_group u inner join " +
+            " approval_group_module_relation m"+
+            " on u.id=m.group_id " +
+            " where u.tenantid=#{tenantId} and u.valid=true and m.module_id = #{params.moduleId}" +
+            "<if test=\"params.query!='' and params.query!=null\">"+
+            " and u.name like '%${params.query}%' ESCAPE '/' " +
+            "</if>" +
+            "<if test='params.sortBy!=null'>" +
+            " order by ${params.sortBy} " +
+            "</if>" +
+            "<if test='params.order!=null '>" +
+            " ${params.order} " +
+            "</if>" +
+            "<if test='params.limit!=-1'>" +
+            " limit ${params.limit} " +
+            "</if>" +
+            "<if test='params.offset!=0'>" +
+            " offset ${params.offset} " +
+            "</if>" +
+            "</script>")
+    public List<ApproveGroupListAndSearchResult> getApproveGroupByModuleId(@Param("tenantId") String tenantId, @Param("params") ApproveGroupParas approveGroupParas);
+
+
 
     @Select("select username from users where userid=#{userId}")
     public String getUserNameById(@Param("userId") String userId);
@@ -93,7 +120,7 @@ public interface ApproveGroupDAO {
 
 
     @Select("<script>" +
-            " select name,description from approval_group where id in " +
+            " select name,description from approval_group where valid = true and id in " +
             "    <foreach item='id' index='index' collection='ids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{id}" +
@@ -119,7 +146,7 @@ public interface ApproveGroupDAO {
      * 四.删除用户组信息
      */
     @Delete("<script>" +
-            " delete from approval_group  " +
+            " update approval_group set valid = false  " +
             " where id in " +
             "<foreach collection='ids' item='groupId' index='index' separator=',' open='(' close=')'>" +
             " #{groupId}" +
@@ -140,6 +167,17 @@ public interface ApproveGroupDAO {
             " </foreach>"+
             "</script>")
     public void deleteApproveGroupModule(@Param("ids") List<String> ids);
+
+
+    /**
+     * 删除审批组与模块关系
+     * @param id
+     */
+    @Delete("<script>" +
+            "delete from approval_group_module_relation " +
+            " where group_id = #{id}" +
+            "</script>")
+    public void deleteApproveGroupModuleById(@Param("id") String id);
 
     /**
      * 审批组与模块关系
@@ -242,12 +280,23 @@ public interface ApproveGroupDAO {
     public void deleteUserByGroupId(@Param("groupId") String groupId, @Param("userIds") List<String> userIds);
 
     /**
+     * 审批组移除成员
+     */
+    @Delete({"<script>",
+            "delete from approval_group_relation where group_id in",
+            "<foreach collection='groups' item='group' index='index' separator=',' open='(' close=')'>",
+            "#{group}",
+            "</foreach>",
+            "</script>"})
+    public void deleteGroupUserRelation(@Param("groups") List<String> groups);
+
+    /**
      * 十五.修改用户组管理信息
      */
     @Update("update approval_group set " +
             "name=#{group.name} ," +
             "description=#{group.description} ," +
-            "updatetime=#{updateTime} " +
+            "update_time=#{updateTime} " +
             "where id=#{groupId}")
     public void updateApproveGroupInformation(@Param("groupId") String groupId, @Param("group") ApproveGroup group, @Param("updateTime") Timestamp updateTime);
 

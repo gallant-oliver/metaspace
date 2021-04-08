@@ -2,7 +2,7 @@ package io.zeta.metaspace.model.approve;
 
 public enum ApproveStatus {
 
-    FINISH("2","已审批") , WAITING("1","待审批"), REJECTED("3","驳回");
+    WAITING("1","待审批"),  FINISH("2","已审批") ,  REJECTED("3","驳回");
     public String code;
 
     public String getCode() {

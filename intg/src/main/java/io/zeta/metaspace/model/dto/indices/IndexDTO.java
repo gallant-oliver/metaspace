@@ -64,6 +64,10 @@ public class IndexDTO {
      */
     private  String  columnId ;
     /**
+     * 表达式
+     */
+    private String expression;
+    /**
      *业务口径
      */
     private  String  businessCaliber ;
@@ -79,6 +83,24 @@ public class IndexDTO {
      *技术负责人id
      */
     private  String  technicalLeader ;
+
+    private int version;
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
+    public String getExpression() {
+        return expression;
+    }
+
+    public void setExpression(String expression) {
+        this.expression = expression;
+    }
 
     public String getDbName() {
         return dbName;

@@ -128,10 +128,30 @@ public class QualifierService {
         }
     }
 
-    //获取修饰词引用列表
-    public PageResult<ReferenceIndex> getQualifierRelationList(String id, String tenantId, Integer offset, int limit) throws AtlasBaseException {
+    //修饰词列表
+    public PageResult<Data> getAllQualifierList(QualifierParameters parameters, String tenantId) throws AtlasBaseException {
         try {
-            List<ReferenceIndex> list = qualifierDAO.getQualifierRelationListById(id, tenantId, offset, limit);
+            List<Data> list = qualifierDAO.getAllQualifierList(parameters, tenantId);
+            long totalSize = 0;
+            if (list.size() != 0) {
+                totalSize = list.get(0).getTotal();
+            }
+            PageResult<Data> result = new PageResult<>();
+            result.setTotalSize(totalSize);
+            result.setCurrentSize(list.size());
+            result.setLists(list);
+            return result;
+        } catch (Exception e) {
+            LOG.error("获取全部修饰词失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取全部修饰词失败");
+        }
+    }
+
+
+    //获取修饰词引用列表
+    public PageResult<ReferenceIndex> getQualifierRelationList(String id, String tenantId, int offset, int limit) throws AtlasBaseException {
+        try {
+            List<ReferenceIndex> list = qualifierDAO.getQualifierRelationListById(id, tenantId, limit, offset);
             long totalSize = 0;
             if (list.size() != 0) {
                 totalSize = list.get(0).getTotal();

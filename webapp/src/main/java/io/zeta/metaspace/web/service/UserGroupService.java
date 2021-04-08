@@ -1304,20 +1304,22 @@ public class UserGroupService {
             }
             //获取用户组对应的权限目录
             List<String> dbNames;
+            List<String> allDBNames = new ArrayList<>();
             if (type==0) {
                 dbNames = tenantService.getDatabase(tenantId);
             }else{
                 dbNames=new ArrayList<>();
             }
-            userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type,dbNames);
-            List<String> categoryIds = userCategories.stream().map(category->category.getGuid()).collect(Collectors.toList());
-            if (type==0 && dbNames.size()!=0) {
-                List<String> allDBNames  = relationDAO.queryAllDBNameByCategoryGuidV2(categoryIds, dbNames, tenantId);
+            allDBNames.addAll(dbNames);
+            userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type, allDBNames);
+            List<String> categoryIds = userCategories.stream().map(category -> category.getGuid()).collect(Collectors.toList());
+            if (type == 0) {
+                List<String> RMDBNames = relationDAO.queryRDBNameByCategoryGuidV2(tenantId);
                 //去重
-                dbNames.addAll(allDBNames);
-                Set<String> set = new HashSet(dbNames);
-                dbNames = new ArrayList<>(set);
-                userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type,dbNames);
+                allDBNames.addAll(RMDBNames);
+                Set<String> set = new HashSet(allDBNames);
+                allDBNames = new ArrayList<>(set);
+                userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type, allDBNames);
             }
             if (categoryIds==null||categoryIds.size()==0){
                 return userMap;

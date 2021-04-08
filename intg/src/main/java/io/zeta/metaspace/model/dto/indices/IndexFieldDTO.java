@@ -1,6 +1,8 @@
 package io.zeta.metaspace.model.dto.indices;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
+
+import java.sql.Timestamp;
 
 public class IndexFieldDTO {
 
@@ -16,9 +18,10 @@ public class IndexFieldDTO {
 
     private String safe;
 
-    private String createTime;
-
-    private String updateTime;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp createTime;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp updateTime;
 
     private String creator;
     private String updater;
@@ -105,19 +108,19 @@ public class IndexFieldDTO {
         this.safe = safe;
     }
 
-    public String getCreateTime() {
+    public Timestamp getCreateTime() {
         return createTime;
     }
 
-    public void setCreateTime(String createTime) {
+    public void setCreateTime(Timestamp createTime) {
         this.createTime = createTime;
     }
 
-    public String getUpdateTime() {
+    public Timestamp getUpdateTime() {
         return updateTime;
     }
 
-    public void setUpdateTime(String updateTime) {
+    public void setUpdateTime(Timestamp updateTime) {
         this.updateTime = updateTime;
     }
 

@@ -1,12 +1,19 @@
 package io.zeta.metaspace.model.dto.indices;
+
+import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
+
+import java.sql.Timestamp;
+
 public class IndexResposeDTO {
     private String indexId;
     private String creator;
-    private String createTime;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp createTime;
     private int indexState;
     private int version;
     private String updater;
-    private String updateTime;
+    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
+    private Timestamp updateTime;
 
     public String getUpdater() {
         return updater;
@@ -14,14 +21,6 @@ public class IndexResposeDTO {
 
     public void setUpdater(String updater) {
         this.updater = updater;
-    }
-
-    public String getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(String updateTime) {
-        this.updateTime = updateTime;
     }
 
     public String getIndexId() {
@@ -40,13 +39,6 @@ public class IndexResposeDTO {
         this.creator = creator;
     }
 
-    public String getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(String createTime) {
-        this.createTime = createTime;
-    }
 
     public int getIndexState() {
         return indexState;
@@ -62,5 +54,21 @@ public class IndexResposeDTO {
 
     public void setVersion(int version) {
         this.version = version;
+    }
+
+    public Timestamp getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Timestamp createTime) {
+        this.createTime = createTime;
+    }
+
+    public Timestamp getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(Timestamp updateTime) {
+        this.updateTime = updateTime;
     }
 }

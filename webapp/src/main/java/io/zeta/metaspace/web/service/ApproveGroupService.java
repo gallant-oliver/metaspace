@@ -14,10 +14,7 @@
 package io.zeta.metaspace.web.service;
 
 
-import io.zeta.metaspace.model.approvegroup.ApproveGroup;
-import io.zeta.metaspace.model.approvegroup.ApproveGroupListAndSearchResult;
-import io.zeta.metaspace.model.approvegroup.ApproveGroupMemberSearch;
-import io.zeta.metaspace.model.approvegroup.ModuleSelect;
+import io.zeta.metaspace.model.approvegroup.*;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.*;
@@ -90,6 +87,21 @@ public class ApproveGroupService {
         commonResult.setCurrentSize(lists.size());
         return commonResult;
 
+    }
+
+    /**
+     * 审批组组详情
+     */
+    public PageResult<ApproveGroupListAndSearchResult> getApproveGroupByModuleId(ApproveGroupParas paras,String tenantId) {
+        List<ApproveGroupListAndSearchResult> lists = approveGroupDAO.getApproveGroupByModuleId(tenantId, paras);
+        PageResult<ApproveGroupListAndSearchResult> result = new PageResult<>();
+        if(lists == null || lists.size() ==0 ){
+            return result;
+        }
+        result.setTotalSize(lists.get(0).getTotalSize());
+        result.setLists(lists);
+        result.setCurrentSize(lists.size());
+        return result;
     }
 
 
@@ -196,8 +208,9 @@ public class ApproveGroupService {
      */
     @Transactional(rollbackFor=Exception.class)
     public void deleteApproveGroupByIDs(List<String> ids) {
-        approveGroupDAO.deleteApproveGroupByIDs(ids); //删除审批组
         approveGroupDAO.deleteApproveGroupModule(ids); //删除审批组对应模块关系
+        approveGroupDAO.deleteGroupUserRelation(ids);  //删除审批组对应用户关系
+        approveGroupDAO.deleteApproveGroupByIDs(ids);  //删除审批组
     }
 
     /**
@@ -321,7 +334,7 @@ public class ApproveGroupService {
 
         approveGroupDAO.updateApproveGroupInformation(groupId, approveGroup, updateTime);
         //删除模块关系
-        approveGroupDAO.deleteApproveGroupModule(approveGroup.getModules());
+        approveGroupDAO.deleteApproveGroupModuleById(approveGroup.getId());
         //添加新的模块授权关系
         approveGroupDAO.addModuleToGroupByIDs(groupId,approveGroup.getModules());
     }

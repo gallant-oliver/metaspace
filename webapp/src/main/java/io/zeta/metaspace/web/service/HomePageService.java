@@ -20,12 +20,14 @@ import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.homepage.*;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.security.Tenant;
 import io.zeta.metaspace.model.security.TenantDatabaseList;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.HomePageDAO;
+import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.TenantDAO;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
@@ -58,6 +60,10 @@ public class HomePageService {
     private TenantService tenantService;
     @Autowired
     private TenantDAO tenantDAO;
+    @Autowired
+    private RelationDAO relationDAO;
+    @Autowired
+    private  DataManageService dataManageService;
 
     private static final String sourceLayerCategoryGuid = "1";
 
@@ -134,7 +140,7 @@ public class HomePageService {
         }
 
     }
-
+    
     @Cacheable(value = "TimeAndDbCache", key = "'TimeAndDbCache'+#tenantId")
     public TimeDBTB getTimeDbTb(String tenantId) throws AtlasBaseException {
         try {
@@ -183,7 +189,6 @@ public class HomePageService {
                 });
             }
 
-
             CompletableFuture<Long> subSystemFuture = CompletableFuture.supplyAsync(() -> {
                 try {
                     return homePageDAO.getSubSystemTotal(sourceLayerCategoryGuid,tenantId);
@@ -202,9 +207,27 @@ public class HomePageService {
                 return null;
             });
             CompletableFuture<Void> future = CompletableFuture.allOf(dbTotalFuture, tbTotalFuture, subSystemFuture, categoryRelatedDBCountFuture);
+            //获取数据库总数
+            List<String> dbs = tenantService.getDatabase(tenantId);
+            List<String> rdbs = relationDAO.queryRDBNameByCategoryGuidV2(tenantId);
+            List<String> allDBNames = new ArrayList<>();
+            if (dbs != null && dbs.size() > 0) {
+                allDBNames.addAll(dbs);
+            }
+            if (rdbs != null && rdbs.size() > 0) {
+                allDBNames.addAll(rdbs);
+                Set<String> set = new HashSet(allDBNames);
+                allDBNames = new ArrayList<>(set);
+            }
+            int tbTotal = 0;
+            List<CategoryPrivilege> userCategories = dataManageService.getAllByUserGroup(0, tenantId);
+            for (CategoryPrivilege userCategorie : userCategories) {
+                if (userCategorie.getLevel() == 1) {
+                    tbTotal += userCategorie.getCount();
+                }
+            }
             future.join();
-            List<Long> dbTotal = dbTotalFuture.get();
-            List<Long> tbTotal = tbTotalFuture.get();
+            int dbTotal = allDBNames.size();
             Long subSystemTotal = subSystemFuture.get();
             List<CategoryDBInfo> categoryRelatedDBCount = categoryRelatedDBCountFuture.get();
             long entityDBTotal=0;
@@ -214,8 +237,8 @@ public class HomePageService {
                 logicDBTotal+=categoryDBInfo.getLogicDBTotal();
             }
             timeDBTB.setDate(date);
-            timeDBTB.setDatabaseTotal(dbTotal.get(0));
-            timeDBTB.setTableTotal(tbTotal.get(0));
+            timeDBTB.setDatabaseTotal(dbTotal);
+            timeDBTB.setTableTotal(tbTotal);
             timeDBTB.setSubsystemTotal(subSystemTotal);
             timeDBTB.setSourceEntityDBTotal(entityDBTotal);
             timeDBTB.setSourceLogicDBTotal(logicDBTotal);

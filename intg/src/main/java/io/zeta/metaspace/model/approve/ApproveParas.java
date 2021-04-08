@@ -51,11 +51,12 @@ public class ApproveParas {
 
     private String result;  //审批动作 1：通过 2.驳回
 
-    private String desc; //审批描述
+    private String desc = ""; //审批描述
 
     private int version;
 
     private String moduleId;
 
+    private List<ApproveItem> approveList;
 
 }
