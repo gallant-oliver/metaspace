@@ -30,6 +30,7 @@ import org.apache.ibatis.annotations.*;
 import org.apache.ibatis.type.EnumOrdinalTypeHandler;
 import org.apache.ibatis.type.JdbcType;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -303,7 +304,7 @@ public interface DataShareDAO {
             "</if>" +
             "</script>")
     public List<ProjectInfo> searchProject(@Param("parameters")Parameters parameters,@Param("userId")String userId,
-                                           @Param("tenantId")String tenantId,@Param("ids")List<String> ids);
+                                           @Param("tenantId")String tenantId,@Param("ids")List<String> ids) throws SQLException;
 
     @Update("update project set name=#{name},description=#{description},manager=#{manager} where id=#{id}")
     public int updateProject(ProjectInfo project);
@@ -578,7 +579,7 @@ public interface DataShareDAO {
              " </if>",
              " </script>"})
     public List<ApiHead> searchApi(@Param("param") Parameters parameters,@Param("projectId") String projectId,@Param("categoryId")String categoryId,
-                                   @Param("status")String status,@Param("approve")Boolean approve,@Param("tenantId")String tenantId);
+                                   @Param("status")String status,@Param("approve")Boolean approve,@Param("tenantId")String tenantId) throws SQLException;
 
     @Select("<script>" +
             " select api.guid id,api.description,api.name,api.approve,api.status,api.createtime,api.categoryguid categoryId,api.version from api join " +

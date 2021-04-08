@@ -10,6 +10,7 @@ import io.zeta.metaspace.web.dao.SyncTaskDefinitionDAO;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.web.service.dataquality.TaskManageService;
 import io.zeta.metaspace.web.task.quartz.QuartzManager;
 import io.zeta.metaspace.web.task.sync.SyncTaskJob;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -20,10 +21,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.janusgraph.util.datastructures.ArraysUtil;
 import org.quartz.CronExpression;
 import org.quartz.SchedulerException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -42,6 +46,8 @@ public class MetaDataTaskService {
     TableDAO tableDAO;
     @Autowired
     UserDAO userDAO;
+
+    private static final Logger LOG = LoggerFactory.getLogger(TaskManageService.class);
 
     public void checkDuplicateName(String id, String name, String tenantId) {
         if (syncTaskDefinitionDAO.countByName(id, name, tenantId) != 0) {
@@ -202,7 +208,17 @@ public class MetaDataTaskService {
     public PageResult<SyncTaskDefinition> getSyncTaskDefinitionList(Parameters parameters, String tenantId) {
         try {
             PageResult<SyncTaskDefinition> pageResult = new PageResult<>();
-            List<SyncTaskDefinition> result = syncTaskDefinitionDAO.pageList(parameters, tenantId);
+            String query = parameters.getQuery();
+            if (Objects.nonNull(query)) {
+                parameters.setQuery(query.replaceAll("_", "/_").replaceAll("%", "/%"));
+            }
+            List<SyncTaskDefinition> result;
+            try {
+                result = syncTaskDefinitionDAO.pageList(parameters, tenantId);
+            } catch (SQLException e) {
+                LOG.error("SQL执行异常", e);
+                result = new ArrayList<>();
+            }
             pageResult.setCurrentSize(result.size());
             pageResult.setLists(result);
             pageResult.setTotalSize(result.size() == 0 ? 0 : result.get(0).getTotal());

@@ -8,6 +8,7 @@ import io.zeta.metaspace.web.typeHandler.ApiPolyEntityTypeHandler;
 import io.zeta.metaspace.web.typeHandler.ListStringTypeHandler;
 import org.apache.ibatis.annotations.*;
 
+import java.sql.SQLException;
 import java.util.List;
 
 @Mapper
@@ -80,7 +81,7 @@ public interface SyncTaskDefinitionDAO {
             "offset ${parameters.offset}" +
             "</if>" +
             "</script>")
-    List<SyncTaskDefinition> pageList(@Param("parameters") Parameters parameters, @Param("tenantId") String tenantId);
+    List<SyncTaskDefinition> pageList(@Param("parameters") Parameters parameters, @Param("tenantId") String tenantId) throws SQLException;
     
     @ResultMap("base")
     @Select("select * from " + TABLE_NAME + " where id = #{id}")

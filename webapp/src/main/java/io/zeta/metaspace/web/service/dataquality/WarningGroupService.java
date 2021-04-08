@@ -27,17 +27,16 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeansUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.ibatis.jdbc.SQL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -133,7 +132,17 @@ public class WarningGroupService {
 
     public PageResult<WarningGroup> getWarningGroupList(Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
-            List<WarningGroup> list = warningGroupDAO.getWarningGroup(parameters,tenantId);
+            String query = parameters.getQuery();
+            if (Objects.nonNull(query)) {
+                parameters.setQuery(query.replaceAll("_", "/_").replaceAll("%", "/%"));
+            }
+            List<WarningGroup> list;
+            try {
+                list = warningGroupDAO.getWarningGroup(parameters, tenantId);
+            }catch (SQLException e){
+                LOG.error("SQL执行异常", e);
+                list = new ArrayList<>();
+            }
             for (WarningGroup group : list) {
                 String numberStr = group.getContacts();
                 String[] numberArr = numberStr.split(",");

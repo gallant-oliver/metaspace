@@ -107,6 +107,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -155,8 +156,17 @@ public class TaskManageService {
     public PageResult<TaskHeader> getTaskList(Integer my, Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-            List<TaskHeader> list = taskManageDAO.getTaskList(my, userId, parameters,tenantId);
-
+            String query = parameters.getQuery();
+            if (Objects.nonNull(query)) {
+                parameters.setQuery(query.replaceAll("_", "/_").replaceAll("%", "/%"));
+            }
+            List<TaskHeader> list;
+            try {
+                list = taskManageDAO.getTaskList(my, userId, parameters, tenantId);
+            } catch (SQLException e) {
+                LOG.error("SQL执行异常", e);
+                list = new ArrayList<>();
+            }
             long totalSize = 0;
             if (list.size()!=0){
                 totalSize = list.get(0).getTotal();

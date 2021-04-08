@@ -43,11 +43,14 @@ import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.service.dataquality.WarningGroupService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -80,7 +83,7 @@ public class UserGroupService {
     CategoryDAO categoryDAO;
     @Autowired
     RelationDAO relationDAO;
-
+    private static final Logger LOG = LoggerFactory.getLogger(UserGroupService.class);
     public PageResult<UserGroupListAndSearchResult> getUserGroupListAndSearch(String tenantId, int offset, int limit, String sortBy, String order, String query) throws AtlasBaseException {
         PageResult<UserGroupListAndSearchResult> commonResult = new PageResult<>();
 
@@ -93,8 +96,13 @@ public class UserGroupService {
         securitySearch.setTenantId(tenantId);
         PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
         List<String> userIds = userAndModules.getLists().stream().map(UserAndModule::getAccountGuid).collect(Collectors.toList());
-
-        List<UserGroupListAndSearchResult> lists = userGroupDAO.getUserGroupSortByUpdateTime(tenantId, offset, limit, sortBy,order, query,userIds);
+        List<UserGroupListAndSearchResult> lists;
+        try {
+            lists = userGroupDAO.getUserGroupSortByUpdateTime(tenantId, offset, limit, sortBy, order, query, userIds);
+        } catch (SQLException e) {
+            LOG.error("SQL执行异常", e);
+            lists = new ArrayList<>();
+        }
 
 
         if (lists == null || lists.size() == 0) {
