@@ -8,8 +8,9 @@ stages:
   - test
   - dev_deploy
   - test_deploy
-  - 10.202.40.82
   - sonarqube
+  - 生成测试覆盖率报告
+  - 删除测试覆盖率报告
 
 # 单元测试
 test:
@@ -59,22 +60,6 @@ test_deploy:
     expire_in: 1 week
     paths:
       - webapp/target/atlas-webapp-*.war
-#部署测试环境
-10.202.40.82:
-  tags:
-    - java
-  stage: 10.202.40.82
-  script:
-    - "mvn $MAVEN_CLI_OPTS clean package -DskipTests"
-    - "sshpass -p $METASPACE_PASSWORD scp -o stricthostkeychecking=no webapp/target/atlas-webapp-*.war $DEPLOY_USER@$TEST_SERVER_ID_2:$DEPLOY_PATH/metaspace.war"
-    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_2 \"$DEPLOY_HOME/bin/metaspace_stop.py && rm -rf $BACKUP_DIR && mv $DEPLOY_PATH/metaspace $BACKUP_DIR  && $DEPLOY_HOME/bin/metaspace_start.py\""
-    - "sshpass -p $METASPACE_PASSWORD ssh -o stricthostkeychecking=no $DEPLOY_USER@$TEST_SERVER_ID_2 \"cd $BACKUP_DIR && rsync -av * $DEPLOY_PATH/metaspace --exclude WEB-INF\""
-  when: manual
-  artifacts:
-    name: metaspace_test
-    expire_in: 1 week
-    paths:
-      - webapp/target/atlas-webapp-*.war
 
 sonarqube:
   tags:
@@ -83,3 +68,26 @@ sonarqube:
   script: mvn clean verify sonar:sonar -DskipTests  -Dsonar.scm.disabled=True
   allow_failure: true
   when: manual
+
+生成测试覆盖率报告:
+  tags:
+    - java
+  stage: 生成测试覆盖率报告
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^release/'
+      allow_failure: true
+      when: manual
+  script:
+    - sshpass -p $PASSWORD_102 ssh -o stricthostkeychecking=no $USER_102@$SERVER_102 "/root/jacoco_report/metaspace/metaspace.sh $CI_COMMIT_BRANCH"
+
+
+删除测试覆盖率报告:
+  tags:
+    - java
+  stage: 删除测试覆盖率报告
+  rules:
+    - if: '$CI_COMMIT_BRANCH =~ /^release/'
+      allow_failure: true
+      when: manual
+  script:
+    - sshpass -p $PASSWORD_102 ssh -o stricthostkeychecking=no $USER_102@$SERVER_102 "rm -rf /root/jacoco_report/metaspace/$CI_COMMIT_BRANCH"
