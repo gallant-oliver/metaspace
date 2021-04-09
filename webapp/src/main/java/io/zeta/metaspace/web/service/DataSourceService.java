@@ -18,50 +18,35 @@ import com.google.common.collect.Lists;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
-import io.zeta.metaspace.model.datasource.DataSourceAuthorizeUser;
-import io.zeta.metaspace.model.datasource.DataSourceAuthorizeUserId;
-
-import static io.zeta.metaspace.web.metadata.BaseFields.ATTRIBUTE_QUALIFIED_NAME;
-import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
-
-import io.zeta.metaspace.model.datasource.DataSourcePrivileges;
-import io.zeta.metaspace.model.datasource.DataSourceType;
-import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
-import io.zeta.metaspace.model.share.APIIdAndName;
-import io.zeta.metaspace.model.usergroup.UserGroupAndPrivilege;
-import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
-import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
-import io.zeta.metaspace.model.datasource.DataSourceBody;
-import io.zeta.metaspace.model.datasource.DataSourceConnection;
-import io.zeta.metaspace.model.datasource.DataSourceHead;
-import io.zeta.metaspace.model.datasource.DataSourceCheckMessage;
-import io.zeta.metaspace.model.datasource.DataSourceInfo;
-import io.zeta.metaspace.model.datasource.DataSourceSearch;
+import io.zeta.metaspace.model.datasource.*;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
-import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
+import io.zeta.metaspace.model.share.APIIdAndName;
 import io.zeta.metaspace.model.user.UserIdAndName;
+import io.zeta.metaspace.model.usergroup.UserGroupAndPrivilege;
+import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
+import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
+import io.zeta.metaspace.utils.AESUtils;
+import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
-import io.zeta.metaspace.web.dao.PrivilegeDAO;
-import io.zeta.metaspace.web.dao.RoleDAO;
-import io.zeta.metaspace.web.dao.UserGroupDAO;
+import io.zeta.metaspace.web.dao.SyncTaskDefinitionDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.metadata.BaseFields;
-import io.zeta.metaspace.utils.AESUtils;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
-import org.apache.atlas.type.AtlasTypeRegistry;
-import org.apache.poi.ss.usermodel.*;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
+import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.lang.StringUtils;
+import org.apache.poi.ss.usermodel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,20 +56,17 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.UUID;
-
-import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static io.zeta.metaspace.web.metadata.BaseFields.ATTRIBUTE_QUALIFIED_NAME;
+import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
+import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 
 @Service
 public class DataSourceService {
@@ -94,26 +76,22 @@ public class DataSourceService {
     @Inject
     protected AtlasGraph graph;
     @Autowired
-    private RoleDAO roleDAO;
-    @Autowired
     private UserDAO userDAO;
 
     @Autowired
     private DataSourceDAO datasourceDAO;
     @Autowired
     private AtlasEntityStoreV2 atlasEntityStoreV2;
-
-    @Autowired
-    private DataSourceService dataSourceService;
     @Autowired
     private TenantService tenantService;
 
     @Autowired
     private AtlasTypeRegistry atlasTypeRegistry;
     @Autowired
-    private PrivilegeDAO privilegeDAO;
-    @Autowired
     private UserGroupDAO userGroupDAO;
+
+    @Autowired
+    private SyncTaskDefinitionDAO syncTaskDefinitionDAO;
 
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
@@ -255,7 +233,8 @@ public class DataSourceService {
                 }
             }
             dataSourceDAO.deleteRelationBySourceId(sourceIds);
-            return dataSourceDAO.deleteDataSource(sourceIds);
+            dataSourceDAO.deleteDataSource(sourceIds);
+            return syncTaskDefinitionDAO.deleteByDataSourceId(sourceIds);
         } catch (Exception e) {
             LOG.error("删除数据源失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除数据源失败\n" + e.getMessage());
@@ -1258,14 +1237,15 @@ public class DataSourceService {
 
     /**
      * 获取数据源类型
+     *
      * @return
      */
-    public List<DataSourceTypeInfo> getDataSourceType(){
-        if (!MetaspaceConfig.getDataService()){
-            DataSourceTypeInfo dataSourceTypeInfo = new DataSourceTypeInfo(DataSourceType.ORACLE.getName(),DataSourceType.ORACLE.getDefaultPort());
+    public List<DataSourceTypeInfo> getDataSourceType() {
+        if (!MetaspaceConfig.getDataService()) {
+            DataSourceTypeInfo dataSourceTypeInfo = new DataSourceTypeInfo(DataSourceType.ORACLE.getName(), DataSourceType.ORACLE.getDefaultPort());
             return Lists.newArrayList(dataSourceTypeInfo);
         }
-        List<DataSourceTypeInfo> typeNames = Arrays.stream(DataSourceType.values()).filter(type->!(type.isBuildIn())&&type.isAdapter()).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(),dataSourceType.getDefaultPort())).collect(Collectors.toList());
+        List<DataSourceTypeInfo> typeNames = Arrays.stream(DataSourceType.values()).filter(type -> !(type.isBuildIn()) && type.isAdapter()).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(), dataSourceType.getDefaultPort())).collect(Collectors.toList());
         return typeNames;
     }
 }

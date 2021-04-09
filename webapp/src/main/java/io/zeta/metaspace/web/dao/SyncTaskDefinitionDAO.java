@@ -33,6 +33,14 @@ public interface SyncTaskDefinitionDAO {
             "</script>"})
     int delete(@Param("ids") List<String> ids);
 
+    @Delete({"<script>",
+            "DELETE FROM " + TABLE_NAME + " WHERE data_source_id in",
+            "<foreach collection='sourceIds' item='sourceId' index='index' separator=',' open='(' close=')'>" ,
+            "#{sourceId}",
+            "</foreach>",
+            "</script>"})
+    int deleteByDataSourceId(@Param("sourceIds") List<String> sourceIds);
+
     @Update("UPDATE public.sync_task_definition\n" +
             "SET name            = #{definition.name},\n" +
             "    description     = #{definition.description},\n" +
