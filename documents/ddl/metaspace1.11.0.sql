@@ -1,4 +1,12 @@
+begin;
 ALTER TABLE sync_task_definition ADD COLUMN IF NOT EXISTS category_guid text;
 COMMENT ON COLUMN sync_task_definition.category_guid IS '技术目录guid';
 COMMENT ON COLUMN "public"."data_quality_task_execute"."execute_status" IS '执行状态:1-执行中,2-成功,3-失败,0-未执行,4-取消';
 COMMENT ON COLUMN "public"."data_quality_task"."current_execution_status" IS '执行状态:1-执行中,2-成功,3-失败,0-待执行,4-取消';
+ALTER TABLE data_quality_task_rule_execute ADD COLUMN IF NOT EXISTS general_warning_check_status int2;
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."general_warning_check_status" IS '一般告警：0-无告警,1-有告警，2-已关闭';
+ALTER TABLE data_quality_task_execute ADD COLUMN IF NOT EXISTS general_warning_count int4;
+COMMENT ON COLUMN "public"."data_quality_task_execute"."general_warning_count" IS '普通告警数';
+ALTER TABLE data_quality_task ADD COLUMN IF NOT EXISTS general_warning_total_count int8 DEFAULT 0;
+COMMENT ON COLUMN "public"."data_quality_task"."general_warning_total_count" IS '普通告警总数统计';
+commit;

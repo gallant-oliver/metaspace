@@ -13,7 +13,7 @@ import java.util.List;
  */
 public enum ModuleEnum {
     //概览
-    OVERVIEW(1,"概览","全部",1,"概览", "overview", "overview",1, 1),
+    OVERVIEW(1,"概览","全部",1,"全部", "overview", "overview",1, 1),
 
     //数据资产
     TECHNICAL(2,"数据资产","技术目录",2,"技术目录", "technical", "technical",1, 2),

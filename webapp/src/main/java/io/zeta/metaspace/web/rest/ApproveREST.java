@@ -62,8 +62,11 @@ public class ApproveREST {
         try {
             Object detailInfo = approveService.ApproveObjectDetail(tenantId, id, businessType, version, moduleId);
             return ReturnUtil.success(detailInfo);
-        } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"审批失败");
+        }catch (AtlasBaseException e){  //业务异常
+            throw e;
+        }
+        catch (Exception e) {  //系统异常
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"获取指标详情失败");
         }
     }
 

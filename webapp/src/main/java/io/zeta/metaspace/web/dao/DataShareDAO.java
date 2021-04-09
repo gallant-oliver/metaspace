@@ -192,7 +192,7 @@ public interface DataShareDAO {
              " <foreach item='tableGuid' index='index' collection='tableList' separator=',' open='(' close=')'>" ,
              " #{tableGuid}",
              " </foreach>",
-             " and api.tenantid=#{tenantId} and api.status!='draft' and api.status!='audit' ",
+             " and api.tenantid=#{tenantId} and api.status!='draft' and api.status!='audit' AND api.valid = true ",
              " <if test='!up'>",
              " and api.status!='up'",
              " </if>",

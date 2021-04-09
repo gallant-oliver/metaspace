@@ -39,8 +39,10 @@ public interface ApproveDAO {
     //实现用户组列表及搜索
     @Select("<script>" +
             "select count(*) over() totalSize,a.id,a.object_id as objectId,a.object_name as objectName,a.business_type as businessType,a.commit_time as commitTime,a.approve_type as approveType, " +
-            "a.status as approveStatus,a.approve_group as approveGroup,users.username as approver,a.approve_time as approveTime,a.submitter as submitter,a.reason as reason,a.module_id as moduleId,a.version as version,a.tenant_id as tenantId"+
-            " from approval_item a left join users on a.approver = users.userid " +
+            "a.status as approveStatus,a.approve_group as approveGroup,f.username as approver,a.approve_time as approveTime,g.username as submitter,a.reason as reason,a.module_id as moduleId,a.version as version,a.tenant_id as tenantId"+
+            " from approval_item a " +
+            " left join users f on a.approver = f.userid " +
+            " left join users g on a.submitter = g.userid " +
             " where a.tenant_id=#{tenantId}" +
             "<if test='groups!=null and groups.size()!=0'>" +
             " and a.approve_group in " +

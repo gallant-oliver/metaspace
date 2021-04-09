@@ -47,6 +47,7 @@ public class DataQualityTask {
     private Boolean delete;
     private Integer executionCount;
     private String updater;
+    private Integer generalWarningTotalCount;
     private Integer orangeWarningTotalCount;
     private Integer redWarningTotalCount;
     private Integer errorTotalCount;
