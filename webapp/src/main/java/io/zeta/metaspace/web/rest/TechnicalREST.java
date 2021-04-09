@@ -183,7 +183,7 @@ public class TechnicalREST {
     }
 
     /**
-     * 获取全部目录
+     * 获取用户目录
      *
      * @return
      * @throws AtlasBaseException

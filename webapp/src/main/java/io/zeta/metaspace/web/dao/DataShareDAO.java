@@ -729,4 +729,35 @@ public interface DataShareDAO {
             " </foreach>" +
             "</script>")
     public int getApiUpNumByProjects(@Param("projectIds")List<String> projectIds);
+
+    @Select("SELECT DISTINCT tableInfo.dbName FROM table_relation,tableInfo, data_source WHERE " +
+            "table_relation.categoryGuid IN (SELECT DISTINCT t2.guid FROM category_group_relation t1 " +
+            "JOIN category t2 ON t1.category_id = t2.guid JOIN user_group t3 ON (t1.group_id = t3.id AND t3.valid = TRUE )" +
+            "JOIN user_group_relation t4 ON t3. ID = t4.group_id WHERE t2.tenantid = t3.tenant AND t3.tenant = #{tenantId} " +
+            "AND t4.user_id = #{userId} AND t2.categorytype = 0) " +
+            "AND tableInfo.tableGuid = table_relation.tableGuid " +
+            "AND tableinfo.source_id = data_source.source_id " +
+            "AND tableInfo.status = 'ACTIVE' " +
+            "AND tableinfo.source_id = #{sourceId}")
+    List<String> getUserRelationDatabases(@Param("tenantId") String tenantId,@Param("sourceId") String sourceId,@Param("userId") String userId);
+
+    @Select("SELECT DISTINCT tableInfo.dbName FROM table_relation, tableInfo " +
+            "WHERE table_relation.categoryGuid in(SELECT DISTINCT t2.guid FROM " +
+            "category_group_relation t1 JOIN category t2 ON t1.category_id = t2.guid " +
+            "JOIN user_group t3 ON ( t1.group_id = t3. ID AND t3. VALID = TRUE) " +
+            "JOIN user_group_relation t4 ON t3. ID = t4.group_id WHERE t2.tenantid = t3.tenant " +
+            "AND t3.tenant = #{tenantId} AND t4.user_id = #{userId} AND t2.categorytype = 0) " +
+            "AND tableInfo.tableGuid = table_relation.tableGuid " +
+            "AND tableInfo.status = 'ACTIVE' " +
+            "AND tableinfo.source_id = 'hive'")
+
+    List<String> getUserHiveDatabases(@Param("tenantId") String tenantId, @Param("userId") String userId);
+
+    @Select("select DISTINCT tableInfo.tablename from tableinfo where tableinfo.status = 'ACTIVE' and tableinfo.source_id = #{sourceId} and tableinfo.dbname = #{database}")
+    List<String> getDatabaseTables(@Param("sourceId") String sourceId, @Param("database") String database);
+
+    @Select("select DISTINCT column_info.column_name from tableinfo join column_info on tableinfo.tableguid = column_info.table_guid " +
+            "where tableinfo.status = 'ACTIVE' and tableinfo.source_id = #{sourceId} and tableinfo.dbname = #{database} and tableinfo.tablename = #{tableName}")
+    List<String> getUserColumns(@Param("sourceId") String sourceId, @Param("database") String database, @Param("tableName") String tableName);
+
 }
