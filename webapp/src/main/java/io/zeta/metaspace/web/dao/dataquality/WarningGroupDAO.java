@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -78,7 +79,7 @@ public interface WarningGroupDAO {
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<WarningGroup> getWarningGroup(@Param("params") Parameters params,@Param("tenantId")String tenantId);
+    public List<WarningGroup> getWarningGroup(@Param("params") Parameters params,@Param("tenantId")String tenantId) throws SQLException;
 
     @Select({" <script>",
              " select count(*)over() total,data_quality_task.id as taskId, data_quality_task_execute.id as executionId, data_quality_task.name as taskName,data_quality_task_execute.number,warning_status as warningStatus,orange_warning_count as orangeWarningCount,",

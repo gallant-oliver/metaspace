@@ -85,6 +85,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Type;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -1486,8 +1487,13 @@ public class DataShareService {
         securitySearch.setTenantId(tenantId);
         PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
         List<String> userIds = userAndModules.getLists().stream().map(UserAndModule::getAccountGuid).collect(Collectors.toList());
-
-        List<ProjectInfo> lists = shareDAO.searchProject(parameters, AdminUtils.getUserData().getUserId(), tenantId, userIds);
+        List<ProjectInfo> lists;
+        try {
+            lists = shareDAO.searchProject(parameters, AdminUtils.getUserData().getUserId(), tenantId, userIds);
+        } catch (SQLException e) {
+            LOG.error("SQL执行异常", e);
+            lists = new ArrayList<>();
+        }
         if (lists == null || lists.size() == 0) {
             return commonResult;
         }
@@ -2319,7 +2325,17 @@ public class DataShareService {
             approveBool = Boolean.valueOf(approve);
         }
         PageResult<ApiHead> pageResult = new PageResult<>();
-        List<ApiHead> apiHeads = shareDAO.searchApi(parameters, projectId, categoryId, status, approveBool, tenantId);
+        String query = parameters.getQuery();
+        if (Objects.nonNull(query)) {
+            parameters.setQuery(query.replaceAll("_", "/_").replaceAll("%", "/%"));
+        }
+        List<ApiHead> apiHeads;
+        try {
+            apiHeads = shareDAO.searchApi(parameters, projectId, categoryId, status, approveBool, tenantId);
+        } catch (SQLException e) {
+            LOG.error("SQL执行异常", e);
+            return null;
+        }
         List<ApiHead> apiHeadForeach = new ArrayList<>();
         apiHeadForeach.addAll(apiHeads);
         if (apiHeads != null && apiHeads.size() != 0) {

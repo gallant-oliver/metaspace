@@ -51,6 +51,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
@@ -273,7 +274,17 @@ public class ApiGroupService {
     public PageResult<ApiGroupV2> searchApiGroup(Parameters parameters, String projectId, String tenantId,Boolean publish){
         PageResult<ApiGroupV2> result = new PageResult<>();
         updateApiRelationStatus();
-        List<ApiGroupV2> groups = apiGroupDAO.searchApiGroup(parameters, projectId, tenantId,publish);
+        String query = parameters.getQuery();
+        if (Objects.nonNull(query)) {
+            parameters.setQuery(query.replaceAll("_", "/_").replaceAll("%", "/%"));
+        }
+        List<ApiGroupV2> groups;
+        try {
+            groups = apiGroupDAO.searchApiGroup(parameters, projectId, tenantId, publish);
+        } catch (SQLException e) {
+            LOG.error("SQL执行异常", e);
+            groups = new ArrayList<>();
+        }
         if (groups==null||groups.size()==0){
             result.setLists(new ArrayList<>());
             return result;

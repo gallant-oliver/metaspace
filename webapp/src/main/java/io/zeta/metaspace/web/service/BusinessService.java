@@ -78,6 +78,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -413,7 +414,12 @@ public class BusinessService {
             }
             if (Objects.nonNull(businessName))
                 businessName = businessName.replaceAll("%", "/%").replaceAll("_", "/_");
-            businessInfoList = businessDao.queryBusinessByName(businessName, categoryIds, limit, offset, tenantId);
+            try {
+                businessInfoList = businessDao.queryBusinessByName(businessName, categoryIds, limit, offset, tenantId);
+            } catch (SQLException e) {
+                LOG.error("SQL执行异常", e);
+                businessInfoList = new ArrayList<>();
+            }
 
             for (BusinessInfoHeader infoHeader : businessInfoList) {
                 String path = CategoryRelationUtils.getPath(infoHeader.getCategoryGuid(), tenantId);
