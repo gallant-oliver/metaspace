@@ -28,10 +28,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class RuleTemplateService {
@@ -67,7 +66,17 @@ public class RuleTemplateService {
     public PageResult<RuleTemplate> search(RuleParameters parameters,String tenantId) throws AtlasBaseException {
         try {
             PageResult pageResult = new PageResult<RuleTemplate>();
-            List<RuleTemplate> lists = ruleTemplateDAO.searchRuleTemplate(parameters,tenantId);
+            String query = parameters.getQuery();
+            if (Objects.nonNull(query)) {
+                parameters.setQuery(query.replaceAll("_", "/_").replaceAll("%", "/%"));
+            }
+            List<RuleTemplate> lists;
+            try {
+                lists = ruleTemplateDAO.searchRuleTemplate(parameters, tenantId);
+            } catch (SQLException e) {
+                LOG.error("SQL执行异常", e);
+                lists = new ArrayList<>();
+            }
             updateRuleType(lists);
             long totalCount = 0;
             if (lists.size()!=0){

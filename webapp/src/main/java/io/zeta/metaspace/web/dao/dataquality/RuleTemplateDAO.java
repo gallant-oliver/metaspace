@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -36,7 +37,7 @@ public interface RuleTemplateDAO {
              " select count(*)over() total,id,name,scope,unit,description,delete,rule_type as ruleType,create_time as createTime,code from data_quality_rule_template" ,
              " where tenantid=#{tenantId} and delete=false " +
              "<if test=\"params.query != null and params.query!=''\">",
-             " and (name like '%${params.query}%' or description like '%${params.query}%' )  " +
+             " and (name like '%${params.query}%' ESCAPE '/' or description like '%${params.query}%' ESCAPE '/' )  " +
              " <if test='params.enable != null'>",
              " and enable=#{params.enable} ",
              " </if>",
@@ -45,7 +46,7 @@ public interface RuleTemplateDAO {
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<RuleTemplate> searchRuleTemplate(@Param("params") RuleParameters params,@Param("tenantId")String tenantId);
+    public List<RuleTemplate> searchRuleTemplate(@Param("params") RuleParameters params,@Param("tenantId")String tenantId) throws SQLException;
 
     @Insert({" <script>",
              " insert into report2ruletemplate(rule_template_id,data_quality_execute_id,creator,create_time)values",

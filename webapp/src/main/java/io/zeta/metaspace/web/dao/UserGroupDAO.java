@@ -41,6 +41,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -87,7 +88,7 @@ public interface UserGroupDAO {
             "</script>")
     public List<UserGroupListAndSearchResult> getUserGroupSortByUpdateTime(@Param("tenantId") String tenantId, @Param("offset") int offset, @Param("limit") int limit,
                                                                            @Param("sortBy")String sortBy, @Param("order") String order, @Param("search") String search,
-                                                                           @Param("ids")List<String> ids);
+                                                                           @Param("ids")List<String> ids) throws SQLException;
 
 
     @Select("select username from users where userid=#{userId}")

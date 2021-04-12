@@ -35,6 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -132,7 +133,17 @@ public class WarningGroupService {
 
     public PageResult<WarningGroup> getWarningGroupList(Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
-            List<WarningGroup> list = warningGroupDAO.getWarningGroup(parameters,tenantId);
+            String query = parameters.getQuery();
+            if (Objects.nonNull(query)) {
+                parameters.setQuery(query.replaceAll("_", "/_").replaceAll("%", "/%"));
+            }
+            List<WarningGroup> list;
+            try {
+                list = warningGroupDAO.getWarningGroup(parameters, tenantId);
+            }catch (SQLException e){
+                LOG.error("SQL执行异常", e);
+                list = new ArrayList<>();
+            }
             for (WarningGroup group : list) {
                 String numberStr = group.getContacts();
                 String[] numberArr = numberStr.split(",");

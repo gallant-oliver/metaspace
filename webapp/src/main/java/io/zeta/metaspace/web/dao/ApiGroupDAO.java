@@ -26,6 +26,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -80,7 +81,7 @@ public interface ApiGroupDAO {
             "offset ${param.offset}" +
             "</if>" +
             "</script>")
-    public List<ApiGroupV2> searchApiGroup(@Param("param")Parameters parameters,@Param("projectId")String projectId,@Param("tenantId")String tenantId,@Param("publish")Boolean publish);
+    public List<ApiGroupV2> searchApiGroup(@Param("param")Parameters parameters,@Param("projectId")String projectId,@Param("tenantId")String tenantId,@Param("publish")Boolean publish) throws SQLException;
 
     @Update("update api_relation set update_status=false where update_status=true and update_time<#{time}")
     public int updateApiRelationStatusByTime(@Param("time")Timestamp timestamp);

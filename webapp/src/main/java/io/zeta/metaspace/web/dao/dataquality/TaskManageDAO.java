@@ -44,6 +44,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -81,7 +82,7 @@ public interface TaskManageDAO {
              " offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<TaskHeader> getTaskList(@Param("my") Integer my, @Param("creator") String creator, @Param("params") Parameters params,@Param("tenantId") String tenantId);
+    public List<TaskHeader> getTaskList(@Param("my") Integer my, @Param("creator") String creator, @Param("params") Parameters params,@Param("tenantId") String tenantId) throws SQLException;
 
     /**
      * 任务总数
