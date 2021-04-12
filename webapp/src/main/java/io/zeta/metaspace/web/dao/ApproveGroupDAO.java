@@ -49,7 +49,7 @@ public interface ApproveGroupDAO {
 
     //实现用户组列表及搜索
     @Select("<script>" +
-            "select count(*) over() totalSize,u.id,u.name,u.description,case when m.member is NULL then '0' else m.member end member,u.creator,u.create_time as createTime,u.update_time as updateTime " +
+            "select count(*) over() totalSize,u.id,u.name,u.description,case when m.member is NULL then '0' else m.member end member,u.creator,u.create_time as createTime,u.update_time as updateTime,users.username as updater " +
             " from approval_group u left join " +
             " (select g.id id,count(*) member " +
             " from approval_group  g " +
@@ -60,7 +60,8 @@ public interface ApproveGroupDAO {
             "</foreach>" +
             " GROUP BY g.id) m " +
             " on u.id=m.id " +
-            " where u.tenantid=#{tenantId} and valid=true" +
+            "left join users on u.updater = users.userid" +
+            " where u.tenantid=#{tenantId} and u.valid=true" +
             "<if test='search!=null'>" +
             " and u.name like '%${search}%' ESCAPE '/' " +
             "</if>" +
@@ -296,6 +297,7 @@ public interface ApproveGroupDAO {
     @Update("update approval_group set " +
             "name=#{group.name} ," +
             "description=#{group.description} ," +
+            "updater=#{group.updater} ," +
             "update_time=#{updateTime} " +
             "where id=#{groupId}")
     public void updateApproveGroupInformation(@Param("groupId") String groupId, @Param("group") ApproveGroup group, @Param("updateTime") Timestamp updateTime);
