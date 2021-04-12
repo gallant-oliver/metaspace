@@ -94,8 +94,8 @@ public interface TableDAO {
     public Table getDbAndTableName(@Param("guid")String guid);
 
     @Select({"<script>",
-            " select count(*)over() total,guid,name,tableGuid,path,requestMode,version,username as creator from apiInfo join users on users.userid=apiInfo.keeper ",
-            "where tableGuid=#{tableGuid} and apiInfo.tenantid=#{tenantId}",
+            " select count(*)over() total,guid,name,tableGuid,path,requestMode,version,username as creator from api join users on users.userid=api.creator ",
+            "where tableGuid=#{tableGuid} and api.tenantid=#{tenantId}",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",
