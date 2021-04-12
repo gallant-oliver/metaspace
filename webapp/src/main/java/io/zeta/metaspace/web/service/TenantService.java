@@ -34,7 +34,9 @@ import io.zeta.metaspace.web.util.CategoryUtil;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -391,7 +393,7 @@ public class TenantService {
         Object msgDesc=null;
         String cacheKey = getCacheKey(tenantId);
         List<String> strings = databaseCache.getIfPresent(cacheKey);
-        if (strings!=null) {
+        if (CollectionUtils.isNotEmpty(strings)) {
             return strings;
         }
         Gson gson = new Gson();
@@ -407,9 +409,8 @@ public class TenantService {
             while(retryCount < retries) {
                 HashMap<String, Object> databases = gson.fromJson(string, new TypeToken<HashMap<String, Object>>() {
                 }.getType());
-                status = databases.get("statusCode");
-                if (status!=null){
-                    msgDesc = databases.get("msgDesc");
+                msgDesc =  databases.get("message") == null? databases.get("msgDesc") : databases.get("message");
+                if (null != databases.get("statusCode") || null != msgDesc){
                     retryCount++;
                     continue;
                 }
@@ -502,5 +503,49 @@ public class TenantService {
         }
         userModulesCache.invalidateAll();
         databaseCache.invalidateAll();
+    }
+
+
+    /**
+     * 查询数据库库表
+     * @param db
+     * @param tenantId
+     * @return
+     */
+    public List<String> getDbTables(String db, String tenantId) {
+        String host = conf.getString(SECURITY_CENTER_HOST);
+        String user = AdminUtils.getUserData().getAccount();
+        String ticketId = AdminUtils.getSSOTicket();
+        int initSize = 2;
+        Map<String, String> headers = new HashMap<String, String>(initSize){
+            private static final long serialVersionUID = 1L;
+            {
+                put("tenantId", tenantId);
+                put("X-SSO-FullticketId", ticketId);
+            }
+        };
+        initSize = 1;
+        Map<String, String> params = new HashMap<String, String>(initSize){
+            private static final long serialVersionUID = 1L;
+            {
+                put("database", db);
+            }
+        };
+        String content = OKHttpClient.doGet(host + TENANT_USER_DATABASE + user, params, headers);
+        if(StringUtils.isBlank(content)){
+            return new ArrayList<>();
+        }
+        Gson gson = new Gson();
+        Map map = gson.fromJson(content, HashMap.class);
+        if (map.containsKey("message")){
+            throw getAtlasBaseException(map.get("statusCode"),map.get("message"),"从安全中心获取数据库【" + db + "】的库表列表失败");
+        }
+        Map<String, List<String>> databaseMap = gson.fromJson(gson.toJson(content), new TypeToken<Map<String, List<String>>>() {
+        }.getType());
+        if(databaseMap.containsKey(db)){
+            return databaseMap.get(db);
+        }else{
+            return new ArrayList<>();
+        }
     }
 }

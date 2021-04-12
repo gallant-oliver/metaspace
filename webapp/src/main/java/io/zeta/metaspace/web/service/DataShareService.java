@@ -1396,6 +1396,45 @@ public class DataShareService {
         return getDataList(null, searchType, parameters, tenantId, sourceId, ids);
     }
 
+    public List<String> getUserDataBases(String tenantId, String sourceId) throws AtlasBaseException {
+
+        User user = AdminUtils.getUserData();
+        if("hive".equalsIgnoreCase(sourceId)){
+            List<String> databases = tenantService.getDatabase(tenantId);
+            List<String> userHiveDatabases = shareDAO.getUserHiveDatabases(tenantId, user.getUserId());
+            if(null == databases){
+                databases = new ArrayList<>();
+            }
+            if(null == userHiveDatabases){
+                userHiveDatabases = new ArrayList<>();
+            }
+            userHiveDatabases.retainAll(databases);
+            return userHiveDatabases;
+        }else{
+            return shareDAO.getUserRelationDatabases(tenantId,sourceId,user.getUserId());
+        }
+    }
+
+    public List<String> getUserTables(String tenantId, String sourceId, String dataBase) throws AtlasBaseException {
+        User user = AdminUtils.getUserData();
+        List<String> userDataBases = getUserDataBases(tenantId, sourceId);
+        if(!userDataBases.contains(dataBase)){
+            throw new AtlasBaseException("id为【"+sourceId+"】的数据源中没有找到数据库【" + dataBase + "." +dataBase + "】，请确认数据库存在并且确保用户" + user.getUsername() + "具有读取该数据库的权限",
+                    AtlasErrorCode.BAD_REQUEST, "数据库【" + dataBase + "】不存在");
+        }
+        return shareDAO.getDatabaseTables(sourceId,dataBase);
+    }
+
+    public List<String> getUserColumns(String tenantId, String sourceId, String dataBase, String tableName) throws AtlasBaseException {
+        User user = AdminUtils.getUserData();
+        List<String> userTables = getUserTables(tenantId, sourceId, dataBase);
+        if(!userTables.contains(tableName)){
+            throw new AtlasBaseException("id为【"+sourceId+"】的数据源中没有找到库表【" + dataBase + "." +tableName + "】，请确认库表存在并且确保用户" + user.getUsername() + "具有读取该库表的权限",
+                    AtlasErrorCode.BAD_REQUEST, "表【" + tableName + "】不存在");
+        }
+        return shareDAO.getUserColumns(sourceId, dataBase, tableName);
+    }
+
     public PageResult getDataList(String proxyUser, SEARCH_TYPE searchType, ColumnParameters parameters, String tenantId, String sourceId, String... ids) throws AtlasBaseException {
         AdapterSource adapterSource = "hive".equalsIgnoreCase(sourceId) ?
                 AdapterUtils.getHiveAdapterSource() :
