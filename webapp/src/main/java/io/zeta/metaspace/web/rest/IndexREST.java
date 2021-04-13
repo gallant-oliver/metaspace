@@ -169,12 +169,19 @@ public class IndexREST {
      */
     @Transactional(rollbackFor = Exception.class)
     public CategoryDeleteReturn deleteIndexField(String guid,String tenantId,int type,boolean deleteIndex) throws Exception {
+        List<String> indexFields=dataManageService.getChildIndexFields(guid,tenantId);
+        indexFields.add(guid);
         if(deleteIndex){
+            //目录校验
+            List<String> indexIds=indexService.getIndexIds(indexFields,tenantId,IndexState.PUBLISH.getValue(),IndexState.APPROVAL.getValue());
+            if(!CollectionUtils.isEmpty(indexIds)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录中存在状态为(已发布、审核中)的指标，不允许删除");
+            }
             //删除目录下所有指标
-            indexService.deleteIndexByIndexFieldId(guid,tenantId);
+            indexService.deleteIndexByIndexFieldId(indexFields,tenantId);
         }else {
             //将指定指标域下所有指标都转移到默认域
-            indexService.removeIndexToAnotherIndexField(guid,tenantId, CategoryUtil.indexFieldId);
+            indexService.removeIndexToAnotherIndexField(indexFields,tenantId, CategoryUtil.indexFieldId);
         }
         //删除目录
         CategoryDeleteReturn deleteReturn =dataManageService.deleteCategory(guid,tenantId,type);

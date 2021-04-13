@@ -247,6 +247,7 @@ public class IndexServiceImpl implements IndexService{
             iap.setUpdater(user.getUserId());
             iap.setUpdateTime(timestamp);
             indexDAO.editAtomicIndex(iap);
+            indexDAO.moveAtomicIndex(iap.getIndexId(),tenantId,iap.getIndexFieldId());
             iard=BeanMapper.map(iap, IndexResposeDTO.class);
         }else if(indexType == IndexType.INDEXDERIVE.getValue()){
             //名称和标识重名校验
@@ -264,6 +265,7 @@ public class IndexServiceImpl implements IndexService{
             //获取已经存在的派生指标与修饰词关系
             List<IndexDeriveModifierRelationPO> modifierRelations=indexDAO.getDeriveModifierRelations(idp.getIndexId());
             editDerivIndex(idp,indexDTO.getModifiers(),modifierRelations);
+            indexDAO.moveDerivIndex(idp.getIndexId(),tenantId,idp.getIndexFieldId());
             iard=BeanMapper.map(idp, IndexResposeDTO.class);
         }else if(indexType == IndexType.INDEXCOMPOSITE.getValue()){
             //名称和标识重名校验
@@ -276,6 +278,7 @@ public class IndexServiceImpl implements IndexService{
             icp.setUpdateTime(timestamp);
             List<IndexDeriveCompositeRelationPO> compositeRelations=indexDAO.getDeriveCompositeRelations(icp.getIndexId());
             editCompositeIndex(icp,indexDTO.getDependentIndices(),compositeRelations);
+            indexDAO.moveCompositeIndex(icp.getIndexId(),tenantId,icp.getIndexFieldId());
             iard=BeanMapper.map(icp, IndexResposeDTO.class);
         }else{
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标类型错误");
@@ -702,19 +705,25 @@ public class IndexServiceImpl implements IndexService{
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void deleteIndexByIndexFieldId(String guid, String tenantId) {
-        indexDAO.deleteAtomicByIndexFieldId(guid,tenantId);
-        indexDAO.deleteDeriveByIndexFieldId(guid,tenantId);
-        indexDAO.deleteCompositeByIndexFieldId(guid,tenantId);
+    public List<String> getIndexIds(List<String> indexFields, String tenantId, int state1, int state2) {
+        List<String> indexIds=indexDAO.getIndexIds(indexFields,tenantId,state1,state2);
+        return indexIds;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void removeIndexToAnotherIndexField(String sourceGuid, String tenantId, String targetGuid) {
-        indexDAO.updateAtomicIndexFieldId(sourceGuid,tenantId,targetGuid);
-        indexDAO.updateDeriveIndexFieldId(sourceGuid,tenantId,targetGuid);
-        indexDAO.updateCompositeIndexFieldId(sourceGuid,tenantId,targetGuid);
+    public void deleteIndexByIndexFieldId(List<String> guids, String tenantId) {
+        indexDAO.deleteAtomicByIndexFieldIds(guids,tenantId);
+        indexDAO.deleteDeriveByIndexFieldIds(guids,tenantId);
+        indexDAO.deleteCompositeByIndexFieldIds(guids,tenantId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void removeIndexToAnotherIndexField(List<String> sourceGuids, String tenantId, String targetGuid) {
+        indexDAO.updateAtomicIndexFieldIds(sourceGuids,tenantId,targetGuid);
+        indexDAO.updateDeriveIndexFieldIds(sourceGuids,tenantId,targetGuid);
+        indexDAO.updateCompositeIndexFieldIds(sourceGuids,tenantId,targetGuid);
     }
 
     @Override

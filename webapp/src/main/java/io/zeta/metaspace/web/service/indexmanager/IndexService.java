@@ -18,22 +18,22 @@ import java.util.List;
 public interface IndexService extends Approvable {
     /**
      * 删除指定指标域下的指标
-     * @param guid 指标域id
+     * @param guids 指标域id
      * @param tenantId 租户id
      */
     @Transactional(rollbackFor = Exception.class)
-    void deleteIndexByIndexFieldId(String guid, String tenantId);
+    void deleteIndexByIndexFieldId(List<String> guids, String tenantId);
 
 
 
     /**
      * 将指定指标域下的指标迁移到另一个指标域
-     * @param sourceGuid 指标域id
+     * @param sourceGuids 指标域id
      * @param tenantId 租户id
      * @param targetGuid 指标域id
      */
     @Transactional(rollbackFor = Exception.class)
-    void removeIndexToAnotherIndexField(String sourceGuid, String tenantId, String targetGuid);
+    void removeIndexToAnotherIndexField(List<String> sourceGuids, String tenantId, String targetGuid);
 
     /**
      * 获取指标域详情
@@ -140,4 +140,6 @@ public interface IndexService extends Approvable {
      * @return
      */
     List<IndexInfoDTO> pageQuery(PageQueryDTO pageQueryDTO, int categoryType, String tenantId) throws Exception;
+
+    List<String> getIndexIds(List<String> indexFields, String tenantId, int state1, int state2);
 }
