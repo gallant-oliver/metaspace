@@ -331,7 +331,7 @@ public class ApproveGroupService {
         }
         long currentTimeMillis = System.currentTimeMillis();
         Timestamp updateTime = new Timestamp(currentTimeMillis);
-
+        approveGroup.setUpdater(AdminUtils.getUserData().getUserId()); //添加更新用户的ID
         approveGroupDAO.updateApproveGroupInformation(groupId, approveGroup, updateTime);
         //删除模块关系
         approveGroupDAO.deleteApproveGroupModuleById(approveGroup.getId());
