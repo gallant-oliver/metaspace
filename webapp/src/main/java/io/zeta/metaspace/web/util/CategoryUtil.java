@@ -114,6 +114,7 @@ public class CategoryUtil {
             add(new Rule("字段汇总值变化率", 1, "%", "相比上一周期，字段汇总值变化率", createTime, createTime, "28", "rule_5", 7));
             add(new Rule("字段最小值变化率", 1, "%", "相比上一周期，字段最小值变化率", createTime, createTime, "29", "rule_5", 8));
             add(new Rule("字段最大值变化率", 1, "%", "相比上一周期，字段最大值变化率", createTime, createTime, "30", "rule_5", 9));
+            add(new Rule("一致性校验",2,null,"一致性",createTime,createTime,"31","rule_6",31));
         }
     };
 
@@ -152,7 +153,10 @@ public class CategoryUtil {
                 category.setCreator(user.getUserId());
             }
             utils.categoryDAO.addAll(initCategory,tenant.getTenantId());
-            //utils.ruleDAO.insertAll(initRule,tenant.getTenantId());
+            for(Rule rule:initRule){
+                rule.setCreator(user.getUserId());
+            }
+            utils.ruleDAO.insertAll(initRule,tenant.getTenantId());
         }
     }
     public static void initApiCategory(String tenantId,String projectId){

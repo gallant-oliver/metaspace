@@ -52,6 +52,7 @@ public class Rule {
     public Rule(String name,int scope,String unit,String description,Timestamp createTime,Timestamp updateTime,String id,String categoryId,int type){
         this.name = name;
         this.scope=scope;
+        this.unit=unit;
         this.description=description;
         this.createTime=createTime;
         this.updateTime=updateTime;
@@ -59,8 +60,9 @@ public class Rule {
         this.id=id;
         this.categoryId=categoryId;
         this.type=type;
-        this.enable=true;
         this.code=id;
+        this.sql=null;
+        this.enable=true;
     }
 
     public Rule(){
