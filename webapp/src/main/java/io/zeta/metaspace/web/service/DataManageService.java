@@ -2984,4 +2984,12 @@ public class DataManageService {
         return categories;
 
     }
+
+    public List<String> getChildIndexFields(String parentGuid, String tenantId) {
+        List<String> indexFields=categoryDao.queryChildrenCategoryId(parentGuid,tenantId);
+        if(!CollectionUtils.isEmpty(indexFields)){
+            return indexFields;
+        }
+        return new ArrayList<>();
+    }
 }
