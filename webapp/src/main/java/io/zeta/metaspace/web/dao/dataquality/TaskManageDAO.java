@@ -414,7 +414,7 @@ public interface TaskManageDAO {
      * 添加任务执行信息
      * @param taskExecute
      */
-    @Insert("insert into data_quality_task_execute(id,task_id,percent,execute_status,executor,execute_time,general_warning_count,orange_warning_count,red_warning_count，" +
+    @Insert("insert into data_quality_task_execute(id,task_id,percent,execute_status,executor,execute_time,general_warning_count,orange_warning_count,red_warning_count," +
             "rule_error_count,number,counter,warning_status,error_status)" +
             "values(#{task.id},#{task.taskId},#{task.percent},#{task.executeStatus},#{task.executor},#{task.executeTime},#{task.generalWarningCount},#{task.orangeWarningCount},#{task.redWarningCount}," +
             "#{task.ruleErrorCount},#{task.number},#{task.counter},#{task.warningStatus},#{task.errorStatus})")
@@ -512,8 +512,17 @@ public interface TaskManageDAO {
      * @param status
      * @return
      */
-    @Update("update data_quality_task_execute set error_status=#{status}")
+    @Update("update data_quality_task_execute set error_status=#{status} where id = #{ruleExecuteId}")
     public int updateTaskExecuteErrorStatus(@Param("ruleExecuteId")String id, @Param("status")Integer status);
+
+    /**
+     * 更新任务执行异常状态
+     * @param id
+     * @param status
+     * @return
+     */
+    @Update("update data_quality_task_rule_execute set error_status=#{status} where id = #{id}")
+    public int updateRuleExecuteErrorStatus(@Param("id")String id, @Param("status")Integer status);
 
     /**
      * 更新任务红色告警数量
@@ -546,8 +555,8 @@ public interface TaskManageDAO {
      * @param msg
      * @return
      */
-    @Update("update data_quality_task_execute set error_msg=#{msg} where id=#{id}")
-    public int updateTaskExecuteErrorMsg(@Param("id")String id, @Param("msg")String msg);
+    @Update("update data_quality_task_rule_execute set error_msg=#{msg} where id=#{id}")
+    public int updateRuleExecuteErrorMsg(@Param("id")String id, @Param("msg")String msg);
 
     /**
      * 更新任务规则执行错误信息
@@ -555,8 +564,9 @@ public interface TaskManageDAO {
      * @param msg
      * @return
      */
-    @Update("update data_quality_task_rule_execute set error_msg=#{msg} where id=#{id}")
-    public int updateTaskRuleExecutionErrorMsg(@Param("id")String id, @Param("msg")String msg);
+    @Update("update data_quality_task_execute set error_msg=#{msg} where id=#{id}")
+    public int updateTaskExecutionErrorMsg(@Param("id")String id, @Param("msg")String msg);
+
 
     /**
      * 更新任务执行耗时

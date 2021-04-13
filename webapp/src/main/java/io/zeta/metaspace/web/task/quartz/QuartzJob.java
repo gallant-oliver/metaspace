@@ -116,34 +116,31 @@ public class QuartzJob implements Job {
     }
 
     public String initExecuteInfo(String taskId) {
-        try {
-            String userId = taskManageDAO.getTaskUpdater(taskId);
-            DataQualityTaskExecute taskExecute = new DataQualityTaskExecute();
-            String id = UUID.randomUUID().toString();
-            taskExecute.setId(id);
-            taskExecute.setTaskId(taskId);
-            taskExecute.setPercent(0F);
-            taskExecute.setExecuteStatus(1);
-            taskExecute.setExecutor(userId);
-            taskExecute.setExecuteTime(new Timestamp(System.currentTimeMillis()));
-            taskExecute.setOrangeWarningCount(0);
-            taskExecute.setRedWarningCount(0);
-            taskExecute.setRuleErrorCount(0);
-            taskExecute.setWarningStatus(0);
-            taskExecute.setGeneralWarningCount(0);
-            taskExecute.setErrorStatus(0);
-            taskExecute.setNumber(String.valueOf(System.currentTimeMillis()));
-            Integer counter = taskManageDAO.getMaxCounter(taskId);
-            taskExecute.setCounter(Objects.isNull(counter) ? 1 : ++counter);
-            taskManageDAO.initTaskExecuteInfo(taskExecute);
-            taskManageDAO.updateTaskExecutionCount(taskId);
-            taskManageDAO.updateTaskExecuteStatus(taskId, 1);
-            taskManageDAO.updateTaskStatus(taskId, 1);
-            return id;
-        } catch (Exception e) {
-            LOG.error(e.toString());
-        }
-        return null;
+
+        String userId = taskManageDAO.getTaskUpdater(taskId);
+        DataQualityTaskExecute taskExecute = new DataQualityTaskExecute();
+        String id = UUID.randomUUID().toString();
+        taskExecute.setId(id);
+        taskExecute.setTaskId(taskId);
+        taskExecute.setPercent(0F);
+        taskExecute.setExecuteStatus(1);
+        taskExecute.setExecutor(userId);
+        taskExecute.setExecuteTime(new Timestamp(System.currentTimeMillis()));
+        taskExecute.setOrangeWarningCount(0);
+        taskExecute.setRedWarningCount(0);
+        taskExecute.setRuleErrorCount(0);
+        taskExecute.setWarningStatus(0);
+        taskExecute.setGeneralWarningCount(0);
+        taskExecute.setErrorStatus(0);
+        taskExecute.setNumber(String.valueOf(System.currentTimeMillis()));
+        Integer counter = taskManageDAO.getMaxCounter(taskId);
+        taskExecute.setCounter(Objects.isNull(counter) ? 1 : ++counter);
+        taskManageDAO.initTaskExecuteInfo(taskExecute);
+        taskManageDAO.updateTaskExecutionCount(taskId);
+        taskManageDAO.updateTaskExecuteStatus(taskId, 1);
+        taskManageDAO.updateTaskStatus(taskId, 1);
+        return id;
+
     }
 
     public boolean canceled(String taskId, String taskExecuteId){
@@ -265,6 +262,8 @@ public class QuartzJob implements Job {
             taskManageDAO.initRuleExecuteInfo(task.getId(), taskExecuteId, taskId, task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(), currentTimeStamp, currentTimeStamp, 0, 0, task.getRuleId());
             do {
                 try {
+                    int m = 1/0;
+                    System.out.println(m);
                     runJob(task);
                     float ratio = (float) (i + 1) / totalStep;
                     LOG.info("raion=" + ratio);
@@ -279,15 +278,16 @@ public class QuartzJob implements Job {
                         retryCount++;
                         LOG.info("retryCount=" + retryCount);
 
-                        Thread.sleep(RETRY * 5000);
+                        Thread.sleep((retryCount + 1) * 5000);
                     } catch (Exception ex) {
                         LOG.error(ex.getMessage());
                     }
-                    if (RETRY == retryCount) {
-                        taskManageDAO.updateTaskExecuteErrorMsg(taskExecuteId, e.toString());
+                    if (RETRY > retryCount) {
+                        taskManageDAO.updateTaskExecutionErrorMsg(task.getTaskExecuteId(), e.toString());
                         taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
                         taskManageDAO.updateTaskErrorCount(taskId);
                         taskManageDAO.updateTaskExecuteErrorStatus(task.getTaskExecuteId(), WarningStatus.WARNING.code);
+                        taskManageDAO.updateRuleExecuteErrorStatus(task.getId(), WarningStatus.WARNING.code);
                     }
                 } finally {
                     recordExecutionInfo(task, errorMsg, tenantId);
@@ -330,7 +330,7 @@ public class QuartzJob implements Job {
         logJoiner.add(checkMsg);
         logJoiner.add(Objects.isNull(errorMsg) ? "SUCCESS" : errorMsg);
 
-        taskManageDAO.updateTaskRuleExecutionErrorMsg(task.getId(), logJoiner.toString());
+        taskManageDAO.updateRuleExecuteErrorMsg(task.getId(), logJoiner.toString());
     }
 
     public void runJob(AtomicTaskExecution task) throws Exception {

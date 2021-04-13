@@ -182,24 +182,11 @@ public class WarningGroupREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/warning/{warningType}/list")
+    @Path("/warning/{warnType}/list")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getWarningList(@PathParam("warningType")Integer warningType, Parameters parameters,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        return warningGroupService.getWarningList(warningType, parameters,tenantId);
-    }
-
-    /**
-     * 获取告警列表
-     * @return
-     * @throws AtlasBaseException
-     */
-    @POST
-    @Path("/warning/list")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getWarningList(Parameters parameters,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        return warningGroupService.getWarns(parameters,tenantId);
+    public PageResult getWarningList(Parameters parameters,@PathParam("warnType")int warnType, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return warningGroupService.getWarns(parameters,tenantId,warnType);
     }
 
     /**
@@ -212,8 +199,8 @@ public class WarningGroupREST {
     @Path("/error/{errorType}/list")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getErrorWarningList(@PathParam("errorType")Integer errorType, Parameters parameters,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        return warningGroupService.getErrorWarningList(errorType, parameters,tenantId);
+    public PageResult getErrorWarningList(@PathParam("errorType")int errorType, Parameters parameters,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return warningGroupService.getErrors(parameters,tenantId,errorType);
     }
 
     /**
@@ -240,7 +227,7 @@ public class WarningGroupREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public void closeTaskError(List<String> executionIdList) throws AtlasBaseException {
-        warningGroupService.closeTaskExecutionWarning(1, executionIdList);
+        warningGroupService.closeErrors(executionIdList);
     }
 
 
