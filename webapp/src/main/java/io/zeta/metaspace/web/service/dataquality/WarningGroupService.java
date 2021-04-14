@@ -456,7 +456,7 @@ public class WarningGroupService {
                 }
                 error.setObject(builder.toString());
             }else{
-                error.setObject(error.getSql());
+                error.setObject(error.getSql()==null?"":error.getSql());
             }
         }
         pageResult.setTotalSize(errors.get(0).getTotal());
