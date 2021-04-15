@@ -45,6 +45,7 @@ import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.service.dataquality.WarningGroupService;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.CategoryUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -1319,6 +1320,9 @@ public class UserGroupService {
                 dbNames=new ArrayList<>();
             }
             allDBNames.addAll(dbNames);
+            if(type==5){
+                userGroupIds.add(CategoryUtil.indexFieldId);
+            }
             userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type, allDBNames);
             List<String> categoryIds = userCategories.stream().map(category -> category.getGuid()).collect(Collectors.toList());
             if (type == 0) {

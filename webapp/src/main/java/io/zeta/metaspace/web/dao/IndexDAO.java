@@ -85,10 +85,16 @@ public interface IndexDAO {
      * 编辑原子指标
      */
     @Update("update index_atomic_info set index_name=#{iap.indexName}, index_identification=#{iap.indexIdentification}, description=#{iap.description}, central=#{iap.central}, " +
-            "index_field_id=#{iap.indexFieldId}, approval_group_id=#{iap.approvalGroupId}, source_id=#{iap.sourceId}, " +
+            " approval_group_id=#{iap.approvalGroupId}, source_id=#{iap.sourceId}, " +
             "db_name=#{iap.dbName}, table_id=#{iap.tableId}, column_id=#{iap.columnId}, business_caliber=#{iap.businessCaliber}, business_leader=#{iap.businessLeader}, " +
             "technical_caliber=#{iap.technicalCaliber}, technical_leader=#{iap.technicalLeader}, updater=#{iap.updater}, update_time=#{iap.updateTime} where index_id=#{iap.indexId} and version=#{iap.version}")
     int editAtomicIndex(@Param("iap") IndexAtomicPO iap);
+
+    /**
+     * 迁移原子指标
+     */
+    @Update("update index_atomic_info set index_field_id=#{targetIndexFieldId} where index_id=#{indexId} and tenant_id=#{tenantId}")
+    void moveAtomicIndex(@Param("indexId")String indexId, @Param("tenantId")String tenantId,@Param("targetIndexFieldId") String targetIndexFieldId);
 
     /**
      *根据派生指标id获取派生指标与修饰词关系
@@ -104,18 +110,28 @@ public interface IndexDAO {
      *编辑派生指标
      */
     @Update("update index_derive_info set index_atomic_id=#{idp.indexAtomicId},time_limit_id=#{idp.timeLimitId},index_name=#{idp.indexName}, index_identification=#{idp.indexIdentification}, description=#{idp.description}, central=#{idp.central}, " +
-            "index_field_id=#{idp.indexFieldId}, approval_group_id=#{idp.approvalGroupId},  " +
+            " approval_group_id=#{idp.approvalGroupId},  " +
             "business_caliber=#{idp.businessCaliber}, business_leader=#{idp.businessLeader}, " +
             "technical_caliber=#{idp.technicalCaliber}, technical_leader=#{idp.technicalLeader}, updater=#{idp.updater}, update_time=#{idp.updateTime} where index_id=#{idp.indexId} and version=#{idp.version}")
     void editDerivIndex(@Param("idp") IndexDerivePO idp);
     /**
+     * 迁移派生指标
+     */
+    @Update("update index_atomic_info set index_field_id=#{targetIndexFieldId} where index_id=#{indexId} and tenant_id=#{tenantId}")
+    void moveDerivIndex(@Param("indexId")String indexId, @Param("tenantId")String tenantId,@Param("targetIndexFieldId") String targetIndexFieldId);
+    /**
      *编辑复合指标
      */
     @Update("update index_composite_info set index_name=#{icp.indexName}, index_identification=#{icp.indexIdentification}, description=#{icp.description}, central=#{icp.central}, " +
-            "index_field_id=#{icp.indexFieldId}, approval_group_id=#{icp.approvalGroupId}, expression=#{icp.expression}, " +
+            " approval_group_id=#{icp.approvalGroupId}, expression=#{icp.expression}, " +
             "business_caliber=#{icp.businessCaliber}, business_leader=#{icp.businessLeader}, " +
             "technical_caliber=#{icp.technicalCaliber}, technical_leader=#{icp.technicalLeader}, updater=#{icp.updater}, update_time=#{icp.updateTime} where index_id=#{icp.indexId} and version=#{icp.version}")
     void editCompositeIndex(@Param("icp") IndexCompositePO icp);
+    /**
+     * 迁移复合指标
+     */
+    @Update("update index_composite_info set index_field_id=#{targetIndexFieldId} where index_id=#{indexId} and tenant_id=#{tenantId}")
+    void moveCompositeIndex(@Param("indexId")String indexId, @Param("tenantId")String tenantId,@Param("targetIndexFieldId") String targetIndexFieldId);
     /**
      *删除派生指标的其所有修饰词
      */
@@ -206,24 +222,55 @@ public interface IndexDAO {
     /**
      *根据指标域id删除原子指标
      */
-    @Delete("delete from index_atomic_info where index_field_id=#{guid} and tenant_id=#{tenantId}")
-    void deleteAtomicByIndexFieldId(@Param("guid") String guid,@Param("tenantId") String tenantId);
+    @Delete({" <script>",
+            " delete from index_atomic_info where tenant_id=#{tenantId} and index_field_id in ",
+            " <foreach item='indexFieldId' index='index' collection='guids' separator=',' open='(' close=')'>",
+            " #{indexFieldId} ",
+            " </foreach>",
+            " </script>"})
+    void deleteAtomicByIndexFieldIds(@Param("guids") List<String> guids,@Param("tenantId") String tenantId);
     /**
      *根据指标域id删除派生指标
      */
-    @Delete("delete from index_derive_info where index_field_id=#{guid} and tenant_id=#{tenantId}")
-    void deleteDeriveByIndexFieldId(@Param("guid") String guid,@Param("tenantId") String tenantId);
+    @Delete({" <script>",
+            " delete from index_derive_info where tenant_id=#{tenantId} and index_field_id in ",
+            " <foreach item='indexFieldId' index='index' collection='guids' separator=',' open='(' close=')'>",
+            " #{indexFieldId} ",
+            " </foreach>",
+            " </script>"})
+    void deleteDeriveByIndexFieldIds(@Param("guids") List<String> guids,@Param("tenantId") String tenantId);
     /**
      *根据指标域id删除复合指标
      */
-    @Delete("delete from index_composite_info where index_field_id=#{guid} and tenant_id=#{tenantId}")
-    void deleteCompositeByIndexFieldId(@Param("guid") String guid,@Param("tenantId") String tenantId);
-    @Update("update index_atomic_info set index_field_id=#{targetGuid} where index_field_id=#{sourceGuid} and  tenant_id=#{tenantId}")
-    void updateAtomicIndexFieldId(@Param("sourceGuid") String sourceGuid,@Param("tenantId")  String tenantId,@Param("targetGuid")  String targetGuid);
-    @Update("update index_derive_info set index_field_id=#{targetGuid} where index_field_id=#{sourceGuid} and  tenant_id=#{tenantId}")
-    void updateDeriveIndexFieldId(@Param("sourceGuid") String sourceGuid,@Param("tenantId")  String tenantId,@Param("targetGuid")  String targetGuid);
-    @Update("update index_composite_info set index_field_id=#{targetGuid} where index_field_id=#{sourceGuid} and  tenant_id=#{tenantId}")
-    void updateCompositeIndexFieldId(@Param("sourceGuid") String sourceGuid,@Param("tenantId")  String tenantId,@Param("targetGuid")  String targetGuid);
+    @Delete({" <script>",
+            " delete from index_composite_info where tenant_id=#{tenantId} and index_field_id in ",
+            " <foreach item='indexFieldId' index='index' collection='guids' separator=',' open='(' close=')'>",
+            " #{indexFieldId} ",
+            " </foreach>",
+            " </script>"})
+    void deleteCompositeByIndexFieldIds(@Param("guids") List<String> guids,@Param("tenantId") String tenantId);
+
+    @Update({" <script>",
+            " update index_atomic_info set index_field_id=#{targetGuid} where tenant_id=#{tenantId} and index_field_id in ",
+            " <foreach item='indexFieldId' index='index' collection='sourceGuids' separator=',' open='(' close=')'>",
+            " #{indexFieldId} ",
+            " </foreach>",
+            " </script>"})
+    void updateAtomicIndexFieldIds(@Param("sourceGuids") List<String> sourceGuids,@Param("tenantId")  String tenantId,@Param("targetGuid")  String targetGuid);
+    @Update({" <script>",
+            " update index_derive_info set index_field_id=#{targetGuid} where tenant_id=#{tenantId} and index_field_id in ",
+            " <foreach item='indexFieldId' index='index' collection='sourceGuids' separator=',' open='(' close=')'>",
+            " #{indexFieldId} ",
+            " </foreach>",
+            " </script>"})
+    void updateDeriveIndexFieldIds(@Param("sourceGuids") List<String> sourceGuids,@Param("tenantId")  String tenantId,@Param("targetGuid")  String targetGuid);
+    @Update({" <script>",
+            " update index_composite_info set index_field_id=#{targetGuid} where tenant_id=#{tenantId} and index_field_id in ",
+            " <foreach item='indexFieldId' index='index' collection='sourceGuids' separator=',' open='(' close=')'>",
+            " #{indexFieldId} ",
+            " </foreach>",
+            " </script>"})
+    void updateCompositeIndexFieldIds(@Param("sourceGuids") List<String> sourceGuids,@Param("tenantId")  String tenantId,@Param("targetGuid")  String targetGuid);
     @Select({" <script>",
             " select iai.*,ca.name as indexFieldName,ag.name as approvalGroupName,ds.source_name as sourceName,ti.tablename as tableName,ci.column_name as columnName, " ,
             " bl.username as businessLeaderName,tl.username as technicalLeaderName, c.username as creatorName,u.username as updaterName,p.username as publisherName " ,
@@ -489,4 +536,21 @@ public interface IndexDAO {
             " where  index_id=#{approveItem.objectId} and version=#{approveItem.version} and tenant_id=#{tenantId} ",
             " </script>"})
     void updatePublishInfo(@Param("approveItem")ApproveItem approveItem, @Param("tenantId")String tenantId,@Param("state") int state);
+    @Select({" <script>",
+            " select index_id from index_atomic_info  where tenant_id=#{tenantId} and (index_state=#{state1} or index_state=#{state2}) and index_field_id in ",
+            " <foreach item='indexFieldId' index='index' collection='indexFields' separator=',' open='(' close=')'>",
+            " #{indexFieldId} ",
+            " </foreach> ",
+            " UNION ",
+            " select index_id from index_derive_info  where tenant_id=#{tenantId} and (index_state=#{state1} or index_state=#{state2}) and index_field_id in ",
+            " <foreach item='indexFieldId' index='index' collection='indexFields' separator=',' open='(' close=')'>",
+            " #{indexFieldId} ",
+            " </foreach> ",
+            " UNION ",
+            " select index_id from index_composite_info  where tenant_id=#{tenantId} and (index_state=#{state1} or index_state=#{state2}) and index_field_id in ",
+            " <foreach item='indexFieldId' index='index' collection='indexFields' separator=',' open='(' close=')'>",
+            " #{indexFieldId} ",
+            " </foreach> ",
+            " </script>"})
+    List<String> getIndexIds(@Param("indexFields")List<String> indexFields, @Param("tenantId")String tenantId,@Param("state1") int state1,@Param("state2") int state2);
 }

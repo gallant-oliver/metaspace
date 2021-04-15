@@ -54,7 +54,7 @@ public class ApproveGroupREST {
     ApproveGroupService approveGroupService;
 
     /**
-     * 审批组列表及搜索 OK
+     * 审批组列表及搜索
      */
 
     @POST
@@ -82,7 +82,7 @@ public class ApproveGroupREST {
     }
 
     /**
-     * 审批组列表及搜索 OK
+     * 审批组列表及搜索
      */
 
     @POST
@@ -132,7 +132,7 @@ public class ApproveGroupREST {
     }
 
     /**
-     * 四.删除审批组 OK
+     * 四.删除审批组
      */
     @DELETE
     @Path("/delete")
@@ -153,7 +153,7 @@ public class ApproveGroupREST {
 
 
     /**
-     * 五.审批组成员列表及搜索 OK
+     * 五.审批组成员列表及搜索
      */
 
     @GET
@@ -199,7 +199,7 @@ public class ApproveGroupREST {
 
 
     /**
-     * 审批组添加成员  OK
+     * 审批组添加成员
      */
     @POST
     @Path("/addUsers")
@@ -221,7 +221,7 @@ public class ApproveGroupREST {
     }
 
     /**
-     * 审批组添加成员  OK
+     * 审批模块
      */
     @POST
     @Path("/module")
@@ -245,7 +245,7 @@ public class ApproveGroupREST {
 
 
     /**
-     * 审批组移除成员 OK
+     * 审批组移除成员
      */
 
     @DELETE
