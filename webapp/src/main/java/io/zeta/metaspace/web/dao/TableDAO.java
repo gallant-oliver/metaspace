@@ -95,7 +95,7 @@ public interface TableDAO {
 
     @Select({"<script>",
             " select count(*)over() total,guid,name,tableGuid,path,requestMode,version,username as creator from api join users on users.userid=api.creator ",
-            "where tableGuid=#{tableGuid} and api.tenantid=#{tenantId}",
+            "where tableGuid=#{tableGuid} and api.tenantid=#{tenantId} AND api.valid = true",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",
