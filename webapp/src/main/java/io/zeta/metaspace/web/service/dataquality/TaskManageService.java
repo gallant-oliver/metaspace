@@ -936,16 +936,21 @@ public class TaskManageService {
                     }else if (TaskType.CUSTOMIZE.equals(taskType)) {
                         List<CustomizeParam> params = GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<CustomizeParam>>() {
                         }.getType());
-                        //自定义规则，只展示规则名称等基础信息，且只有一条记录
-                        TaskRuleExecutionRecord taskRuleExecutionRecord = new TaskRuleExecutionRecord(record);
+                        List<TaskRuleExecutionRecord> resultList = new ArrayList<>();
                         //取出自定义规则的数据源(保存在其参数字符串中)
                         if(params != null && params.size() > 0){
-                            CustomizeParam customizeParam = params.get(0);
-                            String dataSourceName = getDataSourceName(customizeParam.getDataSourceId()); //获取数据源
-                            taskRuleExecutionRecord.setDataSourceName(dataSourceName);
+                            for (CustomizeParam customizeParam: params) {
+                                //自定义规则，只展示规则名称等基础信息，且只有一条记录
+                                TaskRuleExecutionRecord taskRuleExecutionRecord = new TaskRuleExecutionRecord(record);
+                                String dataSourceName = getDataSourceName(customizeParam.getDataSourceId()); //获取数据源
+                                taskRuleExecutionRecord.setDataSourceName(dataSourceName);
+                                taskRuleExecutionRecord.setDbName(customizeParam.getSchema());
+                                taskRuleExecutionRecord.setTableName(customizeParam.getTable());
+                                taskRuleExecutionRecord.setObjectName(customizeParam.getColumn());
+                                taskRuleExecutionRecord.setTableId(customizeParam.getTable());
+                                resultList.add(taskRuleExecutionRecord);
+                            }
                         }
-                        List<TaskRuleExecutionRecord> resultList = new ArrayList<>();
-                        resultList.add(taskRuleExecutionRecord);
                         map.get(record.getSubtaskId()).setTaskRuleExecutionRecords(resultList);
                     }
                 }
@@ -967,7 +972,9 @@ public class TaskManageService {
             }else {
                 result =String.format("%.0f", record.getResult());
             }
-            result = result + record.getCheckThresholdUnit();
+            if(null != record.getCheckThresholdUnit()){
+                result = result + record.getCheckThresholdUnit();
+            }
         }
         record.setResultString(result);
     }
