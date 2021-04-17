@@ -766,6 +766,17 @@ public class TaskManageService {
         try {
             TaskExecutionReport taskExecutionInfo = taskManageDAO.getTaskExecutionInfo(taskId);
             List<TaskExecutionReport.ExecutionRecord> executionRecordList = taskManageDAO.getTaskExecutionRecord(taskId);
+            if(!CollectionUtils.isEmpty(executionRecordList)){
+                executionRecordList.stream().forEach(r ->{
+                    if(r.getErrorCount() != null &&  r.getErrorCount() != 0){
+                        r.setCheckResult("异常");
+                    }else if(r.getGeneralWarningCount() != null && r.getGeneralWarningCount() != 0){
+                        r.setCheckResult("不合格");
+                    }else{
+                        r.setCheckResult("合格");
+                    }
+                });
+            }
             taskExecutionInfo.setExecutionRecordList(executionRecordList);
             return taskExecutionInfo;
         } catch (Exception e) {

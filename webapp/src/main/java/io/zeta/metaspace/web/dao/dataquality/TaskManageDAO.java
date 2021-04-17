@@ -642,7 +642,7 @@ public interface TaskManageDAO {
     @Select("select rule_type from data_quality_rule_template where id=#{ruleId} and tenantid=#{tenantId}")
     public String getRuleTypeCodeByRuleId(@Param("ruleId")String id,@Param("tenantId")String tenantId);
 
-    @Select("select id as taskId,name as taskName,level,description,execution_count as executeCount,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,error_total_count as errorTotalCount,start_time as startTime,end_time as endTime,pool from data_quality_task where id=#{taskId}")
+    @Select("select id as taskId,name as taskName,level,description,execution_count as executeCount,general_warning_total_count as generalWarningTotalCount,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,error_total_count as errorTotalCount,start_time as startTime,end_time as endTime,pool from data_quality_task where id=#{taskId}")
     public TaskExecutionReport getTaskExecutionInfo(@Param("taskId")String id);
 
     @Select({" <script>",
@@ -696,7 +696,7 @@ public interface TaskManageDAO {
      * @param id
      * @return
      */
-    @Select("select id as executionId,number,orange_warning_count as orangeWarningCount,red_warning_count as redWarningCount,rule_error_count as errorCount,execute_time as executeTime from data_quality_task_execute where task_id=#{taskId} order by executeTime desc")
+    @Select("select id as executionId,number,orange_warning_count as orangeWarningCount,red_warning_count as redWarningCount,general_warning_count as generalWarningCount,rule_error_count as errorCount,execute_time as executeTime from data_quality_task_execute where task_id=#{taskId} order by executeTime desc")
     public List<TaskExecutionReport.ExecutionRecord> getTaskExecutionRecord(@Param("taskId")String id);
 
     /**
