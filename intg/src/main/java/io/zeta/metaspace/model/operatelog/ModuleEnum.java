@@ -42,7 +42,7 @@ public enum ModuleEnum {
     RULEMANAGE(4,"数据质量","规则管理",20,"规则管理", "rulemanage", "rulemanage",1, 20),
     TASKMANAGE(4,"数据质量","任务管理",21,"任务管理", "taskmanage", "taskmanage",1, 21),
     WARNINGGROUP(4,"数据质量","告警处理",22,"告警处理", "warninggroup", "warninggroup",1, 22),
-    RULETEMPLATE(4,"数据质量","问题库",23,"问题库", "ruletemplate", "ruletemplate",1, 23),
+    RULETEMPLATE(4,"数据质量","报告归档",23,"报告归档", "ruletemplate", "ruletemplate",1, 23),
     //以下数据质量在安全中心不存在
     DATAQUALITY(4,"数据质量","查看",24,"数据质量", "dataquality", "dataquality",1, 24),
 
