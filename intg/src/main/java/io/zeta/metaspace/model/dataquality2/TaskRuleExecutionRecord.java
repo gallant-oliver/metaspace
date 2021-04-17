@@ -46,6 +46,7 @@ public class TaskRuleExecutionRecord {
     private Integer checkType;
     private Integer checkExpression;
     private Float result;
+    private String resultString;
     private Float checkMinValue;
     private Float checkMaxValue;
     private Integer checkStatus;

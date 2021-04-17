@@ -98,6 +98,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import scala.annotation.meta.param;
 
 import java.io.BufferedOutputStream;
@@ -673,7 +674,6 @@ public class TaskManageService {
 
 
     public void startTaskNow(String taskId) throws AtlasBaseException {
-        EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
         if(QuartzJob.CANCEL_STATE_MAP.containsKey(taskId)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务正在执行中");
         }
@@ -875,6 +875,9 @@ public class TaskManageService {
             Boolean filing = taskManageDAO.getFilingStatus(executionId)==0?false:true;
             for (TaskRuleExecutionRecord record : list) {
                 record.setFiling(filing);
+
+                setResultString(record);
+
                 if (map.containsKey(record.getSubtaskId())){
                     map.get(record.getSubtaskId()).getTaskRuleExecutionRecords().add(record);
                 }else{
@@ -954,6 +957,18 @@ public class TaskManageService {
             LOG.error("获取报告规则详情失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报告规则详情失败");
         }
+    }
+
+    private void setResultString(TaskRuleExecutionRecord record) {
+        String reult = "";
+        if(record.getResult() != null){
+            if("%".equals(record.getCheckThresholdUnit())){
+                reult = String.format("%.2f", record.getResult()/100f);
+            }else {
+                reult =String.format("%.0f", record.getResult());
+            }
+        }
+        record.setResultString(reult + record.getCheckThresholdUnit());
     }
 
     public PageResult<ExecutionLogHeader> getExecutionLogList(String taskId, Parameters parameters) throws AtlasBaseException {
