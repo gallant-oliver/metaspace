@@ -262,8 +262,6 @@ public class QuartzJob implements Job {
             taskManageDAO.initRuleExecuteInfo(task.getId(), taskExecuteId, taskId, task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(), currentTimeStamp, currentTimeStamp, 0, 0, task.getRuleId());
             do {
                 try {
-                    int m = 1/0;
-                    System.out.println(m);
                     runJob(task);
                     float ratio = (float) (i + 1) / totalStep;
                     LOG.info("raion=" + ratio);
