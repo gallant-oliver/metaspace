@@ -960,15 +960,16 @@ public class TaskManageService {
     }
 
     private void setResultString(TaskRuleExecutionRecord record) {
-        String reult = "";
+        String result = "";
         if(record.getResult() != null){
             if("%".equals(record.getCheckThresholdUnit())){
-                reult = String.format("%.2f", record.getResult()/100f);
+                result = String.format("%.2f", record.getResult()/100f);
             }else {
-                reult =String.format("%.0f", record.getResult());
+                result =String.format("%.0f", record.getResult());
             }
+            result = result + record.getCheckThresholdUnit();
         }
-        record.setResultString(reult + record.getCheckThresholdUnit());
+        record.setResultString(result);
     }
 
     public PageResult<ExecutionLogHeader> getExecutionLogList(String taskId, Parameters parameters) throws AtlasBaseException {

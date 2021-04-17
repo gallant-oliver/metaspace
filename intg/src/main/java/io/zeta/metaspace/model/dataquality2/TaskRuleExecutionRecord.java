@@ -104,5 +104,6 @@ public class TaskRuleExecutionRecord {
         this.checkThresholdUnit = taskRuleExecutionRecord.checkThresholdUnit;
         this.filing = taskRuleExecutionRecord.filing;
         this.createTime = taskRuleExecutionRecord.createTime;
+        this.resultString = taskRuleExecutionRecord.resultString;
     }
 }
