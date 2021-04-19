@@ -1394,92 +1394,21 @@ public class DataManageService {
                 String typeName = entity.getTypeName();
                 if (("hive_table").equals(typeName)) {
                     if (entity.getAttribute("temporary") == null || entity.getAttribute("temporary").toString().equals("false")) {
-                        String guid = entity.getGuid();
-                        String name = getEntityAttribute(entity, "name");
-                        if (tableDAO.ifTableExists(guid) == 0) {
-                            TableInfo tableInfo = new TableInfo();
-                            tableInfo.setTableGuid(guid);
-                            tableInfo.setTableName(name);
-                            Object createTime = entity.getAttribute("createTime");
-                            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                            String formatDateStr = sdf.format(createTime);
-                            tableInfo.setCreateTime(formatDateStr);
-                            tableInfo.setStatus(entity.getStatus().name());
-                            AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
-                            tableInfo.setDatabaseGuid(relatedDB.getGuid());
-                            tableInfo.setDbName(relatedDB.getDisplayText());
-                            tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
-                            tableInfo.setDescription(getEntityAttribute(entity, "comment"));
-                            tableInfo.setSourceId("hive");
-                            tableDAO.addTable(tableInfo);
-                        }
-                    }
-                } else if (("rdbms_table").equals(typeName)) {
-                    String guid = entity.getGuid();
-                    String name = getEntityAttribute(entity, "name");
-                    if (tableDAO.ifTableExists(guid) == 0) {
-                        TableInfo tableInfo = new TableInfo();
-                        tableInfo.setTableGuid(guid);
-                        tableInfo.setTableName(name);
-                        Object createTime = entity.getAttribute("createTime");
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                        String formatDateStr = sdf.format(createTime);
-                        tableInfo.setCreateTime(formatDateStr);
-                        tableInfo.setStatus(entity.getStatus().name());
-                        AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
-                        tableInfo.setDatabaseGuid(relatedDB.getGuid());
-                        tableInfo.setDbName(relatedDB.getDisplayText());
-                        tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
-                        tableInfo.setDescription(getEntityAttribute(entity, "comment"));
-                        String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
-                        tableInfo.setSourceId(qualifiedName.split("\\.")[0]);
-
+                        TableInfo tableInfo = getTableInfo(entity);
+                        tableInfo.setSourceId("hive");
+                        //检查表是否存在，如果存在，删除表并替换所有关联中的表guid为新表guid
+                        deleteIfExistTable(tableInfo);
                         tableDAO.addTable(tableInfo);
                     }
-                } else if (("hive_column").equals(typeName)) {
-                    AtlasRelatedObjectId table = (AtlasRelatedObjectId) entity.getRelationshipAttribute("table");
-                    String tableGuid = table.getGuid();
-                    String guid = entity.getGuid();
-                    String name = entity.getAttribute("name").toString();
-                    String type = entity.getAttribute("type").toString();
-                    Object comment = entity.getAttribute("comment");
-                    String status = entity.getStatus().name();
-                    String updateTime = DateUtils.date2String(entity.getUpdateTime());
-                    Column column = new Column();
-                    column.setTableId(tableGuid);
-                    column.setColumnId(guid);
-                    column.setColumnName(name);
-                    column.setType(type);
-                    column.setStatus(status);
-                    column.setDisplayNameUpdateTime(updateTime);
-                    if (comment != null) {
-                        column.setDescription(column.toString());
-                    }
-
+                } else if (("rdbms_table").equals(typeName)) {
+                    TableInfo tableInfo = getTableInfo(entity);
+                    String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
+                    tableInfo.setSourceId(qualifiedName.split("\\.")[0]);
+                    deleteIfExistTable(tableInfo);
+                    tableDAO.addTable(tableInfo);
+                } else if (("hive_column").equals(typeName) || ("rdbms_column").equals(typeName)) {
+                    Column column = getColumn(entity);
                     columnList.add(column);
-
-                } else if (("rdbms_column").equals(typeName)) {
-                    AtlasRelatedObjectId table = (AtlasRelatedObjectId) entity.getRelationshipAttribute("table");
-                    String tableGuid = table.getGuid();
-                    String guid = entity.getGuid();
-                    String name = entity.getAttribute("name").toString();
-                    String type = entity.getAttribute("data_type").toString();
-                    Object comment = entity.getAttribute("comment");
-                    String status = entity.getStatus().name();
-                    String updateTime = DateUtils.date2String(entity.getUpdateTime());
-                    Column column = new Column();
-                    column.setTableId(tableGuid);
-                    column.setColumnId(guid);
-                    column.setColumnName(name);
-                    column.setType(type);
-                    column.setStatus(status);
-                    column.setDisplayNameUpdateTime(updateTime);
-                    if (comment != null) {
-                        column.setDescription(column.toString());
-                    }
-
-                    columnList.add(column);
-
                 }
             }
             if (columnList.size() > 0) {
@@ -1490,6 +1419,65 @@ public class DataManageService {
         } catch (Exception e) {
             LOG.error("添加entity失败", e);
         }
+    }
+
+    private void deleteIfExistTable(TableInfo tableInfo) {
+
+        TableInfo table = tableDAO.getTableInfo(tableInfo.getSourceId(), tableInfo.getDbName(), tableInfo.getTableName());
+        if (null != table) {
+            tableDAO.deleteTableInfo(table.getTableGuid());
+            tableDAO.updateTableRelatedOwner(tableInfo.getTableGuid(), table.getTableGuid());
+            tableDAO.updateTableRelations(tableInfo.getTableGuid(), table.getTableGuid());
+            tableDAO.updateTableTags(tableInfo.getTableGuid(), table.getTableGuid());
+            businessDAO.UpdateBusinessRelationByTableGuid(tableInfo.getTableGuid(), table.getTableGuid());
+            businessDAO.updateBusinessTrustTableByTableId(tableInfo.getTableGuid(), table.getTableGuid());
+
+        }
+
+    }
+
+    private Column getColumn(AtlasEntity entity) {
+        AtlasRelatedObjectId table = (AtlasRelatedObjectId) entity.getRelationshipAttribute("table");
+        String tableGuid = table.getGuid();
+        String guid = entity.getGuid();
+        String name = entity.getAttribute("name").toString();
+        String columnGuid = columnDAO.getColumnGuid(tableGuid, name);
+        if(null != columnGuid){
+            columnDAO.deleteColumn(columnGuid);
+        }
+        String type = entity.getAttribute("data_type").toString();
+        Object comment = entity.getAttribute("comment");
+        String status = entity.getStatus().name();
+        String updateTime = DateUtils.date2String(entity.getUpdateTime());
+        Column column = new Column();
+        column.setTableId(tableGuid);
+        column.setColumnId(guid);
+        column.setColumnName(name);
+        column.setType(type);
+        column.setStatus(status);
+        column.setDisplayNameUpdateTime(updateTime);
+        if (comment != null) {
+            column.setDescription(column.toString());
+        }
+        return column;
+    }
+
+    private TableInfo getTableInfo(AtlasEntity entity) {
+        String name = getEntityAttribute(entity, "name");
+        TableInfo tableInfo = new TableInfo();
+        tableInfo.setTableGuid(entity.getGuid());
+        tableInfo.setTableName(name);
+        Object createTime = entity.getAttribute("createTime");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String formatDateStr = sdf.format(createTime);
+        tableInfo.setCreateTime(formatDateStr);
+        tableInfo.setStatus(entity.getStatus().name());
+        AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
+        tableInfo.setDatabaseGuid(relatedDB.getGuid());
+        tableInfo.setDbName(relatedDB.getDisplayText());
+        tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
+        tableInfo.setDescription(getEntityAttribute(entity, "comment"));
+        return tableInfo;
     }
 
     @Transactional(rollbackFor = Exception.class)

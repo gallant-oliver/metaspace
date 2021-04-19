@@ -208,6 +208,9 @@ public interface BusinessDAO {
     @Delete("delete from business2Table where tableGuid=#{tableGuid}")
     public int deleteBusinessRelationByTableGuid(@Param("tableGuid")String tableGuid);
 
+    @Update("update business2Table set tableGuid = #{tableGuid} where tableGuid=#{oldTableGuid}")
+    public int UpdateBusinessRelationByTableGuid(@Param("tableGuid")String tableGuid, @Param("oldTableGuid")String oldTableGuid);
+
 
 
     @Select({"<script>",
@@ -238,6 +241,9 @@ public interface BusinessDAO {
 
     @Update("update businessInfo set trustTable=null where trustTable=#{tableId}")
     public int removeBusinessTrustTableByTableId(@Param("tableId")String tableId);
+
+    @Update("update businessInfo set trustTable=#{tableId} where trustTable=#{OldTableId}")
+    int updateBusinessTrustTableByTableId(@Param("tableId")String tableId, @Param("OldTableId")String OldTableId);
 
     @Select("<script>" +
             "select businessInfo.name,businessInfo.module,businessInfo.description,businessInfo.owner,businessInfo.manager,businessInfo.maintainer,businessInfo.dataassets,businessInfo.businesslastupdate,businessInfo.businessoperator " +
