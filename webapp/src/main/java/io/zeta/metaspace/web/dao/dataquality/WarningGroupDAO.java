@@ -156,6 +156,12 @@ public interface WarningGroupDAO {
     public int closeExecutionWarning(@Param("executeId")String executeId);
 
     /**
+     * 关闭异常
+     */
+    @Update("update data_quality_task_execute set error_status = 2 where id = #{executeId}")
+    public int closeExecutionError(@Param("executeId")String executeId);
+
+    /**
      * 关闭告警
      */
     @Update("update data_quality_task_rule_execute set general_warning_check_status= #{ruleExecute.generalWarningCheckStatus}," +
@@ -164,6 +170,11 @@ public interface WarningGroupDAO {
             "where id = #{ruleExecute.id}")
     public int closeRuleExecuteWarn(@Param("ruleExecute")RuleExecute ruleExecute);
 
+    /**
+     * 关闭异常
+     */
+    @Update("update data_quality_task_rule_execute set error_status = 2 where id = #{id}")
+    public int closeRuleExecuteError(@Param("id")String id);
 
 
 
@@ -275,7 +286,15 @@ public interface WarningGroupDAO {
             "join data_quality_sub_task_rule t5 on (t3.subtask_rule_id = t5.id and t5.delete = false) " ,
             "join data_quality_rule_template t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid and t6.delete = false) ",
             " where t1.delete=false and t1.tenantId=#{tenantId} and (t1.name like '%${params.query}%' ESCAPE '/' or t3.id like '%${params.query}%' ESCAPE '/')",
-            " and t3.general_warning_check_status != 0",
+            " <if test='warnType==1'>",
+            " and general_warning_check_status=1 ",
+            " </if>",
+            " <if test='warnType==2'>",
+            " and general_warning_check_status=2 ",
+            " </if>",
+            " <if test='warnType==0'>",
+            " and general_warning_check_status!=0 ",
+            " </if>",
             "UNION",
             "select t1.id as taskId, t3.orange_warning_check_status as status, t3.id as warnNo, t1.name as taskName,t4.sequence, t6.name as ruleName," ,
             "t3.create_time as warnTime, 1 as warnGrade,t6.description as ruleDescription,t6.scope,t6.type,",
@@ -285,7 +304,15 @@ public interface WarningGroupDAO {
             "join data_quality_sub_task_rule t5 on (t3.subtask_rule_id = t5.id and t5.delete = false) " ,
             "join data_quality_rule_template t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid and t6.delete = false) ",
             " where t1.delete=false and t1.tenantId=#{tenantId} and (t1.name like '%${params.query}%' ESCAPE '/' or t3.id like '%${params.query}%' ESCAPE '/')",
-            " and t3.orange_warning_check_status != 0",
+            " <if test='warnType==1'>",
+            " and orange_warning_check_status=1 ",
+            " </if>",
+            " <if test='warnType==2'>",
+            " and orange_warning_check_status=2 ",
+            " </if>",
+            " <if test='warnType==0'>",
+            " and orange_warning_check_status!=0 ",
+            " </if>",
             "UNION",
             "select t1.id as taskId, t3.red_warning_check_status as status, t3.id as warnNo, t1.name as taskName,t4.sequence, t6.name as ruleName," ,
             "t3.create_time as warnTime, 2 as warnGrade,t6.description as ruleDescription,t6.scope,t6.type,",
@@ -295,8 +322,16 @@ public interface WarningGroupDAO {
             "join data_quality_sub_task_rule t5 on (t3.subtask_rule_id = t5.id and t5.delete = false) " ,
             "join data_quality_rule_template t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid and t6.delete = false) ",
             " where t1.delete=false and t1.tenantId=#{tenantId} and (t1.name like '%${params.query}%' ESCAPE '/' or t3.id like '%${params.query}%' ESCAPE '/')",
-            " and t3.red_warning_check_status != 0) tt",
-            " order by tt.warnTime desc, tt.warnNo",
+            " <if test='warnType==1'>",
+            " and red_warning_check_status=1 ",
+            " </if>",
+            " <if test='warnType==2'>",
+            " and red_warning_check_status=2 ",
+            " </if>",
+            " <if test='warnType==0'>",
+            " and red_warning_check_status!=0 ",
+            " </if>",
+            " ) tt order by tt.warnTime desc, tt.warnNo",
             " <if test='params.limit!=null and params.limit!= -1'>",
             " limit #{params.limit}",
             " </if>",
@@ -304,11 +339,46 @@ public interface WarningGroupDAO {
             " offset #{params.offset}",
             " </if>",
             "</script>"})
-    List<WarnInformation> getWarns(@Param("params") Parameters params,@Param("tenantId")String tenantId);
+    List<WarnInformation> getWarns(@Param("params") Parameters params,@Param("warnType")int warnType, @Param("tenantId")String tenantId);
 
-    @Select("select id, task_execute_id, general_warning_check_status, orange_warning_check_status, red_warning_check_status from data_quality_task_rule_execute where id = #{id}")
+
+
+    @Select({"<script>",
+            "select count(*)over() total, ",
+            "t1.id as taskId, t3.id as warnNo, t1.name as taskName,t4.sequence, t6.name as ruleName," ,
+            "t3.create_time as warnTime, t3.error_msg AS errorMsg,t3.error_status as status, t6.description as ruleDescription,t6.scope,t6.type,",
+            "t5.check_type as checkType,t5.check_threshold_max_value checkMaxValue,t5.check_threshold_min_value as checkMinValue,",
+            "t3.subtask_object_id as objectId,t6.sql,t3.result,t6.unit from data_quality_task t1 join data_quality_task_execute t2 on t1.id = t2.task_id" ,
+            "join data_quality_task_rule_execute t3 on t2.id = t3.task_execute_id join data_quality_sub_task t4 on (t3.subtask_id = t4.id and t4.delete = false)",
+            "join data_quality_sub_task_rule t5 on (t3.subtask_rule_id = t5.id and t5.delete = false) " ,
+            "join data_quality_rule_template t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid and t6.delete = false) ",
+            " where t1.delete=false and t1.tenantId=#{tenantId} and (t1.name like '%${params.query}%' ESCAPE '/' or t3.id like '%${params.query}%' ESCAPE '/')",
+            " <if test='errorType==1'>",
+            " and t3.error_status=1 ",
+            " </if>",
+            " <if test='errorType==2'>",
+            " and t3.error_status=2 ",
+            " </if>",
+            " <if test='errorType==0'>",
+            " and t3.error_status!=0 ",
+            " </if>",
+            " order by t3.create_time desc, t3.id",
+            " <if test='params.limit!=null and params.limit!= -1'>",
+            " limit #{params.limit}",
+            " </if>",
+            " <if test='params.offset!=null'>",
+            " offset #{params.offset}",
+            " </if>",
+            "</script>"})
+    List<WarnInformation> getErrors(@Param("params") Parameters params,@Param("errorType")int errorType, @Param("tenantId")String tenantId);
+
+
+
+
+    @Select("select id, task_execute_id, general_warning_check_status, orange_warning_check_status, " +
+            "red_warning_check_status, error_status from data_quality_task_rule_execute where id = #{id}")
     RuleExecute getRuleExecute(@Param("id")String id);
 
-    @Select("select id, task_execute_id, general_warning_check_status, orange_warning_check_status, red_warning_check_status from data_quality_task_rule_execute where task_execute_id = #{taskExecuteId}")
+    @Select("select id, task_execute_id, error_status ,general_warning_check_status, orange_warning_check_status, red_warning_check_status from data_quality_task_rule_execute where task_execute_id = #{taskExecuteId}")
     List<RuleExecute> getRuleExecutes(@Param("taskExecuteId")String taskExecuteId);
 }

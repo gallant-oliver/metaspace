@@ -71,6 +71,9 @@ public class OperateLogInterceptor implements MethodInterceptor {
                 if (modulePath.equals("datashare")&&path.contains("datashare/api")){
                     modulePath="apimanage";
                 }
+                if (modulePath.equals("approveGroups")){
+                    modulePath="approvermanage";
+                }
                 operateLog.setModule(modulePath.toLowerCase());
             }
             String tenantId = request.getHeader("tenantId");
