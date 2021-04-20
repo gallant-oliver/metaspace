@@ -1406,8 +1406,11 @@ public class DataManageService {
                     tableInfo.setSourceId(qualifiedName.split("\\.")[0]);
                     deleteIfExistTable(tableInfo);
                     tableDAO.addTable(tableInfo);
-                } else if (("hive_column").equals(typeName) || ("rdbms_column").equals(typeName)) {
-                    Column column = getColumn(entity);
+                } else if (("hive_column").equals(typeName)) {
+                    Column column = getColumn(entity, "type");
+                    columnList.add(column);
+                } else if(("rdbms_column").equals(typeName)){
+                    Column column = getColumn(entity, "data_type");
                     columnList.add(column);
                 }
             }
@@ -1436,7 +1439,7 @@ public class DataManageService {
 
     }
 
-    private Column getColumn(AtlasEntity entity) {
+    private Column getColumn(AtlasEntity entity, String typeKey) {
         AtlasRelatedObjectId table = (AtlasRelatedObjectId) entity.getRelationshipAttribute("table");
         String tableGuid = table.getGuid();
         String guid = entity.getGuid();
@@ -1445,7 +1448,7 @@ public class DataManageService {
         if(null != columnGuid){
             columnDAO.deleteColumn(columnGuid);
         }
-        String type = entity.getAttribute("data_type").toString();
+        String type = entity.getAttribute(typeKey).toString();
         Object comment = entity.getAttribute("comment");
         String status = entity.getStatus().name();
         String updateTime = DateUtils.date2String(entity.getUpdateTime());
