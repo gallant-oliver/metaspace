@@ -60,6 +60,9 @@ public interface TableDAO {
     @Select("select count(1) from tableinfo where tableguid=#{tableGuid}")
     public Integer ifTableExists(String tableGuid);
 
+    @Select("select tableguid, databasestatus from tableinfo where dbname =#{dbName} and tablename =#{tableName} and source_id = #{sourceId} and status = 'ACTIVE'")
+    TableInfo getTableInfo(@Param("sourceId")String sourceId, @Param("dbName")String dbName, @Param("tableName")String tableName);
+
     @Select("select organization.name,table2owner.tableGuid,table2owner.pkId from organization,table2owner where organization.pkId=table2owner.pkId and tableGuid=#{tableGuid}")
     public List<DataOwnerHeader> getDataOwnerList(@Param("tableGuid") String tableGuid);
 
@@ -80,6 +83,14 @@ public interface TableDAO {
     @Delete("delete from table2owner where tableGuid=#{tableGuid}")
     public int deleteTableRelatedOwner(@Param("tableGuid")String tableGuid);
 
+    @Update("update table2owner set tableGuid = #{tableGuid} where tableGuid=#{OldTableGuid}")
+    int updateTableRelatedOwner(@Param("tableGuid")String tableGuid, @Param("OldTableGuid")String OldTableGuid);
+
+    @Update("update table_relation set tableguid = #{tableGuid} where tableguid=#{OldTableGuid}")
+    int updateTableRelations(@Param("tableGuid")String tableGuid, @Param("OldTableGuid")String OldTableGuid);
+
+    @Update("update table2tag set tableguid = #{tableGuid} where tableguid=#{OldTableGuid}")
+    int updateTableTags(@Param("tableGuid")String tableGuid, @Param("OldTableGuid")String OldTableGuid);
 
     @Update("update tableInfo set subordinateSystem=#{info.subordinateSystem},subordinateDatabase=#{info.subordinateDatabase} where tableGuid=#{tableGuid}")
     public int updateTableEditInfo(@Param("tableGuid")String tableGuid, @Param("info")Table info);
