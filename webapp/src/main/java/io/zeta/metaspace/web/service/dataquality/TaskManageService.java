@@ -98,6 +98,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import scala.annotation.meta.param;
 
 import java.io.BufferedOutputStream;
@@ -673,7 +674,6 @@ public class TaskManageService {
 
 
     public void startTaskNow(String taskId) throws AtlasBaseException {
-        EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
         if(QuartzJob.CANCEL_STATE_MAP.containsKey(taskId)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务正在执行中");
         }
@@ -766,6 +766,17 @@ public class TaskManageService {
         try {
             TaskExecutionReport taskExecutionInfo = taskManageDAO.getTaskExecutionInfo(taskId);
             List<TaskExecutionReport.ExecutionRecord> executionRecordList = taskManageDAO.getTaskExecutionRecord(taskId);
+            if(!CollectionUtils.isEmpty(executionRecordList)){
+                executionRecordList.stream().forEach(r ->{
+                    if(r.getErrorCount() != null &&  r.getErrorCount() != 0){
+                        r.setCheckResult("异常");
+                    }else if(r.getGeneralWarningCount() != null && r.getGeneralWarningCount() != 0){
+                        r.setCheckResult("不合格");
+                    }else{
+                        r.setCheckResult("合格");
+                    }
+                });
+            }
             taskExecutionInfo.setExecutionRecordList(executionRecordList);
             return taskExecutionInfo;
         } catch (Exception e) {
@@ -864,6 +875,9 @@ public class TaskManageService {
             Boolean filing = taskManageDAO.getFilingStatus(executionId)==0?false:true;
             for (TaskRuleExecutionRecord record : list) {
                 record.setFiling(filing);
+
+                setResultString(record);
+
                 if (map.containsKey(record.getSubtaskId())){
                     map.get(record.getSubtaskId()).getTaskRuleExecutionRecords().add(record);
                 }else{
@@ -922,16 +936,21 @@ public class TaskManageService {
                     }else if (TaskType.CUSTOMIZE.equals(taskType)) {
                         List<CustomizeParam> params = GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<CustomizeParam>>() {
                         }.getType());
-                        //自定义规则，只展示规则名称等基础信息，且只有一条记录
-                        TaskRuleExecutionRecord taskRuleExecutionRecord = new TaskRuleExecutionRecord(record);
+                        List<TaskRuleExecutionRecord> resultList = new ArrayList<>();
                         //取出自定义规则的数据源(保存在其参数字符串中)
                         if(params != null && params.size() > 0){
-                            CustomizeParam customizeParam = params.get(0);
-                            String dataSourceName = getDataSourceName(customizeParam.getDataSourceId()); //获取数据源
-                            taskRuleExecutionRecord.setDataSourceName(dataSourceName);
+                            for (CustomizeParam customizeParam: params) {
+                                //自定义规则，只展示规则名称等基础信息，且只有一条记录
+                                TaskRuleExecutionRecord taskRuleExecutionRecord = new TaskRuleExecutionRecord(record);
+                                String dataSourceName = getDataSourceName(customizeParam.getDataSourceId()); //获取数据源
+                                taskRuleExecutionRecord.setDataSourceName(dataSourceName);
+                                taskRuleExecutionRecord.setDbName(customizeParam.getSchema());
+                                taskRuleExecutionRecord.setTableName(customizeParam.getTable());
+                                taskRuleExecutionRecord.setObjectName(customizeParam.getColumn());
+                                taskRuleExecutionRecord.setTableId(customizeParam.getTable());
+                                resultList.add(taskRuleExecutionRecord);
+                            }
                         }
-                        List<TaskRuleExecutionRecord> resultList = new ArrayList<>();
-                        resultList.add(taskRuleExecutionRecord);
                         map.get(record.getSubtaskId()).setTaskRuleExecutionRecords(resultList);
                     }
                 }
@@ -943,6 +962,21 @@ public class TaskManageService {
             LOG.error("获取报告规则详情失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报告规则详情失败");
         }
+    }
+
+    private void setResultString(TaskRuleExecutionRecord record) {
+        String result = "";
+        if(record.getResult() != null){
+            if("%".equals(record.getCheckThresholdUnit())){
+                result = String.format("%.2f", record.getResult()/100f);
+            }else {
+                result =String.format("%.0f", record.getResult());
+            }
+            if(null != record.getCheckThresholdUnit()){
+                result = result + record.getCheckThresholdUnit();
+            }
+        }
+        record.setResultString(result);
     }
 
     public PageResult<ExecutionLogHeader> getExecutionLogList(String taskId, Parameters parameters) throws AtlasBaseException {

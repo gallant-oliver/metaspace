@@ -13,4 +13,6 @@ public class RuleExecute {
     private Integer orangeWarningCheckStatus;
 
     private Integer redWarningCheckStatus;
+
+    private Integer errorStatus;
 }

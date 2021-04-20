@@ -38,6 +38,7 @@ public class TaskExecutionReport {
     private Timestamp endTime;
     private Integer orangeWarningTotalCount;
     private Integer redWarningTotalCount;
+    private Integer generalWarningTotalCount;
     private Integer errorTotalCount;
     private Integer executeCount;
     private List<ExecutionRecord> executionRecordList;
@@ -113,6 +114,13 @@ public class TaskExecutionReport {
     public void setRedWarningTotalCount(Integer redWarningTotalCount) {
         this.redWarningTotalCount = redWarningTotalCount;
     }
+    public Integer getGeneralWarningTotalCount() {
+        return generalWarningTotalCount;
+    }
+
+    public void setGeneralWarningTotalCount(Integer generalWarningTotalCount) {
+        this.generalWarningTotalCount = generalWarningTotalCount;
+    }
 
     public Integer getExecuteCount() {
         return executeCount;
@@ -143,6 +151,8 @@ public class TaskExecutionReport {
         private Integer orangeWarningCount;
         private Integer redWarningCount;
         private Integer errorCount;
+        private Integer generalWarningCount;
+        private String checkResult;
         @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
         private Timestamp executeTime;
         private String number;
@@ -171,6 +181,21 @@ public class TaskExecutionReport {
             this.redWarningCount = redWarningCount;
         }
 
+        public Integer getGeneralWarningCount() {
+            return generalWarningCount;
+        }
+
+        public void setGeneralWarningCount(Integer generalWarningCount) {
+            this.generalWarningCount = generalWarningCount;
+        }
+
+        public String getCheckResult() {
+            return checkResult;
+        }
+
+        public void setCheckResult(String checkResult) {
+            this.checkResult = checkResult;
+        }
         public Integer getErrorCount() {
             return errorCount;
         }
