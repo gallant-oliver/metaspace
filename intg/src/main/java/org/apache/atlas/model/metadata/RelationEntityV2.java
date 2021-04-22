@@ -61,7 +61,8 @@ public class RelationEntityV2 {
         this.total = total;
     }
 
-    public RelationEntityV2() { }
+    public RelationEntityV2() {
+    }
 
     public RelationEntityV2(String relationshipGuid, String categoryGuid, String tableName, String dbName, String tableGuid, String path, String status) {
         this.relationshipGuid = relationshipGuid;
