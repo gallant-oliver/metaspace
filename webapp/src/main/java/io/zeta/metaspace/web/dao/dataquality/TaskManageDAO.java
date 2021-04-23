@@ -283,6 +283,14 @@ public interface TaskManageDAO {
     public EditionTaskInfo getTaskInfo(@Param("taskId")String taskId);
 
     /**
+     * 任务详情-任务信息
+     * @param taskId
+     * @return
+     */
+    @Select("select current_execution_status from data_quality_task where id=#{taskId}")
+    public Integer getTaskStatus(@Param("taskId")String taskId);
+
+    /**
      * 任务详情-子任务信息
      * @param taskId
      * @return

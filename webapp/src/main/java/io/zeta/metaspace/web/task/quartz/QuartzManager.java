@@ -19,6 +19,8 @@ package io.zeta.metaspace.web.task.quartz;
 
 import io.zeta.metaspace.model.dataquality.Schedule;
 import io.zeta.metaspace.web.service.DataQualityService;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang.StringUtils;
 import org.quartz.*;
 import org.quartz.spi.MutableTrigger;
@@ -131,10 +133,30 @@ public class QuartzManager {
             //启动
             if (!scheduler.isShutdown()) {
                 scheduler.start();
+            }else{
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务已关闭");
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * 判断任务是否存在
+     * @param triggerName
+     * @param triggerGroupName
+     * @return
+     */
+    public boolean checkExists(String triggerName, String triggerGroupName) {
+
+        boolean exist = false;
+        try {
+            TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
+            exist = scheduler.checkExists(triggerKey);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return exist;
     }
 
     /**
