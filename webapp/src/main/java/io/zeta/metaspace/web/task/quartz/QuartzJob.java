@@ -161,8 +161,7 @@ public class QuartzJob implements Job {
             STATE_MAP.put(taskId,false);
             EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
             String tenantId = taskInfo.getTenantId();
-
-            Thread.sleep(10000);
+            
             if(canceled(taskId, taskExecuteId)){
                 return;
             };
