@@ -111,7 +111,7 @@ public interface RelationDAO {
              " from ( SELECT table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid,tableInfo.status, tableInfo.description,data_source.source_name ",
              " FROM table_relation,tableInfo,data_source WHERE table_relation.categoryGuid = #{categoryGuid} AND tableinfo.source_id = data_source.source_id AND tableInfo.tableGuid = table_relation.tableGuid ",
              " AND status != 'DELETED' AND data_source.tenantid = #{tenantId} UNION SELECT table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid,tableInfo.status,",
-             " tableInfo.description, data_source.source_name FROM table_relation,tableInfo,data_source WHERE table_relation.categoryGuid = #{categoryGuid} AND tableinfo.source_id = data_source.source_id AND tableInfo.tableGuid = table_relation.tableGuid ",
+             " tableInfo.description, 'hive' as source_name  FROM table_relation,tableInfo WHERE table_relation.categoryGuid = #{categoryGuid} AND tableInfo.tableGuid = table_relation.tableGuid ",
              " AND status != 'DELETED' AND tableinfo.dbname in",
              " <foreach item='item' index='index' collection='databases' separator=',' open='(' close=')'>",
              " #{item}",
