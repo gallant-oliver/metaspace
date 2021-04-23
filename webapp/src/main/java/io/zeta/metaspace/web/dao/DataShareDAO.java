@@ -160,24 +160,42 @@ public interface DataShareDAO {
     @Select("select fields from apiInfo where path=#{path}")
     public Object getAPIFields(@Param("path")String path);
 
+//    @Select({" <script>",
+//             " select count(1)over() total,apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,users.username as keeper,",
+//             " tableInfo.tableName,apiGroup.name as groupName, tableInfo.display_name as tableDisplayName",
+//             " from apiInfo,tableInfo,apiGroup,users where",
+//             " apiInfo.tableGuid in",
+//             " <foreach item='tableGuid' index='index' collection='tableList' separator=',' open='(' close=')'>" ,
+//             " #{tableGuid}",
+//             " </foreach>",
+//             " and apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.tenantid=#{tenantId} ",
+//             " and users.userId=apiInfo.keeper order by apiInfo.updateTime desc",
+//             " <if test='limit != null and limit!=-1'>",
+//             " limit #{limit}",
+//             " </if>",
+//             " <if test='offset != null'>",
+//             " offset #{offset}",
+//             " </if>",
+//             " </script>"})
+//    public List<APIInfoHeader> getTableRelatedAPI(@Param("tableList")List<String> tableList, @Param("limit")int limit,@Param("offset") int offset,@Param("tenantId")String tenantId);
+
     @Select({" <script>",
-             " select count(1)over() total,apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,users.username as keeper,",
-             " tableInfo.tableName,apiGroup.name as groupName, tableInfo.display_name as tableDisplayName",
-             " from apiInfo,tableInfo,apiGroup,users where",
-             " apiInfo.tableGuid in",
-             " <foreach item='tableGuid' index='index' collection='tableList' separator=',' open='(' close=')'>" ,
-             " #{tableGuid}",
-             " </foreach>",
-             " and apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.tenantid=#{tenantId} ",
-             " and users.userId=apiInfo.keeper order by apiInfo.updateTime desc",
-             " <if test='limit != null and limit!=-1'>",
-             " limit #{limit}",
-             " </if>",
-             " <if test='offset != null'>",
-             " offset #{offset}",
-             " </if>",
-             " </script>"})
+            " SELECT COUNT ( 1 ) OVER ( ) total,api.guid,api.name,api.tableguid,users.username AS keeper,tableInfo.tableName,tableInfo.display_name AS tableDisplayName",
+            " FROM api INNER JOIN tableInfo ON api.tableguid=tableinfo.tableguid INNER JOIN users ON users.userId = api.creator",
+            " WHERE api.tenantid=#{tenantId} AND api.tableguid IN",
+            " <foreach item='tableGuid' index='index' collection='tableList' separator=',' open='(' close=')'>",
+            " #{tableGuid}",
+            " </foreach>",
+            " ORDER BY api.updateTime DESC",
+            " <if test='limit != null and limit!=-1'>",
+            " limit #{limit}",
+            " </if>",
+            " <if test='offset != null'>",
+            " offset #{offset}",
+            " </if>",
+            " </script>"})
     public List<APIInfoHeader> getTableRelatedAPI(@Param("tableList")List<String> tableList, @Param("limit")int limit,@Param("offset") int offset,@Param("tenantId")String tenantId);
+
 
     @Select({" <script>",
              " select count(1)over() total,api.guid id,api.name,api.tableGuid,api.status,users.username as creator,",
