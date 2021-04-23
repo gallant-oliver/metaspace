@@ -17,15 +17,8 @@
 package io.zeta.metaspace.web.task.quartz;
 
 
-import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.healthmarketscience.sqlbuilder.BinaryCondition;
-import com.healthmarketscience.sqlbuilder.CaseStatement;
-import com.healthmarketscience.sqlbuilder.ComboCondition;
-import com.healthmarketscience.sqlbuilder.CustomSql;
-import com.healthmarketscience.sqlbuilder.FunctionCall;
-import com.healthmarketscience.sqlbuilder.SelectQuery;
-import com.healthmarketscience.sqlbuilder.UnaryCondition;
+import com.healthmarketscience.sqlbuilder.*;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterBaseException;
 import io.zeta.metaspace.adapter.AdapterExecutor;
@@ -35,10 +28,7 @@ import io.zeta.metaspace.model.dataquality.RuleCheckType;
 import io.zeta.metaspace.model.dataquality.TaskType;
 import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
-import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.measure.*;
-import io.zeta.metaspace.model.metadata.Column;
-import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.GsonUtils;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
@@ -56,11 +46,12 @@ import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
-import org.quartz.*;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -81,7 +72,7 @@ import static io.zeta.metaspace.model.dataquality.RuleCheckType.FLU;
  * @date 2019/7/25 17:28
  */
 
-@Transactional(rollbackFor = Exception.class)
+
 public class QuartzJob implements Job {
 
     private static final Logger LOG = LoggerFactory.getLogger(QuartzJob.class);
@@ -100,7 +91,7 @@ public class QuartzJob implements Job {
 
     Map<String, Float> columnType2Result = new HashMap<>();
 
-    public static final Map<String,Boolean> CANCEL_STATE_MAP = new HashMap<>();
+    public static final Map<String,Boolean> STATE_MAP = new HashMap<>();
 
     private static Configuration conf;
     private static String engine;
@@ -144,8 +135,8 @@ public class QuartzJob implements Job {
     }
 
     public boolean canceled(String taskId, String taskExecuteId){
-        if(CANCEL_STATE_MAP.get(taskId)) {
-            taskManageDAO.updateTaskExecuteStatus(taskId, 4);
+        if(STATE_MAP.get(taskId)) {
+            taskManageDAO.updateTaskExecuteStatus(taskExecuteId, 4);
             taskManageDAO.updateTaskStatus(taskId, 4);
             taskManageDAO.updateTaskFinishedPercent(taskId, 0F);
             taskManageDAO.updateTaskExecutionFinishedPercent(taskExecuteId, 0F);
@@ -157,19 +148,21 @@ public class QuartzJob implements Job {
     @Override
     public void execute(JobExecutionContext jobExecutionContext) {
         String taskId = "";
+        String taskExecuteId = "";
         try {
             JobKey key = jobExecutionContext.getTrigger().getJobKey();
             LOG.warn("任务名为" + key.getName() + "开始执行");
             taskId = taskManageDAO.getTaskIdByQrtzName(key.getName());
-            if(CANCEL_STATE_MAP.containsKey(taskId)){
+            if(STATE_MAP.containsKey(taskId)){
                 //任务正在运行中，跳过本次执行
                 return;
-            }else{
-                CANCEL_STATE_MAP.put(taskId,false);
             }
+            taskExecuteId = initExecuteInfo(taskId);
+            STATE_MAP.put(taskId,false);
             EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
             String tenantId = taskInfo.getTenantId();
-            String taskExecuteId = initExecuteInfo(taskId);
+
+            Thread.sleep(10000);
             if(canceled(taskId, taskExecuteId)){
                 return;
             };
@@ -187,9 +180,15 @@ public class QuartzJob implements Job {
             };
             executeAtomicTaskList(taskId, taskExecuteId, taskList, tenantId);
         } catch (Exception e) {
+            if(StringUtils.isNotBlank(taskId)){
+                taskManageDAO.updateTaskStatus(taskId, 3);
+            }
+            if(StringUtils.isNotBlank(taskExecuteId)){
+                taskManageDAO.updateTaskExecuteStatus(taskExecuteId, 3);
+            }
             LOG.error(e.toString(), e);
         }finally {
-            CANCEL_STATE_MAP.remove(taskId);
+            STATE_MAP.remove(taskId);
         }
     }
 
