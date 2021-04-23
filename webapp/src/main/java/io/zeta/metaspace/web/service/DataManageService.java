@@ -852,6 +852,47 @@ public class DataManageService {
         }
     }
 
+    /**
+     * 模糊查询获取库或者表
+     *
+     * @param tenantId
+     * @param name     名称
+     * @param offset
+     * @param limit
+     * @param type     db 数据库 table 数据表
+     */
+    public PageResult<Database> getDbListLikeName(String tenantId, String name, Long offset, Long limit, String type) {
+        try {
+            List<String> databases = tenantService.getDatabase(tenantId);
+            List<RelationEntityV2> relations = new ArrayList<>();
+            List<Database> databaseList = new ArrayList<>();
+            if ("db".equals(type)) {
+                relations = relationDao.selectListByDbName(name, tenantId, limit, offset, databases);
+            } else {
+                relations = relationDao.selectListByTableName(name, tenantId, limit, offset, databases);
+            }
+            PageResult<Database> databasePageResult = new PageResult<>();
+            if (org.apache.commons.collections4.CollectionUtils.isEmpty(relations)) {
+                return databasePageResult;
+            }
+            for (RelationEntityV2 relation : relations) {
+                Database database = new Database();
+                database.setDatabaseId(relation.getTableGuid());
+                database.setDatabaseName(relation.getTableName());
+                database.setStatus(relation.getStatus());
+                databaseList.add(database);
+            }
+            databasePageResult.setLists(databaseList);
+            databasePageResult.setCurrentSize(databaseList.size());
+            databasePageResult.setTotalSize(relations.get(0).getTotal());
+            databasePageResult.setOffset(offset);
+            return databasePageResult;
+        } catch (Exception e) {
+            LOG.error("getDbListLikeName exception is {}", e);
+            throw new AtlasBaseException(AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, "获取数据列表失败");
+        }
+    }
+
     public PageResult<RelationEntityV2> getRelationsByTableName(RelationQuery query, int type, String tenantId) throws AtlasBaseException {
         try {
             User user = AdminUtils.getUserData();

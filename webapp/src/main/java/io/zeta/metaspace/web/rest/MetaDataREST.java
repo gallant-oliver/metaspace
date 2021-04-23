@@ -18,7 +18,6 @@ import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datasource.DataSourceHead;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
-import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.datastandard.DataStandAndTable;
 import io.zeta.metaspace.model.datastandard.DataStandardHead;
 import io.zeta.metaspace.model.metadata.*;
@@ -30,10 +29,8 @@ import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.table.Tag;
-import io.zeta.metaspace.model.tag.Tag2Table;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.TableDAO;
-import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
@@ -88,15 +85,12 @@ public class MetaDataREST {
     private TableDAO tableDAO;
     @Autowired
     private DataStandardService dataStandardService;
+
     private final MetaDataService metadataService;
     @Autowired
     private BusinessService businessService;
     @Context
     private HttpServletResponse httpServletResponse;
-    @Autowired
-    private UsersService usersService;
-    @Autowired
-    private UserGroupDAO userGroupDAO;
     @Autowired
     private DataSourceService dataSourceService;
 
@@ -134,7 +128,7 @@ public class MetaDataREST {
     @Path("/info/table/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Map<String,Object> getDatabase(@PathParam("guid") String guid) throws AtlasBaseException {
+    public Map<String, Object> getDatabase(@PathParam("guid") String guid) throws AtlasBaseException {
         return metadataService.getTableType(guid);
     }
 
@@ -195,6 +189,23 @@ public class MetaDataREST {
         }
     }
 
+    /**
+     * 模糊查询获取库或者表
+     * @param tenantId
+     * @param name 名称
+     * @param offset
+     * @param limit
+     * @param type db 数据库 table 数据表
+     * @return
+     */
+    @GET
+    @Path("schema/table/{name}/{type}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Database> getDbListLikeName(@HeaderParam("tenantId") String tenantId, @PathParam("name") String name, @QueryParam("offset") Long offset, @QueryParam("limit") Long limit, @PathParam("type") String type) {
+        return dataManageService.getDbListLikeName(tenantId, name, offset, limit, type);
+    }
+
 
     //获取数据表 分页
     @GET
@@ -214,7 +225,7 @@ public class MetaDataREST {
             }
             Boolean isView = StringUtils.isEmpty(isViewStr) ? null : Boolean.parseBoolean(isViewStr);
 
-            PageResult<TableEntity> result = searchService.getTable(schemaId, active, offset, limit,query, isView , queryInfo);
+            PageResult<TableEntity> result = searchService.getTable(schemaId, active, offset, limit, query, isView, queryInfo);
             return result;
         } finally {
             AtlasPerfTracer.log(perf);
@@ -509,7 +520,7 @@ public class MetaDataREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<Tag> getTag(@PathParam("guid") String guid, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            return tableTagService.getTags(guid,tenantId);
+            return tableTagService.getTags(guid, tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取标签失败");
         }
@@ -889,7 +900,7 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public RDBMSTable getTableInfoById(@PathParam("tableId") String tableId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        return metadataService.getRDBMSTableInfoById(tableId,tenantId);
+        return metadataService.getRDBMSTableInfoById(tableId, tenantId);
     }
 
     /**
