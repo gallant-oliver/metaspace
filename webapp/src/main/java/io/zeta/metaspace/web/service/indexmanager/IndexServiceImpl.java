@@ -14,6 +14,7 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.po.indices.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
+import io.zeta.metaspace.model.timelimit.TimelimitEntity;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.*;
