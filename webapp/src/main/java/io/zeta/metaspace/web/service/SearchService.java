@@ -80,15 +80,31 @@ public class SearchService {
     @Autowired
     private MetaDataService metaDataService;
 
+    @Autowired
+    private TableDAO tableDAO;
+
     public PageResult<Database> getDatabases(String sourceId, long offset, long limit, String query, boolean active, String tenantId, boolean queryCount) {
         List<String> dbs = tenantService.getDatabase(tenantId);
+        String guid = "";
+        if (StringUtils.isEmpty(sourceId)) {
+            List<String> guidList = tableDAO.selectDatabaseGuidByTenantId(tenantId);
+            guid = dbsToString(guidList);
+        }
         String dbsToString = dbsToString(dbs);
-        return metaspaceEntityService.getSchemaList(sourceId, active, offset, limit, query, dbsToString, queryCount);
+        return metaspaceEntityService.getSchemaList(sourceId, guid, active, offset, limit, query, dbsToString, queryCount);
     }
 
-    public PageResult<TableEntity> getTable(String schemaId, boolean active, long offset, long limit, String query, Boolean isView, boolean queryInfo) {
+    public PageResult<TableEntity> getTable(String schemaId, boolean active, long offset, long limit, String query, Boolean isView, boolean queryInfo, String tenantId) {
         try {
-            PageResult<TableEntity> result = metaspaceEntityService.getTableList(schemaId, active, offset, limit, query, isView);
+            String dbsToString = "";
+            String guid = "";
+            if (StringUtils.isNotBlank(query)) {
+                List<String> dbs = tenantService.getDatabase(tenantId);
+                dbsToString = dbsToString(dbs);
+                List<String> guidList = tableDAO.selectDatabaseGuidByTenantId(tenantId);
+                guid = dbsToString(guidList);
+            }
+            PageResult<TableEntity> result = metaspaceEntityService.getTableList(dbsToString, guid, schemaId, active, offset, limit, query, isView);
             if (queryInfo && result.getCurrentSize() > 0) {
                 for (TableEntity tableEntity : result.getLists()) {
                     Map<String, Object> tableInfo = metaDataService.getTableType(tableEntity.getId());
