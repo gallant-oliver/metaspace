@@ -203,6 +203,13 @@ public class DataManageService {
                 }
             }
             getCount(valueList, type, tenantId);
+            if(type==5&& !CollectionUtils.isEmpty(valueList)){
+                valueList.forEach(x->{
+                    if(CategoryUtil.indexFieldId.equals(x.getGuid())){
+                        x.setPrivilege(new CategoryPrivilege.Privilege(false, false, true, false, true, false, false, false, false,false));
+                    }
+                });
+            }
             return valueList;
         } catch (MyBatisSystemException e) {
             LOG.error("数据库服务异常", e);

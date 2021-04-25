@@ -51,6 +51,10 @@ public class IndexInfoDTO {
      */
     private  String  indexFieldName;
     /**
+     * 内容编辑权限
+     */
+    private boolean contentEdit;
+    /**
      *审批组id
      */
     private  String  approvalGroupId ;
@@ -500,7 +504,11 @@ public class IndexInfoDTO {
         this.expression = expression;
     }
 
+    public boolean isContentEdit() {
+        return contentEdit;
+    }
 
-
-
+    public void setContentEdit(boolean contentEdit) {
+        this.contentEdit = contentEdit;
+    }
 }
