@@ -13,6 +13,7 @@ import io.zeta.metaspace.model.modifiermanage.Qualifier;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.po.indices.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.*;
@@ -697,9 +698,25 @@ public class IndexServiceImpl implements IndexService{
     @Override
     public List<IndexInfoDTO> pageQuery(PageQueryDTO pageQueryDTO, int categoryType, String tenantId) throws Exception {
         List<IndexInfoPO> indexInfoPOS=indexDAO.pageQuery(pageQueryDTO,categoryType,tenantId);
+        List<CategoryPrivilege> categoryPrivileges=dataManageService.getAllByUserGroup(categoryType,tenantId);
+        Map<String,Boolean> contentEdits=new HashMap<>();
+
+        if(!CollectionUtils.isEmpty(categoryPrivileges)){
+            categoryPrivileges.forEach(x->{
+                String guid=x.getGuid();
+                boolean contentEdit=x.getPrivilege().isCreateRelation();
+                contentEdits.put(guid,contentEdit);
+            });
+        }
         List<IndexInfoDTO> indexInfoDTOS=null;
         if(!CollectionUtils.isEmpty(indexInfoPOS)){
-            indexInfoDTOS = indexInfoPOS.stream().map(x -> BeanMapper.map(x, IndexInfoDTO.class)).collect(Collectors.toList());
+            indexInfoDTOS = indexInfoPOS.stream().map(x->{
+                IndexInfoDTO indexInfoDTO=BeanMapper.map(x,IndexInfoDTO.class);
+                if(contentEdits.size()>0){
+                    indexInfoDTO.setContentEdit(contentEdits.get(indexInfoDTO.getIndexFieldId()));
+                }
+                return indexInfoDTO;
+            }).collect(Collectors.toList());
         }
         return indexInfoDTOS;
     }

@@ -360,13 +360,6 @@ public class IndexREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.getCategories()");
             }
             List<CategoryPrivilege> allByUserGroup = dataManageService.getAllByUserGroup(CATEGORY_TYPE, tenantId);
-            if(!CollectionUtils.isEmpty(allByUserGroup)){
-                allByUserGroup.forEach(x->{
-                    if(CategoryUtil.indexFieldId.equals(x.getGuid())){
-                        x.setPrivilege(new CategoryPrivilege.Privilege(false, false, true, true, false, false, false, false, false,false));
-                    }
-                });
-            }
             return allByUserGroup;
         }  finally {
             AtlasPerfTracer.log(perf);
