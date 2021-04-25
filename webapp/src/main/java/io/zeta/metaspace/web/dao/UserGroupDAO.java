@@ -484,6 +484,14 @@ public interface UserGroupDAO {
     @Update("update user_group set updatetime=#{updateTime},authorize_user=#{userId},authorize_time=#{updateTime} where id=#{groupId}")
     public int updateCategory(@Param("groupId") String groupId, @Param("updateTime") Timestamp updateTime,@Param("userId") String userId);
 
+    //批量更新用户组
+    @Update("<script>update user_group set updatetime=#{updateTime},authorize_user=#{userId},authorize_time=#{updateTime} where id in" +
+            "<foreach item='groupId' index='index' collection='groupIds' open='(' separator=',' close=')'>" +
+            "#{groupId}" +
+            "</foreach>" +
+            "</script>")
+    public int updateCategorys(@Param("groupIds") List<String> groupIds, @Param("updateTime") Timestamp updateTime,@Param("userId") String userId);
+
     @Select("select guid from category where categorytype=#{categoryType} and level = 1 adn tenantid=#{tenantId}")
     public List<String> getTopCategoryGuid(int categoryType,@Param("tenantId") String tenantId);
 
