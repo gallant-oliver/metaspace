@@ -157,7 +157,6 @@ public class TimeLimitService implements TimeLimitServiceImp{
             timelimitEntity.setUpdater(userData.getUserId());
             timelimitEntity.setMark(request.getMark());
 
-
             Integer nameById = timeLimitDAO.isNameById(tenantId, request.getName(), request.getId());
             if(nameById > 0){ //重名
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "时间限定名称" + timelimitEntity.getName() + "已存在");

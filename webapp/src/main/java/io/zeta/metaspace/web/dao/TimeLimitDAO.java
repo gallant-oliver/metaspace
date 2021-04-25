@@ -62,6 +62,9 @@ public interface TimeLimitDAO {
     @Select({" select id from time_limit where tenantid=#{tenantId} and name=#{timeLimitName}"})
     List<String> getTimeLimitByName(@Param("timeLimitName") String timeLimitName, @Param("tenantId") String tenantId);
 
+
+    @Select({" select * from time_limit where tenantid=#{tenantId} and id=#{id}"})
+    TimelimitEntity getTimeLimitById(@Param("id") String id, @Param("tenantId") String tenantId);
     /**
      * 获取任务列表
      *
