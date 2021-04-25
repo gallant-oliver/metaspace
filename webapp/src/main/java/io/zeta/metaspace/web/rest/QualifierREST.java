@@ -1,7 +1,6 @@
 package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.HttpRequestContext;
-import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.modifiermanage.Data;
 import io.zeta.metaspace.model.modifiermanage.Qualifier;
@@ -10,6 +9,7 @@ import io.zeta.metaspace.model.modifiermanage.QualifierType;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
+import io.zeta.metaspace.web.dao.QualifierDAO;
 import io.zeta.metaspace.web.service.QualifierService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import lombok.val;
@@ -17,6 +17,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,7 @@ import javax.ws.rs.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
@@ -36,6 +38,8 @@ public class QualifierREST {
 
     @Autowired
     private QualifierService qualifierService;
+    @Autowired
+    private QualifierDAO qualifierDAO;
 
     private static final Logger PERF_LOG = LoggerFactory.getLogger(QualifierREST.class);
 
@@ -52,7 +56,11 @@ public class QualifierREST {
     @OperateType(INSERT)
     @Path("/add")
     public Result addQualifier(Qualifier dataList, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.MODIFIER.getAlias(), dataList.getName());
+        String name = "";
+        if (dataList != null && dataList.getDataList().size() > 0) {
+            name = StringUtils.join(dataList.getDataList().stream().map(data -> data.getName()).collect(Collectors.toList()), ";");
+        }
+        HttpRequestContext.get().auditLog(ModuleEnum.MODIFIER.getAlias(), "新建修饰词" + name);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -105,7 +113,11 @@ public class QualifierREST {
     @Path("/delete")
     @OperateType(OperateTypeEnum.DELETE)
     public Result deleteQualifier(Data ids, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.MODIFIER.getAlias(),ids.getName() );
+        String name = "";
+        if (ids != null && ids.getIds().size() > 0) {
+            name = StringUtils.join(qualifierDAO.getQualiferNameByIds(ids.getIds(), tenantId), ";");
+        }
+        HttpRequestContext.get().auditLog(ModuleEnum.MODIFIER.getAlias(),"删除修饰词" + name);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -133,7 +145,7 @@ public class QualifierREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     public Result editQualifier(Data data, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.MODIFIER.getAlias(), data.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.MODIFIER.getAlias(), "编辑修饰词" + data.getName());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -244,7 +256,7 @@ public class QualifierREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     public Result addQualifierType(Data data, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.MODIFIER.getAlias(), data.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.MODIFIER.getAlias(), "添加修饰词类型" + data.getName());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -280,7 +292,7 @@ public class QualifierREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     public Result editQualifierType(Data data, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.MODIFIER.getAlias(), data.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.MODIFIER.getAlias(),"编辑修饰词类型" + data.getName());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -342,7 +354,11 @@ public class QualifierREST {
     @Path("/type/delete")
     @OperateType(OperateTypeEnum.DELETE)
     public Result deleteQualifierType(Data ids, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.MODIFIER.getAlias(), ids.getName());
+        String name = "";
+        if (ids != null && ids.getIds().size() > 0) {
+            name = StringUtils.join(qualifierDAO.getQualiferTypeNameByIds(ids.getIds(), tenantId), ";");
+        }
+        HttpRequestContext.get().auditLog(ModuleEnum.MODIFIER.getAlias(),"删除修饰词类型" + name);
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {

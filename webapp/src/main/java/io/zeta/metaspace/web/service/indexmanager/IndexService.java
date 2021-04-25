@@ -142,4 +142,10 @@ public interface IndexService extends Approvable {
     List<IndexInfoDTO> pageQuery(PageQueryDTO pageQueryDTO, int categoryType, String tenantId) throws Exception;
 
     List<String> getIndexIds(List<String> indexFields, String tenantId, int state1, int state2);
+
+    /**
+     * 获取指标链路
+     */
+    @Transactional(rollbackFor = Exception.class)
+    IndexLinkDto getIndexLink(String indexId, int indexType,String version, String tenantId);
 }
