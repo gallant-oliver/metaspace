@@ -410,7 +410,7 @@ public interface IndexDAO {
             " select * from index_derive_info where tenant_id=#{tenantId} and index_id in " ,
             " ( " ,
             " select  derive_index_id from index_derive_composite_relation where composite_index_id=#{indexId}" ,
-            " ) " ,
+            " )" ,
             " </script>"})
     List<IndexDerivePO> getDependentDeriveIndex(@Param("indexId")String indexId, @Param("tenantId")String tenantId);
 
