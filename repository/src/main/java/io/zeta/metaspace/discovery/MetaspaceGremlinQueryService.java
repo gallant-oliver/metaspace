@@ -958,7 +958,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         String queryStr;
         String queryCountStr;
         if (StringUtils.isNotBlank(query)) {
-            String format = "g.tx().commit();g.V().or(has('__typeName','rdbms_db').has('__guid', within(" + guid + ")).inE().outV().has('__typeName', 'rdbms_table').has('__guid')%s,has('__typeName','hive_db').has('Asset.name', within(" + dbsToString + ")).inE().outV().has('__typeName', 'hive_table').has('__guid')%s).order().by('__timestamp').dedup()%s.toList()";
+            String format = "g.tx().commit();g.V().or(has('__typeName','rdbms_db').has('__guid', within(" + guid + ")),has('__typeName','hive_db').has('Asset.name', within(" + dbsToString + "))).inE().outV().or(has('__typeName', 'rdbms_table').has('__guid')%s,has('__typeName', 'hive_table').has('__guid')%s).order().by('__timestamp').dedup()%s.toList()";
             String value = activeQuery + nameQuery + viewQuery;
             queryStr = String.format(format, value, value, pageQuery);
             queryCountStr = String.format(format, value, value, ".count()");

@@ -26,6 +26,9 @@ public interface TableDAO {
     @Select("SELECT DISTINCT tableinfo.databaseguid FROM tableinfo INNER JOIN data_source on tableinfo.source_id=data_source.source_id WHERE data_source.tenantid = #{tenantId}")
     List<String> selectDatabaseGuidByTenantId(@Param("tenantId") String tenantId);
 
+    @Select("SELECT DISTINCT tableinfo.tableguid FROM tableinfo INNER JOIN data_source on tableinfo.source_id=data_source.source_id WHERE data_source.tenantid = #{tenantId}")
+    List<String> selectGuidByTenantId(@Param("tenantId") String tenantId);
+
     @Select("SELECT  businessinfo.businessid,businessinfo.NAME businessObject,category.NAME department,users.username businessLeader FROM business2table,businessinfo,category,users WHERE businessinfo.businessid = business2table.businessid AND businessinfo.departmentid = category.guid AND users.userid =  businessinfo.submitter AND business2table.tableguid = #{guid} AND category.tenantid = #{tenantId}")
     public List<Table.BusinessObject> getBusinessObjectByTableguid(@Param("guid") String guid,@Param("tenantId") String tenantId);
 
