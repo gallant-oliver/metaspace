@@ -30,6 +30,7 @@ import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.timelimit.TimeLimitOperEnum;
 import io.zeta.metaspace.model.timelimit.TimeLimitRequest;
 import io.zeta.metaspace.model.timelimit.TimeLimitSearch;
+import io.zeta.metaspace.model.timelimit.TimelimitEntity;
 import io.zeta.metaspace.web.service.timelimit.TimeLimitService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -107,8 +108,8 @@ public class TimeLimitREST {
             }else if(TimeLimitOperEnum.CANCEL.getCode().equals(request.getType())){ //下线，暂时不需要
                 timeLimitService.cancel(request,tenantId);
             }else{ //删除
-                timeLimitService.delTimeLimit(request,tenantId);
-                HttpRequestContext.get().auditLog(ModuleEnum.TIMELIMIT.getAlias(), "删除时间限定"+request.getName());
+                TimelimitEntity timelimitEntity = timeLimitService.delTimeLimit(request, tenantId);
+                HttpRequestContext.get().auditLog(ModuleEnum.TIMELIMIT.getAlias(), "删除时间限定"+timelimitEntity.getName());
             }
             return ReturnUtil.success(); //无异常返回成功信息
         } catch (Exception e) {
