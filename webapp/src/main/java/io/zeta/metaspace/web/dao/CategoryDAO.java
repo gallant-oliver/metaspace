@@ -62,6 +62,14 @@ public interface CategoryDAO {
     @Select("select * from category where guid=#{guid} and tenantid=#{tenantId}")
     public CategoryEntityV2 queryByGuid(@Param("guid") String categoryGuid,@Param("tenantId")String tenantId) throws SQLException;
 
+    @Select({"<script>"+
+            " select * from category where tenantid=#{tenantId} and guid in" +
+            " <foreach item='guid' index='index' collection='categoryGuid' open='(' separator=',' close=')'>" +
+            " #{guid}" +
+            " </foreach>" +
+            " </script>"})
+    public List<CategoryEntityV2> queryCategoryEntitysByGuids(@Param("categoryGuid") List<String> categoryGuid,@Param("tenantId")String tenantId) throws SQLException;
+
     @Select("select * from category where categorytype=#{type} and downbrothercategoryguid is null and level=1 and tenantid=#{tenantId}")
     public CategoryEntityV2 getQuery(@Param("type") int type,@Param("tenantId")String tenantId) throws SQLException;
 
