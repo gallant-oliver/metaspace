@@ -30,6 +30,7 @@ import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.timelimit.TimeLimitOperEnum;
 import io.zeta.metaspace.model.timelimit.TimeLimitRequest;
 import io.zeta.metaspace.model.timelimit.TimeLimitSearch;
+import io.zeta.metaspace.model.timelimit.TimelimitEntity;
 import io.zeta.metaspace.web.service.timelimit.TimeLimitService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -72,7 +73,6 @@ public class TimeLimitREST {
     @Path("/list")
     @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    @OperateType(UPDATE)
     public Result list(TimeLimitSearch search, @HeaderParam("tenantId")String tenantId) throws Exception {
         try {
             return ReturnUtil.success(timeLimitService.search(search,tenantId)); //无异常返回成功信息
@@ -83,6 +83,7 @@ public class TimeLimitREST {
 
     @POST
     @Path("/edit")
+    @OperateType(UPDATE)
     @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public Result edit(TimeLimitRequest request, @HeaderParam("tenantId")String tenantId) throws Exception {
@@ -107,8 +108,8 @@ public class TimeLimitREST {
             }else if(TimeLimitOperEnum.CANCEL.getCode().equals(request.getType())){ //下线，暂时不需要
                 timeLimitService.cancel(request,tenantId);
             }else{ //删除
-                timeLimitService.delTimeLimit(request,tenantId);
-                HttpRequestContext.get().auditLog(ModuleEnum.TIMELIMIT.getAlias(), "删除时间限定"+request.getName());
+                TimelimitEntity timelimitEntity = timeLimitService.delTimeLimit(request, tenantId);
+                HttpRequestContext.get().auditLog(ModuleEnum.TIMELIMIT.getAlias(), "删除时间限定"+timelimitEntity.getName());
             }
             return ReturnUtil.success(); //无异常返回成功信息
         } catch (Exception e) {
