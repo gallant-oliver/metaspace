@@ -72,7 +72,6 @@ public class TimeLimitREST {
     @Path("/list")
     @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
-    @OperateType(UPDATE)
     public Result list(TimeLimitSearch search, @HeaderParam("tenantId")String tenantId) throws Exception {
         try {
             return ReturnUtil.success(timeLimitService.search(search,tenantId)); //无异常返回成功信息
@@ -83,6 +82,7 @@ public class TimeLimitREST {
 
     @POST
     @Path("/edit")
+    @OperateType(UPDATE)
     @Produces({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     @Consumes({Servlets.JSON_MEDIA_TYPE, MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public Result edit(TimeLimitRequest request, @HeaderParam("tenantId")String tenantId) throws Exception {
