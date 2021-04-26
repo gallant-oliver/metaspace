@@ -1049,32 +1049,6 @@ public class UserGroupService {
         if (parentCategory.getEditItem()&&!category.getEditItem()){
             category.setEditItem(true);
         }
-
-    }
-
-    /**
-     * 父目录权限校验
-     * @param category
-     * @param parentCategoryGuid
-     * @param userGroupId
-     */
-    public void privilegesCheck(CategoryPrivilegeV2 category, String parentCategoryGuid, String userGroupId) {
-        if (parentCategoryGuid == null || parentCategoryGuid.length() == 0) {
-            return;
-        }
-        CategoryPrivilegeV2 parentCategory = userGroupDAO.getCategoriesPrivileges(parentCategoryGuid, userGroupId);
-        if (parentCategory == null || parentCategory.getRead() == null) {
-            return;
-        }
-        if (parentCategory.getRead() && !category.getRead()) {
-            category.setRead(true);
-        }
-        if (parentCategory.getEditCategory() && !category.getEditCategory()) {
-            category.setEditCategory(true);
-        }
-        if (parentCategory.getEditItem() && !category.getEditItem()) {
-            category.setEditItem(true);
-        }
     }
 
     /**
