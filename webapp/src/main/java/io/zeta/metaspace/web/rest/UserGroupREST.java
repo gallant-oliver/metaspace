@@ -16,6 +16,7 @@ package io.zeta.metaspace.web.rest;
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
+import com.google.common.collect.Lists;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -549,7 +550,7 @@ public class UserGroupREST {
             UserGroup userGroup = userGroupService.getUserGroupByID(id);
             HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "更新用户组："+userGroup.getName()+"目录权限");
             CategoryPrivilegeV2 categoryPrivilegeV2 = new CategoryPrivilegeV2(category);
-            List<CategoryPrivilegeV2> categoryPrivilegeV2s = userGroupService.updatePrivileges(categoryPrivilegeV2, id, type, tenantId, category.isChild());
+            List<CategoryPrivilegeV2> categoryPrivilegeV2s = userGroupService.updatePrivileges(Lists.newArrayList(categoryPrivilegeV2), id, type, tenantId, category.isChild());
             return ReturnUtil.success(categoryPrivilegeV2s);
         }catch (Exception e){
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"更新用户组目录权限失败");
