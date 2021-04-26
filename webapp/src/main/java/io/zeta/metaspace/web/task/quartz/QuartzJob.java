@@ -178,6 +178,7 @@ public class QuartzJob implements Job {
                 return;
             };
             executeAtomicTaskList(taskId, taskExecuteId, taskList, tenantId);
+            canceled(taskId, taskExecuteId);
         } catch (Exception e) {
             if(StringUtils.isNotBlank(taskId)){
                 taskManageDAO.updateTaskStatus(taskId, 3);
@@ -248,8 +249,9 @@ public class QuartzJob implements Job {
         long startTime = System.currentTimeMillis();
         String errorMsg = null;
         for (int i = 0; i < totalStep; i++) {
-            if(canceled(taskId,taskExecuteId)){
+            if(STATE_MAP.get(taskId)){
                 taskManageDAO.updateDataTaskCostTime(taskExecuteId, System.currentTimeMillis() - startTime);
+                return;
             }
             //根据模板状态判断是否继续运行
             int retryCount = 0;
@@ -268,22 +270,25 @@ public class QuartzJob implements Job {
                     errorMsg = null;
                     break;
                 } catch (Exception e) {
-                    errorMsg = e.getMessage();
-                    LOG.error(e.toString());
+                    if (STATE_MAP.get(taskId)) {
+                        error(taskId, task, e);
+                        return;
+                    }
+                    if (RETRY == retryCount) {
+                        error(taskId, task, e);
+                        errorMsg = e.getMessage();
+                        LOG.error(e.toString());
+                        return;
+                    }
                     try {
                         retryCount++;
                         LOG.info("retryCount=" + retryCount);
-
                         Thread.sleep((retryCount + 1) * 5000);
+                        if (STATE_MAP.get(taskId)) {
+                            return;
+                        }
                     } catch (Exception ex) {
                         LOG.error(ex.getMessage());
-                    }
-                    if (RETRY > retryCount) {
-                        taskManageDAO.updateTaskExecutionErrorMsg(task.getTaskExecuteId(), e.toString());
-                        taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
-                        taskManageDAO.updateTaskErrorCount(taskId);
-                        taskManageDAO.updateTaskExecuteErrorStatus(task.getTaskExecuteId(), WarningStatus.WARNING.code);
-                        taskManageDAO.updateRuleExecuteErrorStatus(task.getId(), WarningStatus.WARNING.code);
                     }
                 } finally {
                     recordExecutionInfo(task, errorMsg, tenantId);
@@ -299,6 +304,14 @@ public class QuartzJob implements Job {
             taskManageDAO.updateTaskStatus(taskId, 2);
         }
         taskManageDAO.updateDataTaskCostTime(taskExecuteId, endTime - startTime);
+    }
+
+    private void error(String taskId, AtomicTaskExecution task, Exception e) {
+        taskManageDAO.updateTaskExecutionErrorMsg(task.getTaskExecuteId(), e.toString());
+        taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
+        taskManageDAO.updateTaskErrorCount(taskId);
+        taskManageDAO.updateTaskExecuteErrorStatus(task.getTaskExecuteId(), WarningStatus.WARNING.code);
+        taskManageDAO.updateRuleExecuteErrorStatus(task.getId(), WarningStatus.WARNING.code);
     }
 
     public void recordExecutionInfo(AtomicTaskExecution task, String errorMsg, String tenantId) {
