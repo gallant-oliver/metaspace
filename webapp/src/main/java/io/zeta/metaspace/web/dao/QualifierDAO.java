@@ -155,7 +155,7 @@ public interface QualifierDAO {
     @Select(" select type_id as \"id\",type_name as \"name\",type_mark as mark,creator,create_time createTime,update_user updateUser,update_time updateTime,type_desc as desc" +
             " from qualifier_type " +
             " where tenantId=#{tenantId} and type_id=#{typeId}")
-    public List<Data> getQualifierTypeByIds(@Param("typeId") String typeId, @Param("tenantId") String tenantId);
+    public List<Data> getQualifierTypeById(@Param("typeId") String typeId, @Param("tenantId") String tenantId);
 
     //判断添加的修饰词类型的名称或标识是否重复
     @Select({"<script>",
@@ -223,4 +223,22 @@ public interface QualifierDAO {
             " </foreach>" +
             " </script>")
     public int removeQualifierByIds(@Param("Ids") List<String> Ids, @Param("tenantId") String tenantId);
+
+    //根据ids查询修饰词名称
+    @Select("<script>" +
+            " select qualifier.name from qualifier where tenantid=#{tenantId} and id in " +
+            " <foreach item='id' index='index' collection='Ids' separator=',' open='(' close=')'>" +
+            " #{id} " +
+            " </foreach>" +
+            " </script>")
+    public List<String> getQualiferNameByIds(@Param("Ids") List<String> Ids, @Param("tenantId") String tenantId);
+
+    //根据ids查询修饰词类型名称
+    @Select("<script>" +
+            " select qualifier_type.type_name from qualifier_type where tenantid=#{tenantId} and type_id in " +
+            " <foreach item='id' index='index' collection='Ids' separator=',' open='(' close=')'>" +
+            " #{id} " +
+            " </foreach>" +
+            " </script>")
+    public List<String> getQualiferTypeNameByIds(@Param("Ids") List<String> Ids, @Param("tenantId") String tenantId);
 }

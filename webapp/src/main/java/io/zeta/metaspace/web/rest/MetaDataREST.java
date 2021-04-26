@@ -190,12 +190,13 @@ public class MetaDataREST {
     }
 
     /**
-     * 模糊查询获取库或者表
+     * 模糊查询获取库或者表  - 废弃不用
+     *
      * @param tenantId
-     * @param name 名称
+     * @param name     名称
      * @param offset
      * @param limit
-     * @param type db 数据库 table 数据表
+     * @param type     db 数据库 table 数据表
      * @return
      */
     @GET
@@ -212,7 +213,8 @@ public class MetaDataREST {
     @Path("/table")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<TableEntity> getTableList(@QueryParam("active") @DefaultValue("true") Boolean active,
+    public PageResult<TableEntity> getTableList(@HeaderParam("tenantId") String tenantId,
+                                                @QueryParam("active") @DefaultValue("true") Boolean active,
                                                 @QueryParam("schemaId") String schemaId,
                                                 @QueryParam("queryInfo") @DefaultValue("false") boolean queryInfo,
                                                 @QueryParam("query") String query,
@@ -225,7 +227,7 @@ public class MetaDataREST {
             }
             Boolean isView = StringUtils.isEmpty(isViewStr) ? null : Boolean.parseBoolean(isViewStr);
 
-            PageResult<TableEntity> result = searchService.getTable(schemaId, active, offset, limit, query, isView, queryInfo);
+            PageResult<TableEntity> result = searchService.getTable(schemaId, active, offset, limit, query, isView, queryInfo, tenantId);
             return result;
         } finally {
             AtlasPerfTracer.log(perf);

@@ -181,7 +181,7 @@ public class QualifierService {
             qualifierType.setQualifierTypeDesc(data.getDesc());
             //添加修饰词类型
             qualifierDAO.addQualifierType(qualifierType, tenantId);
-            List<Data> dataList = qualifierDAO.getQualifierTypeByIds(qualifierType.getQualifierTypeId(), tenantId);
+            List<Data> dataList = qualifierDAO.getQualifierTypeById(qualifierType.getQualifierTypeId(), tenantId);
             return dataList;
         } catch (
                 Exception e) {

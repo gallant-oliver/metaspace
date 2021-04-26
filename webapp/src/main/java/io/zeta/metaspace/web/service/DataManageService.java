@@ -203,6 +203,13 @@ public class DataManageService {
                 }
             }
             getCount(valueList, type, tenantId);
+            if(type==5&& !CollectionUtils.isEmpty(valueList)){
+                valueList.forEach(x->{
+                    if(CategoryUtil.indexFieldId.equals(x.getGuid())){
+                        x.setPrivilege(new CategoryPrivilege.Privilege(false, false, true, false, true, false, false, false, false,false));
+                    }
+                });
+            }
             return valueList;
         } catch (MyBatisSystemException e) {
             LOG.error("数据库服务异常", e);
@@ -765,7 +772,6 @@ public class DataManageService {
                         if (relations.get(0).getTotal() < offset + 1) {
                             offset -= relations.get(0).getTotal();
                             hiveRelations = relationDao.queryHiveRelationByCategoryGuidV2(categoryGuid, limit, offset, databases, tenantId);
-                            hiveRelations.forEach(s -> s.setSourceName("hive"));
                             allRelations.addAll(hiveRelations);
                             //从关系型数据库拿数据
                         } else if (relations.get(0).getTotal() >= offset + limit) {
@@ -774,13 +780,11 @@ public class DataManageService {
                         } else if (relations.get(0).getTotal() >= offset + 1 && relations.get(0).getTotal() < offset + limit) {//从hive和关系型数据库拿数据
                             relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, relations.get(0).getTotal() - offset, offset, databases, tenantId);
                             hiveRelations = relationDao.queryHiveRelationByCategoryGuidV2(categoryGuid, limit - (relations.get(0).getTotal() - offset), 0, databases, tenantId);
-                            hiveRelations.forEach(s -> s.setSourceName("hive"));
                             allRelations.addAll(relations);
                             allRelations.addAll(hiveRelations);
                         }
                     } else if (hiveRelations.size() > 0 && hiveRelations != null) {
                         hiveRelations = relationDao.queryHiveRelationByCategoryGuidV2(categoryGuid, limit, offset, databases, tenantId);
-                        hiveRelations.forEach(s -> s.setSourceName("hive"));
                         allRelations.addAll(hiveRelations);
                     }
                 }
@@ -800,8 +804,8 @@ public class DataManageService {
                 List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
                 entity.setDataOwner(ownerHeaders);
             }
-            getPath(relations, tenantId);
-            pageResult.setCurrentSize(relations.size());
+            getPath(allRelations, tenantId);
+            pageResult.setCurrentSize(allRelations.size());
             pageResult.setLists(allRelations);
             pageResult.setTotalSize(totalNum);
             return pageResult;

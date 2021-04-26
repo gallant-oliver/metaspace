@@ -53,6 +53,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -360,13 +361,6 @@ public class IndexREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.getCategories()");
             }
             List<CategoryPrivilege> allByUserGroup = dataManageService.getAllByUserGroup(CATEGORY_TYPE, tenantId);
-            if(!CollectionUtils.isEmpty(allByUserGroup)){
-                allByUserGroup.forEach(x->{
-                    if(CategoryUtil.indexFieldId.equals(x.getGuid())){
-                        x.setPrivilege(new CategoryPrivilege.Privilege(false, false, true, true, false, false, false, false, false,false));
-                    }
-                });
-            }
             return allByUserGroup;
         }  finally {
             AtlasPerfTracer.log(perf);
@@ -715,6 +709,29 @@ public class IndexREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         } finally {
             AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 获取指标链路
+     * @param tenantId
+     * @param map
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("links")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getIndexFieldInfo(@HeaderParam("tenantId")String tenantId, Map<String,String> map) throws AtlasBaseException {
+        try {
+            String indexId = map.get("indexId"); //指标ID
+            String indexType = map.get("indexType"); //指标类型 ，指标类型(1 原子指标，2派生指标，3复合指标)
+            String version = map.get("version"); //指标类型 ，指标类型(1 原子指标，2派生指标，3复合指标)
+            IndexLinkDto indexLink = indexService.getIndexLink(indexId, Integer.parseInt(indexType), version, tenantId);
+            return ReturnUtil.success(indexLink);
+        }catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e, "获取指标链路失败");
         }
     }
 
