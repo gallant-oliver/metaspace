@@ -86,7 +86,6 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.NORMDESIGN,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -113,13 +112,13 @@ public class IndexREST {
      * @return
      * @throws AtlasBaseException
      */
-    @Permission({ModuleEnum.NORMDESIGN,ModuleEnum.AUTHORIZATION})
     @PUT
     @Path("/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     public String updateCategory(@PathParam("categoryId") String categoryGuid,CategoryInfoV2 categoryInfo,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), categoryInfo.getName());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -141,7 +140,6 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @DELETE
     @Path("/categories/{categoryGuid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -156,6 +154,7 @@ public class IndexREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.deleteCategory(" + categoryGuid + ")");
             }
             deleteReturn = deleteIndexField(categoryGuid, tenantId, CATEGORY_TYPE,deleteIndex);
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), categoryGuid);
             return ReturnUtil.success(deleteReturn);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -286,7 +285,6 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.NORMDESIGN,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -296,7 +294,6 @@ public class IndexREST {
         File file = null;
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), name);
             file = ExportDataPathUtils.fileCheck(name, fileInputStream);
             String upload = dataManageService.uploadIndexField(file, CATEGORY_TYPE, tenantId);
             HashMap<String, String> map = new HashMap<String, String>() {{
@@ -319,7 +316,6 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.NORMDESIGN,ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/import/{upload}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -329,7 +325,6 @@ public class IndexREST {
         File file = null;
         try {
 
-            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), "指标域批量导入" );
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
 
             dataManageService.importBatchIndexField(file,CATEGORY_TYPE,tenantId);
@@ -373,7 +368,6 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.NORMDESIGN,ModuleEnum.AUTHORIZATION})
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -403,7 +397,6 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.NORMDESIGN,ModuleEnum.AUTHORIZATION})
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -434,7 +427,6 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @DELETE
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -447,10 +439,15 @@ public class IndexREST {
             }
             if(!Objects.isNull(requestDTO)){
                 List<DeleteIndexInfoDTO> deleteList = requestDTO.getDtoList();
+
                 if(!CollectionUtils.isEmpty(deleteList)){
                     List<DeleteIndexInfoDTO> deleteIndexInfoDTOs = deleteList.stream().filter(x -> (IndexState.CREATE.getValue() == x.getIndexState() || IndexState.OFFLINE.getValue() == x.getIndexState())).collect(Collectors.toList());
                     if(!CollectionUtils.isEmpty(deleteIndexInfoDTOs)){
+                        StringBuilder content=new StringBuilder();
+                        deleteIndexInfoDTOs.forEach(x->content.append(x.getIndexId()).append(","));
+                        content.deleteCharAt(content.lastIndexOf(","));
                         indexService.deleteIndex(deleteIndexInfoDTOs, tenantId);
+                        HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(),content.toString());
                     }
                 }
             }
@@ -468,7 +465,6 @@ public class IndexREST {
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @GET
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -490,7 +486,6 @@ public class IndexREST {
         }
     }
 
-    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @GET
     @Path("/dataSource")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -510,13 +505,11 @@ public class IndexREST {
         }
     }
 
-    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/dataSource/db")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getOptionalDb(OptionalRequestDTO optionalRequestDTO,@HeaderParam("tenantId") String tenantId) throws Exception {
-        //@QueryParam("dataSourceId") String dataSourceId
         if(Objects.isNull(optionalRequestDTO)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源id不能为空");
         }
@@ -534,7 +527,6 @@ public class IndexREST {
         }
     }
 
-    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/dataSource/db/table")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -557,7 +549,6 @@ public class IndexREST {
         }
     }
 
-    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/dataSource/db/table/column")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -580,7 +571,6 @@ public class IndexREST {
         }
     }
 
-    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @GET
     @Path("/{indexId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -606,7 +596,6 @@ public class IndexREST {
         }
     }
 
-    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @PUT
     @Path("/sendApprove")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -643,7 +632,6 @@ public class IndexREST {
             AtlasPerfTracer.log(perf);
         }
     }
-    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/{indexId}/history")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -679,7 +667,6 @@ public class IndexREST {
         }
     }
 
-    @Permission({ModuleEnum.NORMDESIGN, ModuleEnum.AUTHORIZATION})
     @POST
     @Path("/pagequery")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
