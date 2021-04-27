@@ -710,7 +710,7 @@ public class TaskManageService {
         } else{
             QuartzJob.STATE_MAP.put(taskId,true);
             long waitTime = 0L;
-            long taskStartExpire = conf.getLong("task_cancel_expire", 60) * 1000;
+            long taskStartExpire = conf.getLong("task_cancel_expire", 15) * 1000;
             long step = 10;
             while(QuartzJob.STATE_MAP.containsKey(taskId)){
                 waitTime += step;
