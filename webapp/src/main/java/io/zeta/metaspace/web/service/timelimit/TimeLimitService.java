@@ -73,8 +73,10 @@ public class TimeLimitService implements TimeLimitServiceImp{
     }
 
     @Override
-    public void delTimeLimit(TimeLimitRequest req, String tenantId) {
+    public TimelimitEntity delTimeLimit(TimeLimitRequest req, String tenantId) {
+        TimelimitEntity timeLimitById = timeLimitDAO.getTimeLimitById(req.getId(), tenantId);
         timeLimitDAO.deleteTimeLimit(req.getIds());
+        return timeLimitById;
     }
 
     @Override
