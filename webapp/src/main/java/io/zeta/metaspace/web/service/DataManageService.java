@@ -24,6 +24,7 @@ package io.zeta.metaspace.web.service;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.dto.indices.IndexFieldExport;
@@ -2395,6 +2396,10 @@ public class DataManageService {
     public void importIndexFields(List<CategoryEntityV2> addIndexFields, List<CategoryEntityV2> updateIndexFields, String tenantId) {
         if (!CollectionUtils.isEmpty(addIndexFields)) {
             categoryDao.addAll(addIndexFields, tenantId);
+            StringBuilder sb=new StringBuilder();
+            addIndexFields.forEach(x->sb.append(x.getName()).append(","));
+            sb.deleteCharAt(sb.lastIndexOf(","));
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), sb.toString() );
         }
         if (!CollectionUtils.isEmpty(updateIndexFields)) {
             categoryDao.updateCategoryEntityV2(updateIndexFields, tenantId);
