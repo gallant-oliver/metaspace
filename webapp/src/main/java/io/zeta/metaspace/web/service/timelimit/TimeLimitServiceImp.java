@@ -20,7 +20,7 @@ public interface TimeLimitServiceImp {
      */
      void addTimeLimit(TimeLimitRequest req, String tenantId);
 
-     TimelimitEntity delTimeLimit(TimeLimitRequest req, String tenantId);
+     List<TimelimitEntity> delTimeLimit(TimeLimitRequest req, String tenantId);
 
 
      void editTimeLimit(TimeLimitRequest req, String tenantId);

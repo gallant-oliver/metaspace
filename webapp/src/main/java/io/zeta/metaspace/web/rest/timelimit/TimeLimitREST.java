@@ -36,12 +36,15 @@ import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import javax.inject.Singleton;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+
+import java.util.List;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
@@ -108,8 +111,13 @@ public class TimeLimitREST {
             }else if(TimeLimitOperEnum.CANCEL.getCode().equals(request.getType())){ //下线，暂时不需要
                 timeLimitService.cancel(request,tenantId);
             }else{ //删除
-                TimelimitEntity timelimitEntity = timeLimitService.delTimeLimit(request, tenantId);
-                HttpRequestContext.get().auditLog(ModuleEnum.TIMELIMIT.getAlias(), "删除时间限定"+timelimitEntity.getName());
+                List<TimelimitEntity> timelimitEntitys = timeLimitService.delTimeLimit(request, tenantId);
+                StringBuilder ss=new StringBuilder();
+                if(CollectionUtils.isNotEmpty(timelimitEntitys)){
+                    timelimitEntitys.forEach(x->ss.append(x.getName()).append(","));
+                    ss.deleteCharAt(ss.lastIndexOf(","));
+                }
+                HttpRequestContext.get().auditLog(ModuleEnum.TIMELIMIT.getAlias(), "删除时间限定"+ss.toString());
             }
             return ReturnUtil.success(); //无异常返回成功信息
         } catch (Exception e) {

@@ -32,6 +32,7 @@ import io.zeta.metaspace.model.dto.indices.IndexFieldNode;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.privilege.Module;
@@ -85,6 +86,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
 import static io.zeta.metaspace.web.service.DataShareService.METASPACE_MOBIUS_ADDRESS;
 
 @Service
@@ -2359,6 +2361,7 @@ public class DataManageService {
      * @param type
      * @throws Exception
      */
+    @OperateType(INSERT)
     @Transactional(rollbackFor = Exception.class)
     public void importBatchIndexField(File fileInputStream, int type, String tenantId) throws Exception {
         if (!fileInputStream.exists()) {
@@ -2391,12 +2394,13 @@ public class DataManageService {
             importIndexFields(addIndexFields, updateIndexFields, tenantId);
         }
     }
-
+    @OperateType(INSERT)
     @Transactional(rollbackFor = Exception.class)
     public void importIndexFields(List<CategoryEntityV2> addIndexFields, List<CategoryEntityV2> updateIndexFields, String tenantId) {
         if (!CollectionUtils.isEmpty(addIndexFields)) {
             categoryDao.addAll(addIndexFields, tenantId);
             StringBuilder sb=new StringBuilder();
+            sb.append("指标域：");
             addIndexFields.forEach(x->sb.append(x.getName()).append(","));
             sb.deleteCharAt(sb.lastIndexOf(","));
             HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), sb.toString() );
@@ -3013,5 +3017,10 @@ public class DataManageService {
             return indexFields;
         }
         return new ArrayList<>();
+    }
+
+    public List<CategoryEntityV2> queryCategoryEntitysByGuids(List<String> indexFields, String tenantId) throws SQLException {
+        List<CategoryEntityV2> categoryEntityV2s=categoryDao.queryCategoryEntitysByGuids(indexFields,tenantId);
+        return categoryEntityV2s;
     }
 }

@@ -57,7 +57,14 @@ public interface TimeLimitDAO {
             "</foreach>" +
             "</script>")
     public void deleteTimeLimit(@Param("ids")List<String> ids);
-
+    @Select("<script>" +
+            "select * from time_limit where tenantid=#{tenantId} and id in " +
+            "<foreach item='id' index='index' collection='ids' " +
+            "open='(' separator=',' close=')'>" +
+            " #{id} " +
+            "</foreach>" +
+            "</script>")
+    List<TimelimitEntity> getTimeLimitByIds(@Param("ids")List<String> ids, @Param("tenantId")String tenantId);
 
     @Select({" select id from time_limit where tenantid=#{tenantId} and name=#{timeLimitName}"})
     List<String> getTimeLimitByName(@Param("timeLimitName") String timeLimitName, @Param("tenantId") String tenantId);
@@ -173,5 +180,6 @@ public interface TimeLimitDAO {
             "WHERE id=#{timeLimit.id} and version = #{timeLimit.version} and tenantid=#{tenantId} " +
             "</script>"})
     int updateTimeLimit(@Param("timeLimit") TimelimitEntity timeLimit, @Param("tenantId") String tenantId);
+
 
 }

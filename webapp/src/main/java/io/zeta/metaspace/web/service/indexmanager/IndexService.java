@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.service.indexmanager;
 
 import io.zeta.metaspace.model.dto.indices.*;
+import io.zeta.metaspace.model.po.indices.IndexInfoPO;
 import io.zeta.metaspace.web.service.Approve.Approvable;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,7 +66,7 @@ public interface IndexService extends Approvable {
      * @param deleteList
      * @param tenantId
      */
-    void deleteIndex(List<DeleteIndexInfoDTO> deleteList, String tenantId);
+    List<IndexInfoPO> deleteIndex(List<DeleteIndexInfoDTO> deleteList, String tenantId);
 
     /**
      * 获取可选指标
