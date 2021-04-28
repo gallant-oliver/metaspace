@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,11 +21,8 @@ package org.apache.atlas.web.service;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.HttpConfiguration;
-import org.eclipse.jetty.server.HttpConnectionFactory;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.util.thread.ExecutorThreadPool;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.slf4j.Logger;
@@ -69,9 +66,11 @@ public class EmbeddedServer {
 
         Connector connector = getConnector(host, port);
         server.addConnector(connector);
-
         WebAppContext application = getWebAppContext(path);
-        server.setHandler(application);
+        GzipHandler gzipHandler = new GzipHandler();
+        gzipHandler.setExcludedMimeTypes("text/html,text/plain,text/xml,text/css,application/javascript,text/javascript");
+        gzipHandler.setHandler(application);
+        server.setHandler(gzipHandler);
     }
 
     protected WebAppContext getWebAppContext(String path) {
@@ -94,7 +93,8 @@ public class EmbeddedServer {
     protected Connector getConnector(String host, int port) throws IOException {
         HttpConfiguration httpConfig = new HttpConfiguration();
         // this is to enable large header sizes when Kerberos is enabled with AD
-        final int bufferSize = AtlasConfiguration.WEBSERVER_REQUEST_BUFFER_SIZE.getInt();;
+        final int bufferSize = AtlasConfiguration.WEBSERVER_REQUEST_BUFFER_SIZE.getInt();
+        ;
         httpConfig.setResponseHeaderSize(bufferSize);
         httpConfig.setRequestHeaderSize(bufferSize);
         httpConfig.setSendServerVersion(false);
@@ -109,7 +109,7 @@ public class EmbeddedServer {
         try {
             server.start();
             server.join();
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.EMBEDDED_SERVER_START, e);
         }
     }
