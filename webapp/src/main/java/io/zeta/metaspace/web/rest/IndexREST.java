@@ -13,6 +13,7 @@ import io.zeta.metaspace.model.enums.IndexType;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
+import io.zeta.metaspace.model.po.indices.IndexInfoPO;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.web.model.TemplateEnum;
@@ -25,6 +26,7 @@ import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryDeleteReturn;
+import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
@@ -37,7 +39,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
+//import org.springframework.util.CollectionUtils;
+import org.apache.commons.collections.CollectionUtils;
 
 
 import javax.inject.Singleton;
@@ -92,13 +95,15 @@ public class IndexREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     public CategoryPrivilege createCategory(CategoryInfoV2 categoryInfo, @HeaderParam("tenantId")String tenantId) throws Exception {
-        HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), categoryInfo.getName());
+
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.createCategory()");
             }
-            return dataManageService.createCategory(categoryInfo, CATEGORY_TYPE,tenantId);
+            CategoryPrivilege categoryPrivilege=dataManageService.createCategory(categoryInfo, CATEGORY_TYPE,tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), "指标域："+categoryInfo.getName());
+            return categoryPrivilege;
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -118,14 +123,16 @@ public class IndexREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     public String updateCategory(@PathParam("categoryId") String categoryGuid,CategoryInfoV2 categoryInfo,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), categoryInfo.getName());
+
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.updateCategory()");
             }
             categoryInfo.setGuid(categoryGuid);
-            return dataManageService.updateCategory(categoryInfo, CATEGORY_TYPE,tenantId);
+            String result=dataManageService.updateCategory(categoryInfo, CATEGORY_TYPE,tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), "指标域："+categoryInfo.getName());
+            return result;
         }  catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -154,7 +161,6 @@ public class IndexREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.deleteCategory(" + categoryGuid + ")");
             }
             deleteReturn = deleteIndexField(categoryGuid, tenantId, CATEGORY_TYPE,deleteIndex);
-            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), categoryGuid);
             return ReturnUtil.success(deleteReturn);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
@@ -167,6 +173,7 @@ public class IndexREST {
     /**
      * 删除指标域
      */
+    @OperateType(OperateTypeEnum.DELETE)
     @Transactional(rollbackFor = Exception.class)
     public CategoryDeleteReturn deleteIndexField(String guid,String tenantId,int type,boolean deleteIndex) throws Exception {
         List<String> indexFields=dataManageService.getChildIndexFields(guid,tenantId);
@@ -183,8 +190,16 @@ public class IndexREST {
             //将指定指标域下所有指标都转移到默认域
             indexService.removeIndexToAnotherIndexField(indexFields,tenantId, CategoryUtil.indexFieldId);
         }
+        List<CategoryEntityV2> categoryEntityV2s= dataManageService.queryCategoryEntitysByGuids(indexFields,tenantId);
         //删除目录
         CategoryDeleteReturn deleteReturn =dataManageService.deleteCategory(guid,tenantId,type);
+        if(CollectionUtils.isNotEmpty(categoryEntityV2s)){
+            StringBuilder sb=new StringBuilder();
+            sb.append("指标域：");
+            categoryEntityV2s.forEach(x->sb.append(x.getName()).append(","));
+            sb.deleteCharAt(sb.lastIndexOf(","));
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(),sb.toString());
+        }
         return deleteReturn;
     }
 
@@ -376,13 +391,13 @@ public class IndexREST {
         if(Objects.isNull(indexDTO)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数错误");
         }
-        HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), indexDTO.getIndexName());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.addIndex()");
             }
             IndexResposeDTO iard=indexService.addIndex(indexDTO,tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), "指标："+indexDTO.getIndexName());
             return ReturnUtil.success("添加成功",iard);
         } catch (Exception e) {
             PERF_LOG.error("指标添加失败",e);
@@ -405,13 +420,13 @@ public class IndexREST {
         if(Objects.isNull(indexDTO)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "参数错误");
         }
-        HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), indexDTO.getIndexName());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.editIndex()");
             }
             IndexResposeDTO iard=indexService.editIndex(indexDTO,tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), "指标："+indexDTO.getIndexName());
             return ReturnUtil.success("编辑成功",iard);
         } catch (AtlasBaseException e) {
             PERF_LOG.error("编辑指标失败",e);
@@ -443,10 +458,13 @@ public class IndexREST {
                 if(!CollectionUtils.isEmpty(deleteList)){
                     List<DeleteIndexInfoDTO> deleteIndexInfoDTOs = deleteList.stream().filter(x -> (IndexState.CREATE.getValue() == x.getIndexState() || IndexState.OFFLINE.getValue() == x.getIndexState())).collect(Collectors.toList());
                     if(!CollectionUtils.isEmpty(deleteIndexInfoDTOs)){
+                        List<IndexInfoPO> indexInfoPOS=indexService.deleteIndex(deleteIndexInfoDTOs, tenantId);
                         StringBuilder content=new StringBuilder();
-                        deleteIndexInfoDTOs.forEach(x->content.append(x.getIndexId()).append(","));
-                        content.deleteCharAt(content.lastIndexOf(","));
-                        indexService.deleteIndex(deleteIndexInfoDTOs, tenantId);
+                        content.append("指标：");
+                        if(CollectionUtils.isNotEmpty(indexInfoPOS)){
+                            indexInfoPOS.forEach(x->content.append(x.getIndexName()).append(","));
+                            content.deleteCharAt(content.lastIndexOf(","));
+                        }
                         HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(),content.toString());
                     }
                 }
@@ -623,6 +641,11 @@ public class IndexREST {
                 }
                 if(!CollectionUtils.isEmpty(approveList)){
                     indexService.indexSendApprove(approveList,tenantId);
+                    StringBuilder sb=new StringBuilder();
+                    sb.append("指标送审：");
+                    approveList.forEach(x->sb.append(x.getIndexName()).append(","));
+                    sb.deleteCharAt(sb.lastIndexOf(","));
+                    HttpRequestContext.get().auditLog(ModuleEnum.APPROVERMANAGE.getAlias(), sb.toString());
                 }
             }
             return ReturnUtil.success("success");

@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.approve.ApproveItem;
+import io.zeta.metaspace.model.dto.indices.DeleteIndexInfoDTO;
 import io.zeta.metaspace.model.dto.indices.IndexDTO;
 import io.zeta.metaspace.model.dto.indices.PageQueryDTO;
 import io.zeta.metaspace.model.modifiermanage.Qualifier;
@@ -553,4 +554,33 @@ public interface IndexDAO {
             " </foreach> ",
             " </script>"})
     List<String> getIndexIds(@Param("indexFields")List<String> indexFields, @Param("tenantId")String tenantId,@Param("state1") int state1,@Param("state2") int state2);
+
+    @Select({"<script>" ,
+            " WITH RECURSIVE T (index_id, index_name,indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time,updater, update_time,rn) AS ",
+            " (",
+            " select index_id, index_name,1 as indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time,updater, update_time ",
+            " ,row_number() over(partition by index_id order by version desc) as rn ",
+            " from index_atomic_info where  tenant_id=#{tenantId} and index_id in ",
+            " <foreach item='indexId' index='index' collection='indexIds' separator=',' open='(' close=')'>",
+            " #{indexId} ",
+            " </foreach> ",
+            " UNION  ",
+            " select index_id, index_name,2 as indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time,updater, update_time ",
+            " ,row_number() over(partition by index_id order by version desc) as rn ",
+            " from index_derive_info where  tenant_id=#{tenantId} and index_id in ",
+            " <foreach item='indexId' index='index' collection='indexIds' separator=',' open='(' close=')'>",
+            " #{indexId} ",
+            " </foreach> ",
+            " UNION  ",
+            " select index_id, index_name,3 as indexType, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time,updater, update_time ",
+            " ,row_number() over(partition by index_id order by version desc) as rn ",
+            " from index_composite_info where tenant_id=#{tenantId} and index_id in ",
+            " <foreach item='indexId' index='index' collection='indexIds' separator=',' open='(' close=')'>",
+            " #{indexId} ",
+            " </foreach> ",
+            " ) ",
+            " select T.* from T ",
+            " where T.tenant_id=#{tenantId} and T.rn=1",
+            "</script>"})
+    List<IndexInfoPO> getIndexNamesByIds(@Param("indexIds")List<String> indexIds, @Param("tenantId")String tenantId);
 }

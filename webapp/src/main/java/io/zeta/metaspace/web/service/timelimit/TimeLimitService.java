@@ -14,6 +14,7 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import kafka.api.ApiUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,10 +74,11 @@ public class TimeLimitService implements TimeLimitServiceImp{
     }
 
     @Override
-    public TimelimitEntity delTimeLimit(TimeLimitRequest req, String tenantId) {
-        TimelimitEntity timeLimitById = timeLimitDAO.getTimeLimitById(req.getId(), tenantId);
+    public List<TimelimitEntity> delTimeLimit(TimeLimitRequest req, String tenantId) {
+        List<String> ids=req.getIds();
+        List<TimelimitEntity> timelimitEntities=timeLimitDAO.getTimeLimitByIds(req.getIds(),tenantId);
         timeLimitDAO.deleteTimeLimit(req.getIds());
-        return timeLimitById;
+        return timelimitEntities;
     }
 
     @Override

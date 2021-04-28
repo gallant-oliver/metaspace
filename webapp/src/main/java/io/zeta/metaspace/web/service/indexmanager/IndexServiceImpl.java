@@ -383,9 +383,21 @@ public class IndexServiceImpl implements IndexService{
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void deleteIndex(List<DeleteIndexInfoDTO> deleteList, String tenantId) {
+    public List<IndexInfoPO> deleteIndex(List<DeleteIndexInfoDTO> deleteList, String tenantId) {
+        List<IndexInfoPO> indexInfoPOS=null;
         if(!CollectionUtils.isEmpty(deleteList)){
+            List<String> indexIds=deleteList.stream().map(x->x.getIndexId()).collect(Collectors.toList());
+            indexInfoPOS=indexDAO.getIndexNamesByIds(indexIds,tenantId);
+            deleteIndexs(deleteList,tenantId);
+        }
+        return indexInfoPOS;
+    }
+
+
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteIndexs(List<DeleteIndexInfoDTO> deleteList, String tenantId) {
+        if(!CollectionUtils.isEmpty(deleteList)){
+
             Map<Integer,List<String>> deleteMap=new HashMap<>();
             deleteList.forEach(x->{
                 List<String> deleteIds = deleteMap.get(x.getIndexType());
