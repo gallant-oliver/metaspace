@@ -531,23 +531,41 @@ public class IndexServiceImpl implements IndexService{
      */
     @Override
     public IndexLinkDto getIndexLink(String indexId, int indexType, String version, String tenantId) {
-        Tuple2<List<IndexLinkEntity>, List<IndexLinkRelation>> result;
-
+        List<IndexLinkEntity> nodes = new LinkedList<>();
+        List<IndexLinkRelation> relations = new LinkedList<>();
+        boolean status = true;
         if(indexType==IndexType.INDEXCOMPOSITE.getValue()){ //复合指标
-            IndexCompositePO compositeIndexPO = indexDAO.getCompositeIndexPO(indexId, Integer.parseInt(version), tenantId);
-            result = getLinkByComplexIndex(compositeIndexPO,tenantId);
+            IndexCompositePO compositeIndexPO = indexDAO.getCompositeIndexPO(indexId, Integer.parseInt(version), tenantId); //复合指标
+
+            List<IndexDerivePO> dependentDeriveIndex = indexDAO.getDependentDeriveIndex(indexId, tenantId);//获取依赖派生指标
+            if(dependentDeriveIndex != null && dependentDeriveIndex.size() >0){
+                for (IndexDerivePO po : dependentDeriveIndex) {
+
+                    IndexAtomicPO indexAtomicPO = indexDAO.getDependentAtomicIndex(po.getIndexAtomicId(), tenantId);
+                    if (indexAtomicPO == null) {
+                        continue; //依赖删除
+                    }
+                    status = getLinkByAutoMaticIndex(indexAtomicPO, tenantId, po.getIndexId(), nodes, relations);
+                    getLinkByDriveIndex(po, indexAtomicPO, compositeIndexPO.getIndexId(), tenantId, nodes, relations, status ? "0" : "2");
+                }
+            }
+            getLinkByComplexIndex(compositeIndexPO,nodes,status?"0":"2");
         }else if(indexType==IndexType.INDEXDERIVE.getValue()){ //派生指标
             IndexDerivePO deriveIndexPO = indexDAO.getDeriveIndexPO(indexId, Integer.parseInt(version), tenantId);
-            result = getLinkByDriveIndex(deriveIndexPO,null,tenantId);
+            IndexAtomicPO indexAtomicPO = indexDAO.getDependentAtomicIndex(deriveIndexPO.getIndexAtomicId(), tenantId);
+            if(indexAtomicPO != null){
+                status = getLinkByAutoMaticIndex(indexAtomicPO, tenantId, deriveIndexPO.getIndexId(), nodes, relations);
+            }
+            getLinkByDriveIndex(deriveIndexPO,indexAtomicPO,null,tenantId,nodes,relations,status?"0":"2");
         }else if(indexType==IndexType.INDEXATOMIC.getValue()){ //原子指标
             IndexAtomicPO atomicIndexPO = indexDAO.getAtomicIndexPO(indexId, Integer.parseInt(version), tenantId);
-            result = getLinkByAutoMaticIndex(atomicIndexPO,null,tenantId);
+            getLinkByAutoMaticIndex(atomicIndexPO,tenantId,null,nodes,relations);
         }else{  //不支持的指标类型
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标类型错误");
         }
         IndexLinkDto indexLinkDto = new IndexLinkDto();
-        indexLinkDto.setNodes(result._1);
-        indexLinkDto.setRelations(result._2);
+        indexLinkDto.setNodes(nodes);
+        indexLinkDto.setRelations(relations);
         return indexLinkDto;
     }
 
@@ -555,51 +573,27 @@ public class IndexServiceImpl implements IndexService{
 
 
 
-    public Tuple2<List<IndexLinkEntity>, List<IndexLinkRelation>> getLinkByComplexIndex(IndexCompositePO index,String tenantId) {
-        Set<IndexLinkEntity> nodes = new HashSet();
-        Set<IndexLinkRelation> relations = new HashSet<>();
-        ComplexIndexLinkNode node;
-        TreeNode<IndexLinkEntity> treeNode = null;
-        List<IndexDerivePO> dependentDeriveIndex = null;
-        if (index != null) {
-            String indexId = index.getIndexId();   //复合指标ID
-            //生成复合指标节点关系
-            node = new ComplexIndexLinkNode();
-            node.setId(index.getIndexId()); //指标ID
-            node.setNodeName(index.getIndexName()); //指标名称
-            node.setIndexCode(index.getIndexIdentification());
-            node.setPublishTime(index.getPublishTime());
-            node.setNodeType("5"); //复合指标
-            node.setNodeStatus("0");//指标类型节点默认执行成功
-            node.setExpress(index.getExpression());//指标类型节点默认执行成功
-            node.setBusinessCaliber(index.getBusinessCaliber());
-            node.setTechnicalCaliber(index.getTechnicalCaliber());
-            treeNode = new TreeNode<>(node);  //root
-            dependentDeriveIndex = indexDAO.getDependentDeriveIndex(indexId, tenantId); //获取依赖指标
-        }
-        if(dependentDeriveIndex != null && dependentDeriveIndex.size()>0){
-            //生成派生指标类型节点，并生成与复合指标间的relation节点
-            for(IndexDerivePO deriveIndex  : dependentDeriveIndex){
-                Tuple2<List<IndexLinkEntity>, List<IndexLinkRelation>> linkByDriveIndex = getLinkByDriveIndex(deriveIndex, treeNode, tenantId);
-                nodes.addAll(linkByDriveIndex._1);
-                relations.addAll(linkByDriveIndex._2);
-            }
-        }
-        return new Tuple2<>(new LinkedList<>(nodes),new LinkedList<>(relations));
+    public void getLinkByComplexIndex(IndexCompositePO index,List<IndexLinkEntity> nodes,String status) {
+        ComplexIndexLinkNode node = new ComplexIndexLinkNode();
+        String indexId = index.getIndexId();   //复合指标ID
+        // 生成复合指标节点关系
+        node.setId(indexId); //指标ID
+        node.setNodeName(index.getIndexName()); //指标名称
+        node.setIndexCode(index.getIndexIdentification());
+        node.setPublishTime(index.getPublishTime());
+        node.setNodeType("5"); //复合指标
+        node.setNodeStatus(status);//指标类型节点默认执行成功
+        node.setExpress(index.getExpression());//指标类型节点默认执行成功
+        node.setBusinessCaliber(index.getBusinessCaliber());
+        node.setTechnicalCaliber(index.getTechnicalCaliber());
+        nodes.add(node);
     }
 
 
-    public Tuple2<List<IndexLinkEntity>, List<IndexLinkRelation>> getLinkByDriveIndex(IndexDerivePO deriveIndex, TreeNode<IndexLinkEntity> parent, String tenantId) {
+    public void getLinkByDriveIndex(IndexDerivePO deriveIndex,IndexAtomicPO indexAtomicPO,String parentId,String tenantId,List<IndexLinkEntity> nodes, List<IndexLinkRelation> relations,String status) {
 
         DriveIndexLinkNode driverNode;
-        IndexAtomicPO indexAtomicPO = null;
-        TreeNode<IndexLinkEntity> treeNode;
-
         try {
-            List<IndexAtomicPO> indexAtomicPOs = indexDAO.getDependentAtomicIndex(deriveIndex.getIndexAtomicId(), tenantId);
-            if (indexAtomicPOs != null && indexAtomicPOs.size() > 0) {
-                indexAtomicPO = indexAtomicPOs.get(0);
-            }
             //生成派生指标类型节点
             driverNode = new DriveIndexLinkNode();
             driverNode.setId(deriveIndex.getIndexId()); //指标ID
@@ -607,7 +601,7 @@ public class IndexServiceImpl implements IndexService{
             driverNode.setPublishTime(deriveIndex.getPublishTime());
             driverNode.setNodeType("4"); //派生指标
             driverNode.setAtomIndexName(indexAtomicPO == null ? "" : indexAtomicPO.getIndexName()); //依赖的原子指标名称
-            driverNode.setNodeStatus("0");//指标类型节点默认执行成功
+            driverNode.setNodeStatus(status);//指标类型节点默认执行成功
             driverNode.setIndexCode(deriveIndex.getIndexIdentification());
             driverNode.setBusinessCaliber(deriveIndex.getBusinessCaliber());
             driverNode.setTechnicalCaliber(deriveIndex.getTechnicalCaliber());
@@ -617,26 +611,48 @@ public class IndexServiceImpl implements IndexService{
                 driverNode.setQualifierName(collect);
             }
             TimelimitEntity timeLimitById = timeLimitDAO.getTimeLimitById(deriveIndex.getTimeLimitId(), tenantId);
-            driverNode.setTimeLimitName(timeLimitById.getName()); //依赖的时间限定名称
-            if(parent != null){
-                treeNode = parent.addChild(driverNode);
-            }else{
-                treeNode = new TreeNode<>(driverNode);
+            if(timeLimitById != null){
+                driverNode.setTimeLimitName(timeLimitById.getName()); //依赖的时间限定名称
+            }
+            nodes.add(driverNode);
+            if(parentId != null){
+                IndexLinkRelation relation = new IndexLinkRelation();
+                relation.setFrom(driverNode.getId());
+                relation.setTo(parentId);
+                relations.add(relation);
             }
         }catch (Exception e){
             LOG.error("GET DriverIndex NODE fail", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "GET ETL NODE fail");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取指标链路失败");
         }
-        if (indexAtomicPO != null) { //存在依赖的原子指标
-                return getLinkByAutoMaticIndex(indexAtomicPO, treeNode, tenantId);
-        }
-        return null;
     }
 
 
-    public Tuple2<List<IndexLinkEntity>, List<IndexLinkRelation>> getLinkByAutoMaticIndex(IndexAtomicPO indexAtomic,TreeNode<IndexLinkEntity> parent,String tenantId){
+    public boolean getLinkByAutoMaticIndex(IndexAtomicPO indexAtomic,String tenantId,String parentId,List<IndexLinkEntity> nodes, List<IndexLinkRelation> relations){
         DataSourceInfo dataSourceInfo = null;
-        TreeNode<IndexLinkEntity> treeNode = null;
+        String table = "";
+        String col = "";
+        try {
+            if (!"hive".equals(indexAtomic.getSourceId())) {
+                dataSourceInfo = dataSourceDAO.getDataSourceInfo(indexAtomic.getSourceId());
+            }
+            TableInfo tableInfoByTableguid = tableDAO.getTableInfoByTableguid(indexAtomic.getTableId());
+            if(tableInfoByTableguid!=null){
+                table = tableInfoByTableguid.getTableName();
+            }
+            Column columnInfoByGuid = columnDAO.getColumnInfoByGuid(indexAtomic.getColumnId());
+            if(columnInfoByGuid!=null){
+                col = tableInfoByTableguid.getTableName();
+            }
+        }catch (Exception e){
+            LOG.error("获取原子指标信息失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取指标链路失败" + e.getMessage());
+        }
+        boolean result = true;
+        if (conf.getBoolean("etl.indexLink.enable")) {  //是否集成任务调度
+            //依据原子指标获取任务调度ETL信息
+             result = getLinkByEtl(indexAtomic, tenantId, nodes,relations, dataSourceInfo,table,col);
+        }
         try {
             AutoMaticIndexLinkNode autoMaticIndexLinkNode = new AutoMaticIndexLinkNode();
             autoMaticIndexLinkNode.setId(indexAtomic.getIndexId()); //指标ID
@@ -645,61 +661,31 @@ public class IndexServiceImpl implements IndexService{
             autoMaticIndexLinkNode.setIndexCode(indexAtomic.getIndexIdentification()); //指标标识
             autoMaticIndexLinkNode.setPublishTime(indexAtomic.getPublishTime());
             autoMaticIndexLinkNode.setNodeType("3"); //原子指标
-            autoMaticIndexLinkNode.setNodeStatus("0");//指标类型节点默认执行成功
+            autoMaticIndexLinkNode.setNodeStatus(result?"0":"2");//指标类型节点默认执行成功
             autoMaticIndexLinkNode.setTechnicalCaliber(indexAtomic.getTechnicalCaliber());
-            String tableNameByTableGuid = tableDAO.getTableNameByTableGuid(indexAtomic.getTableId());
-            Column columnInfoByGuid = columnDAO.getColumnInfoByGuid(indexAtomic.getColumnId());
-            if (!"hive".equals(indexAtomic.getSourceId())) {
-                dataSourceInfo = dataSourceDAO.getDataSourceInfo(indexAtomic.getSourceId());
-            }
-            autoMaticIndexLinkNode.setDataFrom(dataSourceInfo == null ? "hive":dataSourceInfo.getSourceName() + "-" + indexAtomic.getDbName() + "-" + tableNameByTableGuid + "-" + columnInfoByGuid.getColumnName());
-            if(parent != null){
-                treeNode = parent.addChild(autoMaticIndexLinkNode);
-            }else{
-                treeNode = new TreeNode<>(autoMaticIndexLinkNode);
-            }
+            autoMaticIndexLinkNode.setDataFrom(dataSourceInfo == null ? "hive"+ "-"+indexAtomic.getDbName() + "-" + table + "-"+col:dataSourceInfo.getSourceName() + "-" + indexAtomic.getDbName() + "-" + table + "-" + col);
+            nodes.add(autoMaticIndexLinkNode);
+            IndexLinkRelation relation = new IndexLinkRelation();
+            relation.setFrom(autoMaticIndexLinkNode.getId());
+            relation.setTo(parentId);
+            relations.add(relation);
         } catch (Exception e) {
             LOG.error("GET AutoMaticIndex NODE fail", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "GET ETL NODE fail" + e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取指标链路失败" + e.getMessage());
         }
-
-        Tuple2<List<IndexLinkEntity>, List<IndexLinkRelation>> linkByEtl = null;
-        if (conf.getBoolean("etl.indexLink.enable")) {  //是否集成任务调度
-            //依据原子指标获取任务调度ETL信息
-            linkByEtl = getLinkByEtl(indexAtomic, tenantId, treeNode, dataSourceInfo);
-        }
-        List<TreeNode<IndexLinkEntity>> elementsIndex = treeNode.getRoot().getElementsIndex();
-        List<IndexLinkEntity> nn = new LinkedList<>();
-        List<IndexLinkRelation> rela = new LinkedList<>();
-
-        for(TreeNode<IndexLinkEntity> en : elementsIndex){
-            nn.add(en.getData());
-            List<TreeNode<IndexLinkEntity>> children = en.getChildren();
-            for(TreeNode<IndexLinkEntity> node :children){
-                IndexLinkRelation relation = new IndexLinkRelation();
-                relation.setFrom(node.getData().getId());
-                relation.setTo(en.getData().getId());
-                rela.add(relation);
-            }
-        }
-        if(linkByEtl != null){
-            nn.addAll(linkByEtl._1);
-            rela.addAll(linkByEtl._2);
-        }
-        return new Tuple2<>(nn,rela);
+        return result;
     }
 
     /**
      * ETL节点不在本系统维护，不涉及状态，数据的维护变更，暂不维护进tree中
      * @param indexAtomic
      * @param tenantId
-     * @param parent
+     * @param
      * @param dataSourceInfo
      * @return
      */
-    public Tuple2<List<IndexLinkEntity>, List<IndexLinkRelation>> getLinkByEtl(IndexAtomicPO indexAtomic, String tenantId, TreeNode<IndexLinkEntity> parent, DataSourceInfo dataSourceInfo) {
-        List<IndexLinkEntity> nodes = new LinkedList<>();
-        List<IndexLinkRelation> relations = new LinkedList<>();
+    public boolean getLinkByEtl(IndexAtomicPO indexAtomic, String tenantId, List<IndexLinkEntity> nodes, List<IndexLinkRelation> relations, DataSourceInfo dataSourceInfo,String table,String col) {
+        boolean resultStatus = true;
         try {
             HashMap<String, Object> hashMap = new HashMap<>();   //http header
             hashMap.put("token", AdminUtils.getSSOTicket());
@@ -710,14 +696,17 @@ public class IndexServiceImpl implements IndexService{
                 postBody.put("dbType", dataSourceInfo.getSourceType().toLowerCase());
                 postBody.put("ip", dataSourceInfo.getIp());
                 postBody.put("port", dataSourceInfo.getPort());
+                if(DataSourceType.POSTGRESQL.getName().equals(dataSourceInfo.getSourceType()) || DataSourceType.SQLSERVER.getName().equals(dataSourceInfo.getSourceType())){
+                    postBody.put("dbName", dataSourceInfo.getDatabase());
+                }else{
+                    postBody.put("dbName", indexAtomic.getDbName());
+                }
             }else{
                 postBody.put("dbType", indexAtomic.getSourceId());
+                postBody.put("dbName", indexAtomic.getDbName());
             }
-            postBody.put("dbName", indexAtomic.getDbName());
-            TableInfo tableInfoByTableguid = tableDAO.getTableInfoByTableguid(indexAtomic.getTableId());
-            postBody.put("tableName",tableInfoByTableguid.getTableName());
-            Column columnInfoByGuid = columnDAO.getColumnInfoByGuid(indexAtomic.getColumnId());
-            postBody.put("columnName", columnInfoByGuid.getColumnName());
+            postBody.put("tableName",table);
+            postBody.put("columnName", col);
             Gson gson = new Gson();
             String json = gson.toJson(postBody); //请求body
             String string = OKHttpClient.doPost(conf.getString("etl.indexlink.address"), hashMap, null, json);
@@ -726,7 +715,8 @@ public class IndexServiceImpl implements IndexService{
             Map<String, Object> dataMap = (Map) result.get("data");
             if(dataMap == null){  //无 ETL 数据
                 LOG.info("ETL return data is null => indexId=" +indexAtomic.getIndexId());
-                return null;
+                return resultStatus;
+
             }
             Map<String, Object> valueMap = gson.fromJson(dataMap.get("value").toString(), HashMap.class);
             Map<String, Object> linkInfoMap = (Map<String, Object>) valueMap.get("dataLinkNodeMap"); //获取调度节点信息与关系信息
@@ -741,14 +731,17 @@ public class IndexServiceImpl implements IndexService{
                     entity.setNodeName(key);
                     entity.setInstanceName(nodeInfo.get("processInstanceName")==null?"":nodeInfo.get("processInstanceName").toString());
                     entity.setDefinitionName(nodeInfo.get("processDefinitionName")==null?"":nodeInfo.get("processDefinitionName").toString());
-                    entity.setNodeStatus(String.valueOf(((Double)nodeInfo.get("state")).longValue()));
+                    entity.setNodeStatus(nodeInfo.get("state")==null?"":String.valueOf(((Double)nodeInfo.get("state")).longValue()));
                     if(key.equals(root) && !"0".equals(entity.getNodeStatus())){ //etl 失败，指标节点成为受到影响的节点，修改上游节点状态
-                        changeStatus(parent);
+                        resultStatus = false;
                     }
-                    entity.setProjectName(nodeInfo.get("projectName").toString());
-                    entity.setTypeName(nodeInfo.get("nodeType").toString());
+                    entity.setProjectName(nodeInfo.get("projectName")==null?"":nodeInfo.get("projectName").toString());
+                    entity.setTypeName(nodeInfo.get("nodeType")==null?"":nodeInfo.get("nodeType").toString());
                     entity.setNodeType("1"); //采集类型节点
-                    Long endTime = ((Double)nodeInfo.get("endTime")).longValue();
+                    Long endTime = null;
+                    if(nodeInfo.get("endTime")!=null){
+                        endTime = ((Double)nodeInfo.get("endTime")).longValue();
+                    }
                     entity.setEndTime(endTime); //结束时间
                     nodes.add(entity);  //封装任务节点
                     List<String> preNode = (List<String>) nodeInfo.get("preTaskList");
@@ -765,21 +758,13 @@ public class IndexServiceImpl implements IndexService{
                 relation.setTo(indexAtomic.getIndexId());
                 relations.add(relation);
             }
-            return new Tuple2<>(nodes,relations);
+            return resultStatus;  //用于确认上游节点状态
         }catch (Exception e){
             LOG.error("GET ETL NODE fail",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"GET ETL NODE fail");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取指标链路失败");
         }
     }
 
-    public void changeStatus(TreeNode<IndexLinkEntity> node){
-        node.data.setNodeStatus("2"); //受到影响
-        if(node.parent == null){
-            return;
-        }
-        changeStatus(node.parent);
-
-    }
 
     @Override
     public IndexInfoDTO getIndexInfo(String indexId, int indexType,int version,int categoryType, String tenantId) {
@@ -796,7 +781,9 @@ public class IndexServiceImpl implements IndexService{
                 indexInfoDTO=BeanMapper.map(indexInfoPO,IndexInfoDTO.class);
                 indexInfoDTO.setIndexType(IndexType.INDEXDERIVE.getValue());
                 //添加依赖的原子指标
-                List<IndexAtomicPO> indexAtomicPOs=indexDAO.getDependentAtomicIndex(indexInfoPO.getIndexAtomicId(),tenantId);
+                IndexAtomicPO indexAtomicPO=indexDAO.getDependentAtomicIndex(indexInfoPO.getIndexAtomicId(),tenantId);
+                List<IndexAtomicPO> indexAtomicPOs = new ArrayList<>();
+                indexAtomicPOs.add(indexAtomicPO);
                 if(!CollectionUtils.isEmpty(indexAtomicPOs)){
                     List<DependentIndex> dependentIndices=indexAtomicPOs.stream().map(x->BeanMapper.map(x,DependentIndex.class)).collect(Collectors.toList());
                     indexInfoDTO.setDependentIndices(dependentIndices);
