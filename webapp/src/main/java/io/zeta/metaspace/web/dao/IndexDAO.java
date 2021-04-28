@@ -392,7 +392,7 @@ public interface IndexDAO {
      *获取依赖的原子指标
      */
     @Select("select * from index_atomic_info iai where iai.index_id=#{indexAtomicId} and iai.tenant_id=#{tenantId} order by iai.version desc limit 1 ")
-    List<IndexAtomicPO> getDependentAtomicIndex(@Param("indexAtomicId")String indexAtomicId, @Param("tenantId")String tenantId);
+    IndexAtomicPO getDependentAtomicIndex(@Param("indexAtomicId")String indexAtomicId, @Param("tenantId")String tenantId);
 
     /**
      * 获取派生指标所依赖的修饰词
