@@ -88,7 +88,7 @@ public class WarningGroupREST {
     @OperateType(INSERT)
     @Valid
     public void insert(WarningGroup warningGroup, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), warningGroup.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.ALARMGROUPMANAGE.getAlias(), "添加告警组：" + warningGroup.getName());
         WarningGroup old = warningGroupService.getByName(warningGroup.getName(),null,tenantId);
         if (old != null) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"告警组名已存在");
@@ -111,7 +111,7 @@ public class WarningGroupREST {
         if (old != null) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"告警组名已存在");
         }
-        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), warningGroup.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.ALARMGROUPMANAGE.getAlias(), "更新告警组：" + warningGroup.getName());
         warningGroupService.update(warningGroup);
     }
 
@@ -130,7 +130,7 @@ public class WarningGroupREST {
         }
         List<String> nameList = warningGroupsLis.stream().map(warningGroup -> warningGroup.getName()).collect(Collectors.toList());
         List<String> idList = warningGroupsLis.stream().map(warningGroup -> warningGroup.getId()).collect(Collectors.toList());
-        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(nameList) + "]");
+        HttpRequestContext.get().auditLog(ModuleEnum.ALARMGROUPMANAGE.getAlias(), "批量删除告警组:" + Joiner.on("、").join(nameList));
         warningGroupService.deleteByIdList(idList);
     }
 
