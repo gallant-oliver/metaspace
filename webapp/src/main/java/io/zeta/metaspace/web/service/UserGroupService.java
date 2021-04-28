@@ -1328,9 +1328,6 @@ public class UserGroupService {
                 dbNames=new ArrayList<>();
             }
             allDBNames.addAll(dbNames);
-            if(type==5){
-                userGroupIds.add(CategoryUtil.indexFieldId);
-            }
             userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type, allDBNames);
             List<String> categoryIds = userCategories.stream().map(category -> category.getGuid()).collect(Collectors.toList());
             if (type == 0) {
