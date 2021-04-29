@@ -275,9 +275,9 @@ public class ApiGroupService {
         PageResult<ApiGroupV2> result = new PageResult<>();
         updateApiRelationStatus();
         String query = parameters.getQuery();
-        if (Objects.nonNull(query)) {
-            parameters.setQuery(query.replaceAll("_", "/_").replaceAll("%", "/%"));
-        }
+//        if (Objects.nonNull(query)) {
+//            parameters.setQuery(query.replaceAll("_", "/_").replaceAll("%", "/%"));
+//        }
         List<ApiGroupV2> groups;
         try {
             groups = apiGroupDAO.searchApiGroup(parameters, projectId, tenantId, publish);
