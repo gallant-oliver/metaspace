@@ -491,6 +491,7 @@ public class SearchService {
                 , guidCount.getCount(), 0);
 
         try (Connection conn = adapterExecutor.getAdapterSource().getConnection()) {
+            LOG.info("执行sql" + selectQuery.toString());
             ResultSet resultSet = conn.createStatement().executeQuery(selectQuery.toString());
             List<String> columns = new ArrayList<>();
             ResultSetMetaData metaData = resultSet.getMetaData();
