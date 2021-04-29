@@ -328,10 +328,32 @@ public class SearchService {
         }
     }
 
-    public TableShow getTableShow(GuidCount guidCount, boolean admin) throws AtlasBaseException, SQLException {
+    public TableShow getTableShow(GuidCount guidCount, boolean admin) throws AtlasBaseException, SQLException, IOException {
+        TableShow tableShow;
+        try {
+            AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guidCount.getGuid());
+            AtlasEntity entity = info.getEntity();
+            String dbType = entity.getTypeName();
+            if (dbType.equals("rdbms_table")) {
+                tableShow = getRDBMSTableShow(guidCount);
+            } else if (dbType.equals("hive_table")) {
+                tableShow = getHiveTableShow(guidCount,admin,entity);
+            } else {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持的数据库类型");
+            }
+        }catch (AtlasBaseException e){
+            LOG.info("数据预览错误",e);
+            throw e;
+        }catch (Exception e){
+            LOG.info("数据预览错误",e);
+            throw e;
+        }
+        return tableShow;
+
+    }
+
+    public TableShow getHiveTableShow(GuidCount guidCount, boolean admin,AtlasEntity entity) throws AtlasBaseException, SQLException {
         TableShow tableShow = new TableShow();
-        AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guidCount.getGuid());
-        AtlasEntity entity = info.getEntity();
         String tableName = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
         String dbType = entity.getTypeName();
         Map<String, Object> attributes = entity.getAttributes();
@@ -340,24 +362,16 @@ public class SearchService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "找不到表");
         }
         String[] splits = qualifiedName.split("\\.");
-        String sql = null;
-        Connection conn = null;
-        if (dbType.equals("rdbms_table")) {
-            sql = "select * from " + splits[1] + ".`" + tableName + "` limit " + guidCount.getCount();
-            String sourceId = splits[0];
-            DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(sourceId);
-            conn = AdapterUtils.getAdapterSource(dataSourceInfo).getConnection();
-        } else if (dbType.equals("hive_table")) {
-            //hive
-            AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(guidCount.getGuid(), true);
-            AtlasEntity tableEntity = tableInfo.getEntity();
-            Map<String, Object> dbRelationshipAttributes = tableEntity.getRelationshipAttributes();
-            AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
-            String dbDisplayText = db.getDisplayText();
-            String user = admin ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
-            conn = AdapterUtils.getHiveAdapterSource().getConnection(user, dbDisplayText, MetaspaceConfig.getHiveJobQueueName());
-            sql = "select * from " + splits[0] + ".`" + tableName + "` limit " + guidCount.getCount();
-        }
+        //hive
+        AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(guidCount.getGuid(), true);
+        AtlasEntity tableEntity = tableInfo.getEntity();
+        Map<String, Object> dbRelationshipAttributes = tableEntity.getRelationshipAttributes();
+        AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
+        String dbDisplayText = db.getDisplayText();
+        String user = admin ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
+        Connection conn = AdapterUtils.getHiveAdapterSource().getConnection(user, dbDisplayText, MetaspaceConfig.getHiveJobQueueName());
+        String sql = "select * from " + splits[0] + ".`" + tableName + "` limit " + guidCount.getCount();
+
         if (conn != null) {
             try (ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
                 List<String> columns = new ArrayList<>();
@@ -383,7 +397,9 @@ public class SearchService {
         return tableShow;
     }
 
-    public BuildTableSql getBuildTableSql(String tableId) throws AtlasBaseException, AtlasException {
+
+
+        public BuildTableSql getBuildTableSql(String tableId) throws AtlasBaseException, AtlasException {
         BuildTableSql buildTableSql = new BuildTableSql();
         List<String> attributes = new ArrayList<>();
         attributes.add("name");

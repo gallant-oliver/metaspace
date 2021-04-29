@@ -22,6 +22,11 @@ public class MysqlAdapterTransformer extends AbstractAdapterTransformer {
     }
 
 
+    @Override
+    public String caseSensitive(String originElement) {
+        return String.format("`%s`", originElement);
+    }
+
     /**
      * 因为 Mysql 在低版本不支持窗口函数，无法使用 count(*) over() 方式获取总数，所以通过子查询的方式
      */

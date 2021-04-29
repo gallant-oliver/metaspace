@@ -26,7 +26,6 @@ import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeanMapper;
-import io.zeta.metaspace.web.util.TreeNode;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -39,8 +38,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import scala.Tuple2;
-
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
@@ -654,7 +651,7 @@ public class IndexServiceImpl implements IndexService{
             }
             Column columnInfoByGuid = columnDAO.getColumnInfoByGuid(indexAtomic.getColumnId());
             if(columnInfoByGuid!=null){
-                col = tableInfoByTableguid.getTableName();
+                col = columnInfoByGuid.getColumnName();
             }
         }catch (Exception e){
             LOG.error("获取原子指标信息失败", e);
@@ -675,7 +672,7 @@ public class IndexServiceImpl implements IndexService{
             autoMaticIndexLinkNode.setNodeType("3"); //原子指标
             autoMaticIndexLinkNode.setNodeStatus(result?"0":"2");//指标类型节点默认执行成功
             autoMaticIndexLinkNode.setTechnicalCaliber(indexAtomic.getTechnicalCaliber());
-            autoMaticIndexLinkNode.setDataFrom(dataSourceInfo == null ? "hive"+ "-"+indexAtomic.getDbName() + "-" + table + "-"+col:dataSourceInfo.getSourceName() + "-" + indexAtomic.getDbName() + "-" + table + "-" + col);
+            autoMaticIndexLinkNode.setDataFrom(dataSourceInfo == null ? "hive"+ "-"+indexAtomic.getDbName() + "-" + table + "-"+col:dataSourceInfo.getSourceName() + "-" + dataSourceInfo.getDatabase() + "-" + table + "-" + col);
             nodes.add(autoMaticIndexLinkNode);
             IndexLinkRelation relation = new IndexLinkRelation();
             relation.setFrom(autoMaticIndexLinkNode.getId());
