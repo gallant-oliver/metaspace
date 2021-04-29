@@ -487,7 +487,7 @@ public class SearchService {
         SelectQuery selectQuery = adapterTransformer.addLimit(
                 new SelectQuery()
                         .addAllColumns()
-                        .addCustomFromTable(new CustomSql("`" + adapterTransformer.caseSensitive(db) + "`" +  ".`" + adapterTransformer.caseSensitive(table)+"`"))
+                        .addCustomFromTable(new CustomSql(adapterTransformer.caseSensitive(db) + "." + adapterTransformer.caseSensitive(table)))
                 , guidCount.getCount(), 0);
 
         try (Connection conn = adapterExecutor.getAdapterSource().getConnection()) {
@@ -535,7 +535,6 @@ public class SearchService {
             tableShow.setLines(resultList);
             return tableShow;
         } catch (Exception e) {
-            LOG.error("getRDBMSTableShow error",e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有找到数据" + e.getMessage());
         }
 
