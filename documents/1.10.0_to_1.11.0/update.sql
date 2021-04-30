@@ -1,4 +1,3 @@
--------------------时间限定----------------------------------
 CREATE TABLE "public"."time_limit" (
   "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
   "name" varchar COLLATE "pg_catalog"."default",
@@ -28,6 +27,7 @@ ALTER TABLE "public"."time_limit"
 COMMENT ON COLUMN "public"."time_limit"."id" IS '表主键';
 COMMENT ON COLUMN "public"."time_limit"."name" IS '时间限定名称';
 COMMENT ON COLUMN "public"."time_limit"."description" IS '描述';
+COMMENT ON COLUMN "public"."time_limit"."grade" IS '粒度';
 COMMENT ON COLUMN "public"."time_limit"."start_time" IS '启始时间';
 COMMENT ON COLUMN "public"."time_limit"."end_time" IS '结束时间';
 COMMENT ON COLUMN "public"."time_limit"."creator" IS '创建人：用户外健';
@@ -37,7 +37,15 @@ COMMENT ON COLUMN "public"."time_limit"."state" IS '状态';
 COMMENT ON COLUMN "public"."time_limit"."version" IS '版本号';
 COMMENT ON COLUMN "public"."time_limit"."delete" IS '删除标记';
 COMMENT ON COLUMN "public"."time_limit"."create_time" IS '创建时间';
-COMMENT ON COLUMN "public"."Untitled"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."time_limit"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."time_limit"."tenantid" IS '租户ID';
+COMMENT ON COLUMN "public"."time_limit"."tenantid" IS '标识';
+COMMENT ON COLUMN "public"."time_limit"."time_type" IS '类型';
+COMMENT ON COLUMN "public"."time_limit"."time_range" IS '前后范围';
+COMMENT ON COLUMN "public"."time_limit"."approveid" IS '前后范围';
+
+
+
 
 -------------------修饰词----------------------------------
 CREATE TABLE "public"."qualifier" (
@@ -64,8 +72,8 @@ COMMENT ON COLUMN "public"."qualifier"."creator" IS '创建人';
 COMMENT ON COLUMN "public"."qualifier"."create_time" IS '创建时间';
 COMMENT ON COLUMN "public"."qualifier"."update_user" IS '更新人';
 COMMENT ON COLUMN "public"."qualifier"."update_time" IS '更新时间';
-COMMENT ON COLUMN "public"."qualifier"."desc" IS '修饰词描述 ';`
-COMMENT ON COLUMN "public"."qualifier"."tenantid" IS '租户ID ';`
+COMMENT ON COLUMN "public"."qualifier"."desc" IS '修饰词描述 ';
+COMMENT ON COLUMN "public"."qualifier"."tenantid" IS '租户ID ';
 COMMENT ON COLUMN "public"."qualifier"."typeid" IS '类型ID ';
 
 -------------------修饰词类型----------------------------------
@@ -145,7 +153,7 @@ COMMENT ON COLUMN "public"."index_atomic_info"."approval_group_id" IS '审批组
 
 COMMENT ON COLUMN "public"."index_atomic_info"."index_state" IS '指标状态；1 新建(未发布过)，2 已发布，3 已下线，4 审核中';
 
-COMMENT ON COLUMN "public"."index_atomic_info"."version" IS '版本号，每发布一次，记录一次历史版本';
+COMMENT ON COLUMN "public"."index_atomic_info"."version" IS '版本号，每下线一次，记录一次历史版本，初始版本号为0，每下线一次，版本号+1';
 
 COMMENT ON COLUMN "public"."index_atomic_info"."source_id" IS '数据源id';
 
@@ -227,7 +235,7 @@ COMMENT ON COLUMN "public"."index_derive_info"."approval_group_id" IS '审批组
 
 COMMENT ON COLUMN "public"."index_derive_info"."index_state" IS '指标状态；1 新建(未发布过)，2 已发布，3 已下线，4 审核中';
 
-COMMENT ON COLUMN "public"."index_derive_info"."version" IS '版本号，每发布一次，记录一次历史版本';
+COMMENT ON COLUMN "public"."index_derive_info"."version" IS '版本号，每下线一次，记录一次历史版本，初始版本号为0，每下线一次，版本号+1';
 
 COMMENT ON COLUMN "public"."index_derive_info"."business_caliber" IS '业务口径';
 
@@ -296,7 +304,7 @@ COMMENT ON COLUMN "public"."index_composite_info"."approval_group_id" IS '审批
 
 COMMENT ON COLUMN "public"."index_composite_info"."index_state" IS '指标状态；1 新建(未发布过)，2 已发布，3 已下线，4 审核中';
 
-COMMENT ON COLUMN "public"."index_composite_info"."version" IS '版本号，每发布一次，记录一次历史版本';
+COMMENT ON COLUMN "public"."index_composite_info"."version" IS '版本号，每下线一次，记录一次历史版本，初始版本号为0，每下线一次，版本号+1';
 
 COMMENT ON COLUMN "public"."index_composite_info"."expression" IS '表达式';
 
@@ -364,18 +372,15 @@ ALTER TABLE "public"."approval_group"
   OWNER TO "metaspace";
 
 COMMENT ON COLUMN "public"."approval_group"."id" IS '审批组ID';
-
 COMMENT ON COLUMN "public"."approval_group"."name" IS '审批组名称';
-
 COMMENT ON COLUMN "public"."approval_group"."description" IS '描述 ';
-
 COMMENT ON COLUMN "public"."approval_group"."creator" IS '创建人';
-
 COMMENT ON COLUMN "public"."approval_group"."create_time" IS '创建时间';
-
 COMMENT ON COLUMN "public"."approval_group"."updater" IS '更新人';
-
 COMMENT ON COLUMN "public"."approval_group"."update_time" IS '更新时间 ';
+COMMENT ON COLUMN "public"."approval_group"."tenantid" IS '租户ID';
+COMMENT ON COLUMN "public"."approval_group"."valid" IS '有效';
+
 
 
 -------------------审批组模块关系表----------------------------------
@@ -389,7 +394,6 @@ ALTER TABLE "public"."approval_group_module_relation"
   OWNER TO "metaspace";
 
 COMMENT ON COLUMN "public"."approval_group_module_relation"."group_id" IS '审批组ID';
-
 COMMENT ON COLUMN "public"."approval_group_module_relation"."module_id" IS '模块ID';
 
 -------------------审批组用户关系表----------------------------------
@@ -403,8 +407,7 @@ CREATE TABLE "public"."approval_group_relation" (
 ALTER TABLE "public"."approval_group_relation"
   OWNER TO "metaspace";
 
-COMMENT ON COLUMN "public"."approval_group_relation"."group_id" IS '审批组ID';
-
+COMMENT ON COLUMN "public"."approval_group_relation"."group_id" IS '审批组ID'
 COMMENT ON COLUMN "public"."approval_group_relation"."user_id" IS '用户ID';
 
 -------------------审批项----------------------------------
@@ -432,19 +435,19 @@ ALTER TABLE "public"."approval_item"
   OWNER TO "metaspace";
 
 COMMENT ON COLUMN "public"."approval_item"."id" IS '审批项ID';
-
 COMMENT ON COLUMN "public"."approval_item"."object_id" IS '送审对象ID';
-
 COMMENT ON COLUMN "public"."approval_item"."object_name" IS '送审对象名称';
-
 COMMENT ON COLUMN "public"."approval_item"."business_type" IS '业务类型编码';
-
 COMMENT ON COLUMN "public"."approval_item"."approve_type" IS '审核类型';
-
 COMMENT ON COLUMN "public"."approval_item"."status" IS '审核状态';
-
 COMMENT ON COLUMN "public"."approval_item"."commit_time" IS '送审时间';
-
+COMMENT ON COLUMN "public"."approval_item"."approve_group" IS '审批组';
+COMMENT ON COLUMN "public"."approval_item"."approver" IS '审批人';
+COMMENT ON COLUMN "public"."approval_item"."approve_time" IS '审批时间';
+COMMENT ON COLUMN "public"."approval_item"."submitter" IS '提交人';
+COMMENT ON COLUMN "public"."approval_item"."module_id" IS '模块ID';
+COMMENT ON COLUMN "public"."approval_item"."version" IS '版本';
+COMMENT ON COLUMN "public"."approval_item"."tenant_id" IS '租户ID';
 COMMENT ON COLUMN "public"."approval_item"."reason" IS '驳回原因';
 
 -------------------更新目录表结构----------------------------------
@@ -482,5 +485,3 @@ where c3.tenantid not in (select tenantid from category c2 where guid='index_fie
 
 update category set upbrothercategoryguid ='index_field_default' where guid in
 (select guid from category c2 where guid <>'index_field_default' and categorytype =5 and "level" =1 and upbrothercategoryguid is null);
-
-

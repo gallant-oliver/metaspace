@@ -4,7 +4,7 @@ dt=`date +%Y%m%d_%H`
 METASPACE_HOME=$1
 bakdir=$2/$dt
 mkdir -p ${bakdir}
-echo 备份文件，备份路径：$bakdir
+echo 备份文件,备份路径:$bakdir
 mv ${METASPACE_HOME}/server/webapp/metaspace ${bakdir}
 
 echo 替换文件
