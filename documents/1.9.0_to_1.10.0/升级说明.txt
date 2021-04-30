@@ -1,0 +1,27 @@
+1. 备份数据库
+2. 执行SQL脚本
+3. metaspace所有安装服务器节点上运行upgrade_metaspace.sh脚本
+（运行前请检查脚本内容，脚本当前目录需要有metaspace.war文件和metaspace文件夹）
+ (运行时请传入参数，第一个参数为metaspace的安装目录，第二个参数为metaspace的备份目录，结尾处不要加/)；
+
+4. 修改atlas-application.proterties配置文件
+##添加adapter配置,其中METASPACE_HOME是metaspace的安装地址(1.9.0-1.9.1)
+	metaspace.adapter.dir={METASPACE_HOME}/adapter
+
+##添加livy配置(1.9.1-1.10.0)
+	# livy 地址
+	livy.uri=http://10.200.64.97:8998/batches
+	# livy 是否开启 kerberos
+	livy.need.kerberos=false
+	livy.server.auth.kerberos.principal=
+	livy.server.auth.kerberos.keytab=
+	# livy 提交后获取 appId 重试次数
+	livy.task.appId.retry.count=3
+
+	#添加配置项,增加sqlserver、postgresql、mysql、db2数据源类型
+	metaspace.dataservice=true
+ 
+5.  griffin设置(1.9.1-1.10.0)
+	上传griffin-measure-6.jar到hdfs
+	新增measureEnv.json 和 sparkConfig.json两个配置文件，并修改其中的路径配置
+6. 重启数据治理
