@@ -18,6 +18,7 @@
 package org.apache.atlas.repository.store.graph.v2;
 
 
+import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.GraphTransactionInterceptor;
 import org.apache.atlas.RequestContext;
@@ -806,6 +807,11 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
             }
             EntityMutationResponse ret = entityGraphMapper.mapAttributesAndClassifications(context, isPartialUpdate, replaceClassifications);
             ret.setGuidAssignments(context.getGuidAssignments());
+            if(entityStream instanceof  AtlasEntityStream){
+                AtlasEntityStream atlasEntityStream = (AtlasEntityStream)entityStream;
+                ret.setDefinition(atlasEntityStream.getDefinition());
+            }
+
             // Notify the change listeners
             entityChangeNotifier.onEntitiesMutated(ret, isImport);
             if (LOG.isDebugEnabled()) {

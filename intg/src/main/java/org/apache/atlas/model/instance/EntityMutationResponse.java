@@ -33,6 +33,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.instance.EntityMutations.EntityOperation;
 import org.apache.commons.collections.CollectionUtils;
@@ -50,6 +51,15 @@ public class EntityMutationResponse {
 
     private Map<EntityOperation, List<AtlasEntityHeader>> mutatedEntities;
     private Map<String, String>                           guidAssignments;
+    private SyncTaskDefinition definition;
+
+    public void setDefinition(SyncTaskDefinition definition){
+        this.definition = definition;
+    }
+
+    public SyncTaskDefinition getDefinition(){
+        return this.definition;
+    }
 
     public EntityMutationResponse() {
     }

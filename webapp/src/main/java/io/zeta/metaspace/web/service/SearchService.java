@@ -8,7 +8,6 @@ import io.zeta.metaspace.adapter.AdapterTransformer;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
-import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
@@ -81,15 +80,31 @@ public class SearchService {
     @Autowired
     private MetaDataService metaDataService;
 
+    @Autowired
+    private TableDAO tableDAO;
+
     public PageResult<Database> getDatabases(String sourceId, long offset, long limit, String query, boolean active, String tenantId, boolean queryCount) {
         List<String> dbs = tenantService.getDatabase(tenantId);
+        String guid = "";
+        if (StringUtils.isEmpty(sourceId)) {
+            List<String> guidList = tableDAO.selectDatabaseGuidByTenantId(tenantId);
+            guid = dbsToString(guidList);
+        }
         String dbsToString = dbsToString(dbs);
-        return metaspaceEntityService.getSchemaList(sourceId, active, offset, limit, query, dbsToString, queryCount);
+        return metaspaceEntityService.getSchemaList(sourceId, guid, active, offset, limit, query, dbsToString, queryCount);
     }
 
-    public PageResult<TableEntity> getTable(String schemaId, boolean active, long offset, long limit, String query, Boolean isView, boolean queryInfo) {
+    public PageResult<TableEntity> getTable(String schemaId, boolean active, long offset, long limit, String query, Boolean isView, boolean queryInfo, String tenantId) {
         try {
-            PageResult<TableEntity> result = metaspaceEntityService.getTableList(schemaId, active, offset, limit, query, isView);
+            String dbsToString = "";
+            String guid = "";
+            if (StringUtils.isNotBlank(query)) {
+                List<String> dbs = tenantService.getDatabase(tenantId);
+                dbsToString = dbsToString(dbs);
+                List<String> guidList = tableDAO.selectDatabaseGuidByTenantId(tenantId);
+                guid = dbsToString(guidList);
+            }
+            PageResult<TableEntity> result = metaspaceEntityService.getTableList(dbsToString, guid, schemaId, active, offset, limit, query, isView);
             if (queryInfo && result.getCurrentSize() > 0) {
                 for (TableEntity tableEntity : result.getLists()) {
                     Map<String, Object> tableInfo = metaDataService.getTableType(tableEntity.getId());
@@ -105,15 +120,15 @@ public class SearchService {
                         } else {
                             // 查询返回单位是字节
                             float size = AdapterUtils.getHiveAdapterSource().getNewAdapterExecutor().getTableSize(schema, tableEntity.getName(), "metaspace");
-                            tableEntity.setTableSize(String.format("%.3f",size/1024/1024));
+                            tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
                         }
                     } else {
                         if (view) {
                             tableEntity.setSql(this.getBuildRDBMSTableSql(tableEntity.getId()).getSql());
                         } else {
                             AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceService.getUnencryptedDataSourceInfo(sourceId));
-                            float size =adapterExecutor.getTableSize(schema, tableEntity.getName(), null);
-                            tableEntity.setTableSize(String.format("%.3f",size/1024/1024));
+                            float size = adapterExecutor.getTableSize(schema, tableEntity.getName(), null);
+                            tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
                         }
                     }
                 }
@@ -313,37 +328,51 @@ public class SearchService {
         }
     }
 
-    public TableShow getTableShow(GuidCount guidCount, boolean admin) throws AtlasBaseException, SQLException {
+    public TableShow getTableShow(GuidCount guidCount, boolean admin) throws AtlasBaseException, SQLException, IOException {
+        TableShow tableShow;
+        try {
+            AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guidCount.getGuid());
+            AtlasEntity entity = info.getEntity();
+            String dbType = entity.getTypeName();
+            if (dbType.equals("rdbms_table")) {
+                tableShow = getRDBMSTableShow(guidCount);
+            } else if (dbType.equals("hive_table")) {
+                tableShow = getHiveTableShow(guidCount,admin,entity);
+            } else {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不支持的数据库类型");
+            }
+        }catch (AtlasBaseException e){
+            LOG.info("数据预览错误",e);
+            throw e;
+        }catch (Exception e){
+            LOG.info("数据预览错误",e);
+            throw e;
+        }
+        return tableShow;
+
+    }
+
+    public TableShow getHiveTableShow(GuidCount guidCount, boolean admin,AtlasEntity entity) throws AtlasBaseException, SQLException {
         TableShow tableShow = new TableShow();
-        AtlasEntity.AtlasEntityWithExtInfo info = entitiesStore.getById(guidCount.getGuid());
-        AtlasEntity entity = info.getEntity();
         String tableName = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
-        String dbType=entity.getTypeName();
-        Map<String, Object> attributes=entity.getAttributes();
-        String qualifiedName= attributes != null ? (String) attributes.get("qualifiedName") : null;
-        if (StringUtils.isEmpty(tableName)||StringUtils.isEmpty(dbType)||StringUtils.isEmpty(qualifiedName)) {
+        String dbType = entity.getTypeName();
+        Map<String, Object> attributes = entity.getAttributes();
+        String qualifiedName = attributes != null ? (String) attributes.get("qualifiedName") : null;
+        if (StringUtils.isEmpty(tableName) || StringUtils.isEmpty(dbType) || StringUtils.isEmpty(qualifiedName)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "找不到表");
         }
         String[] splits = qualifiedName.split("\\.");
-        String sql = null;
-        Connection conn=null;
-        if(dbType.equals("rdbms_table")){
-            sql = "select * from "+splits[1]+".`" + tableName + "` limit " + guidCount.getCount();
-            String sourceId=splits[0];
-            DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(sourceId);
-            conn = AdapterUtils.getAdapterSource(dataSourceInfo).getConnection();
-        }else if(dbType.equals("hive_table")){
-            //hive
-            AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(guidCount.getGuid(), true);
-            AtlasEntity tableEntity = tableInfo.getEntity();
-            Map<String, Object> dbRelationshipAttributes = tableEntity.getRelationshipAttributes();
-            AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
-            String dbDisplayText = db.getDisplayText();
-            String user = admin ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
-            conn = AdapterUtils.getHiveAdapterSource().getConnection(user, dbDisplayText, MetaspaceConfig.getHiveJobQueueName());
-            sql = "select * from "+splits[0]+".`" + tableName + "` limit " + guidCount.getCount();
-        }
-        if(conn!=null){
+        //hive
+        AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(guidCount.getGuid(), true);
+        AtlasEntity tableEntity = tableInfo.getEntity();
+        Map<String, Object> dbRelationshipAttributes = tableEntity.getRelationshipAttributes();
+        AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
+        String dbDisplayText = db.getDisplayText();
+        String user = admin ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
+        Connection conn = AdapterUtils.getHiveAdapterSource().getConnection(user, dbDisplayText, MetaspaceConfig.getHiveJobQueueName());
+        String sql = "select * from " + splits[0] + ".`" + tableName + "` limit " + guidCount.getCount();
+
+        if (conn != null) {
             try (ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
                 List<String> columns = new ArrayList<>();
                 ResultSetMetaData metaData = resultSet.getMetaData();
@@ -368,7 +397,9 @@ public class SearchService {
         return tableShow;
     }
 
-    public BuildTableSql getBuildTableSql(String tableId) throws AtlasBaseException, AtlasException {
+
+
+        public BuildTableSql getBuildTableSql(String tableId) throws AtlasBaseException, AtlasException {
         BuildTableSql buildTableSql = new BuildTableSql();
         List<String> attributes = new ArrayList<>();
         attributes.add("name");
@@ -460,6 +491,7 @@ public class SearchService {
                 , guidCount.getCount(), 0);
 
         try (Connection conn = adapterExecutor.getAdapterSource().getConnection()) {
+            LOG.info("执行sql" + selectQuery.toString());
             ResultSet resultSet = conn.createStatement().executeQuery(selectQuery.toString());
             List<String> columns = new ArrayList<>();
             ResultSetMetaData metaData = resultSet.getMetaData();
@@ -555,7 +587,7 @@ public class SearchService {
         }
         DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(sourceId);
 
-        AdapterExecutor adapterExecutor  = AdapterUtils.getAdapterExecutor(dataSourceInfo);
+        AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
         AdapterTransformer adapterTransformer = adapterExecutor.getAdapterSource().getAdapter().getAdapterTransformer();
         //buildTableSql.setSql(adapterExecutor.getCreateTableSql(adapterTransformer.caseSensitive(db),adapterTransformer.caseSensitive(table)));
         buildTableSql.setSql("");
@@ -609,17 +641,19 @@ public class SearchService {
         databaseHeaders.forEach(e -> {
             String sourceId = e.getSourceId();
             List<String> table = collect.get(sourceId).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
-            if (relationTableGuids.containsAll(table)) {
-                //全被勾选
-                e.setCheck(1);
-            } else {
-                table.retainAll(relationTableGuids);
-                if (table.size() > 0) {
-                    //勾选了部分
-                    e.setCheck(2);
+            if (collect != null && collect.size() > 0) {
+                if (relationTableGuids.containsAll(table)) {
+                    //全被勾选
+                    e.setCheck(1);
                 } else {
-                    //全部未勾选
-                    e.setCheck(0);
+                    table.retainAll(relationTableGuids);
+                    if (table.size() > 0) {
+                        //勾选了部分
+                        e.setCheck(2);
+                    } else {
+                        //全部未勾选
+                        e.setCheck(0);
+                    }
                 }
             }
         });
@@ -748,7 +782,7 @@ public class SearchService {
             return tablePageResult;
         }
 
-        List<TechnologyInfo.Table> tableInfos = roleDAO.getTableInfosByDBIdByParameters(strings, databaseGuid, parameters.getOffset(), parameters.getLimit(),tenantId);
+        List<TechnologyInfo.Table> tableInfos = roleDAO.getTableInfosByDBIdByParameters(strings, databaseGuid, parameters.getOffset(), parameters.getLimit(), tenantId);
         List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryId);
         List<AddRelationTable> tables = getTables(tableInfos);
         supplyPath(tables, tenantId);

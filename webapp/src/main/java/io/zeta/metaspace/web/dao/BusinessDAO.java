@@ -71,7 +71,7 @@ public interface BusinessDAO {
     public TechnologyInfo queryTechnologyInfoByBusinessId(@Param("businessId")String businessId);
 
     //查询业务信息关联的数据库表
-    @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid,display_name as displayName,description from tableInfo where tableGuid in(select tableGuid from business2table where businessId=#{businessId})")
+    @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid,display_name as displayName,description from tableInfo where tableGuid in(select tableGuid from business2table where status='ACTIVE' and businessId=#{businessId})")
     public List<TechnologyInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
 
     //添加目录/业务对象关联
@@ -101,7 +101,7 @@ public interface BusinessDAO {
              " offset #{offset}",
              " </script>"})
     //@Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%' limit #{limit} offset #{offset}")
-    public List<BusinessInfoHeader> queryBusinessByName(@Param("businessName")String businessName, @Param("ids") List<String> categoryIds, @Param("limit")int limit, @Param("offset") int offset,@Param("tenantId")String tenantId);
+    public List<BusinessInfoHeader> queryBusinessByName(@Param("businessName")String businessName, @Param("ids") List<String> categoryIds, @Param("limit")int limit, @Param("offset") int offset,@Param("tenantId")String tenantId) throws SQLException;
 
 
     @Select({"<script>",
@@ -208,6 +208,9 @@ public interface BusinessDAO {
     @Delete("delete from business2Table where tableGuid=#{tableGuid}")
     public int deleteBusinessRelationByTableGuid(@Param("tableGuid")String tableGuid);
 
+    @Update("update business2Table set tableGuid = #{tableGuid} where tableGuid=#{oldTableGuid}")
+    public int UpdateBusinessRelationByTableGuid(@Param("tableGuid")String tableGuid, @Param("oldTableGuid")String oldTableGuid);
+
 
 
     @Select({"<script>",
@@ -238,6 +241,9 @@ public interface BusinessDAO {
 
     @Update("update businessInfo set trustTable=null where trustTable=#{tableId}")
     public int removeBusinessTrustTableByTableId(@Param("tableId")String tableId);
+
+    @Update("update businessInfo set trustTable=#{tableId} where trustTable=#{OldTableId}")
+    int updateBusinessTrustTableByTableId(@Param("tableId")String tableId, @Param("OldTableId")String OldTableId);
 
     @Select("<script>" +
             "select businessInfo.name,businessInfo.module,businessInfo.description,businessInfo.owner,businessInfo.manager,businessInfo.maintainer,businessInfo.dataassets,businessInfo.businesslastupdate,businessInfo.businessoperator " +

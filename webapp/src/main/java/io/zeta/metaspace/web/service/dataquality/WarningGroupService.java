@@ -14,6 +14,7 @@ package io.zeta.metaspace.web.service.dataquality;
 
 import com.google.gson.reflect.TypeToken;
 import io.zeta.metaspace.model.dataquality2.*;
+import io.zeta.metaspace.model.datasource.DataSource;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
@@ -27,17 +28,17 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeansUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -133,7 +134,17 @@ public class WarningGroupService {
 
     public PageResult<WarningGroup> getWarningGroupList(Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
-            List<WarningGroup> list = warningGroupDAO.getWarningGroup(parameters,tenantId);
+            String query = parameters.getQuery();
+            if (Objects.nonNull(query)) {
+                parameters.setQuery(query.replaceAll("_", "/_").replaceAll("%", "/%"));
+            }
+            List<WarningGroup> list;
+            try {
+                list = warningGroupDAO.getWarningGroup(parameters, tenantId);
+            }catch (SQLException e){
+                LOG.error("SQL执行异常", e);
+                list = new ArrayList<>();
+            }
             for (WarningGroup group : list) {
                 String numberStr = group.getContacts();
                 String[] numberArr = numberStr.split(",");
@@ -199,6 +210,8 @@ public class WarningGroupService {
         }
     }
 
+
+
     public void closeTaskExecutionWarning(Integer warningType, List<String> taskIdList) throws AtlasBaseException {
         try {
             warningGroupDAO.closeTaskExecutionWarning(warningType, taskIdList);
@@ -206,6 +219,102 @@ public class WarningGroupService {
             LOG.error("关闭失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭失败");
         }
+    }
+    public void closeWarns(List<String> warnNos) throws AtlasBaseException {
+        try {
+            if(CollectionUtils.isEmpty(warnNos)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭告警失败，告警编号为空");
+            }
+            Map<String, List<Integer>> idAndGrades = new HashMap<>();
+            warnNos.stream().forEach(warnNo -> {
+                String[] idAndGrade = warnNo.split("_");
+                if(idAndGrade.length != 2){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭失败,告警编号【" + warnNo + "】错误，格式应为id_warnGrade");
+                }
+                if(!idAndGrades.containsKey(idAndGrade[0])){
+                    List<Integer> grades = new ArrayList<>();
+                    idAndGrades.put(idAndGrade[0],grades);
+                }
+                idAndGrades.get(idAndGrade[0]).add(Integer.valueOf(idAndGrade[1]));
+            });
+
+            Set<Map.Entry<String, List<Integer>>> entries = idAndGrades.entrySet();
+            for (Map.Entry<String, List<Integer>> entry: entries){
+                String id = entry.getKey();
+                RuleExecute currentRuleExecute = warningGroupDAO.getRuleExecute(id);
+                List<Integer> grades = entry.getValue();
+                grades.stream().forEach(grade ->{
+                    switch (grade){
+                        case 0:currentRuleExecute.setGeneralWarningCheckStatus(2);
+                            break;
+                        case 1:currentRuleExecute.setOrangeWarningCheckStatus(2);
+                            break;
+                        default:currentRuleExecute.setRedWarningCheckStatus(2);
+                    }
+                });
+                warningGroupDAO.closeRuleExecuteWarn(currentRuleExecute);
+                if(!haveWarn(currentRuleExecute)){
+                    warningGroupDAO.closeExecutionWarning(currentRuleExecute.getTaskExecuteId());
+                }
+            }
+        } catch (Exception e) {
+            LOG.error("关闭失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭失败");
+        }
+    }
+
+    public void closeErrors(List<String> errorIds) throws AtlasBaseException {
+        try {
+            if(CollectionUtils.isEmpty(errorIds)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭异常失败，异常编号为空");
+            }
+            for (String id: errorIds){
+                RuleExecute ruleExecute = warningGroupDAO.getRuleExecute(id);
+                if(ruleExecute == null){
+                    continue;
+                }
+                warningGroupDAO.closeRuleExecuteError(id);
+                if(!haveError(ruleExecute)){
+                    warningGroupDAO.closeExecutionError(ruleExecute.getTaskExecuteId());
+                }
+            }
+        } catch (Exception e) {
+            LOG.error("关闭失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭失败");
+        }
+    }
+
+    public boolean haveError(RuleExecute currentRuleExecute){
+
+        List<RuleExecute> ruleExecutes = warningGroupDAO.getRuleExecutes(currentRuleExecute.getTaskExecuteId());
+        for (RuleExecute ruleExecute: ruleExecutes){
+            if(ruleExecute.getErrorStatus() != null && ruleExecute.getErrorStatus() == 1){
+                //有异常未关闭
+                return true;
+            }
+        }
+        //没有任何异常了
+        return false;
+    }
+
+    public boolean haveWarn(RuleExecute currentRuleExecute){
+        List<RuleExecute> ruleExecutes = warningGroupDAO.getRuleExecutes(currentRuleExecute.getTaskExecuteId());
+        for (RuleExecute ruleExecute: ruleExecutes){
+            if(ruleExecute.getGeneralWarningCheckStatus() != null && ruleExecute.getGeneralWarningCheckStatus() == 1){
+                //有普通告警
+                return true;
+            }
+            if(ruleExecute.getOrangeWarningCheckStatus() != null && ruleExecute.getOrangeWarningCheckStatus()== 1){
+                //有黄色告警
+                return true;
+            }
+            if(ruleExecute.getRedWarningCheckStatus() != null && ruleExecute.getRedWarningCheckStatus()== 1){
+                //有红色告警
+                return true;
+            }
+        }
+        //没有任何告警了
+        return false;
     }
 
     public WarningInfo getWarningInfo(String executionId,String tenantId) throws AtlasBaseException {
@@ -280,6 +389,80 @@ public class WarningGroupService {
             LOG.error("获取告警信息失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警信息失败");
         }
+    }
+
+    public PageResult<WarnInformation> getWarns(Parameters parameters,String tenantId, int warnType){
+        List<WarnInformation> warns = warningGroupDAO.getWarns(parameters, warnType, tenantId);
+        return getDetails(parameters, warns, error -> error.getWarnNo() + "_" + error.getWarnGrade());
+    }
+
+
+    public PageResult<WarnInformation> getErrors(Parameters parameters,String tenantId, int errorType){
+
+        List<WarnInformation> errors = warningGroupDAO.getErrors(parameters, errorType, tenantId);
+        return getDetails(parameters, errors, error -> error.getWarnNo());
+    }
+
+
+    public PageResult<WarnInformation> getDetails(Parameters parameters, List<WarnInformation> errors, Function<WarnInformation, String> apply){
+        PageResult<WarnInformation> pageResult = new PageResult<>();
+        pageResult.setOffset(parameters.getOffset());
+        if(CollectionUtils.isEmpty(errors)){
+            pageResult.setTotalSize(0);
+            pageResult.setCurrentSize(0);
+            return pageResult;
+        }
+        for (WarnInformation error : errors) {
+            String unit = error.getUnit();
+            if(null == unit){
+                error.setUnit("");
+            }
+            String errorNo = apply.apply(error);
+            error.setWarnNo(errorNo);
+            List<TaskWarningHeader.WarningGroupHeader> groupHeaderList = warningGroupDAO.getWarningGroupList(error.getTaskId(), 0);
+            error.setWarnGroupNames(groupHeaderList);
+            int scope = error.getScope();
+            if(0 == scope || 1 == scope) {
+                //表列级别检测
+                CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(error.getObjectId(), CustomizeParam.class);
+                if(!"hive".equalsIgnoreCase(paramInfo.getDataSourceId())){
+                    DataSource dataSource = warningGroupDAO.getDataSource(paramInfo.getDataSourceId());
+                    paramInfo.setDataSourceName(dataSource.getSourceName());
+                    paramInfo.setSchema(paramInfo.getSchema() + "." + dataSource.getDatabase());
+                }else{
+                    paramInfo.setDataSourceName("hive");
+                }
+                error.setObject(paramInfo);
+            } else if(2 ==scope && 31 == error.getType()){
+                // 一致性规则
+                List<ConsistencyParam> params = GsonUtils.getInstance().fromJson(error.getObjectId(), new TypeToken<List<ConsistencyParam>>() {
+                }.getType());
+                StringBuilder builder = new StringBuilder();
+                int size = params.get(0).getJoinFields().size();
+                int allSize = size + params.get(0).getCompareFields().size();
+                for(int i = 0; i < allSize; i ++){
+                    builder.append("(");
+                    for (ConsistencyParam param: params) {
+                        List<String> joinFields = param.getJoinFields();
+                        List<String> compareFields = param.getCompareFields();
+                        if(size>i){
+                            builder.append(joinFields.get(i)).append(";");
+                        }else{
+                            builder.append(compareFields.get(i - size)).append(";");
+                        }
+                    }
+                    builder = builder.delete(builder.length() -1, builder.length());
+                    builder.append(") ");
+                }
+                error.setObject(builder.toString());
+            }else{
+                error.setObject(error.getSql()==null?"":error.getSql());
+            }
+        }
+        pageResult.setTotalSize(errors.get(0).getTotal());
+        pageResult.setLists(errors);
+        pageResult.setCurrentSize(errors.size());
+        return pageResult;
     }
 
     public ErrorInfo getErrorInfo(String executionRuleId) throws AtlasBaseException {

@@ -569,6 +569,7 @@ public class DataShareREST {
         }
     }
 
+
     @POST
     @Path("/oracle/{sourceId}/schemas")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -579,6 +580,75 @@ public class DataShareREST {
             return shareService.getDataList(DataShareService.SEARCH_TYPE.SCHEMA, parameters,tenantId, sourceId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据源schema失败，请检查数据源配置或者确认查询schema存在");
+        }
+    }
+
+    /**
+     * 查询用户数据库列表
+     * @param sourceId 资源id，查询hive数据库时传“hive”
+     * @param tenantId 租住id
+     * @return 用户有权限且有数据的数据库列表
+     * @throws AtlasBaseException 系统异常
+     */
+    @GET
+    @Path("user/{sourceId}/databases")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Permission({ModuleEnum.TASKMANAGE})
+    public List<String> getUserDatabases(@PathParam("sourceId") String sourceId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        try {
+            return shareService.getUserDataBases(tenantId, sourceId);
+        } catch (AtlasBaseException e){
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据库失败");
+        }
+    }
+
+    /**
+     * 查询指定数据库下用户有权限的库表列表
+     * @param sourceId
+     * @param tenantId
+     * @param database
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("user/{sourceId}/{database}/tables")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Permission({ModuleEnum.TASKMANAGE})
+    public List<String> getUserTables(@PathParam("sourceId") String sourceId, @HeaderParam("tenantId")String tenantId, @PathParam("database")String database) throws AtlasBaseException {
+        try {
+            return shareService.getUserTables(tenantId, sourceId, database);
+        } catch (AtlasBaseException e){
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据库表失败");
+        }
+    }
+
+    /**
+     * 查询指定库表下用户有权限的列集合
+     * @param sourceId
+     * @param database
+     * @param tableName
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("user/{sourceId}/{database}/{tableName}/columns")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Permission({ModuleEnum.TASKMANAGE})
+    public List<String> getUserColumns(@PathParam("sourceId") String sourceId, @PathParam("database") String database, @PathParam("tableName") String tableName, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        try {
+            return shareService.getUserColumns(tenantId, sourceId, database, tableName);
+        } catch (AtlasBaseException e){
+            throw e;
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取对应表的列信息失败");
         }
     }
 
@@ -594,6 +664,8 @@ public class DataShareREST {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取schema下的表失败，请检查数据源配置或者确认相关表存在");
         }
     }
+
+
 
     @POST
     @Path("/oracle/{sourceId}/{schemaName}/{tableName}/columns")

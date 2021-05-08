@@ -28,21 +28,10 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.BorderStyle;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellStyle;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Color;
-import org.apache.poi.ss.usermodel.HorizontalAlignment;
-import org.apache.poi.ss.usermodel.IndexedColors;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.RegionUtil;
-import org.apache.poi.xssf.usermodel.XSSFCell;
-import org.apache.poi.xssf.usermodel.XSSFRow;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.xssf.usermodel.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileNotFoundException;
@@ -390,14 +379,26 @@ public class PoiExcelUtils {
             }
             Files.createFile(template);
 
-            Workbook workbook = new XSSFWorkbook();
-            Sheet sheet = workbook.createSheet();
+            XSSFWorkbook workbook = new XSSFWorkbook();
+            XSSFSheet sheet = workbook.createSheet();
+            XSSFCellStyle textStyle=  genContextStyle(workbook);
+            XSSFCellStyle titleStyle=genTitleStyle(workbook);
+            XSSFDataFormat format=workbook.createDataFormat();
+            textStyle.setDataFormat(format.getFormat("@"));
+            titleStyle.setDataFormat(format.getFormat("@"));
+
             String[][] content = templateEnum.getContent();
+            for(int i=0;i<content[0].length;i++){
+                sheet.setDefaultColumnStyle(i,textStyle);
+                sheet.setColumnWidth(i,4000);
+            }
 
             for (int i = 0; i < content.length; i++) {
                 Row row = sheet.createRow(i);
                 for (int j = 0; j < content[i].length; j++) {
-                    row.createCell(j).setCellValue(content[i][j]);
+                    Cell cell = row.createCell(j);
+                    cell.setCellStyle(titleStyle);
+                    cell.setCellValue(content[i][j]);
                 }
             }
 
@@ -409,5 +410,34 @@ public class PoiExcelUtils {
         return Files.newInputStream(template);
     }
 
+    //创建文本样式
+    public static XSSFCellStyle genContextStyle(XSSFWorkbook workbook){
+        XSSFCellStyle style = workbook.createCellStyle();
+        //文本水平居中显示
+        style.setAlignment(HorizontalAlignment.CENTER);
+        //文本竖直居中显示
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        //文本自动换行
+        style.setWrapText(true);
+        return style;
+    }
 
+    //生成标题样式
+    public static XSSFCellStyle genTitleStyle(XSSFWorkbook workbook){
+
+        XSSFCellStyle style = workbook.createCellStyle();
+        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setWrapText(true);
+
+        //标题居中，没有边框，所以这里没有设置边框，设置标题文字样式
+        XSSFFont titleFont = workbook.createFont();
+        //加粗
+        titleFont.setBold(true);
+        //文字尺寸
+        titleFont.setFontHeight((short)10);
+        titleFont.setFontHeightInPoints((short)10);
+        style.setFont(titleFont);
+        return style;
+    }
 }

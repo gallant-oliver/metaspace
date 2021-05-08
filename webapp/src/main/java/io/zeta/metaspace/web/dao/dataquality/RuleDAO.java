@@ -119,11 +119,11 @@ public interface RuleDAO {
     public Rule getRuleTemplate(@Param("id") String id,@Param("tenantId")String tenantId);
 
     @Insert("<script>" +
-            " insert into data_quality_rule_template(id,name,code,rule_type,description,creator,create_time,update_time,delete,scope,tenantId,sql,type,enable) " +
-            " values" +
-            "<foreach collection='rules' item='rule' index='index' separator='),(' open='(' close=')'>" +
-            "#{rule.id},#{rule.name},#{rule.code},#{rule.categoryId},#{rule.description},#{rule.creator},#{rule.createTime},#{rule.updateTime},#{rule.delete},#{rule.scope},#{tenantId},#{rule.sql},#{rule.type},#{rule.enable}"+
-            "</foreach>"+
+            " insert into data_quality_rule_template(name,scope,unit,description,create_time,update_time,delete,id,rule_type,type,tenantid,creator,code,sql,enable) " +
+            " values " +
+            " <foreach collection='rules' item='rule' index='index' separator='),(' open='(' close=')'>" +
+            " #{rule.name},#{rule.scope},#{rule.unit},#{rule.description},#{rule.createTime},#{rule.updateTime},#{rule.delete},#{rule.id},#{rule.categoryId},#{rule.type},#{tenantId},#{rule.creator},#{rule.code},#{rule.sql},#{rule.enable}"+
+            " </foreach>"+
             "</script>")
     public int insertAll(@Param("rules") List<Rule> rules,@Param("tenantId")String tenantId);
 }

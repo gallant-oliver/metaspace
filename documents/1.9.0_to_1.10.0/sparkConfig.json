@@ -1,0 +1,14 @@
+{
+  "file": "hdfs:///user/metaspace/griffin-measure-6.jar",
+  "className": "org.apache.griffin.measure.Application",
+  "proxyUser":"user",
+  "queue": "root.ckf1",
+  "driverMemory": "3g",
+  "executorMemory": "5g",
+  "conf": {
+    "spark.sql.hive.real.user":"metaspace"
+  },
+  "files": [
+  ]
+
+}

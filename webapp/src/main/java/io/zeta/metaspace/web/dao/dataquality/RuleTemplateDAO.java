@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -45,7 +46,7 @@ public interface RuleTemplateDAO {
              " limit #{params.limit} offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<RuleTemplate> searchRuleTemplate(@Param("params") RuleParameters params,@Param("tenantId")String tenantId);
+    public List<RuleTemplate> searchRuleTemplate(@Param("params") RuleParameters params,@Param("tenantId")String tenantId) throws SQLException;
 
     @Insert({" <script>",
              " insert into report2ruletemplate(rule_template_id,data_quality_execute_id,creator,create_time)values",

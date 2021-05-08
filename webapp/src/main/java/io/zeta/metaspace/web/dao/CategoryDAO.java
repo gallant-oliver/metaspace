@@ -16,10 +16,13 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.dto.indices.IndexDTO;
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.metadata.TableOwner;
+import io.zeta.metaspace.model.po.indices.IndexAtomicPO;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.usergroup.UserGroup;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.atlas.model.metadata.RelationEntityV2;
@@ -31,6 +34,7 @@ import org.apache.ibatis.annotations.Update;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.List;
 import java.util.Set;
 
@@ -42,8 +46,8 @@ import java.util.Set;
 public interface CategoryDAO {
 
 
-    @Insert("insert into category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType,level,safe,tenantid,createtime)" +
-            "values(#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{tenantId},#{category.createTime})")
+    @Insert("insert into category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType,level,safe,tenantid,createtime,creator,code)" +
+            "values(#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{tenantId},#{category.createTime},#{category.creator},#{category.code})")
     public int add(@Param("category") CategoryEntityV2 category,@Param("tenantId") String tenantId);
 
     @Select("select count(*) from category where categoryType=#{categoryType} and (tenantid=#{tenantId})")
@@ -52,8 +56,19 @@ public interface CategoryDAO {
     @Select("select * from category where categoryType=#{categoryType} and (tenantid=#{tenantId})")
     public Set<CategoryEntityV2> getAll(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId) throws SQLException;
 
+    @Select("select * from category where categoryType=#{categoryType} and tenantid=#{tenantId} and (code=#{code} or (level=#{level} and name=#{name}))")
+    public Set<CategoryEntityV2> getCategoryByNameOrCode(@Param("tenantId")String tenantId,@Param("categoryType") int categoryType,@Param("name") String name,@Param("code") String code,@Param("level") int level) throws SQLException;
+
     @Select("select * from category where guid=#{guid} and tenantid=#{tenantId}")
     public CategoryEntityV2 queryByGuid(@Param("guid") String categoryGuid,@Param("tenantId")String tenantId) throws SQLException;
+
+    @Select({"<script>"+
+            " select * from category where tenantid=#{tenantId} and guid in" +
+            " <foreach item='guid' index='index' collection='categoryGuid' open='(' separator=',' close=')'>" +
+            " #{guid}" +
+            " </foreach>" +
+            " </script>"})
+    public List<CategoryEntityV2> queryCategoryEntitysByGuids(@Param("categoryGuid") List<String> categoryGuid,@Param("tenantId")String tenantId) throws SQLException;
 
     @Select("select * from category where categorytype=#{type} and downbrothercategoryguid is null and level=1 and tenantid=#{tenantId}")
     public CategoryEntityV2 getQuery(@Param("type") int type,@Param("tenantId")String tenantId) throws SQLException;
@@ -96,8 +111,22 @@ public interface CategoryDAO {
     @Update("update category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid} and tenantid=#{tenantId}")
     public int updateDownBrotherCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid,@Param("tenantId")String tenantId);
 
-    @Update("update category set name=#{category.name},description=#{category.description},qualifiedName=#{category.qualifiedName},safe=#{category.safe} where guid=#{category.guid} and tenantid=#{tenantId}")
-    public int updateCategoryInfo(@Param("category")CategoryEntity category,@Param("tenantId")String tenantId);
+    @Update("update category set name=#{category.name},description=#{category.description},qualifiedName=#{category.qualifiedName},safe=#{category.safe},updater=#{updater},updatetime=#{updateTime},code=#{category.code} where guid=#{category.guid} and tenantid=#{tenantId}")
+    public int updateCategoryInfo(@Param("category")CategoryEntity category,@Param("tenantId")String tenantId,@Param("updater")String updater,@Param("updateTime") Timestamp updateTime);
+
+    @Select("select * from category where categoryType=#{categoryType} and tenantid=#{tenantId} and guid<>#{guid} and (code=#{code} or (level=#{level} and name=#{name}))")
+    public Set<CategoryEntityV2> getOtherCategoryByCodeOrName(@Param("tenantId")String tenantId,@Param("guid")String guid,@Param("categoryType") int categoryType,@Param("name") String name,@Param("code") String code,@Param("level") int level) throws SQLException;
+
+    @Select("<script>" +
+            "select * from category where tenantid=#{tenantId} and categoryType=#{categoryType} and code in " +
+            " <foreach item='code' index='index' collection='codes' separator=',' open='(' close=')'>" +
+            " #{code} " +
+            " </foreach>" +
+            " </script>")
+    public List<CategoryEntityV2> getCategoryByCodes(@Param("codes")List<String> codes,@Param("tenantId")String tenantId,@Param("categoryType")int categoryType);
+
+    @Select("select * from category where tenantid=#{tenantId} and categoryType=#{categoryType} and code=#{code} ")
+    public CategoryEntityV2 getCategoryByCode(@Param("code")String code,@Param("tenantId")String tenantId,@Param("categoryType")int categoryType);
 
     @Delete("delete from category where guid=#{guid} and tenantid=#{tenantId}")
     public int delete(@Param("guid")String guid,@Param("tenantId")String tenantId) throws SQLException;
@@ -144,15 +173,7 @@ public interface CategoryDAO {
     public String queryGuidPathByGuid(@Param("guid")String guid,@Param("tenantId") String tenantId);
 
 
-    @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
-            "(SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH " +
-            "FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId} " +
-            "UNION ALL " +
-            "SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH " +
-            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid and tenantid=#{tenantId}) " +
-            "SELECT  DEPTH FROM T WHERE guid=#{guid} " +
-            "ORDER BY PATH")
-    public int queryLevelByGuid(@Param("guid")String guid,@Param("tenantId") String tenantId);
+
 
 
     @Select("WITH RECURSIVE categoryTree AS  " +
@@ -162,16 +183,16 @@ public interface CategoryDAO {
             "SELECT guid FROM categoryTree")
     public List<String> queryChildrenCategoryId(@Param("parentCategoryGuid")String parentCategoryGuid,@Param("tenantId")String tenantId);
 
-    @Delete({"<script>",
+    /*@Delete({"<script>",
              "delete from table_relation where tableGuid=#{tableGuid} and categoryGuid in ",
              "<foreach item='guid' index='index' collection='categoryList' separator=',' open='(' close=')'>" ,
              "#{guid}",
              "</foreach>",
              "</script>"})
-    public int deleteChildrenRelation(@Param("tableGuid")String tableGuid, @Param("categoryList")List<String> categoryList);
+    public int deleteChildrenRelation(@Param("tableGuid")String tableGuid, @Param("categoryList")List<String> categoryList);*/
 
-    @Select("select * from table_relation where relationShipGuid=#{relationShipGuid}")
-    public RelationEntityV2 getRelationByGuid(@Param("relationShipGuid")String relationShipGuid);
+    /*@Select("select * from table_relation where relationShipGuid=#{relationShipGuid}")
+    public RelationEntityV2 getRelationByGuid(@Param("relationShipGuid")String relationShipGuid);*/
 
 //    @Select("select guid from category where categoryType=#{categoryType}")
 //    public List<String> getAllCategory(@Param("categoryType")int categoryType);
@@ -179,16 +200,19 @@ public interface CategoryDAO {
     @Select("select guid from category where categoryType=#{categoryType} and tenantid=#{tenantId}")
     public List<String> getAllCategory(@Param("categoryType") int categoryType, @Param("tenantId")String tenantId);
 
+    @Select("select * from category where categoryType=#{categoryType} and tenantid=#{tenantId} and level=#{level}")
+    public List<CategoryEntityV2> getAllCategoryByLevel(@Param("categoryType") int categoryType, @Param("tenantId")String tenantId,@Param("level")int level);
+
     @Select("select level from category where guid=#{guid} and tenantid=#{tenantId}")
     public int getCategoryLevel(@Param("guid")String guid, @Param("tenantId")String tenantId);
 
-    @Update({" <script>",
+    /*@Update({" <script>",
              " update tableInfo set dataOwner=#{owners,jdbcType=OTHER, typeHandler=io.zeta.metaspace.model.metadata.JSONTypeHandlerPg} where tableGuid in",
              "<foreach item='guid' index='index' collection='tables' separator=',' open='(' close=')'>" ,
              "#{guid}",
              "</foreach>",
              "</script>"})
-    public int addTableOwners(TableOwner owner) throws SQLException;
+    public int addTableOwners(TableOwner owner) throws SQLException;*/
 
     @Update({" <script>",
              " insert into table2owner(tableGuid,ownerId,keeper,generateTime,pkid)values",
@@ -219,9 +243,9 @@ public interface CategoryDAO {
     public String getCategoryNameByRelationId(@Param("guid")String guid, @Param("tenantId")String tenantId);
 
     @Insert(" <script>" +
-            "INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,categorytype,level,safe,createtime,tenantid) VALUES " +
+            "INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,qualifiedname,categorytype,level,safe,createtime,tenantid,creator,code) VALUES " +
             "<foreach item='category' index='index' collection='categorys' separator='),(' open='(' close=')'>" +
-            "#{category.guid},#{category.name},#{category.description},#{category.parentCategoryGuid},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.categoryType},#{category.level},#{category.safe},#{category.createTime},#{tenantId}"+
+            "#{category.guid},#{category.name},#{category.description},#{category.parentCategoryGuid},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{category.createTime},#{tenantId},#{category.creator},#{category.code}"+
             "</foreach>" +
             " </script>")
     public int addAll(@Param("categorys") List<CategoryEntityV2> categorys,@Param("tenantId") String tenantId);
@@ -232,6 +256,19 @@ public interface CategoryDAO {
 
     @Select("select guid from category where categorytype=#{type} and (downBrotherCategoryGuid is NULL or downBrotherCategoryGuid='') and level=1 and tenantid=#{tenantId}")
     public String queryLastCategory(@Param("type")int type,@Param("tenantId")String tenantId);
+
+    @Select({" <script>",
+            " select * from category where categorytype=#{type} and (downBrotherCategoryGuid is NULL or downBrotherCategoryGuid='') and (tenantid=#{tenantId}) ",
+            " <choose>",
+            " <when test='parentCategoryGuid != null'>",
+            " and parentCategoryGuid=#{parentCategoryGuid}",
+            " </when>",
+            " <otherwise>",
+            " and parentCategoryGuid is null",
+            " </otherwise>",
+            " </choose>",
+            " </script>"})
+    public CategoryEntityV2 getLastCategory(@Param("parentCategoryGuid")String parentCategoryGuid,@Param("type")int type,@Param("tenantId")String tenantId);
 
     @Select("select name from category where categorytype=#{type} and level=1 and tenantid=#{tenantId}")
     public List<String> getChildCategoryNameByType(@Param("type")int type,@Param("tenantId")String tenantId);
@@ -258,6 +295,16 @@ public interface CategoryDAO {
             " ) as tmp (guid,upbrothercategoryguid,downbrothercategoryguid) where category.guid=tmp.guid and tenantid=#{tenantId}; " +
             " </script>")
     public int updateCategoryEntityV2Tree(@Param("categories")List<CategoryEntityV2> categories,@Param("tenantId")String tenantId);
+
+    @Update(" <script>" +
+            "update category set downbrothercategoryguid=tmp.downbrothercategoryguid " +
+            " from (values" +
+            " <foreach item='category' index='index' collection='categories' separator='),(' open='(' close=')'>" +
+            " #{category.guid},#{category.downBrotherCategoryGuid} " +
+            " </foreach>" +
+            " ) as tmp (guid,downbrothercategoryguid) where category.guid=tmp.guid and tenantid=#{tenantId}; " +
+            " </script>")
+    public int updateCategoryEntityV2(@Param("categories")List<CategoryEntityV2> categories,@Param("tenantId")String tenantId);
 
     @Select(" select count(1) from category where name=#{name} " +
             " and categorytype=#{type} and level=1 and tenantid=#{tenantId}")
@@ -288,5 +335,13 @@ public interface CategoryDAO {
             " ORDER BY PATH" +
             " </script>")
     public List<CategoryPath> getPathByIds(@Param("ids")List<String> ids,@Param("categoryType") int categoryType, @Param("tenantId")String tenantId);
+
+    @Select({" <script> ",
+            " select distinct c.guid from category c join category_group_relation cgr on c.guid=cgr.category_id where c.categorytype=#{categoryType} and c.tenantid=#{tenantId} and cgr.group_id in  ",
+            " <foreach item='groupId' index='index' collection='groupIds' separator=',' open='(' close=')'>",
+            " #{groupId} ",
+            " </foreach>",
+            " </script>"})
+    List<String> getCategorysByGroup(@Param("groupIds") List<String> groupIds,@Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
 
 }

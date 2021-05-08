@@ -43,10 +43,8 @@ import org.apache.atlas.model.instance.*;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
-import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.store.AtlasTypeDefStore;
-import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -113,6 +111,8 @@ public class MetaDataService {
     MetadataSubscribeDAO metadataSubscribeDAO;
     @Autowired
     DataManageService dataManageService;
+    @Autowired
+    DataSourceDAO dataSourceDAO;
     private String errorMessage = "";
 
     private Map<String, IMetaDataProvider> metaDataProviderMap = new HashMap<>();
@@ -132,17 +132,9 @@ public class MetaDataService {
     @Autowired
     private MetadataHistoryDAO metadataHistoryDAO;
     @Autowired
-    private DataSourceService dataSourceService;
-    @Autowired
-    private AtlasTypeRegistry atlasTypeRegistry;
-    @Autowired
-    private AtlasGraph graph;
-    @Autowired
     private SearchService searchService;
     @Autowired
     private UserGroupDAO userGroupDAO;
-    @Autowired
-    private TenantService tenantService;
 
 
     public Map<String, Object> getTableType(String guid) {
@@ -322,7 +314,7 @@ public class MetaDataService {
             }
             //tag，从postgresql获取，获取不到不展示
             try {
-                List<Tag> tags = tableTagDAO.getTable2Tag(table.getTableId(),tenantId);
+                List<Tag> tags = tableTagDAO.getTable2Tag(table.getTableId(), tenantId);
                 table.setTags(tags);
             } catch (Exception e) {
                 LOG.error("获取标签失败,错误信息:" + e.getMessage(), e);
@@ -439,7 +431,7 @@ public class MetaDataService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
             //table
-            RDBMSTable table = extractRDBMSTableInfo(entity, guid, info, tenantId);
+            RDBMSTable table = this.extractRDBMSTableInfo(entity, guid, info, tenantId);
 
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
@@ -469,27 +461,24 @@ public class MetaDataService {
             table.setTableName(getEntityAttribute(entity, "name"));
             //状态
             table.setStatus(entity.getStatus().name());
-            //创建时间
-            String createTimeAttribute = "createTime";
-            if (entity.hasAttribute(createTimeAttribute) && Objects.nonNull(entity.getAttribute(createTimeAttribute))) {
-
-                Date createTime = (Date) entity.getAttribute("createTime");
-                ;
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                table.setCreateTime(sdf.format(createTime));
-            } else {
-                table.setCreateTime("");
-            }
-
             String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
             String sourceId = StringUtils.isNotEmpty(qualifiedName) ? qualifiedName.split("\\.")[0] : "";
+
+            //创建时间
+            Object createTime = entity.getAttribute("createTime");
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String formatDateStr = sdf.format(createTime);
+            table.setCreateTime(formatDateStr);
+            if ("1970-01-01 08:00:00".equals(formatDateStr)) {
+                table.setCreateTime(sdf.format(entity.getCreateTime()));
+            }
 
             //描述
             table.setTableDescription(getEntityAttribute(entity, "comment"));
             //数据库名
             AtlasRelatedObjectId relatedObject = getRelatedDB(entity);
             AtlasEntity.AtlasEntityWithExtInfo dbInfo = entitiesStore.getById(relatedObject.getGuid());
-            AtlasRelatedObjectId relatedInstance = getRelatedInstance(dbInfo.getEntity());
+            AtlasRelatedObjectId relatedInstance = this.getRelatedInstance(dbInfo.getEntity());
             table.setDatabaseId(relatedObject.getGuid());
             table.setDatabaseName(relatedObject.getDisplayText());
             table.setDatabaseStatus(relatedObject.getEntityStatus().name());
@@ -504,12 +493,10 @@ public class MetaDataService {
             table.setForeignKeys(cik.getForeignKeys());
             table.setIndexes(cik.getIndexes());
             table.setColumns(cik.getColumns());
-
+            table.setOwner((getEntityAttribute(entity, "owner") == null) ? dataSourceDAO.getDataSourceInfo(sourceId).getSourceType() : getEntityAttribute(entity, "owner"));
 
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
-
-
             try {
                 List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
                 boolean edit = false;
@@ -526,7 +513,7 @@ public class MetaDataService {
 
             //tag，从postgresql获取，获取不到不展示
             try {
-                List<Tag> tags = tableTagDAO.getTable2Tag(table.getTableId(),tenantId);
+                List<Tag> tags = tableTagDAO.getTable2Tag(table.getTableId(), tenantId);
                 table.setTags(tags);
             } catch (Exception e) {
                 LOG.error("获取标签失败,错误信息:" + e.getMessage(), e);
@@ -557,11 +544,8 @@ public class MetaDataService {
                 table.setDataWarehouseDescription(tableInfo.getDataWarehouseDescription());
                 //目录管理员
                 table.setCatalogAdmin(tableInfo.getCatalogAdmin());
-                //创建时间
-                Object createTime = entity.getAttribute("createTime");
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-                String formatDateStr = sdf.format(createTime);
-                table.setCreateTime(formatDateStr);
+
+
             } catch (Exception e) {
                 LOG.error("获取源系统维度失败,错误信息:" + e.getMessage(), e);
             }

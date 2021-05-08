@@ -85,6 +85,7 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Type;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -1395,6 +1396,45 @@ public class DataShareService {
         return getDataList(null, searchType, parameters, tenantId, sourceId, ids);
     }
 
+    public List<String> getUserDataBases(String tenantId, String sourceId) throws AtlasBaseException {
+
+        User user = AdminUtils.getUserData();
+        if("hive".equalsIgnoreCase(sourceId)){
+            List<String> databases = tenantService.getDatabase(tenantId);
+            List<String> userHiveDatabases = shareDAO.getUserHiveDatabases(tenantId, user.getUserId());
+            if(null == databases){
+                databases = new ArrayList<>();
+            }
+            if(null == userHiveDatabases){
+                userHiveDatabases = new ArrayList<>();
+            }
+            userHiveDatabases.retainAll(databases);
+            return userHiveDatabases;
+        }else{
+            return shareDAO.getUserRelationDatabases(tenantId,sourceId,user.getUserId());
+        }
+    }
+
+    public List<String> getUserTables(String tenantId, String sourceId, String dataBase) throws AtlasBaseException {
+        User user = AdminUtils.getUserData();
+        List<String> userDataBases = getUserDataBases(tenantId, sourceId);
+        if(!userDataBases.contains(dataBase)){
+            throw new AtlasBaseException("id为【"+sourceId+"】的数据源中没有找到数据库【" + dataBase + "." +dataBase + "】，请确认数据库存在并且确保用户" + user.getUsername() + "具有读取该数据库的权限",
+                    AtlasErrorCode.BAD_REQUEST, "数据库【" + dataBase + "】不存在");
+        }
+        return shareDAO.getDatabaseTables(sourceId,dataBase);
+    }
+
+    public List<String> getUserColumns(String tenantId, String sourceId, String dataBase, String tableName) throws AtlasBaseException {
+        User user = AdminUtils.getUserData();
+        List<String> userTables = getUserTables(tenantId, sourceId, dataBase);
+        if(!userTables.contains(tableName)){
+            throw new AtlasBaseException("id为【"+sourceId+"】的数据源中没有找到库表【" + dataBase + "." +tableName + "】，请确认库表存在并且确保用户" + user.getUsername() + "具有读取该库表的权限",
+                    AtlasErrorCode.BAD_REQUEST, "表【" + tableName + "】不存在");
+        }
+        return shareDAO.getUserColumns(sourceId, dataBase, tableName);
+    }
+
     public PageResult getDataList(String proxyUser, SEARCH_TYPE searchType, ColumnParameters parameters, String tenantId, String sourceId, String... ids) throws AtlasBaseException {
         AdapterSource adapterSource = "hive".equalsIgnoreCase(sourceId) ?
                 AdapterUtils.getHiveAdapterSource() :
@@ -1486,8 +1526,13 @@ public class DataShareService {
         securitySearch.setTenantId(tenantId);
         PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
         List<String> userIds = userAndModules.getLists().stream().map(UserAndModule::getAccountGuid).collect(Collectors.toList());
-
-        List<ProjectInfo> lists = shareDAO.searchProject(parameters, AdminUtils.getUserData().getUserId(), tenantId, userIds);
+        List<ProjectInfo> lists;
+        try {
+            lists = shareDAO.searchProject(parameters, AdminUtils.getUserData().getUserId(), tenantId, userIds);
+        } catch (SQLException e) {
+            LOG.error("SQL执行异常", e);
+            lists = new ArrayList<>();
+        }
         if (lists == null || lists.size() == 0) {
             return commonResult;
         }
@@ -2319,7 +2364,17 @@ public class DataShareService {
             approveBool = Boolean.valueOf(approve);
         }
         PageResult<ApiHead> pageResult = new PageResult<>();
-        List<ApiHead> apiHeads = shareDAO.searchApi(parameters, projectId, categoryId, status, approveBool, tenantId);
+        String query = parameters.getQuery();
+        if (Objects.nonNull(query)) {
+            parameters.setQuery(query.replaceAll("_", "/_").replaceAll("%", "/%"));
+        }
+        List<ApiHead> apiHeads;
+        try {
+            apiHeads = shareDAO.searchApi(parameters, projectId, categoryId, status, approveBool, tenantId);
+        } catch (SQLException e) {
+            LOG.error("SQL执行异常", e);
+            return null;
+        }
         List<ApiHead> apiHeadForeach = new ArrayList<>();
         apiHeadForeach.addAll(apiHeads);
         if (apiHeads != null && apiHeads.size() != 0) {

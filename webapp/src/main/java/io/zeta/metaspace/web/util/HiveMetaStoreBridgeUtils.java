@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.TableSchema;
+import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.sync.SyncTaskInstance;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
@@ -212,13 +213,13 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
                 }
             }
             for (String databaseName : databaseNames) {
-                AtlasEntityWithExtInfo dbEntity = registerDatabase(databaseName);
+                AtlasEntityWithExtInfo dbEntity = registerDatabase(databaseName, tableSchema.getDefinition());
                 if (allDatabase) {
                     updatedTables.incrementAndGet();
                     continue;
                 }
                 if (dbEntity != null) {
-                    importTables(dbEntity.getEntity(), databaseName, database2Table.get(databaseName), false);
+                    importTables(dbEntity.getEntity(), databaseName, database2Table.get(databaseName), false, tableSchema.getDefinition());
                 }
             }
         } else {
@@ -248,7 +249,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
      * @param failOnError
      * @throws Exception
      */
-    private int importTables(AtlasEntity dbEntity, String databaseName, List<String> tableNames, final boolean failOnError) throws Exception {
+    private int importTables(AtlasEntity dbEntity, String databaseName, List<String> tableNames, final boolean failOnError,SyncTaskDefinition definition) throws Exception {
         int tablesImported = 0;
 
         if (!CollectionUtils.isEmpty(tableNames)) {
@@ -259,7 +260,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
                 deleteTableEntity(databaseName, tableNames);
 
                 for (String tableName : tableNames) {
-                    int imported = importTable(dbEntity, databaseName, tableName, failOnError);
+                    int imported = importTable(dbEntity, databaseName, tableName, failOnError, definition);
 
                     tablesImported += imported;
                     updatedTables.incrementAndGet();
@@ -294,7 +295,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         }
     }
 
-    public int importTable(AtlasEntity dbEntity, String databaseName, String tableName, final boolean failOnError) throws Exception {
+    public int importTable(AtlasEntity dbEntity, String databaseName, String tableName, final boolean failOnError, SyncTaskDefinition definition) throws Exception {
         try {
             Table table = hiveMetaStoreClient.getTable(databaseName, tableName);
             String tableQualifiedName = getTableProcessQualifiedName(clusterName, table);
@@ -309,7 +310,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
                 LOG.info("尝试拿锁 : " + Thread.currentThread().getName() + " " + tableQualifiedName);
                 if (lock.acquire(LOCK_TIME_OUT_TIME, TimeUnit.MINUTES)) {
                     LOG.info("拿锁成功 : " + Thread.currentThread().getName() + " " + tableQualifiedName);
-                    AtlasEntityWithExtInfo tableEntity = registerTable(dbEntity, table);
+                    AtlasEntityWithExtInfo tableEntity = registerTable(dbEntity, table, definition);
 
                     if (table.getTableType() == TableType.EXTERNAL_TABLE) {
                         AtlasEntityWithExtInfo processEntity = findProcessEntity(tableQualifiedName);
@@ -377,7 +378,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
      * @return
      * @throws Exception
      */
-    private AtlasEntityWithExtInfo registerDatabase(String databaseName) throws Exception {
+    private AtlasEntityWithExtInfo registerDatabase(String databaseName, SyncTaskDefinition definition) throws Exception {
         AtlasEntityWithExtInfo ret = null;
         Database db = hiveMetaStoreClient.getDatabase(databaseName);
 
@@ -393,7 +394,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
                     ret = findDatabase(clusterName, databaseName);
 
                     if (ret == null) {
-                        ret = registerInstance(new AtlasEntityWithExtInfo(toDbEntity(db)));
+                        ret = registerInstance(new AtlasEntityWithExtInfo(toDbEntity(db)), definition);
                     } else {
                         LOG.info("Database {} is already registered - id={}. Updating it.", databaseName, ret.getEntity().getGuid());
 
@@ -401,7 +402,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
                         updateInstance(ret);
 
-                        dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()));
+                        dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()), definition);
                     }
                     return ret;
                 }
@@ -418,7 +419,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         return ret;
     }
 
-    private AtlasEntityWithExtInfo registerTable(AtlasEntity dbEntity, Table table) throws AtlasHookException {
+    private AtlasEntityWithExtInfo registerTable(AtlasEntity dbEntity, Table table, SyncTaskDefinition definition) throws AtlasHookException {
         try {
             AtlasEntityWithExtInfo ret;
             AtlasEntityWithExtInfo tableEntity = findTableEntity(table);
@@ -426,7 +427,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
             if (tableEntity == null) {
                 tableEntity = toTableEntity(dbEntity, table);
 
-                ret = registerInstance(tableEntity);
+                ret = registerInstance(tableEntity, definition);
             } else {
                 LOG.info("Table {}.{} is already registered with id {}. Updating entity.", table.getDbName(), table.getTableName(), tableEntity.getEntity().getGuid());
 
@@ -436,7 +437,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
                 AtlasRelatedObjectId atlasRelatedObjectId = new AtlasRelatedObjectId();
                 atlasRelatedObjectId.setDisplayText(String.valueOf(dbEntity.getAttribute(ATTRIBUTE_NAME)));
                 ret.getEntity().setRelationshipAttribute("db", atlasRelatedObjectId);
-                dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()));
+                dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()), definition);
                 ret.getEntity().removeRelationshipAttribute("db");
             }
 

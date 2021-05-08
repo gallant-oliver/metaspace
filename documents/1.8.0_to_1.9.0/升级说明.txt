@@ -1,0 +1,4 @@
+1. 备份数据库
+2. 执行SQL脚本
+3. metaspace所有安装服务器节点上运行upgrade_metaspace.sh脚本（运行前请检查脚本内容，脚本当前目录需要有metaspace.war文件和metaspace文件夹）(运行时请传入参数，第一个参数为metaspace的安装目录，第二个参数为metaspace的备份目录，结尾处不要加/)；
+5. 重启数据治理

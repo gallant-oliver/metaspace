@@ -15,6 +15,7 @@ package io.zeta.metaspace.web.util;
 
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.security.Tenant;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
@@ -51,31 +52,32 @@ public class CategoryUtil {
     private static List<CategoryEntityV2> initCategory = new ArrayList<CategoryEntityV2>(){
         {
             Timestamp createTime = DateUtils.currentTimestamp();
-            add(new CategoryEntityV2("1", "贴源层", null, null, null, "2", 0, 1, "1", createTime));
-            add(new CategoryEntityV2("2","基础层",null,null,"1","3",0,1,"1",createTime));
-            add(new CategoryEntityV2("3","规范层",null,null,"2","4",0,1,"1", createTime));
-            add(new CategoryEntityV2("4","通过层",null,null,"3","5",0,1,"1", createTime));
-            add(new CategoryEntityV2("5","应用层",null,null,"4",null,0,1,"1", createTime));
-            add(new CategoryEntityV2("Standard-1", "基础类数据标准","基础类数据标准",null,null,"Standard-2",3,1,"1", createTime));
-            add(new CategoryEntityV2("Standard-2", "指标类数据标准","指标类数据标准",null,"Standard-1",null,3,1,"1", createTime));
-            add(new CategoryEntityV2("Standard-3", "参考数据标准","参考数据标准","Standard-1",null,"Standard-4",3,2,"1", createTime));
-            add(new CategoryEntityV2("Standard-4", "主数据标准","主数据标准","Standard-1","Standard-3","Standard-5",3,2 ,"1", createTime));
-            add(new CategoryEntityV2("Standard-5", "逻辑数据模型标准","逻辑数据模型标准","Standard-1","Standard-4","Standard-6",3,2,"1", createTime));
-            add(new CategoryEntityV2("Standard-6", "物理数据模型标准","物理数据模型标准","Standard-1","Standard-5","Standard-7",3,2,"1", createTime));
-            add(new CategoryEntityV2("Standard-7", "元数据标准","元数据标准","Standard-1","Standard-6","Standard-8",3,2,"1", createTime));
-            add(new CategoryEntityV2("Standard-8", "公共代码标准","公共代码标准","Standard-1","Standard-7","Standard-9",3,2,"1", createTime));
-            add(new CategoryEntityV2("Standard-9", "编码标准","编码标准","Standard-1","Standard-8",null,3,2,"1", createTime));
-            add(new CategoryEntityV2("Standard-10", "基础指标标准","基础指标标准","Standard-2",null,"Standard-11",3,2,"1", createTime));
-            add(new CategoryEntityV2("Standard-11", "计算指标标准","计算指标标准","Standard-2","Standard-10",null,3,2,"1", createTime));
-            add(new CategoryEntityV2("Standard-12", "业务元数据标准","业务元数据标准","Standard-7",null,"Standard-13",3,2,"1", createTime));
-            add(new CategoryEntityV2("Standard-13", "技术元数据标准","技术元数据标准","Standard-7","Standard-12","Standard-14",3,2,"1", createTime));
-            add(new CategoryEntityV2("Standard-14", "管理元数据标准","业管理元数据标准","Standard-7","Standard-13",null,3,2,"1", createTime));
-            add(new CategoryEntityV2("rule_1" ,"表体积" , "表体积"  ,null,null, "rule_2"   ,4 ,1,"1", createTime));
-            add(new CategoryEntityV2("rule_2"  ,"空值校验", "空值校验",null,"rule_1", "rule_3",4 ,1,"1", createTime));
-            add(new CategoryEntityV2("rule_3"  ,"唯一值校验", "唯一值校验",null,"rule_2", "rule_4",4 ,1,"1", createTime));
-            add(new CategoryEntityV2("rule_4"  ,"重复值校验", "重复值校验",null,"rule_3", "rule_5",4 ,1,"1",  createTime));
-            add(new CategoryEntityV2("rule_5"  ,"数值型校验", "数值型校验",null,"rule_4", "rule_6",4 ,1,"1",  createTime));
-            add(new CategoryEntityV2("rule_6"  ,"一致性校验", "一致性校验",null,"rule_5", null,4 ,1,"1",  createTime));
+            add(new CategoryEntityV2("1", "贴源层", null, null, null, "2", 0, 1, "1", createTime,null));
+            add(new CategoryEntityV2("2","基础层",null,null,"1","3",0,1,"1",createTime,null));
+            add(new CategoryEntityV2("3","规范层",null,null,"2","4",0,1,"1", createTime,null));
+            add(new CategoryEntityV2("4","通用层",null,null,"3","5",0,1,"1", createTime,null));
+            add(new CategoryEntityV2("5","应用层",null,null,"4",null,0,1,"1", createTime,null));
+            add(new CategoryEntityV2("Standard-1", "基础类数据标准","基础类数据标准",null,null,"Standard-2",3,1,"1", createTime,null));
+            add(new CategoryEntityV2("Standard-2", "指标类数据标准","指标类数据标准",null,"Standard-1",null,3,1,"1", createTime,null));
+            add(new CategoryEntityV2("Standard-3", "参考数据标准","参考数据标准","Standard-1",null,"Standard-4",3,2,"1", createTime,null));
+            add(new CategoryEntityV2("Standard-4", "主数据标准","主数据标准","Standard-1","Standard-3","Standard-5",3,2 ,"1", createTime,null));
+            add(new CategoryEntityV2("Standard-5", "逻辑数据模型标准","逻辑数据模型标准","Standard-1","Standard-4","Standard-6",3,2,"1", createTime,null));
+            add(new CategoryEntityV2("Standard-6", "物理数据模型标准","物理数据模型标准","Standard-1","Standard-5","Standard-7",3,2,"1", createTime,null));
+            add(new CategoryEntityV2("Standard-7", "元数据标准","元数据标准","Standard-1","Standard-6","Standard-8",3,2,"1", createTime,null));
+            add(new CategoryEntityV2("Standard-8", "公共代码标准","公共代码标准","Standard-1","Standard-7","Standard-9",3,2,"1", createTime,null));
+            add(new CategoryEntityV2("Standard-9", "编码标准","编码标准","Standard-1","Standard-8",null,3,2,"1", createTime,null));
+            add(new CategoryEntityV2("Standard-10", "基础指标标准","基础指标标准","Standard-2",null,"Standard-11",3,2,"1", createTime,null));
+            add(new CategoryEntityV2("Standard-11", "计算指标标准","计算指标标准","Standard-2","Standard-10",null,3,2,"1", createTime,null));
+            add(new CategoryEntityV2("Standard-12", "业务元数据标准","业务元数据标准","Standard-7",null,"Standard-13",3,2,"1", createTime,null));
+            add(new CategoryEntityV2("Standard-13", "技术元数据标准","技术元数据标准","Standard-7","Standard-12","Standard-14",3,2,"1", createTime,null));
+            add(new CategoryEntityV2("Standard-14", "管理元数据标准","业管理元数据标准","Standard-7","Standard-13",null,3,2,"1", createTime,null));
+            add(new CategoryEntityV2("rule_1" ,"表体积" , "表体积"  ,null,null, "rule_2"   ,4 ,1,"1", createTime,null));
+            add(new CategoryEntityV2("rule_2"  ,"空值校验", "空值校验",null,"rule_1", "rule_3",4 ,1,"1", createTime,null));
+            add(new CategoryEntityV2("rule_3"  ,"唯一值校验", "唯一值校验",null,"rule_2", "rule_4",4 ,1,"1", createTime,null));
+            add(new CategoryEntityV2("rule_4"  ,"重复值校验", "重复值校验",null,"rule_3", "rule_5",4 ,1,"1",  createTime,null));
+            add(new CategoryEntityV2("rule_5"  ,"数值型校验", "数值型校验",null,"rule_4", "rule_6",4 ,1,"1",  createTime,null));
+            add(new CategoryEntityV2("rule_6"  ,"一致性校验", "一致性校验",null,"rule_5", null,4 ,1,"1",  createTime,null));
+            add(new CategoryEntityV2("index_field_default","默认域","默认域",null,null,null,5,1,"1",createTime,"IndexFieldDefault01"));
         }
     };
 
@@ -112,6 +114,7 @@ public class CategoryUtil {
             add(new Rule("字段汇总值变化率", 1, "%", "相比上一周期，字段汇总值变化率", createTime, createTime, "28", "rule_5", 7));
             add(new Rule("字段最小值变化率", 1, "%", "相比上一周期，字段最小值变化率", createTime, createTime, "29", "rule_5", 8));
             add(new Rule("字段最大值变化率", 1, "%", "相比上一周期，字段最大值变化率", createTime, createTime, "30", "rule_5", 9));
+            add(new Rule("一致性校验",2,null,"一致性",createTime,createTime,"31","rule_6",31));
         }
     };
 
@@ -138,17 +141,27 @@ public class CategoryUtil {
         add("Standard-13");
         add("Standard-14");
     }};
+    //默认指标域
+    public static final String indexFieldId="index_field_default";
+
     public static final String apiCategoryName = "默认目录";
 
     public static void initCategorySql(List<Tenant> tenants){
+        User user=AdminUtils.getUserData();
         for (Tenant tenant: tenants){
+            for(CategoryEntityV2 category:initCategory){
+                category.setCreator(user.getUserId());
+            }
             utils.categoryDAO.addAll(initCategory,tenant.getTenantId());
-            //utils.ruleDAO.insertAll(initRule,tenant.getTenantId());
+            for(Rule rule:initRule){
+                rule.setCreator(user.getUserId());
+            }
+            utils.ruleDAO.insertAll(initRule,tenant.getTenantId());
         }
     }
     public static void initApiCategory(String tenantId,String projectId){
         Timestamp createTime = DateUtils.currentTimestamp();
         String uuid = UUID.randomUUID().toString();
-        utils.dataShareDAO.add(new CategoryEntityV2(uuid,"默认目录","默认目录",null,null,null,2,1,"1",createTime),projectId,tenantId);
+        utils.dataShareDAO.add(new CategoryEntityV2(uuid,"默认目录","默认目录",null,null,null,2,1,"1",createTime,null),projectId,tenantId);
     }
 }

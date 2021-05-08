@@ -13,12 +13,13 @@
 package io.zeta.metaspace.model.result;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class PageResult<E> implements Serializable {
     private long totalSize;
     private long currentSize;
-    private List<E> lists;
+    private List<E> lists = new ArrayList<>();
     private long offset;
 
     public long getTotalSize() {

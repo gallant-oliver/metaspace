@@ -31,6 +31,7 @@ public class CategoryInfoV2 {
     private Integer categoryType;
     private String safe;
     private boolean authorized;
+    private String code;
 
     public boolean isAuthorized() {
         return authorized;
@@ -94,5 +95,13 @@ public class CategoryInfoV2 {
 
     public void setCategoryType(Integer categoryType) {
         this.categoryType = categoryType;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 }

@@ -16,12 +16,10 @@
  */
 package io.zeta.metaspace.discovery;
 
-import static org.apache.atlas.repository.Constants.RELATIONSHIP_GUID_PROPERTY_KEY;
-import static org.apache.atlas.repository.graph.GraphHelper.getGuid;
-import static org.apache.atlas.repository.graph.GraphHelper.string;
-
-
 import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
+import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import org.apache.atlas.AtlasClient;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
@@ -33,7 +31,6 @@ import org.apache.atlas.discovery.EntityLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntityHeader;
-import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.repository.graphdb.AtlasEdge;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
@@ -47,15 +44,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
-import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 
+import javax.inject.Inject;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Inject;
+import static org.apache.atlas.repository.Constants.RELATIONSHIP_GUID_PROPERTY_KEY;
+import static org.apache.atlas.repository.graph.GraphHelper.getGuid;
 
 /*
  * @description
@@ -882,35 +878,40 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         return String.format("%s@%s", instanceId, clusterName);
     }
 
-    public PageResult<Database> getSchemaList(String sourceId, boolean active, long offset, long limit, String query, String dbs, boolean queryTableCount) throws AtlasBaseException {
+    public PageResult<Database> getSchemaList(String sourceId, String guid, boolean active, long offset, long limit, String query, String dbs, boolean queryTableCount) throws AtlasBaseException {
         PageResult<Database> databasePageResult = new PageResult<>();
         List<Database> lists = new ArrayList<>();
 
-        String activeQuery = active ? ".has('__state','ACTIVE')" : "";
+        String activeQuery = ".has('__state','ACTIVE')";
         String nameQuery = StringUtils.isEmpty(query) ? "" : ".has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*" + query + ".*'))";
         String pageQuery = (offset == 0 && limit == -1) ? "" : ".range(" + offset + "," + (offset + limit) + ")";
 
         String format = "";
         if (StringUtils.isEmpty(sourceId)) {
             //跨类型搜索
-            format = "g.tx().commit();g.V().or(has('__typeName','rdbms_db'),has('__typeName','hive_db').has('Asset.name', within(" + dbs + "))).has('__guid')%s.order().by('__timestamp').dedup()%s.toList()";
+//            format = "g.tx().commit();g.V().or(has('__typeName','rdbms_db'),has('__typeName','hive_db').has('Asset.name', within(" + dbs + "))).has('__guid')%s.order().by('__timestamp').dedup()%s.toList()";
+
+            format = "g.tx().commit();g.V().or(has('__typeName','rdbms_db').has('__guid',within(" + guid + "))%s" +
+                    ",has('__typeName','hive_db').has('Asset.name', within(" + dbs + ")).has('__guid')%s)" +
+                    ".order().by('__timestamp').dedup()%s.toList()";
         } else if ("hive".equalsIgnoreCase(sourceId)) {
             //hive 搜索
             format = "g.tx().commit();g.V().has('__typeName','hive_db').has('__guid')%s.has('Asset.name', within(" + dbs + ")).order().by('__timestamp').dedup()%s.toList()";
         } else {
             //关系型数据源搜索
-            format = "g.tx().commit();g.V().has('__typeName','rdbms_instance').has('Referenceable.qualifiedName','"+getInstanceQualifiedName(sourceId)+"').inE().outV().has('__typeName','rdbms_db').has('__guid')%s.order().by('__timestamp').dedup()%s.toList()";
+            format = "g.tx().commit();g.V().has('__typeName','rdbms_instance').has('Referenceable.qualifiedName','" + getInstanceQualifiedName(sourceId) + "').inE().outV().has('__typeName','rdbms_db').has('__guid')%s.order().by('__timestamp').dedup()%s.toList()";
         }
 
-        String queryStr =  String.format(format,
-                activeQuery + nameQuery,
-                pageQuery
-        );
+        String queryStr;
+        String queryCountStr;
+        if (StringUtils.isEmpty(sourceId)) {
+            queryStr = String.format(format, activeQuery + nameQuery, activeQuery + nameQuery, pageQuery);
+            queryCountStr = String.format(format, activeQuery + nameQuery, activeQuery + nameQuery, ".count()");
+        } else {
+            queryStr = String.format(format, activeQuery + nameQuery, pageQuery);
+            queryCountStr = String.format(format, activeQuery + nameQuery, ".count()");
+        }
 
-        String queryCountStr = String.format(format,
-                activeQuery + nameQuery,
-                ".count()"
-        );
 
         List<AtlasVertex> databases = (List) graph.executeGremlinScript(queryStr, false);
         for (AtlasVertex database : databases) {
@@ -943,30 +944,37 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         return databasePageResult;
     }
 
-    public PageResult<TableEntity> getTableList(String schemaId, boolean active, long offset, long limit, String query, Boolean isView) throws AtlasBaseException {
+    public PageResult<TableEntity> getTableList(String dbsToString, String guid, String schemaId, boolean active, long offset, long limit, String query, Boolean isView) throws AtlasBaseException {
         PageResult<TableEntity> tablePageResult = new PageResult<>();
         List<TableEntity> lists = new ArrayList<>();
 
         String schemaIdQuery = StringUtils.isEmpty(schemaId) ? "" : ".has('__guid','" + schemaId + "')";
-        String activeQuery = active ? ".has('__state','ACTIVE')" : "";
+        String activeQuery = ".has('__state','ACTIVE')";
         String pageQuery = (offset == 0 && limit == -1) ? "" : ".range(" + offset + "," + (offset + limit) + ")";
         String nameQuery = StringUtils.isEmpty(query) ? "" : ".has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*" + query + ".*'))";
         String viewQuery = isView == null ? "" : (isView ? ".or(has('hive_table.tableType',org.janusgraph.core.attribute.Text.textRegex('.*(?i)VIEW.*')),has('rdbms_table.type',org.janusgraph.core.attribute.Text.textRegex('.*(?i)VIEW.*')))"
                 : ".not(or(has('hive_table.tableType',org.janusgraph.core.attribute.Text.textRegex('.*(?i)VIEW.*')),has('rdbms_table.type',org.janusgraph.core.attribute.Text.textRegex('.*(?i)VIEW.*'))))");
 
+        String queryStr;
+        String queryCountStr;
+        if (StringUtils.isNotBlank(query)) {
+            String format = "g.tx().commit();g.V().or(has('__typeName','rdbms_db').has('__guid', within(" + guid + ")),has('__typeName','hive_db').has('Asset.name', within(" + dbsToString + "))).inE().outV().or(has('__typeName', 'rdbms_table').has('__guid')%s,has('__typeName', 'hive_table').has('__guid')%s).order().by('__timestamp').dedup()%s.toList()";
+            String value = activeQuery + nameQuery + viewQuery;
+            queryStr = String.format(format, value, value, pageQuery);
+            queryCountStr = String.format(format, value, value, ".count()");
+        } else {
+            queryStr = String.format("g.tx().commit();g.V().has('__typeName',within('rdbms_db','hive_db'))%s.inE().outV().has('__typeName', within('rdbms_table','hive_table')).has('__guid')%s.order().by('__timestamp').dedup()%s.toList()",
+                    schemaIdQuery,
+                    activeQuery + nameQuery + viewQuery,
+                    pageQuery
+            );
 
-        String queryStr = String.format("g.tx().commit();g.V().has('__typeName',within('rdbms_db','hive_db'))%s.inE().outV().has('__typeName', within('rdbms_table','hive_table')).has('__guid')%s.order().by('__timestamp').dedup()%s.toList()",
-                schemaIdQuery,
-                activeQuery + nameQuery + viewQuery,
-                pageQuery
-        );
-
-        String queryCountStr = String.format("g.tx().commit();g.V().has('__typeName',within('rdbms_db','hive_db'))%s.inE().outV().has('__typeName', within('rdbms_table','hive_table')).has('__guid')%s.order().by('__timestamp').dedup()%s.toList()",
-                schemaIdQuery,
-                activeQuery + nameQuery + viewQuery,
-                ".count()"
-        );
-
+            queryCountStr = String.format("g.tx().commit();g.V().has('__typeName',within('rdbms_db','hive_db'))%s.inE().outV().has('__typeName', within('rdbms_table','hive_table')).has('__guid')%s.order().by('__timestamp').dedup()%s.toList()",
+                    schemaIdQuery,
+                    activeQuery + nameQuery + viewQuery,
+                    ".count()"
+            );
+        }
         List<AtlasVertex> tables = (List) graph.executeGremlinScript(queryStr, false);
         for (AtlasVertex table : tables) {
             TableEntity tb = new TableEntity();
@@ -981,7 +989,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                 AtlasEntity entity = dbEntityWithExtInfo.getEntity();
                 tb.setName(entity.getAttribute("name").toString());
                 tb.setHiveTable(entity.getTypeName().toLowerCase().contains("hive"));
-                tb.setTableType(String.valueOf(entity.getAttribute(tb.isHiveTable() ? "tableType":"type")));
+                tb.setTableType(String.valueOf(entity.getAttribute(tb.isHiveTable() ? "tableType" : "type")));
                 if (Boolean.parseBoolean(String.valueOf(entity.getAttribute(temporary))) == true) {
                     tb.setVirtualTable(true);
                 } else {
@@ -1000,7 +1008,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         tablePageResult.setTotalSize(Integer.parseInt(num.get(0).toString()));
         return tablePageResult;
     }
-
 
 
     public PageResult<Database> getDatabaseByQuery(String queryDb, boolean active, long offset, long limit, String dbs) throws AtlasBaseException {

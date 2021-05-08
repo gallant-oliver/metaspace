@@ -41,6 +41,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -72,10 +73,10 @@ public interface UserGroupDAO {
             "<if test='search!=null'>" +
             " and u.name like '%${search}%' ESCAPE '/' " +
             "</if>" +
-            "<if test='sortBy!=null'>" +
+            "<if test=\"sortBy!=null and sortBy!=''\">" +
             "order by ${sortBy} " +
             "</if>" +
-            "<if test='order!=null '>" +
+            "<if test=\"order!=null and order!=''\">" +
             " ${order} " +
             "</if>" +
             "<if test='limit!=-1'>" +
@@ -87,7 +88,7 @@ public interface UserGroupDAO {
             "</script>")
     public List<UserGroupListAndSearchResult> getUserGroupSortByUpdateTime(@Param("tenantId") String tenantId, @Param("offset") int offset, @Param("limit") int limit,
                                                                            @Param("sortBy")String sortBy, @Param("order") String order, @Param("search") String search,
-                                                                           @Param("ids")List<String> ids);
+                                                                           @Param("ids")List<String> ids) throws SQLException;
 
 
     @Select("select username from users where userid=#{userId}")
@@ -269,6 +270,15 @@ public interface UserGroupDAO {
             "        </if>" +
             "        )" +
             "    </when>" +
+            "    <when test=\"categoryType==5\">" +
+            "        guid from ( " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_atomic_info where  tenant_id=#{tenantId}  " +
+            "        union  " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_derive_info where  tenant_id=#{tenantId}  " +
+            "        union  " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_composite_info where  tenant_id=#{tenantId}  " +
+            "        ) adc where adc.rn=1 " +
+            "    </when>" +
             "    <when test=\"categoryType==1\">" +
             "        categoryguid as guid from business_relation " +
             "    </when>" +
@@ -284,9 +294,28 @@ public interface UserGroupDAO {
             "</choose>" +
             " group by guid" +
             ") item on category.guid=item.guid " +
-            "where categoryType=#{categoryType} and tenantid=#{tenantId}" +
+            " where categoryType=#{categoryType} and tenantid=#{tenantId}" +
             "</script>")
     public List<RoleModulesCategories.Category> getAllCategorysAndCount(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId,@Param("dbNames") List<String> dbNames);
+
+    @Select("select DISTINCT t2.guid, t2.name, t2.level, t2.qualifiedname, t2.parentcategoryguid, t2.upbrothercategoryguid, t2.downbrothercategoryguid,t2.description, t2.safe " +
+            "FROM category_group_relation t1 JOIN category t2 ON t1.category_id = t2.guid\n" +
+            "JOIN user_group t3 ON (t1.group_id = t3.id and t3.valid = true)\n" +
+            "JOIN user_group_relation t4 ON t3.id = t4.group_id\n" +
+            "WHERE t2.tenantid = #{tenantId}\n" +
+            "AND t3.tenant = #{tenantId}\n" +
+            "AND t4.user_id = #{userId}\n" +
+            "AND t2.categorytype = 0")
+    public List<CategoryPrivilegeV2> getUserCategories(@Param("tenantId") String tenantId, @Param("userId") String userId);
+
+    @Select({"<script>",
+            "select guid, name, level, qualifiedname, parentcategoryguid, upbrothercategoryguid, downbrothercategoryguid,description, safe ",
+            " from category where tenantid = #{tenantId} and categorytype = 0 and guid in ",
+            "<foreach collection='guids' item='guid' index='index' separator=',' open='(' close=')'>",
+            "#{guid}",
+            "</foreach>",
+            "</script>"})
+    public List<CategoryPrivilegeV2> getUserCategoriesByIds(@Param("guids") List<String> guids, @Param("tenantId")String tenantId);
 
     @Select("select c.guid from category_group_relation g join category c on g.category_id=c.guid where g.group_id=#{userGroupId} and c.categorytype=#{categoryType} and c.tenantid=#{tenantId} and g.read=true")
     public List<String> getCategorysByTypeIds(@Param("userGroupId") String userGroupId, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
@@ -454,6 +483,14 @@ public interface UserGroupDAO {
     //更新用户组
     @Update("update user_group set updatetime=#{updateTime},authorize_user=#{userId},authorize_time=#{updateTime} where id=#{groupId}")
     public int updateCategory(@Param("groupId") String groupId, @Param("updateTime") Timestamp updateTime,@Param("userId") String userId);
+
+    //批量更新用户组
+    @Update("<script>update user_group set updatetime=#{updateTime},authorize_user=#{userId},authorize_time=#{updateTime} where id in" +
+            "<foreach item='groupId' index='index' collection='groupIds' open='(' separator=',' close=')'>" +
+            "#{groupId}" +
+            "</foreach>" +
+            "</script>")
+    public int updateCategorys(@Param("groupIds") List<String> groupIds, @Param("updateTime") Timestamp updateTime,@Param("userId") String userId);
 
     @Select("select guid from category where categorytype=#{categoryType} and level = 1 adn tenantid=#{tenantId}")
     public List<String> getTopCategoryGuid(int categoryType,@Param("tenantId") String tenantId);
@@ -943,7 +980,10 @@ public interface UserGroupDAO {
             " select count(*) count," +
             "<choose>" +
             "    <when test=\"categoryType==0\">" +
-            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and (dbname is null " +
+            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and " +
+            "        tableinfo.status='ACTIVE' and "+
+            "        ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') and " +
+            "        (dbname is null " +
             "        <if test='dbNames!=null and dbNames.size()>0'>" +
             "          or dbname in " +
             "          <foreach item='item' index='index' collection='dbNames'" +
@@ -952,6 +992,15 @@ public interface UserGroupDAO {
             "          </foreach>" +
             "        </if>" +
             "        )" +
+            "    </when>" +
+            "    <when test=\"categoryType==5\">" +
+            "        guid from ( " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_atomic_info where  tenant_id=#{tenantId}  " +
+            "        union  " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_derive_info where  tenant_id=#{tenantId}  " +
+            "        union  " +
+            "        select index_field_id as guid,index_id ,row_number() over(partition by index_id order by version desc) as rn from index_composite_info where  tenant_id=#{tenantId}  " +
+            "        ) adc where adc.rn=1 " +
             "    </when>" +
             "    <when test=\"categoryType==1\">" +
             "        categoryguid as guid from business_relation " +
@@ -967,7 +1016,7 @@ public interface UserGroupDAO {
             "    </otherwise>" +
             "</choose>" +
             " group by guid" +
-            ") item on c.guid=item.guid " +
+            " )item on c.guid=item.guid " +
             " where c.tenantid=#{tenantId} and c.categorytype=#{categoryType}" +
             " and g.group_id in " +
             "    <foreach item='id' index='index' collection='userGroupIds'" +

@@ -44,6 +44,15 @@ public class CategoryEntity implements Serializable {
     // Category hierarchy links
     private AtlasRelatedCategoryHeader parentCategory;
     private Set<AtlasRelatedCategoryHeader> childrenCategories;
+    private String code;
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
 
     public String getSafe() {
         return safe;

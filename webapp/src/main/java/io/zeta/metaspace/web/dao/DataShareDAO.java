@@ -30,6 +30,7 @@ import org.apache.ibatis.annotations.*;
 import org.apache.ibatis.type.EnumOrdinalTypeHandler;
 import org.apache.ibatis.type.JdbcType;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -159,24 +160,42 @@ public interface DataShareDAO {
     @Select("select fields from apiInfo where path=#{path}")
     public Object getAPIFields(@Param("path")String path);
 
+//    @Select({" <script>",
+//             " select count(1)over() total,apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,users.username as keeper,",
+//             " tableInfo.tableName,apiGroup.name as groupName, tableInfo.display_name as tableDisplayName",
+//             " from apiInfo,tableInfo,apiGroup,users where",
+//             " apiInfo.tableGuid in",
+//             " <foreach item='tableGuid' index='index' collection='tableList' separator=',' open='(' close=')'>" ,
+//             " #{tableGuid}",
+//             " </foreach>",
+//             " and apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.tenantid=#{tenantId} ",
+//             " and users.userId=apiInfo.keeper order by apiInfo.updateTime desc",
+//             " <if test='limit != null and limit!=-1'>",
+//             " limit #{limit}",
+//             " </if>",
+//             " <if test='offset != null'>",
+//             " offset #{offset}",
+//             " </if>",
+//             " </script>"})
+//    public List<APIInfoHeader> getTableRelatedAPI(@Param("tableList")List<String> tableList, @Param("limit")int limit,@Param("offset") int offset,@Param("tenantId")String tenantId);
+
     @Select({" <script>",
-             " select count(1)over() total,apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,users.username as keeper,",
-             " tableInfo.tableName,apiGroup.name as groupName, tableInfo.display_name as tableDisplayName",
-             " from apiInfo,tableInfo,apiGroup,users where",
-             " apiInfo.tableGuid in",
-             " <foreach item='tableGuid' index='index' collection='tableList' separator=',' open='(' close=')'>" ,
-             " #{tableGuid}",
-             " </foreach>",
-             " and apiInfo.tableGuid=tableInfo.tableGuid and apiInfo.groupGuid=apiGroup.guid and apiInfo.tenantid=#{tenantId} ",
-             " and users.userId=apiInfo.keeper order by apiInfo.updateTime desc",
-             " <if test='limit != null and limit!=-1'>",
-             " limit #{limit}",
-             " </if>",
-             " <if test='offset != null'>",
-             " offset #{offset}",
-             " </if>",
-             " </script>"})
+            " SELECT COUNT ( 1 ) OVER ( ) total,api.guid,api.name,api.tableguid,users.username AS keeper,tableInfo.tableName,tableInfo.display_name AS tableDisplayName",
+            " FROM api INNER JOIN tableInfo ON api.tableguid=tableinfo.tableguid INNER JOIN users ON users.userId = api.creator",
+            " WHERE api.tenantid=#{tenantId} AND api.tableguid IN",
+            " <foreach item='tableGuid' index='index' collection='tableList' separator=',' open='(' close=')'>",
+            " #{tableGuid}",
+            " </foreach>",
+            " ORDER BY api.updateTime DESC",
+            " <if test='limit != null and limit!=-1'>",
+            " limit #{limit}",
+            " </if>",
+            " <if test='offset != null'>",
+            " offset #{offset}",
+            " </if>",
+            " </script>"})
     public List<APIInfoHeader> getTableRelatedAPI(@Param("tableList")List<String> tableList, @Param("limit")int limit,@Param("offset") int offset,@Param("tenantId")String tenantId);
+
 
     @Select({" <script>",
              " select count(1)over() total,api.guid id,api.name,api.tableGuid,api.status,users.username as creator,",
@@ -191,7 +210,7 @@ public interface DataShareDAO {
              " <foreach item='tableGuid' index='index' collection='tableList' separator=',' open='(' close=')'>" ,
              " #{tableGuid}",
              " </foreach>",
-             " and api.tenantid=#{tenantId} and api.status!='draft' and api.status!='audit' ",
+             " and api.tenantid=#{tenantId} and api.status!='draft' and api.status!='audit' AND api.valid = true ",
              " <if test='!up'>",
              " and api.status!='up'",
              " </if>",
@@ -303,7 +322,7 @@ public interface DataShareDAO {
             "</if>" +
             "</script>")
     public List<ProjectInfo> searchProject(@Param("parameters")Parameters parameters,@Param("userId")String userId,
-                                           @Param("tenantId")String tenantId,@Param("ids")List<String> ids);
+                                           @Param("tenantId")String tenantId,@Param("ids")List<String> ids) throws SQLException;
 
     @Update("update project set name=#{name},description=#{description},manager=#{manager} where id=#{id}")
     public int updateProject(ProjectInfo project);
@@ -578,7 +597,7 @@ public interface DataShareDAO {
              " </if>",
              " </script>"})
     public List<ApiHead> searchApi(@Param("param") Parameters parameters,@Param("projectId") String projectId,@Param("categoryId")String categoryId,
-                                   @Param("status")String status,@Param("approve")Boolean approve,@Param("tenantId")String tenantId);
+                                   @Param("status")String status,@Param("approve")Boolean approve,@Param("tenantId")String tenantId) throws SQLException;
 
     @Select("<script>" +
             " select api.guid id,api.description,api.name,api.approve,api.status,api.createtime,api.categoryguid categoryId,api.version from api join " +
@@ -729,4 +748,35 @@ public interface DataShareDAO {
             " </foreach>" +
             "</script>")
     public int getApiUpNumByProjects(@Param("projectIds")List<String> projectIds);
+
+    @Select("SELECT DISTINCT tableInfo.dbName FROM table_relation,tableInfo, data_source WHERE " +
+            "table_relation.categoryGuid IN (SELECT DISTINCT t2.guid FROM category_group_relation t1 " +
+            "JOIN category t2 ON t1.category_id = t2.guid JOIN user_group t3 ON (t1.group_id = t3.id AND t3.valid = TRUE )" +
+            "JOIN user_group_relation t4 ON t3. ID = t4.group_id WHERE t2.tenantid = t3.tenant AND t3.tenant = #{tenantId} " +
+            "AND t4.user_id = #{userId} AND t2.categorytype = 0) " +
+            "AND tableInfo.tableGuid = table_relation.tableGuid " +
+            "AND tableinfo.source_id = data_source.source_id " +
+            "AND tableInfo.status = 'ACTIVE' " +
+            "AND tableinfo.source_id = #{sourceId}")
+    List<String> getUserRelationDatabases(@Param("tenantId") String tenantId,@Param("sourceId") String sourceId,@Param("userId") String userId);
+
+    @Select("SELECT DISTINCT tableInfo.dbName FROM table_relation, tableInfo " +
+            "WHERE table_relation.categoryGuid in(SELECT DISTINCT t2.guid FROM " +
+            "category_group_relation t1 JOIN category t2 ON t1.category_id = t2.guid " +
+            "JOIN user_group t3 ON ( t1.group_id = t3. ID AND t3. VALID = TRUE) " +
+            "JOIN user_group_relation t4 ON t3. ID = t4.group_id WHERE t2.tenantid = t3.tenant " +
+            "AND t3.tenant = #{tenantId} AND t4.user_id = #{userId} AND t2.categorytype = 0) " +
+            "AND tableInfo.tableGuid = table_relation.tableGuid " +
+            "AND tableInfo.status = 'ACTIVE' " +
+            "AND tableinfo.source_id = 'hive'")
+
+    List<String> getUserHiveDatabases(@Param("tenantId") String tenantId, @Param("userId") String userId);
+
+    @Select("select DISTINCT tableInfo.tablename from tableinfo where tableinfo.status = 'ACTIVE' and tableinfo.source_id = #{sourceId} and tableinfo.dbname = #{database}")
+    List<String> getDatabaseTables(@Param("sourceId") String sourceId, @Param("database") String database);
+
+    @Select("select DISTINCT column_info.column_name from tableinfo join column_info on tableinfo.tableguid = column_info.table_guid " +
+            "where tableinfo.status = 'ACTIVE' and tableinfo.source_id = #{sourceId} and tableinfo.dbname = #{database} and tableinfo.tablename = #{tableName}")
+    List<String> getUserColumns(@Param("sourceId") String sourceId, @Param("database") String database, @Param("tableName") String tableName);
+
 }

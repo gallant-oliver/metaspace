@@ -25,7 +25,7 @@
     <parent>
         <groupId>org.apache.atlas</groupId>
         <artifactId>apache-atlas</artifactId>
-        <version>1.10.0</version>
+        <version>1.11.0</version>
     </parent>
     <artifactId>atlas-webapp</artifactId>
     <description>Apache Atlas Web Application</description>
@@ -762,6 +762,13 @@
             <groupId>com.alibaba</groupId>
             <artifactId>druid</artifactId>
             <version>1.1.12</version>
+        </dependency>
+
+        <!--Java Bean映射器-->
+        <dependency>
+            <groupId>net.sf.dozer</groupId>
+            <artifactId>dozer</artifactId>
+            <version>5.5.1</version>
         </dependency>
 
     </dependencies>

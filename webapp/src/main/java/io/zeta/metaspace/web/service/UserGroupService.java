@@ -40,25 +40,27 @@ import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
 import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
-import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
+import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.service.dataquality.WarningGroupService;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.CategoryUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
+
 
 
 /**
@@ -80,7 +82,9 @@ public class UserGroupService {
     TenantService tenantService;
     @Autowired
     CategoryDAO categoryDAO;
-
+    @Autowired
+    RelationDAO relationDAO;
+    private static final Logger LOG = LoggerFactory.getLogger(UserGroupService.class);
     public PageResult<UserGroupListAndSearchResult> getUserGroupListAndSearch(String tenantId, int offset, int limit, String sortBy, String order, String query) throws AtlasBaseException {
         PageResult<UserGroupListAndSearchResult> commonResult = new PageResult<>();
 
@@ -93,8 +97,13 @@ public class UserGroupService {
         securitySearch.setTenantId(tenantId);
         PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
         List<String> userIds = userAndModules.getLists().stream().map(UserAndModule::getAccountGuid).collect(Collectors.toList());
-
-        List<UserGroupListAndSearchResult> lists = userGroupDAO.getUserGroupSortByUpdateTime(tenantId, offset, limit, sortBy,order, query,userIds);
+        List<UserGroupListAndSearchResult> lists;
+        try {
+            lists = userGroupDAO.getUserGroupSortByUpdateTime(tenantId, offset, limit, sortBy, order, query, userIds);
+        } catch (SQLException e) {
+            LOG.error("SQL执行异常", e);
+            lists = new ArrayList<>();
+        }
 
 
         if (lists == null || lists.size() == 0) {
@@ -611,6 +620,7 @@ public class UserGroupService {
 
     public List<CategoryPrivilege> getAdminCategory(int categorytype,String tenantId) throws AtlasBaseException {
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
+
         List<RoleModulesCategories.Category> allCategorys;
         if (categorytype==0){
             List<String> dbNames = tenantService.getDatabase(tenantId);
@@ -883,13 +893,13 @@ public class UserGroupService {
      * @param tenantId
      * @throws SQLException
      */
-    public List<CategoryPrivilegeV2> updatePrivileges(CategoryPrivilegeV2 category,String userGroupId,int categoryType,String tenantId,boolean isChild) throws AtlasBaseException, SQLException {
+    public List<CategoryPrivilegeV2> updatePrivileges(List<CategoryPrivilegeV2> category,String userGroupId,int categoryType,String tenantId,boolean isChild) throws AtlasBaseException, SQLException {
         return updatePrivileges(category,userGroupId,categoryType,tenantId,isChild,new ArrayList<>());
     }
 
     /**
      * 变更目录权限
-     * @param category
+     * @param categorys
      * @param userGroupId
      * @param categoryType
      * @param tenantId
@@ -899,74 +909,83 @@ public class UserGroupService {
      * @throws SQLException
      * @throws AtlasBaseException
      */
-    @Transactional(rollbackFor=Exception.class)
-    public List<CategoryPrivilegeV2> updatePrivileges(CategoryPrivilegeV2 category,String userGroupId,int categoryType,String tenantId,boolean isChild,List<String> updateIds) throws SQLException, AtlasBaseException {
-        CategoryEntityV2 categoryByGuid = categoryDAO.queryByGuid(category.getGuid(), tenantId);
+    @Transactional(rollbackFor = Exception.class)
+    public List<CategoryPrivilegeV2> updatePrivileges(List<CategoryPrivilegeV2> categorys, String userGroupId, int categoryType, String tenantId, boolean isChild, List<String> updateIds) throws SQLException, AtlasBaseException {
+        //获取所有的guids
+        List<String> guids = categorys.stream().map(category -> category.getGuid()).collect(Collectors.toList());
+        //根据guids获取所有的目录实体
+        List<CategoryEntityV2> categoryEntitysByGuids = categoryDAO.queryCategoryEntitysByGuids(guids, tenantId);
+        for (CategoryPrivilegeV2 category : categorys) {
+            categoryEntitysByGuids.forEach(s -> {
+                if (category.getGuid().equals(s.getGuid())) {
+                    //权限校验
+                    privilegeCheck(category, s.getParentCategoryGuid(), userGroupId);
+                }
+            });
+        }
 
-        //权限校验
-        privilegeCheck(category,categoryByGuid.getParentCategoryGuid(),userGroupId);
-
-        ArrayList<String> categoryList = Lists.newArrayList(category.getGuid());
-        List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getChildCategoriesPrivileges(categoryList,userGroupId, categoryType, tenantId);
+        ArrayList<String> categoryList = Lists.newArrayList(guids);
+        List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getChildCategoriesPrivileges(categoryList, userGroupId, categoryType, tenantId);
         List<String> childIds = childCategoriesPrivileges.stream().map(categoryPrivilegeV2 -> categoryPrivilegeV2.getGuid()).collect(Collectors.toList());
-        for (String updateId:updateIds){
-            if (childIds.contains(updateId)){
+        for (String updateId : updateIds) {
+            if (childIds.contains(updateId)) {
                 categoryList.add(updateId);
             }
         }
-        if (!category.getRead()){
-            if (isChild){
-                for (CategoryPrivilegeV2 childCategory:childCategoriesPrivileges){
+        if (categorys.size() != 0 && !categorys.get(0).getRead()) {
+            if (isChild) {
+                for (CategoryPrivilegeV2 childCategory : childCategoriesPrivileges) {
                     childCategory.setRead(false);
                     childCategory.setEditCategory(false);
                     childCategory.setEditItem(false);
                 }
-                userGroupDAO.deleteCategoryPrivilege(childIds,userGroupId);
+                userGroupDAO.deleteCategoryPrivilege(childIds, userGroupId);
                 return childCategoriesPrivileges;
-            }else{
-                userGroupDAO.deleteCategoryPrivilege(categoryList,userGroupId);
-                return Lists.newArrayList(category);
+            } else {
+                userGroupDAO.deleteCategoryPrivilege(guids, userGroupId);
+                return categorys;
             }
         }
         List<String> updateCategory = new ArrayList<>();
         List<String> insertCategory = new ArrayList<>();
-        for (CategoryPrivilegeV2 childCategory:childCategoriesPrivileges){
-            if (childCategory.getRead()==null){
-                insertCategory.add(childCategory.getGuid());
-                childCategory.setRead(true);
-                childCategory.setEditCategory(category.getEditCategory());
-                childCategory.setEditItem(category.getEditItem());
-            }else if(isChild){
-                updateCategory.add(childCategory.getGuid());
-                childCategory.setRead(true);
-                childCategory.setEditCategory(category.getEditCategory());
-                childCategory.setEditItem(category.getEditItem());
-            }else{
-                updateCategory.add(childCategory.getGuid());
-                childCategory.setRead(true);
-                childCategory.setEditCategory(category.getEditCategory()||childCategory.getEditCategory());
-                childCategory.setEditItem(category.getEditItem()||childCategory.getEditItem());
+        if (categorys.size() >0 && categorys != null) {
+            for (CategoryPrivilegeV2 childCategory : childCategoriesPrivileges) {
+                if (childCategory.getRead() == null) {
+                    insertCategory.add(childCategory.getGuid());
+                    childCategory.setRead(true);
+                    childCategory.setEditCategory(categorys.get(0).getEditCategory());
+                    childCategory.setEditItem(categorys.get(0).getEditItem());
+                } else if (isChild) {
+                    updateCategory.add(childCategory.getGuid());
+                    childCategory.setRead(true);
+                    childCategory.setEditCategory(categorys.get(0).getEditCategory());
+                    childCategory.setEditItem(categorys.get(0).getEditItem());
+                } else {
+                    updateCategory.add(childCategory.getGuid());
+                    childCategory.setRead(true);
+                    childCategory.setEditCategory(categorys.get(0).getEditCategory() || childCategory.getEditCategory());
+                    childCategory.setEditItem(categorys.get(0).getEditItem() || childCategory.getEditItem());
+                }
+                if (childCategory.getGuid().equals(categorys.get(0).getGuid())) {
+                    childCategory.setRead(true);
+                    childCategory.setEditCategory(categorys.get(0).getEditCategory());
+                    childCategory.setEditItem(categorys.get(0).getEditItem());
+                }
             }
-            if (childCategory.getGuid().equals(category.getGuid())){
-                childCategory.setRead(true);
-                childCategory.setEditCategory(category.getEditCategory());
-                childCategory.setEditItem(category.getEditItem());
+            if (updateCategory.size() != 0) {
+                if (isChild) {
+                    userGroupDAO.updateMandatoryChildCategoryPrivileges(updateCategory, userGroupId, categorys.get(0));
+                } else {
+                    userGroupDAO.updateChildCategoryPrivileges(updateCategory, userGroupId, categorys.get(0));
+                }
             }
-        }
-
-        if (updateCategory.size()!=0){
-            if (isChild){
-                userGroupDAO.updateMandatoryChildCategoryPrivileges(updateCategory,userGroupId,category);
-            }else{
-                userGroupDAO.updateChildCategoryPrivileges(updateCategory,userGroupId,category);
+            if (insertCategory.size() != 0) {
+                userGroupDAO.addCategoryPrivileges(insertCategory, userGroupId, categorys.get(0));
             }
+            userGroupDAO.updateCategoryPrivileges(categoryList, userGroupId, categorys.get(0));
         }
-        if (insertCategory.size()!=0){
-            userGroupDAO.addCategoryPrivileges(insertCategory,userGroupId,category);
-        }
-        userGroupDAO.updateCategoryPrivileges(categoryList,userGroupId,category);
         Timestamp currentTime = new Timestamp(System.currentTimeMillis());
-        userGroupDAO.updateCategory(userGroupId, currentTime,AdminUtils.getUserData().getUserId());
+        userGroupDAO.updateCategory(userGroupId, currentTime, AdminUtils.getUserData().getUserId());
         return childCategoriesPrivileges;
     }
 
@@ -1030,7 +1049,6 @@ public class UserGroupService {
         if (parentCategory.getEditItem()&&!category.getEditItem()){
             category.setEditItem(true);
         }
-
     }
 
     /**
@@ -1303,14 +1321,23 @@ public class UserGroupService {
             }
             //获取用户组对应的权限目录
             List<String> dbNames;
+            List<String> allDBNames = new ArrayList<>();
             if (type==0) {
                 dbNames = tenantService.getDatabase(tenantId);
             }else{
                 dbNames=new ArrayList<>();
             }
-            userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type,dbNames);
-            List<String> categoryIds = userCategories.stream().map(category->category.getGuid()).collect(Collectors.toList());
-
+            allDBNames.addAll(dbNames);
+            userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type, allDBNames);
+            List<String> categoryIds = userCategories.stream().map(category -> category.getGuid()).collect(Collectors.toList());
+            if (type == 0) {
+                List<String> RMDBNames = relationDAO.queryRDBNameByCategoryGuidV2(tenantId);
+                //去重
+                allDBNames.addAll(RMDBNames);
+                Set<String> set = new HashSet(allDBNames);
+                allDBNames = new ArrayList<>(set);
+                userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type, allDBNames);
+            }
             if (categoryIds==null||categoryIds.size()==0){
                 return userMap;
             }
@@ -1473,25 +1500,28 @@ public class UserGroupService {
      * @throws SQLException
      * @throws AtlasBaseException
      */
-    public void addUserGroupPrivilege(UpdateCategory category,String tenantId,int type) throws SQLException, AtlasBaseException {
+    public void addUserGroupPrivilege(UpdateCategory category, String tenantId, int type) throws SQLException, AtlasBaseException {
         List<String> removeCategoryId = new ArrayList<>();
         List<String> categoryIds = category.getGuid();
-        for (String guid:categoryIds){
-            CategoryEntityV2 categoryByGuid = categoryDAO.queryByGuid(guid, tenantId);
-            if (categoryIds.contains(categoryByGuid.getParentCategoryGuid())){
-                removeCategoryId.add(guid);
+        List<CategoryEntityV2> categoryEntitysByGuids = categoryDAO.queryCategoryEntitysByGuids(categoryIds, tenantId);
+        categoryEntitysByGuids.stream().forEach(categoryParent -> {
+            if (categoryIds.contains(categoryParent.getParentCategoryGuid())){
+                removeCategoryId.add(categoryParent.getGuid());
             }
-        }
+        });
+
         categoryIds.removeAll(removeCategoryId);
-        for (String groupId:category.getUserGroupIds()){
-            for (String guid:categoryIds){
+        for (String groupId : category.getUserGroupIds()) {
+            List<CategoryPrivilegeV2> categoryPrivilegeV2List = new ArrayList<>();
+            for (String guid : categoryIds) {
                 CategoryPrivilegeV2 categoryPrivilegeV2 = new CategoryPrivilegeV2(category);
                 categoryPrivilegeV2.setGuid(guid);
-                updatePrivileges(categoryPrivilegeV2,groupId,type,tenantId,category.isChild(),removeCategoryId);
+                categoryPrivilegeV2List.add(categoryPrivilegeV2);
             }
-            Timestamp currentTime = new Timestamp(System.currentTimeMillis());
-            userGroupDAO.updateCategory(groupId, currentTime,AdminUtils.getUserData().getUserId());
+            updatePrivileges(categoryPrivilegeV2List, groupId, type, tenantId, category.isChild(), removeCategoryId);
         }
+        Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+        userGroupDAO.updateCategorys(category.getUserGroupIds(), currentTime, AdminUtils.getUserData().getUserId());
     }
 
     /**

@@ -44,6 +44,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -73,7 +74,7 @@ public interface TaskManageDAO {
              " <if test='my==0'>",
              " and data_quality_task.creator=#{creator}",
              " </if>",
-             " order by data_quality_task.number",
+             " order by data_quality_task.create_time desc",
              " <if test='params.limit!=null and params.limit!= -1'>",
              " limit #{params.limit}",
              " </if>",
@@ -81,7 +82,7 @@ public interface TaskManageDAO {
              " offset #{params.offset}",
              " </if>",
              " </script>"})
-    public List<TaskHeader> getTaskList(@Param("my") Integer my, @Param("creator") String creator, @Param("params") Parameters params,@Param("tenantId") String tenantId);
+    public List<TaskHeader> getTaskList(@Param("my") Integer my, @Param("creator") String creator, @Param("params") Parameters params,@Param("tenantId") String tenantId) throws SQLException;
 
     /**
      * 任务总数
@@ -213,8 +214,8 @@ public interface TaskManageDAO {
      * @param task
      * @return
      */
-    @Insert({" insert into data_quality_task(id,name,level,description,cron_expression,enable,start_time,end_time,create_time,update_time,creator,updater,delete,orange_warning_total_count,red_warning_total_count,error_total_count,execution_count,tenantId,number) ",
-             " values(#{task.id},#{task.name},#{task.level},#{task.description},#{task.cronExpression},#{task.enable},#{task.startTime},#{task.endTime},#{task.createTime},#{task.updateTime},#{task.creator},#{task.updater},#{task.delete},#{task.orangeWarningTotalCount},#{task.redWarningTotalCount},#{task.errorTotalCount},#{task.executionCount},#{tenantId},(select (case when max(number) is null then 0 else max(number) end)+1 from data_quality_task where tenantid=#{tenantId}))"})
+    @Insert({" insert into data_quality_task(id,name,level,description,cron_expression,enable,start_time,end_time,create_time,update_time,creator,updater,delete,general_warning_total_count,orange_warning_total_count,red_warning_total_count,error_total_count,execution_count,tenantId,number) ",
+             " values(#{task.id},#{task.name},#{task.level},#{task.description},#{task.cronExpression},#{task.enable},#{task.startTime},#{task.endTime},#{task.createTime},#{task.updateTime},#{task.creator},#{task.updater},#{task.delete},#{task.generalWarningTotalCount},#{task.orangeWarningTotalCount},#{task.redWarningTotalCount},#{task.errorTotalCount},#{task.executionCount},#{tenantId},(select (case when max(number) is null then 0 else max(number) end)+1 from data_quality_task where tenantid=#{tenantId}))"})
     public int addDataQualityTask(@Param("task")DataQualityTask task,@Param("tenantId")String tenantId);
 
 
@@ -277,8 +278,17 @@ public interface TaskManageDAO {
      * @param taskId
      * @return
      */
-    @Select("select id,name as taskName,level,description,'TID-'||number as taskID, start_time as startTime,end_time as endTime,cron_expression as cronExpression,pool,tenantid from data_quality_task where id=#{taskId}")
+    @Select("select id,name as taskName,level,description,'TID-'||number as taskID, start_time as startTime,end_time as endTime," +
+            "cron_expression as cronExpression,pool,tenantid from data_quality_task where id=#{taskId}")
     public EditionTaskInfo getTaskInfo(@Param("taskId")String taskId);
+
+    /**
+     * 任务详情-任务信息
+     * @param taskId
+     * @return
+     */
+    @Select("select current_execution_status from data_quality_task where id=#{taskId}")
+    public Integer getTaskStatus(@Param("taskId")String taskId);
 
     /**
      * 任务详情-子任务信息
@@ -412,7 +422,10 @@ public interface TaskManageDAO {
      * 添加任务执行信息
      * @param taskExecute
      */
-    @Insert("insert into data_quality_task_execute(id,task_id,percent,execute_status,executor,execute_time,orange_warning_count,red_warning_count,rule_error_count,number,counter,warning_status,error_status)values(#{task.id},#{task.taskId},#{task.percent},#{task.executeStatus},#{task.executor},#{task.executeTime},#{task.orangeWarningCount},#{task.redWarningCount},#{task.ruleErrorCount},#{task.number},#{task.counter},#{task.warningStatus},#{task.errorStatus})")
+    @Insert("insert into data_quality_task_execute(id,task_id,percent,execute_status,executor,execute_time,general_warning_count,orange_warning_count,red_warning_count," +
+            "rule_error_count,number,counter,warning_status,error_status)" +
+            "values(#{task.id},#{task.taskId},#{task.percent},#{task.executeStatus},#{task.executor},#{task.executeTime},#{task.generalWarningCount},#{task.orangeWarningCount},#{task.redWarningCount}," +
+            "#{task.ruleErrorCount},#{task.number},#{task.counter},#{task.warningStatus},#{task.errorStatus})")
     public void initTaskExecuteInfo(@Param("task")DataQualityTaskExecute taskExecute);
 
     /**
@@ -507,8 +520,17 @@ public interface TaskManageDAO {
      * @param status
      * @return
      */
-    @Update("update data_quality_task_execute set error_status=#{status}")
+    @Update("update data_quality_task_execute set error_status=#{status} where id = #{ruleExecuteId}")
     public int updateTaskExecuteErrorStatus(@Param("ruleExecuteId")String id, @Param("status")Integer status);
+
+    /**
+     * 更新任务执行异常状态
+     * @param id
+     * @param status
+     * @return
+     */
+    @Update("update data_quality_task_rule_execute set error_status=#{status} where id = #{id}")
+    public int updateRuleExecuteErrorStatus(@Param("id")String id, @Param("status")Integer status);
 
     /**
      * 更新任务红色告警数量
@@ -517,6 +539,15 @@ public interface TaskManageDAO {
      */
     @Update("update data_quality_task_execute set red_warning_count=red_warning_count+1 where id=#{id}")
     public int updateTaskExecuteRedWarningNum(@Param("id")String id);
+
+    /**
+     * 更新任务红色告警数量
+     * @param id
+     * @return
+     */
+    @Update("update data_quality_task_execute set general_warning_count=general_warning_count+1 where id=#{id}")
+    public int updateTaskExecuteGeneralWarningNum(@Param("id")String id);
+
 
     /**
      * 更新执行失败规则数量
@@ -532,8 +563,8 @@ public interface TaskManageDAO {
      * @param msg
      * @return
      */
-    @Update("update data_quality_task_execute set error_msg=#{msg} where id=#{id}")
-    public int updateTaskExecuteErrorMsg(@Param("id")String id, @Param("msg")String msg);
+    @Update("update data_quality_task_rule_execute set error_msg=#{msg} where id=#{id}")
+    public int updateRuleExecuteErrorMsg(@Param("id")String id, @Param("msg")String msg);
 
     /**
      * 更新任务规则执行错误信息
@@ -541,8 +572,9 @@ public interface TaskManageDAO {
      * @param msg
      * @return
      */
-    @Update("update data_quality_task_rule_execute set error_msg=#{msg} where id=#{id}")
-    public int updateTaskRuleExecutionErrorMsg(@Param("id")String id, @Param("msg")String msg);
+    @Update("update data_quality_task_execute set error_msg=#{msg} where id=#{id}")
+    public int updateTaskExecutionErrorMsg(@Param("id")String id, @Param("msg")String msg);
+
 
     /**
      * 更新任务执行耗时
@@ -618,7 +650,7 @@ public interface TaskManageDAO {
     @Select("select rule_type from data_quality_rule_template where id=#{ruleId} and tenantid=#{tenantId}")
     public String getRuleTypeCodeByRuleId(@Param("ruleId")String id,@Param("tenantId")String tenantId);
 
-    @Select("select id as taskId,name as taskName,level,description,execution_count as executeCount,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,error_total_count as errorTotalCount,start_time as startTime,end_time as endTime,pool from data_quality_task where id=#{taskId}")
+    @Select("select id as taskId,name as taskName,level,description,execution_count as executeCount,general_warning_total_count as generalWarningTotalCount,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,error_total_count as errorTotalCount,start_time as startTime,end_time as endTime,pool from data_quality_task where id=#{taskId}")
     public TaskExecutionReport getTaskExecutionInfo(@Param("taskId")String id);
 
     @Select({" <script>",
@@ -672,7 +704,7 @@ public interface TaskManageDAO {
      * @param id
      * @return
      */
-    @Select("select id as executionId,number,orange_warning_count as orangeWarningCount,red_warning_count as redWarningCount,rule_error_count as errorCount,execute_time as executeTime from data_quality_task_execute where task_id=#{taskId} order by executeTime desc")
+    @Select("select id as executionId,number,orange_warning_count as orangeWarningCount,red_warning_count as redWarningCount,general_warning_count as generalWarningCount,rule_error_count as errorCount,execute_time as executeTime from data_quality_task_execute where task_id=#{taskId} order by executeTime desc")
     public List<TaskExecutionReport.ExecutionRecord> getTaskExecutionRecord(@Param("taskId")String id);
 
     /**
@@ -698,6 +730,14 @@ public interface TaskManageDAO {
      */
     @Update("update data_quality_task set red_warning_total_count=red_warning_total_count+1 where id=#{taskId}")
     public int updateTaskRedWarningCount(@Param("taskId")String id);
+
+    /**
+     * 更新任务红色告警总量
+     * @param id
+     * @return
+     */
+    @Update("update data_quality_task set general_warning_total_count=general_warning_total_count+1 where id=#{taskId}")
+    public int updateTaskGeneralWarningCount(@Param("taskId")String id);
 
     /**
      * 更新任务异常执行总量

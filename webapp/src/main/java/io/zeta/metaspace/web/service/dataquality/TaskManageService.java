@@ -41,8 +41,6 @@ import io.zeta.metaspace.model.dataquality2.ErrorData;
 import io.zeta.metaspace.model.dataquality2.ExecutionLog;
 import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
 import io.zeta.metaspace.model.dataquality2.ExecutionReportData;
-import io.zeta.metaspace.model.dataquality2.HiveNumericType;
-import io.zeta.metaspace.model.dataquality2.ObjectType;
 import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleHeader;
 import io.zeta.metaspace.model.dataquality2.RuleTemplateType;
@@ -61,13 +59,11 @@ import io.zeta.metaspace.model.metadata.ColumnParameters;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.security.Pool;
 import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.utils.GsonUtils;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
-import io.zeta.metaspace.web.dao.dataquality.RuleTemplateDAO;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.service.BusinessService;
 import io.zeta.metaspace.web.service.DataShareService;
@@ -86,9 +82,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FileUtils;
-import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.tinkerpop.shaded.minlog.Log;
 import org.quartz.CronExpression;
@@ -98,15 +92,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import scala.annotation.meta.param;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -155,8 +148,17 @@ public class TaskManageService {
     public PageResult<TaskHeader> getTaskList(Integer my, Parameters parameters,String tenantId) throws AtlasBaseException {
         try {
             String userId = AdminUtils.getUserData().getUserId();
-            List<TaskHeader> list = taskManageDAO.getTaskList(my, userId, parameters,tenantId);
-
+            String query = parameters.getQuery();
+            if (Objects.nonNull(query)) {
+                parameters.setQuery(query.replaceAll("_", "/_").replaceAll("%", "/%"));
+            }
+            List<TaskHeader> list;
+            try {
+                list = taskManageDAO.getTaskList(my, userId, parameters, tenantId);
+            } catch (SQLException e) {
+                LOG.error("SQL执行异常", e);
+                list = new ArrayList<>();
+            }
             long totalSize = 0;
             if (list.size()!=0){
                 totalSize = list.get(0).getTotal();
@@ -318,6 +320,8 @@ public class TaskManageService {
             dataQualityTask.setDelete(false);
             //是否开启
             dataQualityTask.setEnable(false);
+            //orangeWarningCount
+            dataQualityTask.setGeneralWarningTotalCount(0);
             //orangeWarningCount
             dataQualityTask.setOrangeWarningTotalCount(0);
             //redWarningCount
@@ -633,27 +637,21 @@ public class TaskManageService {
                 String jobGroupName = JOB_GROUP_NAME + qrtzName;
                 String triggerName = TRIGGER_NAME + qrtzName;
                 String triggerGroupName = TRIGGER_GROUP_NAME + qrtzName;
-                DataQualityTask task = taskManageDAO.getQrtzInfoByTemplateId(taskId);
-                String cron = task.getCronExpression();
-                quartzManager.modifyJobTime(qrtzName,jobGroupName,triggerName,triggerGroupName,cron);  //任务重新开启后检查cron是否有变化，如果有需要重新刷新trigger
-                quartzManager.resumeJob(qrtzName, jobGroupName);
+                if(quartzManager.checkExists(triggerName, triggerGroupName)){
+                    DataQualityTask task = taskManageDAO.getQrtzInfoByTemplateId(taskId);
+                    String cron = task.getCronExpression();
+                    quartzManager.modifyJobTime(qrtzName,jobGroupName,triggerName,triggerGroupName,cron);  //任务重新开启后检查cron是否有变化，如果有需要重新刷新trigger
+                    quartzManager.resumeJob(qrtzName, jobGroupName);
+                }else{
+                    addQuartzJob(taskId, qrtzName);
+                }
+
             }
             //设置任务状态为【启用】
             taskManageDAO.updateTaskEnableStatus(taskId, true);
         } catch (Exception e) {
             LOG.error("开启任务失败", e);
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "开启任务失败");
-        }
-    }
-
-    public void startTaskNow(String taskId) throws AtlasBaseException {
-        try {
-            String jobName = taskManageDAO.getJobName(taskId);
-            String jobGroupName = JOB_GROUP_NAME + System.currentTimeMillis();
-            quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class);
-        } catch (Exception e) {
-            LOG.error("开启任务失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "开启任务失败");
         }
     }
 
@@ -671,11 +669,73 @@ public class TaskManageService {
     }
 
 
+    public void startTaskNow(String taskId) throws AtlasBaseException {
+        if(QuartzJob.STATE_MAP.containsKey(taskId)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务正在执行中");
+        }
+        try {
+            String jobName = taskManageDAO.getJobName(taskId);
+            String jobGroupName = JOB_GROUP_NAME + System.currentTimeMillis();
+            quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class);
+            long waitTime = 0L;
+            long taskStartExpire = conf.getLong("task_start_expire", 10) * 1000;
+            long step = 50;
+            while(true){
+                waitTime+=step;
+                Thread.sleep(step);
+                if(QuartzJob.STATE_MAP.containsKey(taskId)){
+                    break;
+                }
+                if(waitTime > taskStartExpire){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "启动任务超时,请重新尝试");
+                }
+            }
+        } catch (AtlasBaseException e) {
+            LOG.error("启动任务失败", e);
+            throw e;
+        }  catch (Exception e) {
+            LOG.error("启动任务失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "启动任务失败");
+        }
+    }
+
+    public void stopTaskNow(String taskId) throws AtlasBaseException, InterruptedException {
+
+        if(!QuartzJob.STATE_MAP.containsKey(taskId)){
+            Integer taskStatus = taskManageDAO.getTaskStatus(taskId);
+            if(taskStatus == null || taskStatus != 1){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "启动没有运行");
+            }
+            taskManageDAO.updateTaskStatus(taskId, 4);
+        } else{
+            QuartzJob.STATE_MAP.put(taskId,true);
+            long waitTime = 0L;
+            long taskStartExpire = conf.getLong("task_cancel_expire", 15) * 1000;
+            long step = 10;
+            while(QuartzJob.STATE_MAP.containsKey(taskId)){
+                waitTime += step;
+                if(taskStartExpire<waitTime){
+                    QuartzJob.STATE_MAP.put(taskId,false);
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "退出任务超时");
+                }
+                Thread.sleep(step);
+            }
+        }
+    }
+
+
 
     public void addQuartzJob(String taskId) throws AtlasBaseException {
+        long currentTime = System.currentTimeMillis();
+        String jobName = String.valueOf(currentTime);
+        addQuartzJob(taskId, jobName);
+        //添加qrtzName
+        taskManageDAO.updateTaskQrtzName(taskId, jobName);
+    }
+
+
+    public void addQuartzJob(String taskId, String jobName) throws AtlasBaseException {
         try {
-            long currentTime = System.currentTimeMillis();
-            String jobName = String.valueOf(currentTime);
             String jobGroupName = JOB_GROUP_NAME + jobName;
             String triggerName = TRIGGER_NAME + jobName;
             String triggerGroupName = TRIGGER_GROUP_NAME + jobName;
@@ -694,8 +754,6 @@ public class TaskManageService {
             } else {
                 quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class);
             }
-            //添加qrtzName
-            taskManageDAO.updateTaskQrtzName(taskId, jobName);
 
         } catch (AtlasBaseException e) {
             throw e;
@@ -735,6 +793,17 @@ public class TaskManageService {
         try {
             TaskExecutionReport taskExecutionInfo = taskManageDAO.getTaskExecutionInfo(taskId);
             List<TaskExecutionReport.ExecutionRecord> executionRecordList = taskManageDAO.getTaskExecutionRecord(taskId);
+            if(!CollectionUtils.isEmpty(executionRecordList)){
+                executionRecordList.stream().forEach(r ->{
+                    if(r.getErrorCount() != null &&  r.getErrorCount() != 0){
+                        r.setCheckResult("异常");
+                    }else if(r.getGeneralWarningCount() != null && r.getGeneralWarningCount() != 0){
+                        r.setCheckResult("不合格");
+                    }else{
+                        r.setCheckResult("合格");
+                    }
+                });
+            }
             taskExecutionInfo.setExecutionRecordList(executionRecordList);
             return taskExecutionInfo;
         } catch (Exception e) {
@@ -833,6 +902,9 @@ public class TaskManageService {
             Boolean filing = taskManageDAO.getFilingStatus(executionId)==0?false:true;
             for (TaskRuleExecutionRecord record : list) {
                 record.setFiling(filing);
+
+                setResultString(record);
+
                 if (map.containsKey(record.getSubtaskId())){
                     map.get(record.getSubtaskId()).getTaskRuleExecutionRecords().add(record);
                 }else{
@@ -891,16 +963,21 @@ public class TaskManageService {
                     }else if (TaskType.CUSTOMIZE.equals(taskType)) {
                         List<CustomizeParam> params = GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<CustomizeParam>>() {
                         }.getType());
-                        //自定义规则，只展示规则名称等基础信息，且只有一条记录
-                        TaskRuleExecutionRecord taskRuleExecutionRecord = new TaskRuleExecutionRecord(record);
+                        List<TaskRuleExecutionRecord> resultList = new ArrayList<>();
                         //取出自定义规则的数据源(保存在其参数字符串中)
                         if(params != null && params.size() > 0){
-                            CustomizeParam customizeParam = params.get(0);
-                            String dataSourceName = getDataSourceName(customizeParam.getDataSourceId()); //获取数据源
-                            taskRuleExecutionRecord.setDataSourceName(dataSourceName);
+                            for (CustomizeParam customizeParam: params) {
+                                //自定义规则，只展示规则名称等基础信息，且只有一条记录
+                                TaskRuleExecutionRecord taskRuleExecutionRecord = new TaskRuleExecutionRecord(record);
+                                String dataSourceName = getDataSourceName(customizeParam.getDataSourceId()); //获取数据源
+                                taskRuleExecutionRecord.setDataSourceName(dataSourceName);
+                                taskRuleExecutionRecord.setDbName(customizeParam.getSchema());
+                                taskRuleExecutionRecord.setTableName(customizeParam.getTable());
+                                taskRuleExecutionRecord.setObjectName(customizeParam.getColumn());
+                                taskRuleExecutionRecord.setTableId(customizeParam.getTable());
+                                resultList.add(taskRuleExecutionRecord);
+                            }
                         }
-                        List<TaskRuleExecutionRecord> resultList = new ArrayList<>();
-                        resultList.add(taskRuleExecutionRecord);
                         map.get(record.getSubtaskId()).setTaskRuleExecutionRecords(resultList);
                     }
                 }
@@ -912,6 +989,21 @@ public class TaskManageService {
             LOG.error("获取报告规则详情失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报告规则详情失败");
         }
+    }
+
+    private void setResultString(TaskRuleExecutionRecord record) {
+        String result = "";
+        if(record.getResult() != null){
+            if("%".equals(record.getCheckThresholdUnit())){
+                result = String.format("%.2f", record.getResult()/100f);
+            }else {
+                result =String.format("%.0f", record.getResult());
+            }
+            if(null != record.getCheckThresholdUnit()){
+                result = result + record.getCheckThresholdUnit();
+            }
+        }
+        record.setResultString(result);
     }
 
     public PageResult<ExecutionLogHeader> getExecutionLogList(String taskId, Parameters parameters) throws AtlasBaseException {

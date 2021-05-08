@@ -88,7 +88,7 @@ public class WarningGroupREST {
     @OperateType(INSERT)
     @Valid
     public void insert(WarningGroup warningGroup, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), warningGroup.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.ALARMGROUPMANAGE.getAlias(), "添加告警组：" + warningGroup.getName());
         WarningGroup old = warningGroupService.getByName(warningGroup.getName(),null,tenantId);
         if (old != null) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"告警组名已存在");
@@ -111,7 +111,7 @@ public class WarningGroupREST {
         if (old != null) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"告警组名已存在");
         }
-        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), warningGroup.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.ALARMGROUPMANAGE.getAlias(), "更新告警组：" + warningGroup.getName());
         warningGroupService.update(warningGroup);
     }
 
@@ -130,7 +130,7 @@ public class WarningGroupREST {
         }
         List<String> nameList = warningGroupsLis.stream().map(warningGroup -> warningGroup.getName()).collect(Collectors.toList());
         List<String> idList = warningGroupsLis.stream().map(warningGroup -> warningGroup.getId()).collect(Collectors.toList());
-        HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(nameList) + "]");
+        HttpRequestContext.get().auditLog(ModuleEnum.ALARMGROUPMANAGE.getAlias(), "批量删除告警组:" + Joiner.on("、").join(nameList));
         warningGroupService.deleteByIdList(idList);
     }
 
@@ -182,11 +182,11 @@ public class WarningGroupREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/warning/{warningType}/list")
+    @Path("/warning/{warnType}/list")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getWarningList(@PathParam("warningType")Integer warningType, Parameters parameters,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        return warningGroupService.getWarningList(warningType, parameters,tenantId);
+    public PageResult getWarningList(Parameters parameters,@PathParam("warnType")int warnType, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return warningGroupService.getWarns(parameters,tenantId,warnType);
     }
 
     /**
@@ -199,21 +199,21 @@ public class WarningGroupREST {
     @Path("/error/{errorType}/list")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getErrorWarningList(@PathParam("errorType")Integer errorType, Parameters parameters,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        return warningGroupService.getErrorWarningList(errorType, parameters,tenantId);
+    public PageResult getErrorWarningList(@PathParam("errorType")int errorType, Parameters parameters,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return warningGroupService.getErrors(parameters,tenantId,errorType);
     }
 
     /**
      * 关闭任务告警
-     * @param executionIdList
+     * @param warnNos
      * @throws AtlasBaseException
      */
     @PUT
     @Path("/warnings")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void closeTaskWarning(List<String> executionIdList) throws AtlasBaseException {
-        warningGroupService.closeTaskExecutionWarning(0, executionIdList);
+    public void closeTaskWarning(List<String> warnNos) throws AtlasBaseException {
+        warningGroupService.closeWarns(warnNos);
     }
 
 
@@ -227,7 +227,7 @@ public class WarningGroupREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public void closeTaskError(List<String> executionIdList) throws AtlasBaseException {
-        warningGroupService.closeTaskExecutionWarning(1, executionIdList);
+        warningGroupService.closeErrors(executionIdList);
     }
 
 

@@ -46,6 +46,7 @@ public class TaskRuleExecutionRecord {
     private Integer checkType;
     private Integer checkExpression;
     private Float result;
+    private String resultString;
     private Float checkMinValue;
     private Float checkMaxValue;
     private Integer checkStatus;
@@ -103,5 +104,6 @@ public class TaskRuleExecutionRecord {
         this.checkThresholdUnit = taskRuleExecutionRecord.checkThresholdUnit;
         this.filing = taskRuleExecutionRecord.filing;
         this.createTime = taskRuleExecutionRecord.createTime;
+        this.resultString = taskRuleExecutionRecord.resultString;
     }
 }

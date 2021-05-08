@@ -55,4 +55,8 @@ public class SyncTaskDefinition {
     private String tenantId;
 
     private long total;
+
+    private String categoryGuid;
+
+    private String categoryName;
 }

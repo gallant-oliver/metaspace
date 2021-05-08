@@ -8,6 +8,7 @@ import io.zeta.metaspace.web.typeHandler.ApiPolyEntityTypeHandler;
 import io.zeta.metaspace.web.typeHandler.ListStringTypeHandler;
 import org.apache.ibatis.annotations.*;
 
+import java.sql.SQLException;
 import java.util.List;
 
 @Mapper
@@ -19,9 +20,10 @@ public interface SyncTaskDefinitionDAO {
     int countByName(@Param("id") String id, @Param("name") String name, @Param("tenantId") String tenantId);
 
 
-    @Insert("INSERT INTO " + TABLE_NAME + " (id, name,description, creator, create_time, update_time, enable, cron_start_time, cron_end_time, crontab, data_source_id, sync_all, schemas, tenant_id)\n" +
+    @Insert("INSERT INTO " + TABLE_NAME + " (id, name,description, creator, create_time, update_time, enable, " +
+            "cron_start_time, cron_end_time, crontab, data_source_id, sync_all, schemas, tenant_id, category_guid)\n" +
             "VALUES (#{definition.id}, #{definition.name}, #{definition.description}, #{definition.creator}, now(),now(),#{definition.enable}, #{definition.cronStartTime}, #{definition.cronEndTime}, #{definition.crontab}, #{definition.dataSourceId}, #{definition.syncAll}," +
-            "#{definition.schemas,typeHandler=io.zeta.metaspace.web.typeHandler.ListStringTypeHandler},#{definition.tenantId})")
+            "#{definition.schemas,typeHandler=io.zeta.metaspace.web.typeHandler.ListStringTypeHandler},#{definition.tenantId}, #{definition.categoryGuid})")
     int insert(@Param("definition") SyncTaskDefinition syncTaskDefinition);
 
     @Delete({"<script>",
@@ -31,6 +33,14 @@ public interface SyncTaskDefinitionDAO {
             "</foreach>",
             "</script>"})
     int delete(@Param("ids") List<String> ids);
+
+    @Delete({"<script>",
+            "DELETE FROM " + TABLE_NAME + " WHERE data_source_id in",
+            "<foreach collection='sourceIds' item='sourceId' index='index' separator=',' open='(' close=')'>" ,
+            "#{sourceId}",
+            "</foreach>",
+            "</script>"})
+    int deleteByDataSourceId(@Param("sourceIds") List<String> sourceIds);
 
     @Update("UPDATE public.sync_task_definition\n" +
             "SET name            = #{definition.name},\n" +
@@ -42,6 +52,7 @@ public interface SyncTaskDefinitionDAO {
             "    crontab         = #{definition.crontab},\n" +
             "    data_source_id  = #{definition.dataSourceId},\n" +
             "    sync_all        = #{definition.syncAll},\n" +
+            "    category_guid   = #{definition.categoryGuid},\n" +
             "    schemas         = #{definition.schemas,typeHandler=io.zeta.metaspace.web.typeHandler.ListStringTypeHandler} \n" +
             "WHERE id = #{definition.id} "
     )
@@ -61,11 +72,14 @@ public interface SyncTaskDefinitionDAO {
     @Select("<script>" +
             "SELECT count(*) over() as total , definition.*," +
             "( case definition.data_source_id when 'hive' then 'hive' else  db.source_name end ) as dataSourceName," +
-            "( case definition.data_source_id when 'hive' then 'HIVE' else  db.source_type end ) as dataSourceType FROM " + TABLE_NAME + " definition " +
+            "( case definition.data_source_id when 'hive' then 'HIVE' else  db.source_type end ) as dataSourceType, " +
+            "category.name as categoryName " +
+            "FROM " + TABLE_NAME + " definition " +
             "left join data_source db on  db.source_id =  definition.data_source_id " +
-            "WHERE tenant_id = #{tenantId} " +
+            "left join category on  (definition.category_guid = category.guid and category.categorytype = 0 and category.tenantid = #{tenantId}) " +
+            "WHERE definition.tenant_id = #{tenantId} " +
             "<if test='null != parameters.query and 0 != parameters.query.length() '>" +
-            " and name like '%${parameters.query}%' ESCAPE '/' " +
+            " and definition.name like '%${parameters.query}%' ESCAPE '/' " +
             "</if> " +
             " order by update_time desc " +
             "<if test='parameters.limit!=-1'>" +
@@ -75,8 +89,8 @@ public interface SyncTaskDefinitionDAO {
             "offset ${parameters.offset}" +
             "</if>" +
             "</script>")
-    List<SyncTaskDefinition> pageList(@Param("parameters") Parameters parameters, @Param("tenantId") String tenantId);
-
+    List<SyncTaskDefinition> pageList(@Param("parameters") Parameters parameters, @Param("tenantId") String tenantId) throws SQLException;
+    
     @ResultMap("base")
     @Select("select * from " + TABLE_NAME + " where id = #{id}")
     SyncTaskDefinition getById(@Param("id") String id);

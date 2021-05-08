@@ -40,6 +40,8 @@ public class RelationEntityV2 {
     private List<DataOwnerHeader> dataOwner;
     private List<String> tableTagList;
     private String description;
+    private String sourceName;
+
     @JsonIgnore
     private int total;
 
@@ -59,7 +61,8 @@ public class RelationEntityV2 {
         this.total = total;
     }
 
-    public RelationEntityV2() { }
+    public RelationEntityV2() {
+    }
 
     public RelationEntityV2(String relationshipGuid, String categoryGuid, String tableName, String dbName, String tableGuid, String path, String status) {
         this.relationshipGuid = relationshipGuid;
@@ -69,6 +72,15 @@ public class RelationEntityV2 {
         this.tableGuid = tableGuid;
         this.path = path;
         this.status = status;
+        this.sourceName = sourceName;
+    }
+
+    public String getSourceName() {
+        return sourceName;
+    }
+
+    public void setSourceName(String sourceName) {
+        this.sourceName = sourceName;
     }
 
     public String getRelationshipGuid() {

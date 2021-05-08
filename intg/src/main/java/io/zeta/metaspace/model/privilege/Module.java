@@ -16,41 +16,23 @@
  */
 package io.zeta.metaspace.model.privilege;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.zeta.metaspace.model.user.UserInfo;
+import lombok.Data;
 
 /*
  * @description
  * @author sunhaoning
  * @date 2019/2/19 11:36
  */
-public class Module {
+@Data
+public class Module implements Comparable<Module>{
     private int moduleId;
     private String moduleName;
     private int type;
-
-    public int getModuleId() {
-        return moduleId;
-    }
-
-    public void setModuleId(int moduleId) {
-        this.moduleId = moduleId;
-    }
-
-    public String getModuleName() {
-        return moduleName;
-    }
-
-    public void setModuleName(String moduleName) {
-        this.moduleName = moduleName;
-    }
-
-    public int getType() {
-        return type;
-    }
-
-    public void setType(int type) {
-        this.type = type;
-    }
+    private int approve;
+    @JsonIgnore
+    private int order;
 
     public Module() {
     }
@@ -61,4 +43,8 @@ public class Module {
         this.type = module.getType();
     }
 
+    @Override
+    public int compareTo(Module o) {
+        return this.order < o.getOrder() ? -1 : 1;
+    }
 }

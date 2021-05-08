@@ -14,11 +14,7 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.TableOwner;
 import io.zeta.metaspace.model.operatelog.OperateType;
-import io.zeta.metaspace.model.result.AddRelationTable;
-import io.zeta.metaspace.model.result.CategoryPrivilege;
-import io.zeta.metaspace.model.result.DownloadUri;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.DataSourceHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
@@ -187,6 +183,28 @@ public class TechnicalREST {
     }
 
     /**
+     * 获取用户目录
+     *
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/user/category")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<CategoryPrivilegeV2> getUserCategories(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getUserCategories()");
+            }
+            return dataManageService.getUserCategories(tenantId);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
      * 添加目录 V2
      *
      * @param categoryInfo
@@ -215,28 +233,38 @@ public class TechnicalREST {
     }
 
     /**
-     * 删除目录 V2
+     * 单个或批量删除目录 V2
      *
-     * @param categoryGuid
+     * @param categoryGuids
      * @return
      * @throws Exception
      */
-    @Permission({ModuleEnum.TECHNICAL,ModuleEnum.AUTHORIZATION})
+    @Permission({ModuleEnum.TECHNICAL, ModuleEnum.AUTHORIZATION})
     @DELETE
-    @Path("/category/{categoryGuid}")
+    @Path("/category/batch")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
-    public Result deleteCategory(@PathParam("categoryGuid") String categoryGuid, @HeaderParam("tenantId") String tenantId) throws Exception {
-        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
+    public Result deleteCategory(List<String> categoryGuids, @HeaderParam("tenantId") String tenantId) throws Exception {
         AtlasPerfTracer perf = null;
+        CategoryDeleteReturn deleteReturn = null;
+        int item = 0;
+        int categorys = 0;
         try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteCategory(" + categoryGuid + ")");
+            for (String categoryGuid : categoryGuids) {
+                Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
+                if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                    perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteCategory(" + categoryGuid + ")");
+                }
+                CategoryEntityV2 category = dataManageService.getCategory(categoryGuid, tenantId);
+                HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), category.getName());
+                deleteReturn = dataManageService.deleteCategory(categoryGuid, tenantId, CATEGORY_TYPE);
+                item += deleteReturn.getItem();
+                categorys += deleteReturn.getCategory();
             }
-            CategoryEntityV2 category = dataManageService.getCategory(categoryGuid, tenantId);
-            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), category.getName());
-            CategoryDeleteReturn deleteReturn = dataManageService.deleteCategory(categoryGuid, tenantId, CATEGORY_TYPE);
+            //设置删除的条数
+            deleteReturn.setItem(item);
+            deleteReturn.setCategory(categorys);
             return ReturnUtil.success(deleteReturn);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");

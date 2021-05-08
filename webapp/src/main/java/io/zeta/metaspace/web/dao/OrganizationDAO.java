@@ -45,7 +45,7 @@ public interface OrganizationDAO {
 
     @Select({" <script>",
              " select count(*)over() total,* from organization where pId=#{pId}",
-            " <if test=\"query != null and query!=''\">",
+             " <if test=\"query != null and query!=''\">",
              " and name like '%${query}%' ESCAPE '/'",
              " </if>",
              " order by name",

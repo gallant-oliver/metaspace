@@ -8,6 +8,9 @@ import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.sync.SyncTaskInstance;
 import io.zeta.metaspace.web.dao.SyncTaskDefinitionDAO;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
+import io.zeta.metaspace.web.dao.TableDAO;
+import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.web.service.dataquality.TaskManageService;
 import io.zeta.metaspace.web.task.quartz.QuartzManager;
 import io.zeta.metaspace.web.task.sync.SyncTaskJob;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -18,10 +21,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.janusgraph.util.datastructures.ArraysUtil;
 import org.quartz.CronExpression;
 import org.quartz.SchedulerException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,6 +42,12 @@ public class MetaDataTaskService {
     private SyncTaskInstanceDAO syncTaskInstanceDAO;
     @Autowired
     private QuartzManager quartzManager;
+    @Autowired
+    TableDAO tableDAO;
+    @Autowired
+    UserDAO userDAO;
+
+    private static final Logger LOG = LoggerFactory.getLogger(TaskManageService.class);
 
     public void checkDuplicateName(String id, String name, String tenantId) {
         if (syncTaskDefinitionDAO.countByName(id, name, tenantId) != 0) {
@@ -62,6 +74,9 @@ public class MetaDataTaskService {
         if (!definition.isSyncAll() && CollectionUtils.isEmpty(definition.getSchemas())) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "自定义数据库不能为空");
         }
+        if (null == definition.getCategoryGuid()) {
+            definition.setCategoryGuid("1");
+        }
     }
 
 
@@ -72,7 +87,8 @@ public class MetaDataTaskService {
             checkDuplicateName(syncTaskDefinition.getId(), syncTaskDefinition.getName(), tenantId);
             checkSyncTaskDefinition(syncTaskDefinition);
 
-            syncTaskDefinition.setCreator(AdminUtils.getUserName());
+            String userId=AdminUtils.getUserData().getUserId();
+            syncTaskDefinition.setCreator(userDAO.getUserInfo(userId).getUsername());
             syncTaskDefinition.setTenantId(tenantId);
             syncTaskDefinitionDAO.insert(syncTaskDefinition);
 
@@ -94,6 +110,9 @@ public class MetaDataTaskService {
             SyncTaskDefinition oldDefinition = syncTaskDefinitionDAO.getById(syncTaskDefinition.getId());
             if (oldDefinition == null) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务不存在");
+            }
+            if(syncTaskDefinition.getCategoryGuid() == null){
+                syncTaskDefinition.setCategoryGuid(oldDefinition.getCategoryGuid());
             }
 
             if (oldDefinition.isEnable()) {
@@ -189,7 +208,17 @@ public class MetaDataTaskService {
     public PageResult<SyncTaskDefinition> getSyncTaskDefinitionList(Parameters parameters, String tenantId) {
         try {
             PageResult<SyncTaskDefinition> pageResult = new PageResult<>();
-            List<SyncTaskDefinition> result = syncTaskDefinitionDAO.pageList(parameters, tenantId);
+            String query = parameters.getQuery();
+            if (Objects.nonNull(query)) {
+                parameters.setQuery(query.replaceAll("_", "/_").replaceAll("%", "/%"));
+            }
+            List<SyncTaskDefinition> result;
+            try {
+                result = syncTaskDefinitionDAO.pageList(parameters, tenantId);
+            } catch (SQLException e) {
+                LOG.error("SQL执行异常", e);
+                result = new ArrayList<>();
+            }
             pageResult.setCurrentSize(result.size());
             pageResult.setLists(result);
             pageResult.setTotalSize(result.size() == 0 ? 0 : result.get(0).getTotal());
@@ -329,7 +358,12 @@ public class MetaDataTaskService {
             String now = LocalDateTime.now().toString();
             String jobName = buildJobName(definitionId + now);
             String jobGroupName = buildJobGroupName(definitionId);
-
+            List<String> schemas = definition.getSchemas();
+            if(org.springframework.util.CollectionUtils.isEmpty(schemas)&&definition.isSyncAll()){
+                tableDAO.updateTableRelationBySourceId(definition.getCategoryGuid(),definition.getDataSourceId());
+            }else{
+                tableDAO.updateTableRelationByDb(definition.getCategoryGuid(),definition.getDataSourceId(),schemas);
+            }
             quartzManager.addSimpleJob(jobName, jobGroupName, SyncTaskJob.class, AdminUtils.getUserName());
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "手动触发失败");

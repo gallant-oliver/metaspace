@@ -17,6 +17,7 @@ package io.zeta.metaspace.web.util;
 
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.TableSchema;
+import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.web.metadata.MetaStoreBridgeUtils;
@@ -125,19 +126,19 @@ public class HbaseMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
     }
 
 
-    public void importTable(final HTableDescriptor htd) throws Exception {
+    public void importTable(final HTableDescriptor htd,  SyncTaskDefinition definition) throws Exception {
         String tableNameStr = htd.getTableName().getNameAsString();
 
         byte[]                 nsByte       = htd.getTableName().getNamespace();
         String                 nsName       = new String(nsByte);
         NamespaceDescriptor    nsDescriptor = hbaseAdmin.getNamespaceDescriptor(nsName);
-        AtlasEntity.AtlasEntityWithExtInfo entity       = createOrUpdateNameSpace(nsDescriptor);
+        AtlasEntity.AtlasEntityWithExtInfo entity       = createOrUpdateNameSpace(nsDescriptor, definition);
         HColumnDescriptor[]    hcdts        = htd.getColumnFamilies();
 
-        createOrUpdateTable(nsName, tableNameStr, entity.getEntity(), htd, hcdts);
+        createOrUpdateTable(nsName, tableNameStr, entity.getEntity(), htd, hcdts, definition);
     }
 
-    protected AtlasEntity.AtlasEntityWithExtInfo createOrUpdateNameSpace(NamespaceDescriptor namespaceDescriptor) throws Exception {
+    protected AtlasEntity.AtlasEntityWithExtInfo createOrUpdateNameSpace(NamespaceDescriptor namespaceDescriptor, SyncTaskDefinition definition) throws Exception {
         String                 nsName          = namespaceDescriptor.getName();
         String                 nsQualifiedName = getNameSpaceQualifiedName(clusterName, nsName);
         AtlasEntity.AtlasEntityWithExtInfo nsEntity        = findNameSpaceEntityInAtlas(nsQualifiedName);
@@ -147,7 +148,7 @@ public class HbaseMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
             AtlasEntity entity = getNameSpaceEntity(nsName, null);
 
-            nsEntity = registerInstance(new AtlasEntity.AtlasEntityWithExtInfo(entity));
+            nsEntity = registerInstance(new AtlasEntity.AtlasEntityWithExtInfo(entity), definition);
         } else {
             LOG.info("NameSpace already present in Atlas. Updating it..: " + nsQualifiedName);
 
@@ -160,7 +161,8 @@ public class HbaseMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         return nsEntity;
     }
 
-    protected AtlasEntity.AtlasEntityWithExtInfo createOrUpdateTable(String nameSpace, String tableName, AtlasEntity nameSapceEntity, HTableDescriptor htd, HColumnDescriptor[] hcdts) throws Exception {
+    protected AtlasEntity.AtlasEntityWithExtInfo createOrUpdateTable(String nameSpace, String tableName, AtlasEntity nameSapceEntity,
+                                                                     HTableDescriptor htd, HColumnDescriptor[] hcdts,  SyncTaskDefinition definition) throws Exception {
         String                 owner            = htd.getOwnerString();
         String                 tblQualifiedName = getTableQualifiedName(clusterName, nameSpace, tableName);
         AtlasEntity.AtlasEntityWithExtInfo ret              = findTableEntityInAtlas(tblQualifiedName);
@@ -170,7 +172,7 @@ public class HbaseMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
             ret = getTableEntity(nameSpace, tableName, owner, nameSapceEntity, htd, null);
 
-            ret = registerInstance(ret);
+            ret = registerInstance(ret, definition);
         } else {
             LOG.info("Table already present in Atlas. Updating it..: " + tblQualifiedName);
 
@@ -182,7 +184,7 @@ public class HbaseMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         AtlasEntity tableEntity = ret.getEntity();
 
         if (tableEntity != null) {
-            List<AtlasEntity.AtlasEntityWithExtInfo> cfEntities = createOrUpdateColumnFamilies(nameSpace, tableName, owner, hcdts, ret);
+            List<AtlasEntity.AtlasEntityWithExtInfo> cfEntities = createOrUpdateColumnFamilies(nameSpace, tableName, owner, hcdts, ret, definition);
 
             List<AtlasObjectId> cfIDs = new ArrayList<>();
 
@@ -198,7 +200,8 @@ public class HbaseMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         return ret;
     }
 
-    protected List<AtlasEntity.AtlasEntityWithExtInfo> createOrUpdateColumnFamilies(String nameSpace, String tableName, String owner, HColumnDescriptor[] hcdts , AtlasEntityWithExtInfo tableRet) throws Exception {
+    protected List<AtlasEntity.AtlasEntityWithExtInfo> createOrUpdateColumnFamilies
+            (String nameSpace, String tableName, String owner, HColumnDescriptor[] hcdts , AtlasEntityWithExtInfo tableRet,  SyncTaskDefinition definition) throws Exception {
         List<AtlasEntity.AtlasEntityWithExtInfo> ret = new ArrayList<>();
         AtlasEntity tableEntity= tableRet.getEntity();
         if (hcdts != null) {
@@ -216,7 +219,7 @@ public class HbaseMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
                     AtlasEntity entity = getColumnFamilyEntity(nameSpace, tableName, owner, columnFamilyDescriptor, tableId, null);
 
-                    cfEntity = registerInstance(new AtlasEntity.AtlasEntityWithExtInfo(entity));
+                    cfEntity = registerInstance(new AtlasEntity.AtlasEntityWithExtInfo(entity), definition);
                 } else {
                     LOG.info("ColumnFamily already present in Atlas. Updating it..: " + cfQualifiedName);
 
@@ -425,14 +428,14 @@ public class HbaseMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
         if (ArrayUtils.isNotEmpty(namespaceDescriptors)) {
             for (NamespaceDescriptor namespaceDescriptor : namespaceDescriptors) {
-                createOrUpdateNameSpace(namespaceDescriptor);
+                createOrUpdateNameSpace(namespaceDescriptor, tableSchema.getDefinition());
                 updatedTables.incrementAndGet();
             }
         }
 
         if (ArrayUtils.isNotEmpty(htds)) {
             for (HTableDescriptor htd : htds) {
-                importTable(htd);
+                importTable(htd, tableSchema.getDefinition());
                 updatedTables.incrementAndGet();
             }
         }
