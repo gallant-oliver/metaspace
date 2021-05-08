@@ -7,7 +7,7 @@
 4. 修改atlas-application.proterties配置文件,添加以下配置
 #任务调度指标链路接口
 etl.indexlink.address=http://10.200.40.64:9003/taskflow/api/v2/metadata/query
-#是够开启获取任务调度节点信息
+#是否开启获取任务调度节点信息
 etl.indexLink.enable=true
 
 5. 重启数据治理
