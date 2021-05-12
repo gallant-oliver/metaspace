@@ -6,15 +6,15 @@ public class IndexDTO {
     /**
      * 指标id
      */
-    private  String  indexId ;
+    private String indexId;
     /**
-     *指标名称
+     * 指标名称
      */
-    private  String  indexName ;
+    private String indexName;
     /**
-     *指标标识
+     * 指标标识
      */
-    private  String  indexIdentification ;
+    private String indexIdentification;
     /**
      * 指标类型
      */
@@ -24,65 +24,97 @@ public class IndexDTO {
      */
     private List<String> dependentIndices;
     /**
-     *指标描述
+     * 指标描述
      */
-    private  String  description ;
+    private String description;
     /**
-     *是否核心指标
+     * 是否核心指标
      */
-    private  boolean  central ;
+    private boolean central;
     /**
      * 时间限定id
      */
-    private  String  timeLimitId;
+    private String timeLimitId;
     /**
-     *指标域id
+     * 指标域id
      */
-    private  String  indexFieldId ;
+    private String indexFieldId;
+
     /**
-     *审批组id
+     * 指标域名称
      */
-    private  String  approvalGroupId ;
+    private String indexFieldName;
+    /**
+     * 审批组id
+     */
+    private String approvalGroupId;
+
+    /**
+     * 审批组名称
+     */
+    private String approvalGroupName;
     /**
      * 修饰词列表
      */
     private List<String> modifiers;
     /**
-     *数据源id
+     * 数据源id
      */
-    private  String  sourceId ;
+    private String sourceId;
+    /**
+     * 数据源名称
+     */
+    private String sourceName;
     /**
      * 数据库名称
      */
-    private  String  dbName;
+    private String dbName;
     /**
-     *表id
+     * 表id
      */
-    private  String  tableId ;
+    private String tableId;
     /**
-     *字段id
+     * 数据表名称
      */
-    private  String  columnId ;
+    private String tableName;
+    /**
+     * 字段id
+     */
+    private String columnId;
+    /**
+     * 字段名称
+     */
+    private String columnName;
     /**
      * 表达式
      */
     private String expression;
     /**
-     *业务口径
+     * 业务口径
      */
-    private  String  businessCaliber ;
+    private String businessCaliber;
     /**
-     *业务负责人id
+     * 业务负责人id
      */
-    private  String  businessLeader ;
+    private String businessLeader;
+
     /**
-     *技术口径
+     * 业务负责人名称
      */
-    private  String  technicalCaliber ;
+    private String businessLeaderName;
     /**
-     *技术负责人id
+     * 技术口径
      */
-    private  String  technicalLeader ;
+    private String technicalCaliber;
+    /**
+     * 技术负责人id
+     */
+    private String technicalLeader;
+
+    /**
+     * 技术负责人名称
+     */
+    private String technicalLeaderName;
 
     private int version;
 
@@ -252,5 +284,61 @@ public class IndexDTO {
 
     public void setTechnicalLeader(String technicalLeader) {
         this.technicalLeader = technicalLeader;
+    }
+
+    public String getBusinessLeaderName() {
+        return businessLeaderName;
+    }
+
+    public void setBusinessLeaderName(String businessLeaderName) {
+        this.businessLeaderName = businessLeaderName;
+    }
+
+    public String getTechnicalLeaderName() {
+        return technicalLeaderName;
+    }
+
+    public void setTechnicalLeaderName(String technicalLeaderName) {
+        this.technicalLeaderName = technicalLeaderName;
+    }
+
+    public String getApprovalGroupName() {
+        return approvalGroupName;
+    }
+
+    public void setApprovalGroupName(String approvalGroupName) {
+        this.approvalGroupName = approvalGroupName;
+    }
+
+    public String getIndexFieldName() {
+        return indexFieldName;
+    }
+
+    public void setIndexFieldName(String indexFieldName) {
+        this.indexFieldName = indexFieldName;
+    }
+
+    public String getSourceName() {
+        return sourceName;
+    }
+
+    public void setSourceName(String sourceName) {
+        this.sourceName = sourceName;
+    }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
+    }
+
+    public String getColumnName() {
+        return columnName;
+    }
+
+    public void setColumnName(String columnName) {
+        this.columnName = columnName;
     }
 }

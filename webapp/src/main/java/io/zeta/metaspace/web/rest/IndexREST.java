@@ -845,4 +845,31 @@ public class IndexREST {
         }
     }
 
+    /**
+     * 导入原子指标数据
+     *
+     * @param upload
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("/import/atom/{upload}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(INSERT)
+    public Result importAtomIndex(@PathParam("upload") String upload, @HeaderParam("tenantId") String tenantId) throws Exception {
+        File file = null;
+        try {
+            file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
+            indexService.importBatchAtomIndex(file, tenantId);
+            return ReturnUtil.success(null);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
+        } finally {
+            if (Objects.nonNull(file) && file.exists()) {
+                file.delete();
+            }
+        }
+    }
+
 }

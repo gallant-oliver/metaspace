@@ -198,4 +198,12 @@ public interface IndexService extends Approvable {
      */
     String uploadExcelAtom(String tenantId, File file) throws Exception;
 
+    /**
+     * 导入原子指标模板数据
+     * @param file
+     * @param tenantId
+     * @throws Exception
+     */
+    void importBatchAtomIndex(File file, String tenantId) throws Exception;
+
 }

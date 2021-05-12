@@ -17,26 +17,13 @@ import io.zeta.metaspace.model.approvegroup.ApproveGroup;
 import io.zeta.metaspace.model.approvegroup.ApproveGroupListAndSearchResult;
 import io.zeta.metaspace.model.approvegroup.ApproveGroupMemberSearch;
 import io.zeta.metaspace.model.approvegroup.ApproveGroupParas;
-import io.zeta.metaspace.model.business.TechnologyInfo;
-import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
-import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
-import io.zeta.metaspace.model.metadata.CategoryExport;
-import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.result.*;
-import io.zeta.metaspace.model.share.ProjectHeader;
-import io.zeta.metaspace.model.table.DataSourceHeader;
-import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.usergroup.UserGroup;
-import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
-import io.zeta.metaspace.model.usergroup.UserGroupPrivileges;
 import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
-import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
-import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
-import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.ibatis.annotations.*;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author lixiang03
@@ -86,10 +73,10 @@ public interface ApproveGroupDAO {
     @Select("<script>" +
             "select count(*) over() totalSize,u.id,u.name,u.description,u.create_time as createTime" +
             " from approval_group u inner join " +
-            " approval_group_module_relation m"+
+            " approval_group_module_relation m" +
             " on u.id=m.group_id " +
             " where u.tenantid=#{tenantId} and u.valid=true and m.module_id = #{params.moduleId}" +
-            "<if test=\"params.query!='' and params.query!=null\">"+
+            "<if test=\"params.query!='' and params.query!=null\">" +
             " and u.name like '%${params.query}%' ESCAPE '/' " +
             "</if>" +
             "<if test='params.sortBy!=null'>" +
@@ -108,9 +95,16 @@ public interface ApproveGroupDAO {
     public List<ApproveGroupListAndSearchResult> getApproveGroupByModuleId(@Param("tenantId") String tenantId, @Param("params") ApproveGroupParas approveGroupParas);
 
 
-
     @Select("select username from users where userid=#{userId}")
     public String getUserNameById(@Param("userId") String userId);
+
+    @Select({"<script>",
+            " SELECT u.ID,u.name FROM approval_group u INNER JOIN approval_group_module_relation M ON u.ID = M.group_id WHERE u.tenantid = #{tenantId} AND u.VALID = TRUE AND M.module_id = '13' AND u.name in",
+            " <foreach item='item' index='index' collection='nameList' open='(' separator=',' close=')'>",
+            " #{item}",
+            " </foreach>",
+            "</script>"})
+    List<ApproveGroupListAndSearchResult> selectListByName(@Param("tenantId") String tenantId, @Param("nameList") Set<String> nameList);
 
 
     /**
@@ -128,8 +122,6 @@ public interface ApproveGroupDAO {
             "    </foreach>" +
             "</script>")
     public List<ApproveGroup> getApproveGroupByIDs(@Param("ids") List<String> ids);
-
-
 
 
     /**
@@ -151,13 +143,14 @@ public interface ApproveGroupDAO {
             " where id in " +
             "<foreach collection='ids' item='groupId' index='index' separator=',' open='(' close=')'>" +
             " #{groupId}" +
-            " </foreach>"+
+            " </foreach>" +
             "</script>")
     public void deleteApproveGroupByIDs(@Param("ids") List<String> ids);
 
 
     /**
      * 删除审批组与模块关系
+     *
      * @param ids
      */
     @Delete("<script>" +
@@ -165,13 +158,14 @@ public interface ApproveGroupDAO {
             " where group_id in " +
             "<foreach collection='ids' item='id' index='index' separator=',' open='(' close=')'>" +
             " #{id}" +
-            " </foreach>"+
+            " </foreach>" +
             "</script>")
     public void deleteApproveGroupModule(@Param("ids") List<String> ids);
 
 
     /**
      * 删除审批组与模块关系
+     *
      * @param id
      */
     @Delete("<script>" +
@@ -182,13 +176,13 @@ public interface ApproveGroupDAO {
 
     /**
      * 审批组与模块关系
+     *
      * @param id
      */
     @Select("select module_id from approval_group_module_relation " +
             " where group_id = #{id} "
-           )
+    )
     public List<String> selectApproveGroupModule(@Param("id") String id);
-
 
 
     /**
@@ -253,11 +247,11 @@ public interface ApproveGroupDAO {
      */
 
     @Insert({"<script> insert into approval_group_relation (group_id,user_id) values ",
-             "<foreach item='item' index='index' collection='userIds'",
-             "open='(' separator='),(' close=')'>",
-             "#{groupId},#{item}",
-             "</foreach>",
-             "</script>"})
+            "<foreach item='item' index='index' collection='userIds'",
+            "open='(' separator='),(' close=')'>",
+            "#{groupId},#{item}",
+            "</foreach>",
+            "</script>"})
     public void addUserGroupByID(@Param("groupId") String groupId, @Param("userIds") List<String> userIds);
 
 
@@ -273,11 +267,11 @@ public interface ApproveGroupDAO {
      * 审批组移除成员
      */
     @Delete({"<script>",
-             "delete from approval_group_relation where group_id=#{groupId} and user_id in ",
-             "<foreach collection='userIds' item='userId' index='index' separator=',' open='(' close=')'>",
-             "#{userId}",
-             "</foreach>",
-             "</script>"})
+            "delete from approval_group_relation where group_id=#{groupId} and user_id in ",
+            "<foreach collection='userIds' item='userId' index='index' separator=',' open='(' close=')'>",
+            "#{userId}",
+            "</foreach>",
+            "</script>"})
     public void deleteUserByGroupId(@Param("groupId") String groupId, @Param("userIds") List<String> userIds);
 
     /**
@@ -314,8 +308,6 @@ public interface ApproveGroupDAO {
     //获取审批组的用户id
     @Select("select user_id from approval_group_relation where group_id=#{groupId}")
     public List<String> getUserIdByApproveGroup(@Param("groupId") String groupId);
-
-
 
 
 }

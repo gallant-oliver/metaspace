@@ -14,6 +14,7 @@ import io.zeta.metaspace.model.enums.IndexState;
 import io.zeta.metaspace.model.enums.IndexType;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.TableInfoId;
 import io.zeta.metaspace.model.modifiermanage.Data;
 import io.zeta.metaspace.model.modifiermanage.Qualifier;
 import io.zeta.metaspace.model.modifiermanage.QualifierParameters;
@@ -120,6 +121,9 @@ public class IndexServiceImpl implements IndexService {
 
     @Autowired
     private UsersService usersService;
+
+    @Autowired
+    private ApproveGroupDAO approveGroupDAO;
 
     //目录类型    指标域
     private static final int CATEGORY_TYPE = 5;
@@ -1465,13 +1469,13 @@ public class IndexServiceImpl implements IndexService {
         Set<String> nameSet = new HashSet<>();
         Set<String> identificationSet = new HashSet<>();
         indexTemplateAtomList.stream().forEach(indexTemplateAtom -> {
-            if (Pattern.matches("^[\\u4E00-\\u9FA5A-Za-z0-9]+$", indexTemplateAtom.getName())) {
+            if (!Pattern.matches("^[\\u4E00-\\u9FA5A-Za-z0-9]+$", indexTemplateAtom.getName())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称仅支持中文、英文和数字");
             }
             if (indexTemplateAtom.getName().length() > 128) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称不能超过128位");
             }
-            if (Pattern.matches("^[a-z0-9_]+$", indexTemplateAtom.getIdentification())) {
+            if (!Pattern.matches("^[a-z0-9_]+$", indexTemplateAtom.getIdentification())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标标识仅支持小写英文、数字和“_”");
             }
             if (indexTemplateAtom.getIdentification().length() > 128) {
@@ -1483,13 +1487,13 @@ public class IndexServiceImpl implements IndexService {
             if (indexTemplateAtom.getBusinessCaliber().length() > 128) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "业务口径不能超过128位");
             }
-            if (Pattern.matches("^[\\u4E00-\\u9FA5A-Za-z0-9]+$", indexTemplateAtom.getBusinessCaliber())) {
+            if (!Pattern.matches("^[\\u4E00-\\u9FA5A-Za-z0-9]+$", indexTemplateAtom.getBusinessCaliber())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "业务口径仅支持中文、英文和数字");
             }
             if (indexTemplateAtom.getTechnicalCaliber().length() > 128) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "技术口径不能超过128位");
             }
-            if (Pattern.matches("^[\\u4E00-\\u9FA5A-Za-z0-9]+$", indexTemplateAtom.getTechnicalCaliber())) {
+            if (StringUtils.isNotBlank(indexTemplateAtom.getTechnicalCaliber()) && !Pattern.matches("^[\\u4E00-\\u9FA5A-Za-z0-9]+$", indexTemplateAtom.getTechnicalCaliber())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "技术口径仅支持中文、英文和数字");
             }
             nameSet.add(indexTemplateAtom.getName());
@@ -1507,33 +1511,189 @@ public class IndexServiceImpl implements IndexService {
     /**
      * 批量导入原子指标
      *
-     * @param fileInputStream
-     * @param type
+     * @param file
      * @param tenantId
      * @throws Exception
      */
+    @Override
     public void importBatchAtomIndex(File file, String tenantId) throws Exception {
         if (!file.exists()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件丢失，请重新上传");
         }
         List<IndexTemplateAtomDTO> indexTemplateAtomDTOList = this.getAtomIndexData(file);
-
+        List<IndexDTO> indexDTOList = new ArrayList<>();
         //数据重复校验
         List<String> nameList = new ArrayList<>();
         List<String> identificationList = new ArrayList<>();
+        Set<String> fieldSet = new HashSet<>(16);
+        Set<String> groupSet = new HashSet<>(16);
         indexTemplateAtomDTOList.stream().forEach(indexTemplateAtomDTO -> {
             nameList.add(indexTemplateAtomDTO.getName());
             identificationList.add(indexTemplateAtomDTO.getIdentification());
+            fieldSet.add(indexTemplateAtomDTO.getField());
+            groupSet.add(indexTemplateAtomDTO.getApprove());
+            IndexDTO indexDTO = new IndexDTO();
+            indexDTO.setIndexName(indexTemplateAtomDTO.getName());
+            indexDTO.setIndexIdentification(indexTemplateAtomDTO.getIdentification());
+            indexDTO.setDescription(indexTemplateAtomDTO.getDescription());
+            if ("是".equals(indexTemplateAtomDTO.getCentral())) {
+                indexDTO.setCentral(true);
+            } else {
+                indexDTO.setCentral(false);
+            }
+            indexDTO.setIndexFieldName(indexTemplateAtomDTO.getField());
+            indexDTO.setSourceName(indexTemplateAtomDTO.getSource());
+            indexDTO.setDbName(indexTemplateAtomDTO.getDbName());
+            indexDTO.setTableName(indexTemplateAtomDTO.getTableName());
+            indexDTO.setColumnName(indexTemplateAtomDTO.getColumnName());
+            indexDTO.setBusinessCaliber(indexTemplateAtomDTO.getBusinessCaliber());
+            indexDTO.setBusinessLeaderName(indexTemplateAtomDTO.getBusinessLeader());
+            indexDTO.setTechnicalCaliber(indexTemplateAtomDTO.getTechnicalCaliber());
+            indexDTO.setTechnicalLeaderName(indexTemplateAtomDTO.getTechnicalLeader());
+            indexDTO.setApprovalGroupName(indexTemplateAtomDTO.getApprove());
+            indexDTOList.add(indexDTO);
         });
         List<IndexAtomicPO> indexAtomicPOList = indexDAO.selectAtomListByIndexNameOrIdentification(tenantId, nameList, identificationList);
         if (!CollectionUtils.isEmpty(indexAtomicPOList)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称或者指标标识已经存在");
         }
-
-
         //数据有效性校验
+        //指标域
+        this.getField(tenantId, fieldSet, indexDTOList);
+        //数据源
+        this.getDatasourceId(tenantId, indexDTOList);
+        //业务负责人 技术负责人
+        this.getUserId(tenantId, indexDTOList);
+        //审批管理
+        this.getApproveGroupId(tenantId, groupSet, indexDTOList);
+        indexAtomicPOList = new ArrayList<>();
+        User user = AdminUtils.getUserData();
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        for (IndexDTO indexDTO : indexDTOList) {
+            IndexAtomicPO iap = BeanMapper.map(indexDTO, IndexAtomicPO.class);
+            iap.setIndexId(UUID.randomUUID().toString());
+            iap.setTenantId(tenantId);
+            iap.setIndexState(1);
+            iap.setVersion(0);
+            iap.setCreator(user.getUserId());
+            iap.setCreateTime(timestamp);
+            iap.setUpdateTime(timestamp);
+            indexAtomicPOList.add(iap);
+        }
+        indexDAO.insertAtomicIndexList(indexAtomicPOList);
+    }
 
+    /**
+     * 指标域
+     *
+     * @param tenantId
+     * @param fieldSet
+     * @param indexDTOList
+     * @throws Exception
+     */
+    private void getField(String tenantId, Set<String> fieldSet, List<IndexDTO> indexDTOList) throws Exception {
+        User user = AdminUtils.getUserData();
+        List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+        List<CategoryEntityV2> categoryEntityV2List = categoryDAO.selectGuidByTenantIdAndGroupIdAndName(fieldSet, tenantId, userGroupIds);
+        if (categoryEntityV2List.size() != fieldSet.size()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在");
+        }
+        for (IndexDTO indexDTO : indexDTOList) {
+            for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2List) {
+                if (indexDTO.getIndexFieldName().equals(categoryEntityV2.getName())) {
+                    indexDTO.setIndexFieldId(categoryEntityV2.getGuid());
+                }
+            }
+        }
+    }
 
+    /**
+     * 审批管理
+     *
+     * @param tenantId
+     * @param groupSet
+     * @param indexDTOList
+     * @throws Exception
+     */
+    private void getApproveGroupId(String tenantId, Set<String> groupSet, List<IndexDTO> indexDTOList) throws Exception {
+        List<ApproveGroupListAndSearchResult> approveGroupListAndSearchResultList = approveGroupDAO.selectListByName(tenantId, groupSet);
+        if (groupSet.size() != approveGroupListAndSearchResultList.size()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审批管理名称不存在");
+        }
+        for (IndexDTO indexDTO : indexDTOList) {
+            for (ApproveGroupListAndSearchResult approveGroupListAndSearchResult : approveGroupListAndSearchResultList) {
+                if (indexDTO.getApprovalGroupName().equals(approveGroupListAndSearchResult.getName())) {
+                    indexDTO.setApprovalGroupId(approveGroupListAndSearchResult.getId());
+                }
+            }
+        }
+    }
+
+    /**
+     * 业务负责人、技术负责人
+     *
+     * @param tenantId
+     * @param indexDTOList
+     * @throws Exception
+     */
+    private void getUserId(String tenantId, List<IndexDTO> indexDTOList) throws Exception {
+        Parameters parameters = new Parameters();
+        parameters.setOffset(0);
+        parameters.setLimit(-1);
+        PageResult<User> pageResult = usersService.getUserListV2(tenantId, parameters);
+        List<User> userList = pageResult.getLists();
+        if (CollectionUtils.isEmpty(userList)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取业务负责人信息失败");
+        }
+        for (IndexDTO indexDTO : indexDTOList) {
+            for (User user : userList) {
+                if (indexDTO.getBusinessLeaderName().equals(user.getUsername())) {
+                    indexDTO.setBusinessLeader(user.getUserId());
+                }
+                if (indexDTO.getTechnicalLeaderName().equals(user.getUsername())) {
+                    indexDTO.setTechnicalLeader(user.getUserId());
+                }
+            }
+            if (StringUtils.isBlank(indexDTO.getBusinessLeader())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "业务负责人不存在");
+            }
+            if (StringUtils.isNotBlank(indexDTO.getTechnicalLeaderName()) && StringUtils.isBlank(indexDTO.getTechnicalLeader())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "技术负责人不存在");
+            }
+        }
+    }
+
+    /**
+     * 数据源-字段
+     *
+     * @param tenantId
+     * @param indexDTOList
+     * @throws Exception
+     */
+    private void getDatasourceId(String tenantId, List<IndexDTO> indexDTOList) throws Exception {
+        List<String> hiveDbList = null;
+        for (IndexDTO indexDTO : indexDTOList) {
+            if ("hive".equalsIgnoreCase(indexDTO.getSourceName())) {
+                if (CollectionUtils.isEmpty(hiveDbList)) {
+                    hiveDbList = tenantService.getDatabase(tenantId);
+                }
+                TableInfoId tableInfoId = tableDAO.selectHiveIdByName(hiveDbList, indexDTO.getDbName(), indexDTO.getTableName(), indexDTO.getColumnName());
+                if (Objects.isNull(tableInfoId)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, String.format("数据源hive-字段(%s)信息匹配失败", indexDTO.getColumnName()));
+                }
+                indexDTO.setSourceId("hive");
+                indexDTO.setTableId(tableInfoId.getTableGuid());
+                indexDTO.setColumnId(tableInfoId.getColumnGuid());
+            } else {
+                TableInfoId tableInfoId = tableDAO.selectRdbmsIdByName(tenantId, indexDTO.getSourceName(), indexDTO.getDbName(), indexDTO.getTableName(), indexDTO.getColumnName());
+                if (Objects.isNull(tableInfoId)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, String.format("数据源-字段(%s)信息匹配失败", indexDTO.getColumnName()));
+                }
+                indexDTO.setSourceId(tableInfoId.getSourceId());
+                indexDTO.setTableId(tableInfoId.getTableGuid());
+                indexDTO.setColumnId(tableInfoId.getColumnGuid());
+            }
+        }
     }
 
 }

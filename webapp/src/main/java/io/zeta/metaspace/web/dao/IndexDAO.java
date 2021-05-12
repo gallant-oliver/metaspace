@@ -19,6 +19,14 @@ public interface IndexDAO {
             "values(#{iap.indexId},#{iap.indexName},#{iap.indexIdentification},#{iap.description},#{iap.central},#{iap.indexFieldId},#{iap.tenantId},#{iap.approvalGroupId},#{iap.indexState},#{iap.version},#{iap.sourceId},#{iap.dbName},#{iap.tableId},#{iap.columnId},#{iap.businessCaliber},#{iap.businessLeader},#{iap.technicalCaliber},#{iap.technicalLeader},#{iap.creator},#{iap.createTime},#{iap.updateTime})")
     void addAtomicIndex(@Param("iap") IndexAtomicPO iap) throws SQLException;
 
+    @Insert({" <script>",
+            "insert into index_atomic_info(index_id, index_name, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, source_id,db_name, table_id, column_id, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time, update_time) values " +
+            " <foreach item='iap' index='index' collection='list' separator=',' close=';'>",
+            " (#{iap.indexId},#{iap.indexName},#{iap.indexIdentification},#{iap.description},#{iap.central},#{iap.indexFieldId},#{iap.tenantId},#{iap.approvalGroupId},#{iap.indexState},#{iap.version},#{iap.sourceId},#{iap.dbName},#{iap.tableId},#{iap.columnId},#{iap.businessCaliber},#{iap.businessLeader},#{iap.technicalCaliber},#{iap.technicalLeader},#{iap.creator},#{iap.createTime},#{iap.updateTime})",
+            " </foreach>",
+            " </script>"})
+    void insertAtomicIndexList(@Param("list") List<IndexAtomicPO> list) throws SQLException;
+
     /**
      * 添加派生指标
      */
