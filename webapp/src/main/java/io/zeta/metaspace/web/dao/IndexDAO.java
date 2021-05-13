@@ -9,6 +9,7 @@ import org.apache.ibatis.annotations.*;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Set;
 
 public interface IndexDAO {
 
@@ -35,6 +36,19 @@ public interface IndexDAO {
     void addDeriveIndex(@Param("idp") IndexDerivePO idp) throws SQLException;
 
     /**
+     * 批量添加派生指标
+     * @param list
+     * @throws SQLException
+     */
+    @Insert({" <script>",
+            "insert into index_derive_info(index_id, index_atomic_id, time_limit_id, index_name, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time, update_time) values",
+            " <foreach item='idp' index='index' collection='list' separator=',' close=';'>",
+            " (#{idp.indexId},#{idp.indexAtomicId},#{idp.timeLimitId},#{idp.indexName},#{idp.indexIdentification},#{idp.description},#{idp.central},#{idp.indexFieldId},#{idp.tenantId},#{idp.approvalGroupId},#{idp.indexState},#{idp.version},#{idp.businessCaliber},#{idp.businessLeader},#{idp.technicalCaliber},#{idp.technicalLeader},#{idp.creator},#{idp.createTime},#{idp.updateTime})",
+            " </foreach>",
+            " </script>"})
+    void addDeriveIndexList(@Param("list") List<IndexDerivePO> list) throws SQLException;
+
+    /**
      * 添加复合指标
      */
     @Insert("insert into index_composite_info(index_id, index_name, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, expression, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time, update_time) " +
@@ -44,7 +58,7 @@ public interface IndexDAO {
     /**
      * 添加派生指标与修饰词关系
      */
-    @Update({" <script>",
+    @Insert({" <script>",
             " insert into index_derive_modifier_relation(derive_index_id, modifier_id)values",
             " <foreach item='idmrPO' index='index' collection='idmrPOS' separator=',' close=';'>",
             " (#{idmrPO.deriveIndexId},#{idmrPO.modifierId})",
@@ -85,6 +99,26 @@ public interface IndexDAO {
             " </foreach>",
             "</script>"})
     List<IndexAtomicPO> selectAtomListByIndexNameOrIdentification(@Param("tenantId") String tenantId, @Param("nameList") List<String> nameList, @Param("identificationList") List<String> identificationList);
+
+    @Select({"<script>",
+            " SELECT DISTINCT index_id,index_name FROM index_atomic_info WHERE index_state = 2 AND tenant_id = #{tenantId} AND index_name IN ",
+            " <foreach item='item' index='index' collection='nameList' separator=',' open='(' close=')'>",
+            " #{item} ",
+            " </foreach>",
+            "</script>"})
+    List<IndexAtomicPO> selectAtomListByName(@Param("tenantId") String tenantId, @Param("nameList") Set<String> nameList);
+
+    @Select({"<script>",
+            " SELECT index_id,index_name,index_identification FROM index_derive_info WHERE tenant_id = #{tenantId} AND index_name in",
+            " <foreach item='item' index='index' collection='nameList' separator=',' open='(' close=')'>",
+            " #{item} ",
+            " </foreach>",
+            " UNION SELECT index_id,index_name,index_identification FROM index_derive_info WHERE tenant_id = #{tenantId} AND index_identification in",
+            " <foreach item='item' index='index' collection='identificationList' separator=',' open='(' close=')'>",
+            " #{item} ",
+            " </foreach>",
+            "</script>"})
+    List<IndexDerivePO> selectDeriveListByNameAndIdentification(@Param("tenantId") String tenantId, @Param("nameList") List<String> nameList, @Param("identificationList") List<String> identificationList);
 
     /**
      * 校验派生指标名称或者标识是否已存在

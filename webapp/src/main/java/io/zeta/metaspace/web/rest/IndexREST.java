@@ -846,6 +846,34 @@ public class IndexREST {
     }
 
     /**
+     * 上传派生指标模板
+     *
+     * @param tenantId
+     * @param fileInputStream
+     * @param contentDispositionHeader
+     * @return
+     */
+    @POST
+    @Path("/upload/excel/derive")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result uploadExcelDerive(@HeaderParam("tenantId") String tenantId, @FormDataParam("file") InputStream fileInputStream,
+                                    @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) {
+        File file = null;
+        try {
+            String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            file = ExportDataPathUtils.fileCheckUuid(name, fileInputStream);
+            return ReturnUtil.success(indexService.uploadExcelDerive(tenantId, file));
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
+        } finally {
+            if (Objects.nonNull(file) && file.exists()) {
+                file.delete();
+            }
+        }
+    }
+
+    /**
      * 导入原子指标数据
      *
      * @param upload
@@ -862,6 +890,33 @@ public class IndexREST {
         try {
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
             indexService.importBatchAtomIndex(file, tenantId);
+            return ReturnUtil.success(null);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
+        } finally {
+            if (Objects.nonNull(file) && file.exists()) {
+                file.delete();
+            }
+        }
+    }
+
+    /**
+     * 导入派生指标数据
+     *
+     * @param upload
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("/import/derive/{upload}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(INSERT)
+    public Result importDeriveIndex(@PathParam("upload") String upload, @HeaderParam("tenantId") String tenantId) throws Exception {
+        File file = null;
+        try {
+            file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
+            indexService.importBatchDeriveIndex(file, tenantId);
             return ReturnUtil.success(null);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");

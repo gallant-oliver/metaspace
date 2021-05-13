@@ -199,11 +199,28 @@ public interface IndexService extends Approvable {
     String uploadExcelAtom(String tenantId, File file) throws Exception;
 
     /**
+     * 上传派生指标excel
+     * @param tenantId
+     * @param file
+     * @return
+     * @throws Exception
+     */
+    String uploadExcelDerive(String tenantId, File file) throws Exception;
+
+    /**
      * 导入原子指标模板数据
      * @param file
      * @param tenantId
      * @throws Exception
      */
     void importBatchAtomIndex(File file, String tenantId) throws Exception;
+
+    /**
+     * 导入派生指标模板数据
+     * @param file
+     * @param tenantId
+     * @throws Exception
+     */
+    void importBatchDeriveIndex(File file, String tenantId) throws Exception;
 
 }
