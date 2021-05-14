@@ -4,6 +4,7 @@ import io.zeta.metaspace.model.po.indices.IndexCompositePO;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -43,6 +44,22 @@ public class IndexTemplateCompositeDTO extends IndexCompositePO {
      * 审批管理名称
      */
     private String approvalGroupName;
+
+    public IndexTemplateCompositeDTO() {
+        this.dependentIndicesId = new ArrayList<>();
+        this.dependentIndicesNameS = new ArrayList<>();
+        this.dependentIndicesName = "";
+        this.indexFieldName = "";
+        this.businessLeaderName = "";
+        this.technicalLeaderName = "";
+        this.approvalGroupName = "";
+        super.setDescription("");
+        super.setIndexName("");
+        super.setIndexIdentification("");
+        super.setExpression("");
+        super.setBusinessCaliber("");
+        super.setTechnicalCaliber("");
+    }
 
     public String checkFieldsIsNull() {
         if (StringUtils.isBlank(this.dependentIndicesName)) {

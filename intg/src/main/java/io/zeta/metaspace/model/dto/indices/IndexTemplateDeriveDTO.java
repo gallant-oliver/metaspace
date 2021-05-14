@@ -4,6 +4,7 @@ import io.zeta.metaspace.model.po.indices.IndexDerivePO;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -11,6 +12,24 @@ import java.util.List;
  */
 @Data
 public class IndexTemplateDeriveDTO extends IndexDerivePO {
+
+    public IndexTemplateDeriveDTO() {
+        this.indexAtomicName = "";
+        this.timeLimitName = "";
+        this.modifiers = new ArrayList<>();
+        this.modifiersName = "";
+        this.modifiersNameList = new ArrayList<>();
+        this.indexFieldName = "";
+        this.businessLeaderName = "";
+        this.technicalLeaderName = "";
+        this.approvalGroupName = "";
+        super.setIndexName("");
+        super.setIndexIdentification("");
+        super.setDescription("");
+        super.setCentral(false);
+        super.setBusinessCaliber("");
+        super.setTechnicalCaliber("");
+    }
 
     /**
      * 依赖原子指标名称
@@ -56,6 +75,7 @@ public class IndexTemplateDeriveDTO extends IndexDerivePO {
      * 审批组名称
      */
     private String approvalGroupName;
+
 
     public String checkFieldsIsNull() {
         if (StringUtils.isBlank(this.indexAtomicName)) {

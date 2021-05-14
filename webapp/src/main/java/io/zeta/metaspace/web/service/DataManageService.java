@@ -3035,7 +3035,9 @@ public class DataManageService {
     @Transactional(rollbackFor = Exception.class)
     public void addBatchDeriveIndex(List<IndexDerivePO> indexDerivePOList, List<IndexDeriveModifierRelationPO> indexDeriveModifierRelationPOList) throws Exception {
         indexDAO.addDeriveIndexList(indexDerivePOList);
-        indexDAO.addDeriveModifierRelations(indexDeriveModifierRelationPOList);
+        if (!CollectionUtils.isEmpty(indexDeriveModifierRelationPOList)) {
+            indexDAO.addDeriveModifierRelations(indexDeriveModifierRelationPOList);
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)

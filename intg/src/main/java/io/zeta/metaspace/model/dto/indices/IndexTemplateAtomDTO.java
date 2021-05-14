@@ -9,6 +9,23 @@ import org.apache.commons.lang3.StringUtils;
 @Data
 public class IndexTemplateAtomDTO {
 
+    public IndexTemplateAtomDTO() {
+        this.name = "";
+        this.identification = "";
+        this.description = "";
+        this.central = "";
+        this.field = "";
+        this.source = "";
+        this.dbName = "";
+        this.tableName = "";
+        this.columnName = "";
+        this.businessCaliber = "";
+        this.businessLeader = "";
+        this.technicalCaliber = "";
+        this.technicalLeader = "";
+        this.approve = "";
+    }
+
     /**
      * 指标名称
      */
