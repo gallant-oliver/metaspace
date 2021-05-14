@@ -56,6 +56,19 @@ public interface IndexDAO {
     void addCompositeIndex(@Param("icp") IndexCompositePO icp) throws SQLException;
 
     /**
+     * 批量添加复合指标
+     * @param list
+     * @throws SQLException
+     */
+    @Insert({" <script>",
+            " insert into index_composite_info(index_id, index_name, index_identification, description, central, index_field_id, tenant_id, approval_group_id, index_state, version, expression, business_caliber, business_leader, technical_caliber, technical_leader, creator, create_time, update_time) values " +
+            " <foreach item='icp' index='index' collection='list' separator=',' close=';'>",
+            " (#{icp.indexId},#{icp.indexName},#{icp.indexIdentification},#{icp.description},#{icp.central},#{icp.indexFieldId},#{icp.tenantId},#{icp.approvalGroupId},#{icp.indexState},#{icp.version},#{icp.expression},#{icp.businessCaliber},#{icp.businessLeader},#{icp.technicalCaliber},#{icp.technicalLeader},#{icp.creator},#{icp.createTime},#{icp.updateTime})",
+            " </foreach>",
+            " </script>"})
+    void addCompositeIndexList(@Param("list") List<IndexCompositePO> list) throws SQLException;
+
+    /**
      * 添加派生指标与修饰词关系
      */
     @Insert({" <script>",
@@ -109,6 +122,14 @@ public interface IndexDAO {
     List<IndexAtomicPO> selectAtomListByName(@Param("tenantId") String tenantId, @Param("nameList") Set<String> nameList);
 
     @Select({"<script>",
+            " SELECT DISTINCT index_id,index_name,index_identification FROM index_derive_info WHERE index_state = 2 AND tenant_id = #{tenantId} AND index_name in",
+            " <foreach item='item' index='index' collection='nameList' separator=',' open='(' close=')'>",
+            " #{item} ",
+            " </foreach>",
+            "</script>"})
+    List<IndexDerivePO> selectDeriveByName(@Param("tenantId") String tenantId, @Param("nameList") Set<String> nameList);
+
+    @Select({"<script>",
             " SELECT index_id,index_name,index_identification FROM index_derive_info WHERE tenant_id = #{tenantId} AND index_name in",
             " <foreach item='item' index='index' collection='nameList' separator=',' open='(' close=')'>",
             " #{item} ",
@@ -119,6 +140,19 @@ public interface IndexDAO {
             " </foreach>",
             "</script>"})
     List<IndexDerivePO> selectDeriveListByNameAndIdentification(@Param("tenantId") String tenantId, @Param("nameList") List<String> nameList, @Param("identificationList") List<String> identificationList);
+
+    @Select({"<script>",
+            " SELECT index_id,index_name,index_identification FROM index_composite_info WHERE tenant_id = #{tenantId} AND index_name in",
+            " <foreach item='item' index='index' collection='nameList' separator=',' open='(' close=')'>",
+            " #{item} ",
+            " </foreach>",
+            " UNION SELECT index_id,index_name,index_identification FROM index_composite_info WHERE tenant_id = #{tenantId} AND index_identification in ",
+            " <foreach item='item' index='index' collection='identificationList' separator=',' open='(' close=')'>",
+            " #{item} ",
+            " </foreach>",
+            "</script>"})
+    List<IndexCompositePO> selectCompositeListByNameAndIdentification(@Param("tenantId") String tenantId,@Param("nameList") List<String> nameList, @Param("identificationList") List<String> identificationList);
+
 
     /**
      * 校验派生指标名称或者标识是否已存在

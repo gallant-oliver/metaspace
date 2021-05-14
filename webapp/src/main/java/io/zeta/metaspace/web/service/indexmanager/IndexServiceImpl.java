@@ -1438,6 +1438,12 @@ public class IndexServiceImpl implements IndexService {
         return ExportDataPathUtils.transferTo(file);
     }
 
+    @Override
+    public String uploadExcelComposite(String tenantId, File file) throws Exception {
+        this.getCompositeIndexData(file);
+        return ExportDataPathUtils.transferTo(file);
+    }
+
     /**
      * 获取原子指标数据
      *
@@ -1607,6 +1613,95 @@ public class IndexServiceImpl implements IndexService {
         return indexTemplateDeriveDTOList;
     }
 
+
+    /**
+     * 获取复合指标数据
+     *
+     * @param file
+     * @return
+     * @throws Exception
+     */
+    private List<IndexTemplateCompositeDTO> getCompositeIndexData(File file) throws Exception {
+        XSSFWorkbook xssfWorkbook = new XSSFWorkbook(file);
+        Sheet sheet = xssfWorkbook.getSheetAt(0);
+        List<IndexTemplateCompositeDTO> indexTemplateCompositeDTOList = new ArrayList<>();
+        for (int i = 1; i < sheet.getLastRowNum() + 1; i++) {
+            Row row = sheet.getRow(i);
+            IndexTemplateCompositeDTO indexTemplateCompositeDTO = new IndexTemplateCompositeDTO();
+            indexTemplateCompositeDTO.setDependentIndicesName(row.getCell(0) == null ? "" : row.getCell(0).getStringCellValue().trim());
+            indexTemplateCompositeDTO.setIndexName(row.getCell(1) == null ? "" : row.getCell(1).getStringCellValue().trim());
+            indexTemplateCompositeDTO.setIndexIdentification(row.getCell(2) == null ? "" : row.getCell(2).getStringCellValue().trim());
+            indexTemplateCompositeDTO.setDescription(row.getCell(3) == null ? "" : row.getCell(3).getStringCellValue().trim());
+            String centralName = row.getCell(4) == null ? "" : row.getCell(4).getStringCellValue().trim();
+            if ("是".equals(centralName)) {
+                indexTemplateCompositeDTO.setCentral(true);
+            } else {
+                indexTemplateCompositeDTO.setCentral(false);
+            }
+            indexTemplateCompositeDTO.setIndexFieldName(row.getCell(5) == null ? "" : row.getCell(5).getStringCellValue().trim());
+            indexTemplateCompositeDTO.setExpression(row.getCell(6) == null ? "" : row.getCell(6).getStringCellValue().trim());
+            indexTemplateCompositeDTO.setBusinessCaliber(row.getCell(7) == null ? "" : row.getCell(7).getStringCellValue().trim());
+            indexTemplateCompositeDTO.setBusinessLeaderName(row.getCell(8) == null ? "" : row.getCell(8).getStringCellValue().trim());
+            indexTemplateCompositeDTO.setTechnicalCaliber(row.getCell(9) == null ? "" : row.getCell(9).getStringCellValue().trim());
+            indexTemplateCompositeDTO.setTechnicalLeaderName(row.getCell(10) == null ? "" : row.getCell(10).getStringCellValue().trim());
+            indexTemplateCompositeDTO.setApprovalGroupName(row.getCell(11) == null ? "" : row.getCell(11).getStringCellValue().trim());
+            String checkResult = indexTemplateCompositeDTO.checkFieldsIsNull();
+            if (StringUtils.isNotBlank(checkResult)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, checkResult);
+            }
+            indexTemplateCompositeDTOList.add(indexTemplateCompositeDTO);
+        }
+        if (CollectionUtils.isEmpty(indexTemplateCompositeDTOList)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内容不能为空");
+        }
+        Set<String> nameSet = new HashSet<>();
+        Set<String> identificationSet = new HashSet<>();
+        indexTemplateCompositeDTOList.stream().forEach(indexTemplateCompositeDTO -> {
+            if (!Pattern.matches("^[\\u4E00-\\u9FA5A-Za-z0-9]+$", indexTemplateCompositeDTO.getIndexName())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称仅支持中文、英文和数字");
+            }
+            if (indexTemplateCompositeDTO.getIndexName().length() > 128) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称不能超过128位");
+            }
+            if (!Pattern.matches("^[a-z0-9_]+$", indexTemplateCompositeDTO.getIndexIdentification())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标标识仅支持小写英文、数字和“_”");
+            }
+            if (indexTemplateCompositeDTO.getIndexIdentification().length() > 128) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标标识不能超过128位");
+            }
+            if (indexTemplateCompositeDTO.getDescription().length() > 300) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "描述不能超过300位");
+            }
+            if (indexTemplateCompositeDTO.getExpression().length() > 300) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "设定表达式不能超过300位");
+            }
+            if (indexTemplateCompositeDTO.getBusinessCaliber().length() > 128) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "业务口径不能超过128位");
+            }
+            if (!Pattern.matches("^[\\u4E00-\\u9FA5A-Za-z0-9]+$", indexTemplateCompositeDTO.getBusinessCaliber())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "业务口径仅支持中文、英文和数字");
+            }
+            if (indexTemplateCompositeDTO.getTechnicalCaliber().length() > 128) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "技术口径不能超过128位");
+            }
+            if (StringUtils.isNotBlank(indexTemplateCompositeDTO.getTechnicalCaliber()) && !Pattern.matches("^[\\u4E00-\\u9FA5A-Za-z0-9]+$", indexTemplateCompositeDTO.getTechnicalCaliber())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "技术口径仅支持中文、英文和数字");
+            }
+            nameSet.add(indexTemplateCompositeDTO.getIndexName());
+            identificationSet.add(indexTemplateCompositeDTO.getIndexIdentification());
+        });
+        if (indexTemplateCompositeDTOList.size() != nameSet.size()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称存在重复数据");
+        }
+        if (indexTemplateCompositeDTOList.size() != identificationSet.size()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标标识存在重复数据");
+        }
+        if (indexTemplateCompositeDTOList.size() > 100) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "单次指标批量导入上限为100");
+        }
+        return indexTemplateCompositeDTOList;
+    }
+
     /**
      * 批量导入原子指标
      *
@@ -1758,6 +1853,79 @@ public class IndexServiceImpl implements IndexService {
         dataManageService.addBatchDeriveIndex(indexDerivePOList, indexDeriveModifierRelationPOList);
     }
 
+
+    /**
+     * 批量导入复合指标
+     *
+     * @param file
+     * @param tenantId
+     * @throws Exception
+     */
+    @Override
+    public void importBatchCompositeIndex(File file, String tenantId) throws Exception {
+        if (!file.exists()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件丢失，请重新上传");
+        }
+        List<IndexTemplateCompositeDTO> indexTemplateCompositeDTOList = this.getCompositeIndexData(file);
+        //数据重复校验
+        Set<String> deriveIndexName = new HashSet<>(16);
+        List<String> nameList = new ArrayList<>();
+        List<String> identificationList = new ArrayList<>();
+        Set<String> fieldSet = new HashSet<>(16);
+        Set<String> groupSet = new HashSet<>(16);
+
+        indexTemplateCompositeDTOList.stream().forEach(indexTemplateCompositeDTO -> {
+            List<String> dependentIndicesNameS = new ArrayList<>();
+            for (String s : indexTemplateCompositeDTO.getDependentIndicesName().split("-")) {
+                deriveIndexName.add(s);
+                dependentIndicesNameS.add(s);
+            }
+            indexTemplateCompositeDTO.setDependentIndicesNameS(dependentIndicesNameS);
+            nameList.add(indexTemplateCompositeDTO.getIndexName());
+            identificationList.add(indexTemplateCompositeDTO.getIndexIdentification());
+            fieldSet.add(indexTemplateCompositeDTO.getIndexFieldName());
+            groupSet.add(indexTemplateCompositeDTO.getApprovalGroupName());
+        });
+
+        List<IndexCompositePO> indexCompositePOList = indexDAO.selectCompositeListByNameAndIdentification(tenantId, nameList, identificationList);
+        if (!CollectionUtils.isEmpty(indexCompositePOList)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称或者指标标识已经存在");
+        }
+
+        //数据有效性校验
+        //依赖派生指标
+        this.getCompositeIndex(tenantId, deriveIndexName, indexTemplateCompositeDTOList);
+        //指标域
+        this.getFieldComposite(tenantId, fieldSet, indexTemplateCompositeDTOList);
+        //业务负责人 技术负责人
+        this.getUserIdComposite(tenantId, indexTemplateCompositeDTOList);
+        //审批管理
+        this.getApproveGroupIdComposite(tenantId, groupSet, indexTemplateCompositeDTOList);
+
+        User user = AdminUtils.getUserData();
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        indexCompositePOList = new ArrayList<>();
+        List<IndexDeriveCompositeRelationPO> indexDeriveCompositeRelationPOList = new ArrayList<>();
+        for (IndexTemplateCompositeDTO indexTemplateCompositeDTO : indexTemplateCompositeDTOList) {
+            IndexCompositePO icp = BeanMapper.map(indexTemplateCompositeDTO, IndexCompositePO.class);
+            icp.setIndexId(UUID.randomUUID().toString());
+            icp.setTenantId(tenantId);
+            icp.setIndexState(1);
+            icp.setVersion(0);
+            icp.setCreator(user.getUserId());
+            icp.setCreateTime(timestamp);
+            icp.setUpdateTime(timestamp);
+            indexCompositePOList.add(icp);
+            IndexDeriveCompositeRelationPO indexDeriveCompositeRelationPO = new IndexDeriveCompositeRelationPO();
+            for (String s : indexTemplateCompositeDTO.getDependentIndicesId()) {
+                indexDeriveCompositeRelationPO.setCompositeIndexId(icp.getIndexId());
+                indexDeriveCompositeRelationPO.setDeriveIndexId(s);
+                indexDeriveCompositeRelationPOList.add(indexDeriveCompositeRelationPO);
+            }
+        }
+        dataManageService.addBatchCompositeIndex(indexCompositePOList, indexDeriveCompositeRelationPOList);
+    }
+
     /**
      * 审批管理-派生
      *
@@ -1775,6 +1943,29 @@ public class IndexServiceImpl implements IndexService {
             for (ApproveGroupListAndSearchResult approveGroupListAndSearchResult : approveGroupListAndSearchResultList) {
                 if (indexTemplateDeriveDTO.getApprovalGroupName().equals(approveGroupListAndSearchResult.getName())) {
                     indexTemplateDeriveDTO.setApprovalGroupId(approveGroupListAndSearchResult.getId());
+                }
+            }
+        }
+    }
+
+
+    /**
+     * 审批管理-复合
+     *
+     * @param tenantId
+     * @param groupSet
+     * @param indexTemplateCompositeDTOList
+     * @throws Exception
+     */
+    private void getApproveGroupIdComposite(String tenantId, Set<String> groupSet, List<IndexTemplateCompositeDTO> indexTemplateCompositeDTOList) throws Exception {
+        List<ApproveGroupListAndSearchResult> approveGroupListAndSearchResultList = approveGroupDAO.selectListByName(tenantId, groupSet);
+        if (groupSet.size() != approveGroupListAndSearchResultList.size()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审批管理名称不存在");
+        }
+        for (IndexTemplateCompositeDTO indexTemplateCompositeDTO : indexTemplateCompositeDTOList) {
+            for (ApproveGroupListAndSearchResult approveGroupListAndSearchResult : approveGroupListAndSearchResultList) {
+                if (indexTemplateCompositeDTO.getApprovalGroupName().equals(approveGroupListAndSearchResult.getName())) {
+                    indexTemplateCompositeDTO.setApprovalGroupId(approveGroupListAndSearchResult.getId());
                 }
             }
         }
@@ -1815,6 +2006,41 @@ public class IndexServiceImpl implements IndexService {
         }
     }
 
+
+    /**
+     * 业务负责人、技术负责人-复合
+     *
+     * @param tenantId
+     * @param indexTemplateCompositeDTOList
+     * @throws Exception
+     */
+    private void getUserIdComposite(String tenantId, List<IndexTemplateCompositeDTO> indexTemplateCompositeDTOList) throws Exception {
+        Parameters parameters = new Parameters();
+        parameters.setOffset(0);
+        parameters.setLimit(-1);
+        PageResult<User> pageResult = usersService.getUserListV2(tenantId, parameters);
+        List<User> userList = pageResult.getLists();
+        if (CollectionUtils.isEmpty(userList)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取业务负责人信息失败");
+        }
+        for (IndexTemplateCompositeDTO indexTemplateCompositeDTO : indexTemplateCompositeDTOList) {
+            for (User user : userList) {
+                if (indexTemplateCompositeDTO.getBusinessLeaderName().equals(user.getUsername())) {
+                    indexTemplateCompositeDTO.setBusinessLeader(user.getUserId());
+                }
+                if (indexTemplateCompositeDTO.getTechnicalLeaderName().equals(user.getUsername())) {
+                    indexTemplateCompositeDTO.setTechnicalLeader(user.getUserId());
+                }
+            }
+            if (StringUtils.isBlank(indexTemplateCompositeDTO.getBusinessLeader())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "业务负责人不存在");
+            }
+            if (StringUtils.isNotBlank(indexTemplateCompositeDTO.getTechnicalLeaderName()) && StringUtils.isBlank(indexTemplateCompositeDTO.getTechnicalLeader())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "技术负责人不存在");
+            }
+        }
+    }
+
     /**
      * 指标域-派生
      *
@@ -1834,6 +2060,30 @@ public class IndexServiceImpl implements IndexService {
             for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2List) {
                 if (indexTemplateDeriveDTO.getIndexFieldName().equals(categoryEntityV2.getName())) {
                     indexTemplateDeriveDTO.setIndexFieldId(categoryEntityV2.getGuid());
+                }
+            }
+        }
+    }
+
+    /**
+     * 指标域-复合
+     *
+     * @param tenantId
+     * @param fieldSet
+     * @param indexTemplateCompositeDTOList
+     * @throws Exception
+     */
+    private void getFieldComposite(String tenantId, Set<String> fieldSet, List<IndexTemplateCompositeDTO> indexTemplateCompositeDTOList) throws Exception {
+        User user = AdminUtils.getUserData();
+        List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+        List<CategoryEntityV2> categoryEntityV2List = categoryDAO.selectGuidByTenantIdAndGroupIdAndName(fieldSet, tenantId, userGroupIds);
+        if (categoryEntityV2List.size() != fieldSet.size()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在");
+        }
+        for (IndexTemplateCompositeDTO indexTemplateCompositeDTO : indexTemplateCompositeDTOList) {
+            for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2List) {
+                if (indexTemplateCompositeDTO.getIndexFieldName().equals(categoryEntityV2.getName())) {
+                    indexTemplateCompositeDTO.setIndexFieldId(categoryEntityV2.getGuid());
                 }
             }
         }
@@ -1899,6 +2149,29 @@ public class IndexServiceImpl implements IndexService {
                     indexTemplateDeriveDTO.setIndexAtomicId(indexAtomicPO.getIndexId());
                 }
             }
+        }
+    }
+
+    /**
+     * @param tenantId
+     * @param deriveIndexName
+     * @param indexTemplateCompositeDTOList
+     */
+    private void getCompositeIndex(String tenantId, Set<String> deriveIndexName, List<IndexTemplateCompositeDTO> indexTemplateCompositeDTOList) {
+        List<IndexDerivePO> indexDerivePOList = indexDAO.selectDeriveByName(tenantId, deriveIndexName);
+        if (deriveIndexName.size() != indexDerivePOList.size()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "依赖派生指标不存在");
+        }
+        for (IndexTemplateCompositeDTO indexTemplateCompositeDTO : indexTemplateCompositeDTOList) {
+            List<String> dependentIndicesIdList = new ArrayList<>();
+            for (String dependentIndicesName : indexTemplateCompositeDTO.getDependentIndicesNameS()) {
+                for (IndexDerivePO indexDerivePO : indexDerivePOList) {
+                    if (dependentIndicesName.equals(indexDerivePO.getIndexName())) {
+                        dependentIndicesIdList.add(indexDerivePO.getIndexId());
+                    }
+                }
+            }
+            indexTemplateCompositeDTO.setDependentIndicesId(dependentIndicesIdList);
         }
     }
 

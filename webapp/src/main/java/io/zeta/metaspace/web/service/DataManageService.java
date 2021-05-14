@@ -33,6 +33,8 @@ import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.po.indices.IndexCompositePO;
+import io.zeta.metaspace.model.po.indices.IndexDeriveCompositeRelationPO;
 import io.zeta.metaspace.model.po.indices.IndexDeriveModifierRelationPO;
 import io.zeta.metaspace.model.po.indices.IndexDerivePO;
 import io.zeta.metaspace.model.pojo.TableInfo;
@@ -211,10 +213,10 @@ public class DataManageService {
                 }
             }
             getCount(valueList, type, tenantId);
-            if(type==5&& !CollectionUtils.isEmpty(valueList)){
-                valueList.forEach(x->{
-                    if(CategoryUtil.indexFieldId.equals(x.getGuid())){
-                        x.setPrivilege(new CategoryPrivilege.Privilege(false, false, true, false, true, false, false, false, false,false));
+            if (type == 5 && !CollectionUtils.isEmpty(valueList)) {
+                valueList.forEach(x -> {
+                    if (CategoryUtil.indexFieldId.equals(x.getGuid())) {
+                        x.setPrivilege(new CategoryPrivilege.Privilege(false, false, true, false, true, false, false, false, false, false));
                     }
                 });
             }
@@ -2399,16 +2401,17 @@ public class DataManageService {
             importIndexFields(addIndexFields, updateIndexFields, tenantId);
         }
     }
+
     @OperateType(INSERT)
     @Transactional(rollbackFor = Exception.class)
     public void importIndexFields(List<CategoryEntityV2> addIndexFields, List<CategoryEntityV2> updateIndexFields, String tenantId) {
         if (!CollectionUtils.isEmpty(addIndexFields)) {
             categoryDao.addAll(addIndexFields, tenantId);
-            StringBuilder sb=new StringBuilder();
+            StringBuilder sb = new StringBuilder();
             sb.append("指标域：");
-            addIndexFields.forEach(x->sb.append(x.getName()).append(","));
+            addIndexFields.forEach(x -> sb.append(x.getName()).append(","));
             sb.deleteCharAt(sb.lastIndexOf(","));
-            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), sb.toString() );
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), sb.toString());
         }
         if (!CollectionUtils.isEmpty(updateIndexFields)) {
             categoryDao.updateCategoryEntityV2(updateIndexFields, tenantId);
@@ -3025,7 +3028,7 @@ public class DataManageService {
     }
 
     public List<CategoryEntityV2> queryCategoryEntitysByGuids(List<String> indexFields, String tenantId) throws SQLException {
-        List<CategoryEntityV2> categoryEntityV2s=categoryDao.queryCategoryEntitysByGuids(indexFields,tenantId);
+        List<CategoryEntityV2> categoryEntityV2s = categoryDao.queryCategoryEntitysByGuids(indexFields, tenantId);
         return categoryEntityV2s;
     }
 
@@ -3033,5 +3036,11 @@ public class DataManageService {
     public void addBatchDeriveIndex(List<IndexDerivePO> indexDerivePOList, List<IndexDeriveModifierRelationPO> indexDeriveModifierRelationPOList) throws Exception {
         indexDAO.addDeriveIndexList(indexDerivePOList);
         indexDAO.addDeriveModifierRelations(indexDeriveModifierRelationPOList);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void addBatchCompositeIndex(List<IndexCompositePO> indexCompositePOList, List<IndexDeriveCompositeRelationPO> indexDeriveCompositeRelationPOList) throws Exception {
+        indexDAO.addCompositeIndexList(indexCompositePOList);
+        indexDAO.addDeriveCompositeRelations(indexDeriveCompositeRelationPOList);
     }
 }

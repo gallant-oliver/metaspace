@@ -200,6 +200,7 @@ public interface IndexService extends Approvable {
 
     /**
      * 上传派生指标excel
+     *
      * @param tenantId
      * @param file
      * @return
@@ -209,6 +210,7 @@ public interface IndexService extends Approvable {
 
     /**
      * 导入原子指标模板数据
+     *
      * @param file
      * @param tenantId
      * @throws Exception
@@ -217,10 +219,28 @@ public interface IndexService extends Approvable {
 
     /**
      * 导入派生指标模板数据
+     *
      * @param file
      * @param tenantId
      * @throws Exception
      */
     void importBatchDeriveIndex(File file, String tenantId) throws Exception;
+
+    /**
+     * 上传复合指标excel
+     *
+     * @param file
+     * @return
+     * @throws Exception
+     */
+    String uploadExcelComposite(String tenantId, File file) throws Exception;
+
+    /**
+     * 导入复合指标模板数据
+     * @param file
+     * @param tenantId
+     * @throws Exception
+     */
+    void importBatchCompositeIndex(File file, String tenantId) throws Exception;
 
 }
