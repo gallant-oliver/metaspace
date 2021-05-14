@@ -109,7 +109,7 @@ public class ExportDataPathUtils {
     public static String transferTo(File file) throws AtlasBaseException, IOException {
         String uploadId = UUIDUtils.alphaUUID();
         String filePath = tmpFilePath + File.separatorChar + uploadId;
-        org.apache.commons.io.FileUtils.forceMkdir(new File(tmpFilePath));
+        FileUtils.forceMkdir(new File(tmpFilePath));
         File uploadFile = new File(filePath);
         File absoluteFile = uploadFile.getAbsoluteFile();
         try {
@@ -137,12 +137,13 @@ public class ExportDataPathUtils {
         if (!(name.endsWith(fileFormat1) || name.endsWith(fileFormat2))) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
         }
-
-        File file = new File(UUIDUtils.alphaUUID() + name);
-        FileUtils.copyInputStreamToFile(fileInputStream, file);
-        if (file.length() > MAX_EXCEL_FILE_SIZE) {
+        String filePath = tmpFilePath + File.separatorChar + UUIDUtils.alphaUUID() + File.separatorChar;
+        FileUtils.forceMkdir(new File(filePath));
+        File uploadFile = new File(filePath + name);
+        FileUtils.copyInputStreamToFile(fileInputStream, uploadFile);
+        if (uploadFile.length() > MAX_EXCEL_FILE_SIZE) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
         }
-        return file;
+        return uploadFile;
     }
 }
