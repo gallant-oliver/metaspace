@@ -35,6 +35,7 @@ import io.zeta.metaspace.web.service.timelimit.TimeLimitServiceImp;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeanMapper;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
+import io.zeta.metaspace.web.util.ProxyUtil;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -1874,7 +1875,7 @@ public class IndexServiceImpl implements IndexService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件丢失，请重新上传");
         }
         List<IndexTemplateAtomDTO> indexTemplateAtomDTOList = this.getAtomIndexData(file);
-        List<IndexDTO> indexDTOList = new ArrayList<>();
+        List<IndexInfoDTO> indexInfoDTOList = new ArrayList<>();
         //数据重复校验
         List<String> nameList = new ArrayList<>();
         List<String> identificationList = new ArrayList<>();
@@ -1885,26 +1886,26 @@ public class IndexServiceImpl implements IndexService {
             identificationList.add(indexTemplateAtomDTO.getIdentification());
             fieldSet.add(indexTemplateAtomDTO.getField());
             groupSet.add(indexTemplateAtomDTO.getApprove());
-            IndexDTO indexDTO = new IndexDTO();
-            indexDTO.setIndexName(indexTemplateAtomDTO.getName());
-            indexDTO.setIndexIdentification(indexTemplateAtomDTO.getIdentification());
-            indexDTO.setDescription(indexTemplateAtomDTO.getDescription());
+            IndexInfoDTO indexInfoDTO = new IndexInfoDTO();
+            indexInfoDTO.setIndexName(indexTemplateAtomDTO.getName());
+            indexInfoDTO.setIndexIdentification(indexTemplateAtomDTO.getIdentification());
+            indexInfoDTO.setDescription(indexTemplateAtomDTO.getDescription());
             if ("是".equals(indexTemplateAtomDTO.getCentral())) {
-                indexDTO.setCentral(true);
+                indexInfoDTO.setCentral(true);
             } else {
-                indexDTO.setCentral(false);
+                indexInfoDTO.setCentral(false);
             }
-            indexDTO.setIndexFieldName(indexTemplateAtomDTO.getField());
-            indexDTO.setSourceName(indexTemplateAtomDTO.getSource());
-            indexDTO.setDbName(indexTemplateAtomDTO.getDbName());
-            indexDTO.setTableName(indexTemplateAtomDTO.getTableName());
-            indexDTO.setColumnName(indexTemplateAtomDTO.getColumnName());
-            indexDTO.setBusinessCaliber(indexTemplateAtomDTO.getBusinessCaliber());
-            indexDTO.setBusinessLeaderName(indexTemplateAtomDTO.getBusinessLeader());
-            indexDTO.setTechnicalCaliber(indexTemplateAtomDTO.getTechnicalCaliber());
-            indexDTO.setTechnicalLeaderName(indexTemplateAtomDTO.getTechnicalLeader());
-            indexDTO.setApprovalGroupName(indexTemplateAtomDTO.getApprove());
-            indexDTOList.add(indexDTO);
+            indexInfoDTO.setIndexFieldName(indexTemplateAtomDTO.getField());
+            indexInfoDTO.setSourceName(indexTemplateAtomDTO.getSource());
+            indexInfoDTO.setDbName(indexTemplateAtomDTO.getDbName());
+            indexInfoDTO.setTableName(indexTemplateAtomDTO.getTableName());
+            indexInfoDTO.setColumnName(indexTemplateAtomDTO.getColumnName());
+            indexInfoDTO.setBusinessCaliber(indexTemplateAtomDTO.getBusinessCaliber());
+            indexInfoDTO.setBusinessLeaderName(indexTemplateAtomDTO.getBusinessLeader());
+            indexInfoDTO.setTechnicalCaliber(indexTemplateAtomDTO.getTechnicalCaliber());
+            indexInfoDTO.setTechnicalLeaderName(indexTemplateAtomDTO.getTechnicalLeader());
+            indexInfoDTO.setApprovalGroupName(indexTemplateAtomDTO.getApprove());
+            indexInfoDTOList.add(indexInfoDTO);
         });
         List<IndexAtomicPO> indexAtomicPOList = indexDAO.selectAtomListByIndexNameOrIdentification(tenantId, nameList, identificationList);
         if (!CollectionUtils.isEmpty(indexAtomicPOList)) {
@@ -1912,17 +1913,17 @@ public class IndexServiceImpl implements IndexService {
         }
         //数据有效性校验
         //指标域
-        this.getField(tenantId, fieldSet, indexDTOList);
+        this.getField(tenantId, fieldSet, indexInfoDTOList);
         //数据源
-        this.getDatasourceId(tenantId, indexDTOList);
+        this.getDatasourceId(tenantId, indexInfoDTOList);
         //业务负责人 技术负责人
-        this.getUserId(tenantId, indexDTOList);
+        this.getUserId(tenantId, indexInfoDTOList);
         //审批管理
-        this.getApproveGroupId(tenantId, groupSet, indexDTOList);
+        this.getApproveGroupId(tenantId, groupSet, indexInfoDTOList);
         indexAtomicPOList = new ArrayList<>();
         User user = AdminUtils.getUserData();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        for (IndexDTO indexDTO : indexDTOList) {
+        for (IndexInfoDTO indexDTO : indexInfoDTOList) {
             IndexAtomicPO iap = BeanMapper.map(indexDTO, IndexAtomicPO.class);
             iap.setIndexId(UUID.randomUUID().toString());
             iap.setTenantId(tenantId);
@@ -1933,7 +1934,7 @@ public class IndexServiceImpl implements IndexService {
             iap.setUpdateTime(timestamp);
             indexAtomicPOList.add(iap);
         }
-        indexDAO.insertAtomicIndexList(indexAtomicPOList);
+        ProxyUtil.getProxy(IndexServiceImpl.class).addBatchAtomIndex(indexAtomicPOList);
     }
 
     /**
@@ -2012,7 +2013,7 @@ public class IndexServiceImpl implements IndexService {
                 indexDeriveModifierRelationPOList.add(indexDeriveModifierRelationPO);
             }
         }
-        dataManageService.addBatchDeriveIndex(indexDerivePOList, indexDeriveModifierRelationPOList);
+        ProxyUtil.getProxy(IndexServiceImpl.class).addBatchDeriveIndex(indexDerivePOList, indexDeriveModifierRelationPOList);
     }
 
 
@@ -2078,14 +2079,34 @@ public class IndexServiceImpl implements IndexService {
             icp.setCreateTime(timestamp);
             icp.setUpdateTime(timestamp);
             indexCompositePOList.add(icp);
-            IndexDeriveCompositeRelationPO indexDeriveCompositeRelationPO = new IndexDeriveCompositeRelationPO();
             for (String s : indexTemplateCompositeDTO.getDependentIndicesId()) {
+                IndexDeriveCompositeRelationPO indexDeriveCompositeRelationPO = new IndexDeriveCompositeRelationPO();
                 indexDeriveCompositeRelationPO.setCompositeIndexId(icp.getIndexId());
                 indexDeriveCompositeRelationPO.setDeriveIndexId(s);
                 indexDeriveCompositeRelationPOList.add(indexDeriveCompositeRelationPO);
             }
         }
-        dataManageService.addBatchCompositeIndex(indexCompositePOList, indexDeriveCompositeRelationPOList);
+
+        ProxyUtil.getProxy(IndexServiceImpl.class).addBatchCompositeIndex(indexCompositePOList, indexDeriveCompositeRelationPOList);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void addBatchAtomIndex(List<IndexAtomicPO> indexAtomicPOList) throws Exception {
+        indexDAO.insertAtomicIndexList(indexAtomicPOList);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void addBatchDeriveIndex(List<IndexDerivePO> indexDerivePOList, List<IndexDeriveModifierRelationPO> indexDeriveModifierRelationPOList) throws Exception {
+        indexDAO.addDeriveIndexList(indexDerivePOList);
+        if (!CollectionUtils.isEmpty(indexDeriveModifierRelationPOList)) {
+            indexDAO.addDeriveModifierRelations(indexDeriveModifierRelationPOList);
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void addBatchCompositeIndex(List<IndexCompositePO> indexCompositePOList, List<IndexDeriveCompositeRelationPO> indexDeriveCompositeRelationPOList) throws Exception {
+        indexDAO.addCompositeIndexList(indexCompositePOList);
+        indexDAO.addDeriveCompositeRelations(indexDeriveCompositeRelationPOList);
     }
 
     /**
@@ -2364,17 +2385,17 @@ public class IndexServiceImpl implements IndexService {
      *
      * @param tenantId
      * @param fieldSet
-     * @param indexDTOList
+     * @param indexInfoDTOList
      * @throws Exception
      */
-    private void getField(String tenantId, Set<String> fieldSet, List<IndexDTO> indexDTOList) throws Exception {
+    private void getField(String tenantId, Set<String> fieldSet, List<IndexInfoDTO> indexInfoDTOList) throws Exception {
         User user = AdminUtils.getUserData();
         List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
         List<CategoryEntityV2> categoryEntityV2List = categoryDAO.selectGuidByTenantIdAndGroupIdAndName(fieldSet, tenantId, userGroupIds);
         if (categoryEntityV2List.size() != fieldSet.size()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在");
         }
-        for (IndexDTO indexDTO : indexDTOList) {
+        for (IndexInfoDTO indexDTO : indexInfoDTOList) {
             for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2List) {
                 if (indexDTO.getIndexFieldName().equals(categoryEntityV2.getName())) {
                     indexDTO.setIndexFieldId(categoryEntityV2.getGuid());
@@ -2388,15 +2409,15 @@ public class IndexServiceImpl implements IndexService {
      *
      * @param tenantId
      * @param groupSet
-     * @param indexDTOList
+     * @param indexInfoDTOList
      * @throws Exception
      */
-    private void getApproveGroupId(String tenantId, Set<String> groupSet, List<IndexDTO> indexDTOList) throws Exception {
+    private void getApproveGroupId(String tenantId, Set<String> groupSet, List<IndexInfoDTO> indexInfoDTOList) throws Exception {
         List<ApproveGroupListAndSearchResult> approveGroupListAndSearchResultList = approveGroupDAO.selectListByName(tenantId, groupSet);
         if (groupSet.size() != approveGroupListAndSearchResultList.size()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审批管理名称不存在");
         }
-        for (IndexDTO indexDTO : indexDTOList) {
+        for (IndexInfoDTO indexDTO : indexInfoDTOList) {
             for (ApproveGroupListAndSearchResult approveGroupListAndSearchResult : approveGroupListAndSearchResultList) {
                 if (indexDTO.getApprovalGroupName().equals(approveGroupListAndSearchResult.getName())) {
                     indexDTO.setApprovalGroupId(approveGroupListAndSearchResult.getId());
@@ -2409,10 +2430,10 @@ public class IndexServiceImpl implements IndexService {
      * 业务负责人、技术负责人
      *
      * @param tenantId
-     * @param indexDTOList
+     * @param indexInfoDTOList
      * @throws Exception
      */
-    private void getUserId(String tenantId, List<IndexDTO> indexDTOList) throws Exception {
+    private void getUserId(String tenantId, List<IndexInfoDTO> indexInfoDTOList) throws Exception {
         Parameters parameters = new Parameters();
         parameters.setOffset(0);
         parameters.setLimit(-1);
@@ -2421,7 +2442,7 @@ public class IndexServiceImpl implements IndexService {
         if (CollectionUtils.isEmpty(userList)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取业务负责人信息失败");
         }
-        for (IndexDTO indexDTO : indexDTOList) {
+        for (IndexInfoDTO indexDTO : indexInfoDTOList) {
             for (User user : userList) {
                 if (indexDTO.getBusinessLeaderName().equals(user.getUsername())) {
                     indexDTO.setBusinessLeader(user.getUserId());
@@ -2443,12 +2464,12 @@ public class IndexServiceImpl implements IndexService {
      * 数据源-字段
      *
      * @param tenantId
-     * @param indexDTOList
+     * @param indexInfoDTOList
      * @throws Exception
      */
-    private void getDatasourceId(String tenantId, List<IndexDTO> indexDTOList) throws Exception {
+    private void getDatasourceId(String tenantId, List<IndexInfoDTO> indexInfoDTOList) throws Exception {
         List<String> hiveDbList = null;
-        for (IndexDTO indexDTO : indexDTOList) {
+        for (IndexInfoDTO indexDTO : indexInfoDTOList) {
             if ("hive".equalsIgnoreCase(indexDTO.getSourceName())) {
                 if (CollectionUtils.isEmpty(hiveDbList)) {
                     hiveDbList = tenantService.getDatabase(tenantId);

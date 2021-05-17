@@ -3031,18 +3031,4 @@ public class DataManageService {
         List<CategoryEntityV2> categoryEntityV2s = categoryDao.queryCategoryEntitysByGuids(indexFields, tenantId);
         return categoryEntityV2s;
     }
-
-    @Transactional(rollbackFor = Exception.class)
-    public void addBatchDeriveIndex(List<IndexDerivePO> indexDerivePOList, List<IndexDeriveModifierRelationPO> indexDeriveModifierRelationPOList) throws Exception {
-        indexDAO.addDeriveIndexList(indexDerivePOList);
-        if (!CollectionUtils.isEmpty(indexDeriveModifierRelationPOList)) {
-            indexDAO.addDeriveModifierRelations(indexDeriveModifierRelationPOList);
-        }
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public void addBatchCompositeIndex(List<IndexCompositePO> indexCompositePOList, List<IndexDeriveCompositeRelationPO> indexDeriveCompositeRelationPOList) throws Exception {
-        indexDAO.addCompositeIndexList(indexCompositePOList);
-        indexDAO.addDeriveCompositeRelations(indexDeriveCompositeRelationPOList);
-    }
 }
