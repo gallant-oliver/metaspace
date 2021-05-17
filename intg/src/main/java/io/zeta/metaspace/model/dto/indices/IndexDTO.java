@@ -39,11 +39,6 @@ public class IndexDTO {
      * 指标域id
      */
     private String indexFieldId;
-
-    /**
-     * 指标域名称
-     */
-    private String indexFieldName;
     /**
      * 审批组id
      */
@@ -258,11 +253,5 @@ public class IndexDTO {
     public void setTechnicalLeader(String technicalLeader) {
         this.technicalLeader = technicalLeader;
     }
-    public String getIndexFieldName() {
-        return indexFieldName;
-    }
 
-    public void setIndexFieldName(String indexFieldName) {
-        this.indexFieldName = indexFieldName;
-    }
 }
