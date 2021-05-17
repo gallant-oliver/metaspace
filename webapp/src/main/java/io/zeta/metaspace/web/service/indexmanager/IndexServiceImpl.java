@@ -17,7 +17,6 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.TableInfoId;
 import io.zeta.metaspace.model.modifiermanage.Data;
 import io.zeta.metaspace.model.modifiermanage.Qualifier;
-import io.zeta.metaspace.model.modifiermanage.QualifierParameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.po.indices.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
@@ -32,20 +31,14 @@ import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.service.Approve.ApproveService;
 import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.service.timelimit.TimeLimitServiceImp;
-import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.BeanMapper;
-import io.zeta.metaspace.web.util.ExportDataPathUtils;
-import io.zeta.metaspace.web.util.ProxyUtil;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.usermodel.*;
 import org.slf4j.Logger;
@@ -1413,25 +1406,6 @@ public class IndexServiceImpl implements IndexService {
         return list;
     }
 
-    /**
-     * 修饰词
-     *
-     * @param tenantId
-     * @return
-     */
-    private List<String> getQualifierName(String tenantId) {
-        List<String> list = new ArrayList<>();
-        QualifierParameters qualifierParameters = new QualifierParameters();
-        qualifierParameters.setLimit(-1);
-        PageResult<Data> pageResult = qualifierService.getAllQualifierList(qualifierParameters, tenantId);
-        List<Data> dataList = pageResult.getLists();
-        if (org.apache.commons.collections4.CollectionUtils.isEmpty(dataList)) {
-            return list;
-        }
-        dataList.stream().forEach(data -> list.add(data.getName()));
-        return list;
-    }
-
     @Override
     public String uploadExcelAtom(String tenantId, File file) throws Exception {
         this.getAtomIndexData(file);
@@ -1458,88 +1432,38 @@ public class IndexServiceImpl implements IndexService {
      * @throws Exception
      */
     private List<IndexTemplateAtomDTO> getAtomIndexData(File file) throws Exception {
-        XSSFWorkbook xssfWorkbook = new XSSFWorkbook(file);
-        Sheet sheet = xssfWorkbook.getSheetAt(0);
+        List<String[]> list = PoiExcelUtils.readExcelFile(file, 1, 14);
         List<IndexTemplateAtomDTO> indexTemplateAtomList = new ArrayList<>();
-        for (int i = 1; i < sheet.getLastRowNum() + 1; i++) {
-            Row row = sheet.getRow(i);
+        for (String[] strings : list) {
             IndexTemplateAtomDTO indexTemplateAtom = new IndexTemplateAtomDTO();
-            Cell cell = row.getCell(0);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateAtom.setName(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(1);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateAtom.setIdentification(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(2);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateAtom.setDescription(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(3);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateAtom.setCentral(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(4);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateAtom.setField(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(5);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateAtom.setSource(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(6);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateAtom.setDbName(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(7);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateAtom.setTableName(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(8);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateAtom.setColumnName(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(9);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateAtom.setBusinessCaliber(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(10);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateAtom.setBusinessLeader(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(11);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateAtom.setTechnicalCaliber(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(12);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateAtom.setTechnicalLeader(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(13);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateAtom.setApprove(cell.getStringCellValue().trim());
-            }
+            indexTemplateAtom.setName(strings[0]);
+            indexTemplateAtom.setIdentification(strings[1]);
+            indexTemplateAtom.setDescription(strings[2]);
+            indexTemplateAtom.setCentral(strings[3]);
+            indexTemplateAtom.setField(strings[4]);
+            indexTemplateAtom.setSource(strings[5]);
+            indexTemplateAtom.setDbName(strings[6]);
+            indexTemplateAtom.setTableName(strings[7]);
+            indexTemplateAtom.setColumnName(strings[8]);
+            indexTemplateAtom.setBusinessCaliber(strings[9]);
+            indexTemplateAtom.setBusinessLeader(strings[10]);
+            indexTemplateAtom.setTechnicalCaliber(strings[11]);
+            indexTemplateAtom.setTechnicalLeader(strings[12]);
+            indexTemplateAtom.setApprove(strings[13]);
             String checkResult = indexTemplateAtom.checkFieldsIsNull();
             if (StringUtils.isNotBlank(checkResult)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, checkResult);
             }
             indexTemplateAtomList.add(indexTemplateAtom);
         }
+        this.checkDataAtom(indexTemplateAtomList);
+        return indexTemplateAtomList;
+    }
+
+    /**
+     * 校验数据规则-原子
+     */
+    private void checkDataAtom(List<IndexTemplateAtomDTO> indexTemplateAtomList) throws Exception {
         if (CollectionUtils.isEmpty(indexTemplateAtomList)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内容不能为空");
         }
@@ -1585,7 +1509,6 @@ public class IndexServiceImpl implements IndexService {
         if (indexTemplateAtomList.size() > 100) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "单次指标批量导入上限为100");
         }
-        return indexTemplateAtomList;
     }
 
 
@@ -1597,87 +1520,43 @@ public class IndexServiceImpl implements IndexService {
      * @throws Exception
      */
     private List<IndexTemplateDeriveDTO> getDeriveIndexData(File file) throws Exception {
-        XSSFWorkbook xssfWorkbook = new XSSFWorkbook(file);
-        Sheet sheet = xssfWorkbook.getSheetAt(0);
         List<IndexTemplateDeriveDTO> indexTemplateDeriveDTOList = new ArrayList<>();
-        for (int i = 1; i < sheet.getLastRowNum() + 1; i++) {
-            Row row = sheet.getRow(i);
+        List<String[]> list = PoiExcelUtils.readExcelFile(file, 1, 13);
+        for (String[] strings : list) {
             IndexTemplateDeriveDTO indexTemplateDeriveDTO = new IndexTemplateDeriveDTO();
-            Cell cell = row.getCell(0);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateDeriveDTO.setIndexAtomicName(cell.getStringCellValue().trim());
+            indexTemplateDeriveDTO.setIndexAtomicName(strings[0]);
+            indexTemplateDeriveDTO.setTimeLimitName(strings[1]);
+            indexTemplateDeriveDTO.setModifiersName(strings[2]);
+            indexTemplateDeriveDTO.setIndexName(strings[3]);
+            indexTemplateDeriveDTO.setIndexIdentification(strings[4]);
+            indexTemplateDeriveDTO.setDescription(strings[5]);
+            if ("是".equals(strings[6])) {
+                indexTemplateDeriveDTO.setCentral(true);
+            } else {
+                indexTemplateDeriveDTO.setCentral(false);
             }
-            cell = row.getCell(1);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateDeriveDTO.setTimeLimitName(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(2);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateDeriveDTO.setModifiersName(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(3);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateDeriveDTO.setIndexName(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(4);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateDeriveDTO.setIndexIdentification(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(5);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateDeriveDTO.setDescription(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(6);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                if ("是".equals(cell.getStringCellValue().trim())) {
-                    indexTemplateDeriveDTO.setCentral(true);
-                } else {
-                    indexTemplateDeriveDTO.setCentral(false);
-                }
-            }
-            cell = row.getCell(7);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateDeriveDTO.setIndexFieldName(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(8);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateDeriveDTO.setBusinessCaliber(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(9);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateDeriveDTO.setBusinessLeaderName(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(10);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateDeriveDTO.setTechnicalCaliber(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(11);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateDeriveDTO.setTechnicalLeaderName(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(12);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateDeriveDTO.setApprovalGroupName(cell.getStringCellValue().trim());
-            }
+            indexTemplateDeriveDTO.setIndexFieldName(strings[7]);
+            indexTemplateDeriveDTO.setBusinessCaliber(strings[8]);
+            indexTemplateDeriveDTO.setBusinessLeaderName(strings[9]);
+            indexTemplateDeriveDTO.setTechnicalCaliber(strings[10]);
+            indexTemplateDeriveDTO.setTechnicalLeaderName(strings[11]);
+            indexTemplateDeriveDTO.setApprovalGroupName(strings[12]);
             String checkResult = indexTemplateDeriveDTO.checkFieldsIsNull();
             if (StringUtils.isNotBlank(checkResult)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, checkResult);
             }
             indexTemplateDeriveDTOList.add(indexTemplateDeriveDTO);
         }
+        this.checkDataDerive(indexTemplateDeriveDTOList);
+        return indexTemplateDeriveDTOList;
+    }
+
+    /**
+     * 校验数据规则-派生
+     *
+     * @param indexTemplateDeriveDTOList
+     */
+    private void checkDataDerive(List<IndexTemplateDeriveDTO> indexTemplateDeriveDTOList) throws Exception {
         if (CollectionUtils.isEmpty(indexTemplateDeriveDTOList)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内容不能为空");
         }
@@ -1723,7 +1602,6 @@ public class IndexServiceImpl implements IndexService {
         if (indexTemplateDeriveDTOList.size() > 100) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "单次指标批量导入上限为100");
         }
-        return indexTemplateDeriveDTOList;
     }
 
 
@@ -1735,82 +1613,42 @@ public class IndexServiceImpl implements IndexService {
      * @throws Exception
      */
     private List<IndexTemplateCompositeDTO> getCompositeIndexData(File file) throws Exception {
-        XSSFWorkbook xssfWorkbook = new XSSFWorkbook(file);
-        Sheet sheet = xssfWorkbook.getSheetAt(0);
+        List<String[]> list = PoiExcelUtils.readExcelFile(file, 1, 12);
         List<IndexTemplateCompositeDTO> indexTemplateCompositeDTOList = new ArrayList<>();
-        for (int i = 1; i < sheet.getLastRowNum() + 1; i++) {
-            Row row = sheet.getRow(i);
+        for (String[] strings : list) {
             IndexTemplateCompositeDTO indexTemplateCompositeDTO = new IndexTemplateCompositeDTO();
-            Cell cell = row.getCell(0);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateCompositeDTO.setDependentIndicesName(cell.getStringCellValue().trim());
+            indexTemplateCompositeDTO.setDependentIndicesName(strings[0]);
+            indexTemplateCompositeDTO.setIndexName(strings[1]);
+            indexTemplateCompositeDTO.setIndexIdentification(strings[2]);
+            indexTemplateCompositeDTO.setDescription(strings[3]);
+            if ("是".equals(strings[4])) {
+                indexTemplateCompositeDTO.setCentral(true);
+            } else {
+                indexTemplateCompositeDTO.setCentral(false);
             }
-            cell = row.getCell(1);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateCompositeDTO.setIndexName(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(2);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateCompositeDTO.setIndexIdentification(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(3);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateCompositeDTO.setDescription(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(4);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                if ("是".equals(row.getCell(4).getStringCellValue().trim())) {
-                    indexTemplateCompositeDTO.setCentral(true);
-                } else {
-                    indexTemplateCompositeDTO.setCentral(false);
-                }
-            }
-            cell = row.getCell(5);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateCompositeDTO.setIndexFieldName(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(6);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateCompositeDTO.setExpression(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(7);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateCompositeDTO.setBusinessCaliber(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(8);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateCompositeDTO.setBusinessLeaderName(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(9);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateCompositeDTO.setTechnicalCaliber(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(10);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateCompositeDTO.setTechnicalLeaderName(cell.getStringCellValue().trim());
-            }
-            cell = row.getCell(11);
-            if (cell != null) {
-                cell.setCellType(CellType.STRING);
-                indexTemplateCompositeDTO.setApprovalGroupName(cell.getStringCellValue().trim());
-            }
+            indexTemplateCompositeDTO.setIndexFieldName(strings[5]);
+            indexTemplateCompositeDTO.setExpression(strings[6]);
+            indexTemplateCompositeDTO.setBusinessCaliber(strings[7]);
+            indexTemplateCompositeDTO.setBusinessLeaderName(strings[8]);
+            indexTemplateCompositeDTO.setTechnicalCaliber(strings[9]);
+            indexTemplateCompositeDTO.setTechnicalLeaderName(strings[10]);
+            indexTemplateCompositeDTO.setApprovalGroupName(strings[11]);
             String checkResult = indexTemplateCompositeDTO.checkFieldsIsNull();
             if (StringUtils.isNotBlank(checkResult)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, checkResult);
             }
             indexTemplateCompositeDTOList.add(indexTemplateCompositeDTO);
         }
+        this.checkDataComposite(indexTemplateCompositeDTOList);
+        return indexTemplateCompositeDTOList;
+    }
+
+    /**
+     * 校验数据规则-复合
+     *
+     * @param indexTemplateCompositeDTOList
+     */
+    private void checkDataComposite(List<IndexTemplateCompositeDTO> indexTemplateCompositeDTOList) throws Exception {
         if (CollectionUtils.isEmpty(indexTemplateCompositeDTOList)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内容不能为空");
         }
@@ -1859,7 +1697,6 @@ public class IndexServiceImpl implements IndexService {
         if (indexTemplateCompositeDTOList.size() > 100) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "单次指标批量导入上限为100");
         }
-        return indexTemplateCompositeDTOList;
     }
 
     /**
@@ -1978,11 +1815,11 @@ public class IndexServiceImpl implements IndexService {
         //依赖原子指标
         this.getAtomIndex(tenantId, atomIndexName, indexTemplateAtomDTOList);
         //时间限定
-        if(!CollectionUtils.isEmpty(timeLimitName)){
+        if (!CollectionUtils.isEmpty(timeLimitName)) {
             this.getTimeLimitByName(tenantId, timeLimitName, indexTemplateAtomDTOList);
         }
         //修饰词
-        if(!CollectionUtils.isEmpty(modifiersName)){
+        if (!CollectionUtils.isEmpty(modifiersName)) {
             this.getModifierId(tenantId, modifiersName, indexTemplateAtomDTOList);
         }
         //指标域
@@ -2337,6 +2174,7 @@ public class IndexServiceImpl implements IndexService {
 
     /**
      * 获取依赖派生指标数据-复合
+     *
      * @param tenantId
      * @param deriveIndexName
      * @param indexTemplateCompositeDTOList
