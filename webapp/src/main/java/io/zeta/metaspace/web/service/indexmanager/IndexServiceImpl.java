@@ -1590,7 +1590,7 @@ public class IndexServiceImpl implements IndexService {
 
 
     /**
-     * 获取原子指标数据
+     * 获取派生指标数据
      *
      * @param file
      * @return
@@ -2289,7 +2289,7 @@ public class IndexServiceImpl implements IndexService {
     }
 
     /**
-     * 获取修饰词
+     * 获取修饰词-派生
      *
      * @param tenantId
      * @param modifiersName
@@ -2336,6 +2336,7 @@ public class IndexServiceImpl implements IndexService {
     }
 
     /**
+     * 获取依赖派生指标数据-复合
      * @param tenantId
      * @param deriveIndexName
      * @param indexTemplateCompositeDTOList
@@ -2359,7 +2360,7 @@ public class IndexServiceImpl implements IndexService {
     }
 
     /**
-     * 时间限定
+     * 时间限定-派生
      *
      * @param tenantId
      * @param timeLimitName
@@ -2381,7 +2382,7 @@ public class IndexServiceImpl implements IndexService {
     }
 
     /**
-     * 指标域
+     * 指标域-原子
      *
      * @param tenantId
      * @param fieldSet
@@ -2405,7 +2406,7 @@ public class IndexServiceImpl implements IndexService {
     }
 
     /**
-     * 审批管理
+     * 审批管理-原子
      *
      * @param tenantId
      * @param groupSet
@@ -2427,7 +2428,7 @@ public class IndexServiceImpl implements IndexService {
     }
 
     /**
-     * 业务负责人、技术负责人
+     * 业务负责人、技术负责人-原子
      *
      * @param tenantId
      * @param indexInfoDTOList
@@ -2461,7 +2462,7 @@ public class IndexServiceImpl implements IndexService {
     }
 
     /**
-     * 数据源-字段
+     * 数据源~字段-原子
      *
      * @param tenantId
      * @param indexInfoDTOList
