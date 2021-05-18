@@ -9,87 +9,87 @@ public class IndexCompositePO {
     /**
      * 指标id
      */
-    private  String  indexId ;
+    private String indexId;
     /**
-     *指标名称
+     * 指标名称
      */
-    private  String  indexName ;
+    private String indexName;
     /**
-     *指标标识
+     * 指标标识
      */
-    private  String  indexIdentification ;
+    private String indexIdentification;
     /**
-     *指标描述
+     * 指标描述
      */
-    private  String  description ;
+    private String description;
     /**
-     *是否核心指标
+     * 是否核心指标
      */
-    private  boolean  central ;
+    private boolean central;
     /**
-     *指标域id
+     * 指标域id
      */
-    private  String  indexFieldId ;
+    private String indexFieldId;
     /**
-     *租户id
+     * 租户id
      */
-    private  String  tenantId ;
+    private String tenantId;
     /**
-     *审批组id
+     * 审批组id
      */
-    private  String  approvalGroupId ;
+    private String approvalGroupId;
     /**
-     *指标状态；1 新建(未发布过)，2 已发布，3 已下线，4 审核中
+     * 指标状态；1 新建(未发布过)，2 已发布，3 已下线，4 审核中
      */
-    private  int  indexState ;
+    private int indexState;
     /**
-     *版本号，每发布一次，记录一次历史版本
+     * 版本号，每发布一次，记录一次历史版本
      */
-    private  int  version ;
+    private int version;
     /**
-     *表达式
+     * 表达式
      */
     private String expression;
     /**
-     *业务口径
+     * 业务口径
      */
-    private  String  businessCaliber ;
+    private String businessCaliber;
     /**
-     *业务负责人id
+     * 业务负责人id
      */
-    private  String  businessLeader ;
+    private String businessLeader;
     /**
-     *技术口径
+     * 技术口径
      */
-    private  String  technicalCaliber ;
+    private String technicalCaliber;
     /**
-     *技术负责人id
+     * 技术负责人id
      */
-    private  String  technicalLeader ;
+    private String technicalLeader;
     /**
-     *创建人id
+     * 创建人id
      */
-    private  String  creator ;
+    private String creator;
     /**
-     *创建时间
+     * 创建时间
      */
-    private Timestamp createTime ;
+    private Timestamp createTime;
     /**
-     *更新人id
+     * 更新人id
      */
-    private  String  updater ;
+    private String updater;
     /**
-     *更新时间
+     * 更新时间
      */
-    private  Timestamp  updateTime ;
+    private Timestamp updateTime;
     /**
-     *发布人id
+     * 发布人id
      */
-    private  String  publisher ;
+    private String publisher;
     /**
-     *发布时间
+     * 发布时间
      */
-    private  Timestamp  publishTime ;
+    private Timestamp publishTime;
 
     public String getIndexId() {
         return indexId;
