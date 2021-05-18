@@ -1995,13 +1995,8 @@ public class IndexServiceImpl implements IndexService {
         if (groupSet.size() != approveGroupListAndSearchResultList.size()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审批管理名称不存在");
         }
-        for (IndexTemplateDeriveDTO indexTemplateDeriveDTO : indexTemplateAtomDTOList) {
-            for (ApproveGroupListAndSearchResult approveGroupListAndSearchResult : approveGroupListAndSearchResultList) {
-                if (indexTemplateDeriveDTO.getApprovalGroupName().equals(approveGroupListAndSearchResult.getName())) {
-                    indexTemplateDeriveDTO.setApprovalGroupId(approveGroupListAndSearchResult.getId());
-                }
-            }
-        }
+        Map<String, String> map = approveGroupListAndSearchResultList.stream().collect(Collectors.toMap(ApproveGroupListAndSearchResult::getName, ApproveGroupListAndSearchResult::getId));
+        indexTemplateAtomDTOList.stream().forEach(indexTemplateDeriveDTO -> indexTemplateDeriveDTO.setApprovalGroupId(map.get(indexTemplateDeriveDTO.getApprovalGroupName())));
     }
 
     /**
@@ -2017,13 +2012,8 @@ public class IndexServiceImpl implements IndexService {
         if (groupSet.size() != approveGroupListAndSearchResultList.size()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审批管理名称不存在");
         }
-        for (IndexTemplateCompositeDTO indexTemplateCompositeDTO : indexTemplateCompositeDTOList) {
-            for (ApproveGroupListAndSearchResult approveGroupListAndSearchResult : approveGroupListAndSearchResultList) {
-                if (indexTemplateCompositeDTO.getApprovalGroupName().equals(approveGroupListAndSearchResult.getName())) {
-                    indexTemplateCompositeDTO.setApprovalGroupId(approveGroupListAndSearchResult.getId());
-                }
-            }
-        }
+        Map<String, String> map = approveGroupListAndSearchResultList.stream().collect(Collectors.toMap(ApproveGroupListAndSearchResult::getName, ApproveGroupListAndSearchResult::getId));
+        indexTemplateCompositeDTOList.stream().forEach(indexTemplateCompositeDTO -> indexTemplateCompositeDTO.setApprovalGroupId(map.get(indexTemplateCompositeDTO.getApprovalGroupName())));
     }
 
     /**
@@ -2042,22 +2032,17 @@ public class IndexServiceImpl implements IndexService {
         if (CollectionUtils.isEmpty(userList)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取业务负责人信息失败");
         }
-        for (IndexTemplateDeriveDTO indexTemplateDeriveDTO : indexTemplateAtomDTOList) {
-            for (User user : userList) {
-                if (indexTemplateDeriveDTO.getBusinessLeaderName().equals(user.getUsername())) {
-                    indexTemplateDeriveDTO.setBusinessLeader(user.getUserId());
-                }
-                if (indexTemplateDeriveDTO.getTechnicalLeaderName().equals(user.getUsername())) {
-                    indexTemplateDeriveDTO.setTechnicalLeader(user.getUserId());
-                }
-            }
+        Map<String, String> map = userList.stream().collect(Collectors.toMap(User::getUsername, User::getUserId));
+        indexTemplateAtomDTOList.stream().forEach(indexTemplateDeriveDTO -> {
+            indexTemplateDeriveDTO.setBusinessLeader(map.get(indexTemplateDeriveDTO.getBusinessLeaderName()));
+            indexTemplateDeriveDTO.setTechnicalLeader(map.get(indexTemplateDeriveDTO.getTechnicalLeaderName()));
             if (StringUtils.isBlank(indexTemplateDeriveDTO.getBusinessLeader())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "业务负责人不存在");
             }
             if (StringUtils.isNotBlank(indexTemplateDeriveDTO.getTechnicalLeaderName()) && StringUtils.isBlank(indexTemplateDeriveDTO.getTechnicalLeader())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "技术负责人不存在");
             }
-        }
+        });
     }
 
 
@@ -2077,22 +2062,17 @@ public class IndexServiceImpl implements IndexService {
         if (CollectionUtils.isEmpty(userList)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取业务负责人信息失败");
         }
-        for (IndexTemplateCompositeDTO indexTemplateCompositeDTO : indexTemplateCompositeDTOList) {
-            for (User user : userList) {
-                if (indexTemplateCompositeDTO.getBusinessLeaderName().equals(user.getUsername())) {
-                    indexTemplateCompositeDTO.setBusinessLeader(user.getUserId());
-                }
-                if (indexTemplateCompositeDTO.getTechnicalLeaderName().equals(user.getUsername())) {
-                    indexTemplateCompositeDTO.setTechnicalLeader(user.getUserId());
-                }
-            }
+        Map<String, String> map = userList.stream().collect(Collectors.toMap(User::getUsername, User::getUserId));
+        indexTemplateCompositeDTOList.stream().forEach(indexTemplateCompositeDTO -> {
+            indexTemplateCompositeDTO.setBusinessLeader(map.get(indexTemplateCompositeDTO.getBusinessLeaderName()));
+            indexTemplateCompositeDTO.setTechnicalLeader(map.get(indexTemplateCompositeDTO.getTechnicalLeaderName()));
             if (StringUtils.isBlank(indexTemplateCompositeDTO.getBusinessLeader())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "业务负责人不存在");
             }
             if (StringUtils.isNotBlank(indexTemplateCompositeDTO.getTechnicalLeaderName()) && StringUtils.isBlank(indexTemplateCompositeDTO.getTechnicalLeader())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "技术负责人不存在");
             }
-        }
+        });
     }
 
     /**
@@ -2110,13 +2090,8 @@ public class IndexServiceImpl implements IndexService {
         if (categoryEntityV2List.size() != fieldSet.size()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在");
         }
-        for (IndexTemplateDeriveDTO indexTemplateDeriveDTO : indexTemplateAtomDTOList) {
-            for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2List) {
-                if (indexTemplateDeriveDTO.getIndexFieldName().equals(categoryEntityV2.getName())) {
-                    indexTemplateDeriveDTO.setIndexFieldId(categoryEntityV2.getGuid());
-                }
-            }
-        }
+        Map<String, String> map = categoryEntityV2List.stream().collect(Collectors.toMap(CategoryEntityV2::getName, CategoryEntityV2::getGuid));
+        indexTemplateAtomDTOList.stream().forEach(indexTemplateDeriveDTO -> indexTemplateDeriveDTO.setIndexFieldId(map.get(indexTemplateDeriveDTO.getIndexFieldName())));
     }
 
     /**
@@ -2134,13 +2109,8 @@ public class IndexServiceImpl implements IndexService {
         if (categoryEntityV2List.size() != fieldSet.size()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在");
         }
-        for (IndexTemplateCompositeDTO indexTemplateCompositeDTO : indexTemplateCompositeDTOList) {
-            for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2List) {
-                if (indexTemplateCompositeDTO.getIndexFieldName().equals(categoryEntityV2.getName())) {
-                    indexTemplateCompositeDTO.setIndexFieldId(categoryEntityV2.getGuid());
-                }
-            }
-        }
+        Map<String, String> map = categoryEntityV2List.stream().collect(Collectors.toMap(CategoryEntityV2::getName, CategoryEntityV2::getGuid));
+        indexTemplateCompositeDTOList.stream().forEach(indexTemplateCompositeDTO -> indexTemplateCompositeDTO.setIndexFieldId(map.get(indexTemplateCompositeDTO.getIndexFieldName())));
     }
 
     /**
@@ -2171,9 +2141,7 @@ public class IndexServiceImpl implements IndexService {
         if (modifiersName.size() != dataList.size()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修饰词不存在");
         }
-        for (IndexTemplateDeriveDTO indexTemplateDeriveDTO : indexTemplateAtomDTOList) {
-            indexTemplateDeriveDTO.setModifiers(this.getModifierIdList(dataList, indexTemplateDeriveDTO));
-        }
+        indexTemplateAtomDTOList.stream().forEach(indexTemplateDeriveDTO -> indexTemplateDeriveDTO.setModifiers(this.getModifierIdList(dataList, indexTemplateDeriveDTO)));
     }
 
     /**
@@ -2185,13 +2153,8 @@ public class IndexServiceImpl implements IndexService {
      */
     private List<String> getModifierIdList(List<Data> dataList, IndexTemplateDeriveDTO indexTemplateDeriveDTO) {
         List<String> list = new ArrayList<>();
-        for (String s : indexTemplateDeriveDTO.getModifiersNameList()) {
-            for (Data data : dataList) {
-                if (s.equals(data.getName())) {
-                    list.add(data.getId());
-                }
-            }
-        }
+        Map<String, String> map = dataList.stream().collect(Collectors.toMap(Data::getName, Data::getId));
+        indexTemplateDeriveDTO.getModifiersNameList().stream().forEach(str -> list.add(map.get(str)));
         return list;
     }
 
@@ -2208,12 +2171,9 @@ public class IndexServiceImpl implements IndexService {
         if (atomIndexName.size() != indexAtomicPOList.size()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "依赖原子指标不存在");
         }
+        Map<String, String> map = indexAtomicPOList.stream().collect(Collectors.toMap(IndexAtomicPO::getIndexName, IndexAtomicPO::getIndexId));
         for (IndexTemplateDeriveDTO indexTemplateDeriveDTO : indexTemplateAtomDTOList) {
-            for (IndexAtomicPO indexAtomicPO : indexAtomicPOList) {
-                if (indexTemplateDeriveDTO.getIndexAtomicName().equals(indexAtomicPO.getIndexName())) {
-                    indexTemplateDeriveDTO.setIndexAtomicId(indexAtomicPO.getIndexId());
-                }
-            }
+            indexTemplateDeriveDTO.setIndexAtomicId(map.get(indexTemplateDeriveDTO.getIndexAtomicName()));
         }
     }
 
@@ -2229,9 +2189,7 @@ public class IndexServiceImpl implements IndexService {
         if (deriveIndexName.size() != indexDerivePOList.size()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "依赖派生指标不存在");
         }
-        for (IndexTemplateCompositeDTO indexTemplateCompositeDTO : indexTemplateCompositeDTOList) {
-            indexTemplateCompositeDTO.setDependentIndicesId(this.getCompositeIndexIdList(indexDerivePOList, indexTemplateCompositeDTO));
-        }
+        indexTemplateCompositeDTOList.stream().forEach(indexTemplateCompositeDTO -> indexTemplateCompositeDTO.setDependentIndicesId(this.getCompositeIndexIdList(indexDerivePOList, indexTemplateCompositeDTO)));
     }
 
     /**
@@ -2243,13 +2201,8 @@ public class IndexServiceImpl implements IndexService {
      */
     private List<String> getCompositeIndexIdList(List<IndexDerivePO> indexDerivePOList, IndexTemplateCompositeDTO indexTemplateCompositeDTO) {
         List<String> list = new ArrayList<>();
-        for (String dependentIndicesName : indexTemplateCompositeDTO.getDependentIndicesNameS()) {
-            for (IndexDerivePO indexDerivePO : indexDerivePOList) {
-                if (dependentIndicesName.equals(indexDerivePO.getIndexName())) {
-                    list.add(indexDerivePO.getIndexId());
-                }
-            }
-        }
+        Map<String, String> map = indexDerivePOList.stream().collect(Collectors.toMap(IndexDerivePO::getIndexName, IndexDerivePO::getIndexId));
+        indexTemplateCompositeDTO.getDependentIndicesNameS().stream().forEach(str -> list.add(map.get(str)));
         return list;
     }
 
@@ -2266,13 +2219,8 @@ public class IndexServiceImpl implements IndexService {
         if (timeLimitEntityList.size() != timeLimitName.size()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "时间限定不存在");
         }
-        for (IndexTemplateDeriveDTO indexTemplateDeriveDTO : indexTemplateAtomDTOList) {
-            for (TimelimitEntity timelimitEntity : timeLimitEntityList) {
-                if (indexTemplateDeriveDTO.getTimeLimitName().equals(timelimitEntity.getName())) {
-                    indexTemplateDeriveDTO.setTimeLimitId(timelimitEntity.getId());
-                }
-            }
-        }
+        Map<String, String> map = timeLimitEntityList.stream().collect(Collectors.toMap(TimelimitEntity::getName, TimelimitEntity::getId));
+        indexTemplateAtomDTOList.stream().forEach(indexTemplateDeriveDTO -> indexTemplateDeriveDTO.setTimeLimitId(map.get(indexTemplateDeriveDTO.getTimeLimitName())));
     }
 
     /**
@@ -2290,13 +2238,8 @@ public class IndexServiceImpl implements IndexService {
         if (categoryEntityV2List.size() != fieldSet.size()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在");
         }
-        for (IndexInfoDTO indexDTO : indexInfoDTOList) {
-            for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2List) {
-                if (indexDTO.getIndexFieldName().equals(categoryEntityV2.getName())) {
-                    indexDTO.setIndexFieldId(categoryEntityV2.getGuid());
-                }
-            }
-        }
+        Map<String, String> map = categoryEntityV2List.stream().collect(Collectors.toMap(CategoryEntityV2::getName, CategoryEntityV2::getGuid));
+        indexInfoDTOList.stream().forEach(indexInfoDTO -> indexInfoDTO.setIndexFieldId(map.get(indexInfoDTO.getIndexFieldName())));
     }
 
     /**
@@ -2312,13 +2255,8 @@ public class IndexServiceImpl implements IndexService {
         if (groupSet.size() != approveGroupListAndSearchResultList.size()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审批管理名称不存在");
         }
-        for (IndexInfoDTO indexDTO : indexInfoDTOList) {
-            for (ApproveGroupListAndSearchResult approveGroupListAndSearchResult : approveGroupListAndSearchResultList) {
-                if (indexDTO.getApprovalGroupName().equals(approveGroupListAndSearchResult.getName())) {
-                    indexDTO.setApprovalGroupId(approveGroupListAndSearchResult.getId());
-                }
-            }
-        }
+        Map<String, String> map = approveGroupListAndSearchResultList.stream().collect(Collectors.toMap(ApproveGroupListAndSearchResult::getName, ApproveGroupListAndSearchResult::getId));
+        indexInfoDTOList.stream().forEach(indexInfoDTO -> indexInfoDTO.setApprovalGroupId(map.get(indexInfoDTO.getApprovalGroupName())));
     }
 
     /**
@@ -2337,15 +2275,10 @@ public class IndexServiceImpl implements IndexService {
         if (CollectionUtils.isEmpty(userList)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取业务负责人信息失败");
         }
+        Map<String, String> map = userList.stream().collect(Collectors.toMap(User::getUsername, User::getUserId));
         for (IndexInfoDTO indexDTO : indexInfoDTOList) {
-            for (User user : userList) {
-                if (indexDTO.getBusinessLeaderName().equals(user.getUsername())) {
-                    indexDTO.setBusinessLeader(user.getUserId());
-                }
-                if (indexDTO.getTechnicalLeaderName().equals(user.getUsername())) {
-                    indexDTO.setTechnicalLeader(user.getUserId());
-                }
-            }
+            indexDTO.setBusinessLeader(map.get(indexDTO.getBusinessLeaderName()));
+            indexDTO.setTechnicalLeader(map.get(indexDTO.getTechnicalLeaderName()));
             if (StringUtils.isBlank(indexDTO.getBusinessLeader())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "业务负责人不存在");
             }
@@ -2354,6 +2287,4 @@ public class IndexServiceImpl implements IndexService {
             }
         }
     }
-
-
 }
