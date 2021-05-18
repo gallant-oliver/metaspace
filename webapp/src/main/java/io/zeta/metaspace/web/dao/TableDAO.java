@@ -10,6 +10,7 @@ import org.apache.ibatis.annotations.*;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Set;
 
 public interface TableDAO {
     @Select("select * from tableinfo where tableguid=#{guid}")
@@ -158,20 +159,39 @@ public interface TableDAO {
     List<TableInfo> getTableByDataSourceAndDb(@Param("dataSourceId") String dataSourceId, @Param("dbName") String dbName, @Param("status") String status);
 
     @Select({"<script>",
-            " SELECT tb.source_id as sourceId,tb.databaseguid as databaseGuid,tb.tableguid as tableGuid,co.column_guid as columnGuid",
-            " FROM tableinfo AS tb INNER JOIN column_info AS co ON tb.tableguid = co.table_guid WHERE",
-            " tb.source_id = 'hive' AND tb.dbname in ",
-            " <foreach item='item' index='index' collection='list' open='(' separator=',' close=')'>",
+            " SELECT tb.source_id AS sourceId,'hive' AS sourceName,tb.databaseguid AS databaseGuid,tb.dbname AS dbName,tb.tableguid AS tableGuid,tb.tablename AS tableName,co.column_guid AS columnGuid,co.COLUMN_NAME AS columnName",
+            " FROM tableinfo AS tb INNER JOIN column_info AS co ON tb.tableguid = co.table_guid WHERE tb.source_id = 'hive' ",
+            " AND tb.dbname IN",
+            " <foreach item='item' index='index' collection='dbNameList' open='(' separator=',' close=')'>",
             " #{item}",
             " </foreach>",
-            " AND tb.dbname = #{dbName} AND tb.tablename = #{tableName} AND co.COLUMN_NAME = #{columnName}",
+            " AND tb.tablename IN",
+            " <foreach item='item' index='index' collection='tableNameList' open='(' separator=',' close=')'>",
+            " #{item}",
+            " </foreach>",
+            " AND co.COLUMN_NAME IN",
+            " <foreach item='item' index='index' collection='columnNameList' open='(' separator=',' close=')'>",
+            " #{item}",
+            " </foreach>",
+            " union",
+            " SELECT tb.source_id AS sourceId,da.source_name AS sourceName,tb.databaseguid AS databaseGuid,tb.dbname AS dbName,tb.tableguid AS tableGuid,tb.tablename AS tableName,co.column_guid AS columnGuid,co.COLUMN_NAME AS columnName ",
+            " FROM tableinfo AS tb INNER JOIN column_info AS co ON tb.tableguid = co.table_guid INNER JOIN data_source AS da ON tb.source_id = da.source_id WHERE da.tenantid = #{tenantId} ",
+            " AND da.source_name IN",
+            " <foreach item='item' index='index' collection='sourceNameList' open='(' separator=',' close=')'>",
+            " #{item}",
+            " </foreach>",
+            " AND tb.dbname IN",
+            " <foreach item='item' index='index' collection='dbNameList' open='(' separator=',' close=')'>",
+            " #{item}",
+            " </foreach>",
+            " AND tb.tablename IN",
+            " <foreach item='item' index='index' collection='tableNameList' open='(' separator=',' close=')'>",
+            " #{item}",
+            " </foreach>",
+            " AND co.COLUMN_NAME IN",
+            " <foreach item='item' index='index' collection='columnNameList' open='(' separator=',' close=')'>",
+            " #{item}",
+            " </foreach>",
             "</script>"})
-    TableInfoId selectHiveIdByName(@Param("list") List<String> list, @Param("dbName") String dbName, @Param("tableName") String tableName, @Param("columnName") String columnName);
-
-    @Select({"<script>",
-            " SELECT tb.source_id,tb.databaseguid,tb.tableguid,co.column_guid FROM tableinfo AS tb INNER JOIN column_info AS co ON tb.tableguid = co.table_guid",
-            " INNER JOIN data_source AS da ON tb.source_id = da.source_id  WHERE",
-            " da.tenantid = #{tenantId} AND da.source_name = #{sourceName} AND tb.dbname = #{dbName} AND tb.tablename = #{tableName} AND co.COLUMN_NAME = #{columnName}",
-            "</script>"})
-    TableInfoId selectRdbmsIdByName(@Param("tenantId") String tenantId, @Param("sourceName") String sourceName, @Param("dbName") String dbName, @Param("tableName") String tableName, @Param("columnName") String columnName);
+    List<TableInfoId> selectListByName(@Param("tenantId") String tenantId, @Param("sourceNameList") Set<String> sourceNameList, @Param("dbNameList") Set<String> dbNameList, @Param("tableNameList") Set<String> tableNameList, @Param("columnNameList") Set<String> columnNameList);
 }
