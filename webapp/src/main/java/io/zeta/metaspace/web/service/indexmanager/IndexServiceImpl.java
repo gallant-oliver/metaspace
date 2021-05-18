@@ -52,6 +52,7 @@ import java.io.File;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1408,19 +1409,19 @@ public class IndexServiceImpl implements IndexService {
 
     @Override
     public String uploadExcelAtom(String tenantId, File file) throws Exception {
-        this.getAtomIndexData(file);
+        this.checkDataAtom(this.getAtomIndexData(file));
         return ExportDataPathUtils.transferTo(file);
     }
 
     @Override
     public String uploadExcelDerive(String tenantId, File file) throws Exception {
-        this.getDeriveIndexData(file);
+        this.checkDataDerive(this.getDeriveIndexData(file));
         return ExportDataPathUtils.transferTo(file);
     }
 
     @Override
     public String uploadExcelComposite(String tenantId, File file) throws Exception {
-        this.getCompositeIndexData(file);
+        this.checkDataComposite(this.getCompositeIndexData(file));
         return ExportDataPathUtils.transferTo(file);
     }
 
@@ -1456,7 +1457,6 @@ public class IndexServiceImpl implements IndexService {
             }
             indexTemplateAtomList.add(indexTemplateAtom);
         }
-        this.checkDataAtom(indexTemplateAtomList);
         return indexTemplateAtomList;
     }
 
@@ -1547,7 +1547,6 @@ public class IndexServiceImpl implements IndexService {
             }
             indexTemplateDeriveDTOList.add(indexTemplateDeriveDTO);
         }
-        this.checkDataDerive(indexTemplateDeriveDTOList);
         return indexTemplateDeriveDTOList;
     }
 
@@ -1639,7 +1638,6 @@ public class IndexServiceImpl implements IndexService {
             }
             indexTemplateCompositeDTOList.add(indexTemplateCompositeDTO);
         }
-        this.checkDataComposite(indexTemplateCompositeDTOList);
         return indexTemplateCompositeDTOList;
     }
 
@@ -1718,6 +1716,7 @@ public class IndexServiceImpl implements IndexService {
         List<String> identificationList = new ArrayList<>();
         Set<String> fieldSet = new HashSet<>(16);
         Set<String> groupSet = new HashSet<>(16);
+
         indexTemplateAtomDTOList.stream().forEach(indexTemplateAtomDTO -> {
             nameList.add(indexTemplateAtomDTO.getName());
             identificationList.add(indexTemplateAtomDTO.getIdentification());
@@ -1757,21 +1756,49 @@ public class IndexServiceImpl implements IndexService {
         this.getUserId(tenantId, indexInfoDTOList);
         //审批管理
         this.getApproveGroupId(tenantId, groupSet, indexInfoDTOList);
-        indexAtomicPOList = new ArrayList<>();
-        User user = AdminUtils.getUserData();
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        for (IndexInfoDTO indexDTO : indexInfoDTOList) {
-            IndexAtomicPO iap = BeanMapper.map(indexDTO, IndexAtomicPO.class);
-            iap.setIndexId(UUID.randomUUID().toString());
-            iap.setTenantId(tenantId);
-            iap.setIndexState(1);
-            iap.setVersion(0);
-            iap.setCreator(user.getUserId());
-            iap.setCreateTime(timestamp);
-            iap.setUpdateTime(timestamp);
-            indexAtomicPOList.add(iap);
+        ProxyUtil.getProxy(IndexServiceImpl.class).addBatchAtomIndex(indexInfoDTOList, tenantId);
+    }
+
+
+    /**
+     * 数据源~字段-原子
+     *
+     * @param tenantId
+     * @param indexInfoDTOList
+     * @throws Exception
+     */
+    private void getDatasourceId(String tenantId, List<IndexInfoDTO> indexInfoDTOList) throws Exception {
+        Set<String> sourceNameList = new HashSet<>(16);
+        Set<String> dbNameList = new HashSet<>(16);
+        Set<String> tableNameList = new HashSet<>(16);
+        Set<String> columnNameList = new HashSet<>(16);
+        for (IndexInfoDTO indexInfoDTO : indexInfoDTOList) {
+            sourceNameList.add(indexInfoDTO.getSourceName());
+            dbNameList.add(indexInfoDTO.getDbName());
+            tableNameList.add(indexInfoDTO.getTableName());
+            columnNameList.add(indexInfoDTO.getColumnName());
         }
-        ProxyUtil.getProxy(IndexServiceImpl.class).addBatchAtomIndex(indexAtomicPOList);
+        List<TableInfoId> tableInfoIdList = tableDAO.selectListByName(tenantId, sourceNameList, dbNameList, tableNameList, columnNameList);
+        if (CollectionUtils.isEmpty(tableInfoIdList)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源信息不存在");
+        }
+        AtomicReference<Integer> count = new AtomicReference<>(0);
+        indexInfoDTOList.stream().forEach(indexInfoDTO -> {
+            tableInfoIdList.stream().forEach(tableInfoId -> {
+                if (indexInfoDTO.getSourceName().equalsIgnoreCase(tableInfoId.getSourceName())
+                        && indexInfoDTO.getDbName().equalsIgnoreCase(tableInfoId.getDbname())
+                        && indexInfoDTO.getTableName().equalsIgnoreCase(tableInfoId.getTableName())
+                        && indexInfoDTO.getColumnName().equalsIgnoreCase(tableInfoId.getColumnName())) {
+                    indexInfoDTO.setSourceId(tableInfoId.getSourceId());
+                    indexInfoDTO.setTableId(tableInfoId.getTableGuid());
+                    indexInfoDTO.setColumnId(tableInfoId.getColumnGuid());
+                    count.updateAndGet(v -> v + 1);
+                }
+            });
+        });
+        if (!count.get().equals(indexInfoDTOList.size())) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "部分数据源信息不存在");
+        }
     }
 
     /**
@@ -1793,7 +1820,6 @@ public class IndexServiceImpl implements IndexService {
         Set<String> modifiersName = new HashSet<>(16);
         List<String> nameList = new ArrayList<>();
         List<String> identificationList = new ArrayList<>();
-
         Set<String> fieldSet = new HashSet<>(16);
         Set<String> groupSet = new HashSet<>(16);
         indexTemplateAtomDTOList.stream().forEach(indexTemplateAtomDTO -> {
@@ -1806,7 +1832,6 @@ public class IndexServiceImpl implements IndexService {
             fieldSet.add(indexTemplateAtomDTO.getIndexFieldName());
             groupSet.add(indexTemplateAtomDTO.getApprovalGroupName());
         });
-
         List<IndexDerivePO> indexAtomicPOList = indexDAO.selectDeriveListByNameAndIdentification(tenantId, nameList, identificationList);
         if (!CollectionUtils.isEmpty(indexAtomicPOList)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标名称或者指标标识已经存在");
@@ -1828,29 +1853,7 @@ public class IndexServiceImpl implements IndexService {
         this.getUserIdDerive(tenantId, indexTemplateAtomDTOList);
         //审批管理
         this.getApproveGroupIdDerive(tenantId, groupSet, indexTemplateAtomDTOList);
-
-        User user = AdminUtils.getUserData();
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        List<IndexDerivePO> indexDerivePOList = new ArrayList<>();
-        List<IndexDeriveModifierRelationPO> indexDeriveModifierRelationPOList = new ArrayList<>();
-        for (IndexTemplateDeriveDTO indexTemplateDeriveDTO : indexTemplateAtomDTOList) {
-            IndexDerivePO idp = BeanMapper.map(indexTemplateDeriveDTO, IndexDerivePO.class);
-            idp.setIndexId(UUID.randomUUID().toString());
-            idp.setTenantId(tenantId);
-            idp.setIndexState(1);
-            idp.setVersion(0);
-            idp.setCreator(user.getUserId());
-            idp.setCreateTime(timestamp);
-            idp.setUpdateTime(timestamp);
-            indexDerivePOList.add(idp);
-            for (String modifier : indexTemplateDeriveDTO.getModifiers()) {
-                IndexDeriveModifierRelationPO indexDeriveModifierRelationPO = new IndexDeriveModifierRelationPO();
-                indexDeriveModifierRelationPO.setDeriveIndexId(idp.getIndexId());
-                indexDeriveModifierRelationPO.setModifierId(modifier);
-                indexDeriveModifierRelationPOList.add(indexDeriveModifierRelationPO);
-            }
-        }
-        ProxyUtil.getProxy(IndexServiceImpl.class).addBatchDeriveIndex(indexDerivePOList, indexDeriveModifierRelationPOList);
+        ProxyUtil.getProxy(IndexServiceImpl.class).addBatchDeriveIndex(tenantId, indexTemplateAtomDTOList);
     }
 
 
@@ -1901,10 +1904,62 @@ public class IndexServiceImpl implements IndexService {
         this.getUserIdComposite(tenantId, indexTemplateCompositeDTOList);
         //审批管理
         this.getApproveGroupIdComposite(tenantId, groupSet, indexTemplateCompositeDTOList);
+        ProxyUtil.getProxy(IndexServiceImpl.class).addBatchCompositeIndex(tenantId, indexTemplateCompositeDTOList);
+    }
 
+    @Transactional(rollbackFor = Exception.class)
+    public void addBatchAtomIndex(List<IndexInfoDTO> indexInfoDTOList, String tenantId) throws Exception {
+        List<IndexAtomicPO> indexAtomicPOList = new ArrayList<>();
         User user = AdminUtils.getUserData();
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        indexCompositePOList = new ArrayList<>();
+        for (IndexInfoDTO indexDTO : indexInfoDTOList) {
+            IndexAtomicPO iap = BeanMapper.map(indexDTO, IndexAtomicPO.class);
+            iap.setIndexId(UUID.randomUUID().toString());
+            iap.setTenantId(tenantId);
+            iap.setIndexState(1);
+            iap.setVersion(0);
+            iap.setCreator(user.getUserId());
+            iap.setCreateTime(timestamp);
+            iap.setUpdateTime(timestamp);
+            indexAtomicPOList.add(iap);
+        }
+        indexDAO.insertAtomicIndexList(indexAtomicPOList);
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void addBatchDeriveIndex(String tenantId, List<IndexTemplateDeriveDTO> indexTemplateAtomDTOList) throws Exception {
+        User user = AdminUtils.getUserData();
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        List<IndexDerivePO> indexDerivePOList = new ArrayList<>();
+        List<IndexDeriveModifierRelationPO> indexDeriveModifierRelationPOList = new ArrayList<>();
+        for (IndexTemplateDeriveDTO indexTemplateDeriveDTO : indexTemplateAtomDTOList) {
+            IndexDerivePO idp = BeanMapper.map(indexTemplateDeriveDTO, IndexDerivePO.class);
+            idp.setIndexId(UUID.randomUUID().toString());
+            idp.setTenantId(tenantId);
+            idp.setIndexState(1);
+            idp.setVersion(0);
+            idp.setCreator(user.getUserId());
+            idp.setCreateTime(timestamp);
+            idp.setUpdateTime(timestamp);
+            indexDerivePOList.add(idp);
+            for (String modifier : indexTemplateDeriveDTO.getModifiers()) {
+                IndexDeriveModifierRelationPO indexDeriveModifierRelationPO = new IndexDeriveModifierRelationPO();
+                indexDeriveModifierRelationPO.setDeriveIndexId(idp.getIndexId());
+                indexDeriveModifierRelationPO.setModifierId(modifier);
+                indexDeriveModifierRelationPOList.add(indexDeriveModifierRelationPO);
+            }
+        }
+        indexDAO.addDeriveIndexList(indexDerivePOList);
+        if (!CollectionUtils.isEmpty(indexDeriveModifierRelationPOList)) {
+            indexDAO.addDeriveModifierRelations(indexDeriveModifierRelationPOList);
+        }
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void addBatchCompositeIndex(String tenantId, List<IndexTemplateCompositeDTO> indexTemplateCompositeDTOList) throws Exception {
+        User user = AdminUtils.getUserData();
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        List<IndexCompositePO> indexCompositePOList = new ArrayList<>();
         List<IndexDeriveCompositeRelationPO> indexDeriveCompositeRelationPOList = new ArrayList<>();
         for (IndexTemplateCompositeDTO indexTemplateCompositeDTO : indexTemplateCompositeDTOList) {
             IndexCompositePO icp = BeanMapper.map(indexTemplateCompositeDTO, IndexCompositePO.class);
@@ -1923,25 +1978,6 @@ public class IndexServiceImpl implements IndexService {
                 indexDeriveCompositeRelationPOList.add(indexDeriveCompositeRelationPO);
             }
         }
-
-        ProxyUtil.getProxy(IndexServiceImpl.class).addBatchCompositeIndex(indexCompositePOList, indexDeriveCompositeRelationPOList);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public void addBatchAtomIndex(List<IndexAtomicPO> indexAtomicPOList) throws Exception {
-        indexDAO.insertAtomicIndexList(indexAtomicPOList);
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public void addBatchDeriveIndex(List<IndexDerivePO> indexDerivePOList, List<IndexDeriveModifierRelationPO> indexDeriveModifierRelationPOList) throws Exception {
-        indexDAO.addDeriveIndexList(indexDerivePOList);
-        if (!CollectionUtils.isEmpty(indexDeriveModifierRelationPOList)) {
-            indexDAO.addDeriveModifierRelations(indexDeriveModifierRelationPOList);
-        }
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public void addBatchCompositeIndex(List<IndexCompositePO> indexCompositePOList, List<IndexDeriveCompositeRelationPO> indexDeriveCompositeRelationPOList) throws Exception {
         indexDAO.addCompositeIndexList(indexCompositePOList);
         indexDAO.addDeriveCompositeRelations(indexDeriveCompositeRelationPOList);
     }
@@ -1968,7 +2004,6 @@ public class IndexServiceImpl implements IndexService {
         }
     }
 
-
     /**
      * 审批管理-复合
      *
@@ -1990,7 +2025,6 @@ public class IndexServiceImpl implements IndexService {
             }
         }
     }
-
 
     /**
      * 业务负责人、技术负责人-派生
@@ -2138,16 +2172,27 @@ public class IndexServiceImpl implements IndexService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "修饰词不存在");
         }
         for (IndexTemplateDeriveDTO indexTemplateDeriveDTO : indexTemplateAtomDTOList) {
-            List<String> list = new ArrayList<>();
-            for (String s : indexTemplateDeriveDTO.getModifiersNameList()) {
-                for (Data data : dataList) {
-                    if (s.equals(data.getName())) {
-                        list.add(data.getId());
-                    }
+            indexTemplateDeriveDTO.setModifiers(this.getModifierIdList(dataList, indexTemplateDeriveDTO));
+        }
+    }
+
+    /**
+     * 获取修饰词ID列表
+     *
+     * @param dataList
+     * @param indexTemplateDeriveDTO
+     * @return
+     */
+    private List<String> getModifierIdList(List<Data> dataList, IndexTemplateDeriveDTO indexTemplateDeriveDTO) {
+        List<String> list = new ArrayList<>();
+        for (String s : indexTemplateDeriveDTO.getModifiersNameList()) {
+            for (Data data : dataList) {
+                if (s.equals(data.getName())) {
+                    list.add(data.getId());
                 }
             }
-            indexTemplateDeriveDTO.setModifiers(list);
         }
+        return list;
     }
 
     /**
@@ -2185,16 +2230,27 @@ public class IndexServiceImpl implements IndexService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "依赖派生指标不存在");
         }
         for (IndexTemplateCompositeDTO indexTemplateCompositeDTO : indexTemplateCompositeDTOList) {
-            List<String> dependentIndicesIdList = new ArrayList<>();
-            for (String dependentIndicesName : indexTemplateCompositeDTO.getDependentIndicesNameS()) {
-                for (IndexDerivePO indexDerivePO : indexDerivePOList) {
-                    if (dependentIndicesName.equals(indexDerivePO.getIndexName())) {
-                        dependentIndicesIdList.add(indexDerivePO.getIndexId());
-                    }
+            indexTemplateCompositeDTO.setDependentIndicesId(this.getCompositeIndexIdList(indexDerivePOList, indexTemplateCompositeDTO));
+        }
+    }
+
+    /**
+     * 获取依赖派生指标ID列表
+     *
+     * @param indexDerivePOList
+     * @param indexTemplateCompositeDTO
+     * @return
+     */
+    private List<String> getCompositeIndexIdList(List<IndexDerivePO> indexDerivePOList, IndexTemplateCompositeDTO indexTemplateCompositeDTO) {
+        List<String> list = new ArrayList<>();
+        for (String dependentIndicesName : indexTemplateCompositeDTO.getDependentIndicesNameS()) {
+            for (IndexDerivePO indexDerivePO : indexDerivePOList) {
+                if (dependentIndicesName.equals(indexDerivePO.getIndexName())) {
+                    list.add(indexDerivePO.getIndexId());
                 }
             }
-            indexTemplateCompositeDTO.setDependentIndicesId(dependentIndicesIdList);
         }
+        return list;
     }
 
     /**
@@ -2299,37 +2355,5 @@ public class IndexServiceImpl implements IndexService {
         }
     }
 
-    /**
-     * 数据源~字段-原子
-     *
-     * @param tenantId
-     * @param indexInfoDTOList
-     * @throws Exception
-     */
-    private void getDatasourceId(String tenantId, List<IndexInfoDTO> indexInfoDTOList) throws Exception {
-        List<String> hiveDbList = null;
-        for (IndexInfoDTO indexDTO : indexInfoDTOList) {
-            if ("hive".equalsIgnoreCase(indexDTO.getSourceName())) {
-                if (CollectionUtils.isEmpty(hiveDbList)) {
-                    hiveDbList = tenantService.getDatabase(tenantId);
-                }
-                TableInfoId tableInfoId = tableDAO.selectHiveIdByName(hiveDbList, indexDTO.getDbName(), indexDTO.getTableName(), indexDTO.getColumnName());
-                if (Objects.isNull(tableInfoId)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, String.format("数据源hive-字段(%s)信息匹配失败", indexDTO.getColumnName()));
-                }
-                indexDTO.setSourceId("hive");
-                indexDTO.setTableId(tableInfoId.getTableGuid());
-                indexDTO.setColumnId(tableInfoId.getColumnGuid());
-            } else {
-                TableInfoId tableInfoId = tableDAO.selectRdbmsIdByName(tenantId, indexDTO.getSourceName(), indexDTO.getDbName(), indexDTO.getTableName(), indexDTO.getColumnName());
-                if (Objects.isNull(tableInfoId)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, String.format("数据源-字段(%s)信息匹配失败", indexDTO.getColumnName()));
-                }
-                indexDTO.setSourceId(tableInfoId.getSourceId());
-                indexDTO.setTableId(tableInfoId.getTableGuid());
-                indexDTO.setColumnId(tableInfoId.getColumnGuid());
-            }
-        }
-    }
 
 }
