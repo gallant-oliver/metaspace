@@ -1778,7 +1778,8 @@ public class IndexServiceImpl implements IndexService {
             tableNameList.add(indexInfoDTO.getTableName());
             columnNameList.add(indexInfoDTO.getColumnName());
         }
-        List<TableInfoId> tableInfoIdList = tableDAO.selectListByName(tenantId, sourceNameList, dbNameList, tableNameList, columnNameList);
+        List<String> hiveDbList = tenantService.getDatabase(tenantId);
+        List<TableInfoId> tableInfoIdList = tableDAO.selectListByName(tenantId, sourceNameList, hiveDbList, dbNameList, tableNameList, columnNameList);
         if (CollectionUtils.isEmpty(tableInfoIdList)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源信息不存在");
         }

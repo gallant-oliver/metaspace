@@ -162,6 +162,10 @@ public interface TableDAO {
             " SELECT tb.source_id AS sourceId,'hive' AS sourceName,tb.databaseguid AS databaseGuid,tb.dbname AS dbName,tb.tableguid AS tableGuid,tb.tablename AS tableName,co.column_guid AS columnGuid,co.COLUMN_NAME AS columnName",
             " FROM tableinfo AS tb INNER JOIN column_info AS co ON tb.tableguid = co.table_guid WHERE tb.source_id = 'hive' ",
             " AND tb.dbname IN",
+            " <foreach item='item' index='index' collection='dbNameListHive' open='(' separator=',' close=')'>",
+            " #{item}",
+            " </foreach>",
+            " AND tb.dbname IN",
             " <foreach item='item' index='index' collection='dbNameList' open='(' separator=',' close=')'>",
             " #{item}",
             " </foreach>",
@@ -193,5 +197,5 @@ public interface TableDAO {
             " #{item}",
             " </foreach>",
             "</script>"})
-    List<TableInfoId> selectListByName(@Param("tenantId") String tenantId, @Param("sourceNameList") Set<String> sourceNameList, @Param("dbNameList") Set<String> dbNameList, @Param("tableNameList") Set<String> tableNameList, @Param("columnNameList") Set<String> columnNameList);
+    List<TableInfoId> selectListByName(@Param("tenantId") String tenantId, @Param("sourceNameList") Set<String> sourceNameList, @Param("dbNameListHive") List<String> dbNameListHive, @Param("dbNameList") Set<String> dbNameList, @Param("tableNameList") Set<String> tableNameList, @Param("columnNameList") Set<String> columnNameList);
 }
