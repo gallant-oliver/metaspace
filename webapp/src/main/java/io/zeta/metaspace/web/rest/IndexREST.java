@@ -828,7 +828,7 @@ public class IndexREST {
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
             file = ExportDataPathUtils.fileCheckUuid(name, fileInputStream);
-            return ReturnUtil.success(indexService.uploadExcelAtom(tenantId, file));
+            return ReturnUtil.success("上传成功", indexService.uploadExcelAtom(tenantId, file));
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
@@ -856,7 +856,7 @@ public class IndexREST {
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
             file = ExportDataPathUtils.fileCheckUuid(name, fileInputStream);
-            return ReturnUtil.success(indexService.uploadExcelDerive(tenantId, file));
+            return ReturnUtil.success("上传成功", indexService.uploadExcelDerive(tenantId, file));
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
@@ -884,7 +884,7 @@ public class IndexREST {
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
             file = ExportDataPathUtils.fileCheckUuid(name, fileInputStream);
-            return ReturnUtil.success(indexService.uploadExcelComposite(tenantId, file));
+            return ReturnUtil.success("上传成功", indexService.uploadExcelComposite(tenantId, file));
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
