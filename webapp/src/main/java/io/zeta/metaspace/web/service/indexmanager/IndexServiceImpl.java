@@ -2089,7 +2089,7 @@ public class IndexServiceImpl implements IndexService {
         List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
         List<CategoryEntityV2> categoryEntityV2List = categoryDAO.selectGuidByTenantIdAndGroupIdAndName(fieldSet, tenantId, userGroupIds);
         if (categoryEntityV2List.size() != fieldSet.size()) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在或者权限不足");
         }
         Map<String, String> map = categoryEntityV2List.stream().collect(Collectors.toMap(CategoryEntityV2::getName, CategoryEntityV2::getGuid));
         indexTemplateAtomDTOList.stream().forEach(indexTemplateDeriveDTO -> indexTemplateDeriveDTO.setIndexFieldId(map.get(indexTemplateDeriveDTO.getIndexFieldName())));
@@ -2108,7 +2108,7 @@ public class IndexServiceImpl implements IndexService {
         List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
         List<CategoryEntityV2> categoryEntityV2List = categoryDAO.selectGuidByTenantIdAndGroupIdAndName(fieldSet, tenantId, userGroupIds);
         if (categoryEntityV2List.size() != fieldSet.size()) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在或者权限不足");
         }
         Map<String, String> map = categoryEntityV2List.stream().collect(Collectors.toMap(CategoryEntityV2::getName, CategoryEntityV2::getGuid));
         indexTemplateCompositeDTOList.stream().forEach(indexTemplateCompositeDTO -> indexTemplateCompositeDTO.setIndexFieldId(map.get(indexTemplateCompositeDTO.getIndexFieldName())));
@@ -2170,7 +2170,7 @@ public class IndexServiceImpl implements IndexService {
     private void getAtomIndex(String tenantId, Set<String> atomIndexName, List<IndexTemplateDeriveDTO> indexTemplateAtomDTOList) throws Exception {
         List<IndexAtomicPO> indexAtomicPOList = indexDAO.selectAtomListByName(tenantId, atomIndexName);
         if (atomIndexName.size() != indexAtomicPOList.size()) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "依赖原子指标不存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "依赖原子指标不存在或者未发布");
         }
         Map<String, String> map = indexAtomicPOList.stream().collect(Collectors.toMap(IndexAtomicPO::getIndexName, IndexAtomicPO::getIndexId));
         for (IndexTemplateDeriveDTO indexTemplateDeriveDTO : indexTemplateAtomDTOList) {
@@ -2188,7 +2188,7 @@ public class IndexServiceImpl implements IndexService {
     private void getCompositeIndex(String tenantId, Set<String> deriveIndexName, List<IndexTemplateCompositeDTO> indexTemplateCompositeDTOList) {
         List<IndexDerivePO> indexDerivePOList = indexDAO.selectDeriveByName(tenantId, deriveIndexName);
         if (deriveIndexName.size() != indexDerivePOList.size()) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "依赖派生指标不存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "依赖派生指标不存在或者未发布");
         }
         indexTemplateCompositeDTOList.stream().forEach(indexTemplateCompositeDTO -> indexTemplateCompositeDTO.setDependentIndicesId(this.getCompositeIndexIdList(indexDerivePOList, indexTemplateCompositeDTO)));
     }
@@ -2237,7 +2237,7 @@ public class IndexServiceImpl implements IndexService {
         List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
         List<CategoryEntityV2> categoryEntityV2List = categoryDAO.selectGuidByTenantIdAndGroupIdAndName(fieldSet, tenantId, userGroupIds);
         if (categoryEntityV2List.size() != fieldSet.size()) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在或者权限不足");
         }
         Map<String, String> map = categoryEntityV2List.stream().collect(Collectors.toMap(CategoryEntityV2::getName, CategoryEntityV2::getGuid));
         indexInfoDTOList.stream().forEach(indexInfoDTO -> indexInfoDTO.setIndexFieldId(map.get(indexInfoDTO.getIndexFieldName())));

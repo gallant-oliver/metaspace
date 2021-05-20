@@ -55,7 +55,7 @@ public interface CategoryDAO {
 
     @Select({"<script>" +
             " SELECT DISTINCT guid,name FROM category INNER JOIN category_group_relation AS cgr ON category.guid = cgr.category_id WHERE ",
-            " category.tenantid = #{tenantId} AND categorytype = 5 AND cgr.READ = TRUE ",
+            " category.tenantid = #{tenantId} AND categorytype = 5 AND cgr.READ = TRUE AND cgr.edit_item = TRUE ",
             " AND category.NAME in ",
             " <foreach item='item' index='index' collection='name' open='(' separator=',' close=')'>" +
             " #{item}" +
