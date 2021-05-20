@@ -1171,7 +1171,7 @@ public class IndexServiceImpl implements IndexService {
             cell.setCellType(CellType.STRING);
             cell.setCellValue("依赖原子指标*");
             row.createCell(1).setCellValue("时间限定");
-            row.createCell(2).setCellValue("修饰词");
+            row.createCell(2).setCellValue("修饰词(多个以-分隔)");
             row.createCell(3).setCellValue("指标名称*");
             row.createCell(4).setCellValue("指标标识*");
             row.createCell(5).setCellValue("描述");
@@ -1227,7 +1227,7 @@ public class IndexServiceImpl implements IndexService {
             XSSFRow row = sheet.createRow(0);
             XSSFCell cell = row.createCell(0);
             cell.setCellType(CellType.STRING);
-            cell.setCellValue("依赖派生指标*");
+            cell.setCellValue("依赖派生指标(多个以-分隔)*");
             row.createCell(1).setCellValue("指标名称*");
             row.createCell(2).setCellValue("指标标识*");
             row.createCell(3).setCellValue("描述");
