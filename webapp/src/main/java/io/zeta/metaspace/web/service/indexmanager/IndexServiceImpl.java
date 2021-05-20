@@ -492,6 +492,7 @@ public class IndexServiceImpl implements IndexService {
             //2.获取被授权给用户组的目录
             List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
             List<String> indexFieldIds = categoryDAO.getCategorysByGroup(groupIds, categoryType, tenantId);
+            indexFieldIds.add("index_field_default");
             //3.获取目录下的已发布的指标
             if (!CollectionUtils.isEmpty(indexFieldIds)) {
                 //已发布
