@@ -1826,7 +1826,9 @@ public class IndexServiceImpl implements IndexService {
         Set<String> groupSet = new HashSet<>(16);
         indexTemplateAtomDTOList.stream().forEach(indexTemplateAtomDTO -> {
             atomIndexName.add(indexTemplateAtomDTO.getIndexAtomicName());
-            timeLimitName.add(indexTemplateAtomDTO.getTimeLimitName());
+            if(StringUtils.isNotBlank(indexTemplateAtomDTO.getTimeLimitName())){
+                timeLimitName.add(indexTemplateAtomDTO.getTimeLimitName());
+            }
             indexTemplateAtomDTO.setModifiersNameList(this.getModifiers(indexTemplateAtomDTO.getModifiersName()));
             modifiersName.addAll(indexTemplateAtomDTO.getModifiersNameList());
             nameList.add(indexTemplateAtomDTO.getIndexName());
