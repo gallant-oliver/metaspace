@@ -492,6 +492,7 @@ public class IndexServiceImpl implements IndexService {
             //2.获取被授权给用户组的目录
             List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
             List<String> indexFieldIds = categoryDAO.getCategorysByGroup(groupIds, categoryType, tenantId);
+            indexFieldIds.add("index_field_default");
             //3.获取目录下的已发布的指标
             if (!CollectionUtils.isEmpty(indexFieldIds)) {
                 //已发布
@@ -1171,7 +1172,7 @@ public class IndexServiceImpl implements IndexService {
             cell.setCellType(CellType.STRING);
             cell.setCellValue("依赖原子指标*");
             row.createCell(1).setCellValue("时间限定");
-            row.createCell(2).setCellValue("修饰词");
+            row.createCell(2).setCellValue("修饰词(多个以-分隔)");
             row.createCell(3).setCellValue("指标名称*");
             row.createCell(4).setCellValue("指标标识*");
             row.createCell(5).setCellValue("描述");
@@ -1227,7 +1228,7 @@ public class IndexServiceImpl implements IndexService {
             XSSFRow row = sheet.createRow(0);
             XSSFCell cell = row.createCell(0);
             cell.setCellType(CellType.STRING);
-            cell.setCellValue("依赖派生指标*");
+            cell.setCellValue("依赖派生指标(多个以-分隔)*");
             row.createCell(1).setCellValue("指标名称*");
             row.createCell(2).setCellValue("指标标识*");
             row.createCell(3).setCellValue("描述");
@@ -1778,7 +1779,8 @@ public class IndexServiceImpl implements IndexService {
             tableNameList.add(indexInfoDTO.getTableName());
             columnNameList.add(indexInfoDTO.getColumnName());
         }
-        List<TableInfoId> tableInfoIdList = tableDAO.selectListByName(tenantId, sourceNameList, dbNameList, tableNameList, columnNameList);
+        List<String> hiveDbList = tenantService.getDatabase(tenantId);
+        List<TableInfoId> tableInfoIdList = tableDAO.selectListByName(tenantId, sourceNameList, hiveDbList, dbNameList, tableNameList, columnNameList);
         if (CollectionUtils.isEmpty(tableInfoIdList)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源信息不存在");
         }
@@ -1824,7 +1826,9 @@ public class IndexServiceImpl implements IndexService {
         Set<String> groupSet = new HashSet<>(16);
         indexTemplateAtomDTOList.stream().forEach(indexTemplateAtomDTO -> {
             atomIndexName.add(indexTemplateAtomDTO.getIndexAtomicName());
-            timeLimitName.add(indexTemplateAtomDTO.getTimeLimitName());
+            if(StringUtils.isNotBlank(indexTemplateAtomDTO.getTimeLimitName())){
+                timeLimitName.add(indexTemplateAtomDTO.getTimeLimitName());
+            }
             indexTemplateAtomDTO.setModifiersNameList(this.getModifiers(indexTemplateAtomDTO.getModifiersName()));
             modifiersName.addAll(indexTemplateAtomDTO.getModifiersNameList());
             nameList.add(indexTemplateAtomDTO.getIndexName());
@@ -2088,7 +2092,7 @@ public class IndexServiceImpl implements IndexService {
         List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
         List<CategoryEntityV2> categoryEntityV2List = categoryDAO.selectGuidByTenantIdAndGroupIdAndName(fieldSet, tenantId, userGroupIds);
         if (categoryEntityV2List.size() != fieldSet.size()) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在或者权限不足");
         }
         Map<String, String> map = categoryEntityV2List.stream().collect(Collectors.toMap(CategoryEntityV2::getName, CategoryEntityV2::getGuid));
         indexTemplateAtomDTOList.stream().forEach(indexTemplateDeriveDTO -> indexTemplateDeriveDTO.setIndexFieldId(map.get(indexTemplateDeriveDTO.getIndexFieldName())));
@@ -2107,7 +2111,7 @@ public class IndexServiceImpl implements IndexService {
         List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
         List<CategoryEntityV2> categoryEntityV2List = categoryDAO.selectGuidByTenantIdAndGroupIdAndName(fieldSet, tenantId, userGroupIds);
         if (categoryEntityV2List.size() != fieldSet.size()) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在或者权限不足");
         }
         Map<String, String> map = categoryEntityV2List.stream().collect(Collectors.toMap(CategoryEntityV2::getName, CategoryEntityV2::getGuid));
         indexTemplateCompositeDTOList.stream().forEach(indexTemplateCompositeDTO -> indexTemplateCompositeDTO.setIndexFieldId(map.get(indexTemplateCompositeDTO.getIndexFieldName())));
@@ -2169,7 +2173,7 @@ public class IndexServiceImpl implements IndexService {
     private void getAtomIndex(String tenantId, Set<String> atomIndexName, List<IndexTemplateDeriveDTO> indexTemplateAtomDTOList) throws Exception {
         List<IndexAtomicPO> indexAtomicPOList = indexDAO.selectAtomListByName(tenantId, atomIndexName);
         if (atomIndexName.size() != indexAtomicPOList.size()) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "依赖原子指标不存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "依赖原子指标不存在或者未发布");
         }
         Map<String, String> map = indexAtomicPOList.stream().collect(Collectors.toMap(IndexAtomicPO::getIndexName, IndexAtomicPO::getIndexId));
         for (IndexTemplateDeriveDTO indexTemplateDeriveDTO : indexTemplateAtomDTOList) {
@@ -2187,7 +2191,7 @@ public class IndexServiceImpl implements IndexService {
     private void getCompositeIndex(String tenantId, Set<String> deriveIndexName, List<IndexTemplateCompositeDTO> indexTemplateCompositeDTOList) {
         List<IndexDerivePO> indexDerivePOList = indexDAO.selectDeriveByName(tenantId, deriveIndexName);
         if (deriveIndexName.size() != indexDerivePOList.size()) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "依赖派生指标不存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "依赖派生指标不存在或者未发布");
         }
         indexTemplateCompositeDTOList.stream().forEach(indexTemplateCompositeDTO -> indexTemplateCompositeDTO.setDependentIndicesId(this.getCompositeIndexIdList(indexDerivePOList, indexTemplateCompositeDTO)));
     }
@@ -2236,7 +2240,7 @@ public class IndexServiceImpl implements IndexService {
         List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
         List<CategoryEntityV2> categoryEntityV2List = categoryDAO.selectGuidByTenantIdAndGroupIdAndName(fieldSet, tenantId, userGroupIds);
         if (categoryEntityV2List.size() != fieldSet.size()) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不存在或者权限不足");
         }
         Map<String, String> map = categoryEntityV2List.stream().collect(Collectors.toMap(CategoryEntityV2::getName, CategoryEntityV2::getGuid));
         indexInfoDTOList.stream().forEach(indexInfoDTO -> indexInfoDTO.setIndexFieldId(map.get(indexInfoDTO.getIndexFieldName())));

@@ -53,17 +53,19 @@ public interface CategoryDAO {
     @Select("select * from category where guid=#{guid} and tenantid=#{tenantId}")
     public CategoryEntityV2 queryByGuid(@Param("guid") String categoryGuid, @Param("tenantId") String tenantId) throws SQLException;
 
-    @Select({"<script>" +
+    @Select({"<script>" ,
             " SELECT DISTINCT guid,name FROM category INNER JOIN category_group_relation AS cgr ON category.guid = cgr.category_id WHERE ",
-            " category.tenantid = #{tenantId} AND categorytype = 5 AND cgr.READ = TRUE ",
+            " category.tenantid = #{tenantId} AND categorytype = 5 AND cgr.READ = TRUE AND cgr.edit_item = TRUE ",
             " AND category.NAME in ",
-            " <foreach item='item' index='index' collection='name' open='(' separator=',' close=')'>" +
-            " #{item}" +
-            " </foreach>" +
+            " <foreach item='item' index='index' collection='name' open='(' separator=',' close=')'>" ,
+            " #{item}" ,
+            " </foreach>" ,
+            " <if test='userGroupIds.size > 0 '>",
             " AND cgr.group_id in ",
-            " <foreach item='item' index='index' collection='userGroupIds' open='(' separator=',' close=')'>" +
-            " #{item}" +
-            " </foreach>" +
+            " <foreach item='item' index='index' collection='userGroupIds' open='(' separator=',' close=')'>" ,
+            " #{item}" ,
+            " </foreach>" ,
+            " </if>",
             " </script>"})
     List<CategoryEntityV2> selectGuidByTenantIdAndGroupIdAndName(@Param("name") Set<String> name, @Param("tenantId") String tenantId, @Param("userGroupIds") List<String> userGroupIds);
 

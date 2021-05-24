@@ -25,6 +25,7 @@ public class IndexTemplateDeriveDTO extends IndexDerivePO {
         this.approvalGroupName = "";
         super.setIndexName("");
         super.setIndexIdentification("");
+        super.setTimeLimitId("");
         super.setDescription("");
         super.setCentral(false);
         super.setBusinessCaliber("");

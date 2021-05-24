@@ -4,6 +4,7 @@ import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.dto.indices.*;
@@ -763,17 +764,14 @@ public class IndexREST {
      * @param tenantId
      * @throws Exception
      */
+    @Permission({ModuleEnum.TECHNICAL, ModuleEnum.AUTHORIZATION})
     @GET
     @Path("/download/excel/atom")
-    public void downLoadExcelAtom(@HeaderParam("tenantId") String tenantId) throws Exception {
+    public void downLoadExcelAtom(@QueryParam("tenantId") String tenantId) throws Exception {
         XSSFWorkbook workbook = indexService.downLoadExcelAtom(tenantId);
         // 应用程序强制下载
         response.setContentType("application/force-download");
-        String userAgent = request.getHeader("User-Agent");
-        String fileName = "原子指标.xlsx";
-        byte[] bytes = userAgent.contains("MSIE") ? fileName.getBytes() : fileName.getBytes("UTF-8");
-        fileName = new String(bytes, "ISO-8859-1");
-        response.addHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+        response.addHeader("Content-Disposition", "attachment; filename=\"" + URLEncoder.encode("原子指标.xlsx", "UTF-8") + "\"");
         workbook.write(response.getOutputStream());
     }
 
@@ -783,17 +781,14 @@ public class IndexREST {
      * @param tenantId
      * @throws Exception
      */
+    @Permission({ModuleEnum.TECHNICAL, ModuleEnum.AUTHORIZATION})
     @GET
     @Path("/download/excel/derive")
-    public void downLoadExcelDerive(@HeaderParam("tenantId") String tenantId) throws Exception {
+    public void downLoadExcelDerive(@QueryParam("tenantId") String tenantId) throws Exception {
         XSSFWorkbook workbook = indexService.downLoadExcelDerive(tenantId);
         // 应用程序强制下载
         response.setContentType("application/force-download");
-        String userAgent = request.getHeader("User-Agent");
-        String fileName = "派生指标.xlsx";
-        byte[] bytes = userAgent.contains("MSIE") ? fileName.getBytes() : fileName.getBytes("UTF-8");
-        fileName = new String(bytes, "ISO-8859-1");
-        response.addHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+        response.addHeader("Content-Disposition", "attachment; filename=\"" + URLEncoder.encode("派生指标.xlsx", "UTF-8") + "\"");
         workbook.write(response.getOutputStream());
     }
 
@@ -803,23 +798,21 @@ public class IndexREST {
      * @param tenantId
      * @throws Exception
      */
+    @Permission({ModuleEnum.TECHNICAL, ModuleEnum.AUTHORIZATION})
     @GET
     @Path("/download/excel/composite")
-    public void downLoadExcel(@HeaderParam("tenantId") String tenantId) throws Exception {
+    public void downLoadExcel(@QueryParam("tenantId") String tenantId) throws Exception {
         XSSFWorkbook workbook = indexService.downLoadExcelComposite(tenantId);
         // 应用程序强制下载
         response.setContentType("application/force-download");
-        String userAgent = request.getHeader("User-Agent");
-        String fileName = "复合指标.xlsx";
-        byte[] bytes = userAgent.contains("MSIE") ? fileName.getBytes() : fileName.getBytes("UTF-8");
-        fileName = new String(bytes, "ISO-8859-1");
-        response.addHeader("Content-Disposition", "attachment; filename=\"" + fileName + "\"");
+        response.addHeader("Content-Disposition", "attachment; filename=\"" + URLEncoder.encode("复合指标.xlsx", "UTF-8") + "\"");
         workbook.write(response.getOutputStream());
     }
 
     /**
      * 上传原子指标模板
-     *multipart/form-data Content-Type
+     * multipart/form-data Content-Type
+     *
      * @param tenantId
      * @param fileInputStream
      * @param contentDispositionHeader
@@ -835,7 +828,7 @@ public class IndexREST {
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
             file = ExportDataPathUtils.fileCheckUuid(name, fileInputStream);
-            return ReturnUtil.success(indexService.uploadExcelAtom(tenantId, file));
+            return ReturnUtil.success("上传成功", indexService.uploadExcelAtom(tenantId, file));
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
@@ -863,7 +856,7 @@ public class IndexREST {
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
             file = ExportDataPathUtils.fileCheckUuid(name, fileInputStream);
-            return ReturnUtil.success(indexService.uploadExcelDerive(tenantId, file));
+            return ReturnUtil.success("上传成功", indexService.uploadExcelDerive(tenantId, file));
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
@@ -886,12 +879,12 @@ public class IndexREST {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result uploadExcelComposite(@HeaderParam("tenantId") String tenantId, @FormDataParam("file") InputStream fileInputStream,
-                                    @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) {
+                                       @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) {
         File file = null;
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
             file = ExportDataPathUtils.fileCheckUuid(name, fileInputStream);
-            return ReturnUtil.success(indexService.uploadExcelComposite(tenantId, file));
+            return ReturnUtil.success("上传成功", indexService.uploadExcelComposite(tenantId, file));
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
