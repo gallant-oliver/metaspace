@@ -111,8 +111,9 @@ public class PoiExcelUtils {
 
     /**
      * 读取excel文件
+     *
      * @param file
-     * @param startRow 开始行数
+     * @param startRow    开始行数
      * @param lastCellNum 列数
      * @return
      * @throws IOException
@@ -123,35 +124,33 @@ public class PoiExcelUtils {
         // 创建返回对象，把每行中的值作为一个数组，所有的行作为一个集合返回
         List<String[]> list = new ArrayList<>();
         if (workbook != null) {
-            for (int sheetNum = 0; sheetNum < workbook.getNumberOfSheets(); sheetNum++) {
-                // 获取当前sheet工作表
-                Sheet sheet = workbook.getSheetAt(sheetNum);
-                if (sheet == null) {
-                    continue;
+            // 获取当前sheet工作表
+            Sheet sheet = workbook.getSheetAt(0);
+            if (sheet == null) {
+                return list;
+            }
+            // 获得当前sheet的结束行
+            int lastRowNum = sheet.getLastRowNum();
+            if (startRow < 0 || startRow > lastRowNum) {
+                throw new RuntimeException("wrong startRow");
+            }
+            // 循环除了第一行之外的所有行
+            for (int rowNum = startRow; rowNum <= lastRowNum; rowNum++) {
+                // 获得当前行
+                Row row = sheet.getRow(rowNum);
+                if (row == null) {
+                    return list;
                 }
-                // 获得当前sheet的结束行
-                int lastRowNum = sheet.getLastRowNum();
-                if (startRow < 0 || startRow > lastRowNum) {
-                    throw new RuntimeException("wrong startRow");
+                // 获得当前行的开始列
+                int firstCellNum = row.getFirstCellNum();
+                // 获得当前行的列数
+                String[] cells = new String[lastCellNum];
+                // 循环当前行
+                for (int cellNum = firstCellNum; cellNum < lastCellNum; cellNum++) {
+                    Cell cell = row.getCell(cellNum);
+                    cells[cellNum] = getCellValue(cell);
                 }
-                // 循环除了第一行之外的所有行
-                for (int rowNum = startRow; rowNum <= lastRowNum; rowNum++) {
-                    // 获得当前行
-                    Row row = sheet.getRow(rowNum);
-                    if (row == null) {
-                        continue;
-                    }
-                    // 获得当前行的开始列
-                    int firstCellNum = row.getFirstCellNum();
-                    // 获得当前行的列数
-                    String[] cells = new String[lastCellNum];
-                    // 循环当前行
-                    for (int cellNum = firstCellNum; cellNum < lastCellNum; cellNum++) {
-                        Cell cell = row.getCell(cellNum);
-                        cells[cellNum] = getCellValue(cell);
-                    }
-                    list.add(cells);
-                }
+                list.add(cells);
             }
         }
         return list;
