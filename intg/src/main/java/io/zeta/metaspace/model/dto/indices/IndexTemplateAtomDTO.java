@@ -125,4 +125,50 @@ public class IndexTemplateAtomDTO {
         }
         return "";
     }
+
+    public Boolean checkTitle() {
+        if (!"指标名称*".equals(this.name)) {
+            return false;
+        }
+        if (!"指标标识*".equals(this.identification)) {
+            return false;
+        }
+        if (!"描述".equals(this.description)) {
+            return false;
+        }
+        if (!"是否核心指标".equals(this.central)) {
+            return false;
+        }
+        if (!"指标域*".equals(this.field)) {
+            return false;
+        }
+        if (!"数据源*".equals(this.source)) {
+            return false;
+        }
+        if (!"数据库*".equals(this.dbName)) {
+            return false;
+        }
+        if (!"数据表*".equals(this.tableName)) {
+            return false;
+        }
+        if (!"字段*".equals(this.columnName)) {
+            return false;
+        }
+        if (!"业务口径*".equals(this.businessCaliber)) {
+            return false;
+        }
+        if (!"业务负责人*".equals(this.businessLeader)) {
+            return false;
+        }
+        if (!"技术口径".equals(this.technicalCaliber)) {
+            return false;
+        }
+        if (!"技术负责人".equals(this.technicalLeader)) {
+            return false;
+        }
+        if (!"审批管理*".equals(this.approve)) {
+            return false;
+        }
+        return true;
+    }
 }

@@ -1434,24 +1434,30 @@ public class IndexServiceImpl implements IndexService {
      * @throws Exception
      */
     private List<IndexTemplateAtomDTO> getAtomIndexData(File file) throws Exception {
-        List<String[]> list = PoiExcelUtils.readExcelFile(file, 1, 14);
+        List<String[]> list = PoiExcelUtils.readExcelFile(file, 0, 14);
         List<IndexTemplateAtomDTO> indexTemplateAtomList = new ArrayList<>();
-        for (String[] strings : list) {
+        for (int i = 0; i < list.size(); i++) {
             IndexTemplateAtomDTO indexTemplateAtom = new IndexTemplateAtomDTO();
-            indexTemplateAtom.setName(strings[0]);
-            indexTemplateAtom.setIdentification(strings[1]);
-            indexTemplateAtom.setDescription(strings[2]);
-            indexTemplateAtom.setCentral(strings[3]);
-            indexTemplateAtom.setField(strings[4]);
-            indexTemplateAtom.setSource(strings[5]);
-            indexTemplateAtom.setDbName(strings[6]);
-            indexTemplateAtom.setTableName(strings[7]);
-            indexTemplateAtom.setColumnName(strings[8]);
-            indexTemplateAtom.setBusinessCaliber(strings[9]);
-            indexTemplateAtom.setBusinessLeader(strings[10]);
-            indexTemplateAtom.setTechnicalCaliber(strings[11]);
-            indexTemplateAtom.setTechnicalLeader(strings[12]);
-            indexTemplateAtom.setApprove(strings[13]);
+            indexTemplateAtom.setName(list.get(i)[0]);
+            indexTemplateAtom.setIdentification(list.get(i)[1]);
+            indexTemplateAtom.setDescription(list.get(i)[2]);
+            indexTemplateAtom.setCentral(list.get(i)[3]);
+            indexTemplateAtom.setField(list.get(i)[4]);
+            indexTemplateAtom.setSource(list.get(i)[5]);
+            indexTemplateAtom.setDbName(list.get(i)[6]);
+            indexTemplateAtom.setTableName(list.get(i)[7]);
+            indexTemplateAtom.setColumnName(list.get(i)[8]);
+            indexTemplateAtom.setBusinessCaliber(list.get(i)[9]);
+            indexTemplateAtom.setBusinessLeader(list.get(i)[10]);
+            indexTemplateAtom.setTechnicalCaliber(list.get(i)[11]);
+            indexTemplateAtom.setTechnicalLeader(list.get(i)[12]);
+            indexTemplateAtom.setApprove(list.get(i)[13]);
+            if (i == 0) {
+                if (!indexTemplateAtom.checkTitle()) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "模板格式错误");
+                }
+                continue;
+            }
             String checkResult = indexTemplateAtom.checkFieldsIsNull();
             if (StringUtils.isNotBlank(checkResult)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, checkResult);
@@ -1522,26 +1528,32 @@ public class IndexServiceImpl implements IndexService {
      */
     private List<IndexTemplateDeriveDTO> getDeriveIndexData(File file) throws Exception {
         List<IndexTemplateDeriveDTO> indexTemplateDeriveDTOList = new ArrayList<>();
-        List<String[]> list = PoiExcelUtils.readExcelFile(file, 1, 13);
-        for (String[] strings : list) {
+        List<String[]> list = PoiExcelUtils.readExcelFile(file, 0, 13);
+        for (int i = 0; i < list.size(); i++) {
             IndexTemplateDeriveDTO indexTemplateDeriveDTO = new IndexTemplateDeriveDTO();
-            indexTemplateDeriveDTO.setIndexAtomicName(strings[0]);
-            indexTemplateDeriveDTO.setTimeLimitName(strings[1]);
-            indexTemplateDeriveDTO.setModifiersName(strings[2]);
-            indexTemplateDeriveDTO.setIndexName(strings[3]);
-            indexTemplateDeriveDTO.setIndexIdentification(strings[4]);
-            indexTemplateDeriveDTO.setDescription(strings[5]);
-            if ("是".equals(strings[6])) {
+            indexTemplateDeriveDTO.setIndexAtomicName(list.get(i)[0]);
+            indexTemplateDeriveDTO.setTimeLimitName(list.get(i)[1]);
+            indexTemplateDeriveDTO.setModifiersName(list.get(i)[2]);
+            indexTemplateDeriveDTO.setIndexName(list.get(i)[3]);
+            indexTemplateDeriveDTO.setIndexIdentification(list.get(i)[4]);
+            indexTemplateDeriveDTO.setDescription(list.get(i)[5]);
+            if ("是".equals(list.get(i)[6])) {
                 indexTemplateDeriveDTO.setCentral(true);
             } else {
                 indexTemplateDeriveDTO.setCentral(false);
             }
-            indexTemplateDeriveDTO.setIndexFieldName(strings[7]);
-            indexTemplateDeriveDTO.setBusinessCaliber(strings[8]);
-            indexTemplateDeriveDTO.setBusinessLeaderName(strings[9]);
-            indexTemplateDeriveDTO.setTechnicalCaliber(strings[10]);
-            indexTemplateDeriveDTO.setTechnicalLeaderName(strings[11]);
-            indexTemplateDeriveDTO.setApprovalGroupName(strings[12]);
+            indexTemplateDeriveDTO.setIndexFieldName(list.get(i)[7]);
+            indexTemplateDeriveDTO.setBusinessCaliber(list.get(i)[8]);
+            indexTemplateDeriveDTO.setBusinessLeaderName(list.get(i)[9]);
+            indexTemplateDeriveDTO.setTechnicalCaliber(list.get(i)[10]);
+            indexTemplateDeriveDTO.setTechnicalLeaderName(list.get(i)[11]);
+            indexTemplateDeriveDTO.setApprovalGroupName(list.get(i)[12]);
+            if (i == 0) {
+                if (!indexTemplateDeriveDTO.checkTitle()) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "模板格式错误");
+                }
+                continue;
+            }
             String checkResult = indexTemplateDeriveDTO.checkFieldsIsNull();
             if (StringUtils.isNotBlank(checkResult)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, checkResult);
@@ -1613,26 +1625,32 @@ public class IndexServiceImpl implements IndexService {
      * @throws Exception
      */
     private List<IndexTemplateCompositeDTO> getCompositeIndexData(File file) throws Exception {
-        List<String[]> list = PoiExcelUtils.readExcelFile(file, 1, 12);
+        List<String[]> list = PoiExcelUtils.readExcelFile(file, 0, 12);
         List<IndexTemplateCompositeDTO> indexTemplateCompositeDTOList = new ArrayList<>();
-        for (String[] strings : list) {
+        for (int i = 0; i < list.size(); i++) {
             IndexTemplateCompositeDTO indexTemplateCompositeDTO = new IndexTemplateCompositeDTO();
-            indexTemplateCompositeDTO.setDependentIndicesName(strings[0]);
-            indexTemplateCompositeDTO.setIndexName(strings[1]);
-            indexTemplateCompositeDTO.setIndexIdentification(strings[2]);
-            indexTemplateCompositeDTO.setDescription(strings[3]);
-            if ("是".equals(strings[4])) {
+            indexTemplateCompositeDTO.setDependentIndicesName(list.get(i)[0]);
+            indexTemplateCompositeDTO.setIndexName(list.get(i)[1]);
+            indexTemplateCompositeDTO.setIndexIdentification(list.get(i)[2]);
+            indexTemplateCompositeDTO.setDescription(list.get(i)[3]);
+            if ("是".equals(list.get(i)[4])) {
                 indexTemplateCompositeDTO.setCentral(true);
             } else {
                 indexTemplateCompositeDTO.setCentral(false);
             }
-            indexTemplateCompositeDTO.setIndexFieldName(strings[5]);
-            indexTemplateCompositeDTO.setExpression(strings[6]);
-            indexTemplateCompositeDTO.setBusinessCaliber(strings[7]);
-            indexTemplateCompositeDTO.setBusinessLeaderName(strings[8]);
-            indexTemplateCompositeDTO.setTechnicalCaliber(strings[9]);
-            indexTemplateCompositeDTO.setTechnicalLeaderName(strings[10]);
-            indexTemplateCompositeDTO.setApprovalGroupName(strings[11]);
+            indexTemplateCompositeDTO.setIndexFieldName(list.get(i)[5]);
+            indexTemplateCompositeDTO.setExpression(list.get(i)[6]);
+            indexTemplateCompositeDTO.setBusinessCaliber(list.get(i)[7]);
+            indexTemplateCompositeDTO.setBusinessLeaderName(list.get(i)[8]);
+            indexTemplateCompositeDTO.setTechnicalCaliber(list.get(i)[9]);
+            indexTemplateCompositeDTO.setTechnicalLeaderName(list.get(i)[10]);
+            indexTemplateCompositeDTO.setApprovalGroupName(list.get(i)[11]);
+            if (i == 0) {
+                if (!indexTemplateCompositeDTO.checkTitle()) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "模板格式错误");
+                }
+                continue;
+            }
             String checkResult = indexTemplateCompositeDTO.checkFieldsIsNull();
             if (StringUtils.isNotBlank(checkResult)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, checkResult);
@@ -1826,7 +1844,7 @@ public class IndexServiceImpl implements IndexService {
         Set<String> groupSet = new HashSet<>(16);
         indexTemplateAtomDTOList.stream().forEach(indexTemplateAtomDTO -> {
             atomIndexName.add(indexTemplateAtomDTO.getIndexAtomicName());
-            if(StringUtils.isNotBlank(indexTemplateAtomDTO.getTimeLimitName())){
+            if (StringUtils.isNotBlank(indexTemplateAtomDTO.getTimeLimitName())) {
                 timeLimitName.add(indexTemplateAtomDTO.getTimeLimitName());
             }
             indexTemplateAtomDTO.setModifiersNameList(this.getModifiers(indexTemplateAtomDTO.getModifiersName()));

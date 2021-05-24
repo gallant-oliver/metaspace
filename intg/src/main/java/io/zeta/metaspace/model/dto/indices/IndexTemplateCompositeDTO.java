@@ -81,4 +81,41 @@ public class IndexTemplateCompositeDTO extends IndexCompositePO {
         }
         return "";
     }
+
+    public Boolean checkTitle() {
+        if ("依赖派生指标(多个以-分隔)*".equals(this.dependentIndicesName)) {
+            return false;
+        }
+        if ("指标名称*".equals(super.getIndexName())) {
+            return false;
+        }
+        if ("指标标识*".equals(super.getIndexIdentification())) {
+            return false;
+        }
+        if ("描述".equals(super.getDescription())) {
+            return false;
+        }
+        if ("指标域*".equals(this.indexFieldName)) {
+            return false;
+        }
+        if ("设定表达式*".equals(super.getExpression())) {
+            return false;
+        }
+        if ("业务口径*".equals(super.getBusinessCaliber())) {
+            return false;
+        }
+        if ("业务负责人*".equals(super.getBusinessLeader())) {
+            return false;
+        }
+        if ("技术口径".equals(super.getTechnicalCaliber())) {
+            return false;
+        }
+        if ("技术负责人".equals(super.getTechnicalLeader())) {
+            return false;
+        }
+        if ("审批管理*".equals(this.approvalGroupName)) {
+            return false;
+        }
+        return true;
+    }
 }
