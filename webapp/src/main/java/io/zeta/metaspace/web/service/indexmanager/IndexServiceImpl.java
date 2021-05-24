@@ -39,6 +39,7 @@ import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DataValidationConstraint;
 import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.usermodel.*;
 import org.slf4j.Logger;
@@ -1185,9 +1186,9 @@ public class IndexServiceImpl implements IndexService {
             row.createCell(12).setCellValue("审批管理*");
 
             //依赖原子指标
-            this.setXSSFDataValidation(this.getAtomicName(tenantId), 0, 0, sheet);
+            this.setXSSFDataValidation(this.getAtomicName(tenantId), 0, 0, sheet, workbook);
             //时间限定
-            this.setXSSFDataValidation(this.getTimeLimitName(tenantId), 1, 1, sheet);
+            this.setXSSFDataValidation(this.getTimeLimitName(tenantId), 1, 1, sheet, workbook);
 
             //是否核心指标下拉框
             CellRangeAddressList regions = new CellRangeAddressList(0, 1000, 6, 6);
@@ -1200,13 +1201,13 @@ public class IndexServiceImpl implements IndexService {
             sheet.addValidationData(validation);
 
             //业务负责人下拉框
-            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 9, 9, sheet);
+            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 9, 9, sheet, workbook);
 
             //技术负责人下拉框
-            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 11, 11, sheet);
+            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 11, 11, sheet, workbook);
 
             //审批管理下拉框
-            this.setXSSFDataValidation(this.getApproveGroupByModuleId(tenantId), 12, 12, sheet);
+            this.setXSSFDataValidation(this.getApproveGroupByModuleId(tenantId), 12, 12, sheet, workbook);
         } catch (Exception e) {
             LOG.error("downLoadExcel exception is {}", e);
             throw new AtlasBaseException(AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, "下载模板失败");
@@ -1252,13 +1253,13 @@ public class IndexServiceImpl implements IndexService {
             sheet.addValidationData(validation);
 
             //业务负责人下拉框
-            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 8, 8, sheet);
+            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 8, 8, sheet, workbook);
 
             //技术负责人下拉框
-            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 10, 10, sheet);
+            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 10, 10, sheet, workbook);
 
             //审批管理下拉框
-            this.setXSSFDataValidation(this.getApproveGroupByModuleId(tenantId), 11, 11, sheet);
+            this.setXSSFDataValidation(this.getApproveGroupByModuleId(tenantId), 11, 11, sheet, workbook);
         } catch (Exception e) {
             LOG.error("downLoadExcel exception is {}", e);
             throw new AtlasBaseException(AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, "下载模板失败");
@@ -1266,16 +1267,30 @@ public class IndexServiceImpl implements IndexService {
         return workbook;
     }
 
-    private void setXSSFDataValidation(List<String> list, Integer firstCol, Integer lastCol, XSSFSheet sheet) {
+    private void setXSSFDataValidation(List<String> list, Integer firstCol, Integer lastCol, XSSFSheet sheet, XSSFWorkbook workbook) {
         if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(list)) {
-            CellRangeAddressList regions = new CellRangeAddressList(0, 1000, firstCol, lastCol);
+            int sheetTotal = workbook.getNumberOfSheets();
+            //新建一个sheet页
+            String hiddenSheetName = "hiddenSheet" + firstCol;
+            XSSFSheet hiddenSheet = workbook.createSheet(hiddenSheetName);
+            //对应列下拉框数据
+            for (int i = 0; i < list.size(); i++) {
+                XSSFRow row1 = hiddenSheet.createRow(i);
+                XSSFCell cell1 = row1.createCell(0);
+                cell1.setCellValue(list.get(i));
+            }
+            String strFormula = hiddenSheetName + "!$A$1:$A$" + list.size();
+            XSSFDataValidationConstraint constraint = new XSSFDataValidationConstraint(DataValidationConstraint.ValidationType.LIST, strFormula);
+            // 设置数据有效性加载在哪个单元格上,四个参数分别是：起始行、终止行、起始列、终止列
+            CellRangeAddressList regions = new CellRangeAddressList(1, 1000, firstCol, lastCol);
             XSSFDataValidationHelper dvHelper = new XSSFDataValidationHelper(sheet);
-            XSSFDataValidationConstraint dvConstraint = (XSSFDataValidationConstraint) dvHelper.createExplicitListConstraint(list.toArray(new String[list.size()]));
-            XSSFDataValidation validation = (XSSFDataValidation) dvHelper.createValidation(dvConstraint, regions);
+            XSSFDataValidation validation = (XSSFDataValidation) dvHelper.createValidation(constraint, regions);
             validation.setShowErrorBox(false);
             validation.setSuppressDropDownArrow(true);
             validation.setShowPromptBox(true);
             sheet.addValidationData(validation);
+            //将新建的sheet页隐藏掉
+            workbook.setSheetHidden(sheetTotal, true);
         }
     }
 
@@ -1319,16 +1334,16 @@ public class IndexServiceImpl implements IndexService {
 
             List<String> list = new ArrayList<>();
             //数据源下拉框
-            this.setXSSFDataValidation(this.getDataSourceByTenantId(tenantId), 5, 5, sheet);
+            this.setXSSFDataValidation(this.getDataSourceByTenantId(tenantId), 5, 5, sheet, workbook);
 
             //业务负责人下拉框
-            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 10, 10, sheet);
+            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 10, 10, sheet, workbook);
 
             //技术负责人下拉框
-            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 12, 12, sheet);
+            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 12, 12, sheet, workbook);
 
             //审批管理下拉框
-            this.setXSSFDataValidation(this.getApproveGroupByModuleId(tenantId), 13, 13, sheet);
+            this.setXSSFDataValidation(this.getApproveGroupByModuleId(tenantId), 13, 13, sheet, workbook);
         } catch (Exception e) {
             LOG.error("downLoadExcel exception is {}", e);
             throw new AtlasBaseException(AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, "下载模板失败");

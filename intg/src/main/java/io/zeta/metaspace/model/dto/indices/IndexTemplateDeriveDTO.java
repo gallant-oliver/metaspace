@@ -122,13 +122,13 @@ public class IndexTemplateDeriveDTO extends IndexDerivePO {
         if (!"业务口径*".equals(super.getBusinessCaliber())) {
             return false;
         }
-        if (!"业务负责人*".equals(super.getBusinessLeader())) {
+        if (!"业务负责人*".equals(this.businessLeaderName)) {
             return false;
         }
         if (!"技术口径".equals(super.getTechnicalCaliber())) {
             return false;
         }
-        if (!"技术负责人".equals(super.getTechnicalLeader())) {
+        if (!"技术负责人".equals(this.technicalLeaderName)) {
             return false;
         }
         if (!"审批管理*".equals(this.approvalGroupName)) {
