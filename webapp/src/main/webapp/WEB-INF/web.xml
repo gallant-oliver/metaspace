@@ -33,6 +33,16 @@
             <param-name>quartz-default-listener-disabled</param-name>
             <param-value>true</param-value>
         </init-param>
+        <init-param>
+            <!-- enable/disable JavaMelody ,default disable-->
+            <param-name>disabled</param-name>
+            <param-value>true</param-value>
+        </init-param>
+        <init-param>
+            <!-- define an storage path for JavaMelodys historical data -->
+            <param-name>storage-directory</param-name>
+            <param-value>/tmp/metaspace/javamelody</param-value>
+        </init-param>
     </filter>
     <filter-mapping>
         <filter-name>javamelody</filter-name>
