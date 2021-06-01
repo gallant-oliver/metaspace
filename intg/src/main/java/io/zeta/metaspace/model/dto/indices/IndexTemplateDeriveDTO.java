@@ -97,4 +97,44 @@ public class IndexTemplateDeriveDTO extends IndexDerivePO {
         return "";
     }
 
+    public Boolean checkTitle() {
+        if (!"依赖原子指标*".equals(this.indexAtomicName)) {
+            return false;
+        }
+        if (!"时间限定".equals(this.timeLimitName)) {
+            return false;
+        }
+        if (!"修饰词(多个以-分隔)".equals(this.modifiersName)) {
+            return false;
+        }
+        if (!"指标名称*".equals(super.getIndexName())) {
+            return false;
+        }
+        if (!"指标标识*".equals(super.getIndexIdentification())) {
+            return false;
+        }
+        if (!"描述".equals(super.getDescription())) {
+            return false;
+        }
+        if (!"指标域*".equals(this.indexFieldName)) {
+            return false;
+        }
+        if (!"业务口径*".equals(super.getBusinessCaliber())) {
+            return false;
+        }
+        if (!"业务负责人*".equals(this.businessLeaderName)) {
+            return false;
+        }
+        if (!"技术口径".equals(super.getTechnicalCaliber())) {
+            return false;
+        }
+        if (!"技术负责人".equals(this.technicalLeaderName)) {
+            return false;
+        }
+        if (!"审批管理*".equals(this.approvalGroupName)) {
+            return false;
+        }
+        return true;
+    }
+
 }

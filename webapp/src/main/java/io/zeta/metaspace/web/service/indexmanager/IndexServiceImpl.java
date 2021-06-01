@@ -39,6 +39,7 @@ import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DataValidationConstraint;
 import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.usermodel.*;
 import org.slf4j.Logger;
@@ -1185,9 +1186,9 @@ public class IndexServiceImpl implements IndexService {
             row.createCell(12).setCellValue("审批管理*");
 
             //依赖原子指标
-            this.setXSSFDataValidation(this.getAtomicName(tenantId), 0, 0, sheet);
+            this.setXSSFDataValidation(this.getAtomicName(tenantId), 0, 0, sheet, workbook);
             //时间限定
-            this.setXSSFDataValidation(this.getTimeLimitName(tenantId), 1, 1, sheet);
+            this.setXSSFDataValidation(this.getTimeLimitName(tenantId), 1, 1, sheet, workbook);
 
             //是否核心指标下拉框
             CellRangeAddressList regions = new CellRangeAddressList(0, 1000, 6, 6);
@@ -1200,13 +1201,13 @@ public class IndexServiceImpl implements IndexService {
             sheet.addValidationData(validation);
 
             //业务负责人下拉框
-            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 9, 9, sheet);
+            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 9, 9, sheet, workbook);
 
             //技术负责人下拉框
-            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 11, 11, sheet);
+            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 11, 11, sheet, workbook);
 
             //审批管理下拉框
-            this.setXSSFDataValidation(this.getApproveGroupByModuleId(tenantId), 12, 12, sheet);
+            this.setXSSFDataValidation(this.getApproveGroupByModuleId(tenantId), 12, 12, sheet, workbook);
         } catch (Exception e) {
             LOG.error("downLoadExcel exception is {}", e);
             throw new AtlasBaseException(AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, "下载模板失败");
@@ -1252,13 +1253,13 @@ public class IndexServiceImpl implements IndexService {
             sheet.addValidationData(validation);
 
             //业务负责人下拉框
-            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 8, 8, sheet);
+            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 8, 8, sheet, workbook);
 
             //技术负责人下拉框
-            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 10, 10, sheet);
+            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 10, 10, sheet, workbook);
 
             //审批管理下拉框
-            this.setXSSFDataValidation(this.getApproveGroupByModuleId(tenantId), 11, 11, sheet);
+            this.setXSSFDataValidation(this.getApproveGroupByModuleId(tenantId), 11, 11, sheet, workbook);
         } catch (Exception e) {
             LOG.error("downLoadExcel exception is {}", e);
             throw new AtlasBaseException(AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, "下载模板失败");
@@ -1266,16 +1267,30 @@ public class IndexServiceImpl implements IndexService {
         return workbook;
     }
 
-    private void setXSSFDataValidation(List<String> list, Integer firstCol, Integer lastCol, XSSFSheet sheet) {
+    private void setXSSFDataValidation(List<String> list, Integer firstCol, Integer lastCol, XSSFSheet sheet, XSSFWorkbook workbook) {
         if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(list)) {
-            CellRangeAddressList regions = new CellRangeAddressList(0, 1000, firstCol, lastCol);
+            int sheetTotal = workbook.getNumberOfSheets();
+            //新建一个sheet页
+            String hiddenSheetName = "hiddenSheet" + firstCol;
+            XSSFSheet hiddenSheet = workbook.createSheet(hiddenSheetName);
+            //对应列下拉框数据
+            for (int i = 0; i < list.size(); i++) {
+                XSSFRow row1 = hiddenSheet.createRow(i);
+                XSSFCell cell1 = row1.createCell(0);
+                cell1.setCellValue(list.get(i));
+            }
+            String strFormula = hiddenSheetName + "!$A$1:$A$" + list.size();
+            XSSFDataValidationConstraint constraint = new XSSFDataValidationConstraint(DataValidationConstraint.ValidationType.LIST, strFormula);
+            // 设置数据有效性加载在哪个单元格上,四个参数分别是：起始行、终止行、起始列、终止列
+            CellRangeAddressList regions = new CellRangeAddressList(1, 1000, firstCol, lastCol);
             XSSFDataValidationHelper dvHelper = new XSSFDataValidationHelper(sheet);
-            XSSFDataValidationConstraint dvConstraint = (XSSFDataValidationConstraint) dvHelper.createExplicitListConstraint(list.toArray(new String[list.size()]));
-            XSSFDataValidation validation = (XSSFDataValidation) dvHelper.createValidation(dvConstraint, regions);
+            XSSFDataValidation validation = (XSSFDataValidation) dvHelper.createValidation(constraint, regions);
             validation.setShowErrorBox(false);
             validation.setSuppressDropDownArrow(true);
             validation.setShowPromptBox(true);
             sheet.addValidationData(validation);
+            //将新建的sheet页隐藏掉
+            workbook.setSheetHidden(sheetTotal, true);
         }
     }
 
@@ -1319,16 +1334,16 @@ public class IndexServiceImpl implements IndexService {
 
             List<String> list = new ArrayList<>();
             //数据源下拉框
-            this.setXSSFDataValidation(this.getDataSourceByTenantId(tenantId), 5, 5, sheet);
+            this.setXSSFDataValidation(this.getDataSourceByTenantId(tenantId), 5, 5, sheet, workbook);
 
             //业务负责人下拉框
-            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 10, 10, sheet);
+            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 10, 10, sheet, workbook);
 
             //技术负责人下拉框
-            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 12, 12, sheet);
+            this.setXSSFDataValidation(this.getUserListByTenantId(tenantId), 12, 12, sheet, workbook);
 
             //审批管理下拉框
-            this.setXSSFDataValidation(this.getApproveGroupByModuleId(tenantId), 13, 13, sheet);
+            this.setXSSFDataValidation(this.getApproveGroupByModuleId(tenantId), 13, 13, sheet, workbook);
         } catch (Exception e) {
             LOG.error("downLoadExcel exception is {}", e);
             throw new AtlasBaseException(AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, "下载模板失败");
@@ -1434,24 +1449,30 @@ public class IndexServiceImpl implements IndexService {
      * @throws Exception
      */
     private List<IndexTemplateAtomDTO> getAtomIndexData(File file) throws Exception {
-        List<String[]> list = PoiExcelUtils.readExcelFile(file, 1, 14);
+        List<String[]> list = PoiExcelUtils.readExcelFile(file, 0, 14);
         List<IndexTemplateAtomDTO> indexTemplateAtomList = new ArrayList<>();
-        for (String[] strings : list) {
+        for (int i = 0; i < list.size(); i++) {
             IndexTemplateAtomDTO indexTemplateAtom = new IndexTemplateAtomDTO();
-            indexTemplateAtom.setName(strings[0]);
-            indexTemplateAtom.setIdentification(strings[1]);
-            indexTemplateAtom.setDescription(strings[2]);
-            indexTemplateAtom.setCentral(strings[3]);
-            indexTemplateAtom.setField(strings[4]);
-            indexTemplateAtom.setSource(strings[5]);
-            indexTemplateAtom.setDbName(strings[6]);
-            indexTemplateAtom.setTableName(strings[7]);
-            indexTemplateAtom.setColumnName(strings[8]);
-            indexTemplateAtom.setBusinessCaliber(strings[9]);
-            indexTemplateAtom.setBusinessLeader(strings[10]);
-            indexTemplateAtom.setTechnicalCaliber(strings[11]);
-            indexTemplateAtom.setTechnicalLeader(strings[12]);
-            indexTemplateAtom.setApprove(strings[13]);
+            indexTemplateAtom.setName(list.get(i)[0]);
+            indexTemplateAtom.setIdentification(list.get(i)[1]);
+            indexTemplateAtom.setDescription(list.get(i)[2]);
+            indexTemplateAtom.setCentral(list.get(i)[3]);
+            indexTemplateAtom.setField(list.get(i)[4]);
+            indexTemplateAtom.setSource(list.get(i)[5]);
+            indexTemplateAtom.setDbName(list.get(i)[6]);
+            indexTemplateAtom.setTableName(list.get(i)[7]);
+            indexTemplateAtom.setColumnName(list.get(i)[8]);
+            indexTemplateAtom.setBusinessCaliber(list.get(i)[9]);
+            indexTemplateAtom.setBusinessLeader(list.get(i)[10]);
+            indexTemplateAtom.setTechnicalCaliber(list.get(i)[11]);
+            indexTemplateAtom.setTechnicalLeader(list.get(i)[12]);
+            indexTemplateAtom.setApprove(list.get(i)[13]);
+            if (i == 0) {
+                if (!indexTemplateAtom.checkTitle()) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "模板格式错误");
+                }
+                continue;
+            }
             String checkResult = indexTemplateAtom.checkFieldsIsNull();
             if (StringUtils.isNotBlank(checkResult)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, checkResult);
@@ -1522,26 +1543,32 @@ public class IndexServiceImpl implements IndexService {
      */
     private List<IndexTemplateDeriveDTO> getDeriveIndexData(File file) throws Exception {
         List<IndexTemplateDeriveDTO> indexTemplateDeriveDTOList = new ArrayList<>();
-        List<String[]> list = PoiExcelUtils.readExcelFile(file, 1, 13);
-        for (String[] strings : list) {
+        List<String[]> list = PoiExcelUtils.readExcelFile(file, 0, 13);
+        for (int i = 0; i < list.size(); i++) {
             IndexTemplateDeriveDTO indexTemplateDeriveDTO = new IndexTemplateDeriveDTO();
-            indexTemplateDeriveDTO.setIndexAtomicName(strings[0]);
-            indexTemplateDeriveDTO.setTimeLimitName(strings[1]);
-            indexTemplateDeriveDTO.setModifiersName(strings[2]);
-            indexTemplateDeriveDTO.setIndexName(strings[3]);
-            indexTemplateDeriveDTO.setIndexIdentification(strings[4]);
-            indexTemplateDeriveDTO.setDescription(strings[5]);
-            if ("是".equals(strings[6])) {
+            indexTemplateDeriveDTO.setIndexAtomicName(list.get(i)[0]);
+            indexTemplateDeriveDTO.setTimeLimitName(list.get(i)[1]);
+            indexTemplateDeriveDTO.setModifiersName(list.get(i)[2]);
+            indexTemplateDeriveDTO.setIndexName(list.get(i)[3]);
+            indexTemplateDeriveDTO.setIndexIdentification(list.get(i)[4]);
+            indexTemplateDeriveDTO.setDescription(list.get(i)[5]);
+            if ("是".equals(list.get(i)[6])) {
                 indexTemplateDeriveDTO.setCentral(true);
             } else {
                 indexTemplateDeriveDTO.setCentral(false);
             }
-            indexTemplateDeriveDTO.setIndexFieldName(strings[7]);
-            indexTemplateDeriveDTO.setBusinessCaliber(strings[8]);
-            indexTemplateDeriveDTO.setBusinessLeaderName(strings[9]);
-            indexTemplateDeriveDTO.setTechnicalCaliber(strings[10]);
-            indexTemplateDeriveDTO.setTechnicalLeaderName(strings[11]);
-            indexTemplateDeriveDTO.setApprovalGroupName(strings[12]);
+            indexTemplateDeriveDTO.setIndexFieldName(list.get(i)[7]);
+            indexTemplateDeriveDTO.setBusinessCaliber(list.get(i)[8]);
+            indexTemplateDeriveDTO.setBusinessLeaderName(list.get(i)[9]);
+            indexTemplateDeriveDTO.setTechnicalCaliber(list.get(i)[10]);
+            indexTemplateDeriveDTO.setTechnicalLeaderName(list.get(i)[11]);
+            indexTemplateDeriveDTO.setApprovalGroupName(list.get(i)[12]);
+            if (i == 0) {
+                if (!indexTemplateDeriveDTO.checkTitle()) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "模板格式错误");
+                }
+                continue;
+            }
             String checkResult = indexTemplateDeriveDTO.checkFieldsIsNull();
             if (StringUtils.isNotBlank(checkResult)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, checkResult);
@@ -1613,26 +1640,32 @@ public class IndexServiceImpl implements IndexService {
      * @throws Exception
      */
     private List<IndexTemplateCompositeDTO> getCompositeIndexData(File file) throws Exception {
-        List<String[]> list = PoiExcelUtils.readExcelFile(file, 1, 12);
+        List<String[]> list = PoiExcelUtils.readExcelFile(file, 0, 12);
         List<IndexTemplateCompositeDTO> indexTemplateCompositeDTOList = new ArrayList<>();
-        for (String[] strings : list) {
+        for (int i = 0; i < list.size(); i++) {
             IndexTemplateCompositeDTO indexTemplateCompositeDTO = new IndexTemplateCompositeDTO();
-            indexTemplateCompositeDTO.setDependentIndicesName(strings[0]);
-            indexTemplateCompositeDTO.setIndexName(strings[1]);
-            indexTemplateCompositeDTO.setIndexIdentification(strings[2]);
-            indexTemplateCompositeDTO.setDescription(strings[3]);
-            if ("是".equals(strings[4])) {
+            indexTemplateCompositeDTO.setDependentIndicesName(list.get(i)[0]);
+            indexTemplateCompositeDTO.setIndexName(list.get(i)[1]);
+            indexTemplateCompositeDTO.setIndexIdentification(list.get(i)[2]);
+            indexTemplateCompositeDTO.setDescription(list.get(i)[3]);
+            if ("是".equals(list.get(i)[4])) {
                 indexTemplateCompositeDTO.setCentral(true);
             } else {
                 indexTemplateCompositeDTO.setCentral(false);
             }
-            indexTemplateCompositeDTO.setIndexFieldName(strings[5]);
-            indexTemplateCompositeDTO.setExpression(strings[6]);
-            indexTemplateCompositeDTO.setBusinessCaliber(strings[7]);
-            indexTemplateCompositeDTO.setBusinessLeaderName(strings[8]);
-            indexTemplateCompositeDTO.setTechnicalCaliber(strings[9]);
-            indexTemplateCompositeDTO.setTechnicalLeaderName(strings[10]);
-            indexTemplateCompositeDTO.setApprovalGroupName(strings[11]);
+            indexTemplateCompositeDTO.setIndexFieldName(list.get(i)[5]);
+            indexTemplateCompositeDTO.setExpression(list.get(i)[6]);
+            indexTemplateCompositeDTO.setBusinessCaliber(list.get(i)[7]);
+            indexTemplateCompositeDTO.setBusinessLeaderName(list.get(i)[8]);
+            indexTemplateCompositeDTO.setTechnicalCaliber(list.get(i)[9]);
+            indexTemplateCompositeDTO.setTechnicalLeaderName(list.get(i)[10]);
+            indexTemplateCompositeDTO.setApprovalGroupName(list.get(i)[11]);
+            if (i == 0) {
+                if (!indexTemplateCompositeDTO.checkTitle()) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "模板格式错误");
+                }
+                continue;
+            }
             String checkResult = indexTemplateCompositeDTO.checkFieldsIsNull();
             if (StringUtils.isNotBlank(checkResult)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, checkResult);
@@ -1826,7 +1859,7 @@ public class IndexServiceImpl implements IndexService {
         Set<String> groupSet = new HashSet<>(16);
         indexTemplateAtomDTOList.stream().forEach(indexTemplateAtomDTO -> {
             atomIndexName.add(indexTemplateAtomDTO.getIndexAtomicName());
-            if(StringUtils.isNotBlank(indexTemplateAtomDTO.getTimeLimitName())){
+            if (StringUtils.isNotBlank(indexTemplateAtomDTO.getTimeLimitName())) {
                 timeLimitName.add(indexTemplateAtomDTO.getTimeLimitName());
             }
             indexTemplateAtomDTO.setModifiersNameList(this.getModifiers(indexTemplateAtomDTO.getModifiersName()));

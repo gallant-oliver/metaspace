@@ -911,8 +911,10 @@ public class IndexREST {
         try {
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
             indexService.importBatchAtomIndex(file, tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), "批量导入原子指标数据");
             return ReturnUtil.success(null);
         } catch (Exception e) {
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), "批量导入原子指标数据");
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
             if (Objects.nonNull(file) && file.exists()) {
@@ -938,8 +940,10 @@ public class IndexREST {
         try {
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
             indexService.importBatchDeriveIndex(file, tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), "批量导入派生指标数据");
             return ReturnUtil.success(null);
         } catch (Exception e) {
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), "批量导入派生指标数据");
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
             if (Objects.nonNull(file) && file.exists()) {
@@ -965,8 +969,10 @@ public class IndexREST {
         try {
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
             indexService.importBatchCompositeIndex(file, tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), "批量导入复合指标数据");
             return ReturnUtil.success(null);
         } catch (Exception e) {
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), "批量导入派生指标数据");
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
             if (Objects.nonNull(file) && file.exists()) {
