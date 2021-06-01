@@ -635,9 +635,14 @@ public class UserGroupService {
 
     public List<CategoryPrivilege> getAdminCategoryView(int categoryType,String tenantId) throws AtlasBaseException {
         List<CategoryPrivilege> userCategories = getAdminCategory(categoryType,tenantId);
-        for (CategoryPrivilege category:userCategories){
+        List<CategoryPrivilege> removeDefaultField = new ArrayList<>();
+        for (CategoryPrivilege category:userCategories) {
             category.getPrivilege().setAsh(false);
+            if (category.getGuid().equals("index_field_default")) {
+                removeDefaultField.add(category);
+            }
         }
+        userCategories.removeAll(removeDefaultField);
         return userCategories;
     }
 
@@ -1328,7 +1333,22 @@ public class UserGroupService {
                 dbNames=new ArrayList<>();
             }
             allDBNames.addAll(dbNames);
-            userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type, allDBNames);
+            /*
+             * 1.12版本改动。默认域自带所有权限，且不可被操作，这表示将没有用户组可以对默认域授权，
+             * category_group_relation表中将不会存在默认域和用户组关系的记录
+             * 而在getUserGroupsCategory方法获取目录下指标数值时，需要category表和category_group_relation关联
+             * 因为category_group_relation表中没有默认域的记录，导致指标设计默认域的数值必然为空
+             * 所以在升级脚本中默认给category_group_relation添加一条默认域和用户组关系记录
+             * 目录ID为index_field_default，用户组ID为ALL，其他权限均为TRUE
+             * 在type=5时，添加用户组ID"ALL",使默认域在关联时不被过滤
+             */
+            if (type == 5) {
+                userGroupIds.add("ALL");
+                userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type, allDBNames);
+                userGroupIds.remove("ALL");
+            } else {
+                userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type, allDBNames);
+            }
             List<String> categoryIds = userCategories.stream().map(category -> category.getGuid()).collect(Collectors.toList());
             if (type == 0) {
                 List<String> RMDBNames = relationDAO.queryRDBNameByCategoryGuidV2(tenantId);
