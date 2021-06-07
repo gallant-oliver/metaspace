@@ -165,7 +165,6 @@ public class QuartzJob implements Job {
             if (canceled(taskId, taskExecuteId)) {
                 return;
             }
-            ;
             //获取原子任务列表，包含子任务关联对象，子任务使用规则，子任务使用规则模板
             List<AtomicTaskExecution> taskList = taskManageDAO.getObjectWithRuleRelation(taskId, tenantId);
             if (Objects.isNull(taskList)) {
@@ -178,7 +177,9 @@ public class QuartzJob implements Job {
             if (canceled(taskId, taskExecuteId)) {
                 return;
             }
+            //执行任务
             executeAtomicTaskList(taskId, taskExecuteId, taskList, tenantId);
+            //取消任务
             canceled(taskId, taskExecuteId);
         } catch (Exception e) {
             if (StringUtils.isNotBlank(taskId)) {
@@ -257,12 +258,15 @@ public class QuartzJob implements Job {
             //根据模板状态判断是否继续运行
             int retryCount = 0;
             AtomicTaskExecution task = taskList.get(i);
+            task.setTaskId(taskId);
+            task.setTaskExecuteId(taskExecuteId);
             long currentTime = System.currentTimeMillis() / 1000 * 1000;
             task.setTimeStamp(currentTime);
             Timestamp currentTimeStamp = new Timestamp(currentTime);
             taskManageDAO.initRuleExecuteInfo(task.getId(), taskExecuteId, taskId, task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(), currentTimeStamp, currentTimeStamp, 0, 0, task.getRuleId());
             do {
                 try {
+                    //执行任务
                     runJob(task);
                     float ratio = (float) (i + 1) / totalStep;
                     LOG.info("raion=" + ratio);
@@ -447,23 +451,20 @@ public class QuartzJob implements Job {
             try {
                 String pool = task.getPool();
                 checkSparkConfig(task.getConfig());
-                result = livyTaskSubmitHelper.post2LivyWithRetry(measure, pool, task.getConfig());
+                result = livyTaskSubmitHelper.post2LivyWithRetry(measure, pool, task);
                 if (result == null) {
                     throw new AtlasBaseException("提交任务失败 : " + measure.getName());
-                }
-
-                while (!isDone(result.getState())) {
-                    Thread.sleep(10000);
-                    result = livyTaskSubmitHelper.getResultByLivyId(result.getId());
                 }
             } catch (InterruptedException e) {
                 throw new AtlasBaseException(e);
             } finally {
                 if (result != null) {
-                    livyTaskSubmitHelper.deleteByLivy(result.getId()); //清除livy记录
-                }
-                if (result != null && "DEAD".equalsIgnoreCase(result.getState())) { //任务执行失败，抛出异常，不做后续处理
-                    throw new AtlasException("任务规则执行失败 task rule id=" + task.getRuleId());
+                    //清除livy记录
+                    livyTaskSubmitHelper.deleteByLivy(result.getId());
+                    if ("DEAD".equalsIgnoreCase(result.getState())) {
+                        //任务执行失败，抛出异常，不做后续处理
+                        throw new AtlasException("任务规则执行失败 task rule id=" + task.getRuleId());
+                    }
                 }
             }
             String _MetricFile = LivyTaskSubmitHelper.getHdfsOutPath(task.getId(), task.getTimeStamp(), "_METRICS");
