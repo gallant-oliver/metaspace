@@ -51,7 +51,7 @@ public abstract class AbstractKafkaConsumerRunnable extends ShutdownableThread {
     private String[] restAddresses;
     public AbstractKafkaConsumerRunnable(NotificationConsumer<Notification> consumer, ServiceState serviceState, String name) throws AtlasException {
         super(name, false);
-        this.applicationProperties = ApplicationProperties.get();;
+        this.applicationProperties = ApplicationProperties.get();
         consumerRetryInterval = applicationProperties.getInt(CONSUMER_RETRY_INTERVAL, 500);
         // 500 ms  by default
         minWaitDuration       = applicationProperties.getInt(CONSUMER_MIN_RETRY_INTERVAL, consumerRetryInterval);
@@ -192,7 +192,7 @@ public abstract class AbstractKafkaConsumerRunnable extends ShutdownableThread {
         }
     }
 
-    protected abstract AuditLog dealMessage(Notification message);
+    protected abstract AuditLog dealMessage(Notification message)throws AtlasException;
 
     private void commit(AtlasKafkaMessage<Notification> kafkaMessage) {
         boolean commitSucceessStatus = false;

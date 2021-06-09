@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  */
 public class RdbmsMessageDeserializer implements MessageDeserializer<RdbmsNotification> {
 
-    private static final ObjectMapper mapper = new ObjectMapper()
+    private static final ObjectMapper MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
 
     /**
@@ -51,7 +51,7 @@ public class RdbmsMessageDeserializer implements MessageDeserializer<RdbmsNotifi
     public RdbmsNotification deserialize(String messageJson) {
         RdbmsNotification rdbmsNotification = new RdbmsNotification();
         try{
-            RdbmsMessage rdbmsMessage = mapper.readValue(messageJson, new TypeReference<RdbmsMessage>() {});
+            RdbmsMessage rdbmsMessage = MAPPER.readValue(messageJson, new TypeReference<RdbmsMessage>() {});
             RdbmsMessage.Payload payload = rdbmsMessage.getPayload();
             if(null == payload){
                 throw new RuntimeException("rdbms消息有误，payload不能为空");

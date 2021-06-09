@@ -8,6 +8,7 @@ import org.apache.atlas.model.instance.debezium.RdbmsEntities;
 import org.apache.atlas.model.notification.Notification;
 import org.apache.atlas.model.notification.RdbmsNotification;
 import org.apache.atlas.notification.rdbms.Conversion;
+import org.apache.atlas.notification.rdbms.DebeziumConnector;
 import org.apache.atlas.repository.converters.AtlasInstanceConverter;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.type.AtlasTypeRegistry;
@@ -18,6 +19,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import java.util.Map;
+import java.util.Properties;
 
 @Component
 @Order(5)
@@ -54,15 +57,19 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
         }
 
         @Override
-        protected AuditLog dealMessage(Notification message) {
-            AuditLog auditLog = null;
+        protected AuditLog dealMessage(Notification message) throws AtlasException{
+
             RdbmsNotification rdbmsMessage = (RdbmsNotification)message;
 
-            RdbmsEntities rdbmsEntities = conversion.convert(rdbmsMessage);
+            String name = rdbmsMessage.getRdbmsMessage().getPayload().getSource().getName();
+
+            Properties connectorProperties = DebeziumConnector.getConnectorConfig(name);
+
+            RdbmsEntities rdbmsEntities = conversion.convert(rdbmsMessage,connectorProperties);
 
             System.out.println("atlas实体及数据血缘【"+rdbmsEntities+"】插入JanusGraph数据库，并调用监听器，将数据插入PG");
 
-            return auditLog;
+            return null;
         }
     }
 }

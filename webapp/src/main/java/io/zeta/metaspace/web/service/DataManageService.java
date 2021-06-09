@@ -23,6 +23,7 @@ package io.zeta.metaspace.web.service;
  */
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.SSOConfig;
@@ -56,6 +57,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.*;
+import org.apache.atlas.repository.Constants;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
@@ -1173,8 +1175,10 @@ public class DataManageService {
             String errorId = null;
             String errorReason = null;
             int retries = 3;
+            Map<String, Object> headerMap = Maps.newHashMap();
+            headerMap.put(Constants.TICKET_KEY, AdminUtils.getSSOTicket());
             while (retryCount < retries) {
-                String res = OKHttpClient.doPut(mobiusURL, jsonStr);
+                String res = OKHttpClient.doPut(mobiusURL, jsonStr, headerMap);
                 LOG.info(res);
                 if (StringUtils.isNotEmpty(res)) {
                     Map response = gson.fromJson(res, Map.class);

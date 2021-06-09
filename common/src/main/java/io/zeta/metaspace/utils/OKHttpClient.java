@@ -25,11 +25,11 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 import io.zeta.metaspace.MetaspaceConfig;
-import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +53,6 @@ import java.util.concurrent.TimeUnit;
 public class OKHttpClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(OKHttpClient.class);
-    private static final String TICKET_KEY = "X-SSO-FullticketId";
     private static OkHttpClient client;
     private static int size;
     private static int okHttpTimeout;
@@ -96,22 +95,7 @@ public class OKHttpClient {
         }
     }
 
-    public static String doPost(String url, String json) throws AtlasBaseException {
-        try {
-            RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
-            String ticket = AdminUtils.getSSOTicket();
-            Request request = new Request.Builder()
-                    .url(url)
-                    .addHeader(TICKET_KEY, ticket)
-                    .post(body)
-                    .build();
-            return getResponse(request);
-        } catch(AtlasBaseException e){
-            throw e;
-        } catch(Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"请求失败"+e.getMessage());
-        }
-    }
+
 
     public static String doPost(String url, Map<String, Object> headerMap,Map<String,Object> queryParamMap, String json) throws AtlasBaseException {
         try {
@@ -153,20 +137,37 @@ public class OKHttpClient {
         return urlBuilder.build().toString();
     }
 
-    public static String doPut(String url, String json) throws AtlasBaseException {
+    public static String doPut(String url, String json, Map<String, Object> headerMap) throws AtlasBaseException {
         try {
             RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
-            String ticket = AdminUtils.getSSOTicket();
-            Request request = new Request.Builder()
-                    .url(url)
-                    .addHeader(TICKET_KEY, ticket)
-                    .put(body)
-                    .build();
+            Request.Builder builder = new Request.Builder();
+            if(MapUtils.isNotEmpty(headerMap)){
+                Headers headers = buildHeaders(headerMap);
+                builder.headers(headers);
+            }
+            Request request = builder.url(url).put(body).build();
             return getResponse(request);
         } catch(AtlasBaseException e){
             throw e;
         } catch(Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求失败"+e.getMessage());
+        }
+    }
+
+    public static String doPost(String url, String json, Map<String, Object> headerMap) throws AtlasBaseException {
+        try {
+            RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
+            Request.Builder builder = new Request.Builder();
+            if(MapUtils.isNotEmpty(headerMap)){
+                Headers headers = buildHeaders(headerMap);
+                builder.headers(headers);
+            }
+            Request request = builder.url(url).post(body).build();
+            return getResponse(request);
+        } catch(AtlasBaseException e){
+            throw e;
+        } catch(Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"请求失败"+e.getMessage());
         }
     }
 
