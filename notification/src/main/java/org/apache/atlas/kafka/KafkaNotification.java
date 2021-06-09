@@ -54,12 +54,16 @@ public class KafkaNotification extends AbstractNotification implements Service {
     public    static final String PROPERTY_PREFIX            = "atlas.kafka";
     public    static final String ATLAS_HOOK_TOPIC           = "ATLAS_HOOK";
     public    static final String ATLAS_ENTITIES_TOPIC       = "ATLAS_ENTITIES";
+    public    static final String ATLAS_TABLE_RDBMS_TOPIC       = "TABLE.ATLAS_MYSQL_45000";
+    public    static final String ATLAS_RDBMS_TOPIC       = "ATLAS_MYSQL_45000";
     protected static final String CONSUMER_GROUP_ID_PROPERTY = "group.id";
+    public static final String DEFAULT_GROUP_ID = "metaspace";
 
-    private static final Map<NotificationType, String> TOPIC_MAP = new HashMap<NotificationType, String>() {
+    private static final Map<NotificationType, List<String>> TOPIC_MAP = new HashMap<NotificationType, List<String>>() {
         {
-            put(NotificationType.HOOK, ATLAS_HOOK_TOPIC);
-            put(NotificationType.ENTITIES, ATLAS_ENTITIES_TOPIC);
+            put(NotificationType.HOOK, Arrays.asList(ATLAS_HOOK_TOPIC));
+            put(NotificationType.ENTITIES, Arrays.asList(ATLAS_ENTITIES_TOPIC));
+            put(NotificationType.RDBMS, Arrays.asList(ATLAS_TABLE_RDBMS_TOPIC,ATLAS_RDBMS_TOPIC));
         }
     };
 
@@ -118,8 +122,21 @@ public class KafkaNotification extends AbstractNotification implements Service {
     }
 
     @VisibleForTesting
-    String getTopicName(NotificationType notificationType) {
+    public List<String> getTopicName(NotificationType notificationType) {
         return TOPIC_MAP.get(notificationType);
+    }
+
+    public synchronized void addTopic(NotificationType notificationType, String topic) {
+        if(null == notificationType || StringUtils.isBlank(topic)){
+            String message = String.format("添加topic未成功，原因：参数为空notificationType = %s, topic = %s", notificationType, topic);
+            throw new RuntimeException(message);
+        }
+        List<String> topics = TOPIC_MAP.get(notificationType);
+        if(topics.contains(topic)){
+            String message = String.format("添加topic未成功，原因： topic %s已经在notificationType为%s的列表中", topic, notificationType);
+            throw new RuntimeException(message);
+        }
+        topics.add(topic);
     }
 
     // ----- Service ---------------------------------------------------------
@@ -185,7 +202,7 @@ public class KafkaNotification extends AbstractNotification implements Service {
 
     @VisibleForTesting
     void sendInternalToProducer(Producer p, NotificationType type, List<String> messages) throws NotificationException {
-        String               topic           = TOPIC_MAP.get(type);
+        String               topic           = TOPIC_MAP.get(type).get(0);
         List<MessageContext> messageContexts = new ArrayList<>();
 
         for (String message : messages) {
@@ -226,12 +243,12 @@ public class KafkaNotification extends AbstractNotification implements Service {
     public KafkaConsumer getKafkaConsumer(Properties consumerProperties, NotificationType type, boolean autoCommitEnabled) {
         if(this.consumer == null) {
             try {
-                String topic = TOPIC_MAP.get(type);
+                List<String> topics = TOPIC_MAP.get(type);
 
                 consumerProperties.put("enable.auto.commit", autoCommitEnabled);
                 this.consumer = new KafkaConsumer(consumerProperties);
 
-                this.consumer.subscribe(Arrays.asList(topic));
+                this.consumer.subscribe(topics);
             } catch (Exception ee) {
                 LOG.error("Exception in getKafkaConsumer ", ee);
             }
@@ -242,12 +259,12 @@ public class KafkaNotification extends AbstractNotification implements Service {
     public KafkaConsumer getNewKafkaConsumer(Properties consumerProperties, NotificationType type, boolean autoCommitEnabled) {
         KafkaConsumer newConsumer = null;
         try {
-            String topic = TOPIC_MAP.get(type);
+            List<String> topics = TOPIC_MAP.get(type);
 
             consumerProperties.put("enable.auto.commit", autoCommitEnabled);
             newConsumer = new KafkaConsumer(consumerProperties);
 
-            newConsumer.subscribe(Arrays.asList(topic));
+            newConsumer.subscribe(topics);
         } catch (Exception ee) {
             LOG.error("Exception in getKafkaConsumer ", ee);
         }
@@ -260,11 +277,7 @@ public class KafkaNotification extends AbstractNotification implements Service {
         // Get properties for consumer request
     Properties getConsumerProperties(NotificationType type) {
         // find the configured group id for the given notification type
-        String groupId = properties.getProperty(type.toString().toLowerCase() + "." + CONSUMER_GROUP_ID_PROPERTY);
-
-        if (StringUtils.isEmpty(groupId)) {
-            throw new IllegalStateException("No configuration group id set for the notification type " + type);
-        }
+        String groupId = properties.getProperty(type.toString().toLowerCase() + "." + CONSUMER_GROUP_ID_PROPERTY, DEFAULT_GROUP_ID);
 
         Properties consumerProperties = new Properties();
 

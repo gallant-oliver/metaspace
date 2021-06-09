@@ -45,11 +45,8 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_
 @JsonIgnoreProperties(ignoreUnknown=true)
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.PROPERTY)
-public class HookNotification implements Serializable {
+public class HookNotification extends  Notification implements Serializable{
     private static final long serialVersionUID = 1L;
-
-    public static final String UNKNOW_USER = "UNKNOWN";
-
     /**
      * Type of the hook message.
      */
@@ -59,14 +56,14 @@ public class HookNotification implements Serializable {
     }
 
     protected HookNotificationType type;
-    protected String               user;
 
     public HookNotification() {
+        super();
     }
 
     public HookNotification(HookNotificationType type, String user) {
+        super(user);
         this.type = type;
-        this.user = user;
     }
 
     public HookNotificationType getType() {
@@ -76,21 +73,13 @@ public class HookNotification implements Serializable {
     public void setType(HookNotificationType type) {
         this.type = type;
     }
-
-    public String getUser() {
-        if (StringUtils.isEmpty(user)) {
-            return UNKNOW_USER;
+    @Override
+    public String getTypeName() {
+        if(type != null){
+            return type.name();
         }
-
-        return user;
+        return "";
     }
-
-    public void setUser(String user) {
-        this.user = user;
-    }
-
-    public void normalize() { }
-
     @Override
     public String toString() {
         return toString(new StringBuilder()).toString();
