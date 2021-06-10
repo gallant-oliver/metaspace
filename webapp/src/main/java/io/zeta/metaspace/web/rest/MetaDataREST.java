@@ -120,6 +120,7 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Database getDatabase(@PathParam("schemaId") String schemaId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+
         return metadataService.getDatabase(schemaId);
     }
 
@@ -226,7 +227,6 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableList(" + schemaId + "," + limit + "," + offset + " )");
             }
             Boolean isView = StringUtils.isEmpty(isViewStr) ? null : Boolean.parseBoolean(isViewStr);
-
             PageResult<TableEntity> result = searchService.getTable(schemaId, active, offset, limit, query, isView, queryInfo, tenantId);
             return result;
         } finally {
