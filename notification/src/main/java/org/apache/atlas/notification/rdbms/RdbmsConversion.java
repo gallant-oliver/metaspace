@@ -39,12 +39,11 @@ public class RdbmsConversion implements Conversion{
         ObjectMapper mapper = new ObjectMapper();
 
 
-        String sourceJson = "{" +
+        String instanceJson = "{" +
                 "    \"entity\": {" +
-                "\"guid\": \"26bc364b-6f8a-406a-b559-82e86985a122\"," +
                 "    \"typeName\":   \"rdbms_instance\"," +
                 "\"attributes\": {" +
-                "\"qualifiedName\": \"1443c338-d3b6-4b24-bc05-5de60e5ccb32@ms\"," +
+                "\"qualifiedName\": \"192.168.8.129:3306\"," +
                 "\"name\":\"10.200.50.69:15432\"," +
                 "\"rdbms_type\":\"POSTGRE\"," +
                 "\"platform\":\"ms\"," +
@@ -62,27 +61,27 @@ public class RdbmsConversion implements Conversion{
 
         String dbJson = "{" +
                 "    \"entity\": {" +
-                "\"guid\": \"2d23b26c-8578-44de-b80c-caeccb632783\"," +
                 "    \"typeName\":   \"rdbms_db\"," +
                 "\"attributes\": {" +
-                "\"qualifiedName\": \"1443c338-d3b6-4b24-bc05-5de60e5ccb32.test_db@ms\"," +
+                "\"qualifiedName\": \"192.168.8.129:3306.test_db\"," +
                 "\"owner\":\"whz\"," +
                 "    \"name\":          \"test_db \"," +
                 "\"description\":   \"rdbms_db datag API input\"," +
                 "\"prodOrOther\": \"\"," +
                 "\"instance\":{" +
-                "                \"guid\": \"26bc364b-6f8a-406a-b559-82e86985a122\"," +
+                "                \"qualifiedName\": \"26bc364b-6f8a-406a-b559-82e86985a122\"," +
                 "                \"typeName\": \"rdbms_instance\"" +
                 "            }" +
                 "}" +
                 "    }" +
                 "}";
+
+
         String columnJson1 = "{" +
                 "    \"entity\": {" +
-                "\"guid\": \"ea875ad3-4056-4f9d-8922-f399220d869a\"," +
                 "    \"typeName\":   \"rdbms_column\"," +
                 "\"attributes\": {" +
-                "\"qualifiedName\": \"1443c338-d3b6-4b24-bc05-5de60e5ccb32.test_db.public.test_table.id@ms\"," +
+                "\"qualifiedName\": \"192.168.8.129:3306.test_db.public.test_table.id\"," +
                 "\"name\":          \"id\"," +
                 "\"comment\":\"rdbms_column API insert test\"," +
                 "\"description\":\"rdbms_column  手动输入\"," +
@@ -98,10 +97,9 @@ public class RdbmsConversion implements Conversion{
 
         String tableJson1 = "{" +
                 "    \"entity\": {" +
-                "\"guid\": \"df5c5fed-35f3-4a6c-81e4-cd59062b5dab\"," +
                 "    \"typeName\":   \"rdbms_table\"," +
                 "\"attributes\": {" +
-                "\"qualifiedName\": \"1443c338-d3b6-4b24-bc05-5de60e5ccb32.test_db.public.test_table@ms\"," +
+                "\"qualifiedName\": \"192.168.8.129:3306.test_db.public.test_table\"," +
                 "\"createTime\":    \"2021-04-25T13:15:25.369Z\"," +
                 "\"name\":          \"public.test_table\"," +
                 "\"comment\":\"test_table API insert test\"," +
@@ -110,11 +108,11 @@ public class RdbmsConversion implements Conversion{
                 "\"type\":\"table\"," +
                 "\"contact_info\":\"mytable_info\"," +
                 "\"db\": {" +
-                "                \"guid\": \"2d23b26c-8578-44de-b80c-caeccb632783\"," +
+                "                \"qualifiedName\": \"192.168.8.129:3306.test_db\"," +
                 "                \"typeName\": \"rdbms_db\"" +
                 "            }," +
                 "\"columns\": [{" +
-                "                \"guid\": \"ea875ad3-4056-4f9d-8922-f399220d869a\"," +
+                "                \"qualifiedName\": \"192.168.8.129:3306.test_db.public.test_table.id\"," +
                 "                \"typeName\": \"rdbms_column\"" +
                 "            }]" +
                 "}" +
@@ -123,10 +121,9 @@ public class RdbmsConversion implements Conversion{
 
         String columnJson2 = "{" +
                 "    \"entity\": {" +
-                "\"guid\": \"78e63cf1-f0d7-4d74-9960-ab964f1821b5\"," +
                 "    \"typeName\":   \"rdbms_column\"," +
                 "\"attributes\": {" +
-                "\"qualifiedName\": \"1443c338-d3b6-4b24-bc05-5de60e5ccb32.test_db.public.test_table_1.id@ms\"," +
+                "\"qualifiedName\": \"192.168.8.129:3306.test_db.public.test_table_1.id\"," +
                 "\"name\":          \"id\"," +
                 "\"comment\":\"rdbms_column API insert test\"," +
                 "\"description\":\"rdbms_column  手动输入\"," +
@@ -142,10 +139,9 @@ public class RdbmsConversion implements Conversion{
 
         String tableJson2 = "{" +
                 "    \"entity\": {" +
-                "\"guid\": \"99fdefb9-b414-449b-a127-c09ae4fa8486\"," +
                 "    \"typeName\":   \"rdbms_table\"," +
                 "\"attributes\": {" +
-                "\"qualifiedName\": \"1443c338-d3b6-4b24-bc05-5de60e5ccb32.test_db.public.test_table_1@ms\"," +
+                "\"qualifiedName\": \"192.168.8.129:3306.test_db.public.test_table_1\"," +
                 "\"createTime\":    \"2021-04-25T13:15:25.369Z\"," +
                 "\"name\":          \"public.test_table_1\"," +
                 "\"comment\":\"public.test_table_1 API insert test\"," +
@@ -154,83 +150,52 @@ public class RdbmsConversion implements Conversion{
                 "\"type\":\"table\"," +
                 "\"contact_info\":\"mytable_info\"," +
                 "\"db\": {" +
-                "                \"guid\": \"2d23b26c-8578-44de-b80c-caeccb632783\"," +
+                "                \"qualifiedName\": \"192.168.8.129:3306.test_db\"," +
                 "                \"typeName\": \"rdbms_db\"" +
                 "            }," +
                 "\"columns\": [{" +
-                "                \"guid\": \"78e63cf1-f0d7-4d74-9960-ab964f1821b5\"," +
+                "                \"qualifiedName\": \"192.168.8.129:3306.test_db.public.test_table_1.id\"," +
                 "                \"typeName\": \"rdbms_column\"" +
                 "            }]" +
                 "}" +
                 "    }" +
                 "}";
 
-        String blukJson = "{" +
-                "    \"entity\": {" +
-                "\"guid\": \"99fdefb9-b414-449b-a127-c09ae4fa8486\"," +
-                "    \"typeName\":   \"rdbms_table\"," +
-                "\"attributes\": {" +
-                "\"qualifiedName\": \"1443c338-d3b6-4b24-bc05-5de60e5ccb32.test_db.public.test_table_1@ms\"," +
-                "\"createTime\":    \"2021-04-25T13:15:25.369Z\"," +
-                "\"name\":          \"public.test_table_1\"," +
-                "\"comment\":\"public.test_table_1 API insert test\"," +
-                "\"description\":\"public.test_table_1  手动输入\"," +
-                "\"owner\":\"whz\"," +
-                "\"type\":\"table\"," +
-                "\"contact_info\":\"mytable_info\"," +
-                "\"db\": {" +
-                "                \"guid\": \"2d23b26c-8578-44de-b80c-caeccb632783\"," +
-                "                \"typeName\": \"rdbms_db\"" +
-                "            }," +
-                "\"columns\": [{" +
-                "                \"guid\": \"78e63cf1-f0d7-4d74-9960-ab964f1821b5\"," +
-                "                \"typeName\": \"rdbms_column\"" +
-                "            }]" +
-                "}" +
-                "    }" +
-                "}" +
-                "" +
-                "" +
-                "" +
-                "" +
-                "" +
-                "{" +
+        String bloodJson = "{" +
                 "\"entities\": [" +
                 "{" +
                 "\"typeName\": \"Process\"," +
-                "\"guid\" : \"4674bad6-6425-4573-9332-0cf89e8750c2\"," +
                 "\"attributes\": {" +
                 "\"name\": \"create table public.test_table_1 as select * from mytable\"," +
                 "\"qualifiedName\": \"1443c338-d3b6-4b24-bc05-5de60e5ccb32.test_db.public.test_table_1.Process@ms:000\"," +
                 "\"inputs\": [" +
                 "{" +
-                "\"guid\": \"df5c5fed-35f3-4a6c-81e4-cd59062b5dab\"," +
+                "\"qualifiedName\": \"192.168.8.129:3306.test_db.public.test_table\"," +
                 "\"typeName\": \"rdbms_table\"" +
                 "}" +
                 "]," +
                 "\"outputs\": [" +
                 "{" +
-                "\"guid\": \"99fdefb9-b414-449b-a127-c09ae4fa8486\"," +
+                "\"qualifiedName\": \"192.168.8.129:3306.test_db.public.test_table_1\"," +
                 "\"typeName\": \"rdbms_table\"" +
                 "}" +
                 "]" +
                 "}" +
                 "}," +
                 "{" +
-                "\"guid\": \"5db638fd-cd68-4308-abc3-373e8a048c0c\"," +
                 "\"typeName\": \"Process\"," +
                 "\"attributes\": {" +
                 "\"name\": \"create table public.test_table_1 as select * from mytable\"," +
                 "\"qualifiedName\": \"1443c338-d3b6-4b24-bc05-5de60e5ccb32.test_db.public.test_table_1.Process@ms:001\"," +
                 "\"inputs\": [" +
                 "{" +
-                "\"guid\": \"ea875ad3-4056-4f9d-8922-f399220d869a\"," +
+                "\"qualifiedName\": \"192.168.8.129:3306.test_db.public.test_table.id\"," +
                 "\"typeName\": \"rdbms_column\"" +
                 "}" +
                 "]," +
                 "\"outputs\": [" +
                 "{" +
-                "\"guid\": \"78e63cf1-f0d7-4d74-9960-ab964f1821b5\"," +
+                "\"qualifiedName\": \"192.168.8.129:3306.test_db.public.test_table_1.id\"," +
                 "\"typeName\": \"rdbms_column\"" +
                 "}" +
                 "]" +
@@ -240,14 +205,28 @@ public class RdbmsConversion implements Conversion{
                 "]" +
                 "}";
 
-        AtlasEntity.AtlasEntityWithExtInfo sourceEntityWithExtInfo = mapper.readValue(sourceJson, AtlasEntity.AtlasEntityWithExtInfo.class);
-
+        RdbmsEntities rdbmsEntities = new RdbmsEntities();
+        SortedMap<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> entityMap = rdbmsEntities.getEntityMap();
+        //添加数据库实例
+        AtlasEntity.AtlasEntityWithExtInfo instanceJsonEntityWithExtInfo = mapper.readValue(instanceJson, AtlasEntity.AtlasEntityWithExtInfo.class);
+        entityMap.put(RdbmsEntities.EntityType.RDBMS_INSTANCE, Arrays.asList(instanceJsonEntityWithExtInfo));
+       //添加数据库
         AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = mapper.readValue(dbJson, AtlasEntity.AtlasEntityWithExtInfo.class);
+        entityMap.put(RdbmsEntities.EntityType.RDBMS_DB, Arrays.asList(dbEntityWithExtInfo));
 
+        //添加列，由于column_2_EntityWithExtInfo依赖于column_1_EntityWithExtInfo，因此，在构建list时,column_1_EntityWithExtInfo排列在column_2_EntityWithExtInfo前面
+        AtlasEntity.AtlasEntityWithExtInfo column_1_EntityWithExtInfo = mapper.readValue(columnJson1, AtlasEntity.AtlasEntityWithExtInfo.class);
+        AtlasEntity.AtlasEntityWithExtInfo column_2_EntityWithExtInfo = mapper.readValue(columnJson2, AtlasEntity.AtlasEntityWithExtInfo.class);
+        entityMap.put(RdbmsEntities.EntityType.RDBMS_COLUMN, Arrays.asList(column_1_EntityWithExtInfo,column_2_EntityWithExtInfo));
 
+        //添加列，由于table_2_EntityWithExtInfo依赖于table_1_EntityWithExtInfo，因此，在构建list时,table_1_EntityWithExtInfo排列在table_2_EntityWithExtInfo前面
+        AtlasEntity.AtlasEntityWithExtInfo table_1_EntityWithExtInfo = mapper.readValue(tableJson1, AtlasEntity.AtlasEntityWithExtInfo.class);
+        AtlasEntity.AtlasEntityWithExtInfo table_2_EntityWithExtInfo = mapper.readValue(tableJson2, AtlasEntity.AtlasEntityWithExtInfo.class);
+        entityMap.put(RdbmsEntities.EntityType.RDBMS_TABLE, Arrays.asList(table_1_EntityWithExtInfo,table_2_EntityWithExtInfo));
 
-        AtlasEntity.AtlasEntitiesWithExtInfo atlasEntitiesWithExtInfo = mapper.readValue(blukJson, AtlasEntity.AtlasEntitiesWithExtInfo.class);
+        AtlasEntity.AtlasEntitiesWithExtInfo atlasEntitiesWithExtInfo = mapper.readValue(bloodJson, AtlasEntity.AtlasEntitiesWithExtInfo.class);
 
-        return new RdbmsEntities(Arrays.asList(sourceEntityWithExtInfo,dbEntityWithExtInfo), atlasEntitiesWithExtInfo);
+        rdbmsEntities.setBloodEntities(atlasEntitiesWithExtInfo);
+        return rdbmsEntities;
     }
 }

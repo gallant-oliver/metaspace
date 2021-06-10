@@ -15,9 +15,7 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class RdbmsNotification extends  Notification implements Serializable {
     private static final long serialVersionUID = 1L;
-    /**
-     * Type of the hook message.
-     */
+
     public enum RdbmsNotificationType {
         /**
          * 创建库，表（视图，列，主键，索引，外键）
