@@ -236,7 +236,6 @@ public class BusinessService {
 
     public TechnologyInfo getRelatedTableList(String businessId, String tenantId) throws AtlasBaseException {
         try {
-
             //technicalLastUpdate && technicalOperator
             TechnologyInfo info = businessDao.queryTechnologyInfoByBusinessId(businessId);
             //editTechnical
@@ -263,7 +262,7 @@ public class BusinessService {
                 info.setEditTechnical(true);
             }
             //tables
-            List<TechnologyInfo.Table> tables = getTablesByBusinessId(businessId);
+            List<TechnologyInfo.Table> tables = getTablesByBusinessId(businessId, tenantId);
             info.setTables(tables);
             //businessId
             info.setBusinessId(businessId);
@@ -276,8 +275,8 @@ public class BusinessService {
         }
     }
 
-    private List<TechnologyInfo.Table> getTablesByBusinessId(String businessId) {
-        List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
+    private List<TechnologyInfo.Table> getTablesByBusinessId(String businessId, String tenantId) {
+        List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessIdAndTenantId(businessId, tenantId);
         tables.forEach(table -> {
             String displayName = columnDAO.getTableDisplayInfoByGuid(table.getTableGuid());
             if (Objects.nonNull(displayName)) {
@@ -324,7 +323,7 @@ public class BusinessService {
                 infoHeader.setPath(joiner.toString());
                 //level2Category
                 infoHeader.setLevel2Category(level2Category);
-                List<TechnologyInfo.Table> tables = getTablesByBusinessId(infoHeader.getBusinessId());
+                List<TechnologyInfo.Table> tables = getTablesByBusinessId(infoHeader.getBusinessId(), tenantId);
                 infoHeader.setTables(tables);
             }
             long totalSize = 0;
@@ -487,7 +486,7 @@ public class BusinessService {
                 int length = 2;
                 if (pathArr.length >= length)
                     infoHeader.setLevel2Category(pathArr[1]);
-                List<TechnologyInfo.Table> tables = getTablesByBusinessId(infoHeader.getBusinessId());
+                List<TechnologyInfo.Table> tables = getTablesByBusinessId(infoHeader.getBusinessId(), tenantId);
                 infoHeader.setTables(tables);
             }
             pageResult.setLists(businessInfoList);
