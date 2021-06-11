@@ -227,11 +227,13 @@ public class MetaDataService {
         AtlasStructType structType = (AtlasStructType) objType;
         AtlasEntityType entityType = atlasTypeRegistry.getEntityTypeByName(typeName);
 
+        // 所有attribute
         ArrayList<String> attributes = new ArrayList<>(structType.getAllAttributes().keySet());
         // 排除att
         if (!CollectionUtils.isEmpty(excludeAttributes)) {
             attributes.removeAll(excludeAttributes);
         }
+        // 所有relationAttribute
         ArrayList<String> relationshipAttributes = new ArrayList<>(entityType.getRelationshipAttributes().keySet());
         // 排除relationAtt
         if (!CollectionUtils.isEmpty(excludeRelationAttributes)) {
@@ -261,13 +263,13 @@ public class MetaDataService {
             database.setStatus(entity.getStatus().name());
             database.setOwner(getEntityAttribute(entity, "owner"));
 
-            AtlasRelatedObjectId relatedInstance = getRelatedInstance(entity);
-            database.setSourceId(relatedInstance.getGuid());
-            database.setSourceName(relatedInstance.getDisplayText());
-
             if (entity.getTypeName().contains("hive")) {
                 database.setSourceId("hive");
                 database.setSourceName("hive");
+            } else {
+                AtlasRelatedObjectId relatedInstance = getRelatedInstance(entity);
+                database.setSourceId(relatedInstance.getGuid());
+                database.setSourceName(relatedInstance.getDisplayText());
             }
             return database;
         } catch (Exception e) {
