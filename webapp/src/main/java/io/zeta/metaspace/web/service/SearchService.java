@@ -156,7 +156,8 @@ public class SearchService {
                 try {
                     objectCompletableFuture.get(30, TimeUnit.SECONDS);
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    e.printStackTrace();
+                    LOG.error("获取表列表失败", e);
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表列表失败");
                 }
             }
             return result;

@@ -927,7 +927,8 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             databases = databasesCf.get();
             dbNum = dbNumCf.get();
         } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+            LOG.error("获取数据库列表出错", e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据库列表出错");
         }
         ExecutorService taskExecutor = Executors.newFixedThreadPool(databases.size() + 1);
         try {
@@ -957,13 +958,13 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                     lists.add(db);
                 }, taskExecutor));
             }
-
             CompletableFuture[] completableFuturesArr = new CompletableFuture[completableFutures.size()];
             CompletableFuture<Void> objectCompletableFuture = CompletableFuture.allOf(completableFutures.toArray(completableFuturesArr));
             try {
                 objectCompletableFuture.get(30, TimeUnit.SECONDS);
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                e.printStackTrace();
+                LOG.error("获取数据库列表出错", e.getMessage());
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据库列表出错");
             }
             databasePageResult.setCurrentSize(lists.size());
             databasePageResult.setLists(lists);
@@ -1014,7 +1015,8 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             list.addAll(tables);
             num = numFuture.get();
         } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
+            LOG.error("获取表列表出错", e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表列表出错");
         }
         ExecutorService taskExecutor = Executors.newFixedThreadPool(tables.size() + 1);
         try {
@@ -1051,7 +1053,8 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             try {
                 objectCompletableFuture.get(30, TimeUnit.SECONDS);
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                e.printStackTrace();
+                LOG.error("获取表列表出错", e.getMessage());
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表列表出错");
             }
         } finally {
             taskExecutor.shutdown();
