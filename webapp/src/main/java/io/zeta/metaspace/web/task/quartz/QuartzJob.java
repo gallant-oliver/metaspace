@@ -45,7 +45,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
@@ -91,11 +91,11 @@ public class QuartzJob implements Job {
 
     Map<String, Float> columnType2Result = new HashMap<>();
 
-    public static final Map<String,Boolean> STATE_MAP = new HashMap<>();
+    public static final Map<String, Boolean> STATE_MAP = new HashMap<>();
 
     private static Configuration conf;
     private static String engine;
-    public final static String hiveId="hive";
+    public final static String hiveId = "hive";
 
 
     static {
@@ -134,8 +134,8 @@ public class QuartzJob implements Job {
 
     }
 
-    public boolean canceled(String taskId, String taskExecuteId){
-        if(STATE_MAP.get(taskId)) {
+    public boolean canceled(String taskId, String taskExecuteId) {
+        if (STATE_MAP.get(taskId)) {
             taskManageDAO.updateTaskExecuteStatus(taskExecuteId, 4);
             taskManageDAO.updateTaskStatus(taskId, 4);
             taskManageDAO.updateTaskFinishedPercent(taskId, 0F);
@@ -153,18 +153,18 @@ public class QuartzJob implements Job {
             JobKey key = jobExecutionContext.getTrigger().getJobKey();
             LOG.warn("任务名为" + key.getName() + "开始执行");
             taskId = taskManageDAO.getTaskIdByQrtzName(key.getName());
-            if(STATE_MAP.containsKey(taskId)){
+            if (STATE_MAP.containsKey(taskId)) {
                 //任务正在运行中，跳过本次执行
                 return;
             }
             taskExecuteId = initExecuteInfo(taskId);
-            STATE_MAP.put(taskId,false);
+            STATE_MAP.put(taskId, false);
             EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
             String tenantId = taskInfo.getTenantId();
-            
-            if(canceled(taskId, taskExecuteId)){
+
+            if (canceled(taskId, taskExecuteId)) {
                 return;
-            };
+            }
             //获取原子任务列表，包含子任务关联对象，子任务使用规则，子任务使用规则模板
             List<AtomicTaskExecution> taskList = taskManageDAO.getObjectWithRuleRelation(taskId, tenantId);
             if (Objects.isNull(taskList)) {
@@ -174,20 +174,22 @@ public class QuartzJob implements Job {
             }
             //补全数据
             completeTaskInformation(taskId, taskExecuteId, taskList);
-            if(canceled(taskId, taskExecuteId)){
+            if (canceled(taskId, taskExecuteId)) {
                 return;
-            };
+            }
+            //执行任务
             executeAtomicTaskList(taskId, taskExecuteId, taskList, tenantId);
+            //取消任务
             canceled(taskId, taskExecuteId);
         } catch (Exception e) {
-            if(StringUtils.isNotBlank(taskId)){
+            if (StringUtils.isNotBlank(taskId)) {
                 taskManageDAO.updateTaskStatus(taskId, 3);
             }
-            if(StringUtils.isNotBlank(taskExecuteId)){
+            if (StringUtils.isNotBlank(taskExecuteId)) {
                 taskManageDAO.updateTaskExecuteStatus(taskExecuteId, 3);
             }
             LOG.error(e.toString(), e);
-        }finally {
+        } finally {
             STATE_MAP.remove(taskId);
         }
     }
@@ -216,8 +218,8 @@ public class QuartzJob implements Job {
                     taskExecution.setObjectName(paramInfo.getColumn());
                 } else if (2 == taskExecution.getScope()) {
                     String sparkConfig = taskManageDAO.geSparkConfig(taskExecution.getSubTaskId());
-                    if (sparkConfig!=null&&sparkConfig.length()!=0){
-                        Map<String,Object> configMap = GsonUtils.getInstance().fromJson(sparkConfig, new TypeToken<Map<String, Integer>>() {
+                    if (sparkConfig != null && sparkConfig.length() != 0) {
+                        Map<String, Object> configMap = GsonUtils.getInstance().fromJson(sparkConfig, new TypeToken<Map<String, Integer>>() {
                         }.getType());
                         taskExecution.setConfig(configMap);
                     }
@@ -225,13 +227,13 @@ public class QuartzJob implements Job {
                     if (TaskType.CONSISTENCY.equals(taskType)) {
                         taskExecution.setConsistencyParams(GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<ConsistencyParam>>() {
                         }.getType()));
-                    }else if (TaskType.CUSTOMIZE.equals(taskType)) {
+                    } else if (TaskType.CUSTOMIZE.equals(taskType)) {
                         taskExecution.setCustomizeParam(GsonUtils.getInstance().fromJson(objectId, new TypeToken<List<CustomizeParam>>() {
                         }.getType()));
-                    }else{
+                    } else {
                         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的任务类型");
                     }
-                }else{
+                } else {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的任务类型");
                 }
 
@@ -249,19 +251,22 @@ public class QuartzJob implements Job {
         long startTime = System.currentTimeMillis();
         String errorMsg = null;
         for (int i = 0; i < totalStep; i++) {
-            if(STATE_MAP.get(taskId)){
+            if (STATE_MAP.get(taskId)) {
                 taskManageDAO.updateDataTaskCostTime(taskExecuteId, System.currentTimeMillis() - startTime);
                 return;
             }
             //根据模板状态判断是否继续运行
             int retryCount = 0;
             AtomicTaskExecution task = taskList.get(i);
-            long currentTime = System.currentTimeMillis()/1000*1000;
+            task.setTaskId(taskId);
+            task.setTaskExecuteId(taskExecuteId);
+            long currentTime = System.currentTimeMillis() / 1000 * 1000;
             task.setTimeStamp(currentTime);
             Timestamp currentTimeStamp = new Timestamp(currentTime);
             taskManageDAO.initRuleExecuteInfo(task.getId(), taskExecuteId, taskId, task.getSubTaskId(), task.getObjectId(), task.getSubTaskRuleId(), currentTimeStamp, currentTimeStamp, 0, 0, task.getRuleId());
             do {
                 try {
+                    //执行任务
                     runJob(task);
                     float ratio = (float) (i + 1) / totalStep;
                     LOG.info("raion=" + ratio);
@@ -322,9 +327,20 @@ public class QuartzJob implements Job {
         if (Objects.nonNull(objectName) && !objectName.equals(tableName)) {
             source += "." + objectName;
         }
+        if (task.getTaskType().equals(TaskType.CONSISTENCY.getCode())) {
+            StringBuilder str = new StringBuilder();
+            str.append(task.getConsistencyParams().get(0).getSchema()).append(".").append(task.getConsistencyParams().get(0).getTable());
+            str.append("~").append(task.getConsistencyParams().get(1).getSchema()).append(".").append(task.getConsistencyParams().get(1).getTable());
+            source = str.toString();
+        } else if (task.getTaskType().equals(TaskType.CUSTOMIZE.getCode())) {
+            StringBuilder str = new StringBuilder();
+            for (CustomizeParam customizeParam : task.getCustomizeParam()) {
+                str.append(customizeParam.getSchema()).append(".").append(customizeParam.getTable()).append("~");
+            }
+            source = StringUtils.substring(str.toString(), 0, str.length() - 1);
+        }
         String checkMsg = taskManageDAO.getRuleCheckName(task.getSubTaskRuleId(), tenantId);
         String currentTime = DateUtils.getNow();
-
         String logInfoStatus = null;
         if (Objects.nonNull(errorMsg)) {
             logInfoStatus = "ERROR";
@@ -409,10 +425,11 @@ public class QuartzJob implements Job {
                     measure = builderCustomizeMeasure(task, task.getTimeStamp());
                     otherRuleCheck(task, measure);
                     break;
-                default:break;
+                default:
+                    break;
             }
         } catch (Exception e) {
-            LOG.info(e.getMessage(),e);
+            LOG.info(e.getMessage(), e);
             throw e;
         }
     }
@@ -427,30 +444,27 @@ public class QuartzJob implements Job {
      * @param task
      * @return
      */
-    public long otherRuleCheck(AtomicTaskExecution task,Measure measure) throws Exception {
+    public long otherRuleCheck(AtomicTaskExecution task, Measure measure) throws Exception {
         Long errorCount = 0L;
         try {
             MeasureLivyResult result = null;
             try {
                 String pool = task.getPool();
                 checkSparkConfig(task.getConfig());
-                result = livyTaskSubmitHelper.post2LivyWithRetry(measure, pool, task.getConfig());
+                result = livyTaskSubmitHelper.post2LivyWithRetry(measure, pool, task);
                 if (result == null) {
                     throw new AtlasBaseException("提交任务失败 : " + measure.getName());
-                }
-
-                while (!isDone(result.getState())) {
-                    Thread.sleep(10000);
-                    result = livyTaskSubmitHelper.getResultByLivyId(result.getId());
                 }
             } catch (InterruptedException e) {
                 throw new AtlasBaseException(e);
             } finally {
-                if(result != null){
-                    livyTaskSubmitHelper.deleteByLivy(result.getId()); //清除livy记录
-                }
-                if (result != null && "DEAD".equalsIgnoreCase(result.getState())) { //任务执行失败，抛出异常，不做后续处理
-                    throw new AtlasException("任务规则执行失败 task rule id="+task.getRuleId());
+                if (result != null) {
+                    //清除livy记录
+                    livyTaskSubmitHelper.deleteByLivy(result.getId());
+                    if ("DEAD".equalsIgnoreCase(result.getState())) {
+                        //任务执行失败，抛出异常，不做后续处理
+                        throw new AtlasException("任务规则执行失败 task rule id=" + task.getRuleId());
+                    }
                 }
             }
             String _MetricFile = LivyTaskSubmitHelper.getHdfsOutPath(task.getId(), task.getTimeStamp(), "_METRICS");
@@ -464,15 +478,15 @@ public class QuartzJob implements Job {
         }
     }
 
-    private void checkSparkConfig(Map<String,Object> config){
-        if (config==null){
+    private void checkSparkConfig(Map<String, Object> config) {
+        if (config == null) {
             return;
         }
-        if (config.containsKey("driverMemory")){
-            config.put("driverMemory",config.get("driverMemory").toString()+"g");
+        if (config.containsKey("driverMemory")) {
+            config.put("driverMemory", config.get("driverMemory").toString() + "g");
         }
-        if (config.containsKey("executorMemory")){
-            config.put("executorMemory",config.get("executorMemory").toString()+"g");
+        if (config.containsKey("executorMemory")) {
+            config.put("executorMemory", config.get("executorMemory").toString() + "g");
         }
     }
 
@@ -483,14 +497,15 @@ public class QuartzJob implements Job {
 
     /**
      * 自定义规则生成Measure
+     *
      * @param task
      * @param timestamp
      * @return
      */
     public Measure builderCustomizeMeasure(AtomicTaskExecution task, Long timestamp) {
         List<CustomizeParam> customizeParam = task.getCustomizeParam();
-        List<CustomizeParam> tables = customizeParam.stream().filter(param -> param.getId().toLowerCase().contains("table")).collect(Collectors.toList());
-        List<CustomizeParam> columns = customizeParam.stream().filter(param -> param.getId().toLowerCase().contains("column")).collect(Collectors.toList());
+        List<CustomizeParam> tables = customizeParam.stream().filter(param -> StringUtils.isNotBlank(param.getTable())).collect(Collectors.toList());
+        List<CustomizeParam> columns = customizeParam.stream().filter(param -> StringUtils.isNotBlank(param.getColumn())).collect(Collectors.toList());
 
         Map<String, MeasureDataSource> dataSourceMap = new HashMap<>();
         for (CustomizeParam table : tables) {
@@ -520,15 +535,15 @@ public class QuartzJob implements Job {
         }
 
         String sql = task.getSql();
-        if (tables!=null){
-            for (CustomizeParam table:tables){
-                sql = sql.replaceAll("\\$\\{" + table.getId() + "\\}",table.getId());
+        if (tables != null) {
+            for (CustomizeParam table : tables) {
+                sql = sql.replaceAll("\\$\\{" + table.getId() + "\\}", table.getId());
             }
         }
 
-        if (columns!=null){
-            for (CustomizeParam column:columns){
-                sql = sql.replaceAll("\\$\\{" + column.getId() + "\\}","`"+column.getColumn()+"`");
+        if (columns != null) {
+            for (CustomizeParam column : columns) {
+                sql = sql.replaceAll("\\$\\{" + column.getId() + "\\}", "`" + column.getColumn() + "`");
             }
         }
         List<MeasureRule> rules = new ArrayList<>();
@@ -537,7 +552,7 @@ public class QuartzJob implements Job {
         MeasureRule rule = new MeasureRule(sql, outName, false, Collections.singletonList(recordOut));
         rules.add(rule);
 
-        String countSql = "select count(*) as value from "+outName;
+        String countSql = "select count(*) as value from " + outName;
         MeasureRuleOut metricOut = new MeasureRuleOut(MeasureRuleOut.Type.METRIC, "data");
         MeasureRule countRule = new MeasureRule(countSql, LivyTaskSubmitHelper.getOutName(task.getId()), false, Collections.singletonList(metricOut));
         rules.add(countRule);
@@ -553,6 +568,7 @@ public class QuartzJob implements Job {
 
     /**
      * 一致性生成Measure
+     *
      * @param task
      * @param timestamp
      * @return
@@ -736,13 +752,13 @@ public class QuartzJob implements Job {
             String columnName = null;
             String user = MetaspaceConfig.getHiveAdmin();
             AdapterSource adapterSource;
-            if (task.getDataSourceId()==null || hiveId.equals(task.getDataSourceId())){
+            if (task.getDataSourceId() == null || hiveId.equals(task.getDataSourceId())) {
                 if (Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
                     adapterSource = AdapterUtils.getImpalaAdapterSource();
                 } else {
                     adapterSource = AdapterUtils.getHiveAdapterSource();
                 }
-            }else{
+            } else {
                 DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(task.getDataSourceId());
                 adapterSource = AdapterUtils.getAdapterSource(dataSourceInfo);
             }
@@ -764,30 +780,30 @@ public class QuartzJob implements Job {
                     case UNIQUE_VALUE_NUM_CHANGE:
                     case UNIQUE_VALUE_NUM_CHANGE_RATIO:
                     case UNIQUE_VALUE_NUM_RATIO:
-                        writeErrorData(jobType,tableName,columnName,sqlDbName,adapterSource,adapterSource.getConnection(user, dbName, pool),hdfsOutPath);
-                        sql = String.format(query, sqlDbName,tableName, columnName, columnName,sqlDbName, tableName, columnName);
+                        writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath);
+                        sql = String.format(query, sqlDbName, tableName, columnName, columnName, sqlDbName, tableName, columnName);
                         break;
                     case DUP_VALUE_NUM:
                     case DUP_VALUE_NUM_CHANGE:
                     case DUP_VALUE_NUM_CHANGE_RATIO:
                     case DUP_VALUE_NUM_RATIO:
-                        writeErrorData(jobType,tableName,columnName,sqlDbName,adapterSource,adapterSource.getConnection(user, dbName, pool),hdfsOutPath);
+                        writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath);
 
-                        sql = String.format(query, columnName,sqlDbName, tableName, columnName, columnName,sqlDbName, tableName, columnName);
+                        sql = String.format(query, columnName, sqlDbName, tableName, columnName, columnName, sqlDbName, tableName, columnName);
                         break;
                     case EMPTY_VALUE_NUM:
                     case EMPTY_VALUE_NUM_CHANGE:
                     case EMPTY_VALUE_NUM_CHANGE_RATIO:
                     case EMPTY_VALUE_NUM_RATIO:
-                        writeErrorData(jobType,tableName,columnName,sqlDbName,adapterSource,adapterSource.getConnection(user, dbName, pool),hdfsOutPath);
-                        sql = String.format(query, sqlDbName,tableName, columnName);
+                        writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath);
+                        sql = String.format(query, sqlDbName, tableName, columnName);
                         break;
                     default:
-                        sql = String.format(query, columnName,sqlDbName, tableName);
+                        sql = String.format(query, columnName, sqlDbName, tableName);
                         break;
                 }
             } else {
-                sql = String.format(query, sqlDbName,tableName);
+                sql = String.format(query, sqlDbName, tableName);
             }
 
             String columnTypeKey = null;
@@ -835,7 +851,7 @@ public class QuartzJob implements Job {
         }
     }
 
-    public void writeErrorData(TaskType jobType,String tableName,String columnName,String sqlDbName,AdapterSource adapterSource,Connection connection,String hdfsOutPath){
+    public void writeErrorData(TaskType jobType, String tableName, String columnName, String sqlDbName, AdapterSource adapterSource, Connection connection, String hdfsOutPath) {
         String errDataSql = QuartQueryProvider.getErrData(jobType);
         String sql;
         switch (jobType) {
@@ -848,23 +864,23 @@ public class QuartzJob implements Job {
             case DUP_VALUE_NUM_CHANGE_RATIO:
             case DUP_VALUE_NUM_RATIO:
 
-                sql = String.format(errDataSql, columnName, sqlDbName,tableName, columnName);
+                sql = String.format(errDataSql, columnName, sqlDbName, tableName, columnName);
                 break;
             case EMPTY_VALUE_NUM:
             case EMPTY_VALUE_NUM_CHANGE:
             case EMPTY_VALUE_NUM_CHANGE_RATIO:
             case EMPTY_VALUE_NUM_RATIO:
-                sql = String.format(errDataSql, sqlDbName,tableName, columnName);
+                sql = String.format(errDataSql, sqlDbName, tableName, columnName);
                 break;
             default:
-                sql = String.format(errDataSql, columnName,sqlDbName, tableName);
+                sql = String.format(errDataSql, columnName, sqlDbName, tableName);
                 break;
         }
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
-        LOG.info("query sql = "+ sql);
+        LOG.info("query sql = " + sql);
         adapterExecutor.queryResultByFetchSize(connection, sql, resultSet -> {
             HdfsUtils hdfsUtils = new HdfsUtils();
-            try (BufferedWriter fileBufferWriter = hdfsUtils.getFileBufferWriter(hdfsOutPath);){
+            try (BufferedWriter fileBufferWriter = hdfsUtils.getFileBufferWriter(hdfsOutPath);) {
                 ResultSetMetaData metaData = resultSet.getMetaData();
                 int columnCount = metaData.getColumnCount();
                 while (resultSet.next()) {
@@ -893,7 +909,7 @@ public class QuartzJob implements Job {
 
                         map.put(column, value);
                     }
-                    fileBufferWriter.write(GsonUtils.getInstance().toJson(map)+"\n");
+                    fileBufferWriter.write(GsonUtils.getInstance().toJson(map) + "\n");
                 }
                 fileBufferWriter.flush();
                 return null;
@@ -959,15 +975,15 @@ public class QuartzJob implements Job {
         String pool = task.getPool();
         try {
             //表数据量
-            AdapterSource adapterSource=null;
-            if (task.getDataSourceId()==null || hiveId.equals(task.getDataSourceId())){
+            AdapterSource adapterSource = null;
+            if (task.getDataSourceId() == null || hiveId.equals(task.getDataSourceId())) {
                 engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf, String::valueOf);
                 if (Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
                     adapterSource = AdapterUtils.getImpalaAdapterSource();
                 } else {
                     adapterSource = AdapterUtils.getHiveAdapterSource();
                 }
-            }else{
+            } else {
                 DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(task.getDataSourceId());
                 adapterSource = AdapterUtils.getAdapterSource(dataSourceInfo);
             }
@@ -1035,13 +1051,13 @@ public class QuartzJob implements Job {
         AdapterSource adapterSource;
         String user = MetaspaceConfig.getHiveAdmin();
         engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf, String::valueOf);
-        if (task.getDataSourceId()==null || hiveId.equals(task.getDataSourceId())){
+        if (task.getDataSourceId() == null || hiveId.equals(task.getDataSourceId())) {
             if (Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
                 adapterSource = AdapterUtils.getImpalaAdapterSource();
             } else {
                 adapterSource = AdapterUtils.getHiveAdapterSource();
             }
-        }else{
+        } else {
             DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(task.getDataSourceId());
             adapterSource = AdapterUtils.getAdapterSource(dataSourceInfo);
         }
