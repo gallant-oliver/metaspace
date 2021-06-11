@@ -335,7 +335,9 @@ public class QuartzJob implements Job {
         } else if (task.getTaskType().equals(TaskType.CUSTOMIZE.getCode())) {
             StringBuilder str = new StringBuilder();
             for (CustomizeParam customizeParam : task.getCustomizeParam()) {
-                str.append(customizeParam.getSchema()).append(".").append(customizeParam.getTable()).append("~");
+                if (StringUtils.isBlank(customizeParam.getColumn())) {
+                    str.append(customizeParam.getSchema()).append(".").append(customizeParam.getTable()).append("~");
+                }
             }
             source = StringUtils.substring(str.toString(), 0, str.length() - 1);
         }
@@ -455,7 +457,7 @@ public class QuartzJob implements Job {
                 if (result == null) {
                     throw new AtlasBaseException("提交任务失败 : " + measure.getName());
                 }
-            } catch (InterruptedException e) {
+            } catch (Exception e) {
                 throw new AtlasBaseException(e);
             } finally {
                 if (result != null) {
@@ -504,7 +506,7 @@ public class QuartzJob implements Job {
      */
     public Measure builderCustomizeMeasure(AtomicTaskExecution task, Long timestamp) {
         List<CustomizeParam> customizeParam = task.getCustomizeParam();
-        List<CustomizeParam> tables = customizeParam.stream().filter(param -> StringUtils.isNotBlank(param.getTable())).collect(Collectors.toList());
+        List<CustomizeParam> tables = customizeParam.stream().filter(param -> StringUtils.isBlank(param.getColumn())).collect(Collectors.toList());
         List<CustomizeParam> columns = customizeParam.stream().filter(param -> StringUtils.isNotBlank(param.getColumn())).collect(Collectors.toList());
 
         Map<String, MeasureDataSource> dataSourceMap = new HashMap<>();
@@ -540,7 +542,6 @@ public class QuartzJob implements Job {
                 sql = sql.replaceAll("\\$\\{" + table.getId() + "\\}", table.getId());
             }
         }
-
         if (columns != null) {
             for (CustomizeParam column : columns) {
                 sql = sql.replaceAll("\\$\\{" + column.getId() + "\\}", "`" + column.getColumn() + "`");

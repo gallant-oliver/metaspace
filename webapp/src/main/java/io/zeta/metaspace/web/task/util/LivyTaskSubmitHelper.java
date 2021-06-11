@@ -169,7 +169,6 @@ public class LivyTaskSubmitHelper {
                 new TypeToken<HashMap<String, Object>>() {
                 };
         MeasureLivyResult measureLivyResult = GsonUtils.getInstance().fromJson(result, MeasureLivyResult.class);
-
         if (retryCount <= 0) {
             return null;
         }
@@ -206,45 +205,29 @@ public class LivyTaskSubmitHelper {
         return GsonUtils.getInstance().fromJson(result, MeasureLivyResult.class);
     }
 
-    public String postToLivy(Measure measure, String pool, Map<String, Object> config) {
-
+    public String postToLivy(Measure measure, String pool, Map<String, Object> config) throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set(REQUEST_BY_HEADER, "admin");
-
-        if (!isNeedKerberos) {
-            String result = null;
-            try {
-                String body = GsonUtils.getInstance().toJson(buildLivyArgs(measure, pool, config)).replaceAll("\\{", "{ ").replaceAll("}", " }");
-                HttpEntity<String> springEntity = new HttpEntity<>(body, headers);
+        String body = GsonUtils.getInstance().toJson(buildLivyArgs(measure, pool, config)).replaceAll("\\{", "{ ").replaceAll("}", " }");
+        HttpEntity<String> springEntity = new HttpEntity<>(body, headers);
+        String result = null;
+        try {
+            if (!isNeedKerberos) {
                 result = restTemplate.postForObject(url, springEntity, String.class);
-                log.info(result);
-            } catch (HttpClientErrorException e) {
-                log.error("Post to livy ERROR. \n  response status : " + e.getMessage()
-                        + "\n  response header : " + e.getResponseHeaders()
-                        + "\n  response body : " + e.getResponseBodyAsString());
-            } catch (Exception e) {
-                log.error("Post to livy ERROR. \n {}", e);
+            } else {
+                KerberosRestTemplate restTemplateKerberos = new KerberosRestTemplate(keyTabLocation, userPrincipal);
+                result = restTemplateKerberos.postForObject(url, springEntity, String.class);
             }
-            return result;
-        } else {
-
-            KerberosRestTemplate restTemplate = new KerberosRestTemplate(keyTabLocation, userPrincipal);
-            HttpEntity<String> springEntity = null;
-            try {
-                String body = GsonUtils.getInstance().toJson(buildLivyArgs(measure, pool, config)).replaceAll("\\{", "{ ").replaceAll("}", " }");
-                springEntity = new HttpEntity<>(body, headers);
-            } catch (HttpClientErrorException e) {
-                log.error("Post to livy ERROR. \n  response status : " + e.getMessage()
-                        + "\n  response header : " + e.getResponseHeaders()
-                        + "\n  response body : " + e.getResponseBodyAsString());
-            } catch (Exception e) {
-                log.error("Post to livy ERROR. {}", e.getMessage(), e);
-            }
-            String result = restTemplate.postForObject(url, springEntity, String.class);
             log.info(result);
-            return result;
+        } catch (HttpClientErrorException e) {
+            log.error("Post to livy ERROR. \n  response status : " + e.getMessage()
+                    + "\n  response header : " + e.getResponseHeaders()
+                    + "\n  response body : " + e.getResponseBodyAsString());
+        } catch (Exception e) {
+            log.error("Post to livy ERROR. \n {}", e);
         }
+        return result;
     }
 
     public String getFromLivy(String uri) {

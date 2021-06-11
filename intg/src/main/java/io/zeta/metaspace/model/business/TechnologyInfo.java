@@ -32,6 +32,7 @@ public class TechnologyInfo {
     private String technicalOperator;
     private Boolean editTechnical;
     private List<Table> tables;
+    private Integer count;
 
     @Data
     public static class Table {
@@ -171,4 +172,11 @@ public class TechnologyInfo {
     }
 
 
+    public Integer getCount() {
+        return count;
+    }
+
+    public void setCount(Integer count) {
+        this.count = count;
+    }
 }

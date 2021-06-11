@@ -38,6 +38,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -325,10 +326,15 @@ public class BusinessService {
                 infoHeader.setLevel2Category(level2Category);
                 List<TechnologyInfo.Table> tables = getTablesByBusinessId(infoHeader.getBusinessId(), tenantId);
                 infoHeader.setTables(tables);
+                if (CollectionUtils.isEmpty(tables)) {
+                    infoHeader.setTechnicalStatus("0");
+                } else {
+                    infoHeader.setTechnicalStatus("1");
+                }
             }
-            long totalSize = 0;
+            Long totalSize = 0L;
             if (list.size() != 0) {
-                totalSize = list.get(0).getTotal();
+                totalSize = Long.valueOf(list.get(0).getTotal());
             }
             pageResult.setTotalSize(totalSize);
             pageResult.setCurrentSize(list.size());
