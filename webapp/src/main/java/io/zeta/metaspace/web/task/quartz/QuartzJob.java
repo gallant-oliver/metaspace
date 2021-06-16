@@ -272,7 +272,6 @@ public class QuartzJob implements Job {
                     LOG.info("raion=" + ratio);
                     taskManageDAO.updateTaskFinishedPercent(taskId, ratio);
                     taskManageDAO.updateTaskExecutionFinishedPercent(taskExecuteId, 0F);
-                    errorMsg = null;
                     break;
                 } catch (Exception e) {
                     if (STATE_MAP.get(taskId)) {
@@ -281,21 +280,16 @@ public class QuartzJob implements Job {
                     }
                     if (RETRY == retryCount) {
                         error(taskId, task, e);
-                        errorMsg = e.getMessage();
-                        LOG.error(e.toString());
                         return;
                     }
-                    try {
-                        retryCount++;
-                        LOG.info("retryCount=" + retryCount);
-                        Thread.sleep((retryCount + 1) * 5000);
-                        if (STATE_MAP.get(taskId)) {
-                            return;
-                        }
-                    } catch (Exception ex) {
-                        LOG.error(ex.getMessage());
+                    retryCount++;
+                    LOG.info("retryCount=" + retryCount);
+                    Thread.sleep((retryCount + 1) * 5000);
+                    if (STATE_MAP.get(taskId)) {
+                        return;
                     }
                 } finally {
+                    errorMsg = task.getErrorMsg();
                     recordExecutionInfo(task, errorMsg, tenantId);
                 }
             } while (retryCount < RETRY);
@@ -455,6 +449,7 @@ public class QuartzJob implements Job {
                 checkSparkConfig(task.getConfig());
                 result = livyTaskSubmitHelper.post2LivyWithRetry(measure, pool, task);
                 if (result == null) {
+                    task.setErrorMsg("提交任务失败");
                     throw new AtlasBaseException("提交任务失败 : " + measure.getName());
                 }
             } catch (Exception e) {
@@ -465,6 +460,7 @@ public class QuartzJob implements Job {
                     livyTaskSubmitHelper.deleteByLivy(result.getId());
                     if ("DEAD".equalsIgnoreCase(result.getState())) {
                         //任务执行失败，抛出异常，不做后续处理
+                        task.setErrorMsg("任务规则执行失败");
                         throw new AtlasException("任务规则执行失败 task rule id=" + task.getRuleId());
                     }
                 }
@@ -1186,7 +1182,8 @@ public class QuartzJob implements Job {
             //计算异常数量
 
         } catch (Exception e) {
-            LOG.info(e.getMessage(), e);
+            task.setErrorMsg(e.getMessage());
+            LOG.error("checkResult EXCEPTION IS {}", e);
             throw e;
         }
         //if (checkStatus == null) throw new RuntimeException();
