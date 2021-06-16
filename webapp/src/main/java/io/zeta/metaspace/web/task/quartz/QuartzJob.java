@@ -535,7 +535,7 @@ public class QuartzJob implements Job {
         String sql = task.getSql();
         if (tables != null) {
             for (CustomizeParam table : tables) {
-                sql = sql.replaceAll("\\$\\{" + table.getId() + "\\}", table.getId());
+                sql = sql.replaceAll("\\$\\{" + table.getId() + "\\}", table.getTable());
             }
         }
         if (columns != null) {
