@@ -20,6 +20,7 @@ import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AdapterUtils;
+import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.ApplicationProperties;
@@ -50,6 +51,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
@@ -104,7 +106,7 @@ public class SearchService {
     }
 
     public PageResult<TableEntity> getTable(String schemaId, boolean active, long offset, long limit, String query, Boolean isView, boolean queryInfo, String tenantId) {
-        ExecutorService taskExecutor = Executors.newFixedThreadPool(limit > 0 ? (int) limit : 1);
+        ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
         try {
             String dbsToString = "";
             String guid = "";
@@ -149,22 +151,18 @@ public class SearchService {
                                 tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
                             }
                         }
-                    }, taskExecutor));
+                    }, threadPoolExecutor));
                 }
-                CompletableFuture[] completableFuturesArr = new CompletableFuture[completableFutures.size()];
-                CompletableFuture<Void> objectCompletableFuture = CompletableFuture.allOf(completableFutures.toArray(completableFuturesArr));
                 try {
-                    objectCompletableFuture.get(30, TimeUnit.SECONDS);
+                    CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[]{})).get(30, TimeUnit.SECONDS);
                 } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    LOG.error("获取表列表失败", e);
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表列表失败");
+                    LOG.error("获取表列表出错", e);
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表列表出错");
                 }
             }
             return result;
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取表列表失败");
-        } finally {
-            taskExecutor.shutdown();
         }
     }
 
