@@ -158,7 +158,6 @@ public final class Constants {
 
     public static final String VERTEX_ID_IN_IMPORT_KEY = "__vIdInImport";
     public static final String EDGE_ID_IN_IMPORT_KEY   = "__eIdInImport";
-    public static final String TX_COMMIT   = "g.tx().commit()";
 
     private Constants() {
     }

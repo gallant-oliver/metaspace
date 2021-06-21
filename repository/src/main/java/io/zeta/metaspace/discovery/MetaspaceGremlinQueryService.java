@@ -919,12 +919,12 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
 
         CompletableFuture<List<AtlasVertex>> databasesCf = CompletableFuture.supplyAsync(() -> {
             List<AtlasVertex> vertices = (List<AtlasVertex>) graph.executeGremlinScript(queryStr, false);
-            graph.executeGremlinScript(Constants.TX_COMMIT, false);
+            graph.commit();
             return vertices;
         }, threadPoolExecutor);
         CompletableFuture<List> dbNumCf = CompletableFuture.supplyAsync(() -> {
             List list = (List) graph.executeGremlinScript(queryCountStr, false);
-            graph.executeGremlinScript(Constants.TX_COMMIT, false);
+            graph.commit();
             return list;
         }, threadPoolExecutor);
         List<AtlasVertex> databases = null;
@@ -957,7 +957,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                         String queryTableCountStr = String.format("g.tx().commit();g.V().has('__typeName',within('rdbms_db','hive_db')).has('__guid','%s').inE().outV().has('__typeName', within('rdbms_table','hive_table'))%s.has('__guid').dedup().count().toList()",
                                 dbEntity.getGuid(), activeQuery);
                         List num = (List) graph.executeGremlinScript(queryTableCountStr, false);
-                        graph.executeGremlinScript(Constants.TX_COMMIT, false);
+                        graph.commit();
                         db.setTableCount(Integer.parseInt(num.get(0).toString()));
                     }
                 }
@@ -1011,12 +1011,12 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
 
         CompletableFuture<List<AtlasVertex>> tablesFuture = CompletableFuture.supplyAsync(() -> {
             List<AtlasVertex> vertices = (List<AtlasVertex>) graph.executeGremlinScript(queryStr, false);
-            graph.executeGremlinScript(Constants.TX_COMMIT, false);
+            graph.commit();
             return vertices;
         }, threadPoolExecutor);
         CompletableFuture<List> numFuture = CompletableFuture.supplyAsync(() -> {
             List numList = (List) graph.executeGremlinScript(queryCountStr, false);
-            graph.executeGremlinScript(Constants.TX_COMMIT, false);
+            graph.commit();
             return numList;
         }, threadPoolExecutor);
         List<AtlasVertex> tables = null;
