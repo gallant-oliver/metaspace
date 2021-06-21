@@ -74,6 +74,16 @@ public interface BusinessDAO {
     @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid,display_name as displayName,description from tableInfo where tableGuid in(select tableGuid from business2table where status='ACTIVE' and businessId=#{businessId}) AND (tableInfo.source_id in (SELECT source_id FROM data_source WHERE tenantid = #{tenantId}) or tableInfo.source_id = 'hive')")
     public List<TechnologyInfo.Table> queryTablesByBusinessIdAndTenantId(@Param("businessId") String businessId, @Param("tenantId") String tenantId);
 
+    @Select({"<script>",
+            " SELECT COUNT(*), businessId FROM tableInfo INNER JOIN business2table ON tableInfo.tableGuid = business2table.tableguid WHERE tableInfo.status = 'ACTIVE' AND businessId IN",
+            " <foreach item='item' index='index' collection='businessIdS' separator=',' open='(' close=')'>" ,
+            " #{item}",
+            " </foreach>",
+            " AND ( tableInfo.source_id IN ( SELECT source_id FROM data_source WHERE tenantid = #{tenantId} ) OR tableInfo.source_id = 'hive' ) ",
+            " GROUP BY businessId",
+            " </script>"})
+    List<TechnologyInfo> getCountByBusinessIdAndTenantId(@Param("businessIdS") List<String> businessIdS, @Param("tenantId") String tenantId);
+
     //添加目录/业务对象关联
     @Insert("insert into business_relation(relationshipGuid,categoryGuid,businessId,generateTime)values(#{relationshipGuid},#{categoryGuid},#{businessId},#{generateTime})")
     public int addRelation(BusinessRelationEntity entity) throws SQLException;
