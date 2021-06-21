@@ -43,9 +43,17 @@ import org.apache.atlas.model.instance.*;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
+import org.apache.atlas.repository.graph.GraphHelper;
+import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
+import org.apache.atlas.repository.store.graph.v2.EntityGraphRetriever;
 import org.apache.atlas.store.AtlasTypeDefStore;
+import org.apache.atlas.type.AtlasEntityType;
+import org.apache.atlas.type.AtlasStructType;
+import org.apache.atlas.type.AtlasTypeRegistry;
+import org.apache.atlas.type.BaseAtlasType;
 import org.apache.commons.beanutils.BeanUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
@@ -61,6 +69,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.inject.Inject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.reflect.Field;
@@ -86,6 +95,7 @@ import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
 public class MetaDataService {
     private static final Logger LOG = LoggerFactory.getLogger(MetaDataService.class);
     private static final String XLS = "xls";
+    private static final String ATT_TABLES = "tables";
 
     @Autowired
     private AtlasEntityStore entitiesStore;
@@ -113,6 +123,8 @@ public class MetaDataService {
     DataManageService dataManageService;
     @Autowired
     DataSourceDAO dataSourceDAO;
+
+
     private String errorMessage = "";
 
     private Map<String, IMetaDataProvider> metaDataProviderMap = new HashMap<>();
@@ -136,14 +148,31 @@ public class MetaDataService {
     @Autowired
     private UserGroupDAO userGroupDAO;
 
+    private final EntityGraphRetriever entityRetriever;
+    private final AtlasTypeRegistry atlasTypeRegistry;
+    private String temporary = "temporary";
+
+    @Inject
+    MetaDataService(AtlasTypeRegistry typeRegistry) {
+        this.entityRetriever = new EntityGraphRetriever(typeRegistry);
+        this.atlasTypeRegistry = typeRegistry;
+    }
+
 
     public Map<String, Object> getTableType(String guid) {
         if (Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
+        AtlasEntity entity = getEntityById(guid);
+        return getTableType(entity);
+    }
+
+    public Map<String, Object> getTableType(AtlasEntity entity) {
+        if (Objects.isNull(entity)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
+        }
         try {
             Map<String, Object> result = new HashMap<>();
-            AtlasEntity entity = getEntityById(guid);
             if (Objects.isNull(entity)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到表");
             }
@@ -186,17 +215,48 @@ public class MetaDataService {
         return false;
     }
 
+    /**
+     * 点转换为AtlasEntity
+     *
+     * @param atlasVertex 点对象
+     * @return
+     */
+    public AtlasEntity vertexToEntity(AtlasVertex atlasVertex, List<String> excludeAttributes, List<String> excludeRelationAttributes) {
+        String typeName = GraphHelper.getTypeName(atlasVertex);
+        BaseAtlasType objType = atlasTypeRegistry.getType(typeName);
+        AtlasStructType structType = (AtlasStructType) objType;
+        AtlasEntityType entityType = atlasTypeRegistry.getEntityTypeByName(typeName);
+
+        // 所有attribute
+        ArrayList<String> attributes = new ArrayList<>(structType.getAllAttributes().keySet());
+        // 排除att
+        if (!CollectionUtils.isEmpty(excludeAttributes)) {
+            attributes.removeAll(excludeAttributes);
+        }
+        // 所有relationAttribute
+        ArrayList<String> relationshipAttributes = new ArrayList<>(entityType.getRelationshipAttributes().keySet());
+        // 排除relationAtt
+        if (!CollectionUtils.isEmpty(excludeRelationAttributes)) {
+            relationshipAttributes.removeAll(excludeRelationAttributes);
+        }
+
+        AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(atlasVertex, attributes, relationshipAttributes, true);
+        return dbEntityWithExtInfo.getEntity();
+    }
+
     public Database getDatabase(String guid) throws AtlasBaseException {
         if (Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
         try {
+            //获取对象
+            AtlasVertex entityVertex = entityRetriever.getEntityVertex(guid);
+
+            // 转换成AtlasEntity
+            // tables属性需要遍历所有的表，极其耗费性能，此接口没有用到，排除掉tables属性
+            AtlasEntity entity = vertexToEntity(entityVertex, Collections.singletonList(ATT_TABLES), Collections.singletonList(ATT_TABLES));
+
             Database database = new Database();
-            //获取entity
-            AtlasEntity entity = getEntityById(guid);
-            if (Objects.isNull(entity)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到schema信息");
-            }
             database.setDatabaseId(guid);
             database.setDatabaseName(getEntityAttribute(entity, "name"));
             database.setDatabaseDescription(entity.getAttribute("comment") == null ? "-" : entity.getAttribute("comment").toString());
@@ -207,8 +267,7 @@ public class MetaDataService {
                 database.setSourceId("hive");
                 database.setSourceName("hive");
             } else {
-                AtlasEntity.AtlasEntityWithExtInfo dbInfo = entitiesStore.getById(entity.getGuid());
-                AtlasRelatedObjectId relatedInstance = getRelatedInstance(dbInfo.getEntity());
+                AtlasRelatedObjectId relatedInstance = getRelatedInstance(entity);
                 database.setSourceId(relatedInstance.getGuid());
                 database.setSourceName(relatedInstance.getDisplayText());
             }
@@ -217,6 +276,7 @@ public class MetaDataService {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "查询数据库信息异常");
         }
     }
+
 
     public Table getTableInfoById(String guid, String tenantId) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
