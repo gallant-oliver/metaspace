@@ -123,7 +123,7 @@ public class SearchService {
                 for (TableEntity tableEntity : result.getLists()) {
                     completableFutures.add(CompletableFuture.runAsync(() -> {
                         AtlasVertex atlasVertex = vertices.stream().filter(vertex -> Objects.equals(tableEntity.getId(), vertex.getProperty("__guid", String.class))).findAny().get();
-                        Map<String, Object> tableInfo = metaDataService.getTableType(metaDataService.vertexToEntity(atlasVertex, null, null));
+                        Map<String, Object> tableInfo = metaDataService.getTableType(metaDataService.vertexToEntityInfo(atlasVertex, null, null).getEntity());
                         String sourceId = String.valueOf(tableInfo.get("sourceId"));
                         String databasesId = String.valueOf(tableInfo.get("schemaId"));
                         String schema = String.valueOf(tableInfo.get("schemaName"));
