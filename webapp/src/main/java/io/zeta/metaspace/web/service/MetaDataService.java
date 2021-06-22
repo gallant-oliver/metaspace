@@ -235,6 +235,16 @@ public class MetaDataService {
      * guid请求点
      * 点转换为AtlasEntity
      *
+     * @return
+     */
+    public AtlasEntity.AtlasEntityWithExtInfo getEntityInfoByGuid(String guid, boolean isMinExtInfo) {
+        return getEntityInfoByGuid(guid, null, null, isMinExtInfo);
+    }
+
+    /**
+     * guid请求点
+     * 点转换为AtlasEntity
+     *
      * @param guid                      实体id
      * @param excludeAttributes         排除的属性，没有填null
      * @param excludeRelationAttributes 排除的依赖属性，没有填null
@@ -243,6 +253,32 @@ public class MetaDataService {
     public AtlasEntity.AtlasEntityWithExtInfo getEntityInfoByGuid(String guid, List<String> excludeAttributes, List<String> excludeRelationAttributes) {
         AtlasVertex entityVertex = entityRetriever.getEntityVertex(guid);
         return vertexToEntityInfo(entityVertex, excludeAttributes, excludeRelationAttributes);
+    }
+
+    /**
+     * guid请求点
+     * 点转换为AtlasEntity
+     *
+     * @param guid                      实体id
+     * @param excludeAttributes         排除的属性，没有填null
+     * @param excludeRelationAttributes 排除的依赖属性，没有填null
+     * @return
+     */
+    public AtlasEntity.AtlasEntityWithExtInfo getEntityInfoByGuid(String guid, List<String> excludeAttributes, List<String> excludeRelationAttributes, boolean isMinExtInfo) {
+        AtlasVertex entityVertex = entityRetriever.getEntityVertex(guid);
+        return vertexToEntityInfo(entityVertex, excludeAttributes, excludeRelationAttributes, isMinExtInfo);
+    }
+
+    /**
+     * 点转换为AtlasEntity
+     *
+     * @param atlasVertex               点对象
+     * @param excludeAttributes         排除的属性，没有填null
+     * @param excludeRelationAttributes 排除的依赖属性，没有填null
+     * @return
+     */
+    public AtlasEntity.AtlasEntityWithExtInfo vertexToEntityInfo(AtlasVertex atlasVertex, List<String> excludeAttributes, List<String> excludeRelationAttributes) {
+        return vertexToEntityInfo(atlasVertex, excludeAttributes, excludeRelationAttributes, true);
     }
 
 
@@ -254,7 +290,7 @@ public class MetaDataService {
      * @param excludeRelationAttributes 排除的依赖属性，没有填null
      * @return
      */
-    public AtlasEntity.AtlasEntityWithExtInfo vertexToEntityInfo(AtlasVertex atlasVertex, List<String> excludeAttributes, List<String> excludeRelationAttributes) {
+    public AtlasEntity.AtlasEntityWithExtInfo vertexToEntityInfo(AtlasVertex atlasVertex, List<String> excludeAttributes, List<String> excludeRelationAttributes, boolean isMinExtInfo) {
         String typeName = GraphHelper.getTypeName(atlasVertex);
         BaseAtlasType objType = atlasTypeRegistry.getType(typeName);
         AtlasStructType structType = (AtlasStructType) objType;
@@ -273,7 +309,7 @@ public class MetaDataService {
             relationshipAttributes.removeAll(excludeRelationAttributes);
         }
 
-        return entityRetriever.toAtlasEntityWithAttribute(atlasVertex, attributes, relationshipAttributes, true);
+        return entityRetriever.toAtlasEntityWithAttribute(atlasVertex, attributes, relationshipAttributes, isMinExtInfo);
     }
 
     public Database getDatabase(String guid) throws AtlasBaseException {
@@ -317,7 +353,7 @@ public class MetaDataService {
         }
         try {
             //获取entity
-            AtlasEntity.AtlasEntityWithExtInfo entityInfo = getEntityInfoByGuid(guid);
+            AtlasEntity.AtlasEntityWithExtInfo entityInfo = getEntityInfoByGuid(guid, false);
             AtlasEntity entity = entityInfo.getEntity();
             if (Objects.isNull(entity)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
@@ -520,7 +556,7 @@ public class MetaDataService {
             //获取entity
             //获取对象
             // 转换成AtlasEntity
-            AtlasEntity.AtlasEntityWithExtInfo info = getEntityInfoByGuid(guid);
+            AtlasEntity.AtlasEntityWithExtInfo info = getEntityInfoByGuid(guid, false);
             AtlasEntity entity = info.getEntity();
             if (Objects.isNull(entity)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
@@ -687,7 +723,7 @@ public class MetaDataService {
         List<RDBMSIndex> indexes = null;
         //获取entity
         try {
-            AtlasEntity.AtlasEntityWithExtInfo info = getEntityInfoByGuid(guid);
+            AtlasEntity.AtlasEntityWithExtInfo info = getEntityInfoByGuid(guid, false);
             AtlasRelatedObjectId relatedDB = getRelatedDB(info.getEntity());
 
             // 不需要tables属性，遍历耗费性能
@@ -1118,7 +1154,7 @@ public class MetaDataService {
         List<Column> columns = null;
         //获取entity
         try {
-            AtlasEntity.AtlasEntityWithExtInfo info = getEntityInfoByGuid(guid);
+            AtlasEntity.AtlasEntityWithExtInfo info = getEntityInfoByGuid(guid, false);
             //columns
             columns = extractColumnInfo(info, guid);
             //filter
@@ -1301,7 +1337,7 @@ public class MetaDataService {
             info.setEntities(lineageEntities);
             info.setRelations(lineageRelations);
             return info;
-        } catch (AtlasBaseException | InterruptedException | TimeoutException | ExecutionException e ) {
+        } catch (AtlasBaseException | InterruptedException | TimeoutException | ExecutionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表血缘关系失败");
         }
     }
