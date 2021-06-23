@@ -1,5 +1,9 @@
 package io.zeta.metaspace.connector.oracle;
 
+import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.COMMIT_SCN_FIELD;
+import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.SQL_REDO_FIELD;
+import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.TEMPORARY_TABLE;
+
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -20,10 +24,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 
- * @author Erdem Cer (erdemcer@gmail.com)
+ *
+ * @author T480
+ *
  */
-
 public class OracleSourceTask extends SourceTask {
 	static final Logger log = LoggerFactory.getLogger(OracleSourceTask.class);
 	private Long streamOffsetScn;
@@ -64,22 +68,19 @@ public class OracleSourceTask extends SourceTask {
 		try {
 
 			dbConn = new OracleConnection().connect(config);
-			// ��ѯ�ֵ�
+			// 查询字典
 			utlDictionary = getSingleRowColumnStringResult(OracleConnectorSQL.SELECT_UTL_DICTIONARY, "VALUE");
 			logFiles = getSingleRowMuiltColumnStringResult(OracleConnectorSQL.SELECT_LOG_FILES, "MEMBER");
-			// ��ѯ��ǰʱ���
+			// 查询当前时间戳
 			streamOffsetScn = getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN");
-			CallableStatement newDbmsLogmnr = dbConn.prepareCall(OracleConnectorSQL.NEW_DBMS_LOGMNR);
-			newDbmsLogmnr.setString(1, logFiles.get(0));
-			newDbmsLogmnr.execute();
-			callableStatements.add(newDbmsLogmnr);
-			if (logFiles.size() > 1) {
-				for (int i = 1; i < logFiles.size(); i++) {
-					CallableStatement addDbmsLogmnr = dbConn.prepareCall(OracleConnectorSQL.ADD_DBMS_LOGMNR);
-					addDbmsLogmnr.setString(1, logFiles.get(i));
-					callableStatements.add(addDbmsLogmnr);
-				}
+
+			String startLogminerSql = OracleConnectorSQL.NEW_DBMS_LOGMNR.replace("?", logFiles.get(0));
+			for (int i = 1; i < logFiles.size(); i++) {
+				startLogminerSql = startLogminerSql + OracleConnectorSQL.ADD_DBMS_LOGMNR.replace("?", logFiles.get(i));
 			}
+			CallableStatement startLogminer = dbConn.prepareCall(startLogminerSql + "END;");
+			startLogminer.execute();
+			callableStatements.add(startLogminer);
 			CallableStatement logMinerStartCall = dbConn.prepareCall(OracleConnectorSQL.START_LOGMINER);
 			logMinerStartCall.setLong(1, streamOffsetScn);
 			logMinerStartCall.setString(2, utlDictionary + "\\dictionary.ora");
@@ -93,7 +94,8 @@ public class OracleSourceTask extends SourceTask {
 	}
 
 	private String getSingleRowColumnStringResult(String sql, String columnName) throws SQLException {
-		ResultSet resultSet = dbConn.prepareCall(sql).executeQuery();
+		CallableStatement prepareCall = dbConn.prepareCall(sql);
+		ResultSet resultSet = prepareCall.executeQuery();
 		String result = null;
 		while (resultSet.next()) {
 			result = resultSet.getString(columnName);
@@ -128,23 +130,23 @@ public class OracleSourceTask extends SourceTask {
 		ArrayList<SourceRecord> records = new ArrayList<>();
 		String sqlRedo = "";
 		try {
-			
+
 			logMinerSelect = dbConn.prepareCall(OracleConnectorSQL.LOGMINER_SELECT_WITHSCHEMA);
 			logMinerSelect.setFetchSize(config.getDbFetchSize());
-			
+
 			logMinerSelect.setLong(1, streamOffsetCommitScn);
 			logMinerData = logMinerSelect.executeQuery();
-			
+
 
 			while (!this.closed && logMinerData.next()) {
 				if (log.isDebugEnabled()) {
 					logRawMinerData();
 				}
-				
-				Long commitScn = logMinerData.getLong(OracleConnectorConstant.COMMIT_SCN_FIELD);
+
+				Long commitScn = logMinerData.getLong(COMMIT_SCN_FIELD);
 				streamOffsetCommitScn = streamOffsetCommitScn < commitScn ? commitScn : streamOffsetCommitScn;
-				sqlRedo = logMinerData.getString(OracleConnectorConstant.SQL_REDO_FIELD);
-				if (sqlRedo.contains(OracleConnectorConstant.TEMPORARY_TABLE)){
+				sqlRedo = logMinerData.getString(SQL_REDO_FIELD);
+				if (sqlRedo.contains(TEMPORARY_TABLE)){
 					continue;
 				}
 				SourceRecord sourceRecord = SourceRecordUtil.getSourceRecord(logMinerData, config);
