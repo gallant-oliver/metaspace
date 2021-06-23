@@ -5,8 +5,10 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 /**
- * @author T480
+ *  
+ * @author Erdem Cer (erdemcer@gmail.com)
  */
+
 public class OracleConnection{    
     
     public Connection connect(OracleSourceConnectorConfig config) throws SQLException{

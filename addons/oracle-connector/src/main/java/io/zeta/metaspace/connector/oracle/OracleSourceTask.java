@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
+ * 
  * @author T480
  *
  */
@@ -39,7 +39,6 @@ public class OracleSourceTask extends SourceTask {
 	ResultSet logMinerData;
 	ResultSet currentScnResultSet;
 	private boolean closed = false;
-	Boolean parseDmlData;
 	static int ix = 0;
 	BlockingQueue<SourceRecord> sourceRecordMq = new LinkedBlockingQueue<>();
 	String utlDictionary = "";
@@ -63,17 +62,18 @@ public class OracleSourceTask extends SourceTask {
 	@Override
 	public void start(Map<String, String> map) {
 		config = new OracleSourceConnectorConfig(map);
-		parseDmlData = config.getParseDmlData();
-		log.info("Oracle Kafka Connector is starting on {}", config.getDbNameAlias());
+		log.info("Oracle Kafka Connector is starting on {}", config.getName());
 		try {
 
 			dbConn = new OracleConnection().connect(config);
-			// 查询字典
+
 			utlDictionary = getSingleRowColumnStringResult(OracleConnectorSQL.SELECT_UTL_DICTIONARY, "VALUE");
 			logFiles = getSingleRowMuiltColumnStringResult(OracleConnectorSQL.SELECT_LOG_FILES, "MEMBER");
-			// 查询当前时间戳
-			streamOffsetScn = getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN");
-
+			
+			streamOffsetScn = config.getStartScn();
+			if(null == streamOffsetScn){
+				streamOffsetScn = getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN");
+			}
 			String startLogminerSql = OracleConnectorSQL.NEW_DBMS_LOGMNR.replace("?", logFiles.get(0));
 			for (int i = 1; i < logFiles.size(); i++) {
 				startLogminerSql = startLogminerSql + OracleConnectorSQL.ADD_DBMS_LOGMNR.replace("?", logFiles.get(i));
@@ -130,19 +130,19 @@ public class OracleSourceTask extends SourceTask {
 		ArrayList<SourceRecord> records = new ArrayList<>();
 		String sqlRedo = "";
 		try {
-
+			
 			logMinerSelect = dbConn.prepareCall(OracleConnectorSQL.LOGMINER_SELECT_WITHSCHEMA);
 			logMinerSelect.setFetchSize(config.getDbFetchSize());
-
+			
 			logMinerSelect.setLong(1, streamOffsetCommitScn);
 			logMinerData = logMinerSelect.executeQuery();
-
+			
 
 			while (!this.closed && logMinerData.next()) {
 				if (log.isDebugEnabled()) {
 					logRawMinerData();
 				}
-
+				
 				Long commitScn = logMinerData.getLong(COMMIT_SCN_FIELD);
 				streamOffsetCommitScn = streamOffsetCommitScn < commitScn ? commitScn : streamOffsetCommitScn;
 				sqlRedo = logMinerData.getString(SQL_REDO_FIELD);
