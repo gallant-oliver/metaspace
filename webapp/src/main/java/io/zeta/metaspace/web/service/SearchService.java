@@ -41,6 +41,8 @@ import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import javax.ws.rs.HeaderParam;
 import java.io.BufferedReader;
@@ -108,6 +110,10 @@ public class SearchService {
     public PageResult<TableEntity> getTable(String schemaId, boolean active, long offset, long limit, String query, Boolean isView, boolean queryInfo, String tenantId) {
         ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
         try {
+            // 在主线程获取用户信息，下面任务子线程获取不到，共享的话session混乱
+            Configuration conf = ApplicationProperties.get();
+            boolean secure = conf.getBoolean("metaspace.secureplus.enable", true);
+            String user = !secure ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
             String dbsToString = "";
             String guid = "";
             if (StringUtils.isNotBlank(query)) {
@@ -123,7 +129,7 @@ public class SearchService {
                 for (TableEntity tableEntity : result.getLists()) {
                     completableFutures.add(CompletableFuture.runAsync(() -> {
                         AtlasVertex atlasVertex = vertices.stream().filter(vertex -> Objects.equals(tableEntity.getId(), vertex.getProperty("__guid", String.class))).findAny().get();
-                        Map<String, Object> tableInfo = metaDataService.getTableType(metaDataService.vertexToEntity(atlasVertex, null, null));
+                        Map<String, Object> tableInfo = metaDataService.getTableType(metaDataService.vertexToEntityInfo(atlasVertex, null, null).getEntity());
                         String sourceId = String.valueOf(tableInfo.get("sourceId"));
                         String databasesId = String.valueOf(tableInfo.get("schemaId"));
                         String schema = String.valueOf(tableInfo.get("schemaName"));
@@ -133,7 +139,7 @@ public class SearchService {
                         if (tableEntity.isHiveTable()) {
                             if (view) {
                                 try {
-                                    tableEntity.setSql(this.getBuildTableSql(tableEntity.getId()).getSql());
+                                    tableEntity.setSql(this.getBuildTableSql(tableEntity.getId(), user).getSql());
                                 } catch (AtlasException e) {
                                     throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取列表失败");
                                 }
@@ -426,7 +432,7 @@ public class SearchService {
     }
 
 
-    public BuildTableSql getBuildTableSql(String tableId) throws AtlasBaseException, AtlasException {
+    public BuildTableSql getBuildTableSql(String tableId, String user) throws AtlasBaseException, AtlasException {
         BuildTableSql buildTableSql = new BuildTableSql();
         List<String> attributes = new ArrayList<>();
         attributes.add("name");
@@ -447,9 +453,6 @@ public class SearchService {
         AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
         String dbDisplayText = db.getDisplayText();
         String sql = "show create table " + name;
-        Configuration conf = ApplicationProperties.get();
-        boolean secure = conf.getBoolean("metaspace.secureplus.enable", true);
-        String user = !secure ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
         try (Connection conn = AdapterUtils.getHiveAdapterSource().getConnection(user, dbDisplayText, MetaspaceConfig.getHiveJobQueueName());
              ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
             StringBuffer stringBuffer = new StringBuffer();
