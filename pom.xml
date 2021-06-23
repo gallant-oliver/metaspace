@@ -250,6 +250,7 @@
         <cdh.avro.version>1.7.6-${cdh.version}</cdh.avro.version>
         <sonar.host.url>http://sonar.gridsum.com</sonar.host.url>
         <sonar.login>650355477e0df2b67087537edb8552bdd079509b</sonar.login>
+        <connect-api.version>0.10.2.0-cp1</connect-api.version>
     </properties>
 
     <modules>
@@ -281,6 +282,7 @@
         <module>distro</module>
         <module>report</module>
         <module>metaspace-adapter</module>
+        <module>addons/oracle-connector</module>
     </modules>
 
     <distributionManagement>

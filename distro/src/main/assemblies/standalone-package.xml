@@ -179,6 +179,20 @@
             <outputDirectory>hook</outputDirectory>
         </fileSet>
 
+        <!-- addons/oracle -->
+        <fileSet>
+            <directory>../addons/hbase-bridge/src/conf</directory>
+            <outputDirectory>connector-conf</outputDirectory>
+            <fileMode>0755</fileMode>
+            <directoryMode>0755</directoryMode>
+        </fileSet>
+
+        <!-- addons/oracle -->
+        <fileSet>
+            <directory>../addons/oracle-connector/target/dependency/connector</directory>
+            <outputDirectory>connector</outputDirectory>
+        </fileSet>
+
         <!-- for kafka topic setup -->
         <fileSet>
             <directory>../addons/kafka-bridge/src/bin</directory>
