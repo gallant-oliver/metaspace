@@ -1,6 +1,5 @@
 package io.zeta.metaspace.connector.oracle;
 
-import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.COMMIT_SCN_FIELD;
 import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.SQL_REDO_FIELD;
 import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.TEMPORARY_TABLE;
 
@@ -95,6 +94,7 @@ public class OracleSourceTask extends SourceTask {
 			logMinerSelect.setFetchSize(config.getDbFetchSize());
 			log.info("LogMiner Session Started");
 		} catch (SQLException e) {
+			log.info("LogMiner Session Start error", e);
 			throw new ConnectException("Error at cennector task " + config.getName() + ", Please check : " + e.toString());
 		}
 	}
