@@ -8,10 +8,7 @@ import io.zeta.metaspace.utils.DateUtils;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.debezium.RdbmsEntities;
 import org.apache.atlas.model.instance.debezium.RdbmsMessage;
-import org.apache.atlas.model.notification.Notification;
 import org.apache.atlas.model.notification.RdbmsNotification;
-import org.apache.atlas.utils.PropertiesUtil;
-import org.apache.calcite.adapter.jdbc.JdbcSchema;
 import org.apache.calcite.sql.*;
 import org.apache.calcite.sql.ddl.SqlCreateMaterializedView;
 import org.apache.calcite.sql.ddl.SqlCreateTable;
@@ -21,7 +18,8 @@ import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.ddl.SqlDdlParserImpl;
 import org.apache.calcite.sql.parser.impl.SqlParserImpl;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.ibatis.jdbc.Null;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StopWatch;
 
@@ -41,13 +39,7 @@ import java.util.*;
  *
  */
 public class CalciteParseSqlTools {
-    //标记是否控制台打印日志
-    private static final Boolean canPrintLog = Boolean.TRUE;
-    private static void printLog(String msg) {
-        if(canPrintLog) {
-            System.out.println(msg);
-        }
-    }
+    private static final Logger log = LoggerFactory.getLogger(CalciteParseSqlTools.class);
     /**
      * ddl 和dml 各自对应的工厂实现解析sql为sqlnode
      * @param sql
@@ -61,7 +53,7 @@ public class CalciteParseSqlTools {
                         "CREATE FOREIGN SCHEMA", "DROP SCHEMA", "DROP TABLE", "DROP VIEW", "DROP FUNCTION",
                         "DROP FOREIGN SCHEMA" ,"DROP MATERIALIZED VIEW"});
 
-        printLog("is DDL:" + isDdl);
+        log.info("is DDL: {}" , isDdl);
         if (isDdl) {
             parser = SqlParser.create(sql, SqlParser.configBuilder().setParserFactory(SqlDdlParserImpl.FACTORY).build() );
         } else {
@@ -71,7 +63,7 @@ public class CalciteParseSqlTools {
             SqlNode node = parser.parseQuery();
             return node;
         } catch (SqlParseException e) {
-            printLog("parse node error:" + e);
+            log.error("parse node error: {}" , e);
             return null;
         }
     }
@@ -82,11 +74,12 @@ public class CalciteParseSqlTools {
         String sql = isDdl ?  payload.getDdl() : payload.getSource().getQuery() ;
         sql = sql.replace("`","");
         String dbname = isDdl ? payload.getDatabaseName() : payload.getSource().getDb() ;
+        //获取表的所有者 （oracle 是用户信息 其他默认public）
         String tableOwner = notification.getUser();
         tableOwner = StringUtils.isBlank(tableOwner) ? "public" : tableOwner;
         List<String> tableList = getBloodRelation(getSqlNodeAvailable(sql));
         String sourceTable = isDdl ? (CollectionUtils.isEmpty(tableList) ? "":tableList.get(0)) : payload.getSource().getTable() ;
-        printLog("execute sql :"+sql);
+        log.info("execute sql :"+sql);
 
         ObjectMapper mapper = new ObjectMapper();
         //1. rdbms_instance 组装
@@ -148,7 +141,7 @@ public class CalciteParseSqlTools {
                 jsonObj.addProperty("typeName","rdbms_db");
                 attributeTableMap.put("db",jsondb);
                 JsonObject jsonColumn = null;
-                List<String> columnList = queryTableColDetails("test",table);
+                List<String> columnList = queryTableColDetails(rdbmsType,table,connectorProperties);
                 if(!CollectionUtils.isEmpty(columnList)){
                     for(String col : columnList){
                         jsonColumn = new JsonObject();
@@ -220,33 +213,33 @@ public class CalciteParseSqlTools {
      */
     public static List<String> getBloodRelation(SqlNode sqlNode) {
         if(Objects.isNull(sqlNode)) {
-            printLog("sql parse error.");
+            log.info("sql parse error.");
             return null;
         }
 
         List<String> bloodTableList = new ArrayList<>();
         if (sqlNode.getKind() == SqlKind.CREATE_TABLE) {
-            printLog("----create_table");
+            log.info("----create_table");
             SqlCreateTable sqlCreate = (SqlCreateTable) sqlNode;
             bloodTableList.add(sqlCreate.name.toString());
             getDependencies(sqlCreate.query,bloodTableList);
         }else if(sqlNode.getKind() == SqlKind.CREATE_VIEW) {
-            printLog("----create_view");
+            log.info("----create_view");
             SqlCreateView sqlCreate = (SqlCreateView) sqlNode;
             bloodTableList.add(sqlCreate.name.toString());
             getDependencies(sqlCreate.query,bloodTableList);
         }else if (sqlNode.getKind() == SqlKind.CREATE_MATERIALIZED_VIEW) {
-            printLog("----create_MATERIALIZED VIEW ");
+            log.info("----create_MATERIALIZED VIEW ");
             SqlCreateMaterializedView sqlCreate = (SqlCreateMaterializedView) sqlNode;
             bloodTableList.add(sqlCreate.name.toString());
             getDependencies(sqlCreate.query,bloodTableList);
         }else if (sqlNode.getKind() == SqlKind.INSERT) {
-            printLog("----insert");
+            log.info("----insert");
             SqlInsert sqlCreate = (SqlInsert) sqlNode;
             bloodTableList.add(sqlCreate.getTargetTable().toString());
             getDependencies(sqlCreate.getSource(),bloodTableList);
         }else{
-            printLog("no blood relation.");
+            log.info("no blood relation.");
         }
         return bloodTableList;
     }
@@ -257,18 +250,18 @@ public class CalciteParseSqlTools {
         List<String> dependendTable = new ArrayList<>();
         if (sqlNode.getKind() == SqlKind.SELECT) {
             SqlSelect sqlKind = (SqlSelect) sqlNode;
-            printLog("-----select");
+            log.info("-----select");
             SqlNode targetNode = sqlKind.getFrom();
             getDependencies(targetNode, dependendTable );
-            //printLog(result.toString());
+            //log.info(result.toString());
         }
         if (sqlNode.getKind() == SqlKind.ORDER_BY) {
             SqlOrderBy sqlKind = (SqlOrderBy) sqlNode;
-            printLog("----order_by");
+            log.info("----order_by");
             getDependencies(sqlKind.getOperandList().get(0), dependendTable);
         }
         if(sqlNode instanceof SqlBasicCall) {
-            printLog("----SqlBasicCall ");
+            log.info("----SqlBasicCall ");
             SqlBasicCall baseCallNode = (SqlBasicCall) sqlNode;
             SqlNode[] sqlNodeArray = baseCallNode.operands;
             for(SqlNode node : sqlNodeArray) {
@@ -368,7 +361,7 @@ public class CalciteParseSqlTools {
                 "\t\t\t\"thread\": 236,\n" +
                 "\t\t\t\"db\": \"my_test\",\n" +
                 "\t\t\t\"table\": \"t_3\",\n" +
-                "\t\t\t\"query\": \"insert into test01 select * from one_2\"\n" +
+                "\t\t\t\"query\": \"insert into student44 select * from student4\"\n" +
                 "\t\t},\n" +
                 "\t\t\"op\": \"c\",\n" +
                 "\t\t\"ts_ms\": 1622801539405\n" +
@@ -378,13 +371,16 @@ public class CalciteParseSqlTools {
         notification.setRdbmsMessage(new RdbmsMessage());
         notification.getRdbmsMessage().setPayload(payload);
         Properties connectorProperties = new Properties();
-        connectorProperties.setProperty("connector.class","io.debezium.connector.mysql.MySqlConnector");
-        connectorProperties.setProperty("database.hostname","192.168.8.129");
-        connectorProperties.setProperty( "database.port","3306");
-        connectorProperties.setProperty( "name", "ATLAS_MYSQL_45000");
+        connectorProperties.setProperty("connector.class","io.debezium.connector.oracle.OracleConnector");
+        connectorProperties.setProperty("database.hostname","10.200.64.102");
+        connectorProperties.setProperty( "database.port","1521");
+        connectorProperties.setProperty( "database.user","test");
+        connectorProperties.setProperty( "database.password","123456");
+        connectorProperties.setProperty( "name", "orcl");
+        connectorProperties.setProperty( "database.server.name", "orcl");
         RdbmsEntities result = getSimulationRdbmsEntities(notification,connectorProperties);
         sw.stop();
-        printLog("total cost time :"+sw.getTotalTimeMillis()+" ms");
+        log.info("total cost time :{} ms",sw.getTotalTimeMillis());
         System.out.println(result);
     }
     /**
@@ -399,7 +395,7 @@ public class CalciteParseSqlTools {
         }
         if (sqlNode.getKind() == SqlKind.JOIN) {
             SqlJoin sqlKind = (SqlJoin) sqlNode;
-            printLog("-----join");
+            log.info("-----join");
 
             getDependencies(sqlKind.getLeft(), result);
             getDependencies(sqlKind.getRight(), result);
@@ -407,7 +403,7 @@ public class CalciteParseSqlTools {
 
         if (sqlNode.getKind() == SqlKind.UNION) {
             SqlBasicCall sqlKind = (SqlBasicCall) sqlNode;
-            printLog("----union");
+            log.info("----union");
 
             getDependencies(sqlKind.getOperandList().get(0), result);
             getDependencies(sqlKind.getOperandList().get(1), result);
@@ -415,25 +411,25 @@ public class CalciteParseSqlTools {
         }
 
         if (sqlNode.getKind() == SqlKind.IDENTIFIER) {
-            printLog("-----identifier");
+            log.info("-----identifier");
             result.add(sqlNode.toString());
         }
 
         if (sqlNode.getKind() == SqlKind.SELECT) {
             SqlSelect sqlKind = (SqlSelect) sqlNode;
-            printLog("-----select");
+            log.info("-----select");
             getDependencies(sqlKind.getFrom(), result);
         }
 
         if (sqlNode.getKind() == SqlKind.AS) {
             SqlBasicCall sqlKind = (SqlBasicCall) sqlNode;
-            printLog("----as");
+            log.info("----as");
             getDependencies(sqlKind.getOperandList().get(0), result);
         }
 
         if (sqlNode.getKind() == SqlKind.ORDER_BY) {
             SqlOrderBy sqlKind = (SqlOrderBy) sqlNode;
-            printLog("----order_by");
+            log.info("----order_by");
             getDependencies(sqlKind.getOperandList().get(0), result);
         }
         return result;
@@ -441,35 +437,40 @@ public class CalciteParseSqlTools {
 
     /**
      * 根据连接信息获取table包含的字段 (主要使用DatabaseMetaData来解决)
-     * @param schemaPattern
      * @param tableNamePattern 注意:和数据库的表一致，区分大小写(calcite parse sql会转换为大写)
+     * @param dbType mysql、oracle
+     * @param connectorProperties
      * @return
      */
-    public static List<String> queryTableColDetails(String schemaPattern,String tableNamePattern) {
-        try(Connection connection = getConnecion("mysql");
-            ResultSet rs = connection.getMetaData().getColumns(null, schemaPattern, tableNamePattern.toLowerCase(), null);) {
+    public static List<String> queryTableColDetails(String dbType, String tableNamePattern, Properties connectorProperties) {
+        String jdbcUser = connectorProperties.getProperty("database.user");
+        String jdbcPassword = connectorProperties.getProperty("database.password");
+        String jdbcURL= "";
+        String jdbcDriver = "";
+        if("mysql".equalsIgnoreCase(dbType)){
+            jdbcDriver = "com.mysql.jdbc.Driver";
+            jdbcURL = "jdbc:mysql://"+connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"/"+connectorProperties.getProperty("database.server.name");
+        }
+        if("oracle".equalsIgnoreCase(dbType)){
+            jdbcDriver = "oracle.jdbc.driver.OracleDriver";
+            jdbcURL = "jdbc:oracle:thin:@"+connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+":"+connectorProperties.getProperty("database.server.name");
+        }
+        try(Connection connection = getConnection(jdbcDriver,jdbcURL,jdbcUser,jdbcPassword);
+            ResultSet rs = connection.getMetaData().getColumns(null, null, tableNamePattern.toLowerCase(), null);) {
             List<String> colTempList = new ArrayList<>();
             while(rs.next()) {
                 colTempList.add(rs.getString("COLUMN_NAME"));
             }
 
-            printLog("table "+tableNamePattern+" column: "+Joiner.on(',').join(colTempList));
+            log.info("table {} column: {}",tableNamePattern,Joiner.on(',').join(colTempList));
             return colTempList;
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;
     }
-    /**
-     * 根据数据源获取对应的连接  可以考虑连接池
-     * @param dbType
-     * @return
-     */
-    private static Connection getConnecion(String dbType) {
-        return mySqlConnection("jdbc:mysql://localhost:3306/test","root","root");
-    }
 
-    private static Connection mySqlConnection(String jdbcUrl,String jdbcUser,String jdbcPassword) {
+    private static Connection getConnection(String jdbcDriver,String jdbcUrl,String jdbcUser,String jdbcPassword) {
         Properties info = new Properties();
         info.put("model",
                 "inline:"
@@ -481,7 +482,7 @@ public class CalciteParseSqlTools {
                         + "      type: 'custom',\n"
                         + "      factory: 'org.apache.calcite.adapter.jdbc.JdbcSchema$Factory',\n"
                         + "      operand: {\n"
-                        + "        jdbcDriver: 'com.mysql.jdbc.Driver',\n"
+                        + "        jdbcDriver: '"+jdbcDriver+"',\n" //com.mysql.jdbc.Driver
                         + "        jdbcUrl:'"+jdbcUrl+"',\n"   //'jdbc:mysql://localhost:3306/test'
                         + "        jdbcUser: '"+jdbcUser+"',\n"
                         + "        jdbcPassword: '"+jdbcPassword+"'\n"
@@ -490,12 +491,12 @@ public class CalciteParseSqlTools {
                         + "  ]\n"
                         + "}");
         try {
-            Class.forName("com.mysql.jdbc.Driver");
+            Class.forName(jdbcDriver); //"com.mysql.jdbc.Driver"
             return DriverManager.getConnection("jdbc:calcite:", info);
         } catch (ClassNotFoundException e) {
-            printLog("没有找到对应的数据库驱动信息.");
+            log.error("没有找到对应的数据库驱动信息.");
         } catch (SQLException e) {
-            printLog("获取数据库连接出错." + e);
+            log.error("获取数据库连接出错.{}" , e);
         }
         return null;
     }
