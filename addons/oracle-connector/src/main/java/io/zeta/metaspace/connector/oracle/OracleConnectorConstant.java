@@ -62,4 +62,5 @@ public class OracleConnectorConstant{
 
     public static final int ORA_DESUPPORT_CM_VERSION=190000;
     public static final String DDL_TOPIC_POSTFIX = "_GENERIC_DDL";
+    public static final String DICTIONARY_FILENAME = "dictionary.ora";
 }

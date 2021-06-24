@@ -66,12 +66,16 @@ public class OracleSourceTask extends SourceTask {
 		try {
 
 			dbConn = new OracleConnection().connect(config);
-
-			utlDictionary = getSingleRowColumnStringResult(OracleConnectorSQL.SELECT_UTL_DICTIONARY, "VALUE");
+			String dictionaryLocation = getSingleRowColumnStringResult(OracleConnectorSQL.SELECT_UTL_DICTIONARY, "VALUE");
+			CallableStatement dictionaryBuild = dbConn.prepareCall(OracleConnectorSQL.DICTIONARY_BUILD);
+			dictionaryBuild.setString(1, OracleConnectorConstant.DICTIONARY_FILENAME);
+			dictionaryBuild.setString(2, dictionaryLocation);
+			dictionaryBuild.execute();
+			dictionaryBuild.close();
 			logFiles = getSingleRowMuiltColumnStringResult(OracleConnectorSQL.SELECT_LOG_FILES, "MEMBER");
-			
+
 			streamOffsetScn = config.getStartScn();
-			if(null == streamOffsetScn){
+			if(0L == streamOffsetScn){
 				streamOffsetScn = getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN");
 			}
 			String startLogminerSql = OracleConnectorSQL.NEW_DBMS_LOGMNR.replace("?", logFiles.get(0));
@@ -83,15 +87,18 @@ public class OracleSourceTask extends SourceTask {
 			callableStatements.add(startLogminer);
 			CallableStatement logMinerStartCall = dbConn.prepareCall(OracleConnectorSQL.START_LOGMINER);
 			logMinerStartCall.setLong(1, streamOffsetScn);
-			logMinerStartCall.setString(2, utlDictionary + "\\dictionary.ora");
+			logMinerStartCall.setString(2, dictionaryLocation + "\\dictionary.ora");
 			logMinerStartCall.execute();
 			callableStatements.add(logMinerStartCall);
 			streamOffsetCommitScn = streamOffsetScn;
+			logMinerSelect = dbConn.prepareCall(OracleConnectorSQL.LOGMINER_SELECT_WITHSCHEMA);
+			logMinerSelect.setFetchSize(config.getDbFetchSize());
 			log.info("LogMiner Session Started");
 		} catch (SQLException e) {
-			throw new ConnectException("Error at database tier, Please check : " + e.toString());
+			throw new ConnectException("Error at cennector task " + config.getName() + ", Please check : " + e.toString());
 		}
 	}
+
 
 	private String getSingleRowColumnStringResult(String sql, String columnName) throws SQLException {
 		CallableStatement prepareCall = dbConn.prepareCall(sql);
@@ -130,35 +137,32 @@ public class OracleSourceTask extends SourceTask {
 		ArrayList<SourceRecord> records = new ArrayList<>();
 		String sqlRedo = "";
 		try {
-			
-			logMinerSelect = dbConn.prepareCall(OracleConnectorSQL.LOGMINER_SELECT_WITHSCHEMA);
-			logMinerSelect.setFetchSize(config.getDbFetchSize());
-			
-			logMinerSelect.setLong(1, streamOffsetCommitScn);
-			logMinerData = logMinerSelect.executeQuery();
-			
 
+			long streamEndScn = getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN");
+			logMinerSelect.setLong(1, streamOffsetCommitScn);
+			logMinerSelect.setLong(2, streamEndScn);
+			logMinerData = logMinerSelect.executeQuery();
+			boolean hiveData = false;
 			while (!this.closed && logMinerData.next()) {
 				if (log.isDebugEnabled()) {
 					logRawMinerData();
 				}
-				
-				Long commitScn = logMinerData.getLong(COMMIT_SCN_FIELD);
-				streamOffsetCommitScn = streamOffsetCommitScn < commitScn ? commitScn : streamOffsetCommitScn;
+				hiveData = true;
 				sqlRedo = logMinerData.getString(SQL_REDO_FIELD);
 				if (sqlRedo.contains(TEMPORARY_TABLE)){
 					continue;
 				}
 				SourceRecord sourceRecord = SourceRecordUtil.getSourceRecord(logMinerData, config);
 				records.add(sourceRecord);
-				System.out.println(sqlRedo);
+				log.debug(sqlRedo);
 			}
-			streamOffsetCommitScn = streamOffsetCommitScn + 1;
-			log.info("Logminer stoppped successfully");
+			if(hiveData){
+				streamOffsetCommitScn = streamEndScn + 1;
+			}
 		} catch (SQLException e) {
 			log.error("SQL error during poll", e);
 		}  catch (Exception e) {
-			log.error("Error during poll on topic {} SQL :{}", config.getTopic(), sqlRedo, e);
+			log.error("Error during poll on cennector task  topic {} SQL :{}", config.getName(), config.getTopic(), sqlRedo, e);
 		}
 		return records;
 

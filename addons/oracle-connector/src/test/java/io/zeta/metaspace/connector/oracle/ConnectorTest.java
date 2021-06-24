@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
@@ -27,10 +26,10 @@ public class ConnectorTest {
 		OracleSourceTask task = new OracleSourceTask();
 		task.start(configMap);
 
-		while(true){
-			Thread.sleep(30000);
+//		while(true){
+//			Thread.sleep(30000);
 			task.poll();
-		}
+//		}
 	}
 	@Test
 	public void testVersion() {
@@ -51,9 +50,6 @@ public class ConnectorTest {
 				put("db.port", "1521");
 				put("db.user", "myTest");
 				put("db.user.password", "test");
-				put("db.fetch.size", "10");
-				put("table.whitelist", "MYTEST.*");
-				put("table.blacklist", "");
 			}
 		};
 		return configMap;
