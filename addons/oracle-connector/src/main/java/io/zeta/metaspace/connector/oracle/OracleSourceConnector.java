@@ -1,9 +1,12 @@
 package io.zeta.metaspace.connector.oracle;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.sql.DriverManager;
 
+import oracle.jdbc.driver.OracleDriver;
 import org.apache.kafka.common.config.ConfigDef;
 import org.apache.kafka.connect.connector.Task;
 import org.apache.kafka.connect.errors.ConnectException;
@@ -20,15 +23,13 @@ public class OracleSourceConnector extends SourceConnector {
 
 	@Override
 	public void start(Map<String, String> map) {
-		config = new OracleSourceConnectorConfig(map);
 
-		String dbName = config.getDbName();
-		if (dbName.equals("")) {
-			throw new ConnectException("Missing Db Name property");
-		}
-		String tableWhiteList = config.getTableWhiteList();
-		if ((tableWhiteList == null)) {
-			throw new ConnectException("Could not find schema or table entry for connector to capture");
+		try{
+			OracleDriver driver= new OracleDriver();
+			DriverManager.registerDriver(driver);
+			config = new OracleSourceConnectorConfig(map);
+		}catch (SQLException e){
+			throw new ConnectException("OracleDriver is not found");
 		}
 	}
 

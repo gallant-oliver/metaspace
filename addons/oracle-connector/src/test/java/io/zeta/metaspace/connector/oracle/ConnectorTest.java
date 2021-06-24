@@ -5,6 +5,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import oracle.jdbc.driver.OracleDriver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.Test;
@@ -16,7 +17,7 @@ public class ConnectorTest {
 
 	@Test
 	public void testLogminer() throws SQLException, InterruptedException{
-		oracle.jdbc.OracleDriver driver= new oracle.jdbc.OracleDriver();
+		OracleDriver driver= new OracleDriver();
 		DriverManager.registerDriver(driver);
 		Map<String, String> configMap = getConfigMap();
 
