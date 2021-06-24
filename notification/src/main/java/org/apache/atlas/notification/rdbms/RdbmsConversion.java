@@ -24,7 +24,7 @@ public class RdbmsConversion implements Conversion{
         }
         try{//解析debezium数据，并分装成atlas实体与血缘
             RdbmsNotification rdbmsMessage = (RdbmsNotification)notification;
-            rdbmsEntities = getSimulationRdbmsEntities(rdbmsMessage, connectorProperties);
+            rdbmsEntities = CalciteParseSqlTools.getSimulationRdbmsEntities(rdbmsMessage, connectorProperties);
 
         }catch (Exception e) {
             throw new AtlasException("解析debezium推送的数据失败");
