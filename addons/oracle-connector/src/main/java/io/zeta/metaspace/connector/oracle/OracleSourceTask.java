@@ -137,7 +137,7 @@ public class OracleSourceTask extends SourceTask {
 		ArrayList<SourceRecord> records = new ArrayList<>();
 		String sqlRedo = "";
 		try {
-
+			log.info("poll start");
 			long streamEndScn = getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN");
 			logMinerSelect.setLong(1, streamOffsetCommitScn);
 			logMinerSelect.setLong(2, streamEndScn);
@@ -154,7 +154,7 @@ public class OracleSourceTask extends SourceTask {
 				}
 				SourceRecord sourceRecord = SourceRecordUtil.getSourceRecord(logMinerData, config);
 				records.add(sourceRecord);
-				log.debug(sqlRedo);
+				log.info(sqlRedo);
 			}
 			if(hiveData){
 				streamOffsetCommitScn = streamEndScn + 1;
@@ -164,6 +164,7 @@ public class OracleSourceTask extends SourceTask {
 		}  catch (Exception e) {
 			log.error("Error during poll on cennector task  topic {} SQL :{}", config.getName(), config.getTopic(), sqlRedo, e);
 		}
+		log.info("poll end");
 		return records;
 
 	}
