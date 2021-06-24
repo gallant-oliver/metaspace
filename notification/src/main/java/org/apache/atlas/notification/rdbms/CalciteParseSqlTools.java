@@ -82,6 +82,8 @@ public class CalciteParseSqlTools {
         String sql = isDdl ?  payload.getDdl() : payload.getSource().getQuery() ;
         sql = sql.replace("`","");
         String dbname = isDdl ? payload.getDatabaseName() : payload.getSource().getDb() ;
+        String tableOwner = notification.getUser();
+        tableOwner = StringUtils.isBlank(tableOwner) ? "public" : tableOwner;
         List<String> tableList = getBloodRelation(getSqlNodeAvailable(sql));
         String sourceTable = isDdl ? (CollectionUtils.isEmpty(tableList) ? "":tableList.get(0)) : payload.getSource().getTable() ;
         printLog("execute sql :"+sql);
@@ -134,8 +136,8 @@ public class CalciteParseSqlTools {
                 table_1_Entity.setEntity(atlasTableOneEntity);
                 atlasTableOneEntity.setTypeName("rdbms_table");
                 Map<String, Object> attributeTableMap = new HashMap<>();
-                attributeTableMap.put("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+".public."+table);
-                attributeTableMap.put("name","public."+table);
+                attributeTableMap.put("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+tableOwner+"."+table);
+                attributeTableMap.put("name",tableOwner+"."+table);
                 attributeTableMap.put("comment","rdbms table API");
                 attributeTableMap.put("description","rdbms_table input");
                 attributeTableMap.put("owner","whz");
@@ -150,7 +152,7 @@ public class CalciteParseSqlTools {
                 if(!CollectionUtils.isEmpty(columnList)){
                     for(String col : columnList){
                         jsonColumn = new JsonObject();
-                        jsonColumn.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+".public."+table+"."+col);
+                        jsonColumn.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+tableOwner+"."+table+"."+col);
                         jsonColumn.addProperty("typeName","rdbms_column");
                         columns.add(jsonColumn);
                     }
@@ -170,7 +172,7 @@ public class CalciteParseSqlTools {
         entities.add(atlasBloodEntity);
         atlasBloodEntity.setTypeName("Process");
         Map<String, Object> attributeBloodMap = new HashMap<>();
-        attributeBloodMap.put("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+".public."+sourceTable+".Process@ms:000");
+        attributeBloodMap.put("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+tableOwner+"."+sourceTable+".Process@ms:000");
         attributeBloodMap.put("name",sql);
 
         JsonArray jsonInputs = new JsonArray();
@@ -178,7 +180,7 @@ public class CalciteParseSqlTools {
 
         JsonObject input = new JsonObject();
         jsonInputs.add(input);
-        input.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+".public."+sourceTable);
+        input.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+tableOwner+"."+sourceTable);
         input.addProperty("typeName","rdbms_table");
         attributeBloodMap.put("inputs",jsonInputs);
         if(!CollectionUtils.isEmpty(tableList) && tableList.size() > 1){
@@ -186,7 +188,7 @@ public class CalciteParseSqlTools {
             for (int i = 1,len = tableList.size();i<len;i++){
                 String tb = tableList.get(i);
                 obj = new JsonObject();
-                obj.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+".public."+tb);
+                obj.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+tableOwner+"."+tb);
                 obj.addProperty("typeName","rdbms_table");
                 jsonOutputs.add(obj);
             }
@@ -200,24 +202,12 @@ public class CalciteParseSqlTools {
         RdbmsEntities rdbmsEntities = new RdbmsEntities();
         SortedMap<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> entityMap = rdbmsEntities.getEntityMap();
         //添加数据库实例
-       // AtlasEntity.AtlasEntityWithExtInfo instanceJsonEntityWithExtInfo = mapper.readValue(instanceJson, AtlasEntity.AtlasEntityWithExtInfo.class);
         entityMap.put(RdbmsEntities.EntityType.RDBMS_INSTANCE, Arrays.asList(instanceJsonEntity));
         //添加数据库
-       // AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = mapper.readValue(dbJson, AtlasEntity.AtlasEntityWithExtInfo.class);
         entityMap.put(RdbmsEntities.EntityType.RDBMS_DB, Arrays.asList(dbEntity));
-
-        //添加列，由于column_2_EntityWithExtInfo依赖于column_1_EntityWithExtInfo，因此，在构建list时,column_1_EntityWithExtInfo排列在column_2_EntityWithExtInfo前面
-        /*AtlasEntity.AtlasEntityWithExtInfo column_1_EntityWithExtInfo = mapper.readValue(columnJson1, AtlasEntity.AtlasEntityWithExtInfo.class);
-        AtlasEntity.AtlasEntityWithExtInfo column_2_EntityWithExtInfo = mapper.readValue(columnJson2, AtlasEntity.AtlasEntityWithExtInfo.class);
-        entityMap.put(RdbmsEntities.EntityType.RDBMS_COLUMN, Arrays.asList(column_1_EntityWithExtInfo,column_2_EntityWithExtInfo));*/
-
-        //添加列，由于table_2_EntityWithExtInfo依赖于table_1_EntityWithExtInfo，因此，在构建list时,table_1_EntityWithExtInfo排列在table_2_EntityWithExtInfo前面
-//        AtlasEntity.AtlasEntityWithExtInfo table_1_EntityWithExtInfo = mapper.readValue(tableJson1, AtlasEntity.AtlasEntityWithExtInfo.class);
-//        AtlasEntity.AtlasEntityWithExtInfo table_2_EntityWithExtInfo = mapper.readValue(tableJson2, AtlasEntity.AtlasEntityWithExtInfo.class);
-        entityMap.put(RdbmsEntities.EntityType.RDBMS_TABLE, tableEntityList); //Arrays.asList(table_1_EntityWithExtInfo,table_2_EntityWithExtInfo)
-
-       // AtlasEntity.AtlasEntitiesWithExtInfo atlasEntitiesWithExtInfo = mapper.readValue(bloodJson, AtlasEntity.AtlasEntitiesWithExtInfo.class);
-
+        //添加表 table
+        entityMap.put(RdbmsEntities.EntityType.RDBMS_TABLE, tableEntityList);
+        //血缘关系
         rdbmsEntities.setBloodEntities(atlasBloodEntities);
         return rdbmsEntities;
     }
