@@ -449,11 +449,11 @@ public class CalciteParseSqlTools {
         String jdbcDriver = "";
         if("mysql".equalsIgnoreCase(dbType)){
             jdbcDriver = "com.mysql.jdbc.Driver";
-            jdbcURL = "jdbc:mysql://"+connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"/"+connectorProperties.getProperty("database.server.name");
+            jdbcURL = "jdbc:mysql://"+connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"/"+connectorProperties.getProperty("name");
         }
         if("oracle".equalsIgnoreCase(dbType)){
             jdbcDriver = "oracle.jdbc.driver.OracleDriver";
-            jdbcURL = "jdbc:oracle:thin:@"+connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+":"+connectorProperties.getProperty("database.server.name");
+            jdbcURL = "jdbc:oracle:thin:@"+connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+":"+connectorProperties.getProperty("name");
         }
         try(Connection connection = getConnection(jdbcDriver,jdbcURL,jdbcUser,jdbcPassword);
             ResultSet rs = connection.getMetaData().getColumns(null, null, tableNamePattern.toLowerCase(), null);) {
