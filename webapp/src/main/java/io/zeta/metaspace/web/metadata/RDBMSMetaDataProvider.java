@@ -127,10 +127,10 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
 
         String instanceId = tableSchema.getInstance();
 
-        syncTaskInstanceDAO.appendLog(taskInstanceId, "初始化成功，导入数据源：" + instanceId);
+        syncTaskInstanceDAO.appendLog(taskInstanceId, "初始化成功，导入数据源和数据库");
         //根据数据源id获取图数据库中的数据源，如果有，则更新，如果没有，则创建
         AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(instanceId, tableSchema.isAll(), tableSchema.getDefinition());
-        syncTaskInstanceDAO.appendLog(taskInstanceId, "导入数据源成功，开始导入表");
+        syncTaskInstanceDAO.appendLog(taskInstanceId, "导入数据源和数据库成功，开始导入表");
         String instanceGuid = atlasEntityWithExtInfo.getEntity().getGuid();
         Collection<Schema> schemas = metaDataInfo.getSchemas();
         if (!CollectionUtils.isEmpty(schemas) && !tableSchema.isAllDatabase()) {
@@ -151,7 +151,6 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                         metaDataContext.putEntity(dbQualifiedName, dbEntity);
                     }
                     importTables(dbEntity.getEntity(), instanceId, database.getFullName(), getTables(database), false, instanceGuid, taskInstanceId, null);
-//                importTables(dbEntity.getEntity(), instanceId, database.getFullName(), getTables(database), false, instanceGuid, taskInstanceId, tableSchema.getDefinition());
                 }, threadPoolExecutor));
             }
             CompletableFuture.allOf(completableFutureList.toArray(new CompletableFuture[]{})).join();
@@ -442,6 +441,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
 
         if (dbId != null) {
             entity.setGuid(dbId);
+            entity.setStatus(AtlasEntity.Status.ACTIVE);
         }
 
         entity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getDBQualifiedName(instanceId, databaseName));
@@ -582,8 +582,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 AtlasEntity.AtlasEntityWithExtInfo tableEntity;
                 if (ret == null) {
                     tableEntity = toTableEntity(dbEntity, instanceId, databaseName, tableName, null, instanceGuid, definition);
-                    ret = registerEntity(tableEntity, null);
-//                    ret = registerEntity(tableEntity, definition);
+                    ret = registerEntity(tableEntity, definition);
                 } else {
                     LOG.info("Table {}.{} is already registered with id {}. Updating entity.", databaseName, tableName, ret.getEntity().getGuid());
                     ret = toTableEntity(dbEntity, instanceId, databaseName, tableName, ret, instanceGuid, definition);
@@ -592,7 +591,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                     AtlasRelatedObjectId atlasRelatedObjectId = new AtlasRelatedObjectId();
                     atlasRelatedObjectId.setDisplayText(String.valueOf(dbEntity.getAttribute(ATTRIBUTE_NAME)));
                     ret.getEntity().setRelationshipAttribute("db", atlasRelatedObjectId);
-                    dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()), null);
+                    dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()), definition);
                 }
                 return ret;
             }
@@ -711,7 +710,6 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                         if (imported == 1) {
                             syncTaskInstanceDAO.appendLog(taskInstanceId, "成功导入表: " + tableName.getFullName());
                         }
-//                    tablesImported += imported;
                         tablesImportedList.add(imported);
                     }, threadPoolExecutor));
                 }
