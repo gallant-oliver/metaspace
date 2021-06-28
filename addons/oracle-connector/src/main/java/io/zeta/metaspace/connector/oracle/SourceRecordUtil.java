@@ -17,6 +17,7 @@ import java.util.Map;
 
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import io.zeta.metaspace.connector.oracle.models.RdbmsMessage;
@@ -27,74 +28,76 @@ public class SourceRecordUtil {
 	public static final String LOG_MINER_OFFSET_FIELD="logminer"; 
 	
 	public static SourceRecord getSourceRecord(ResultSet logMinerData, OracleSourceConnectorConfig config) throws SQLException{
-		
 		String dbName = config.getDbName();
 		String sqlRedo = logMinerData.getString(SQL_REDO_FIELD);
-		
-		Source source =new Source();
-		source.setName(config.getName());
-		source.setDb(dbName);
-		source.setTable(logMinerData.getString(OracleConnectorConstant.TABLE_NAME_FIELD));
-		source.setThread(logMinerData.getLong(OracleConnectorConstant.THREAD_FIELD));
-		source.setSnapshot(Boolean.FALSE);
-		source.setServerId(1);
-		source.setTsSec(logMinerData.getDate(OracleConnectorConstant.TIMESTAMP_FIELD).getTime());
-		RdbmsMessage.Payload payload = new RdbmsMessage.Payload();
-		payload.setSource(source);
-		payload.setDatabaseName(dbName);
-		payload.setTsMs(System.currentTimeMillis());
-		
-		
 		String operation = logMinerData.getString(OPERATION_FIELD);
-		
-		switch (operation) {
-		case "INSERT":
-			payload.setOp("c");
-			source.setQuery(sqlRedo);
-			break;
-		case "DELETE":
-			payload.setOp("d");
-			source.setQuery(sqlRedo);
-			break;
-		case "UPDATE":
-			payload.setOp("u");
-			source.setQuery(sqlRedo);
-			break;
-		default:
-			payload.setDdl(sqlRedo);
-			break;
-		}
-		//Schema 组装
-		Schema schema = SchemaBuilder.struct().required().name(config.getName())
-				.field("databaseName",SchemaBuilder.string().required().build())
-				.field("ddl",SchemaBuilder.string().required().build())
-				.field("source",SchemaBuilder.struct().required().name(config.getName())
-						.field("version",SchemaBuilder.string().optional().build())
-						.field("name",SchemaBuilder.string().required().build())
-						.field("server_id",SchemaBuilder.int64().required().build())
-						.field("ts_sec",SchemaBuilder.int64().required().build())
-						.field("gtid",SchemaBuilder.string().optional().build())
-						.field("file",SchemaBuilder.string().required().build())
-						.field("pos",SchemaBuilder.int64().required().build())
-						.field("row",SchemaBuilder.int32().required().build())
-						.field("snapshot",SchemaBuilder.bool().optional().defaultValue(Boolean.FALSE).build())
-						.field("thread",SchemaBuilder.int64().optional().build())
-						.field("db",SchemaBuilder.string().optional().build())
-						.field("table",SchemaBuilder.string().optional().build())
-						.field("query",SchemaBuilder.string().optional().build())
-						.build())
-				.build();
 
-		RdbmsMessage rdbmsMessage = new RdbmsMessage();
-		rdbmsMessage.setPayload(payload);
-		rdbmsMessage.setSchema(schema);
+		String op = "";
+		switch (operation) {
+			case "INSERT":
+				op = "c";
+				break;
+			case "DELETE":
+				op = "d";
+				break;
+			case "UPDATE":
+				op = "u";
+				break;
+			default:
+				op = "ddl";
+				break;
+		}
+		//Schema 主要是组装payload的数据格式
+		Schema sourceSchema = SchemaBuilder.struct().optional().name(config.getName())
+				.field("version",SchemaBuilder.string().optional().build())
+				.field("name",SchemaBuilder.string().optional().build())
+				.field("server_id",SchemaBuilder.int64().optional().build())
+				.field("ts_sec",SchemaBuilder.int64().optional().build())
+				.field("gtid",SchemaBuilder.string().optional().build())
+				.field("file",SchemaBuilder.string().optional().build())
+				.field("pos",SchemaBuilder.int64().optional().build())
+				.field("row",SchemaBuilder.int32().optional().build())
+				.field("snapshot",SchemaBuilder.bool().optional().defaultValue(Boolean.FALSE).build())
+				.field("thread",SchemaBuilder.int64().optional().build())
+				.field("db",SchemaBuilder.string().optional().build())
+				.field("table",SchemaBuilder.string().optional().build())
+				.field("query",SchemaBuilder.string().optional().build())
+				.build();
+		SchemaBuilder payLoadSchemaBuilder = SchemaBuilder.struct().required().name(config.getName())
+				.field("before", SchemaBuilder.struct().optional().build())
+				.field("after", SchemaBuilder.struct().optional().build())
+				.field("source",sourceSchema);
+
+		if("ddl".equals(op)) {// 下边参数是 ddl 的
+			payLoadSchemaBuilder.field("databaseName",SchemaBuilder.string().optional().build())
+					.field("ddl",SchemaBuilder.string().optional().build());
+		}else {//下边两个参数是 dml 中的
+			payLoadSchemaBuilder.field("op", SchemaBuilder.string().optional().build())
+					.field("ts_ms", SchemaBuilder.int64().optional().build());
+		}
+
+		Struct sourceStruct = new Struct(sourceSchema);
+		sourceStruct.put("name", config.getName())//.put("server_id", "")
+				.put("ts_sec", logMinerData.getDate(OracleConnectorConstant.TIMESTAMP_FIELD).getTime())
+				.put("snapshot", Boolean.FALSE)
+				.put("thread", logMinerData.getLong(OracleConnectorConstant.THREAD_FIELD));
+
+		Struct payloadStruct = new Struct(payLoadSchemaBuilder.build());
+		payloadStruct.put("source", sourceStruct);
+		if("ddl".equals(op)) {
+			payloadStruct.put("databaseName", dbName).put("ddl", sqlRedo);
+		}else {
+			sourceStruct.put("db", dbName).put("query",sqlRedo)
+					.put("table", logMinerData.getString(OracleConnectorConstant.TABLE_NAME_FIELD));
+			payloadStruct.put("op", op).put("ts_ms", logMinerData.getDate(OracleConnectorConstant.TIMESTAMP_FIELD).getTime());
+		}
+
 		Long scn = logMinerData.getLong(SCN_FIELD);
 		Long commitScn = logMinerData.getLong(COMMIT_SCN_FIELD);
 		String rowId = logMinerData.getString(ROW_ID_FIELD);
 		Map<String, String> sourceOffset = sourceOffset(scn, commitScn, rowId);
 		Map<String, String> sourcePartition = Collections.singletonMap(LOG_MINER_OFFSET_FIELD, dbName);
-		return new SourceRecord(sourcePartition, sourceOffset, config.getTopic(), schema, rdbmsMessage);
-		
+		return new SourceRecord(sourcePartition, sourceOffset, config.getTopic(), payloadStruct.schema(), payloadStruct);
 	}
 	
 	private static Map<String, String> sourceOffset(Long scnPosition, Long commitScnPosition, String rowId) {
