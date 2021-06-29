@@ -23,7 +23,7 @@ public class DebeziumConnector {
 
     private static final Cache<String, Instance> CONNECTOR_CACHE = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(60000, TimeUnit.MINUTES).build();
 
-    private static final String DEBEZIUM_CONNECTOR_URL = "debezium.connect.url";
+    private static final String KAFKA_CONNECTOR_URL = "kafka.connect.url";
     private static final Configuration CONF;
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
@@ -41,7 +41,7 @@ public class DebeziumConnector {
 
         Instance instance = CONNECTOR_CACHE.getIfPresent(connectorName);
         if(null == instance){
-            String url = CONF.getString(DEBEZIUM_CONNECTOR_URL);
+            String url = CONF.getString(KAFKA_CONNECTOR_URL);
             try{
                 String content = OKHttpClient.doGet(url + "/connectors/" + connectorName, null, null);
                 instance = MAPPER.readValue(content, Instance.class);
