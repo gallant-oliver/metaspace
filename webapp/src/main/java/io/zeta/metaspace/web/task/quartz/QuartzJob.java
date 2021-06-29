@@ -502,8 +502,8 @@ public class QuartzJob implements Job {
      */
     public Measure builderCustomizeMeasure(AtomicTaskExecution task, Long timestamp) {
         List<CustomizeParam> customizeParam = task.getCustomizeParam();
-        List<CustomizeParam> tables = customizeParam.stream().filter(param -> StringUtils.isBlank(param.getColumn())).collect(Collectors.toList());
-        List<CustomizeParam> columns = customizeParam.stream().filter(param -> StringUtils.isNotBlank(param.getColumn())).collect(Collectors.toList());
+        List<CustomizeParam> tables = customizeParam.stream().filter(param -> param.getId().toLowerCase().contains("table")).collect(Collectors.toList());
+        List<CustomizeParam> columns = customizeParam.stream().filter(param -> param.getId().toLowerCase().contains("column")).collect(Collectors.toList());
 
         Map<String, MeasureDataSource> dataSourceMap = new HashMap<>();
         for (CustomizeParam table : tables) {
@@ -535,7 +535,7 @@ public class QuartzJob implements Job {
         String sql = task.getSql();
         if (tables != null) {
             for (CustomizeParam table : tables) {
-                sql = sql.replaceAll("\\$\\{" + table.getId() + "\\}", table.getTable());
+                sql = sql.replaceAll("\\$\\{" + table.getId() + "\\}",table.getId());
             }
         }
         if (columns != null) {
