@@ -8,7 +8,7 @@ import org.apache.atlas.model.instance.debezium.RdbmsEntities;
 import org.apache.atlas.model.notification.Notification;
 import org.apache.atlas.model.notification.RdbmsNotification;
 import org.apache.atlas.notification.rdbms.Conversion;
-import org.apache.atlas.notification.rdbms.DebeziumConnector;
+import org.apache.atlas.notification.rdbms.KafkaConnector;
 import org.apache.atlas.repository.converters.AtlasInstanceConverter;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.type.AtlasTypeRegistry;
@@ -19,7 +19,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.util.Map;
 import java.util.Properties;
 
 @Component
@@ -63,8 +62,10 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
 
             String name = rdbmsMessage.getRdbmsMessage().getPayload().getSource().getName();
 
-            Properties connectorProperties = DebeziumConnector.getConnectorConfig(name);
-
+            Properties connectorProperties = KafkaConnector.getConnectorConfig(name);
+            if(null == connectorProperties){
+                throw new RuntimeException("获取connector失败");
+            }
             RdbmsEntities rdbmsEntities = conversion.convert(rdbmsMessage,connectorProperties);
 
             System.out.println("atlas实体及数据血缘【"+rdbmsEntities+"】插入JanusGraph数据库，并调用监听器，将数据插入PG");

@@ -54,15 +54,22 @@ public class KafkaNotification extends AbstractNotification implements Service {
     public    static final String PROPERTY_PREFIX            = "atlas.kafka";
     public    static final String ATLAS_HOOK_TOPIC           = "ATLAS_HOOK";
     public    static final String ATLAS_ENTITIES_TOPIC       = "ATLAS_ENTITIES";
-    public    static final String ORACLE_METADATA_TOPIC       = "ORACLE_METADATA";
+    public    static final String ORACLE_METADATA_TOPIC       = "oracle.metadata.topic";
     protected static final String CONSUMER_GROUP_ID_PROPERTY = "group.id";
     public static final String DEFAULT_GROUP_ID = "metaspace";
 
     private static final Map<NotificationType, List<String>> TOPIC_MAP = new HashMap<NotificationType, List<String>>() {
         {
-            put(NotificationType.HOOK, Arrays.asList(ATLAS_HOOK_TOPIC));
-            put(NotificationType.ENTITIES, Arrays.asList(ATLAS_ENTITIES_TOPIC));
-            put(NotificationType.RDBMS, Arrays.asList(ORACLE_METADATA_TOPIC));
+            String oracleMetadataToipic = null;
+            try{
+                Configuration configuration = ApplicationProperties.get();
+                configuration.getString(ORACLE_METADATA_TOPIC, "ORACLE_METADATA");
+                put(NotificationType.HOOK, Arrays.asList(ATLAS_HOOK_TOPIC));
+                put(NotificationType.ENTITIES, Arrays.asList(ATLAS_ENTITIES_TOPIC));
+                put(NotificationType.RDBMS, Arrays.asList(oracleMetadataToipic));
+            }catch (Exception e){
+                throw new RuntimeException("初始化KafkaNotification.TOPIC_MAP失败", e);
+            }
         }
     };
 

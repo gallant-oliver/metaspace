@@ -2,16 +2,17 @@ package org.apache.atlas.notification.rdbms;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.utils.OKHttpClient;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.commons.configuration.Configuration;
-import com.google.common.cache.CacheBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -19,40 +20,101 @@ import java.util.concurrent.TimeUnit;
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_ONLY;
 
-public class DebeziumConnector {
-
+public class KafkaConnector {
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaConnector.class);
     private static final Cache<String, Instance> CONNECTOR_CACHE = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(60000, TimeUnit.MINUTES).build();
 
     private static final String KAFKA_CONNECTOR_URL = "kafka.connect.url";
+    private static final String ORACLE_INIT_CONNECTOR_NAME = "oracle.init.connector.name";
     private static final Configuration CONF;
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
+    private static final ObjectMapper MAPPER ;
 
     static{
         try{
+            MAPPER = new ObjectMapper().configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
+            MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
             CONF = ApplicationProperties.get();
-
         }catch (Exception e){
             throw new RuntimeException("初始化DebeziumConnector失败");
         }
     }
 
     public static Properties getConnectorConfig(String connectorName){
+        Properties config = null;
+        Instance connector = getConnector(connectorName);
+        if(null != connector) {
+            config = connector.getConfig();
+        }
+        return config;
+    }
 
-        Instance instance = CONNECTOR_CACHE.getIfPresent(connectorName);
+    public static Instance getConnector(String connectorName){
+
+        return getConnector(connectorName, true);
+    }
+
+    public static Instance getConnector(String connectorName, boolean useCache){
+        Instance instance = null;
+        if(useCache){
+            instance = CONNECTOR_CACHE.getIfPresent(connectorName);
+        }
         if(null == instance){
             String url = CONF.getString(KAFKA_CONNECTOR_URL);
             try{
                 String content = OKHttpClient.doGet(url + "/connectors/" + connectorName, null, null);
                 instance = MAPPER.readValue(content, Instance.class);
-                CONNECTOR_CACHE.put(connectorName,instance);
+                if(null != instance && instance.getName() != null){
+                    CONNECTOR_CACHE.put(connectorName,instance);
+                }else{
+                    instance = null;
+                }
             }catch (Exception e){
-                throw new RuntimeException("获取debezium配置失败",e);
+                LOG.warn("获取connector失败:" + e.getMessage());
             }
         }
-        return instance.getConfig();
 
+        String url = CONF.getString(KAFKA_CONNECTOR_URL);
+        return instance;
     }
+
+    public synchronized static Instance addConnector(Instance instance){
+
+        Instance newInstance = null;
+        Instance connector = getConnector(instance.getName());
+        if(null != connector){
+            throw new RuntimeException("添加connector失败: 名称为" + instance.getName() + "的connector已经存在");
+        }
+        try{
+            String json = MAPPER.writeValueAsString(instance);
+            String url = CONF.getString(KAFKA_CONNECTOR_URL);
+            String content = OKHttpClient.doPost(url + "/connectors", json);
+            newInstance = MAPPER.readValue(content, Instance.class);
+            CONNECTOR_CACHE.put(newInstance.getName(),newInstance);
+        }catch (Exception e){
+            throw new RuntimeException("添加connector失败",e);
+        }
+        String initConnectorName = CONF.getString(ORACLE_INIT_CONNECTOR_NAME,"oracle_init_connector");
+        removeConnector(initConnectorName);
+        return newInstance;
+    }
+
+    public synchronized static void removeConnector(String connectorName){
+
+        Instance connector = getConnector(connectorName, false);
+        if(null != connector){
+            try{
+                String url = CONF.getString(KAFKA_CONNECTOR_URL);
+                OKHttpClient.doDelete(url + "/connectors/" + connectorName);
+
+            }catch (Exception e){
+                throw new RuntimeException("删除connector失败",e);
+            }
+        }
+        if(null != CONNECTOR_CACHE.getIfPresent(connectorName)){
+            CONNECTOR_CACHE.invalidate(connectorName);
+        }
+    }
+
     @JsonAutoDetect(getterVisibility=PUBLIC_ONLY, setterVisibility=PUBLIC_ONLY, fieldVisibility=NONE)
     @JsonIgnoreProperties(ignoreUnknown=true)
     public static class Instance{

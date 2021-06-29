@@ -95,6 +95,35 @@ public class OKHttpClient {
         }
     }
 
+    public static String doPost(String url, String json) throws AtlasBaseException {
+        try {
+            RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
+            Request.Builder builder = new Request.Builder();
+            Request request = builder.url(url).post(body).build();
+            return getResponse(request);
+        } catch(AtlasBaseException e){
+            throw e;
+        } catch(Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"请求失败"+e.getMessage());
+        }
+    }
+
+    public static String doPost(String url, String json, Map<String, Object> headerMap) throws AtlasBaseException {
+        try {
+            RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
+            Request.Builder builder = new Request.Builder();
+            if(MapUtils.isNotEmpty(headerMap)){
+                Headers headers = buildHeaders(headerMap);
+                builder.headers(headers);
+            }
+            Request request = builder.url(url).post(body).build();
+            return getResponse(request);
+        } catch(AtlasBaseException e){
+            throw e;
+        } catch(Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"请求失败"+e.getMessage());
+        }
+    }
 
 
     public static String doPost(String url, Map<String, Object> headerMap,Map<String,Object> queryParamMap, String json) throws AtlasBaseException {
@@ -154,21 +183,12 @@ public class OKHttpClient {
         }
     }
 
-    public static String doPost(String url, String json, Map<String, Object> headerMap) throws AtlasBaseException {
-        try {
-            RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
-            Request.Builder builder = new Request.Builder();
-            if(MapUtils.isNotEmpty(headerMap)){
-                Headers headers = buildHeaders(headerMap);
-                builder.headers(headers);
-            }
-            Request request = builder.url(url).post(body).build();
-            return getResponse(request);
-        } catch(AtlasBaseException e){
-            throw e;
-        } catch(Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"请求失败"+e.getMessage());
-        }
+    /**
+     * delete
+     * @return
+     */
+    public static String doDelete(String url) throws AtlasBaseException {
+        return doDelete(url, null,null);
     }
 
     /**
@@ -187,7 +207,6 @@ public class OKHttpClient {
         try {
             Request.Builder builder = new Request.Builder()
                     .url(url);
-            map.put("Content-Type","application/json");
             if (StringUtils.isNotEmpty(bodyJson)){
                 RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), bodyJson);
                 builder.delete(body);
@@ -195,6 +214,7 @@ public class OKHttpClient {
                 builder.delete();
             }
             if(Objects.nonNull(map)) {
+                map.put("Content-Type","application/json");
                 Set<Map.Entry<String, String>> headerEntries = map.entrySet();
                 for (Map.Entry<String, String> entry : headerEntries) {
                     builder.addHeader(entry.getKey(), entry.getValue());
