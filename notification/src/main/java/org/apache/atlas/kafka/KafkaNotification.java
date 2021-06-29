@@ -54,8 +54,7 @@ public class KafkaNotification extends AbstractNotification implements Service {
     public    static final String PROPERTY_PREFIX            = "atlas.kafka";
     public    static final String ATLAS_HOOK_TOPIC           = "ATLAS_HOOK";
     public    static final String ATLAS_ENTITIES_TOPIC       = "ATLAS_ENTITIES";
-    public    static final String ATLAS_TABLE_RDBMS_TOPIC       = "TABLE.ATLAS_MYSQL_45000";
-    public    static final String ATLAS_RDBMS_TOPIC       = "ATLAS_MYSQL_45000";
+    public    static final String ORACLE_METADATA_TOPIC       = "ORACLE_METADATA";
     protected static final String CONSUMER_GROUP_ID_PROPERTY = "group.id";
     public static final String DEFAULT_GROUP_ID = "metaspace";
 
@@ -63,7 +62,7 @@ public class KafkaNotification extends AbstractNotification implements Service {
         {
             put(NotificationType.HOOK, Arrays.asList(ATLAS_HOOK_TOPIC));
             put(NotificationType.ENTITIES, Arrays.asList(ATLAS_ENTITIES_TOPIC));
-            put(NotificationType.RDBMS, Arrays.asList(ATLAS_TABLE_RDBMS_TOPIC,ATLAS_RDBMS_TOPIC));
+            put(NotificationType.RDBMS, Arrays.asList(ORACLE_METADATA_TOPIC));
         }
     };
 
