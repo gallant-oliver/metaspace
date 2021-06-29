@@ -733,59 +733,6 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         return tablesImported;
     }
 
-//    /**
-//     * Imports all tables for the given db
-//     *
-//     * @param dbEntity
-//     * @param databaseName
-//     * @param failOnError
-//     * @throws Exception
-//     */
-//    private int importTables(AtlasEntity dbEntity, String instanceId, String databaseName, Collection<Table> tableNames,
-//                             final boolean failOnError, String instanceGuid, String taskInstanceId, SyncTaskDefinition definition) {
-//        int tablesImported = 0;
-//
-//        if (!CollectionUtils.isEmpty(tableNames)) {
-//            LOG.info("Found {} tables to import in database {}", tableNames.size(), databaseName);
-//
-//            try {
-//                //删除JanusGraph中已经不存在table
-//                if (isSource) {
-//                    deleteTableEntity(instanceGuid, databaseName, tableNames);
-//                }
-//
-//                for (Table tableName : tableNames) {
-//                    SyncTaskInstance taskInstance = syncTaskInstanceDAO.getById(taskInstanceId);
-//                    if (taskInstance == null || SyncTaskInstance.Status.FAIL.equals(taskInstance.getStatus())) {
-//                        LOG.error("终止元数据同步,数据源：");
-//                        throw new AtlasBaseException("终止元数据同步,数据源：" + dataSourceInfo.getSourceName());
-//                    }
-//                    if (LOG.isDebugEnabled()) {
-//                        LOG.debug("导入{}表的元数据", tableName.getFullName());
-//                    }
-//                    int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError, instanceGuid, definition);
-//                    if (imported == 1) {
-//                        syncTaskInstanceDAO.appendLog(taskInstanceId, "成功导入表: " + tableName.getFullName());
-//                    }
-//                    tablesImported += imported;
-//                }
-//            } catch (AtlasBaseException e) {
-//                throw e;
-//            } catch (Exception e) {
-//                LOG.error("导入表元数据错误", e);
-//            } finally {
-//                if (tablesImported == tableNames.size()) {
-//                    LOG.info("Successfully imported {} tables from database {}", tablesImported, databaseName);
-//                } else {
-//                    LOG.error("Imported {} of {} tables from database {}. Please check logs for errors during import", tablesImported, tableNames.size(), databaseName);
-//                }
-//            }
-//        } else {
-//            LOG.info("No tables to import in database {}", databaseName);
-//        }
-//
-//        return tablesImported;
-//    }
 
     /**
      * Registers an entity in atlas
