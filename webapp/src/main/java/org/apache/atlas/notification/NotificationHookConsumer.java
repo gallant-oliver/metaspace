@@ -356,10 +356,11 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
             long process_total_cost = 0;
             //当前处理耗时
             long current_cost = 0;
-            Boolean result = false;
+
             try {
                 while (shouldRun.get()) {
                     long start = 0;
+                    Boolean result = false;
                     try {
                         List<AtlasKafkaMessage<HookNotification>> messages = consumer.receive();
                         start = System.currentTimeMillis();
@@ -388,13 +389,15 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
                             break;
                         }
                     }
+                    finally {
+                        if (result) {
+                            indexCounter.plusOneSuccess("HIVE");
+                        } else {
+                            indexCounter.plusOneFail("HIVE");
+                        }
+                    }
                 }
             } finally {
-                if (result) {
-                    indexCounter.plusOneSuccess("HIVE");
-                } else {
-                    indexCounter.plusOneFail("HIVE");
-                }
                 if (consumer != null) {
                     LOG.info("closing NotificationConsumer");
 
