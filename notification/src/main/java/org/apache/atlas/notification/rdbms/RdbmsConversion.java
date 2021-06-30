@@ -1,16 +1,13 @@
 package org.apache.atlas.notification.rdbms;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.atlas.AtlasException;
-import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.debezium.RdbmsEntities;
 import org.apache.atlas.model.notification.Notification;
 import org.apache.atlas.model.notification.RdbmsNotification;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Singleton;
-import java.io.IOException;
-import java.util.*;
+import java.util.Properties;
 
 
 @Singleton
@@ -34,7 +31,7 @@ public class RdbmsConversion implements Conversion{
 
 
 
-    public RdbmsEntities getSimulationRdbmsEntities (Notification notification, Properties connectorProperties) throws IOException {
+   /* public RdbmsEntities getSimulationRdbmsEntities (Notification notification, Properties connectorProperties) throws IOException {
 
         ObjectMapper mapper = new ObjectMapper();
 
@@ -228,5 +225,5 @@ public class RdbmsConversion implements Conversion{
 
         rdbmsEntities.setBloodEntities(atlasEntitiesWithExtInfo);
         return rdbmsEntities;
-    }
+    }*/
 }
