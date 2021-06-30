@@ -27,6 +27,15 @@ public interface SyncTaskInstanceDAO {
     @Update("UPDATE " + TABLE_NAME + " SET status = #{status} , log = log || '\n' || now() || ' ' || #{log}, update_time = now() where id = #{id}")
     int updateStatusAndAppendLog(@Param("id") String id, @Param("status") SyncTaskInstance.Status status, @Param("log") String log);
 
+    /**
+     * 服务重启或异常，停止任务实例
+     * @param status
+     * @param log
+     * @return
+     */
+    @Update("UPDATE " + TABLE_NAME + " SET status = #{status} , log = log || '\n' || now() || ' ' || #{log}, update_time = now() where status = 'RUN'")
+    int updateStatusAndAppendLogAllFail(@Param("status") SyncTaskInstance.Status status, @Param("log") String log);
+
     @Update("UPDATE " + TABLE_NAME + " SET log = log || '\n' || now() || ' ' || #{log}, update_time = now() where id = #{id}")
     int appendLog(@Param("id") String id, @Param("log") String log);
 
