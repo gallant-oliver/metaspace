@@ -1,38 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration status="info" monitorInterval="1800">
-    <Properties>
-        <Property name="LOG_HOME">${sys:atlas.log.dir}</Property>
-        <Property name="LOG_FILE">${sys:atlas.log.file}</Property>
-    </Properties>
     <Appenders>
-        <!--<Console name="console" target="SYSTEM_OUT">
-            &lt;!&ndash; 控制台只输出level及以上级别的信息(onMatch),其他的直接拒绝(onMismatch) &ndash;&gt;
-            &lt;!&ndash; <ThresholdFilter level="trace" onMatch="ACCEPT" onMismatch="DENY"
-                /> &ndash;&gt;
-            &lt;!&ndash; 输出日志的格式 &ndash;&gt;
-            <PatternLayout
-                pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p ${hostName} - [%t] - %c.%M(%F:%L) %m%n" />
-        </Console>-->
         <Console name="console" target="SYSTEM_OUT">
             <!-- 控制台只输出level及以上级别的信息(onMatch),其他的直接拒绝(onMismatch) -->
             <!-- <ThresholdFilter level="trace" onMatch="ACCEPT" onMismatch="DENY"
                 /> -->
             <!-- 输出日志的格式 -->
-            <PatternLayout>
-                <Pattern>%d{yyyy-MM-dd'T'HH:mm:ssZZ} %-4p [metaspace@core@1.4.2] [%t] %C{2}.%M(%F:%L) - %m%n</Pattern>
-            </PatternLayout>
+            <PatternLayout
+                pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p ${hostName} - [%t] - %c.%M(%F:%L) %m%n" />
         </Console>
-
-        <RollingFile name="application" fileName="${LOG_HOME}/${LOG_FILE}"
-                     filePattern="${LOG_HOME}/$${date:yyyy-MM}/application-%d{yyyy-MM-dd}-%i.log.gz">
-            <JsonTemplateLayout eventTemplateUri="${env:LOG4J2_JSON_LAYOUT_PATH:-classpath:custom-log4j2-json-layout.json}"/>
-            <Policies>
-                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
-                <SizeBasedTriggeringPolicy size="100M" />
-            </Policies>
-            <DefaultRolloverStrategy max="30"/>
-        </RollingFile>
-
     </Appenders>
     <Loggers>
         <logger name="org.apache.atlas" level="info">
@@ -68,7 +44,7 @@
         </logger>
 
         <root level="INFO">
-            <appender-ref ref="application"/>
+            <appender-ref ref="console"/>
         </root>
     </Loggers>
 
