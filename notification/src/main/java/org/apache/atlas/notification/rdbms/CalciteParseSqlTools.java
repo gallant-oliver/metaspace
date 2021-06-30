@@ -89,7 +89,12 @@ public class CalciteParseSqlTools {
         attributeMap.put("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port"));
         attributeMap.put("name",connectorProperties.getProperty("name"));
         String connectorClass = connectorProperties.getProperty("connector.class");
-        String rdbmsType = connectorClass == null ? "" : connectorClass.substring(connectorClass.lastIndexOf('.')+1).replace("Connector","");
+        String rdbmsType = "";
+        if(connectorClass != null){
+            String[] arr = connectorClass.split("\\.");
+            rdbmsType = arr.length > 1 ? arr[arr.length-2] : arr[0];
+        }
+
         attributeMap.put("rdbms_type",rdbmsType);
         attributeMap.put("platform","zeta");
         attributeMap.put("cloudOrOnPrem","cloud");
