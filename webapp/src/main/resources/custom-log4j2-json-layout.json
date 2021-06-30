@@ -1,0 +1,58 @@
+{
+  "request_id": {
+    "$resolver": "mdc"
+  },
+  "level": {
+    "$resolver": "level",
+    "field": "name"
+  },
+  "error_type": {
+    "$resolver": "exception",
+    "field": "className"
+  },
+  "error_msg": {
+    "$resolver": "exception",
+    "field": "message",
+    "stringified": true
+  },
+  "error_stacktrace": {
+    "$resolver": "exception",
+    "field": "stackTrace",
+    "stringified": true
+  },
+  "line_number": {
+    "$resolver": "source",
+    "field": "lineNumber"
+  },
+  "class": {
+    "$resolver": "source",
+    "field": "className"
+  },
+  "production": "metaspace",
+
+  "source_host": "${hostName}",
+  "message": {
+    "$resolver": "message",
+    "stringified": true
+  },
+  "thread_name": {
+    "$resolver": "thread",
+    "field": "name"
+  },
+  "@timestamp": {
+    "$resolver": "timestamp"
+  },
+
+  "file": {
+    "$resolver": "source",
+    "field": "fileName"
+  },
+  "method": {
+    "$resolver": "source",
+    "field": "methodName"
+  },
+  "logger_name": {
+    "$resolver": "logger",
+    "field": "name"
+  }
+}
