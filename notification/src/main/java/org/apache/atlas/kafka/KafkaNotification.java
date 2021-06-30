@@ -63,7 +63,7 @@ public class KafkaNotification extends AbstractNotification implements Service {
             String oracleMetadataToipic = null;
             try{
                 Configuration configuration = ApplicationProperties.get();
-                configuration.getString(ORACLE_METADATA_TOPIC, "ORACLE_METADATA");
+                oracleMetadataToipic = configuration.getString(ORACLE_METADATA_TOPIC, "ORACLE_METADATA");
                 put(NotificationType.HOOK, Arrays.asList(ATLAS_HOOK_TOPIC));
                 put(NotificationType.ENTITIES, Arrays.asList(ATLAS_ENTITIES_TOPIC));
                 put(NotificationType.RDBMS, Arrays.asList(oracleMetadataToipic));
