@@ -360,7 +360,6 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
             try {
                 while (shouldRun.get()) {
                     long start = 0;
-                    Boolean result = false;
                     try {
                         List<AtlasKafkaMessage<HookNotification>> messages = consumer.receive();
                         start = System.currentTimeMillis();
@@ -375,25 +374,20 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
                         }
                         int size = messages.size();
                         if (size > 0) {
-                            result = true;
+                            indexCounter.plusOneSuccess("HIVE");
                             LOG.info("接收数据条数为{}, 总耗时为{}ms", size, System.currentTimeMillis() - start);
                         }
                     } catch (IllegalStateException ex) {
+                        indexCounter.plusOneFail("HIVE");
                         LOG.error("消费kafka数据发生错误", ex);
                         adaptiveWaiter.pause(ex);
                     } catch (Exception e) {
+                        indexCounter.plusOneFail("HIVE");
                         LOG.warn("Exception in NotificationHookConsumer, 本次处理总耗时{}", System.currentTimeMillis() - start, e);
                         if (shouldRun.get()) {
                             adaptiveWaiter.pause(e);
                         } else {
                             break;
-                        }
-                    }
-                    finally {
-                        if (result) {
-                            indexCounter.plusOneSuccess("HIVE");
-                        } else {
-                            indexCounter.plusOneFail("HIVE");
                         }
                     }
                 }
