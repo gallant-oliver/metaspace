@@ -1,10 +1,9 @@
 package org.apache.atlas.model.instance.debezium;
 
 import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.hadoop.util.hash.Hash;
 
-import java.util.List;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
 
 public class RdbmsEntities {
 
@@ -18,13 +17,13 @@ public class RdbmsEntities {
          */
         RDBMS_DB(2),
         /**
-         * 列
-         */
-        RDBMS_COLUMN(3),
-        /**
          * 表
          */
-        RDBMS_TABLE(4),
+        RDBMS_TABLE(3),
+        /**
+         * 列
+         */
+        RDBMS_COLUMN(4),
         /**
          * 关系
          */
@@ -46,35 +45,59 @@ public class RdbmsEntities {
         private int getOrder(){
             return this.order;
         }
-
-
     }
+
+    public enum OperateType {
+        /**
+         * 新增
+         */
+        ADD(),
+        /**
+         * 删除
+         */
+        DROP(),
+        /**
+         * 更新
+         */
+        MODIFY();
+    }
+
     /**
      * 实体集合,有序map不允许被覆盖
      */
-    private SortedMap<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> entityMap =
-            new TreeMap<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>((o1, o2) -> {
+    private final Map<OperateType, Map<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> entityMap = new HashMap<OperateType, Map<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>>(){
+        {
+            put(OperateType.ADD,  new TreeMap<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>((o1, o2) -> {
                 if(o1.order == o2.order){
                     return 0;
                 }
                 return o1.order < o2.order ? 1 : -1;
-            });
+            }));
+
+            put(OperateType.DROP,  new TreeMap<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>((o1, o2) -> {
+                if(o1.order == o2.order){
+                    return 0;
+                }
+                return o1.order > o2.order ? 1 : -1;
+            }));
+            //更新的顺序由组装者决定，如果更新是有序的，请覆盖OperateType.MODIFY所对应的map。
+            put(OperateType.MODIFY,  new HashMap<>());
+        }
+    };
+
 
     /**
      * 数据血缘
      */
-    private AtlasEntity.AtlasEntitiesWithExtInfo bloodEntities;
+    private Map<OperateType, AtlasEntity.AtlasEntitiesWithExtInfo> bloodEntitiesMap = new HashMap<OperateType, AtlasEntity.AtlasEntitiesWithExtInfo>();
 
-    public SortedMap<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> getEntityMap() {
+    public Map<OperateType, Map<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> getEntityMap() {
         return entityMap;
     }
 
 
-    public AtlasEntity.AtlasEntitiesWithExtInfo getBloodEntities() {
-        return bloodEntities;
+    public Map<OperateType, AtlasEntity.AtlasEntitiesWithExtInfo> getBloodEntities() {
+        return bloodEntitiesMap;
     }
 
-    public void setBloodEntities(AtlasEntity.AtlasEntitiesWithExtInfo bloodEntities) {
-        this.bloodEntities = bloodEntities;
-    }
 }

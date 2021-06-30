@@ -88,8 +88,6 @@ public abstract class AbstractKafkaConsumerRunnable extends ShutdownableThread {
                 long start = 0;
                 try {
                     List<AtlasKafkaMessage<Notification>> messages = consumer.receive();
-                    System.out.println(this);
-                    System.out.println(consumer);
                     start = System.currentTimeMillis();
                     for (AtlasKafkaMessage<Notification> msg : messages) {
                         process_start = System.currentTimeMillis();
