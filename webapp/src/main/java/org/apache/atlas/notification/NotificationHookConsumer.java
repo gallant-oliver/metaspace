@@ -19,6 +19,7 @@ package org.apache.atlas.notification;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
 import kafka.utils.ShutdownableThread;
 import org.apache.atlas.*;
 import org.apache.atlas.ha.HAConfiguration;
@@ -30,14 +31,9 @@ import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.notification.HookNotification;
 import org.apache.atlas.model.notification.HookNotification.EntityCreateRequestV2;
 import org.apache.atlas.model.notification.HookNotification.EntityDeleteRequestV2;
-import org.apache.atlas.model.notification.HookNotification.EntityUpdateRequestV2;
 import org.apache.atlas.model.notification.HookNotification.EntityPartialUpdateRequestV2;
+import org.apache.atlas.model.notification.HookNotification.EntityUpdateRequestV2;
 import org.apache.atlas.notification.NotificationInterface.NotificationType;
-import org.apache.atlas.v1.model.instance.Referenceable;
-import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityCreateRequest;
-import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityDeleteRequest;
-import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityPartialUpdateRequest;
-import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityUpdateRequest;
 import org.apache.atlas.repository.converters.AtlasInstanceConverter;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStream;
@@ -46,6 +42,11 @@ import org.apache.atlas.service.Service;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.utils.AtlasPerfTracer;
+import org.apache.atlas.v1.model.instance.Referenceable;
+import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityCreateRequest;
+import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityDeleteRequest;
+import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityPartialUpdateRequest;
+import org.apache.atlas.v1.model.notification.HookNotificationV1.EntityUpdateRequest;
 import org.apache.atlas.web.filters.AuditFilter;
 import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.service.ServiceState;
@@ -60,12 +61,7 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -97,6 +93,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
     private final ServiceState           serviceState;
     private final AtlasInstanceConverter instanceConverter;
     private final AtlasTypeRegistry      typeRegistry;
+    private final IndexCounter indexCounter = new IndexCounter();
     private final int                    maxRetries;
     private final int                    failedMsgCacheSize;
     private final int                    minWaitDuration;
@@ -359,6 +356,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
             long process_total_cost = 0;
             //当前处理耗时
             long current_cost = 0;
+            Boolean result = false;
             try {
                 while (shouldRun.get()) {
                     long start = 0;
@@ -376,6 +374,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
                         }
                         int size = messages.size();
                         if (size > 0) {
+                            result = true;
                             LOG.info("接收数据条数为{}, 总耗时为{}ms", size, System.currentTimeMillis() - start);
                         }
                     } catch (IllegalStateException ex) {
@@ -391,6 +390,11 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
                     }
                 }
             } finally {
+                if (result) {
+                    indexCounter.plusOneSuccess("HIVE");
+                } else {
+                    indexCounter.plusOneFail("HIVE");
+                }
                 if (consumer != null) {
                     LOG.info("closing NotificationConsumer");
 

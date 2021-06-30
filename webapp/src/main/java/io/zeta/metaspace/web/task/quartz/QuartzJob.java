@@ -34,10 +34,12 @@ import io.zeta.metaspace.utils.GsonUtils;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.service.DataSourceService;
+import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
 import io.zeta.metaspace.web.task.util.LivyTaskSubmitHelper;
 import io.zeta.metaspace.web.task.util.QuartQueryProvider;
 import io.zeta.metaspace.web.util.DateUtils;
 import io.zeta.metaspace.web.util.HdfsUtils;
+import io.zeta.metaspace.web.util.IndexCounterUtils;
 import io.zeta.metaspace.web.util.QualityEngine;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasConfiguration;
@@ -86,6 +88,8 @@ public class QuartzJob implements Job {
     DataSourceService dataSourceService;
     @Autowired
     LivyTaskSubmitHelper livyTaskSubmitHelper;
+    @Autowired
+    private IndexCounter indexCounter;
 
     private final int RETRY = 3;
 
@@ -291,6 +295,12 @@ public class QuartzJob implements Job {
                 } finally {
                     errorMsg = task.getErrorMsg();
                     recordExecutionInfo(task, errorMsg, tenantId);
+                    //记录任务成功数和失败数
+                    if (StringUtils.isBlank(errorMsg)) {
+                        indexCounter.plusOne(IndexCounterUtils.METASPACE_QUALITY_TASK_SUCCESS_COUNT);
+                    } else {
+                        indexCounter.plusOne(IndexCounterUtils.METASPACE_QUALITY_TASK_FAIL_COUNT);
+                    }
                 }
             } while (retryCount < RETRY);
         }
