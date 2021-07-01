@@ -33,10 +33,6 @@ import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
-import io.zeta.metaspace.model.po.indices.IndexCompositePO;
-import io.zeta.metaspace.model.po.indices.IndexDeriveCompositeRelationPO;
-import io.zeta.metaspace.model.po.indices.IndexDeriveModifierRelationPO;
-import io.zeta.metaspace.model.po.indices.IndexDerivePO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.privilege.Module;
@@ -1421,6 +1417,27 @@ public class DataManageService {
         return gson.fromJson(gson.toJson(paramMap), cls);
     }
 
+    /**
+     * sql语句分为输入和输出型，只有输出型的表和字段才会视为修改 比如：create table a as SELECT * from b ，那么只有a表才会修改，b表不变
+     * @param entity
+     * @return
+     */
+    public Boolean getOutputFromProcesses(AtlasEntity entity) {
+        try {
+            LOG.info("inputToProcesses is {}", entity.getRelationshipAttributes().get("inputToProcesses"));
+            LOG.info("outputFromProcesses is {}", entity.getRelationshipAttributes().get("outputFromProcesses"));
+            List<Object> input = (List<Object>) entity.getRelationshipAttributes().get("inputToProcesses");
+            List<Object> output = (List<Object>) entity.getRelationshipAttributes().get("outputFromProcesses");
+            if (CollectionUtils.isEmpty(input) && !CollectionUtils.isEmpty(output)) {
+                return false;
+            }
+        } catch (Exception e) {
+            LOG.error("getOutputFromProcesses exception is {}", e);
+        }
+        return true;
+    }
+
+
     @Transactional(rollbackFor = Exception.class)
     public void addEntity(List<AtlasEntity> entities, SyncTaskDefinition definition) {
         List<Column> columnList = new ArrayList<>();
@@ -1429,6 +1446,9 @@ public class DataManageService {
             for (AtlasEntity entity : entities) {
                 String typeName = entity.getTypeName();
                 if (("hive_table").equals(typeName)) {
+                    if(this.getOutputFromProcesses(entity)){
+                        continue;
+                    }
                     if (entity.getAttribute("temporary") == null || entity.getAttribute("temporary").toString().equals("false")) {
                         TableInfo tableInfo = getTableInfo(entity);
                         tableInfo.setSourceId("hive");
@@ -1443,6 +1463,9 @@ public class DataManageService {
                     deleteIfExistTable(tableInfo);
                     tableDAO.addTable(tableInfo);
                 } else if (("hive_column").equals(typeName)) {
+                    if(this.getOutputFromProcesses(entity)){
+                        continue;
+                    }
                     Column column = getColumn(entity, "type");
                     columnList.add(column);
                 } else if (("rdbms_column").equals(typeName)) {
@@ -1617,6 +1640,9 @@ public class DataManageService {
             for (AtlasEntity entity : entities) {
                 String typeName = entity.getTypeName();
                 if (typeName.equals("hive_table")) {
+                    if(this.getOutputFromProcesses(entity)){
+                        continue;
+                    }
                     if (entity.getAttribute("temporary") == null || entity.getAttribute("temporary").toString().equals("false")) {
                         TableInfo tableInfo = new TableInfo();
                         tableInfo.setTableGuid(entity.getGuid());
@@ -1641,6 +1667,9 @@ public class DataManageService {
                         sendMetadataChangedMail(entity.getGuid());
                     }
                 } else if (typeName.equals("hive_column")) {
+                    if(this.getOutputFromProcesses(entity)){
+                        continue;
+                    }
                     String guid = entity.getGuid();
                     String name = entity.getAttribute("name").toString();
                     String type = entity.getAttribute("type").toString();
