@@ -77,7 +77,7 @@ public class DatabaseUtil {
                 columnNames.add(tableColumnInfo);
             }
         } catch (SQLException e) {
-            logger.error("getColumnNames failure", e);
+            logger.error("table {} getColumnNames failure",tableName, e);
         } finally {
             if (pStemt != null) {
                 try {
