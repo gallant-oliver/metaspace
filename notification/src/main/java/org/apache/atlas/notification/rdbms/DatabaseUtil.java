@@ -84,7 +84,7 @@ public class DatabaseUtil {
                     pStemt.close();
                     // closeConnection(conn);
                 } catch (SQLException e) {
-                    logger.error("getColumnNames close pstem and connection failure", e);
+                    logger.error("table {} getColumnNames close pstem and connection failure:{}",tableName, e);
                 }
             }
         }
