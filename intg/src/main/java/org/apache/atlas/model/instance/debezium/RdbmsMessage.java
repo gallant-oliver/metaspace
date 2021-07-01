@@ -43,6 +43,15 @@ public class RdbmsMessage {
         private long tsMs;
         private String databaseName;
         private String ddl;
+        private String owner;
+
+        public String getOwner() {
+            return owner;
+        }
+
+        public void setOwner(String owner) {
+            this.owner = owner;
+        }
 
         public Map<String, Object> getBefore() {
             return before;

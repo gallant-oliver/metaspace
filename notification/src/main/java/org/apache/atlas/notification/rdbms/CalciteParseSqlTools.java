@@ -68,9 +68,7 @@ public class CalciteParseSqlTools {
         String sql = isDdl ?  payload.getDdl() : payload.getSource().getQuery() ;
         sql = sql.replace("`","").replace(";","");
         String dbname = isDdl ? payload.getDatabaseName() : payload.getSource().getDb() ;
-        //获取表的所有者 （oracle 是用户信息 其他默认public）
-        String tableOwner = notification.getUser();
-        tableOwner = StringUtils.equals("UNKNOWN",tableOwner) ? "" : tableOwner;
+
         SqlNode sqlParseNode = getSqlNodeAvailable(sql);
         if(sqlParseNode == null){
             throw new RuntimeException("sql 语法解析处理错误.");
@@ -91,7 +89,12 @@ public class CalciteParseSqlTools {
         attributeMap.put("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port"));
         attributeMap.put("name",connectorProperties.getProperty("name"));
         String connectorClass = connectorProperties.getProperty("connector.class");
-        String rdbmsType = connectorClass == null ? "" : connectorClass.substring(connectorClass.lastIndexOf('.')+1).replace("Connector","");
+        String rdbmsType = "";
+        if(connectorClass != null){
+            String[] arr = connectorClass.split("\\.");
+            rdbmsType = arr.length > 1 ? arr[arr.length-2] : arr[0];
+        }
+
         attributeMap.put("rdbms_type",rdbmsType);
         attributeMap.put("platform","zeta");
         attributeMap.put("cloudOrOnPrem","cloud");
@@ -129,8 +132,8 @@ public class CalciteParseSqlTools {
                 table_1_Entity.setEntity(atlasTableOneEntity);
                 atlasTableOneEntity.setTypeName("rdbms_table");
                 Map<String, Object> attributeTableMap = new HashMap<>();
-                attributeTableMap.put("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+tableOwner+"."+table);
-                attributeTableMap.put("name",tableOwner+"."+table);
+                attributeTableMap.put("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+table);
+                attributeTableMap.put("name",table);
                 attributeTableMap.put("comment","rdbms table API");
                 attributeTableMap.put("description","rdbms_table input");
                 attributeTableMap.put("owner","whz");
@@ -155,13 +158,13 @@ public class CalciteParseSqlTools {
                 if(!CollectionUtils.isEmpty(columnList)){
                     for(String col : columnList){
                         jsonColumn = new JsonObject();
-                        jsonColumn.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+tableOwner+"."+table+"."+col);
+                        jsonColumn.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+table+"."+col);
                         jsonColumn.addProperty("typeName","rdbms_column");
                         columns.add(jsonColumn);
                     }
 
                 }
-
+                attributeTableMap.put("columns",columns);
                 atlasTableOneEntity.setAttributes(attributeTableMap);
                 tableEntityList.add(table_1_Entity);
             }
@@ -175,7 +178,7 @@ public class CalciteParseSqlTools {
             entities.add(atlasBloodEntity);
             atlasBloodEntity.setTypeName("Process");
             Map<String, Object> attributeBloodMap = new HashMap<>();
-            attributeBloodMap.put("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+tableOwner+"."+sourceTable+".Process@ms:000");
+            attributeBloodMap.put("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+sourceTable+".Process@ms:000");
             attributeBloodMap.put("name",sql);
 
             JsonArray jsonInputs = new JsonArray();
@@ -183,7 +186,7 @@ public class CalciteParseSqlTools {
 
             JsonObject input = new JsonObject();
             jsonInputs.add(input);
-            input.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+tableOwner+"."+sourceTable);
+            input.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+sourceTable);
             input.addProperty("typeName","rdbms_table");
             attributeBloodMap.put("inputs",jsonInputs);
 
@@ -191,7 +194,7 @@ public class CalciteParseSqlTools {
             for (int i = 1,len = tableList.size();i<len;i++){
                 String tb = tableList.get(i);
                 obj = new JsonObject();
-                obj.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+tableOwner+"."+tb);
+                obj.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+tb);
                 obj.addProperty("typeName","rdbms_table");
                 jsonOutputs.add(obj);
             }
@@ -214,7 +217,10 @@ public class CalciteParseSqlTools {
         addOperateMap.put(RdbmsEntities.EntityType.RDBMS_TABLE, tableEntityList);
         //血缘关系
         Map<RdbmsEntities.OperateType, AtlasEntity.AtlasEntitiesWithExtInfo> bloodMap = rdbmsEntities.getBloodEntities();
-        bloodMap.put(operateType,atlasBloodEntities);
+        if(!CollectionUtils.isEmpty(atlasBloodEntities.getEntities())){
+            bloodMap.put(operateType,atlasBloodEntities);
+        }
+
         return rdbmsEntities;
     }
     /**
