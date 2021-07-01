@@ -46,9 +46,6 @@ public class RdbmsEntities {
             return this.order;
         }
 
-        public static EntityType getEntityType(String name){
-            return EntityType.valueOf(name.toUpperCase());
-        }
     }
 
     public enum OperateType {

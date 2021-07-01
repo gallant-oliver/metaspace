@@ -138,14 +138,5 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
             }
             func.apply(bloodEntity);
         }
-
-        public void rebuildEntity(AtlasEntity.AtlasEntityWithExtInfo entity){
-            String typeName = entity.getEntity().getTypeName();
-            RdbmsEntities.EntityType entityType = RdbmsEntities.EntityType.getEntityType(typeName);
-            switch (entityType){
-                case  RDBMS_INSTANCE :
-
-            }
-        }
     }
 }
