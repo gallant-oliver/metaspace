@@ -24,7 +24,7 @@ public class KafkaConnector {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaConnector.class);
     private static final Cache<String, Instance> CONNECTOR_CACHE = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(60000, TimeUnit.MINUTES).build();
 
-    private static final String KAFKA_CONNECTOR_URL = "kafka.connect.url";
+    private static final String KAFKA_CONNECTOR_URL = "oracle.kafka.connect.url";
     private static final String ORACLE_INIT_CONNECTOR_NAME = "oracle.init.connector.name";
     private static final Configuration CONF;
     private static final ObjectMapper MAPPER ;
