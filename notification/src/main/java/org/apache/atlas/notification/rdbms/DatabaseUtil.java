@@ -55,10 +55,10 @@ public class DatabaseUtil {
      * @param tableName 表名
      * @return
      */
-    public List<String> getColumnNames(String tableName,String jdbcurl, String username, String password) {
-        List<String> columnNames = new ArrayList<>();
+    public List<TableColumnInfo> getColumnNames(String tableName,String jdbcUrl, String username, String password) {
+        List<TableColumnInfo> columnNames = new ArrayList<>();
         //与数据库的连接
-        Connection conn = getConnection(jdbcurl,  username,  password);
+        Connection conn = getConnection(jdbcUrl,  username,  password);
         PreparedStatement pStemt = null;
         String tableSql = SQL + tableName;
         try {
@@ -67,8 +67,14 @@ public class DatabaseUtil {
             ResultSetMetaData rsmd = pStemt.getMetaData();
             //表列数
             int size = rsmd.getColumnCount();
+            TableColumnInfo tableColumnInfo = null;
             for (int i = 0; i < size; i++) {
-                columnNames.add(rsmd.getColumnName(i + 1));
+                tableColumnInfo = new TableColumnInfo();
+                tableColumnInfo.setColumnName(rsmd.getColumnName(i + 1));
+                tableColumnInfo.setDataType(rsmd.getColumnTypeName(i + 1));
+                tableColumnInfo.setNullable(rsmd.isNullable(i + 1)==1);
+                tableColumnInfo.setLength(rsmd.getColumnDisplaySize(i+1));
+                columnNames.add(tableColumnInfo);
             }
         } catch (SQLException e) {
             logger.error("getColumnNames failure", e);
@@ -85,6 +91,44 @@ public class DatabaseUtil {
         return columnNames;
     }
 
+    static class TableColumnInfo{
+        private String columnName;
+        private boolean nullable;
+        private String dataType;
+        private Integer length;
+
+        public Integer getLength() {
+            return length;
+        }
+
+        public void setLength(Integer length) {
+            this.length = length;
+        }
+
+        public String getColumnName() {
+            return columnName;
+        }
+
+        public void setColumnName(String columnName) {
+            this.columnName = columnName;
+        }
+
+        public boolean isNullable() {
+            return nullable;
+        }
+
+        public void setNullable(boolean nullable) {
+            this.nullable = nullable;
+        }
+
+        public String getDataType() {
+            return dataType;
+        }
+
+        public void setDataType(String dataType) {
+            this.dataType = dataType;
+        }
+    }
     /**
      * 关闭数据库连接
      * @param conn
@@ -160,54 +204,5 @@ public class DatabaseUtil {
         }
         return columnTypes;
     }
-    *//**
-     * 获取表中字段的所有注释
-     * @param
-     * @return
-     *//*
-    public static List<String> getColumnComments(String driver,String tableName,String jdbcurl, String username, String password) {
-        List<String> columnTypes = new ArrayList<>();
-        //与数据库的连接
-        Connection conn = getConnection( driver, jdbcurl,  username,  password);
-        PreparedStatement pStemt = null;
-        String tableSql = SQL + tableName;
-        List<String> columnComments = new ArrayList<>();//列名注释集合
-        ResultSet rs = null;
-        try {
-            pStemt = conn.prepareStatement(tableSql);
-            rs = pStemt.executeQuery("show full columns from " + tableName);
-            while (rs.next()) {
-                columnComments.add(rs.getString("Comment"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            if (rs != null) {
-                try {
-                    rs.close();
-                    closeConnection(conn);
-                } catch (SQLException e) {
-                    logger.error("getColumnComments close ResultSet and connection failure", e);
-                }
-            }
-        }
-        return columnComments;
-    }
-    public static void main(String[] args) {
-        System.out.println(DatabaseUtil.class.getName());
-        String jdbcurl = "jdbc:mysql://localhost:3306/test?useUnicode=true&amp;characterEncoding=utf8",username="root",  password="root";
-        String driver = "com.mysql.jdbc.Driver";
-        List<String> tableNames = getTableNames(driver, jdbcurl,  username,  password);
-        System.out.println("tableNames:" + tableNames);
-        for (String tableName : tableNames) {
-            System.out.println("================start==========================");
-            System.out.println("==============================================");
-           // System.out.println("ColumnNames:" + getColumnNames(driver,tableName,jdbcurl,  username,  password));
-            System.out.println("ColumnTypes:" + getColumnTypes(driver,tableName,jdbcurl,  username,  password));
-            System.out.println("ColumnComments:" + getColumnComments(driver,tableName,jdbcurl,  username,  password));
-            System.out.println("==============================================");
-            System.out.println("=================end=======================");
-        }
-    }*/
-
+    */
 }
