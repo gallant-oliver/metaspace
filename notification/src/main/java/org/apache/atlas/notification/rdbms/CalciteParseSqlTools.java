@@ -67,19 +67,30 @@ public class CalciteParseSqlTools {
         sql = sql.replace("`","").replace(";","");
         //String dbname = isDdl ? payload.getDatabaseName() : payload.getSource().getDb() ;
 
-        SqlNode sqlParseNode = getSqlNodeAvailable(sql);
+        /*SqlNode sqlParseNode = getSqlNodeAvailable(sql);
         if(sqlParseNode == null){
             throw new RuntimeException("sql 语法解析处理错误.");
         }
         Map<String,Object>  bloodTableMap= getBloodRelation(sqlParseNode);
-        List<String> tableList = (List<String>) bloodTableMap.get("tableBlood");
+        List<String> tableList = (List<String>) bloodTableMap.get("tableBlood");*/
+        String rdbmsType = getRdbmsType(connectorProperties);
+        Map<String, TreeSet<String>> resultTableMap = DruidAnalyzerUtil.getFromTo(sql,rdbmsType);
+        TreeSet<String> fromSet = resultTableMap.get("from");
+        TreeSet<String> toSet = resultTableMap.get("to");
+        if(resultTableMap == null
+                || (fromSet.isEmpty() && toSet.isEmpty()) ){
+            log.info("sql解析没有表对象，不需要处理..");
+            return null;
+        }
+        List<String> tableList = new ArrayList<>();
+        tableList.addAll(toSet);
+        tableList.addAll(fromSet);
         for(int i = 0,len=tableList.size(); i < len; i++) {
             String v = tableList.get(i);
-            tableList.set(i, v.indexOf('.') == -1 ? "nice "+"."+v : v);
+            tableList.set(i, v.indexOf('.') == -1 ? payload.getOwner()+"."+v : v);
         }
-        tableList.forEach(v->v=v.indexOf('.') == -1 ? payload.getOwner()+"."+v : v);
-        RdbmsEntities.OperateType operateType = (RdbmsEntities.OperateType) bloodTableMap.get("operType");
-        String sourceTable = isDdl ? (CollectionUtils.isEmpty(tableList) ? "":tableList.get(0)) : payload.getSource().getTable() ;
+
+        RdbmsEntities.OperateType operateType = RdbmsEntities.OperateType.ADD;
         log.info("execute sql :"+sql);
 
         ObjectMapper mapper = new ObjectMapper();
@@ -104,7 +115,7 @@ public class CalciteParseSqlTools {
         }
 
         //blood relation
-        AtlasEntity.AtlasEntitiesWithExtInfo atlasBloodEntities = makeAtlasBloodRelation(tableList, sql, connectorProperties);
+        AtlasEntity.AtlasEntitiesWithExtInfo atlasBloodEntities = makeAtlasBloodRelation(fromSet, toSet, sql, connectorProperties);
 
         RdbmsEntities rdbmsEntities = new RdbmsEntities();
         Map<RdbmsEntities.OperateType, Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> operateEntityMap = rdbmsEntities.getEntityMap();
@@ -128,58 +139,82 @@ public class CalciteParseSqlTools {
 
     /**
      * 组装表数据血缘关系（列级别暂定）
-     * @param tableList
+     * @param fromSet
+     * @param toSet
      * @param sql
      * @param connectorProperties
      * @return
      */
-    private static AtlasEntity.AtlasEntitiesWithExtInfo makeAtlasBloodRelation(List<String> tableList,String sql,Properties connectorProperties){
+    private static AtlasEntity.AtlasEntitiesWithExtInfo makeAtlasBloodRelation(TreeSet<String> fromSet,TreeSet<String> toSet,String sql,Properties connectorProperties){
         AtlasEntity.AtlasEntitiesWithExtInfo atlasBloodEntities = new AtlasEntity.AtlasEntitiesWithExtInfo();
-        if(!CollectionUtils.isEmpty(tableList) && tableList.size() > 1){
-            //存在血缘关系
-            log.info("存在表数据血缘关系...");
-            String dbHostname = connectorProperties.getProperty("db.hostname");
-            String dbPort = connectorProperties.getProperty("db.port");
-            String dbname = connectorProperties.getProperty("db.name");
+        if(CollectionUtils.isEmpty(fromSet) || CollectionUtils.isEmpty(toSet)){
+            log.info("该 sql {} 不存在血缘关系。",sql);
+            return atlasBloodEntities;
+        }
+        //存在血缘关系
+        log.info("存在表数据血缘关系...");
+        String dbHostname = connectorProperties.getProperty("db.hostname");
+        String dbPort = connectorProperties.getProperty("db.port");
+        String dbname = connectorProperties.getProperty("db.name");
 
-            AtlasEntity atlasBloodEntity = new AtlasEntity();
-            atlasBloodEntity.setTypeName("Process");
-            JsonArray jsonInputs = new JsonArray();
-            JsonArray jsonOutputs = new JsonArray();
-            Map<String, Object> attributeBloodMap = new HashMap<>();
-            StringBuilder qualifiedProcessName = new StringBuilder();
-            JsonObject input = null;
-            for (int i = 1,len = tableList.size(); i < len;i++){
-                qualifiedProcessName.append(dbHostname+":"+dbPort+":"+dbname+":"+tableList.get(i)+"@");
-                input = new JsonObject();
-                JsonObject uniqueAttributesJsonObj = new JsonObject();
-                uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+tableList.get(i));
-                input.addProperty("uniqueAttributes",uniqueAttributesJsonObj.toString());
-                input.addProperty("typeName","rdbms_table");
-                jsonInputs.add(input);
-            }
-            qualifiedProcessName.append(dbHostname+":"+dbPort+":"+dbname+":"+tableList.get(0));
+        AtlasEntity atlasBloodEntity = new AtlasEntity();
+        atlasBloodEntity.setTypeName("Process");
+        JsonArray jsonInputs = new JsonArray();
+        JsonArray jsonOutputs = new JsonArray();
+        Map<String, Object> attributeBloodMap = new HashMap<>();
+        StringBuilder qualifiedProcessNameFromTo = new StringBuilder();
+
+        fromSet.forEach(fromTable->{
+            qualifiedProcessNameFromTo.append(dbHostname+":"+dbPort+":"+dbname+":"+fromTable+" ");
+            JsonObject input = new JsonObject();
+            JsonObject uniqueAttributesJsonObj = new JsonObject();
+            uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+fromTable);
+            input.addProperty("uniqueAttributes",uniqueAttributesJsonObj.toString());
+            input.addProperty("typeName","rdbms_table");
+            jsonInputs.add(input);
+        });
+        qualifiedProcessNameFromTo.append("@");
+        toSet.forEach(toTable->{
+            qualifiedProcessNameFromTo.append(dbHostname+":"+dbPort+":"+dbname+":"+toTable+" ");
+
             JsonObject output = new JsonObject();
             JsonObject uniqueAttributesJsonObj = new JsonObject();
-            uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+tableList.get(0));
+            uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+toTable);
             output.addProperty("uniqueAttributes",uniqueAttributesJsonObj.toString());
             output.addProperty("typeName","rdbms_table");
+            jsonOutputs.add(output);
+        });
 
-            attributeBloodMap.put("inputs",jsonInputs);
-            attributeBloodMap.put("outputs",jsonOutputs);
-            attributeBloodMap.put("qualifiedName",qualifiedProcessName.toString());
-            attributeBloodMap.put("name",sql);
+        attributeBloodMap.put("inputs",jsonInputs);
+        attributeBloodMap.put("outputs",jsonOutputs);
+        attributeBloodMap.put("qualifiedName",qualifiedProcessNameFromTo.toString());
+        attributeBloodMap.put("name",sql);
 
-            atlasBloodEntity.setAttributes(attributeBloodMap);
-            List<AtlasEntity> entities = new ArrayList<>();
-            //添加表的血缘关系
-            entities.add(atlasBloodEntity);
-            //添加列的血缘关系 TODO
-            atlasBloodEntities.setEntities(entities);
-        }
+        atlasBloodEntity.setAttributes(attributeBloodMap);
+        List<AtlasEntity> entities = new ArrayList<>();
+        //添加表的血缘关系
+        entities.add(atlasBloodEntity);
+        //添加列的血缘关系 TODO
+        atlasBloodEntities.setEntities(entities);
 
         return atlasBloodEntities;
     }
+
+    /**
+     * 根据connector class获取数据源类型
+     * @param connectorProperties
+     * @return
+     */
+    private static String getRdbmsType(Properties connectorProperties){
+        String rdbmsType = "";
+        String connectorClass = connectorProperties.getProperty("connector.class");
+        if(connectorClass != null){
+            String[] arr = connectorClass.split("\\.");
+            rdbmsType = arr.length > 1 ? arr[arr.length-2] : arr[0];
+        }
+        return rdbmsType;
+    }
+
     /**
      * 组装atlas 实体
      * @param entityType instance、db、table etc
@@ -191,18 +226,14 @@ public class CalciteParseSqlTools {
                                                                              RdbmsMessage.Payload payload,String table){
         List<AtlasEntity.AtlasEntityWithExtInfo> resultList = new ArrayList<>();
 
-        String connectorClass = connectorProperties.getProperty("connector.class");
         String dbHostname = connectorProperties.getProperty("db.hostname");
         String dbPort = connectorProperties.getProperty("db.port");
         String dbPassword = connectorProperties.getProperty("db.user.password");
         String name = connectorProperties.getProperty("name");
         String username = connectorProperties.getProperty("db.user");
         String dbname = connectorProperties.getProperty("db.name");
-        String rdbmsType = "";
-        if(connectorClass != null){
-            String[] arr = connectorClass.split("\\.");
-            rdbmsType = arr.length > 1 ? arr[arr.length-2] : arr[0];
-        }
+        String rdbmsType = getRdbmsType(connectorProperties);
+
         AtlasEntity atlasEntity = null;
         // rdbms_instance
         if(entityType == RdbmsEntities.EntityType.RDBMS_INSTANCE){
