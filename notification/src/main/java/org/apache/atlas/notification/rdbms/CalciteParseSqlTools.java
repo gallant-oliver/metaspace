@@ -66,13 +66,13 @@ public class CalciteParseSqlTools {
         String sql = isDdl ?  payload.getDdl() : payload.getSource().getQuery() ;
         sql = sql.replace("`","").replace(";","");
         //String dbname = isDdl ? payload.getDatabaseName() : payload.getSource().getDb() ;
-
         /*SqlNode sqlParseNode = getSqlNodeAvailable(sql);
         if(sqlParseNode == null){
             throw new RuntimeException("sql 语法解析处理错误.");
         }
         Map<String,Object>  bloodTableMap= getBloodRelation(sqlParseNode);
         List<String> tableList = (List<String>) bloodTableMap.get("tableBlood");*/
+
         String rdbmsType = getRdbmsType(connectorProperties);
         Map<String, TreeSet<String>> resultTableMap = DruidAnalyzerUtil.getFromTo(sql,rdbmsType);
         TreeSet<String> fromSet = resultTableMap.get("from");
@@ -82,16 +82,13 @@ public class CalciteParseSqlTools {
             log.info("sql解析没有表对象，不需要处理..");
             return null;
         }
-        List<String> tableList = new ArrayList<>();
-        tableList.addAll(toSet);
-        tableList.addAll(fromSet);
-        for(int i = 0,len=tableList.size(); i < len; i++) {
-            String v = tableList.get(i);
-            tableList.set(i, v.indexOf('.') == -1 ? payload.getOwner()+"."+v : v);
-        }
 
-        RdbmsEntities.OperateType operateType = RdbmsEntities.OperateType.ADD;
-        log.info("execute sql :"+sql);
+        RdbmsEntities.OperateType operateType =
+                StringUtils.startsWithAny(sql.trim().toUpperCase(), new String[] { "CREATE", "INSERT"}) ? RdbmsEntities.OperateType.ADD :
+                        (StringUtils.startsWithAny(sql.trim().toUpperCase(),new String[] { "DROP", "DELETE"}) ? RdbmsEntities.OperateType.DROP :
+                        RdbmsEntities.OperateType.MODIFY);
+
+        log.info("execute sql :{},\n operateType:{}",sql,operateType);
 
         ObjectMapper mapper = new ObjectMapper();
         //1. rdbms_instance 组装
@@ -102,32 +99,41 @@ public class CalciteParseSqlTools {
         List<AtlasEntity.AtlasEntityWithExtInfo> dbEntityList
                 = makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_DB,connectorProperties,payload,null);
 
-        //3.rdbms_table
-        List<AtlasEntity.AtlasEntityWithExtInfo> tableEntityList = new ArrayList<>();
-        List<AtlasEntity.AtlasEntityWithExtInfo> columnEntityList = new ArrayList<>();
-        if(!CollectionUtils.isEmpty(tableList)){
-            for (String table : tableList){
-                //table oracle 需要增加用户
-                tableEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_TABLE,connectorProperties,payload,table));
-                //增加该表的列 entity
-                columnEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_COLUMN,connectorProperties,payload,table));
-            }
-        }
+        //3.rdbms_table 操作表的对象(表名处理为 user.table 格式)
+        List<String> fromTableList = new ArrayList<>(fromSet);
+        List<String> toTableList = new ArrayList<>(toSet);
+        addOwnerPrefixToTable(payload.getOwner(),fromTableList,toTableList);
+
+        List<AtlasEntity.AtlasEntityWithExtInfo> fromTableEntityList = new ArrayList<>();
+        List<AtlasEntity.AtlasEntityWithExtInfo> fromColumnEntityList = new ArrayList<>();
+        List<AtlasEntity.AtlasEntityWithExtInfo> toTableEntityList = new ArrayList<>();
+        List<AtlasEntity.AtlasEntityWithExtInfo> toColumnEntityList = new ArrayList<>();
+        dealTableColumnEntity(fromTableList, connectorProperties, payload, fromTableEntityList, fromColumnEntityList);
+        dealTableColumnEntity(toTableList, connectorProperties, payload, toTableEntityList, toColumnEntityList);
 
         //blood relation
         AtlasEntity.AtlasEntitiesWithExtInfo atlasBloodEntities = makeAtlasBloodRelation(fromSet, toSet, sql, connectorProperties);
 
         RdbmsEntities rdbmsEntities = new RdbmsEntities();
         Map<RdbmsEntities.OperateType, Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> operateEntityMap = rdbmsEntities.getEntityMap();
+        Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> modifyMap = operateEntityMap.get(RdbmsEntities.OperateType.MODIFY);
         Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> operateMap = operateEntityMap.get(operateType);
         //添加数据库实例
-        operateMap.put(RdbmsEntities.EntityType.RDBMS_INSTANCE, instanceEntityList);
+        modifyMap.put(RdbmsEntities.EntityType.RDBMS_INSTANCE, instanceEntityList);
         //添加数据库
-        operateMap.put(RdbmsEntities.EntityType.RDBMS_DB, dbEntityList);
-        //添加表 table
-        operateMap.put(RdbmsEntities.EntityType.RDBMS_TABLE, tableEntityList);
-        //添加列 column
-        operateMap.put(RdbmsEntities.EntityType.RDBMS_COLUMN, columnEntityList);
+        modifyMap.put(RdbmsEntities.EntityType.RDBMS_DB, dbEntityList);
+        //添加来源的 表 列 column table
+        modifyMap.put(RdbmsEntities.EntityType.RDBMS_TABLE, fromTableEntityList);
+        modifyMap.put(RdbmsEntities.EntityType.RDBMS_COLUMN, fromColumnEntityList);
+
+        //添加输出（最终）表 列 column table
+        if(operateType == RdbmsEntities.OperateType.MODIFY){
+            modifyMap.put(RdbmsEntities.EntityType.RDBMS_TABLE, toTableEntityList);
+            modifyMap.put(RdbmsEntities.EntityType.RDBMS_COLUMN, toColumnEntityList);
+        }else{
+            operateMap.put(RdbmsEntities.EntityType.RDBMS_TABLE, toTableEntityList);
+            operateMap.put(RdbmsEntities.EntityType.RDBMS_COLUMN, toColumnEntityList);
+        }
         //血缘关系
         Map<RdbmsEntities.OperateType, AtlasEntity.AtlasEntitiesWithExtInfo> bloodMap = rdbmsEntities.getBloodEntities();
         if(!CollectionUtils.isEmpty(atlasBloodEntities.getEntities())){
@@ -137,6 +143,24 @@ public class CalciteParseSqlTools {
         return rdbmsEntities;
     }
 
+    /**
+     * 处理表和列的entity 数据
+     * @param tableList
+     * @param connectorProperties
+     * @param payload
+     * @param tableEntityList 返回的table对象
+     * @param columnEntityList 返回的column对象
+     */
+    private static void dealTableColumnEntity(List<String> tableList,Properties connectorProperties,RdbmsMessage.Payload payload, List<AtlasEntity.AtlasEntityWithExtInfo> tableEntityList, List<AtlasEntity.AtlasEntityWithExtInfo> columnEntityList){
+        if(!CollectionUtils.isEmpty(tableList)){
+            for (String table : tableList){
+                //table oracle 需要增加用户
+                tableEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_TABLE,connectorProperties,payload,table));
+                //增加该表的列 entity
+                columnEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_COLUMN,connectorProperties,payload,table));
+            }
+        }
+    }
     /**
      * 组装表数据血缘关系（列级别暂定）
      * @param fromSet
@@ -159,32 +183,13 @@ public class CalciteParseSqlTools {
 
         AtlasEntity atlasBloodEntity = new AtlasEntity();
         atlasBloodEntity.setTypeName("Process");
-        JsonArray jsonInputs = new JsonArray();
-        JsonArray jsonOutputs = new JsonArray();
-        Map<String, Object> attributeBloodMap = new HashMap<>();
+
         StringBuilder qualifiedProcessNameFromTo = new StringBuilder();
-
-        fromSet.forEach(fromTable->{
-            qualifiedProcessNameFromTo.append(dbHostname+":"+dbPort+":"+dbname+":"+fromTable+" ");
-            JsonObject input = new JsonObject();
-            JsonObject uniqueAttributesJsonObj = new JsonObject();
-            uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+fromTable);
-            input.addProperty("uniqueAttributes",uniqueAttributesJsonObj.toString());
-            input.addProperty("typeName","rdbms_table");
-            jsonInputs.add(input);
-        });
+        JsonArray jsonInputs = dealInputOrOutput(fromSet,dbHostname, dbPort, dbname, qualifiedProcessNameFromTo);
         qualifiedProcessNameFromTo.append("@");
-        toSet.forEach(toTable->{
-            qualifiedProcessNameFromTo.append(dbHostname+":"+dbPort+":"+dbname+":"+toTable+" ");
+        JsonArray jsonOutputs = dealInputOrOutput(toSet,dbHostname, dbPort, dbname, qualifiedProcessNameFromTo);
 
-            JsonObject output = new JsonObject();
-            JsonObject uniqueAttributesJsonObj = new JsonObject();
-            uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+toTable);
-            output.addProperty("uniqueAttributes",uniqueAttributesJsonObj.toString());
-            output.addProperty("typeName","rdbms_table");
-            jsonOutputs.add(output);
-        });
-
+        Map<String, Object> attributeBloodMap = new HashMap<>();
         attributeBloodMap.put("inputs",jsonInputs);
         attributeBloodMap.put("outputs",jsonOutputs);
         attributeBloodMap.put("qualifiedName",qualifiedProcessNameFromTo.toString());
@@ -199,7 +204,33 @@ public class CalciteParseSqlTools {
 
         return atlasBloodEntities;
     }
+    private static void addOwnerPrefixToTable(String owner,List<String>... tableList){
+        for(List<String> list : tableList){
+            for(int i = 0,len = list.size(); i < len; i++) {
+                String v = list.get(i);
+                list.set(i, v.indexOf('.') == -1 ? owner+"."+v : v);
+            }
+        }
 
+    }
+    /*
+     * 处理数据血缘的from（inputs）、to （outputs）的字段结构数据
+     */
+    private static JsonArray dealInputOrOutput(TreeSet<String> set,
+                                               String dbHostname,String dbPort,String dbname,StringBuilder qualifiedProcessNameFromTo){
+        JsonArray result = new JsonArray();
+        set.forEach(toTable->{
+            qualifiedProcessNameFromTo.append(dbHostname+":"+dbPort+":"+dbname+":"+toTable+" ");
+
+            JsonObject output = new JsonObject();
+            JsonObject uniqueAttributesJsonObj = new JsonObject();
+            uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+toTable);
+            output.addProperty("uniqueAttributes",uniqueAttributesJsonObj.toString());
+            output.addProperty("typeName","rdbms_table");
+            result.add(output);
+        });
+        return result;
+    }
     /**
      * 根据connector class获取数据源类型
      * @param connectorProperties

@@ -6,6 +6,9 @@ import org.slf4j.LoggerFactory;
 import java.sql.*;
 import java.util.*;
 
+/**
+ * 数据库元数据工具类   （根据连接获取所有表、表的列信息）
+ */
 public class DatabaseUtil {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseUtil.class);
     private static final String SQL = "SELECT * FROM ";// 数据库操作
