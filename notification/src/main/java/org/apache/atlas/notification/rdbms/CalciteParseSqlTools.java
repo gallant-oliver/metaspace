@@ -148,7 +148,7 @@ public class CalciteParseSqlTools {
     private static AtlasEntity.AtlasEntitiesWithExtInfo makeAtlasBloodRelation(TreeSet<String> fromSet,TreeSet<String> toSet,String sql,Properties connectorProperties){
         AtlasEntity.AtlasEntitiesWithExtInfo atlasBloodEntities = new AtlasEntity.AtlasEntitiesWithExtInfo();
         if(CollectionUtils.isEmpty(fromSet) || CollectionUtils.isEmpty(toSet)){
-            log.info("该 sql {} 不存在血缘关系。",sql);
+            log.info("该 sql {} ...不存在血缘关系。",sql.substring(0,30));
             return atlasBloodEntities;
         }
         //存在血缘关系

@@ -37,12 +37,12 @@ public class DruidAnalyzerUtil {
         try{
             stmts = SQLUtils.parseStatements(sql, db);
         }catch (ParserException ex){
-            log.error("sql parse error:{}",ex);
+            log.error("sql {} => parse error:{}",sql,ex);
         }
         if (stmts == null) {
             return null;
         }
-        
+
         TreeSet<String> fromSet = new TreeSet<>();
         TreeSet<String> toSet = new TreeSet<>();
         Map<String, TreeSet<String>> fromTo = new HashMap<>(4);
