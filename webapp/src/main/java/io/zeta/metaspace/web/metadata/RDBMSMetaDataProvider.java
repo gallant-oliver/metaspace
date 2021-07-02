@@ -33,7 +33,6 @@ import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,7 +54,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.web.metadata.BaseFields.*;
-import static io.zeta.metaspace.web.util.BaseHiveEvent.ATTRIBUTE_TABLE_TYPE;
 
 /**
  * @author zhuxuetong
@@ -113,6 +111,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
      */
     protected void init(TableSchema tableSchema) {
         dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(tableSchema.getInstance());
+        tableSchema.getDefinition().setDataSourceType(dataSourceInfo.getSourceType());
         adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
         metaDataInfo = adapterExecutor.getMeteDataInfo(tableSchema);
     }

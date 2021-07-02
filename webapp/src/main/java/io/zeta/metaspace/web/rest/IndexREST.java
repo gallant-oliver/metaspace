@@ -18,6 +18,7 @@ import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
 import io.zeta.metaspace.web.service.indexmanager.IndexService;
 import io.zeta.metaspace.web.util.CategoryUtil;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
@@ -54,10 +55,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
@@ -76,7 +74,8 @@ public class IndexREST {
     private DataManageService dataManageService;
     @Autowired
     private IndexService indexService;
-
+    @Autowired
+    private IndexCounter indexCounter;
     @Context
     private HttpServletResponse response;
     @Context
@@ -979,6 +978,48 @@ public class IndexREST {
                 file.delete();
             }
         }
+    }
+
+    /**
+     * 查询指标关键字列表
+     *
+     * @return
+     */
+    @GET
+    @Path("/keys")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result notes() {
+        Set<String> items = indexCounter.keys();
+        return ReturnUtil.success(items);
+    }
+
+    /**
+     * 查询所有指标
+     *
+     * @return
+     */
+    @GET
+    @Path("/all/index")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getAllIndexes() {
+        Map<String, Long> indexes = indexCounter.getAllIndexes();
+        return ReturnUtil.success(indexes);
+    }
+
+    /**
+     * 根据指标关键字查询指标
+     *
+     * @return
+     */
+    @POST
+    @Path("/keys/index")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getIndexByKeys(Set<String> keys) {
+        Map<String, Long> indexes = indexCounter.getIndexByKeys(keys);
+        return ReturnUtil.success(indexes);
     }
 
 }

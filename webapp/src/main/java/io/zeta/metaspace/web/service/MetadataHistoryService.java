@@ -16,9 +16,10 @@
  */
 package io.zeta.metaspace.web.service;
 
-import io.zeta.metaspace.web.dao.MetadataHistoryDAO;
 import io.zeta.metaspace.model.metadata.ColumnMetadata;
 import io.zeta.metaspace.model.metadata.TableMetadata;
+import io.zeta.metaspace.web.dao.MetadataHistoryDAO;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
@@ -32,12 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 /*
  * @description
@@ -46,6 +42,7 @@ import java.util.Set;
  */
 
 @Service
+@Slf4j
 public class MetadataHistoryService {
 
     private static final Logger LOG = LoggerFactory.getLogger(MetadataHistoryService.class);
@@ -53,12 +50,17 @@ public class MetadataHistoryService {
     @Autowired
     private MetadataHistoryDAO metadataDAO;
     @Autowired
+    private DataManageService dataManageService;
+    @Autowired
     private AtlasEntityStoreV2 entityStore;
     private String partitionAttribute = "partitionKeys";
 
     public Set<String> getTableGuid(List<AtlasEntity> entities) {
         Set<String> tableSet = new HashSet<>();
         for (AtlasEntity entity : entities) {
+            if (dataManageService.getOutputFromProcesses(entity)) {
+                continue;
+            }
             String typeName = entity.getTypeName();
             if("hive_table".equals(typeName)) {
                 tableSet.add(entity.getGuid());
@@ -69,7 +71,7 @@ public class MetadataHistoryService {
                 }
             }
         }
-
+        log.info("tableSet is {}", tableSet);
         return tableSet;
     }
 
@@ -84,7 +86,7 @@ public class MetadataHistoryService {
                     AtlasEntity entity = info.getEntity();
                     List<String> partitionKeyList = extractPartitionKeyInfo(entity);
                     TableMetadata tableMetadata = generateTableMetadata(entity);
-
+                    log.info("storeHistoryMetadata AtlasEntity is {},name is {}", entity, tableMetadata.getName());
                     int sameCount = metadataDAO.getSameUpdateEntityCount(tableMetadata);
                     if(sameCount > 0) {
                         return;

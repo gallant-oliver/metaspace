@@ -37,7 +37,9 @@ import io.zeta.metaspace.web.dao.SyncTaskDefinitionDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.metadata.BaseFields;
+import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.IndexCounterUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
@@ -89,13 +91,29 @@ public class DataSourceService {
     private AtlasTypeRegistry atlasTypeRegistry;
     @Autowired
     private UserGroupDAO userGroupDAO;
-
+    @Autowired
+    private IndexCounter indexCounter;
     @Autowired
     private SyncTaskDefinitionDAO syncTaskDefinitionDAO;
 
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
 
+    /**
+     * 记录检索次数和检索时长
+     * @param start
+     * @param end
+     * @param type
+     */
+    public void metadataSearchStatistics(Long start, Long end, String type) {
+        if ("metadata".equals(type)) {
+            indexCounter.plusOne(IndexCounterUtils.METASPACE_METADATA_SEARCH_COUNT);
+            IndexCounterUtils.INDEX_MAP.get(IndexCounterUtils.METASPACE_METADATA_SEARCH_DURATION).getAndAdd(end - start);
+        } else if ("data_kinship".equals(type)) {
+            indexCounter.plusOne(IndexCounterUtils.METASPACE_DATA_KINSHIP_SEARCH_COUNT);
+            IndexCounterUtils.INDEX_MAP.get(IndexCounterUtils.METASPACE_DATA_KINSHIP_SEARCH_DURATION).getAndAdd(end - start);
+        }
+    }
 
     /**
      * 添加数据源
