@@ -14,12 +14,10 @@ import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.ddl.SqlDdlParserImpl;
 import org.apache.calcite.sql.parser.impl.SqlParserImpl;
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StopWatch;
 
 import java.io.IOException;
 import java.util.*;
@@ -39,7 +37,7 @@ public class CalciteParseSqlTools {
      * @param sql
      * @return
      */
-    public static SqlNode getSqlNodeAvailable(String sql) {
+    private static SqlNode getSqlNodeAvailable(String sql) {
         SqlParser parser = null;
         //根据sql语句判断是否属于ddl语句
         boolean isDdl = StringUtils.startsWithAny(sql.trim().replaceAll("\\s+", " ").toUpperCase(),
@@ -67,154 +65,75 @@ public class CalciteParseSqlTools {
         Boolean isDdl = StringUtils.isBlank(payload.getOp());
         String sql = isDdl ?  payload.getDdl() : payload.getSource().getQuery() ;
         sql = sql.replace("`","").replace(";","");
-        String dbname = isDdl ? payload.getDatabaseName() : payload.getSource().getDb() ;
-
-        SqlNode sqlParseNode = getSqlNodeAvailable(sql);
+        //String dbname = isDdl ? payload.getDatabaseName() : payload.getSource().getDb() ;
+        /*SqlNode sqlParseNode = getSqlNodeAvailable(sql);
         if(sqlParseNode == null){
             throw new RuntimeException("sql 语法解析处理错误.");
         }
         Map<String,Object>  bloodTableMap= getBloodRelation(sqlParseNode);
-        List<String> tableList = (List<String>) bloodTableMap.get("tableBlood");
-        RdbmsEntities.OperateType operateType = (RdbmsEntities.OperateType) bloodTableMap.get("operType");
-        String sourceTable = isDdl ? (CollectionUtils.isEmpty(tableList) ? "":tableList.get(0)) : payload.getSource().getTable() ;
-        log.info("execute sql :"+sql);
+        List<String> tableList = (List<String>) bloodTableMap.get("tableBlood");*/
+
+        String rdbmsType = getRdbmsType(connectorProperties);
+        Map<String, TreeSet<String>> resultTableMap = DruidAnalyzerUtil.getFromTo(sql,rdbmsType);
+        TreeSet<String> fromSet = resultTableMap.get("from");
+        TreeSet<String> toSet = resultTableMap.get("to");
+        if(resultTableMap == null
+                || (fromSet.isEmpty() && toSet.isEmpty()) ){
+            log.info("sql解析没有表对象，不需要处理..");
+            return null;
+        }
+
+        RdbmsEntities.OperateType operateType =
+                StringUtils.startsWithAny(sql.trim().toUpperCase(), new String[] { "CREATE", "INSERT"}) ? RdbmsEntities.OperateType.ADD :
+                        (StringUtils.startsWithAny(sql.trim().toUpperCase(),new String[] { "DROP", "DELETE"}) ? RdbmsEntities.OperateType.DROP :
+                        RdbmsEntities.OperateType.MODIFY);
+
+        log.info("execute sql :{},\n operateType:{}",sql,operateType);
 
         ObjectMapper mapper = new ObjectMapper();
         //1. rdbms_instance 组装
-        AtlasEntity.AtlasEntityWithExtInfo instanceJsonEntity = new  AtlasEntity.AtlasEntityWithExtInfo();
-        AtlasEntity atlasEntity = new AtlasEntity();
-        instanceJsonEntity.setEntity(atlasEntity);
-        atlasEntity.setTypeName("rdbms_instance");
-        Map<String, Object> attributeMap = new HashMap<>();
-        attributeMap.put("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port"));
-        attributeMap.put("name",connectorProperties.getProperty("name"));
-        String connectorClass = connectorProperties.getProperty("connector.class");
-        String rdbmsType = "";
-        if(connectorClass != null){
-            String[] arr = connectorClass.split("\\.");
-            rdbmsType = arr.length > 1 ? arr[arr.length-2] : arr[0];
-        }
+        List<AtlasEntity.AtlasEntityWithExtInfo> instanceEntityList
+                = makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_INSTANCE,connectorProperties,payload,null);
 
-        attributeMap.put("rdbms_type",rdbmsType);
-        attributeMap.put("platform","zeta");
-        attributeMap.put("cloudOrOnPrem","cloud");
-        attributeMap.put("hostname",connectorProperties.getProperty("database.hostname"));
-        attributeMap.put("port",connectorProperties.getProperty("database.port"));
-        attributeMap.put("protocol","http");
-        attributeMap.put("contact_info","jdbc");
-        attributeMap.put("comment","rdbms_instance API");
-        attributeMap.put("description","rdbms_instance描述");
-        attributeMap.put("owner","whz");
-        atlasEntity.setAttributes(attributeMap);
         //2. rdbms_db
-        AtlasEntity.AtlasEntityWithExtInfo dbEntity = new  AtlasEntity.AtlasEntityWithExtInfo();
-        AtlasEntity atlasDbEntity = new AtlasEntity();
-        dbEntity.setEntity(atlasEntity);
-        atlasDbEntity.setTypeName("rdbms_db");
-        Map<String, Object> attributeDbMap = new HashMap<>();
-        attributeDbMap.put("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname);
-        attributeDbMap.put("name",dbname);
-        attributeDbMap.put("owner","whz");
-        attributeDbMap.put("description","rdbms_db data API ");
-        JsonObject jsonObj = new JsonObject();
-        jsonObj.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port"));
-        jsonObj.addProperty("typeName","rdbms_instance");
-        attributeDbMap.put("instance",jsonObj);
-        atlasDbEntity.setAttributes(attributeMap);
-        //3.rdbms_table
-        List<AtlasEntity.AtlasEntityWithExtInfo> tableEntityList = new ArrayList<>();
-        if(!CollectionUtils.isEmpty(tableList)){
-            AtlasEntity.AtlasEntityWithExtInfo table_1_Entity = null;
-            JsonArray columns = new JsonArray();
-            for (String table : tableList){
-                table_1_Entity = new AtlasEntity.AtlasEntityWithExtInfo();
-                AtlasEntity atlasTableOneEntity = new AtlasEntity();
-                table_1_Entity.setEntity(atlasTableOneEntity);
-                atlasTableOneEntity.setTypeName("rdbms_table");
-                Map<String, Object> attributeTableMap = new HashMap<>();
-                attributeTableMap.put("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+table);
-                attributeTableMap.put("name",table);
-                attributeTableMap.put("comment","rdbms table API");
-                attributeTableMap.put("description","rdbms_table input");
-                attributeTableMap.put("owner","whz");
-                attributeTableMap.put("type","table");
-                attributeTableMap.put("createTime", DateUtils.currentTimestamp().toString());
-                JsonObject jsondb = new JsonObject();
-                jsonObj.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname);
-                jsonObj.addProperty("typeName","rdbms_db");
-                attributeTableMap.put("db",jsondb);
-                JsonObject jsonColumn = null;
-                //获取表字段信息
-                String jdbcDriver = null,jdbcURL = null;
-                if("mysql".equalsIgnoreCase(rdbmsType)){
-                    jdbcDriver = "com.mysql.jdbc.Driver";
-                    jdbcURL = "jdbc:mysql://"+connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"/"+connectorProperties.getProperty("name");
-                }
-                if("oracle".equalsIgnoreCase(rdbmsType)){
-                    jdbcDriver = "oracle.jdbc.driver.OracleDriver";
-                    jdbcURL = "jdbc:oracle:thin:@"+connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+":"+connectorProperties.getProperty("name");
-                }
-                List<String> columnList = DatabaseUtil.getInstance(jdbcDriver).getColumnNames(table,jdbcURL,connectorProperties.getProperty("database.user"),connectorProperties.getProperty("database.password")); //queryTableColDetails(rdbmsType,table,connectorProperties);
-                if(!CollectionUtils.isEmpty(columnList)){
-                    for(String col : columnList){
-                        jsonColumn = new JsonObject();
-                        jsonColumn.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+table+"."+col);
-                        jsonColumn.addProperty("typeName","rdbms_column");
-                        columns.add(jsonColumn);
-                    }
+        List<AtlasEntity.AtlasEntityWithExtInfo> dbEntityList
+                = makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_DB,connectorProperties,payload,null);
 
-                }
-                attributeTableMap.put("columns",columns);
-                atlasTableOneEntity.setAttributes(attributeTableMap);
-                tableEntityList.add(table_1_Entity);
-            }
+        //3.rdbms_table 操作表的对象(表名处理为 user.table 格式)
+        List<String> fromTableList = new ArrayList<>(fromSet);
+        List<String> toTableList = new ArrayList<>(toSet);
+        addOwnerPrefixToTable(payload.getOwner(),fromTableList,toTableList);
 
-        }
+        List<AtlasEntity.AtlasEntityWithExtInfo> fromTableEntityList = new ArrayList<>();
+        List<AtlasEntity.AtlasEntityWithExtInfo> fromColumnEntityList = new ArrayList<>();
+        List<AtlasEntity.AtlasEntityWithExtInfo> toTableEntityList = new ArrayList<>();
+        List<AtlasEntity.AtlasEntityWithExtInfo> toColumnEntityList = new ArrayList<>();
+        dealTableColumnEntity(fromTableList, connectorProperties, payload, fromTableEntityList, fromColumnEntityList);
+        dealTableColumnEntity(toTableList, connectorProperties, payload, toTableEntityList, toColumnEntityList);
+
         //blood relation
-        AtlasEntity.AtlasEntitiesWithExtInfo atlasBloodEntities = new AtlasEntity.AtlasEntitiesWithExtInfo();
-        if(!CollectionUtils.isEmpty(tableList) && tableList.size() > 1){
-            List<AtlasEntity> entities = new ArrayList<>();
-            AtlasEntity atlasBloodEntity = new AtlasEntity();
-            entities.add(atlasBloodEntity);
-            atlasBloodEntity.setTypeName("Process");
-            Map<String, Object> attributeBloodMap = new HashMap<>();
-            attributeBloodMap.put("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+sourceTable+".Process@ms:000");
-            attributeBloodMap.put("name",sql);
-
-            JsonArray jsonInputs = new JsonArray();
-            JsonArray jsonOutputs = new JsonArray();
-
-            JsonObject input = new JsonObject();
-            jsonInputs.add(input);
-            input.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+sourceTable);
-            input.addProperty("typeName","rdbms_table");
-            attributeBloodMap.put("inputs",jsonInputs);
-
-            JsonObject obj = null;
-            for (int i = 1,len = tableList.size();i<len;i++){
-                String tb = tableList.get(i);
-                obj = new JsonObject();
-                obj.addProperty("qualifiedName",connectorProperties.getProperty("database.hostname")+":"+connectorProperties.getProperty("database.port")+"."+dbname+"."+tb);
-                obj.addProperty("typeName","rdbms_table");
-                jsonOutputs.add(obj);
-            }
-            atlasBloodEntities.setEntities(entities);
-            attributeBloodMap.put("outputs",jsonOutputs);
-            attributeBloodMap.put("owner","whz");
-            attributeBloodMap.put("type","table");
-            atlasBloodEntity.setAttributes(attributeBloodMap);
-        }
-
+        AtlasEntity.AtlasEntitiesWithExtInfo atlasBloodEntities = makeAtlasBloodRelation(fromSet, toSet, sql, connectorProperties);
 
         RdbmsEntities rdbmsEntities = new RdbmsEntities();
         Map<RdbmsEntities.OperateType, Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> operateEntityMap = rdbmsEntities.getEntityMap();
-        Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> addOperateMap = operateEntityMap.get(operateType);
+        Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> modifyMap = operateEntityMap.get(RdbmsEntities.OperateType.MODIFY);
+        Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> operateMap = operateEntityMap.get(operateType);
         //添加数据库实例
-        addOperateMap.put(RdbmsEntities.EntityType.RDBMS_INSTANCE, Arrays.asList(instanceJsonEntity));
+        modifyMap.put(RdbmsEntities.EntityType.RDBMS_INSTANCE, instanceEntityList);
         //添加数据库
-        addOperateMap.put(RdbmsEntities.EntityType.RDBMS_DB, Arrays.asList(dbEntity));
-        //添加表 table
-        addOperateMap.put(RdbmsEntities.EntityType.RDBMS_TABLE, tableEntityList);
+        modifyMap.put(RdbmsEntities.EntityType.RDBMS_DB, dbEntityList);
+        //添加来源的 表 列 column table
+        modifyMap.put(RdbmsEntities.EntityType.RDBMS_TABLE, fromTableEntityList);
+        modifyMap.put(RdbmsEntities.EntityType.RDBMS_COLUMN, fromColumnEntityList);
+
+        //添加输出（最终）表 列 column table
+        if(operateType == RdbmsEntities.OperateType.MODIFY){
+            modifyMap.put(RdbmsEntities.EntityType.RDBMS_TABLE, toTableEntityList);
+            modifyMap.put(RdbmsEntities.EntityType.RDBMS_COLUMN, toColumnEntityList);
+        }else{
+            operateMap.put(RdbmsEntities.EntityType.RDBMS_TABLE, toTableEntityList);
+            operateMap.put(RdbmsEntities.EntityType.RDBMS_COLUMN, toColumnEntityList);
+        }
         //血缘关系
         Map<RdbmsEntities.OperateType, AtlasEntity.AtlasEntitiesWithExtInfo> bloodMap = rdbmsEntities.getBloodEntities();
         if(!CollectionUtils.isEmpty(atlasBloodEntities.getEntities())){
@@ -223,6 +142,239 @@ public class CalciteParseSqlTools {
 
         return rdbmsEntities;
     }
+
+    /**
+     * 处理表和列的entity 数据
+     * @param tableList
+     * @param connectorProperties
+     * @param payload
+     * @param tableEntityList 返回的table对象
+     * @param columnEntityList 返回的column对象
+     */
+    private static void dealTableColumnEntity(List<String> tableList,Properties connectorProperties,RdbmsMessage.Payload payload, List<AtlasEntity.AtlasEntityWithExtInfo> tableEntityList, List<AtlasEntity.AtlasEntityWithExtInfo> columnEntityList){
+        if(!CollectionUtils.isEmpty(tableList)){
+            for (String table : tableList){
+                //table oracle 需要增加用户
+                tableEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_TABLE,connectorProperties,payload,table));
+                //增加该表的列 entity
+                columnEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_COLUMN,connectorProperties,payload,table));
+            }
+        }
+    }
+    /**
+     * 组装表数据血缘关系（列级别暂定）
+     * @param fromSet
+     * @param toSet
+     * @param sql
+     * @param connectorProperties
+     * @return
+     */
+    private static AtlasEntity.AtlasEntitiesWithExtInfo makeAtlasBloodRelation(TreeSet<String> fromSet,TreeSet<String> toSet,String sql,Properties connectorProperties){
+        AtlasEntity.AtlasEntitiesWithExtInfo atlasBloodEntities = new AtlasEntity.AtlasEntitiesWithExtInfo();
+        if(CollectionUtils.isEmpty(fromSet) || CollectionUtils.isEmpty(toSet)){
+            log.info("该 sql {} ...不存在血缘关系。",sql.substring(0,30));
+            return atlasBloodEntities;
+        }
+        //存在血缘关系
+        log.info("存在表数据血缘关系...");
+        String dbHostname = connectorProperties.getProperty("db.hostname");
+        String dbPort = connectorProperties.getProperty("db.port");
+        String dbname = connectorProperties.getProperty("db.name");
+
+        AtlasEntity atlasBloodEntity = new AtlasEntity();
+        atlasBloodEntity.setTypeName("Process");
+
+        StringBuilder qualifiedProcessNameFromTo = new StringBuilder();
+        JsonArray jsonInputs = dealInputOrOutput(fromSet,dbHostname, dbPort, dbname, qualifiedProcessNameFromTo);
+        qualifiedProcessNameFromTo.append("@");
+        JsonArray jsonOutputs = dealInputOrOutput(toSet,dbHostname, dbPort, dbname, qualifiedProcessNameFromTo);
+
+        Map<String, Object> attributeBloodMap = new HashMap<>();
+        attributeBloodMap.put("inputs",jsonInputs);
+        attributeBloodMap.put("outputs",jsonOutputs);
+        attributeBloodMap.put("qualifiedName",qualifiedProcessNameFromTo.toString());
+        attributeBloodMap.put("name",sql);
+
+        atlasBloodEntity.setAttributes(attributeBloodMap);
+        List<AtlasEntity> entities = new ArrayList<>();
+        //添加表的血缘关系
+        entities.add(atlasBloodEntity);
+        //添加列的血缘关系 TODO
+        atlasBloodEntities.setEntities(entities);
+
+        return atlasBloodEntities;
+    }
+    private static void addOwnerPrefixToTable(String owner,List<String>... tableList){
+        for(List<String> list : tableList){
+            for(int i = 0,len = list.size(); i < len; i++) {
+                String v = list.get(i);
+                list.set(i, v.indexOf('.') == -1 ? owner+"."+v : v);
+            }
+        }
+
+    }
+    /*
+     * 处理数据血缘的from（inputs）、to （outputs）的字段结构数据
+     */
+    private static JsonArray dealInputOrOutput(TreeSet<String> set,
+                                               String dbHostname,String dbPort,String dbname,StringBuilder qualifiedProcessNameFromTo){
+        JsonArray result = new JsonArray();
+        set.forEach(toTable->{
+            qualifiedProcessNameFromTo.append(dbHostname+":"+dbPort+":"+dbname+":"+toTable+" ");
+
+            JsonObject output = new JsonObject();
+            JsonObject uniqueAttributesJsonObj = new JsonObject();
+            uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+toTable);
+            output.addProperty("uniqueAttributes",uniqueAttributesJsonObj.toString());
+            output.addProperty("typeName","rdbms_table");
+            result.add(output);
+        });
+        return result;
+    }
+    /**
+     * 根据connector class获取数据源类型
+     * @param connectorProperties
+     * @return
+     */
+    private static String getRdbmsType(Properties connectorProperties){
+        String rdbmsType = "";
+        String connectorClass = connectorProperties.getProperty("connector.class");
+        if(connectorClass != null){
+            String[] arr = connectorClass.split("\\.");
+            rdbmsType = arr.length > 1 ? arr[arr.length-2] : arr[0];
+        }
+        return rdbmsType;
+    }
+
+    /**
+     * 组装atlas 实体
+     * @param entityType instance、db、table etc
+     * @param connectorProperties
+     * @param payload
+     * @return
+     */
+    private static List<AtlasEntity.AtlasEntityWithExtInfo>  makeAtlasEntity(RdbmsEntities.EntityType entityType,Properties connectorProperties,
+                                                                             RdbmsMessage.Payload payload,String table){
+        List<AtlasEntity.AtlasEntityWithExtInfo> resultList = new ArrayList<>();
+
+        String dbHostname = connectorProperties.getProperty("db.hostname");
+        String dbPort = connectorProperties.getProperty("db.port");
+        String dbPassword = connectorProperties.getProperty("db.user.password");
+        String name = connectorProperties.getProperty("name");
+        String username = connectorProperties.getProperty("db.user");
+        String dbname = connectorProperties.getProperty("db.name");
+        String rdbmsType = getRdbmsType(connectorProperties);
+
+        AtlasEntity atlasEntity = null;
+        // rdbms_instance
+        if(entityType == RdbmsEntities.EntityType.RDBMS_INSTANCE){
+            atlasEntity = new AtlasEntity();
+            atlasEntity.setTypeName("rdbms_instance");
+            Map<String, Object> attributeMap = new HashMap<>();
+            attributeMap.put("qualifiedName",dbHostname+":"+dbPort);
+            attributeMap.put("name",name);
+            attributeMap.put("rdbms_type",rdbmsType);
+            attributeMap.put("platform","zeta");
+            attributeMap.put("cloudOrOnPrem","cloud");
+            attributeMap.put("hostname",dbHostname);
+            attributeMap.put("port",dbPort);
+            attributeMap.put("protocol","http");
+            attributeMap.put("contact_info","jdbc");
+            attributeMap.put("comment","rdbms_instance API");
+            attributeMap.put("description","rdbms_instance描述");
+            attributeMap.put("owner",username);
+            atlasEntity.setAttributes(attributeMap);
+
+            AtlasEntity.AtlasEntityWithExtInfo instanceJsonEntity = new  AtlasEntity.AtlasEntityWithExtInfo();
+            instanceJsonEntity.setEntity(atlasEntity);
+            resultList.add(instanceJsonEntity);
+        }else if(entityType == RdbmsEntities.EntityType.RDBMS_DB){
+            atlasEntity = new AtlasEntity();
+            atlasEntity.setTypeName("rdbms_db");
+            Map<String, Object> attributeDbMap = new HashMap<>();
+            attributeDbMap.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname);
+            attributeDbMap.put("name",dbname);
+            attributeDbMap.put("owner",username);
+            attributeDbMap.put("description","rdbms_db data API ");
+            attributeDbMap.put("prodOrOther","");
+            JsonObject jsonObj = new JsonObject();
+            JsonObject uniqueAttributesJsonObj = new JsonObject();
+            uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort);
+            jsonObj.addProperty("uniqueAttributes",uniqueAttributesJsonObj.toString());
+            jsonObj.addProperty("typeName","rdbms_instance");
+            attributeDbMap.put("instance",jsonObj);
+            atlasEntity.setAttributes(attributeDbMap);
+
+            AtlasEntity.AtlasEntityWithExtInfo instanceJsonEntity = new  AtlasEntity.AtlasEntityWithExtInfo();
+            instanceJsonEntity.setEntity(atlasEntity);
+            resultList.add(instanceJsonEntity);
+        }else if(entityType == RdbmsEntities.EntityType.RDBMS_TABLE){
+            atlasEntity = new AtlasEntity();
+            atlasEntity.setTypeName("rdbms_table");
+            Map<String, Object> attributeTableMap = new HashMap<>();
+            attributeTableMap.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+table);
+            attributeTableMap.put("name",table);
+            attributeTableMap.put("createTime", DateUtils.currentTimestamp().toString());
+            attributeTableMap.put("comment","rdbms table API");
+            attributeTableMap.put("description","rdbms_table input");
+            attributeTableMap.put("owner",username);
+            attributeTableMap.put("type","table");
+
+            JsonObject jsonObj = new JsonObject();
+            JsonObject uniqueAttributesJsonObj = new JsonObject();
+            uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort+":"+dbname);
+            jsonObj.addProperty("typeName","rdbms_db");
+            jsonObj.addProperty("uniqueAttributes",uniqueAttributesJsonObj.toString());
+            attributeTableMap.put("db",jsonObj);
+            atlasEntity.setAttributes(attributeTableMap);
+
+            AtlasEntity.AtlasEntityWithExtInfo instanceJsonEntity = new  AtlasEntity.AtlasEntityWithExtInfo();
+            instanceJsonEntity.setEntity(atlasEntity);
+            resultList.add(instanceJsonEntity);
+        }else if(entityType == RdbmsEntities.EntityType.RDBMS_COLUMN){
+            //获取表字段信息
+            String jdbcDriver = null,jdbcURL = null;
+            if("mysql".equalsIgnoreCase(rdbmsType)){
+                jdbcDriver = "com.mysql.jdbc.Driver";
+                jdbcURL = "jdbc:mysql://"+dbHostname+":"+dbPort+"/"+dbname;
+            }
+            if("oracle".equalsIgnoreCase(rdbmsType)){
+                jdbcDriver = "oracle.jdbc.driver.OracleDriver";
+                jdbcURL = "jdbc:oracle:thin:@"+dbHostname+":"+dbPort+":"+dbname;
+            }
+
+            Map<String, Object> attributeTableMap = null;
+            List<DatabaseUtil.TableColumnInfo> columnList = DatabaseUtil.getInstance(jdbcDriver).getColumnNames(table,jdbcURL,username,dbPassword);
+            if(!CollectionUtils.isEmpty(columnList)){
+                for(DatabaseUtil.TableColumnInfo colInfo : columnList){
+                    attributeTableMap = new HashMap<>();
+                    atlasEntity = new AtlasEntity();
+                    atlasEntity.setTypeName("rdbms_column");
+                    attributeTableMap.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+table+":"+colInfo.getColumnName());
+                    attributeTableMap.put("name",colInfo.getColumnName());
+                    attributeTableMap.put("comment","rdbms_column input");
+                    attributeTableMap.put("owner",username);
+                    attributeTableMap.put("data_type",colInfo.getDataType());
+                    attributeTableMap.put("length",colInfo.getLength());
+                    attributeTableMap.put("default_value","0");
+                    attributeTableMap.put("isNullable",colInfo.isNullable());
+                    attributeTableMap.put("isPrimaryKey",false);
+                    JsonObject tableJson = new JsonObject();
+                    JsonObject uniqueAttributesJsonObj = new JsonObject();
+                    uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+table);
+                    tableJson.addProperty("uniqueAttributes",uniqueAttributesJsonObj.toString());
+                    tableJson.addProperty("typeName","rdbms_table");
+                    attributeTableMap.put("table",tableJson);
+
+                    atlasEntity.setAttributes(attributeTableMap);
+                    AtlasEntity.AtlasEntityWithExtInfo instanceJsonEntity = new  AtlasEntity.AtlasEntityWithExtInfo();
+                    instanceJsonEntity.setEntity(atlasEntity);
+                    resultList.add(instanceJsonEntity);
+                }
+            }
+        }
+        return resultList;
+    }
     /**
      *  获取数据的血缘关系
      *  支持格式： create table|view xxx as select ...
@@ -230,7 +382,7 @@ public class CalciteParseSqlTools {
      * @param sqlNode
      * @return
      */
-    public static Map<String,Object> getBloodRelation(SqlNode sqlNode) {
+    private static Map<String,Object> getBloodRelation(SqlNode sqlNode) {
         Map<String,Object> resultMap = new HashMap<>();
         List<String> bloodTableList = new ArrayList<>();
         resultMap.put("operType",RdbmsEntities.OperateType.ADD);
@@ -298,7 +450,7 @@ public class CalciteParseSqlTools {
      * @param result
      * @return
      */
-    public static List<String> getDependencies(SqlNode sqlNode, List<String> result) {
+    private static List<String> getDependencies(SqlNode sqlNode, List<String> result) {
         if(sqlNode == null){
             return null;
         }
@@ -343,118 +495,5 @@ public class CalciteParseSqlTools {
         }
         return result;
     }
-
-    public static void main(String[] args) throws IOException {
-        String insertSeSql = "insert into EmployeeConfidential  SELECT EmployeeID, Employees.DepartmentID, SocialSecurityNumber, Salary, ManagerID, Departments.DepartmentName, Departments.DepartmentHeadID FROM Employees, Departments WHERE Employees.DepartmentID=Departments.DepartmentID ORDER BY Employees.DepartmentID";;
-        String matiSql = "CREATE MATERIALIZED VIEW EmployeeConfidential AS SELECT EmployeeID, Employees.DepartmentID, SocialSecurityNumber, Salary, ManagerID, Departments.DepartmentName, Departments.DepartmentHeadID FROM Employees, Departments WHERE Employees.DepartmentID=Departments.DepartmentID ORDER BY Employees.DepartmentID";
-        String createSubsql = "create table test.cmp as select\r\n" +
-                "user_id  as uid\r\n" +
-                ",user_name  as uname\r\n" +
-                "from\r\n" +
-                "(\r\n" +
-                "    select user_id, concat(\"test\",user_name) as user_name\r\n" +
-                "    from test.userss\r\n" +
-                ")t";
-        String createBigSql = "CREATE TABLE tmp.tmp_a_supp_achievement_an_mom_001 AS\r\n" +
-                "  SELECT a1.dim_day_txdate,\r\n" +
-                "         a.a_pin,\r\n" +
-                "         Sum(Coalesce(b.amount, 0)) AS total_amount\r\n" +
-                "         , Sum(Coalesce(c.refund_amt, 0)) AS refund_amt\r\n" +
-                "         , Sum(os_prcp_amt) os_prcp_amt\r\n" +
-                "  FROM (SELECT dim_day_txdate \r\n" +
-                "        FROM dmv.dim_day\r\n" +
-                "        WHERE dim_day_txdate>=concat(cast(Year('2018-05-15')-1 AS string),'-', substring('2018-05-15', 6, 2), '-01')\r\n" +
-                "          AND dim_day_txdate<='2018-05-15' )a1\r\n" +
-                "  JOIN (SELECT DISTINCT a_pin, product_type\r\n" +
-                "        FROM dwd.dwd_as_qy_cust_account_s_d\r\n" +
-                "        WHERE dt ='2018-05-15' AND product_type='20288' )a\r\n" +
-                "  LEFT OUTER JOIN (SELECT substring(tx_time, 1, 10) AS time1, sum(order_amt) AS amount, a_pin\r\n" +
-                "                    FROM dwd.dwd_actv_as_qy_iou_receipt_s_d\r\n" +
-                "                    WHERE a_order_type='20096' AND a_pin NOT IN ('vep_test', 'VOPVSP测试')\r\n" +
-                "                      AND dt='2018-05-15'\r\n" +
-                "                    GROUP BY substring(tx_time, 1, 10), a_pin )b\r\n" +
-                "              ON cast(a.a_pin AS string)=cast(b.a_pin AS string) AND a1.dim_day_txdate=b.time1\r\n" +
-                "  LEFT OUTER JOIN ( SELECT substring(refund_time, 1, 10) AS refund_time, a_pin, sum(refund_amt)AS refund_amt\r\n" +
-                "                    FROM dwd.dwd_as_qy_iou_refund_s_d\r\n" +
-                "                    WHERE refund_status='20090' AND dt='2018-05-15' AND a_order_no <> '12467657248'\r\n" +
-                "                      AND a_refund_no <> '1610230919767139947'\r\n" +
-                "                    GROUP BY substring(refund_time, 1, 10), a_pin )c\r\n" +
-                "              ON cast(a.a_pin AS string)=cast(c.a_pin AS string) AND a1.dim_day_txdate=c.refund_time\r\n" +
-                "  LEFT OUTER JOIN (SELECT dt, a_pin, sum(os_prcp_amt) AS os_prcp_amt\r\n" +
-                "                    FROM dwd.dwd_as_qy_cycle_detail_s_d\r\n" +
-                "                    WHERE dt>=concat(substr('2018-05-15', 1, 7), '-01') AND dt<='2018-05-15'\r\n" +
-                "                    GROUP BY dt, a_pin)e\r\n" +
-                "              ON cast(a.jd_pin AS string)=cast(e.a_pin AS string) AND a1.dim_day_txdate=e.dt\r\n" +
-                "  GROUP BY a1.dim_day_txdate, a.a_pin" ;
-
-        String selectSQl = "create table aaa as select * from tablex union select * from tablebb";
-        String dropSql = "drop table tablex";
-        String alterOper = "ALTER TABLE `t_1` ADD INDEX `name_index` (`name`) USING BTREE COMMENT '测试索引' ";//不支持
-        StopWatch sw = new StopWatch();
-        sw.start();
-//        SqlNode node = getSqlNodeAvailable(selectSQl);
-//        getBloodRelation(node);
-        RdbmsNotification notification = new RdbmsNotification();
-        String payloadStr = "{\n" +
-                "\t\t\"source\": {\n" +
-                "\t\t\t\"version\": \"0.8.3.Final\",\n" +
-                "\t\t\t\"name\": \"ATLAS_MYSQL_45000\",\n" +
-                "\t\t\t\"server_id\": 1,\n" +
-                "\t\t\t\"ts_sec\": 1622776067,\n" +
-                "\t\t\t\"gtid\": \"4723ba50-a993-11eb-8ba2-000c29e51789:67\",\n" +
-                "\t\t\t\"file\": \"mysql-bin.000018\",\n" +
-                "\t\t\t\"pos\": 13544,\n" +
-                "\t\t\t\"row\": 0,\n" +
-                "\t\t\t\"snapshot\": false,\n" +
-                "\t\t\t\"thread\": null,\n" +
-                "\t\t\t\"db\": null,\n" +
-                "\t\t\t\"table\": null,\n" +
-                "\t\t\t\"query\": null\n" +
-                "\t\t},\n" +
-                "\t\t\"databaseName\": \"my_test\",\n" +
-                "\t\t\"ddl\": \"CREATE TABLE `t_1` (\\r\\n`id`  int NOT NULL ,\\r\\n`name`  varchar(255) NULL ,\\r\\nPRIMARY KEY (`id`)\\r\\n)\"\n" +
-                "\t}";
-        String payload_insert = "{\n" +
-                "\t\t\"before\": null,\n" +
-                "\t\t\"after\": {\n" +
-                "\t\t\t\"id\": 1,\n" +
-                "\t\t\t\"name\": \"n1\"\n" +
-                "\t\t},\n" +
-                "\t\t\"source\": {\n" +
-                "\t\t\t\"version\": \"0.8.3.Final\",\n" +
-                "\t\t\t\"name\": \"ATLAS_MYSQL_45000\",\n" +
-                "\t\t\t\"server_id\": 1,\n" +
-                "\t\t\t\"ts_sec\": 1622801539,\n" +
-                "\t\t\t\"gtid\": \"4723ba50-a993-11eb-8ba2-000c29e51789:84\",\n" +
-                "\t\t\t\"file\": \"mysql-bin.000018\",\n" +
-                "\t\t\t\"pos\": 17919,\n" +
-                "\t\t\t\"row\": 0,\n" +
-                "\t\t\t\"snapshot\": false,\n" +
-                "\t\t\t\"thread\": 236,\n" +
-                "\t\t\t\"db\": \"my_test\",\n" +
-                "\t\t\t\"table\": \"t_3\",\n" +
-                "\t\t\t\"query\": \"insert into TEST.STUDENT44(id,name) values ('30','nice meet u')\"\n" +
-                "\t\t},\n" +
-                "\t\t\"op\": \"c\",\n" +
-                "\t\t\"ts_ms\": 1622801539405\n" +
-                "\t}";
-        ObjectMapper mapper = new ObjectMapper();
-        RdbmsMessage.Payload payload =  mapper.readValue(payload_insert,RdbmsMessage.Payload.class);
-        notification.setRdbmsMessage(new RdbmsMessage());
-        notification.getRdbmsMessage().setPayload(payload);
-        Properties connectorProperties = new Properties();
-        connectorProperties.setProperty("connector.class","io.debezium.connector.oracle.OracleConnector");
-        connectorProperties.setProperty("database.hostname","10.200.64.102");
-        connectorProperties.setProperty( "database.port","1521");
-        connectorProperties.setProperty( "database.user","test");
-        connectorProperties.setProperty( "database.password","123456");
-        connectorProperties.setProperty( "name", "orcl");
-        connectorProperties.setProperty( "database.server.name", "orcl");
-        RdbmsEntities result = getSimulationRdbmsEntities(notification,connectorProperties);
-        sw.stop();
-        log.info("total cost time :{} ms",sw.getTotalTimeMillis());
-        System.out.println(result);
-    }
-
 
 }
