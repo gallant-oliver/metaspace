@@ -253,7 +253,7 @@ public class QuartzJob implements Job {
         LOG.info("query engine:" + engine);
         int totalStep = taskList.size();
         long startTime = System.currentTimeMillis();
-        String errorMsg = null;
+        StringBuilder errorMsg = new StringBuilder();
         for (int i = 0; i < totalStep; i++) {
             if (STATE_MAP.get(taskId)) {
                 taskManageDAO.updateDataTaskCostTime(taskExecuteId, System.currentTimeMillis() - startTime);
@@ -293,26 +293,21 @@ public class QuartzJob implements Job {
                         return;
                     }
                 } finally {
-                    errorMsg = task.getErrorMsg();
-                    recordExecutionInfo(task, errorMsg, tenantId);
-                    //记录任务成功数和失败数
-                    if (StringUtils.isBlank(errorMsg)) {
-                        indexCounter.plusOne(IndexCounterUtils.METASPACE_QUALITY_TASK_SUCCESS_COUNT);
-                    } else {
-                        indexCounter.plusOne(IndexCounterUtils.METASPACE_QUALITY_TASK_FAIL_COUNT);
-                    }
+                    errorMsg.append(StringUtils.isBlank(task.getErrorMsg()) ? "" : task.getErrorMsg());
+                    recordExecutionInfo(task, task.getErrorMsg(), tenantId);
                 }
             } while (retryCount < RETRY);
         }
-        long endTime = System.currentTimeMillis();
-        if (null != errorMsg) {
+        if (StringUtils.isNotBlank(errorMsg)) {
+            indexCounter.plusOne(IndexCounterUtils.METASPACE_QUALITY_TASK_FAIL_COUNT);
             taskManageDAO.updateTaskExecuteStatus(taskExecuteId, 3);
             taskManageDAO.updateTaskStatus(taskId, 3);
         } else {
+            indexCounter.plusOne(IndexCounterUtils.METASPACE_QUALITY_TASK_SUCCESS_COUNT);
             taskManageDAO.updateTaskExecuteStatus(taskExecuteId, 2);
             taskManageDAO.updateTaskStatus(taskId, 2);
         }
-        taskManageDAO.updateDataTaskCostTime(taskExecuteId, endTime - startTime);
+        taskManageDAO.updateDataTaskCostTime(taskExecuteId, System.currentTimeMillis() - startTime);
     }
 
     private void error(String taskId, AtomicTaskExecution task, Exception e) {
