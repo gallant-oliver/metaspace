@@ -96,14 +96,15 @@ public class SearchService {
 
     public PageResult<Database> getDatabases(String sourceId, long offset, long limit, String query, boolean active, String tenantId, boolean queryCount) {
         List<String> dbs = tenantService.getDatabase(tenantId);
-
-        String guid = "";
+        dbs = dbs.stream().filter(db->db.contains(query)).collect(Collectors.toList());
+        String guids = "";
         if (StringUtils.isEmpty(sourceId)) {
-            List<String> guidList = tableDAO.selectDatabaseGuidByTenantId(tenantId);
-            guid = dbsToString(guidList);
+            List<TableInfo> rdbmsTableInfoList = tableDAO.selectDatabaseByTenantId(tenantId);
+            List<String> collect = rdbmsTableInfoList.stream().filter(rdbmsTableInfo -> rdbmsTableInfo.getDbName().contains(query)).map(TableInfo::getDatabaseGuid).collect(Collectors.toList());
+            guids = dbsToString(collect);
         }
         String dbsToString = dbsToString(dbs);
-        return metaspaceEntityService.getSchemaList(sourceId, guid, active, offset, limit, query, dbsToString, queryCount);
+        return metaspaceEntityService.getSchemaList(sourceId, guids, offset, limit, dbsToString, queryCount);
 
     }
 
