@@ -18,6 +18,39 @@ import org.slf4j.LoggerFactory;
 
 public class DruidAnalyzerUtil {
     private static final Logger log = LoggerFactory.getLogger(DruidAnalyzerUtil.class);
+
+    /**
+     * druid 处理 sql 的解析，增加了sql加工的逻辑
+     * @param db
+     * @param sql
+     * @return
+     */
+    private static List<SQLStatement> parseStatements(String db,String sql){
+        List<SQLStatement> stmts = null;
+        while(true){
+            try {
+                stmts = SQLUtils.parseStatements(sql, db);
+                break;
+            }catch (ParserException e) {
+                String errMsg = e.getMessage();
+                log.error("parse sql error :{}",errMsg);
+                int index = errMsg.indexOf("token");
+                int index2 = errMsg.indexOf("EOF");
+                if(index2 != -1){
+                    String[] arr = sql.split(" ");
+                    sql = sql.substring(0, sql.indexOf(arr[arr.length-1]));
+                    log.info("EOF deal after sql: {}",sql);
+                }else if(index != -1) {
+                    String[] arr = errMsg.split(" ");
+                    sql = sql.substring(0, sql.indexOf(arr[arr.length-1]));
+                    log.info("invalid token deal after sql: {}",sql);
+                }else {
+                    break;
+                }
+            }
+        }
+        return stmts;
+    }
     /**
      *  获取sql的表血缘
      * @param sql
@@ -33,13 +66,9 @@ public class DruidAnalyzerUtil {
         if (JdbcConstants.ORACLE.equals(dbType) || JdbcConstants.ALI_ORACLE.equals(dbType)) {
             db = JdbcConstants.ORACLE;
         }
-        List<SQLStatement> stmts = null;
-        try{
-            stmts = SQLUtils.parseStatements(sql, db);
-        }catch (ParserException ex){
-            log.error("sql {} => parse error:{}",sql,ex);
-        }
+        List<SQLStatement> stmts = parseStatements(db, sql);
         if (stmts == null) {
+            log.error("sql {} => parse error",sql);
             return null;
         }
 
@@ -48,9 +77,7 @@ public class DruidAnalyzerUtil {
         Map<String, TreeSet<String>> fromTo = new HashMap<>(4);
         for (SQLStatement stmt : stmts) {
             SchemaStatVisitor statVisitor = SQLUtils.createSchemaStatVisitor(db);
-			/*if (stmt instanceof SQLUseStatement) {
-			    database = ((SQLUseStatement) stmt).getDatabase().getSimpleName().toUpperCase();
-			}*/
+
             stmt.accept(statVisitor);
             Map<TableStat.Name, TableStat> tables = statVisitor.getTables();
             Collection<TableStat.Column> columns = statVisitor.getColumns();
