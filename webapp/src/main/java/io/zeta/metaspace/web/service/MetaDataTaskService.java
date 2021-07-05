@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.PostConstruct;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -46,6 +47,11 @@ public class MetaDataTaskService {
     TableDAO tableDAO;
     @Autowired
     UserDAO userDAO;
+
+    @PostConstruct
+    public void init() {
+        syncTaskInstanceDAO.updateStatusAndAppendLogAllFail(SyncTaskInstance.Status.FAIL, "服务异常自动停止任务实例");
+    }
 
     private static final Logger LOG = LoggerFactory.getLogger(TaskManageService.class);
 
