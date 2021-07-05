@@ -96,9 +96,9 @@ public class SearchService {
 
     public PageResult<Database> getDatabases(String sourceId, long offset, long limit, String query, boolean active, String tenantId, boolean queryCount) {
         List<String> dbs = tenantService.getDatabase(tenantId);
-        dbs = dbs.stream().filter(db->db.contains(query)).collect(Collectors.toList());
         String guids = "";
         if (StringUtils.isEmpty(sourceId)) {
+            dbs = dbs.stream().filter(db->db.contains(query)).collect(Collectors.toList());
             List<TableInfo> rdbmsTableInfoList = tableDAO.selectDatabaseByTenantId(tenantId);
             List<String> collect = rdbmsTableInfoList.stream().filter(rdbmsTableInfo -> rdbmsTableInfo.getDbName().contains(query)).map(TableInfo::getDatabaseGuid).collect(Collectors.toList());
             guids = dbsToString(collect);

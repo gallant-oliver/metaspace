@@ -343,7 +343,5 @@ public class Table implements Serializable {
         private String businessObject;
         private String department;
         private String businessLeader;
-
-
     }
 }
