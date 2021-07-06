@@ -18,6 +18,7 @@ import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataSourceService;
+import io.zeta.metaspace.web.util.LocalCacheUtils;
 import io.zeta.metaspace.web.util.ZkLockUtils;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
@@ -32,6 +33,7 @@ import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,10 +127,11 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         metaDataContext = new MetaDataContext();
 
         String instanceId = tableSchema.getInstance();
-
+        this.checkTaskEnable(taskInstanceId);
         syncTaskInstanceDAO.appendLog(taskInstanceId, "初始化成功，导入数据源和数据库");
         //根据数据源id获取图数据库中的数据源，如果有，则更新，如果没有，则创建
-        AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(instanceId, tableSchema.isAll(), tableSchema.getDefinition());
+        AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(instanceId, taskInstanceId, tableSchema.isAll(), tableSchema.getDefinition());
+        this.checkTaskEnable(taskInstanceId);
         syncTaskInstanceDAO.appendLog(taskInstanceId, "导入数据源和数据库成功，开始导入表");
         String instanceGuid = atlasEntityWithExtInfo.getEntity().getGuid();
         Collection<Schema> schemas = metaDataInfo.getSchemas();
@@ -157,12 +160,13 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         } else {
             LOG.info("No database found");
         }
+        this.checkTaskEnable(taskInstanceId);
         syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
         LOG.info("import metadata end at {}", new Date());
     }
 
 
-    protected AtlasEntity.AtlasEntityWithExtInfo registerInstance(String instanceId, boolean allDatabase, SyncTaskDefinition definition) throws Exception {
+    protected AtlasEntity.AtlasEntityWithExtInfo registerInstance(String instanceId, String taskInstanceId, boolean allDatabase, SyncTaskDefinition definition) throws Exception {
         AtlasEntity.AtlasEntityWithExtInfo ret;
         String instanceQualifiedName = getInstanceQualifiedName(instanceId);
 
@@ -179,6 +183,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                     clearRelationshipAttributes(ret);
                     metaDataContext.putEntity(instanceQualifiedName, ret);
                 }
+                this.checkTaskEnable(taskInstanceId);
                 AtlasEntity.AtlasEntityWithExtInfo instanceEntity;
                 if (ret == null) {
                     instanceEntity = toInstanceEntity(null, instanceId, allDatabase);
@@ -259,9 +264,9 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
 
 
     protected int importTable(AtlasEntity dbEntity, String instanceId, String databaseName, Table tableName, final boolean failOnError,
-                              String instanceGuid, SyncTaskDefinition definition) {
+                              String instanceGuid, String taskInstanceId, SyncTaskDefinition definition) {
         try {
-            registerTable(dbEntity, instanceId, databaseName, tableName, instanceGuid, definition);
+            registerTable(dbEntity, instanceId, databaseName, tableName, instanceGuid, taskInstanceId, definition);
             return 1;
         } catch (Exception e) {
             LOG.error("Import failed for {} {}", getTableTypeName(), tableName, e);
@@ -568,7 +573,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     }
 
     protected AtlasEntity.AtlasEntityWithExtInfo registerTable(AtlasEntity dbEntity, String instanceId, String databaseName,
-                                                               Table tableName, String instanceGuid, SyncTaskDefinition definition) throws Exception {
+                                                               Table tableName, String instanceGuid, String taskInstanceId , SyncTaskDefinition definition) throws Exception {
         String tableQualifiedName = getTableQualifiedName(instanceId, databaseName, tableName.getName());
         AtlasEntity.AtlasEntityWithExtInfo ret = findEntity(getTableTypeName(), tableQualifiedName);
 
@@ -578,6 +583,8 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
             LOG.info("尝试拿锁 : " + Thread.currentThread().getName() + " " + tableQualifiedName);
             if (lock.acquire(LOCK_TIME_OUT_TIME, TimeUnit.MINUTES)) {
                 LOG.info("拿锁成功 : " + Thread.currentThread().getName() + " " + tableQualifiedName);
+                //监听任务是否被手动停止
+                this.checkTaskEnable(taskInstanceId);
                 AtlasEntity.AtlasEntityWithExtInfo tableEntity;
                 if (ret == null) {
                     tableEntity = toTableEntity(dbEntity, instanceId, databaseName, tableName, null, instanceGuid, definition);
@@ -697,16 +704,13 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 List<CompletableFuture<Void>> completableFutureList = new ArrayList<>(tableNames.size());
                 for (Table tableName : tableNames) {
                     completableFutureList.add(CompletableFuture.runAsync(() -> {
-                        SyncTaskInstance taskInstance = syncTaskInstanceDAO.getById(taskInstanceId);
-                        if (taskInstance == null || SyncTaskInstance.Status.FAIL.equals(taskInstance.getStatus())) {
-                            LOG.error("终止元数据同步,数据源：");
-                            throw new AtlasBaseException("终止元数据同步,数据源：" + dataSourceInfo.getSourceName());
-                        }
+                        this.checkTaskEnable(taskInstanceId);
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("导入{}表的元数据", tableName.getFullName());
                         }
-                        int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError, instanceGuid, definition);
+                        int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError, instanceGuid, taskInstanceId, definition);
                         if (imported == 1) {
+                            this.checkTaskEnable(taskInstanceId);
                             syncTaskInstanceDAO.appendLog(taskInstanceId, "成功导入表: " + tableName.getFullName());
                         }
                         tablesImportedList.add(imported);
@@ -730,6 +734,19 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         }
 
         return tablesImported;
+    }
+
+    /**
+     * 检查任务是否被手动停止
+     * @param taskInstanceId
+     * @throws AtlasBaseException
+     */
+    private void checkTaskEnable(String taskInstanceId) throws AtlasBaseException {
+        String value = LocalCacheUtils.RDBMS_METADATA_GATHER_ENABLE_CACHE.getIfPresent(taskInstanceId);
+        if (StringUtils.isNotBlank(value) && value.equals("fail")) {
+            LOG.error("终止元数据同步,数据源：{}" , dataSourceInfo.getSourceName());
+            throw new AtlasBaseException("终止元数据同步,数据源：" + dataSourceInfo.getSourceName());
+        }
     }
 
 
