@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
@@ -74,6 +75,8 @@ public class DruidAnalyzerUtil {
 
         TreeSet<String> fromSet = new TreeSet<>();
         TreeSet<String> toSet = new TreeSet<>();
+        TreeSet<String> fromColumnSet = new TreeSet<>();
+        TreeSet<String> toColumnSet = new TreeSet<>();
         Map<String, TreeSet<String>> fromTo = new HashMap<>(4);
         for (SQLStatement stmt : stmts) {
             SchemaStatVisitor statVisitor = SQLUtils.createSchemaStatVisitor(db);
@@ -81,17 +84,23 @@ public class DruidAnalyzerUtil {
             stmt.accept(statVisitor);
             Map<TableStat.Name, TableStat> tables = statVisitor.getTables();
             Collection<TableStat.Column> columns = statVisitor.getColumns();
-            columns.forEach(column -> {
+            /*columns.forEach(column -> {
                 System.out.println(column.getTable() + " "+column.getName());
-            });
+            });*/
             if (tables != null) {
                 tables.forEach((tableName, stat) -> {
                     if (stat.getCreateCount() > 0 || stat.getInsertCount() > 0) {
                         String to = tableName.getName().toUpperCase();
                         toSet.add(to);
+                        toColumnSet.addAll( columns.stream().filter(v->to.equalsIgnoreCase(v.getTable()) )
+                                .map(p->p.getTable() + ":"+p.getName()).collect(Collectors.toSet())
+                        );
                     } else if (stat.getSelectCount() > 0) {
                         String from = tableName.getName().toUpperCase();
                         fromSet.add(from);
+                        fromColumnSet.addAll( columns.stream().filter(v->from.equalsIgnoreCase(v.getTable()) || "UNKNOWN".equalsIgnoreCase(v.getTable()))
+                                .map(p->p.getTable() + ":"+p.getName()).collect(Collectors.toSet())
+                        );
                     }
                 });
             }
@@ -99,6 +108,8 @@ public class DruidAnalyzerUtil {
 
         fromTo.put("from", fromSet);
         fromTo.put("to", toSet);
+        fromTo.put("fromColumn", fromColumnSet);
+        fromTo.put("toColumn", toColumnSet);
         return fromTo;
     }
 
