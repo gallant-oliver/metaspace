@@ -14,6 +14,7 @@ import com.alibaba.druid.sql.parser.ParserException;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
 import com.alibaba.druid.stat.TableStat;
 import com.alibaba.druid.util.JdbcConstants;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,7 +99,9 @@ public class DruidAnalyzerUtil {
                     } else if (stat.getSelectCount() > 0) {
                         String from = tableName.getName().toUpperCase();
                         fromSet.add(from);
-                        fromColumnSet.addAll( columns.stream().filter(v->from.equalsIgnoreCase(v.getTable()) || "UNKNOWN".equalsIgnoreCase(v.getTable()))
+                        //只筛选select后的字段，去除where
+                        fromColumnSet.addAll( columns.stream().filter(v->v.isSelect() &&
+                                (StringUtils.equalsIgnoreCase(v.getTable(), from) || StringUtils.equalsIgnoreCase(v.getTable(), "UNKNOWN") ))
                                 .map(p->p.getTable() + ":"+p.getName()).collect(Collectors.toSet())
                         );
                     }
