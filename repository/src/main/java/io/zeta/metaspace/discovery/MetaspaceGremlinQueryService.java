@@ -55,6 +55,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 
 import static org.apache.atlas.repository.Constants.RELATIONSHIP_GUID_PROPERTY_KEY;
 import static org.apache.atlas.repository.graph.GraphHelper.getGuid;
@@ -884,57 +885,48 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         return String.format("%s@%s", instanceId, clusterName);
     }
 
-    public PageResult<Database> getSchemaList(String sourceId, String guid, boolean active, long offset, long limit, String query, String dbs, boolean queryTableCount) throws AtlasBaseException {
+    public PageResult<Database> getSchemaList(String sourceId, String guids, long offset, long limit, String dbs, boolean queryTableCount) throws AtlasBaseException {
         ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
         PageResult<Database> databasePageResult = new PageResult<>();
         String activeQuery = ".has('__state','ACTIVE')";
-        String nameQuery = StringUtils.isEmpty(query) ? "" : ".has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*" + query + ".*'))";
+//        String nameQuery = StringUtils.isEmpty(query) ? "" : ".has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*" + query + ".*'))";
         String pageQuery = (offset == 0 && limit == -1) ? "" : ".range(" + offset + "," + (offset + limit) + ")";
 
-        String format = "";
+        List<AtlasVertex> databases = new ArrayList<>();
+        List<Long> dbNum = new ArrayList<>();
+        // 没有sourceId，说明是根据库名进行检索
         if (StringUtils.isEmpty(sourceId)) {
-            //跨类型搜索
-//            format = "g.tx().commit();g.V().or(has('__typeName','rdbms_db'),has('__typeName','hive_db').has('Asset.name', within(" + dbs + "))).has('__guid')%s.order().by('__timestamp').dedup()%s.toList()";
-
-            format = "g.V().or(has('__typeName','rdbms_db').has('__guid',within(" + guid + "))%s" +
-                    ",has('__typeName','hive_db').has('Asset.name', within(" + dbs + ")).has('__guid')%s)" +
-                    ".order().by('__timestamp').dedup()%s.toList()";
-        } else if ("hive".equalsIgnoreCase(sourceId)) {
-            //hive 搜索
-            format = "g.V().has('__typeName','hive_db').has('__guid')%s.has('Asset.name', within(" + dbs + ")).order().by('__timestamp').dedup()%s.toList()";
+            handlerQuerySchemaByKey(guids, dbs, activeQuery, databases, dbNum, limit, offset);
         } else {
-            //关系型数据源搜索
-            format = "g.V().has('__typeName','rdbms_instance').has('Referenceable.qualifiedName','" + getInstanceQualifiedName(sourceId) + "').inE().outV().has('__typeName','rdbms_db').has('__guid')%s.order().by('__timestamp').dedup()%s.toList()";
-        }
+            String format = "";
+            if ("hive".equalsIgnoreCase(sourceId)) {
+                //hive 搜索
+                format = "g.V().has('__typeName','hive_db').has('__guid')%s.has('Asset.name', within(" + dbs + ")).order().by('__timestamp').dedup()%s.toList()";
+            } else {
+                //关系型数据源搜索
+                format = "g.V().has('__typeName','rdbms_instance').has('Referenceable.qualifiedName','" + getInstanceQualifiedName(sourceId) + "').inE().outV().has('__typeName','rdbms_db').has('__guid')%s.order().by('__timestamp').dedup()%s.toList()";
+            }
 
-        String queryStr;
-        String queryCountStr;
-        if (StringUtils.isEmpty(sourceId)) {
-            queryStr = String.format(format, activeQuery + nameQuery, activeQuery + nameQuery, pageQuery);
-            queryCountStr = String.format(format, activeQuery + nameQuery, activeQuery + nameQuery, ".count()");
-        } else {
-            queryStr = String.format(format, activeQuery + nameQuery, pageQuery);
-            queryCountStr = String.format(format, activeQuery + nameQuery, ".count()");
-        }
+            String queryStr = String.format(format, activeQuery, pageQuery);
+            String queryCountStr = String.format(format, activeQuery, ".count()");
+            CompletableFuture<List<AtlasVertex>> databasesCf = CompletableFuture.supplyAsync(() -> {
+                List<AtlasVertex> vertices = (List<AtlasVertex>) graph.executeGremlinScript(queryStr, false);
+                graph.commit();
+                return vertices;
+            }, threadPoolExecutor);
+            CompletableFuture<List> dbNumCf = CompletableFuture.supplyAsync(() -> {
+                List<Long> list = (List<Long>) graph.executeGremlinScript(queryCountStr, false);
+                graph.commit();
+                return list;
+            }, threadPoolExecutor);
 
-        CompletableFuture<List<AtlasVertex>> databasesCf = CompletableFuture.supplyAsync(() -> {
-            List<AtlasVertex> vertices = (List<AtlasVertex>) graph.executeGremlinScript(queryStr, false);
-            graph.commit();
-            return vertices;
-        }, threadPoolExecutor);
-        CompletableFuture<List> dbNumCf = CompletableFuture.supplyAsync(() -> {
-            List list = (List) graph.executeGremlinScript(queryCountStr, false);
-            graph.commit();
-            return list;
-        }, threadPoolExecutor);
-        List<AtlasVertex> databases = null;
-        List dbNum = null;
-        try {
-            databases = databasesCf.get();
-            dbNum = dbNumCf.get();
-        } catch (InterruptedException | ExecutionException e) {
-            LOG.error("获取数据库列表出错", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据库列表出错");
+            try {
+                databases = databasesCf.get();
+                dbNum = dbNumCf.get();
+            } catch (InterruptedException | ExecutionException e) {
+                LOG.error("获取数据库列表出错", e);
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据库列表出错");
+            }
         }
         List<Database> lists = new ArrayList<>();
         ArrayList<CompletableFuture> completableFutures = new ArrayList<>();
@@ -956,9 +948,9 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                     if (queryTableCount) {
                         String queryTableCountStr = String.format("g.tx().commit();g.V().has('__typeName',within('rdbms_db','hive_db')).has('__guid','%s').inE().outV().has('__typeName', within('rdbms_table','hive_table'))%s.has('__guid').dedup().count().toList()",
                                 dbEntity.getGuid(), activeQuery);
-                        List num = (List) graph.executeGremlinScript(queryTableCountStr, false);
+                        List<Long> num = (List<Long>) graph.executeGremlinScript(queryTableCountStr, false);
                         graph.commit();
-                        db.setTableCount(Integer.parseInt(num.get(0).toString()));
+                        db.setTableCount(num.get(0));
                     }
                 }
             }, threadPoolExecutor));
@@ -971,8 +963,71 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         }
         databasePageResult.setCurrentSize(lists.size());
         databasePageResult.setLists(lists);
-        databasePageResult.setTotalSize(Integer.parseInt(dbNum.get(0).toString()));
+        databasePageResult.setTotalSize(dbNum.get(0));
         return databasePageResult;
+    }
+
+    /**
+     * 根据库名检索数据库的处理
+     *
+     * @param guids              rdbms的库id
+     * @param dbs                hive的库名
+     * @param activeQuery        状态查询
+     * @param allAtlasVertexList 查询到的点
+     * @param dbNum              查询到的数量
+     */
+    private void handlerQuerySchemaByKey(String guids, String dbs, String activeQuery, List<AtlasVertex> allAtlasVertexList, List<Long> dbNum, long limit, long offset) {
+        // 处理方法中是hive和rdbms分开处理，所以分页需要手动分页
+        String pageQuery = (offset == 0 && limit == -1) ? "" : ".range(" + 0 + "," + (offset + limit) + ")";
+
+        List<AtlasVertex> atlasVertexList = new ArrayList<>();
+        ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
+        ArrayList<CompletableFuture> completableFutures = new ArrayList<>();
+        List<String> queryStrings = new ArrayList<>();
+        // 如果检索到的名字在hive和rdbms都有的话，用or合并到一起查询不走索引，全图检索。所以需要分开并行查询
+        // rdbms使用guid进行过滤
+        if (StringUtils.isNotEmpty(guids)) {
+            String format = "g.V().has('__typeName','rdbms_db').has('__guid',within(" + guids + "))%s" +
+                    ".order().by('__timestamp').dedup()%s.toList()";
+            String queryStr = String.format(format, activeQuery, pageQuery);
+            String queryCountStr = String.format(format, activeQuery, ".count()");
+            queryStrings.add(queryStr);
+            queryStrings.add(queryCountStr);
+        }
+        // hive使用asset.name进行过滤
+        if (StringUtils.isNotEmpty(dbs)) {
+            String format = "g.V().has('__typeName','hive_db').has('Asset.name', within(" + dbs + ")).has('__guid')%s" +
+                    ".order().by('__timestamp').dedup()%s.toList()";
+            String queryStr = String.format(format, activeQuery, pageQuery);
+            String queryCountStr = String.format(format, activeQuery, ".count()");
+            queryStrings.add(queryStr);
+            queryStrings.add(queryCountStr);
+        }
+        for (String s : queryStrings) {
+            completableFutures.add(CompletableFuture.supplyAsync(() -> {
+                List vertices = (List) graph.executeGremlinScript(s, false);
+                graph.commit();
+                return vertices;
+            }, threadPoolExecutor));
+        }
+        List<Object> collect = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
+        long sum = 0L;
+        for (Object o : collect) {
+            List list = (List) o;
+            if (CollectionUtils.isNotEmpty(list)) {
+                if (list.get(0) instanceof AtlasVertex) {
+                    atlasVertexList.addAll((List<AtlasVertex>) o);
+                } else {
+                    sum += (Long) list.get(0);
+                }
+            }
+        }
+        dbNum.add(sum);
+        // 根据时间戳排序，然后进行手动分页
+        if (CollectionUtils.isNotEmpty(atlasVertexList) && atlasVertexList.size() > offset) {
+            atlasVertexList.sort(Comparator.comparing(o -> o.getProperty("__timestamp", Long.class)));
+            allAtlasVertexList.addAll(atlasVertexList.subList((int) offset, (int) (atlasVertexList.size() <= offset + limit ? atlasVertexList.size() : offset + limit)));
+        }
     }
 
     public PageResult<TableEntity> getTableList(List<AtlasVertex> list, String dbsToString, String guid, String schemaId, boolean active, long offset, long limit, String query, Boolean isView) throws AtlasBaseException {
