@@ -14,6 +14,7 @@ import io.zeta.metaspace.model.sync.SyncTaskInstance;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
+import io.zeta.metaspace.web.dao.DataSourceDAO;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataSourceService;
@@ -81,6 +82,9 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     @Autowired
     private ZkLockUtils zkLockUtils;
 
+    @Autowired
+    private DataSourceDAO dataSourceDAO;
+
     /**
      * 因为用 new 创建实例，所以不能自动注入相关参数
      */
@@ -121,10 +125,9 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
 
         metaDataContext = new MetaDataContext();
 
-        String instanceId = tableSchema.getInstance();
-
+        String sourceId = tableSchema.getInstance();
         //根据数据源id获取图数据库中的数据源，如果有，则更新，如果没有，则创建
-        AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(instanceId, tableSchema.isAll(), tableSchema.getDefinition());
+        AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(tableSchema.isAll(), tableSchema.getDefinition());
         String instanceGuid = atlasEntityWithExtInfo.getEntity().getGuid();
         if (!CollectionUtils.isEmpty(metaDataInfo.getSchemas()) && !tableSchema.isAllDatabase()) {
             LOG.info("Found {} databases", metaDataInfo.getSchemas().size());
@@ -132,15 +135,15 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
             //导入table
             for (Schema database : metaDataInfo.getSchemas()) {
                 AtlasEntity.AtlasEntityWithExtInfo dbEntity;
-                String dbQualifiedName = getDBQualifiedName(instanceId, database.getFullName());
+                String dbQualifiedName = getDBQualifiedName(database.getFullName());
                 if (metaDataContext.isKownEntity(dbQualifiedName)) {
                     dbEntity = metaDataContext.getEntity(dbQualifiedName);
                 } else {
-                    dbEntity = findDatabase(instanceId, database.getFullName());
+                    dbEntity = findDatabase(database.getFullName());
                     clearRelationshipAttributes(dbEntity);
                     metaDataContext.putEntity(dbQualifiedName, dbEntity);
                 }
-                importTables(dbEntity.getEntity(), instanceId, database.getFullName(), getTables(database), false, instanceGuid, taskInstanceId, tableSchema.getDefinition());
+                importTables(dbEntity.getEntity(), sourceId, database.getFullName(), getTables(database), false, instanceGuid, taskInstanceId, tableSchema.getDefinition());
             }
 
         } else {
@@ -151,9 +154,9 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     }
 
 
-    protected AtlasEntity.AtlasEntityWithExtInfo registerInstance(String instanceId, boolean allDatabase, SyncTaskDefinition definition) throws Exception {
+    protected AtlasEntity.AtlasEntityWithExtInfo registerInstance(boolean allDatabase, SyncTaskDefinition definition) throws Exception {
         AtlasEntity.AtlasEntityWithExtInfo ret;
-        String instanceQualifiedName = getInstanceQualifiedName(instanceId);
+        String instanceQualifiedName = getInstanceQualifiedName();
 
         InterProcessMutex lock = zkLockUtils.getInterProcessMutex(instanceQualifiedName);
 
@@ -164,18 +167,20 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 if (metaDataContext.isKownEntity(instanceQualifiedName)) {
                     ret = metaDataContext.getEntity(instanceQualifiedName);
                 } else {
-                    ret = findInstance(instanceId);
-                    clearRelationshipAttributes(ret);
-                    metaDataContext.putEntity(instanceQualifiedName, ret);
+                    ret = findInstance();
+                    if(null != ret){
+                        clearRelationshipAttributes(ret);
+                        metaDataContext.putEntity(instanceQualifiedName, ret);
+                    }
                 }
                 AtlasEntity.AtlasEntityWithExtInfo instanceEntity;
                 if (ret == null) {
-                    instanceEntity = toInstanceEntity(null, instanceId, allDatabase);
+                    instanceEntity = toInstanceEntity(null, allDatabase);
                     ret = registerEntity(instanceEntity, definition);
                     isSource = false;
                 } else {
-                    LOG.info("Instance {} is already registered - id={}. Updating it.", instanceId, ret.getEntity().getGuid());
-                    ret = toInstanceEntity(ret, instanceId, allDatabase);
+                    LOG.info("Instance {} is already registered - id={}. Updating it.", instanceQualifiedName, ret.getEntity().getGuid());
+                    ret = toInstanceEntity(ret, allDatabase);
                     entitiesStore.createOrUpdate(new AtlasEntityStream(ret, definition), false);
                     isSource = true;
                 }
@@ -191,12 +196,13 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         }
     }
 
-    protected AtlasEntity.AtlasEntityWithExtInfo toInstanceEntity(AtlasEntity.AtlasEntityWithExtInfo instanceEntity, String instanceId, boolean allDatabase) {
+    protected AtlasEntity.AtlasEntityWithExtInfo toInstanceEntity(AtlasEntity.AtlasEntityWithExtInfo instanceEntity, boolean allDatabase) {
         if (instanceEntity == null) {
             instanceEntity = new AtlasEntity.AtlasEntityWithExtInfo(new AtlasEntity(getInstanceTypeName()));
         }
+        String sourceId = dataSourceInfo.getSourceId();
         AtlasEntity entity = instanceEntity.getEntity();
-        entity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getInstanceQualifiedName(instanceId));
+        entity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getInstanceQualifiedName());
         entity.setAttribute(ATTRIBUTE_NAME, dataSourceInfo.getSourceName());
         entity.setAttribute(ATTRIBUTE_RDBMS_TYPE, dataSourceInfo.getSourceType());
         entity.setAttribute(ATTRIBUTE_PLATFORM, dataSourceInfo.getSourceType());
@@ -207,11 +213,11 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         List<AtlasEntity> dbEntities = new ArrayList<>();
         for (Schema schema : metaDataInfo.getSchemas()) {
             AtlasEntity.AtlasEntityWithExtInfo dbEntity = null;
-            String dbQualifiedName = getDBQualifiedName(instanceId, schema.getFullName());
+            String dbQualifiedName = getDBQualifiedName(schema.getFullName());
             if (metaDataContext.isKownEntity(dbQualifiedName)) {
                 dbEntity = metaDataContext.getEntity(dbQualifiedName);
             } else {
-                dbEntity = toDBEntity(instanceEntity, null, instanceId, schema.getFullName());
+                dbEntity = toDBEntity(instanceEntity, null, sourceId, schema.getFullName());
                 metaDataContext.putEntity(dbQualifiedName, dbEntity);
             }
             dbEntities.add(dbEntity.getEntity());
@@ -222,7 +228,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         if (attributes != null) {
             for (AtlasObjectId atlasObjectId : attributes) {
                 AtlasEntity atlasEntity = instanceEntity.getReferredEntity(atlasObjectId.getGuid());
-                atlasEntity = toDBEntity(instanceEntity, atlasEntity, instanceId);
+                atlasEntity = toDBEntity(instanceEntity, atlasEntity, sourceId);
                 instanceEntity.addReferredEntity(atlasEntity);
             }
             if (allDatabase) {
@@ -362,7 +368,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 foreignEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getColumnQualifiedName((String) table.getAttribute(ATTRIBUTE_QUALIFIED_NAME), foreignKey.getName()));
                 //todo ATTRIBUTE_REFERENCES_TABLE 和 ATTRIBUTE_REFERENCES_COLUMNS 需要需要表已经存在janusgraph中
                 //            visitForeignEntity(foreignEntity, foreignKey, dbEntity, instanceId);
-                String tableQualifiedName = getTableQualifiedName(table.getAttribute(ATTRIBUTE_QUALIFIED_NAME).toString().split("\\.")[0], primaryKeyColumn.getSchemaName(), primaryKeyColumn.getTableName());
+                String tableQualifiedName = getTableQualifiedName(primaryKeyColumn.getSchemaName(), primaryKeyColumn.getTableName());
                 AtlasEntity.AtlasEntityWithExtInfo tableInfo = findEntity(getTableTypeName(), tableQualifiedName);
                 if (tableInfo != null) {
                     tableInfo = getById(tableInfo.getEntity().getGuid(), false);
@@ -378,7 +384,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
 
                 ret.add(foreignEntity);
             } else {
-                String tableQualifiedName = getTableQualifiedName(table.getAttribute(ATTRIBUTE_QUALIFIED_NAME).toString().split("\\.")[0], foreignKeyColumn.getSchemaName(), foreignKeyColumn.getTableName());
+                String tableQualifiedName = getTableQualifiedName(foreignKeyColumn.getSchemaName(), foreignKeyColumn.getTableName());
                 String foreignQualifiedName = getColumnQualifiedName(tableQualifiedName, foreignKey.getName());
                 AtlasEntity.AtlasEntityWithExtInfo info = findEntity(RDBMS_FOREIGN_KEY, foreignQualifiedName);
                 if (info != null) {
@@ -431,7 +437,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
             entity.setGuid(dbId);
         }
 
-        entity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getDBQualifiedName(instanceId, databaseName));
+        entity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getDBQualifiedName(databaseName));
         entity.setAttribute(ATTRIBUTE_NAME, databaseName);
         entity.setAttribute(ATTRIBUTE_CLUSTER_NAME, clusterName);
         entity.setAttribute(ATTRIBUTE_PRODOROTHER, "");
@@ -441,7 +447,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
 
     protected AtlasEntity toDBEntity(AtlasEntity.AtlasEntityWithExtInfo instance, AtlasEntity entity, String instanceId) {
         String databaseName = (String) entity.getAttribute("name");
-        entity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getDBQualifiedName(instanceId, databaseName));
+        entity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getDBQualifiedName(databaseName));
         entity.setAttribute(ATTRIBUTE_NAME, databaseName);
         entity.setAttribute(ATTRIBUTE_CLUSTER_NAME, clusterName);
         entity.setAttribute(ATTRIBUTE_PRODOROTHER, "");
@@ -464,7 +470,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
             tableEntity = new AtlasEntity.AtlasEntityWithExtInfo(new AtlasEntity(getTableTypeName()));
         }
         AtlasEntity tableAtlasEntity = tableEntity.getEntity();
-        tableAtlasEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getTableQualifiedName(instanceId, databaseName, table.getName()));
+        tableAtlasEntity.setAttribute(ATTRIBUTE_QUALIFIED_NAME, getTableQualifiedName(databaseName, table.getName()));
         tableAtlasEntity.setAttribute(ATTRIBUTE_NAME, table.getName());
         tableAtlasEntity.setAttribute(ATTRIBUTE_DB, getObjectId(dbEntity));
         tableAtlasEntity.setAttribute(ATTRIBUTE_TYPE, table.getTableType().toString().toUpperCase());
@@ -520,11 +526,11 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     }
 
 
-    public AtlasEntity.AtlasEntityWithExtInfo findInstance(String instanceId) throws AtlasBaseException {
+    public AtlasEntity.AtlasEntityWithExtInfo findInstance() throws AtlasBaseException {
         if (LOG.isDebugEnabled()) {
-            LOG.debug("Searching Atlas for instance {}", instanceId);
+            LOG.debug("Searching Atlas for instance {}", dataSourceInfo.getSourceId());
         }
-        return findEntity(getInstanceTypeName(), getInstanceQualifiedName(instanceId));
+        return findEntity(getInstanceTypeName(), getInstanceQualifiedName());
     }
 
 
@@ -557,7 +563,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
 
     protected AtlasEntity.AtlasEntityWithExtInfo registerTable(AtlasEntity dbEntity, String instanceId, String databaseName,
                                                                Table tableName, String instanceGuid, SyncTaskDefinition definition) throws Exception {
-        String tableQualifiedName = getTableQualifiedName(instanceId, databaseName, tableName.getName());
+        String tableQualifiedName = getTableQualifiedName(databaseName, tableName.getName());
         AtlasEntity.AtlasEntityWithExtInfo ret = findEntity(getTableTypeName(), tableQualifiedName);
 
         InterProcessMutex lock = zkLockUtils.getInterProcessMutex(tableQualifiedName);
@@ -600,37 +606,36 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
      * @return AtlasEntity for database if exists, else null
      * @throws Exception
      */
-    private AtlasEntity.AtlasEntityWithExtInfo findDatabase(String instanceId, String databaseName) throws Exception {
+    private AtlasEntity.AtlasEntityWithExtInfo findDatabase(String databaseName) throws Exception {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Searching Atlas for database {}", databaseName);
         }
-        return findEntity(getDatabaseTypeName(), getDBQualifiedName(instanceId, databaseName));
+        return findEntity(getDatabaseTypeName(), getDBQualifiedName(databaseName));
     }
 
-    public String getInstanceQualifiedName(String instanceId) {
-        return String.format("%s@%s", instanceId, clusterName);
+    public String getInstanceQualifiedName() {
+
+        String ip = dataSourceInfo.getIp();
+        String port = dataSourceInfo.getPort();
+
+        return String.format("%s:%s", ip, port);
     }
 
     /**
      * Construct the qualified name used to uniquely identify a Database instance in Atlas.
      *
-     * @param dbName Name of the Hive database
      * @return Unique qualified name to identify the Database instance in Atlas.
      */
-    protected String getDBQualifiedName(String instanceId, String dbName) {
-        return String.format("%s.%s@%s", instanceId, dbName, clusterName);
+    protected String getDBQualifiedName(String dbName) {
+        return String.format("%s:%s", getInstanceQualifiedName(), dbName);
     }
 
-    protected String getTableQualifiedName(String instanceId, String dbName, String tableName) {
-        return String.format("%s.%s.%s@%s", instanceId, dbName, tableName, clusterName);
+    protected String getTableQualifiedName(String dbName, String tableName) {
+        return String.format("%s:%s", getDBQualifiedName(dbName), tableName);
     }
 
     protected static String getColumnQualifiedName(String tableQualifiedName, final String colName) {
-        final String[] parts = tableQualifiedName.split("@");
-        final String tableName = parts[0];
-        final String clusterName = parts[1];
-
-        return String.format("%s.%s@%s", tableName, colName, clusterName);
+        return String.format("%s:%s", tableQualifiedName, colName);
     }
 
 
