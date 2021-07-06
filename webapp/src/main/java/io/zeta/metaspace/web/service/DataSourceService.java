@@ -101,6 +101,7 @@ public class DataSourceService {
 
     /**
      * 记录检索次数和检索时长
+     *
      * @param start
      * @param end
      * @param type
@@ -1263,7 +1264,8 @@ public class DataSourceService {
             DataSourceTypeInfo dataSourceTypeInfo = new DataSourceTypeInfo(DataSourceType.ORACLE.getName(), DataSourceType.ORACLE.getDefaultPort());
             return Lists.newArrayList(dataSourceTypeInfo);
         }
-        List<DataSourceTypeInfo> typeNames = Arrays.stream(DataSourceType.values()).filter(type -> !(type.isBuildIn()) && type.isAdapter()).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(), dataSourceType.getDefaultPort())).collect(Collectors.toList());
-        return typeNames;
+        // 配置的数据源类型
+        List<String> confList = Arrays.stream(MetaspaceConfig.getDataSourceType()).map(String::toUpperCase).collect(Collectors.toList());
+        return Arrays.stream(DataSourceType.values()).filter(e -> confList.contains(e.getName())).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(), dataSourceType.getDefaultPort())).collect(Collectors.toList());
     }
 }
