@@ -296,17 +296,6 @@ public class CalciteParseSqlTools {
             uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+"."+value);
             instance.put("uniqueAttributes",uniqueAttributes);
 
-            /*RdbmsAttributes instance = new RdbmsAttributes();
-            instance.setTypeName("rdbms_column");
-            RdbmsAttributes.InnerAttributes innerAttributes = new RdbmsAttributes.InnerAttributes();
-            innerAttributes.setQualifiedName(dbHostname+":"+dbPort+":"+dbname+":"+"."+value);
-            instance.setUniqueAttributes(innerAttributes);*/
-
-            /*JsonObject output = new JsonObject();
-            JsonObject uniqueAttributesJsonObj = new JsonObject();
-            uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+"."+value);
-            output.addProperty("uniqueAttributes",uniqueAttributesJsonObj.toString());
-            output.addProperty("typeName","rdbms_column");*/
             result.add(instance);
         });
         return result;
@@ -336,17 +325,6 @@ public class CalciteParseSqlTools {
             uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+owner+"."+toTable);
             instance.put("uniqueAttributes",uniqueAttributes);
 
-            /*RdbmsAttributes instance = new RdbmsAttributes();
-            instance.setTypeName("rdbms_table");
-            RdbmsAttributes.InnerAttributes innerAttributes = new RdbmsAttributes.InnerAttributes();
-            innerAttributes.setQualifiedName(dbHostname+":"+dbPort+":"+dbname+":"+owner+"."+toTable);
-            instance.setUniqueAttributes(innerAttributes);*/
-
-           /* JsonObject output = new JsonObject();
-            JsonObject uniqueAttributesJsonObj = new JsonObject();
-            uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+owner+"."+toTable);
-            output.addProperty("uniqueAttributes",uniqueAttributesJsonObj.toString());
-            output.addProperty("typeName","rdbms_table");*/
             result.add(instance);
         });
         return result;
@@ -428,16 +406,6 @@ public class CalciteParseSqlTools {
             Map<String,Object> uniqueAttributes  = new HashMap<>();
             uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort);
             instance.put("uniqueAttributes",uniqueAttributes);
-            /*RdbmsAttributes instance = new RdbmsAttributes();
-            instance.setTypeName("rdbms_instance");
-            RdbmsAttributes.InnerAttributes innerAttributes = new RdbmsAttributes.InnerAttributes();
-            innerAttributes.setQualifiedName(dbHostname+":"+dbPort);
-            instance.setUniqueAttributes(innerAttributes);*/
-            /*JsonObject jsonObj = new JsonObject();
-            JsonObject uniqueAttributesJsonObj = new JsonObject();
-            uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort);
-            jsonObj.addProperty("uniqueAttributes",uniqueAttributesJsonObj.toString());
-            jsonObj.addProperty("typeName","rdbms_instance");*/
             attributeDbMap.put("instance",instance);
             atlasEntity.setAttributes(attributeDbMap);
 
@@ -462,17 +430,6 @@ public class CalciteParseSqlTools {
             uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname);
             instance.put("uniqueAttributes",uniqueAttributes);
 
-            /*RdbmsAttributes instance = new RdbmsAttributes();
-            instance.setTypeName("rdbms_db");
-            RdbmsAttributes.InnerAttributes innerAttributes = new RdbmsAttributes.InnerAttributes();
-            innerAttributes.setQualifiedName(dbHostname+":"+dbPort+":"+dbname);
-            instance.setUniqueAttributes(innerAttributes);*/
-
-            /*JsonObject jsonObj = new JsonObject();
-            JsonObject uniqueAttributesJsonObj = new JsonObject();
-            uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort+":"+dbname);
-            jsonObj.addProperty("typeName","rdbms_db");
-            jsonObj.addProperty("uniqueAttributes",uniqueAttributesJsonObj.toString());*/
             attributeTableMap.put("db",instance);
             atlasEntity.setAttributes(attributeTableMap);
 
@@ -514,17 +471,6 @@ public class CalciteParseSqlTools {
                     Map<String,Object> uniqueAttributes  = new HashMap<>();
                     uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+table);
                     instance.put("uniqueAttributes",uniqueAttributes);
-
-                    /*RdbmsAttributes instance = new RdbmsAttributes();
-                    instance.setTypeName("rdbms_table");
-                    RdbmsAttributes.InnerAttributes innerAttributes = new RdbmsAttributes.InnerAttributes();
-                    innerAttributes.setQualifiedName(dbHostname+":"+dbPort+":"+dbname+":"+table);
-                    instance.setUniqueAttributes(innerAttributes);*/
-                    /*JsonObject tableJson = new JsonObject();
-                    JsonObject uniqueAttributesJsonObj = new JsonObject();
-                    uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+table);
-                    tableJson.addProperty("uniqueAttributes",uniqueAttributesJsonObj.toString());
-                    tableJson.addProperty("typeName","rdbms_table");*/
                     attributeTableMap.put("table",instance);
 
                     atlasEntity.setAttributes(attributeTableMap);
