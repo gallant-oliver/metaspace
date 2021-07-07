@@ -1424,6 +1424,9 @@ public class DataManageService {
      */
     public Boolean getOutputFromProcesses(AtlasEntity entity) {
         try {
+            if(entity.getRelationshipAttributes() == null){
+                return false;
+            }
             LOG.info("inputToProcesses is {}", entity.getRelationshipAttributes().get("inputToProcesses"));
             LOG.info("outputFromProcesses is {}", entity.getRelationshipAttributes().get("outputFromProcesses"));
             List<Object> input = (List<Object>) entity.getRelationshipAttributes().get("inputToProcesses");
@@ -1445,6 +1448,9 @@ public class DataManageService {
     public Boolean getHiveAtlasEntityAll(List<AtlasEntity> entities){
         int i = 0;
         for (AtlasEntity entity : entities) {
+            if(entity.getRelationshipAttributes() == null){
+                return false;
+            }
             List<Object> input = (List<Object>) entity.getRelationshipAttributes().get("inputToProcesses");
             List<Object> output = (List<Object>) entity.getRelationshipAttributes().get("outputFromProcesses");
             if (CollectionUtils.isEmpty(input) && CollectionUtils.isEmpty(output)) {
