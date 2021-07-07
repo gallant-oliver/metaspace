@@ -90,7 +90,8 @@ public class DruidAnalyzerUtil {
             });*/
             if (tables != null) {
                 tables.forEach((tableName, stat) -> {
-                    if (stat.getCreateCount() > 0 || stat.getInsertCount() > 0) {
+                    if (stat.getCreateCount() > 0 || stat.getInsertCount() > 0
+                            || stat.getDropCount() > 0 || stat.getAlterCount() > 0) {
                         String to = tableName.getName().toUpperCase();
                         toSet.add(to);
                         toColumnSet.addAll( columns.stream().filter(v->to.equalsIgnoreCase(v.getTable()) )
