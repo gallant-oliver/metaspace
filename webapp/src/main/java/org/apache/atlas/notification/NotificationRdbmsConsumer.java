@@ -38,8 +38,6 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
     private static final Logger LOG        = LoggerFactory.getLogger(NotificationRdbmsConsumer.class);
     private Conversion conversion;
 
-    private AtlasEntityStore entityStore;
-
     @Inject
     public NotificationRdbmsConsumer(ServiceState serviceState,
                                      AtlasEntityStore entityStore,
@@ -58,8 +56,6 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
     public int getHandlerOrder() {
         return ActiveStateChangeHandler.HandlerOrder.NOTIFICATION_RDBMS_CONSUMER.getOrder();
     }
-
-
 
 
     @VisibleForTesting
@@ -83,8 +79,8 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
             RdbmsEntities rdbmsEntities = conversion.convert(rdbmsMessage,connectorProperties);
 
             LOG.info("atlas实体及数据血缘【"+rdbmsEntities+"】插入JanusGraph数据库，并调用监听器，将数据插入PG");
-//            RdbmsEntities.OperateType[] operateTypes = {RdbmsEntities.OperateType.DROP, RdbmsEntities.OperateType.ADD, RdbmsEntities.OperateType.MODIFY};
-//            deal(rdbmsEntities, operateTypes);
+            RdbmsEntities.OperateType[] operateTypes = {RdbmsEntities.OperateType.DROP, RdbmsEntities.OperateType.MODIFY, RdbmsEntities.OperateType.ADD};
+            deal(rdbmsEntities, operateTypes);
             return null;
         }
 
@@ -112,6 +108,7 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
                             AtlasEntityType entityType = typeRegistry.getEntityTypeByName(typeName);
                             return atlasEntityStore.deleteByUniqueAttributes(entityType, attributes);
                         });
+                        break;
                     default:
                         dealEntities(entityTypeMap,  entity -> atlasEntityStore.createOrUpdate(new AtlasEntityStream(entity), false));
                         dealBlood(bloodEntity, blood ->  atlasEntityStore.createOrUpdate(new AtlasEntityStream(blood), false));

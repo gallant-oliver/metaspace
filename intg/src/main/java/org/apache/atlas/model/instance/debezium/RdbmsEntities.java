@@ -68,21 +68,16 @@ public class RdbmsEntities {
      */
     private final Map<OperateType, Map<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> entityMap = new HashMap<OperateType, Map<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>>(){
         {
-            put(OperateType.ADD,  new TreeMap<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>((o1, o2) -> {
-                if(o1.order == o2.order){
-                    return 0;
-                }
-                return o1.order < o2.order ? 1 : -1;
-            }));
 
-            put(OperateType.DROP,  new TreeMap<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>((o1, o2) -> {
-                if(o1.order == o2.order){
-                    return 0;
-                }
-                return o1.order > o2.order ? 1 : -1;
-            }));
-            //更新的顺序由组装者决定，如果更新是有序的，请覆盖OperateType.MODIFY所对应的map。
-            put(OperateType.MODIFY,  new HashMap<>());
+            put(OperateType.ADD,  new TreeMap<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>((o1, o2) ->
+                    o1.order == o2.order ? 0 : (o1.order > o2.order ? 1 : -1)
+            ));
+            put(OperateType.DROP,  new TreeMap<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>((o1, o2) ->
+                    o1.order == o2.order ? 0 : (o1.order < o2.order ? 1 : -1)
+            ));
+            put(OperateType.MODIFY,  new TreeMap<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>((o1, o2) ->
+                    o1.order == o2.order ? 0 : (o1.order > o2.order ? 1 : -1)
+            ));
         }
     };
 

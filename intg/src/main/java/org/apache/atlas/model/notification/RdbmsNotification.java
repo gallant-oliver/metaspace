@@ -7,6 +7,7 @@ import org.apache.atlas.model.instance.debezium.RdbmsMessage;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.Serializable;
+import java.util.regex.Pattern;
 
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_ONLY;
@@ -15,7 +16,8 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class RdbmsNotification extends  Notification implements Serializable {
     private static final long serialVersionUID = 1L;
-
+    private static final Pattern SQL_DOC_PATTERN = Pattern.compile("(?ms)('(?:''|[^'])*')|--(?!(\\s*\\++\\s*\\S+))\\s.*?$|((/\\*)(?!(\\s*\\++\\s*\\S+)).*?(\\*/))");
+    private static final Pattern BLACK_LINE_PATTERN = Pattern.compile("(\n|↵)(?=([^\"]*\"[^\"]*\")*[^\"]*$)(?=([^']*'[^']*')*[^']*$)");
     public enum RdbmsNotificationType {
         /**
          * 创建库，表（视图，列，主键，索引，外键）
@@ -24,11 +26,11 @@ public class RdbmsNotification extends  Notification implements Serializable {
         /**
          * 更新库，表（视图，列，主键，索引，外键）
          */
-        ALTER("m"),
+        ALTER("a"),
         /**
          * 删除库，表（视图，列，主键，索引，外键）
          */
-        DROP("d"),
+        DROP("drop"),
         /**
          * 插入数据
          */
@@ -40,7 +42,7 @@ public class RdbmsNotification extends  Notification implements Serializable {
         /**
          * 删除数据
          */
-        DPDATE("d");
+        DELETE("d");
         private RdbmsNotificationType(String code){
             this.code = code;
         }
@@ -110,11 +112,13 @@ public class RdbmsNotification extends  Notification implements Serializable {
         if(StringUtils.isBlank(sql)){
             throw new AtlasBaseException("sql语句不能为空");
         }
-        String firstChar = sql.trim().substring(0, 1).toLowerCase();
-        switch (firstChar){
-            case "c" : return RdbmsNotificationType.NEW;
-            case "d" : return RdbmsNotificationType.DROP;
-            case "a" : return RdbmsNotificationType.ALTER;
+        sql = SQL_DOC_PATTERN.matcher(sql).replaceAll("$1");
+        sql = BLACK_LINE_PATTERN.matcher(sql).replaceAll(" ").trim();
+        String firstWord = sql.trim().substring(0, sql.indexOf(" ")).toLowerCase();
+        switch (firstWord){
+            case "create" : return RdbmsNotificationType.NEW;
+            case "drop" : return RdbmsNotificationType.DROP;
+            case "alter" : return RdbmsNotificationType.ALTER;
         }
         throw new AtlasBaseException("不识别的rdbms操作,sql = " + sql);
     }
