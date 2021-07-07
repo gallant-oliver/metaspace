@@ -1437,6 +1437,27 @@ public class DataManageService {
         return true;
     }
 
+    /**
+     * HIVE数据-检查AtlasEntity中输入和输出是否全是空
+     * @param entities
+     * @return
+     */
+    public Boolean getHiveAtlasEntityAll(List<AtlasEntity> entities){
+        int i = 0;
+        for (AtlasEntity entity : entities) {
+            List<Object> input = (List<Object>) entity.getRelationshipAttributes().get("inputToProcesses");
+            List<Object> output = (List<Object>) entity.getRelationshipAttributes().get("outputFromProcesses");
+            if (CollectionUtils.isEmpty(input) && CollectionUtils.isEmpty(output)) {
+                i++;
+            }
+        }
+        LOG.info("getHiveAtlasEntityAll i = {},entities is {}", i, entities.size());
+        if(entities.size() == i){
+            return false;
+        }
+        return true;
+    }
+
 
     @Transactional(rollbackFor = Exception.class)
     public void addEntity(List<AtlasEntity> entities, SyncTaskDefinition definition) {
@@ -1446,7 +1467,7 @@ public class DataManageService {
             for (AtlasEntity entity : entities) {
                 String typeName = entity.getTypeName();
                 if (("hive_table").equals(typeName)) {
-                    if(this.getOutputFromProcesses(entity)){
+                    if(this.getOutputFromProcesses(entity) && this.getHiveAtlasEntityAll(entities)){
                         continue;
                     }
                     if (entity.getAttribute("temporary") == null || entity.getAttribute("temporary").toString().equals("false")) {
@@ -1463,7 +1484,7 @@ public class DataManageService {
                     deleteIfExistTable(tableInfo);
                     tableDAO.addTable(tableInfo);
                 } else if (("hive_column").equals(typeName)) {
-                    if(this.getOutputFromProcesses(entity)){
+                    if(this.getOutputFromProcesses(entity) && this.getHiveAtlasEntityAll(entities)){
                         continue;
                     }
                     Column column = getColumn(entity, "type");
@@ -1640,7 +1661,7 @@ public class DataManageService {
             for (AtlasEntity entity : entities) {
                 String typeName = entity.getTypeName();
                 if (typeName.equals("hive_table")) {
-                    if(this.getOutputFromProcesses(entity)){
+                    if(this.getOutputFromProcesses(entity) && this.getHiveAtlasEntityAll(entities)){
                         continue;
                     }
                     if (entity.getAttribute("temporary") == null || entity.getAttribute("temporary").toString().equals("false")) {
@@ -1667,7 +1688,7 @@ public class DataManageService {
                         sendMetadataChangedMail(entity.getGuid());
                     }
                 } else if (typeName.equals("hive_column")) {
-                    if(this.getOutputFromProcesses(entity)){
+                    if(this.getOutputFromProcesses(entity) && this.getHiveAtlasEntityAll(entities)){
                         continue;
                     }
                     String guid = entity.getGuid();

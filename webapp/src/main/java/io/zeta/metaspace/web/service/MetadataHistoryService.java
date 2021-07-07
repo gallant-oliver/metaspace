@@ -58,7 +58,7 @@ public class MetadataHistoryService {
     public Set<String> getTableGuid(List<AtlasEntity> entities) {
         Set<String> tableSet = new HashSet<>();
         for (AtlasEntity entity : entities) {
-            if (dataManageService.getOutputFromProcesses(entity)) {
+            if (dataManageService.getOutputFromProcesses(entity) && dataManageService.getHiveAtlasEntityAll(entities)) {
                 continue;
             }
             String typeName = entity.getTypeName();
