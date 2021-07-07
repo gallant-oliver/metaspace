@@ -1,8 +1,5 @@
 package org.apache.atlas.notification.rdbms;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
 import io.zeta.metaspace.utils.DateUtils;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.debezium.RdbmsEntities;
@@ -244,9 +241,9 @@ public class CalciteParseSqlTools {
         atlasBloodEntity.setTypeName("Process");
 
         StringBuilder qualifiedProcessNameFromTo = new StringBuilder();
-        List<RdbmsAttributes> jsonInputs = dealInputOrOutput(fromSet,dbHostname, dbPort, dbname, qualifiedProcessNameFromTo,owner);
+        List<Map<String, Object>> jsonInputs = dealInputOrOutput(fromSet,dbHostname, dbPort, dbname, qualifiedProcessNameFromTo,owner);
         qualifiedProcessNameFromTo.append("@");
-        List<RdbmsAttributes> jsonOutputs = dealInputOrOutput(toSet,dbHostname, dbPort, dbname, qualifiedProcessNameFromTo,owner);
+        List<Map<String, Object>> jsonOutputs = dealInputOrOutput(toSet,dbHostname, dbPort, dbname, qualifiedProcessNameFromTo,owner);
 
         Map<String, Object> attributeBloodMap = new HashMap<>();
         attributeBloodMap.put("inputs",jsonInputs);
@@ -268,9 +265,9 @@ public class CalciteParseSqlTools {
             Map<String, Object> attributeMap = new HashMap<>();
             attributeMap.put("name",sql);
             StringBuilder qualifiedProcessColumn = new StringBuilder();
-            List<RdbmsAttributes> jsonColumnInputs = processColumnRelation(entry.getValue(),dbHostname, dbPort, dbname,qualifiedProcessColumn);
+            List<Map<String, Object>> jsonColumnInputs = processColumnRelation(entry.getValue(),dbHostname, dbPort, dbname,qualifiedProcessColumn);
             qualifiedProcessColumn.append("@");
-            List<RdbmsAttributes> jsonColumnOutputs = processColumnRelation(Arrays.asList(entry.getKey()),dbHostname, dbPort, dbname,qualifiedProcessColumn);
+            List<Map<String, Object>> jsonColumnOutputs = processColumnRelation(Arrays.asList(entry.getKey()),dbHostname, dbPort, dbname,qualifiedProcessColumn);
             attributeMap.put("qualifiedName",qualifiedProcessColumn.toString());
             attributeMap.put("inputs",jsonColumnInputs);
             attributeMap.put("outputs",jsonColumnOutputs);
@@ -284,19 +281,25 @@ public class CalciteParseSqlTools {
         return atlasBloodEntities;
     }
 
-    private static List<RdbmsAttributes> processColumnRelation(List<String> valueList, String dbHostname,
+    private static List<Map<String,Object>> processColumnRelation(List<String> valueList, String dbHostname,
                                                    String dbPort, String dbname,
                                                    StringBuilder qualifiedProcessColumn) {
-        List<RdbmsAttributes> result = new ArrayList<>();
+        List<Map<String,Object>> result = new ArrayList<>();
 
         valueList.forEach(value->{
             qualifiedProcessColumn.append(dbHostname+":"+dbPort+":"+dbname+":"+"."+value+" ");
 
-            RdbmsAttributes instance = new RdbmsAttributes();
+            Map<String,Object> instance = new HashMap<>();
+            instance.put("typeName","rdbms_column");
+            Map<String,Object> uniqueAttributes  = new HashMap<>();
+            uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+"."+value);
+            instance.put("uniqueAttributes",uniqueAttributes);
+
+            /*RdbmsAttributes instance = new RdbmsAttributes();
             instance.setTypeName("rdbms_column");
             RdbmsAttributes.InnerAttributes innerAttributes = new RdbmsAttributes.InnerAttributes();
             innerAttributes.setQualifiedName(dbHostname+":"+dbPort+":"+dbname+":"+"."+value);
-            instance.setUniqueAttributes(innerAttributes);
+            instance.setUniqueAttributes(innerAttributes);*/
 
             /*JsonObject output = new JsonObject();
             JsonObject uniqueAttributesJsonObj = new JsonObject();
@@ -320,17 +323,23 @@ public class CalciteParseSqlTools {
     /*
      * 处理数据血缘的from（inputs）、to （outputs）的字段结构数据
      */
-    private static List<RdbmsAttributes> dealInputOrOutput(TreeSet<String> set,String dbHostname,String dbPort,String dbname,
+    private static List<Map<String,Object>> dealInputOrOutput(TreeSet<String> set,String dbHostname,String dbPort,String dbname,
                                                StringBuilder qualifiedProcessNameFromTo,String owner){
-        List<RdbmsAttributes> result = new ArrayList<>();
+        List<Map<String,Object>> result = new ArrayList<>();
         set.forEach(toTable->{
             qualifiedProcessNameFromTo.append(dbHostname+":"+dbPort+":"+dbname+":"+owner+"."+toTable+" ");
 
-            RdbmsAttributes instance = new RdbmsAttributes();
+            Map<String,Object> instance = new HashMap<>();
+            instance.put("typeName","rdbms_table");
+            Map<String,Object> uniqueAttributes  = new HashMap<>();
+            uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+owner+"."+toTable);
+            instance.put("uniqueAttributes",uniqueAttributes);
+
+            /*RdbmsAttributes instance = new RdbmsAttributes();
             instance.setTypeName("rdbms_table");
             RdbmsAttributes.InnerAttributes innerAttributes = new RdbmsAttributes.InnerAttributes();
             innerAttributes.setQualifiedName(dbHostname+":"+dbPort+":"+dbname+":"+owner+"."+toTable);
-            instance.setUniqueAttributes(innerAttributes);
+            instance.setUniqueAttributes(innerAttributes);*/
 
            /* JsonObject output = new JsonObject();
             JsonObject uniqueAttributesJsonObj = new JsonObject();
@@ -406,11 +415,17 @@ public class CalciteParseSqlTools {
             attributeDbMap.put("owner",username);
             attributeDbMap.put("description","rdbms_db data API ");
             attributeDbMap.put("prodOrOther","");
-            RdbmsAttributes instance = new RdbmsAttributes();
+
+            Map<String,Object> instance = new HashMap<>();
+            instance.put("typeName","rdbms_instance");
+            Map<String,Object> uniqueAttributes  = new HashMap<>();
+            uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort);
+            instance.put("uniqueAttributes",uniqueAttributes);
+            /*RdbmsAttributes instance = new RdbmsAttributes();
             instance.setTypeName("rdbms_instance");
             RdbmsAttributes.InnerAttributes innerAttributes = new RdbmsAttributes.InnerAttributes();
             innerAttributes.setQualifiedName(dbHostname+":"+dbPort);
-            instance.setUniqueAttributes(innerAttributes);
+            instance.setUniqueAttributes(innerAttributes);*/
             /*JsonObject jsonObj = new JsonObject();
             JsonObject uniqueAttributesJsonObj = new JsonObject();
             uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort);
@@ -434,11 +449,17 @@ public class CalciteParseSqlTools {
             attributeTableMap.put("owner",username);
             attributeTableMap.put("type","table");
 
-            RdbmsAttributes instance = new RdbmsAttributes();
+            Map<String,Object> instance = new HashMap<>();
+            instance.put("typeName","rdbms_db");
+            Map<String,Object> uniqueAttributes  = new HashMap<>();
+            uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname);
+            instance.put("uniqueAttributes",uniqueAttributes);
+
+            /*RdbmsAttributes instance = new RdbmsAttributes();
             instance.setTypeName("rdbms_db");
             RdbmsAttributes.InnerAttributes innerAttributes = new RdbmsAttributes.InnerAttributes();
             innerAttributes.setQualifiedName(dbHostname+":"+dbPort+":"+dbname);
-            instance.setUniqueAttributes(innerAttributes);
+            instance.setUniqueAttributes(innerAttributes);*/
 
             /*JsonObject jsonObj = new JsonObject();
             JsonObject uniqueAttributesJsonObj = new JsonObject();
@@ -481,11 +502,17 @@ public class CalciteParseSqlTools {
                     attributeTableMap.put("isNullable",colInfo.isNullable());
                     attributeTableMap.put("isPrimaryKey",false);
 
-                    RdbmsAttributes instance = new RdbmsAttributes();
+                    Map<String,Object> instance = new HashMap<>();
+                    instance.put("typeName","rdbms_table");
+                    Map<String,Object> uniqueAttributes  = new HashMap<>();
+                    uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+table);
+                    instance.put("uniqueAttributes",uniqueAttributes);
+
+                    /*RdbmsAttributes instance = new RdbmsAttributes();
                     instance.setTypeName("rdbms_table");
                     RdbmsAttributes.InnerAttributes innerAttributes = new RdbmsAttributes.InnerAttributes();
                     innerAttributes.setQualifiedName(dbHostname+":"+dbPort+":"+dbname+":"+table);
-                    instance.setUniqueAttributes(innerAttributes);
+                    instance.setUniqueAttributes(innerAttributes);*/
                     /*JsonObject tableJson = new JsonObject();
                     JsonObject uniqueAttributesJsonObj = new JsonObject();
                     uniqueAttributesJsonObj.addProperty("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+table);

@@ -10,6 +10,8 @@ import java.util.stream.Collectors;
 
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
+import com.alibaba.druid.sql.ast.statement.SQLCreateMaterializedViewStatement;
+import com.alibaba.druid.sql.ast.statement.SQLCreateViewStatement;
 import com.alibaba.druid.sql.parser.ParserException;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
 import com.alibaba.druid.stat.TableStat;
@@ -18,6 +20,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * druid 解析sql 工具类
+ * sql 解析生成表、列信息
+ */
 public class DruidAnalyzerUtil {
     private static final Logger log = LoggerFactory.getLogger(DruidAnalyzerUtil.class);
 
@@ -80,14 +86,21 @@ public class DruidAnalyzerUtil {
         TreeSet<String> toColumnSet = new TreeSet<>();
         Map<String, TreeSet<String>> fromTo = new HashMap<>(4);
         for (SQLStatement stmt : stmts) {
-            SchemaStatVisitor statVisitor = SQLUtils.createSchemaStatVisitor(db);
+            //创建视图view  materialized view 需单独处理(否则获取不到目标视图名称)
+            if(stmt instanceof SQLCreateViewStatement) {
+                SQLCreateViewStatement view = (SQLCreateViewStatement)stmt;
+                toSet.add(view.getTableSource().toString());
+            }
+            if(stmt instanceof SQLCreateMaterializedViewStatement) {
+                SQLCreateMaterializedViewStatement view = (SQLCreateMaterializedViewStatement)stmt;
+                toSet.add(view.getName().toString());
+            }
 
+            SchemaStatVisitor statVisitor = SQLUtils.createSchemaStatVisitor(db);
             stmt.accept(statVisitor);
             Map<TableStat.Name, TableStat> tables = statVisitor.getTables();
             Collection<TableStat.Column> columns = statVisitor.getColumns();
-            /*columns.forEach(column -> {
-                System.out.println(column.getTable() + " "+column.getName());
-            });*/
+
             if (tables != null) {
                 tables.forEach((tableName, stat) -> {
                     if (stat.getCreateCount() > 0 || stat.getInsertCount() > 0
@@ -117,29 +130,4 @@ public class DruidAnalyzerUtil {
         return fromTo;
     }
 
-    public static void main(String[] args) {
-        String sql = "-- step 1 step1\n" +
-                "DROP TABLE IF EXISTS tb1;\n" +
-                "CREATE TABLE tb1  AS\n" +
-                "SELECT tb2.filed1,\n" +
-                "       filed2,\n" +
-                "       filed3\n" +
-                "FROM tb2,tb3\n" +
-                "WHERE tb2.filed1 = tb3.filed1 \n" +
-                "  AND filed3 = 0\n" ;
-
-        sql= "SELECT a.filed4 AS filed4,\n" +
-                "       a.filed5\n" +
-                "FROM tb2 a\n" +
-                "LEFT JOIN tb3 b ON (a.filed4 = b.filed4)\n" +
-                "WHERE a.filed4 = 1\n" +
-                "  AND a.filed5 = 0;\n";
-
-        Map<String, TreeSet<String>> result = DruidAnalyzerUtil.getFromTo(sql,"oracle");
-        result.forEach((key, set) -> {
-            System.out.print(key+":");
-            set.forEach(item -> System.out.print(item +" "));
-            System.out.println();
-        });
-    }
 }
