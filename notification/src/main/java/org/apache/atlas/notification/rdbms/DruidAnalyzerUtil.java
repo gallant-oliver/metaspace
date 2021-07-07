@@ -1,11 +1,7 @@
 package org.apache.atlas.notification.rdbms;
 
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import com.alibaba.druid.sql.SQLUtils;
@@ -84,16 +80,19 @@ public class DruidAnalyzerUtil {
         TreeSet<String> toSet = new TreeSet<>();
         TreeSet<String> fromColumnSet = new TreeSet<>();
         TreeSet<String> toColumnSet = new TreeSet<>();
-        Map<String, TreeSet<String>> fromTo = new HashMap<>(4);
+        Map<String, TreeSet<String>> fromTo = new HashMap<>(5);
+        fromTo.put("type",new TreeSet<>(Arrays.asList("table")));
         for (SQLStatement stmt : stmts) {
             //创建视图view  materialized view 需单独处理(否则获取不到目标视图名称)
             if(stmt instanceof SQLCreateViewStatement) {
                 SQLCreateViewStatement view = (SQLCreateViewStatement)stmt;
                 toSet.add(view.getTableSource().toString());
+                fromTo.put("type",new TreeSet<>(Arrays.asList("view")));
             }
             if(stmt instanceof SQLCreateMaterializedViewStatement) {
                 SQLCreateMaterializedViewStatement view = (SQLCreateMaterializedViewStatement)stmt;
                 toSet.add(view.getName().toString());
+                fromTo.put("type",new TreeSet<>(Arrays.asList("view")));
             }
 
             SchemaStatVisitor statVisitor = SQLUtils.createSchemaStatVisitor(db);

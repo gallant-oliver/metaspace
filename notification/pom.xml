@@ -31,17 +31,17 @@
 
     <dependencies>
         <!-- https://mvnrepository.com/artifact/org.apache.calcite/calcite-core -->
-        <dependency>
+       <!-- <dependency>
             <groupId>org.apache.calcite</groupId>
             <artifactId>calcite-core</artifactId>
             <version>1.25.0</version>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/org.apache.calcite/calcite-server 支持DDL解析 -->
+        &lt;!&ndash; https://mvnrepository.com/artifact/org.apache.calcite/calcite-server 支持DDL解析 &ndash;&gt;
         <dependency>
             <groupId>org.apache.calcite</groupId>
             <artifactId>calcite-server</artifactId>
             <version>1.25.0</version>
-        </dependency>
+        </dependency>-->
 
         <dependency>
             <groupId>org.apache.atlas</groupId>

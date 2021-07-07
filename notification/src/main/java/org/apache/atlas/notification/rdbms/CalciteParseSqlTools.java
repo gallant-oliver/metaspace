@@ -4,21 +4,14 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.debezium.RdbmsEntities;
 import org.apache.atlas.model.instance.debezium.RdbmsMessage;
 import org.apache.atlas.model.notification.RdbmsNotification;
-import org.apache.calcite.sql.*;
-import org.apache.calcite.sql.ddl.*;
-import org.apache.calcite.sql.parser.SqlParseException;
-import org.apache.calcite.sql.parser.SqlParser;
-import org.apache.calcite.sql.parser.ddl.SqlDdlParserImpl;
-import org.apache.calcite.sql.parser.impl.SqlParserImpl;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -31,61 +24,27 @@ import java.util.stream.Collectors;
  */
 public class CalciteParseSqlTools {
     private static final Logger log = LoggerFactory.getLogger(CalciteParseSqlTools.class);
-    /**
-     * ddl 和dml 各自对应的工厂实现解析sql为sqlnode
-     * @param sql
-     * @return
-     */
-    @Deprecated
-    private static SqlNode getSqlNodeAvailable(String sql) {
-        SqlParser parser = null;
-        //根据sql语句判断是否属于ddl语句
-        boolean isDdl = StringUtils.startsWithAny(sql.trim().replaceAll("\\s+", " ").toUpperCase(),
-                new String[] { "CREATE SCHEMA", "CREATE TABLE", "CREATE VIEW", "CREATE FUNCTION","CREATE MATERIALIZED VIEW",
-                        "CREATE FOREIGN SCHEMA", "DROP SCHEMA", "DROP TABLE", "DROP VIEW", "DROP FUNCTION",
-                        "DROP FOREIGN SCHEMA" ,"DROP MATERIALIZED VIEW"});
-
-        log.info("is DDL: {}" , isDdl);
-        if (isDdl) {
-            parser = SqlParser.create(sql, SqlParser.configBuilder().setParserFactory(SqlDdlParserImpl.FACTORY).build() );
-        } else {
-            parser = SqlParser.create(sql, SqlParser.configBuilder().setParserFactory(SqlParserImpl.FACTORY).build() );
-        }
-        try {
-            SqlNode node = parser.parseQuery();
-            return node;
-        } catch (SqlParseException e) {
-            log.error("parse node error: {}" , e);
-            return null;
-        }
-    }
 
     public static RdbmsEntities getSimulationRdbmsEntities(RdbmsNotification notification, Properties connectorProperties) throws IOException {
         RdbmsMessage.Payload payload = notification.getRdbmsMessage().getPayload();
         Boolean isDdl = StringUtils.isBlank(payload.getOp());
         String sql = isDdl ?  payload.getDdl() : payload.getSource().getQuery() ;
         sql = sql.replace("`","").replace(";","");
-        //String dbname = isDdl ? payload.getDatabaseName() : payload.getSource().getDb() ;
-        /*SqlNode sqlParseNode = getSqlNodeAvailable(sql);
-        if(sqlParseNode == null){
-            throw new RuntimeException("sql 语法解析处理错误.");
-        }
-        Map<String,Object>  bloodTableMap= getBloodRelation(sqlParseNode);
-        List<String> tableList = (List<String>) bloodTableMap.get("tableBlood");*/
 
         String rdbmsType = getRdbmsType(connectorProperties);
         Map<String, TreeSet<String>> resultTableMap = DruidAnalyzerUtil.getFromTo(sql,rdbmsType);
         TreeSet<String> fromSet = resultTableMap.get("from");
         TreeSet<String> toSet = resultTableMap.get("to");
+        String entityType = resultTableMap.get("type").first(); //table or view
         if(resultTableMap == null
                 || (fromSet.isEmpty() && toSet.isEmpty()) ){
             log.info("sql解析没有表对象，不需要处理..");
             return new RdbmsEntities();
         }
-
+        String upperSql = sql.trim().toUpperCase();
         RdbmsEntities.OperateType operateType =
-                StringUtils.startsWithAny(sql.trim().toUpperCase(), new String[] { "CREATE", "INSERT"}) ? RdbmsEntities.OperateType.ADD :
-                        (StringUtils.startsWithAny(sql.trim().toUpperCase(),new String[] { "DROP", "DELETE"}) ? RdbmsEntities.OperateType.DROP :
+                StringUtils.startsWithAny(upperSql, new String[] { "CREATE", "INSERT"})? RdbmsEntities.OperateType.ADD :
+                        (StringUtils.startsWithAny(upperSql,new String[] { "DROP", "DELETE"}) ? RdbmsEntities.OperateType.DROP :
                         RdbmsEntities.OperateType.MODIFY);
 
         log.info("execute sql :{},\n operateType:{}",sql,operateType);
@@ -108,8 +67,9 @@ public class CalciteParseSqlTools {
         List<AtlasEntity.AtlasEntityWithExtInfo> fromColumnEntityList = new ArrayList<>();
         List<AtlasEntity.AtlasEntityWithExtInfo> toTableEntityList = new ArrayList<>();
         List<AtlasEntity.AtlasEntityWithExtInfo> toColumnEntityList = new ArrayList<>();
-        //记录表.列格式的list
+        //表.列 格式的list 结构进行组装
         List<String> allColumnInfo = new ArrayList<>();
+        connectorProperties.put("table.type",entityType);
         dealTableColumnEntity(fromTableList, connectorProperties, fromTableEntityList, fromColumnEntityList,allColumnInfo);
         dealTableColumnEntity(toTableList, connectorProperties, toTableEntityList, toColumnEntityList,allColumnInfo);
 
@@ -344,12 +304,6 @@ public class CalciteParseSqlTools {
         return rdbmsType;
     }
 
-   /* private static String getFormatDateString(){
-        Date now = new Date();
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.S'Z'");
-        return  sdf.format(now);
-    }*/
-
     /**
      * 组装atlas 实体
      * @param entityType instance、db、table etc
@@ -422,7 +376,9 @@ public class CalciteParseSqlTools {
             attributeTableMap.put("comment","rdbms table API");
             attributeTableMap.put("description","rdbms_table input");
             attributeTableMap.put("owner",username);
-            attributeTableMap.put("type","table");
+            String type = connectorProperties.getProperty("table.type");
+            log.info("当前操作的实体类型是 ====> {}",type);
+            attributeTableMap.put("type",type);
 
             Map<String,Object> instance = new HashMap<>();
             instance.put("typeName","rdbms_db");
@@ -482,125 +438,6 @@ public class CalciteParseSqlTools {
         }
         return resultList;
     }
-    /**
-     *  获取数据的血缘关系
-     *  支持格式： create table|view xxx as select ...
-     *          insert into tableXX select ...
-     * @param sqlNode
-     * @return
-     */
-    private static Map<String,Object> getBloodRelation(SqlNode sqlNode) {
-        Map<String,Object> resultMap = new HashMap<>();
-        List<String> bloodTableList = new ArrayList<>();
-        resultMap.put("operType",RdbmsEntities.OperateType.ADD);
-        resultMap.put("tableBlood",bloodTableList);
 
-        if(Objects.isNull(sqlNode)) {
-            log.info("sql parse error.");
-            return null;
-        }
-
-        if (sqlNode.getKind() == SqlKind.CREATE_TABLE) {
-            log.info("----create_table");
-            resultMap.put("operType",RdbmsEntities.OperateType.ADD);
-            SqlCreateTable sqlCreate = (SqlCreateTable) sqlNode;
-            bloodTableList.add(sqlCreate.name.toString());
-            getDependencies(sqlCreate.query,bloodTableList);
-        }else if(sqlNode.getKind() == SqlKind.CREATE_VIEW) {
-            log.info("----create_view");
-            resultMap.put("operType",RdbmsEntities.OperateType.ADD);
-            SqlCreateView sqlCreate = (SqlCreateView) sqlNode;
-            bloodTableList.add(sqlCreate.name.toString());
-            getDependencies(sqlCreate.query,bloodTableList);
-        }else if (sqlNode.getKind() == SqlKind.CREATE_MATERIALIZED_VIEW) {
-            log.info("----create_MATERIALIZED VIEW ");
-            resultMap.put("operType",RdbmsEntities.OperateType.ADD);
-            SqlCreateMaterializedView sqlCreate = (SqlCreateMaterializedView) sqlNode;
-            bloodTableList.add(sqlCreate.name.toString());
-            getDependencies(sqlCreate.query,bloodTableList);
-        }else if (sqlNode.getKind() == SqlKind.INSERT) {
-            log.info("----insert");
-            resultMap.put("operType",RdbmsEntities.OperateType.ADD);
-            SqlInsert sqlCreate = (SqlInsert) sqlNode;
-            bloodTableList.add(sqlCreate.getTargetTable().toString());
-            getDependencies(sqlCreate.getSource(),bloodTableList);
-        }else if(sqlNode.getKind() == SqlKind.DROP_TABLE) {
-            log.info("----drop table");
-            resultMap.put("operType",RdbmsEntities.OperateType.DROP);
-            SqlDropTable sqlDrop = (SqlDropTable) sqlNode;
-            bloodTableList.add(sqlDrop.name.toString());
-        }else if(sqlNode.getKind() == SqlKind.DROP_VIEW) {
-            log.info("----drop view");
-            resultMap.put("operType",RdbmsEntities.OperateType.DROP);
-            SqlDropView sqlDrop = (SqlDropView) sqlNode;
-            bloodTableList.add(sqlDrop.name.toString());
-        }else if(sqlNode.getKind() == SqlKind.DROP_MATERIALIZED_VIEW) {
-            log.info("----drop MATERIALIZED_VIEW");
-            resultMap.put("operType",RdbmsEntities.OperateType.DROP);
-            SqlDropMaterializedView sqlDrop = (SqlDropMaterializedView) sqlNode;
-            bloodTableList.add(sqlDrop.name.toString());
-        }else if(sqlNode.getKind() == SqlKind.UPDATE) {
-            log.info("----drop UPDATE");
-            resultMap.put("operType",RdbmsEntities.OperateType.MODIFY);
-            SqlUpdate sqlUpdate = (SqlUpdate) sqlNode;
-            bloodTableList.add(sqlUpdate.getTargetTable().toString());
-            getDependencies(sqlUpdate.getSourceSelect(),bloodTableList);
-        }else{
-            log.info("no blood relation.");
-        }
-        return resultMap;
-    }
-
-    /**
-     *  找出表的依赖关系
-     * @param sqlNode
-     * @param result
-     * @return
-     */
-    private static List<String> getDependencies(SqlNode sqlNode, List<String> result) {
-        if(sqlNode == null){
-            return null;
-        }
-        if (sqlNode.getKind() == SqlKind.JOIN) {
-            SqlJoin sqlKind = (SqlJoin) sqlNode;
-            log.info("-----join");
-
-            getDependencies(sqlKind.getLeft(), result);
-            getDependencies(sqlKind.getRight(), result);
-        }
-
-        if (sqlNode.getKind() == SqlKind.UNION) {
-            SqlBasicCall sqlKind = (SqlBasicCall) sqlNode;
-            log.info("----union");
-
-            getDependencies(sqlKind.getOperandList().get(0), result);
-            getDependencies(sqlKind.getOperandList().get(1), result);
-
-        }
-
-        if (sqlNode.getKind() == SqlKind.IDENTIFIER) {
-            log.info("-----identifier");
-            result.add(sqlNode.toString());
-        }
-
-        if (sqlNode.getKind() == SqlKind.SELECT) {
-            SqlSelect sqlKind = (SqlSelect) sqlNode;
-            log.info("-----select");
-            getDependencies(sqlKind.getFrom(), result);
-        }
-
-        if (sqlNode.getKind() == SqlKind.AS) {
-            SqlBasicCall sqlKind = (SqlBasicCall) sqlNode;
-            log.info("----as");
-            getDependencies(sqlKind.getOperandList().get(0), result);
-        }
-
-        if (sqlNode.getKind() == SqlKind.ORDER_BY) {
-            SqlOrderBy sqlKind = (SqlOrderBy) sqlNode;
-            log.info("----order_by");
-            getDependencies(sqlKind.getOperandList().get(0), result);
-        }
-        return result;
-    }
 
 }
