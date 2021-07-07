@@ -14,13 +14,12 @@ import io.zeta.metaspace.web.service.dataquality.TaskManageService;
 import io.zeta.metaspace.web.task.quartz.QuartzManager;
 import io.zeta.metaspace.web.task.sync.SyncTaskJob;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.LocalCacheUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.janusgraph.util.datastructures.ArraysUtil;
 import org.quartz.CronExpression;
-import org.quartz.SchedulerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -390,6 +389,7 @@ public class MetaDataTaskService {
             }
             HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(), "停止采集任务实例: " + instance.getName());
             syncTaskInstanceDAO.updateStatusAndAppendLog(instanceId, SyncTaskInstance.Status.FAIL, "手动停止任务实例");
+            LocalCacheUtils.RDBMS_METADATA_GATHER_ENABLE_CACHE.put(instanceId, "fail");
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "停止任务实例失败");
         }
