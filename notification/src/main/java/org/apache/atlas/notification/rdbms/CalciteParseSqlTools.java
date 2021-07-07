@@ -1,6 +1,5 @@
 package org.apache.atlas.notification.rdbms;
 
-import io.zeta.metaspace.utils.DateUtils;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.debezium.RdbmsEntities;
 import org.apache.atlas.model.instance.debezium.RdbmsMessage;
@@ -12,11 +11,13 @@ import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.parser.ddl.SqlDdlParserImpl;
 import org.apache.calcite.sql.parser.impl.SqlParserImpl;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -365,6 +366,12 @@ public class CalciteParseSqlTools {
         return rdbmsType;
     }
 
+   /* private static String getFormatDateString(){
+        Date now = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.S'Z'");
+        return  sdf.format(now);
+    }*/
+
     /**
      * 组装atlas 实体
      * @param entityType instance、db、table etc
@@ -443,7 +450,7 @@ public class CalciteParseSqlTools {
             Map<String, Object> attributeTableMap = new HashMap<>();
             attributeTableMap.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+table);
             attributeTableMap.put("name",table);
-            attributeTableMap.put("createTime", DateUtils.currentTimestamp().toString());
+            attributeTableMap.put("createTime", new Date());
             attributeTableMap.put("comment","rdbms table API");
             attributeTableMap.put("description","rdbms_table input");
             attributeTableMap.put("owner",username);
