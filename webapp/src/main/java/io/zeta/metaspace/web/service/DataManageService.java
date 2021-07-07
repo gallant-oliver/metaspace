@@ -1448,6 +1448,7 @@ public class DataManageService {
     public Boolean getHiveAtlasEntityAll(List<AtlasEntity> entities){
         int i = 0;
         for (AtlasEntity entity : entities) {
+            //当执行删表语句时，关联关系为空
             if(entity.getRelationshipAttributes() == null){
                 return false;
             }
