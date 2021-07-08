@@ -19,6 +19,7 @@ public class MetaspaceConfig {
     private static String hiveConfig;
     private static String metaspaceUrl;
     private static boolean dataService;
+    private static boolean operateLogModuleMoon;
     private static String[] dataSourceType;
     private static String[] dataSourceApiType;
     public static List<String> systemCategory = new ArrayList<String>() {{
@@ -46,6 +47,10 @@ public class MetaspaceConfig {
 
     public static boolean getDataService() {
         return dataService;
+    }
+
+    public static boolean getOperateLogModuleMoon() {
+        return operateLogModuleMoon;
     }
 
     public static String[] getDataSourceType() {
@@ -114,6 +119,7 @@ public class MetaspaceConfig {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.request.address未正确配置");
             }
             dataService = conf.getBoolean("metaspace.dataservice", false);
+            operateLogModuleMoon = conf.getBoolean("metaspace.operationlog.module.moon", false);
             dataSourceType = conf.getStringArray("metaspace.datasource.type");
             dataSourceApiType = conf.getStringArray("metaspace.datasource.api.type");
         } catch (Exception e) {
