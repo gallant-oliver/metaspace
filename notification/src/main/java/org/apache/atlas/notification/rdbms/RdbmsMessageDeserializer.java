@@ -32,6 +32,8 @@ import org.apache.atlas.notification.MessageDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.regex.Pattern;
+
 
 /**
  * Hook notification message deserializer.
@@ -41,10 +43,13 @@ public class RdbmsMessageDeserializer implements MessageDeserializer<RdbmsNotifi
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
 
+    private static final Pattern SQL_DOC_PATTERN = Pattern.compile("(?ms)('(?:''|[^'])*')|--(?!(\\s*\\++\\s*\\S+))\\s.*?$|((/\\*)(?!(\\s*\\++\\s*\\S+)).*?(\\*/))");
+    private static final Pattern BLACK_LINE_PATTERN = Pattern.compile("(\n|↵)(?=([^\"]*\"[^\"]*\")*[^\"]*$)(?=([^']*'[^']*')*[^']*$)");
+
     /**
      * Logger for rdbms notification messages.
      */
-    private static final Logger NOTIFICATION_LOGGER = LoggerFactory.getLogger(RdbmsMessageDeserializer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RdbmsMessageDeserializer.class);
 
 
     @Override
@@ -57,15 +62,20 @@ public class RdbmsMessageDeserializer implements MessageDeserializer<RdbmsNotifi
                 throw new RuntimeException("rdbms消息有误，payload不能为空");
             }
             RdbmsNotification.RdbmsNotificationType type = null;
+            String sql = payload.getOp() != null ? payload.getSource().getQuery() : payload.getDdl();
+            sql = SQL_DOC_PATTERN.matcher(sql).replaceAll("$1");
+            sql = BLACK_LINE_PATTERN.matcher(sql).replaceAll(" ").trim();
             if(payload.getOp() != null){
                 type = RdbmsNotification.RdbmsNotificationType.getTypeByCode(payload.getOp());
+                payload.getSource().setQuery(sql);
             }else{
-                type = RdbmsNotification.getTypeBySql(payload.getDdl());
+                type = RdbmsNotification.getTypeBySql(sql);
+                payload.setDdl(sql);
             }
             rdbmsNotification.setType(type);
             rdbmsNotification.setRdbmsMessage(rdbmsMessage);
         }catch (Exception e){
-            throw new AtlasBaseException("消息转化异常", e);
+            LOG.error("消息转化异常, messageJson: {}",messageJson, e);
         }
         return rdbmsNotification;
 

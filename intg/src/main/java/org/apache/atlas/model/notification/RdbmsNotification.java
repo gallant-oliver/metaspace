@@ -16,8 +16,6 @@ import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_
 @JsonIgnoreProperties(ignoreUnknown=true)
 public class RdbmsNotification extends  Notification implements Serializable {
     private static final long serialVersionUID = 1L;
-    private static final Pattern SQL_DOC_PATTERN = Pattern.compile("(?ms)('(?:''|[^'])*')|--(?!(\\s*\\++\\s*\\S+))\\s.*?$|((/\\*)(?!(\\s*\\++\\s*\\S+)).*?(\\*/))");
-    private static final Pattern BLACK_LINE_PATTERN = Pattern.compile("(\n|↵)(?=([^\"]*\"[^\"]*\")*[^\"]*$)(?=([^']*'[^']*')*[^']*$)");
     public enum RdbmsNotificationType {
         /**
          * 创建库，表（视图，列，主键，索引，外键）
@@ -112,8 +110,6 @@ public class RdbmsNotification extends  Notification implements Serializable {
         if(StringUtils.isBlank(sql)){
             throw new AtlasBaseException("sql语句不能为空");
         }
-        sql = SQL_DOC_PATTERN.matcher(sql).replaceAll("$1");
-        sql = BLACK_LINE_PATTERN.matcher(sql).replaceAll(" ").trim();
         String firstWord = sql.trim().substring(0, sql.indexOf(" ")).toLowerCase();
         switch (firstWord){
             case "create" : return RdbmsNotificationType.NEW;

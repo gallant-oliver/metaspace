@@ -79,6 +79,9 @@ public class AtlasKafkaConsumer<T> extends AbstractNotificationConsumer<T> {
                 T message = deserializer.deserialize(record.value().toString());
 
                 if (message == null) {
+                    TopicPartition partition = new TopicPartition(record.topic(), record.partition());
+                    LOG.info("一条消息转化结果为空：partition:{}; offset:{}; 消息{}", record.partition(), record.offset(), record.value());
+                    commit(partition, record.offset() + 1);
                     continue;
                 }
                 messages.add(new AtlasKafkaMessage(message, record.offset(), record.partition(), record.topic()));
