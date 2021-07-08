@@ -70,6 +70,10 @@ public class DruidAnalyzerUtil {
             for(SQLSelectItem item : list){
                 String origin = "";
                 String clomn = item.getAlias();
+                if(clomn == null){
+                    log.info("no alias..");
+                    continue;
+                }
                 clomn = clomn.replaceAll("\"","").replaceAll("\'","");
                 String oriColumn = item.getExpr().toString();
                 int location = oriColumn.indexOf('.');
@@ -135,13 +139,14 @@ public class DruidAnalyzerUtil {
                     if (stat.getCreateCount() > 0 || stat.getInsertCount() > 0
                             || stat.getDropCount() > 0 || stat.getAlterCount() > 0) {
                         String to = tableName.getName().toUpperCase();
-                        toSet.add(to);
+
+                        toSet.add(to.indexOf(".") != -1 ? to.split("\\.")[1]:to);
                         toColumnSet.addAll( columns.stream().filter(v->to.equalsIgnoreCase(v.getTable()) )
                                 .map(p->p.getTable() + ":"+p.getName()).collect(Collectors.toSet())
                         );
                     } else if (stat.getSelectCount() > 0) {
                         String from = tableName.getName().toUpperCase();
-                        fromSet.add(from);
+                        fromSet.add(from.indexOf(".") != -1 ? from.split("\\.")[1] : from);
                         //只筛选select后的字段，去除where  且 列存在别名的话，使用（别名=>原名）的格式
                         fromColumnSet.addAll( columns.stream().filter(v->v.isSelect() &&
                                 (StringUtils.equalsIgnoreCase(v.getTable(), from) || StringUtils.equalsIgnoreCase(v.getTable(), "UNKNOWN") ))

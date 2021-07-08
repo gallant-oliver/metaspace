@@ -145,12 +145,13 @@ public class CalciteParseSqlTools {
             String[] tableColumn = columnAliasArray[1].split(":");
             if("unknown".equalsIgnoreCase(tableColumn[0])){
                 fromColumnList.add(allColumnInfo.stream().filter(v->tableColumn[1].equalsIgnoreCase(v.split(":")[1]))
-                        .findFirst().get());
+                        .findFirst().map(v->columnAliasArray[0]+"=>"+v).get());
                 continue;
             }
             if("*".equalsIgnoreCase(tableColumn[1])){
                 fromColumnList.addAll(
-                        allColumnInfo.stream().filter(v->v.split(":")[0].toLowerCase().equalsIgnoreCase((owner+"."+tableColumn[0]).toLowerCase())).collect(Collectors.toList())
+                        allColumnInfo.stream().filter(v->v.split(":")[0].toLowerCase().equalsIgnoreCase((owner+"."+tableColumn[0]).toLowerCase()))
+                                .map(v->columnAliasArray[0]+"=>"+v).collect(Collectors.toList())
                 );
                 continue;
             }
