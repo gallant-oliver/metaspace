@@ -26,6 +26,7 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
+import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,8 +58,9 @@ public class MetadataHistoryService {
 
     public Set<String> getTableGuid(List<AtlasEntity> entities) {
         Set<String> tableSet = new HashSet<>();
+        Boolean hiveAtlasEntityAll = dataManageService.getHiveAtlasEntityAll(entities);
         for (AtlasEntity entity : entities) {
-            if (dataManageService.getOutputFromProcesses(entity) && dataManageService.getHiveAtlasEntityAll(entities)) {
+            if (dataManageService.getOutputFromProcesses(entity) && hiveAtlasEntityAll) {
                 continue;
             }
             String typeName = entity.getTypeName();
@@ -110,6 +112,9 @@ public class MetadataHistoryService {
                             }
                         }
                     }
+                    if (this.getTableCompareResult(tableGuid, tableMetadata) && this.getColumnCompareResult(tableGuid, columnMetadataList)) {
+                        return;
+                    }
                     metadataDAO.addTableMetadata(tableMetadata);
                     int version = metadataDAO.getTableVersion(tableGuid);
                     columnMetadataList.forEach(columnMetadata -> columnMetadata.setVersion(version));
@@ -122,6 +127,49 @@ public class MetadataHistoryService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
+
+    /**
+     * 校验字段和上一版本是否完全一致
+     * @param tableGuid
+     * @param columnMetadataList
+     * @return
+     */
+    private Boolean getColumnCompareResult(String tableGuid, List<ColumnMetadata> columnMetadataList) {
+        List<ColumnMetadata> columnMetadataListHistory = metadataDAO.getLastColumnMetadata(tableGuid);
+        if (CollectionUtils.isEmpty(columnMetadataListHistory)) {
+            return false;
+        }
+        if (columnMetadataList.size() != columnMetadataListHistory.size()) {
+            return false;
+        }
+        int i = 0;
+        for (ColumnMetadata columnMetadata : columnMetadataListHistory) {
+            for (ColumnMetadata metadata : columnMetadataList) {
+                if (columnMetadata.compareColumn(metadata)) {
+                    i++;
+                }
+            }
+        }
+        if (columnMetadataList.size() == i) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 比较表内容是否一致
+     * @param tableGuid
+     * @param tableMetadata
+     * @return
+     */
+    private Boolean getTableCompareResult(String tableGuid, TableMetadata tableMetadata) {
+        TableMetadata tableMetadataListHistory = metadataDAO.getLastTableMetadata(tableGuid);
+        if (tableMetadataListHistory == null) {
+            return false;
+        }
+        return tableMetadataListHistory.compareTable(tableMetadata);
+    }
+
 
     public TableMetadata generateTableMetadata(AtlasEntity entity) {
         String guid = entity.getGuid();
