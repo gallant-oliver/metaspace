@@ -325,7 +325,7 @@ public class TenantService {
                 //是否为“规范定义”的子菜单“我的申请”
                 if(moduleEnum == ModuleEnum.MYAPPLICATION){
                     flag = 1;
-                }else if(flag == -1){
+                } else if (flag == -1 && moduleEnum != ModuleEnum.DATASTANDARD) {
                     flag = 0;
                 }
             }
