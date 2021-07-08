@@ -6,12 +6,12 @@ import java.util.stream.Collectors;
 
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
-import com.alibaba.druid.sql.ast.statement.SQLCreateMaterializedViewStatement;
-import com.alibaba.druid.sql.ast.statement.SQLCreateViewStatement;
+import com.alibaba.druid.sql.ast.statement.*;
 import com.alibaba.druid.sql.parser.ParserException;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
 import com.alibaba.druid.stat.TableStat;
 import com.alibaba.druid.util.JdbcConstants;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,6 +55,34 @@ public class DruidAnalyzerUtil {
         }
         return stmts;
     }
+
+    /**
+     * 获取创建表的列别名信息
+     * @param stmt
+     * @return 返回 原始表.列  --> 别名字段
+     */
+    private static Map<String,String> getColumnAliasMap(SQLStatement stmt){
+        Map<String,String> aliasMap = new HashMap<>();
+        if(stmt instanceof SQLCreateTableStatement) {
+            SQLCreateTableStatement createStmt = (SQLCreateTableStatement) stmt;
+            SQLSelectQueryBlock selectBlock =  createStmt.getSelect().getQueryBlock();
+            List<SQLSelectItem> list = selectBlock.getSelectList();
+            for(SQLSelectItem item : list){
+                String origin = "";
+                String clomn = item.getAlias();
+                clomn = clomn.replaceAll("\"","").replaceAll("\'","");
+                String oriColumn = item.getExpr().toString();
+                int location = oriColumn.indexOf('.');
+                if(location > -1 ) {
+                    SQLTableSource tbSource = selectBlock.findTableSource(oriColumn.split("\\.")[0]);
+                    origin = tbSource != null ? tbSource.toString()+":"+ oriColumn.split("\\.")[1] :oriColumn;
+                }
+                aliasMap.put(origin, clomn);
+            }
+        }
+
+        return aliasMap;
+    }
     /**
      *  获取sql的表血缘
      * @param sql
@@ -83,6 +111,8 @@ public class DruidAnalyzerUtil {
         Map<String, TreeSet<String>> fromTo = new HashMap<>(5);
         fromTo.put("type",new TreeSet<>(Arrays.asList("table")));
         for (SQLStatement stmt : stmts) {
+            Map<String,String> aliasMap = getColumnAliasMap(stmt);
+            log.info("处理字段别名success.");
             //创建视图view  materialized view 需单独处理(否则获取不到目标视图名称)
             if(stmt instanceof SQLCreateViewStatement) {
                 SQLCreateViewStatement view = (SQLCreateViewStatement)stmt;
@@ -112,10 +142,11 @@ public class DruidAnalyzerUtil {
                     } else if (stat.getSelectCount() > 0) {
                         String from = tableName.getName().toUpperCase();
                         fromSet.add(from);
-                        //只筛选select后的字段，去除where
+                        //只筛选select后的字段，去除where  且 列存在别名的话，使用（别名=>原名）的格式
                         fromColumnSet.addAll( columns.stream().filter(v->v.isSelect() &&
                                 (StringUtils.equalsIgnoreCase(v.getTable(), from) || StringUtils.equalsIgnoreCase(v.getTable(), "UNKNOWN") ))
-                                .map(p->p.getTable() + ":"+p.getName()).collect(Collectors.toSet())
+                                .map(p-> MapUtils.getString(aliasMap,p.getTable() + ":"+p.getName(),"")+"=>"+p.getTable() + ":"+p.getName())
+                                .collect(Collectors.toSet())
                         );
                     }
                 });
