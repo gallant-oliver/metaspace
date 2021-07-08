@@ -16,6 +16,7 @@ import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStream;
 import org.apache.atlas.repository.store.graph.v2.EntityStream;
 import org.apache.atlas.type.AtlasEntityType;
+import org.apache.atlas.type.AtlasStructType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.service.ServiceState;
@@ -35,8 +36,16 @@ import java.util.function.Function;
 @Order(5)
 @DependsOn(value = {"atlasTypeDefStoreInitializer", "atlasTypeDefGraphStoreV2"})
 public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer {
-    private static final Logger LOG        = LoggerFactory.getLogger(NotificationRdbmsConsumer.class);
+    private static final Logger LOG  = LoggerFactory.getLogger(NotificationRdbmsConsumer.class);
     private Conversion conversion;
+
+    private static final Map<String, String> PARENT_RELATION_MAP = new HashMap<String, String>(){
+        {
+            put("rdbms_db", "instance");
+            put("rdbms_table", "rdbms_db");
+            put("rdbms_column", "rdbms_table");
+        }
+    };
 
     @Inject
     public NotificationRdbmsConsumer(ServiceState serviceState,
@@ -79,61 +88,102 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
             RdbmsEntities rdbmsEntities = conversion.convert(rdbmsMessage,connectorProperties);
 
             LOG.info("atlas实体及数据血缘【"+rdbmsEntities+"】插入JanusGraph数据库，并调用监听器，将数据插入PG");
-            RdbmsEntities.OperateType[] operateTypes = {RdbmsEntities.OperateType.DROP, RdbmsEntities.OperateType.MODIFY, RdbmsEntities.OperateType.ADD};
-            deal(rdbmsEntities, operateTypes);
+            synchronize(rdbmsEntities);
             return null;
         }
 
-        void deal(RdbmsEntities rdbmsEntities, RdbmsEntities.OperateType[] operateTypes){
+        private void synchronize(RdbmsEntities rdbmsEntities){
             Map<RdbmsEntities.OperateType, Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> entityMap = rdbmsEntities.getEntityMap();
-            Map<RdbmsEntities.OperateType, AtlasEntity.AtlasEntitiesWithExtInfo> bloodEntities = rdbmsEntities.getBloodEntities();
-            for (RdbmsEntities.OperateType operateType: operateTypes) {
-                Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> entityTypeMap = entityMap.get(operateType);
-                AtlasEntity.AtlasEntitiesWithExtInfo bloodEntity = bloodEntities.get(operateType);
-                switch (operateType){
-                    case DROP:
-                        dealBlood(bloodEntity, blood -> {
-                            List<AtlasEntity> entities = bloodEntity.getEntities();
-                            for (AtlasEntity entity : entities) {
-                                String typeName = entity.getTypeName();
-                                AtlasEntityType entityType = typeRegistry.getEntityTypeByName(typeName);
-                                Map<String, Object> attributes = entity.getAttributes();
-                                atlasEntityStore.deleteByUniqueAttributes(entityType, attributes);
-                            }
-                            return null;
-                        });
-                        dealEntities(entityTypeMap,  entity -> {
-                            String typeName = entity.getEntity().getTypeName();
-                            Map<String, Object> attributes = entity.getEntity().getAttributes();
-                            AtlasEntityType entityType = typeRegistry.getEntityTypeByName(typeName);
-                            return atlasEntityStore.deleteByUniqueAttributes(entityType, attributes);
-                        });
+
+            Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> modifyMap = entityMap.get(RdbmsEntities.OperateType.MODIFY);
+            Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> addMap = entityMap.get(RdbmsEntities.OperateType.ADD);
+            List<AtlasEntity.AtlasEntityWithExtInfo> addOrUpdateEntities = mergeEntities(modifyMap,addMap);
+            addOrUpdateEntities = sortEntities(addOrUpdateEntities);
+
+            for (AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo: addOrUpdateEntities) {
+                atlasEntityStore.createOrUpdate(new AtlasEntityStream(atlasEntityWithExtInfo), false);
+            }
+
+            AtlasEntity.AtlasEntitiesWithExtInfo bloodEntities = rdbmsEntities.getBloodEntities();
+            if(null != bloodEntities){
+                atlasEntityStore.createOrUpdate(new AtlasEntityStream(bloodEntities), false);
+            }
+
+        }
+
+        private List<AtlasEntity.AtlasEntityWithExtInfo> sortEntities(List<AtlasEntity.AtlasEntityWithExtInfo> addOrUpdateEntities){
+            List<AtlasEntity.AtlasEntityWithExtInfo> sortEntities = new LinkedList<>();
+            List<AtlasEntity.AtlasEntityWithExtInfo> tmpEntities = new LinkedList<>();
+            for (AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo: addOrUpdateEntities) {
+                sort(sortEntities, addOrUpdateEntities, tmpEntities, atlasEntityWithExtInfo);
+                if(CollectionUtils.isNotEmpty(tmpEntities)){
+                    sortEntities.addAll(tmpEntities);
+                }
+            }
+            return sortEntities;
+        }
+
+        private void sort(List<AtlasEntity.AtlasEntityWithExtInfo> sortEntities, List<AtlasEntity.AtlasEntityWithExtInfo> addOrUpdateEntities, List<AtlasEntity.AtlasEntityWithExtInfo> tmpEntities, AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo) {
+            //已经存在
+            if(sortEntities.contains(atlasEntityWithExtInfo)){
+                return;
+            }
+            tmpEntities.add(0,atlasEntityWithExtInfo);
+            String parentQualifiedName = getParentQualifiedName(atlasEntityWithExtInfo);
+            //没有任何依赖
+            if(null == parentQualifiedName){
+                return;
+            }
+            AtlasEntity.AtlasEntityWithExtInfo parentAtlasEntityWithExtInfo = getEntityByQualifiedName(parentQualifiedName, sortEntities);
+            //依赖已经存在
+            if(null != parentAtlasEntityWithExtInfo){
+                return;
+            }
+            //依赖不存在
+            parentAtlasEntityWithExtInfo = getEntityByQualifiedName(parentQualifiedName, addOrUpdateEntities);
+            if(null == parentAtlasEntityWithExtInfo){
+                Object qualifiedName = atlasEntityWithExtInfo.getEntity().getAttribute("qualifiedName");
+                throw new RuntimeException("节点"+qualifiedName+"所依赖的节点"+parentQualifiedName+"没有找到");
+            }
+            sort(sortEntities, addOrUpdateEntities, tmpEntities, parentAtlasEntityWithExtInfo);
+        }
+
+        private String getParentQualifiedName(AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo){
+            String parentQualifiedName = null;
+            AtlasEntity entity = atlasEntityWithExtInfo.getEntity();
+            String typeName = entity.getTypeName();
+            if(PARENT_RELATION_MAP.containsKey(typeName)){
+                AtlasStructType.AtlasAttribute attribute = (AtlasStructType.AtlasAttribute)entity.getAttribute(PARENT_RELATION_MAP.get(typeName));
+                parentQualifiedName = attribute.getQualifiedName();
+            }
+            return parentQualifiedName;
+        }
+
+        private AtlasEntity.AtlasEntityWithExtInfo getEntityByQualifiedName(String qualifiedName, List<AtlasEntity.AtlasEntityWithExtInfo> atlasEntityWithExtInfos){
+
+            AtlasEntity.AtlasEntityWithExtInfo resultEntity = null;
+            if(CollectionUtils.isNotEmpty(atlasEntityWithExtInfos)){
+                for (AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo:atlasEntityWithExtInfos) {
+                    Object name = (String)atlasEntityWithExtInfo.getEntity().getAttribute("qualifiedName");
+                    if(name.equals(qualifiedName)){
+                        resultEntity =  atlasEntityWithExtInfo;
                         break;
-                    default:
-                        dealEntities(entityTypeMap,  entity -> atlasEntityStore.createOrUpdate(new AtlasEntityStream(entity), false));
-                        dealBlood(bloodEntity, blood ->  atlasEntityStore.createOrUpdate(new AtlasEntityStream(blood), false));
+                    }
                 }
             }
+            return resultEntity;
         }
 
-        void dealEntities(Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> entityTypeMap, Function<AtlasEntity.AtlasEntityWithExtInfo, EntityMutationResponse> func){
-            if(MapUtils.isEmpty(entityTypeMap)){
-                return;
+        private List<AtlasEntity.AtlasEntityWithExtInfo> mergeEntities(Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> modifyMap, Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> addMap){
+            List<AtlasEntity.AtlasEntityWithExtInfo> addOrUpdateEntities = new ArrayList<>();
+            if(MapUtils.isNotEmpty(modifyMap)){
+                modifyMap.values().stream().filter(e -> CollectionUtils.isNotEmpty(e)).forEach(e -> addOrUpdateEntities.addAll(e));
             }
-            Set<Map.Entry<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> entries = entityTypeMap.entrySet();
-            for (Map.Entry<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> entry : entries) {
-                List<AtlasEntity.AtlasEntityWithExtInfo> entities = entry.getValue();
-                for (AtlasEntity.AtlasEntityWithExtInfo entity : entities) {
-                    func.apply(entity);
-                }
+            if(MapUtils.isNotEmpty(addMap)){
+                addMap.values().stream().filter(e -> CollectionUtils.isNotEmpty(e)).forEach(e -> addOrUpdateEntities.addAll(e));
             }
+            return addOrUpdateEntities;
         }
 
-        void dealBlood(AtlasEntity.AtlasEntitiesWithExtInfo bloodEntity, Function<AtlasEntity.AtlasEntitiesWithExtInfo,EntityMutationResponse> func){
-            if(null == bloodEntity){
-                return;
-            }
-            func.apply(bloodEntity);
-        }
     }
 }

@@ -85,15 +85,18 @@ public class RdbmsEntities {
     /**
      * 数据血缘
      */
-    private Map<OperateType, AtlasEntity.AtlasEntitiesWithExtInfo> bloodEntitiesMap = new HashMap<OperateType, AtlasEntity.AtlasEntitiesWithExtInfo>();
+    private AtlasEntity.AtlasEntitiesWithExtInfo bloodEntities;
 
     public Map<OperateType, Map<EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> getEntityMap() {
         return entityMap;
     }
 
 
-    public Map<OperateType, AtlasEntity.AtlasEntitiesWithExtInfo> getBloodEntities() {
-        return bloodEntitiesMap;
+    public AtlasEntity.AtlasEntitiesWithExtInfo getBloodEntities() {
+        return bloodEntities;
     }
 
+    public void setBloodEntities(AtlasEntity.AtlasEntitiesWithExtInfo bloodEntities) {
+        this.bloodEntities =  bloodEntities;
+    }
 }

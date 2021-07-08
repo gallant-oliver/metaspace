@@ -104,11 +104,7 @@ public class CalciteParseSqlTools {
             operateMap.put(RdbmsEntities.EntityType.RDBMS_COLUMN, toColumnEntityList);
         }
         //血缘关系
-        Map<RdbmsEntities.OperateType, AtlasEntity.AtlasEntitiesWithExtInfo> bloodMap = rdbmsEntities.getBloodEntities();
-        if(!CollectionUtils.isEmpty(atlasBloodEntities.getEntities())){
-            bloodMap.put(operateType,atlasBloodEntities);
-        }
-
+        rdbmsEntities.setBloodEntities(atlasBloodEntities);
         return rdbmsEntities;
     }
 
