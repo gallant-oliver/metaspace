@@ -11,7 +11,6 @@ import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -29,7 +28,7 @@ public class CalciteParseSqlTools {
         RdbmsMessage.Payload payload = notification.getRdbmsMessage().getPayload();
         Boolean isDdl = StringUtils.isBlank(payload.getOp());
         String sql = isDdl ?  payload.getDdl() : payload.getSource().getQuery() ;
-        sql = sql.replace("`","").replace(";","");
+        sql = sql.replace("`","").replaceAll("\"","").replaceAll("\'","");
 
         String rdbmsType = getRdbmsType(connectorProperties);
         Map<String, TreeSet<String>> resultTableMap = DruidAnalyzerUtil.getFromTo(sql,rdbmsType);
@@ -139,7 +138,6 @@ public class CalciteParseSqlTools {
      * @return
      */
     private static Map<String,List<String>> makeAtlasColumnMap(Map<String, TreeSet<String>> resultTableMap,List<String> allColumnInfo,String owner){
-        Map<String,List<String>> resultMap = new HashMap<>();
         //处理目标字段以及来源字段的映射
         TreeSet<String> fromColumnSet = resultTableMap.get("fromColumn");
         TreeSet<String> toColumnSet = resultTableMap.get("toColumn");
@@ -147,7 +145,8 @@ public class CalciteParseSqlTools {
         //fromColumnSet中的a.* unknown.id这种格式需转化(unknown对应具体的某个表字段) 转化
         List<String> fromColumnList = new ArrayList<>();
         for (String fromColumn : fromColumnSet){
-            String[] tableColumn = fromColumn.split(":");
+            String[] columnAliasArray = fromColumn.split("=>");
+            String[] tableColumn = columnAliasArray[1].split(":");
             if("unknown".equalsIgnoreCase(tableColumn[0])){
                 fromColumnList.add(allColumnInfo.stream().filter(v->tableColumn[1].equalsIgnoreCase(v.split(":")[1]))
                         .findFirst().get());
@@ -159,7 +158,7 @@ public class CalciteParseSqlTools {
                 );
                 continue;
             }
-            fromColumnList.add(owner+"."+fromColumn);
+            fromColumnList.add(columnAliasArray[0]+"=>"+owner+"."+columnAliasArray[1]);
         }
         //增加去重判断
         fromColumnList = fromColumnList.stream().distinct().collect(Collectors.toList());
@@ -167,18 +166,31 @@ public class CalciteParseSqlTools {
         if(toColumnSet.isEmpty()){//获取全部字段信息
             log.info("需要处理所有字段的映射。");
             List<String> destColumnList = allColumnInfo.stream().filter(v->toSet.contains(v.split(":")[0].split("\\.")[1])).collect(Collectors.toList());
-            for (String str : destColumnList){
-                resultMap.put(str,fromColumnList.stream()
-                        .filter(v->v.split(":")[1].equalsIgnoreCase(str.split(":")[1])).collect(Collectors.toList()));
-            }
+            return getFieldLineageMap(destColumnList,fromColumnList);
         }else{
             log.info("只处理血缘需要字段的映射。");
-            for (String str : toColumnSet){
-                resultMap.put(owner+"."+str,fromColumnList.stream()
-                        .filter(v->v.split(":")[1].equalsIgnoreCase(str.split(":")[1])).collect(Collectors.toList()));
-            }
+            return getFieldLineageMap(toColumnSet,fromColumnList);
         }
-
+    }
+    /*
+    * 处理表血缘 字段映射关系
+     */
+    private static Map<String,List<String>> getFieldLineageMap(Collection<String> destColumnList,List<String> fromColumnList){
+        Map<String,List<String>> resultMap = new HashMap<>();
+        for (String str : destColumnList){
+            //优先别名相同，否则使用原始名称
+            List<String> mapList = fromColumnList.stream()
+                    .filter(v->v.split("=>")[0].equalsIgnoreCase(str.split(":")[1]))
+                    .map(v->v.split("=>")[1])
+                    .collect(Collectors.toList());
+            if(CollectionUtils.isEmpty(mapList)){
+                mapList = fromColumnList.stream()
+                        .filter(v->v.split(":")[1].equalsIgnoreCase(str.split(":")[1]))
+                        .map(v->v.split("=>")[1])
+                        .collect(Collectors.toList());
+            }
+            resultMap.put(str,mapList);
+        }
         return resultMap;
     }
     /**
