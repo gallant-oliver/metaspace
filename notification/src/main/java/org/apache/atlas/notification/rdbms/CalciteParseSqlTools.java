@@ -41,10 +41,11 @@ public class CalciteParseSqlTools {
             log.info("sql解析没有表对象，不需要处理..");
             return new RdbmsEntities();
         }
-        String upperSql = sql.trim().toUpperCase();
+        String upperSql = sql.trim().replaceAll("\\s+", " ").toUpperCase();
+        String alterType = upperSql.startsWith("ALTER TABLE") && upperSql.split("\\s+").length > 4 ? upperSql.split("\\s+")[3] : "DEFAULT";
         RdbmsEntities.OperateType operateType =
-                StringUtils.startsWithAny(upperSql, new String[] { "CREATE", "INSERT"})? RdbmsEntities.OperateType.ADD :
-                        (StringUtils.startsWithAny(upperSql,new String[] { "DROP", "DELETE"}) ? RdbmsEntities.OperateType.DROP :
+                StringUtils.startsWithAny(upperSql, new String[] { "CREATE", "INSERT"}) || StringUtils.equalsIgnoreCase("ADD",alterType) ? RdbmsEntities.OperateType.ADD :
+                        (StringUtils.startsWithAny(upperSql,new String[] { "DROP", "DELETE"}) || StringUtils.equalsIgnoreCase("DROP",alterType) ? RdbmsEntities.OperateType.DROP :
                         RdbmsEntities.OperateType.MODIFY);
 
         log.info("execute sql :{},\n operateType:{}",sql,operateType);
