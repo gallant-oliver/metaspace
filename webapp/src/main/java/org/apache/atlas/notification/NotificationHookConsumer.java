@@ -431,7 +431,7 @@ public class NotificationHookConsumer implements Service, ActiveStateChangeHandl
                         RequestContext requestContext = RequestContext.get();
 
                         requestContext.setUser(messageUser, null);
-
+                        LOG.info("message type = {}" , message.getType());
                         switch (message.getType()) {
                             case ENTITY_CREATE: {
                                 final EntityCreateRequest      createRequest = (EntityCreateRequest) message;

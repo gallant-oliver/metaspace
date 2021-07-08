@@ -1424,15 +1424,44 @@ public class DataManageService {
      */
     public Boolean getOutputFromProcesses(AtlasEntity entity) {
         try {
+            if(entity.getRelationshipAttributes() == null){
+                return false;
+            }
             LOG.info("inputToProcesses is {}", entity.getRelationshipAttributes().get("inputToProcesses"));
             LOG.info("outputFromProcesses is {}", entity.getRelationshipAttributes().get("outputFromProcesses"));
             List<Object> input = (List<Object>) entity.getRelationshipAttributes().get("inputToProcesses");
             List<Object> output = (List<Object>) entity.getRelationshipAttributes().get("outputFromProcesses");
             if (CollectionUtils.isEmpty(input) && !CollectionUtils.isEmpty(output)) {
+                LOG.info("getOutputFromProcesses is continue");
                 return false;
             }
         } catch (Exception e) {
             LOG.error("getOutputFromProcesses exception is {}", e);
+        }
+        return true;
+    }
+
+    /**
+     * HIVE数据-检查AtlasEntity中输入和输出是否全是空
+     * @param entities
+     * @return
+     */
+    public Boolean getHiveAtlasEntityAll(List<AtlasEntity> entities){
+        int i = 0;
+        for (AtlasEntity entity : entities) {
+            //当执行删表语句时，关联关系为空
+            if(entity.getRelationshipAttributes() == null){
+                return false;
+            }
+            List<Object> input = (List<Object>) entity.getRelationshipAttributes().get("inputToProcesses");
+            List<Object> output = (List<Object>) entity.getRelationshipAttributes().get("outputFromProcesses");
+            if (CollectionUtils.isEmpty(input) && CollectionUtils.isEmpty(output)) {
+                i++;
+            }
+        }
+        LOG.info("getHiveAtlasEntityAll i = {},entities is {}", i, entities.size());
+        if(entities.size() == i){
+            return false;
         }
         return true;
     }
@@ -1443,10 +1472,11 @@ public class DataManageService {
         List<Column> columnList = new ArrayList<>();
         try {
             //添加到tableinfo
+            Boolean hiveAtlasEntityAll = this.getHiveAtlasEntityAll(entities);
             for (AtlasEntity entity : entities) {
                 String typeName = entity.getTypeName();
                 if (("hive_table").equals(typeName)) {
-                    if(this.getOutputFromProcesses(entity)){
+                    if(this.getOutputFromProcesses(entity) && hiveAtlasEntityAll){
                         continue;
                     }
                     if (entity.getAttribute("temporary") == null || entity.getAttribute("temporary").toString().equals("false")) {
@@ -1463,7 +1493,7 @@ public class DataManageService {
                     deleteIfExistTable(tableInfo);
                     tableDAO.addTable(tableInfo);
                 } else if (("hive_column").equals(typeName)) {
-                    if(this.getOutputFromProcesses(entity)){
+                    if(this.getOutputFromProcesses(entity) && hiveAtlasEntityAll){
                         continue;
                     }
                     Column column = getColumn(entity, "type");
@@ -1637,10 +1667,11 @@ public class DataManageService {
         try {
             Configuration configuration = ApplicationProperties.get();
             Boolean enableEmail = configuration.getBoolean("metaspace.mail.enable", false);
+            Boolean hiveAtlasEntityAll = this.getHiveAtlasEntityAll(entities);
             for (AtlasEntity entity : entities) {
                 String typeName = entity.getTypeName();
                 if (typeName.equals("hive_table")) {
-                    if(this.getOutputFromProcesses(entity)){
+                    if(this.getOutputFromProcesses(entity) && hiveAtlasEntityAll){
                         continue;
                     }
                     if (entity.getAttribute("temporary") == null || entity.getAttribute("temporary").toString().equals("false")) {
@@ -1667,7 +1698,7 @@ public class DataManageService {
                         sendMetadataChangedMail(entity.getGuid());
                     }
                 } else if (typeName.equals("hive_column")) {
-                    if(this.getOutputFromProcesses(entity)){
+                    if(this.getOutputFromProcesses(entity) && hiveAtlasEntityAll){
                         continue;
                     }
                     String guid = entity.getGuid();
