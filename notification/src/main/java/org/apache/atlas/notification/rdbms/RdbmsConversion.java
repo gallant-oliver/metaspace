@@ -23,7 +23,7 @@ public class RdbmsConversion implements Conversion{
             RdbmsNotification rdbmsMessage = (RdbmsNotification)notification;
             rdbmsEntities = CalciteParseSqlTools.getSimulationRdbmsEntities(rdbmsMessage, connectorProperties);
         }catch (Exception e) {
-            throw new AtlasException("解析debezium推送的数据失败");
+            throw new AtlasException("解析debezium推送的数据失败",e);
         }
         return rdbmsEntities;
     }
