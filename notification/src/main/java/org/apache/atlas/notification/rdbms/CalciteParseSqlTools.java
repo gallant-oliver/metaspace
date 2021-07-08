@@ -249,12 +249,12 @@ public class CalciteParseSqlTools {
         List<Map<String,Object>> result = new ArrayList<>();
 
         valueList.forEach(value->{
-            qualifiedProcessColumn.append(dbHostname+":"+dbPort+":"+dbname+":"+"."+value+" ");
+            qualifiedProcessColumn.append(dbHostname+":"+dbPort+":"+dbname+":"+value+" ");
 
             Map<String,Object> instance = new HashMap<>();
             instance.put("typeName","rdbms_column");
             Map<String,Object> uniqueAttributes  = new HashMap<>();
-            uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+"."+value);
+            uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+value);
             instance.put("uniqueAttributes",uniqueAttributes);
 
             result.add(instance);
