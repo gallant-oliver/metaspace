@@ -42,6 +42,7 @@ import org.springframework.stereotype.Service;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /*
@@ -95,17 +96,15 @@ public class HomePageService {
             List<String> tenants = tenantDAO.getAllTenantId();
             for (String tenantId:tenants){
                 homePageDAO.deleteStatistical(date,tenantId);
-                List<String> dbs=tenantService.getDatabase(tenantId);
-                String dbsToString = dbsToString(dbs);
-                List<Long> dbTotal = metaspaceGremlinService.getDBTotal(dbsToString);
-                List<Long> tbTotal = metaspaceGremlinService.getTBTotal(dbsToString);
+                int dbTotal = this.getSingleDayDBTotal(tenantId);
+                int tbTotal = this.getSingleDayDBTotal(tenantId);
                 long businessCount = homePageDAO.getBusinessCount(tenantId);
                 long addedBusinessCount = homePageDAO.getAddedBusinessCount(tenantId);
                 long noAddedBusinessCount = homePageDAO.getNoAddedBusinessCount(tenantId);
                 String uuid = UUID.randomUUID().toString();
-                homePageDAO.addStatistical(uuid, date, dbTotal.get(0), SystemStatistical.DB_TOTAL.getCode(),tenantId);
+                homePageDAO.addStatistical(uuid, date, dbTotal, SystemStatistical.DB_TOTAL.getCode(),tenantId);
                 uuid = UUID.randomUUID().toString();
-                homePageDAO.addStatistical(uuid, date, tbTotal.get(0), SystemStatistical.TB_TOTAL.getCode(),tenantId);
+                homePageDAO.addStatistical(uuid, date, tbTotal, SystemStatistical.TB_TOTAL.getCode(),tenantId);
                 uuid = UUID.randomUUID().toString();
                 homePageDAO.addStatistical(uuid, date, businessCount, SystemStatistical.BUSINESS_TOTAL.getCode(),tenantId);
                 uuid = UUID.randomUUID().toString();
@@ -119,10 +118,10 @@ public class HomePageService {
         if (dbs==null||dbs.size()==0){
             return "";
         }
-        StringBuffer str = new StringBuffer();
+        StringBuilder str = new StringBuilder();
         for (String db:dbs){
             str.append("'");
-            str.append(db.replaceAll("'", "\\\\'"));
+            str.append(db.replace("'", "\\\\'"));
             str.append("'");
             str.append(",");
         }
@@ -208,26 +207,7 @@ public class HomePageService {
             });
             CompletableFuture<Void> future = CompletableFuture.allOf(dbTotalFuture, tbTotalFuture, subSystemFuture, categoryRelatedDBCountFuture);
             //获取数据库总数
-            List<String> dbs = tenantService.getDatabase(tenantId);
-            List<String> rdbs = relationDAO.queryRDBNameByCategoryGuidV2(tenantId);
-            List<String> allDBNames = new ArrayList<>();
-            if (dbs != null && dbs.size() > 0) {
-                allDBNames.addAll(dbs);
-            }
-            if (rdbs != null && rdbs.size() > 0) {
-                allDBNames.addAll(rdbs);
-                Set<String> set = new HashSet(allDBNames);
-                allDBNames = new ArrayList<>(set);
-            }
-            int tbTotal = 0;
-            List<CategoryPrivilege> userCategories = dataManageService.getAllByUserGroup(0, tenantId);
-            for (CategoryPrivilege userCategorie : userCategories) {
-                if (userCategorie.getLevel() == 1) {
-                    tbTotal += userCategorie.getCount();
-                }
-            }
             future.join();
-            int dbTotal = allDBNames.size();
             Long subSystemTotal = subSystemFuture.get();
             List<CategoryDBInfo> categoryRelatedDBCount = categoryRelatedDBCountFuture.get();
             long entityDBTotal=0;
@@ -237,13 +217,13 @@ public class HomePageService {
                 logicDBTotal+=categoryDBInfo.getLogicDBTotal();
             }
             timeDBTB.setDate(date);
-            timeDBTB.setDatabaseTotal(dbTotal);
-            timeDBTB.setTableTotal(tbTotal);
+            timeDBTB.setDatabaseTotal(this.getSingleDayDBTotal(tenantId));
+            timeDBTB.setTableTotal(this.getSingleDayTBTotal(tenantId));
             timeDBTB.setSubsystemTotal(subSystemTotal);
             timeDBTB.setSourceEntityDBTotal(entityDBTotal);
             timeDBTB.setSourceLogicDBTotal(logicDBTotal);
             return timeDBTB;
-        } catch (Exception e) {
+        } catch (InterruptedException | ExecutionException e) {
             LOG.error("获取统计信息失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取统计信息失败");
         }
@@ -256,6 +236,32 @@ public class HomePageService {
         return brokenLine;
     }
 
+    private int getSingleDayDBTotal(String tenantId){
+        List<String> dbs = tenantService.getDatabase(tenantId);
+        List<String> rdbs = relationDAO.queryRDBNameByCategoryGuidV2(tenantId);
+        List<String> allDBNames = new ArrayList<>();
+        if (dbs!=null&&!dbs.isEmpty()) {
+            allDBNames.addAll(dbs);
+        }
+        if (rdbs!=null&&!rdbs.isEmpty()) {
+            allDBNames.addAll(rdbs);
+            Set<String> set = new HashSet<>(allDBNames);
+            allDBNames = new ArrayList<>(set);
+        }
+        return allDBNames.size();
+    }
+
+    private int getSingleDayTBTotal(String tenantId){
+        int tbTotal = 0;
+        List<CategoryPrivilege> userCategories = dataManageService.getAllByUserGroup(0, tenantId);
+        for (CategoryPrivilege userCategorie : userCategories) {
+            if (userCategorie.getLevel() == 1 ) {
+                tbTotal += userCategorie.getCount();
+            }
+        }
+
+        return tbTotal;
+    }
 
     private void addBrokenLine(BrokenLine brokenLine, SystemStatistical systemStatistical,String tenantId) throws AtlasBaseException {
         List<String> dates = brokenLine.getDate() == null ? new ArrayList<>() : brokenLine.getDate();
@@ -278,28 +284,23 @@ public class HomePageService {
             map.put(dateStatistical.getDate(), dateStatistical.getStatistical());
         }
         for (long time = startDate; time < DateUtils.getToday().getTime(); time = DateUtils.getNext(time).getTime()) {
-            long date = time;
-            if (map.containsKey(date)) {
-                list.add(map.get(date));
+            if (map.containsKey(time)) {
+                list.add(map.get(time));
             } else {
                 list.add(getYesterdayStatistical(map, time, startDate));
             }
 
         }
-        //判断独立部署和多租户
-        List<String> dbs = TenantService.defaultTenant.equals(tenantId)? null : tenantService.getDatabase(tenantId);
-        String dbsToString = dbsToString(dbs);
-
         switch (systemStatistical) {
             case DB_TOTAL: {
                 //判断独立部署和多租户
-                long aLong = TenantService.defaultTenant.equals(tenantId)? metaspaceGremlinService.getDBTotal().get(0) : metaspaceGremlinService.getDBTotal(dbsToString).get(0);
+                long aLong = TenantService.defaultTenant.equals(tenantId)? metaspaceGremlinService.getDBTotal().get(0) : this.getSingleDayDBTotal(tenantId);
                 switchCase(startDate, list, statisticalByDateType, map, aLong);
                 break;
             }
             case TB_TOTAL: {
                 //判断独立部署和多租户
-                long aLong = TenantService.defaultTenant.equals(tenantId)? metaspaceGremlinService.getTBTotal().get(0) : metaspaceGremlinService.getTBTotal(dbsToString).get(0);
+                long aLong = TenantService.defaultTenant.equals(tenantId)? metaspaceGremlinService.getTBTotal().get(0) : this.getSingleDayTBTotal(tenantId);
                 switchCase(startDate, list, statisticalByDateType, map, aLong);
                 break;
             }
