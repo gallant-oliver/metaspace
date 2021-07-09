@@ -71,6 +71,7 @@ public class CalciteParseSqlTools {
         List<String> allColumnInfo = new ArrayList<>();
         connectorProperties.put("table.type",entityType);
         dealTableColumnEntity(fromTableList, connectorProperties, fromTableEntityList, fromColumnEntityList,allColumnInfo);
+        connectorProperties.put("isDropTable",operateType);
         dealTableColumnEntity(toTableList, connectorProperties, toTableEntityList, toColumnEntityList,allColumnInfo);
 
         //blood relation
@@ -91,22 +92,31 @@ public class CalciteParseSqlTools {
         //添加数据库
         modifyMap.put(RdbmsEntities.EntityType.RDBMS_DB, dbEntityList);
         //添加来源的 表 列 column table
-        modifyMap.put(RdbmsEntities.EntityType.RDBMS_TABLE, fromTableEntityList);
-        modifyMap.put(RdbmsEntities.EntityType.RDBMS_COLUMN, fromColumnEntityList);
+        addMapOrNot(modifyMap,RdbmsEntities.EntityType.RDBMS_TABLE,fromTableEntityList);
+        addMapOrNot(modifyMap,RdbmsEntities.EntityType.RDBMS_COLUMN,fromColumnEntityList);
 
         //添加输出（最终）表 列 column table
         if(operateType == RdbmsEntities.OperateType.MODIFY){
-            modifyMap.put(RdbmsEntities.EntityType.RDBMS_TABLE, toTableEntityList);
-            modifyMap.put(RdbmsEntities.EntityType.RDBMS_COLUMN, toColumnEntityList);
+            addMapOrNot(modifyMap,RdbmsEntities.EntityType.RDBMS_TABLE,toTableEntityList);
+            addMapOrNot(modifyMap,RdbmsEntities.EntityType.RDBMS_COLUMN,toColumnEntityList);
         }else{
-            operateMap.put(RdbmsEntities.EntityType.RDBMS_TABLE, toTableEntityList);
-            operateMap.put(RdbmsEntities.EntityType.RDBMS_COLUMN, toColumnEntityList);
+            addMapOrNot(operateMap,RdbmsEntities.EntityType.RDBMS_TABLE,toTableEntityList);
+            addMapOrNot(operateMap,RdbmsEntities.EntityType.RDBMS_COLUMN,toColumnEntityList);
         }
         //血缘关系
-        rdbmsEntities.setBloodEntities(atlasBloodEntities);
+        if(!CollectionUtils.isEmpty(atlasBloodEntities.getEntities())){
+            rdbmsEntities.setBloodEntities(atlasBloodEntities);
+        }
+
         return rdbmsEntities;
     }
 
+    private static void addMapOrNot(Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> map,
+                                    RdbmsEntities.EntityType type, List<AtlasEntity.AtlasEntityWithExtInfo> entityList){
+        if(!CollectionUtils.isEmpty(entityList)){
+            map.put(type, entityList);
+        }
+    }
     /**
      * 处理表和列的entity 数据
      * @param tableList
@@ -122,6 +132,11 @@ public class CalciteParseSqlTools {
                 //table oracle 需要增加用户
                 tableEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_TABLE,connectorProperties,table,null));
                 //增加该表的列 entity
+                String dropTable = connectorProperties.getProperty("isDropTable");
+                if(RdbmsEntities.OperateType.DROP.name().equalsIgnoreCase(dropTable)){
+                    log.info("drop 操作，不需要获取列字段信息。");
+                    continue;
+                }
                 columnEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_COLUMN,connectorProperties,table,allColumnInfo));
             }
         }
@@ -138,6 +153,11 @@ public class CalciteParseSqlTools {
         TreeSet<String> fromColumnSet = resultTableMap.get("fromColumn");
         TreeSet<String> toColumnSet = resultTableMap.get("toColumn");
         TreeSet<String> toSet = resultTableMap.get("to");
+
+        //List<String> fromTableList = new ArrayList<>(fromSet);
+        List<String> toTableList = new ArrayList<>(toSet);
+        addOwnerPrefixToTable(owner,toTableList);
+
         //fromColumnSet中的a.* unknown.id这种格式需转化(unknown对应具体的某个表字段) 转化
         List<String> fromColumnList = new ArrayList<>();
         for (String fromColumn : fromColumnSet){
@@ -156,14 +176,14 @@ public class CalciteParseSqlTools {
                 );
                 continue;
             }
-            fromColumnList.add(columnAliasArray[0]+"=>"+owner+"."+columnAliasArray[1]);
+            fromColumnList.add(columnAliasArray[0]+"=>"+(columnAliasArray[1].contains(".") ? columnAliasArray[1] : owner+"."+columnAliasArray[1]));
         }
         //增加去重判断
         fromColumnList = fromColumnList.stream().distinct().collect(Collectors.toList());
 
         if(toColumnSet.isEmpty()){//获取全部字段信息
             log.info("需要处理所有字段的映射。");
-            List<String> destColumnList = allColumnInfo.stream().filter(v->toSet.contains(v.split(":")[0].split("\\.")[1])).collect(Collectors.toList());
+            List<String> destColumnList = allColumnInfo.stream().filter(v->toTableList.contains(v.split(":")[0])).collect(Collectors.toList());
             return getFieldLineageMap(destColumnList,fromColumnList);
         }else{
             log.info("只处理血缘需要字段的映射。");
@@ -202,6 +222,10 @@ public class CalciteParseSqlTools {
                                                                                List<String> allColumnInfo,String owner){
         TreeSet<String> fromSet = resultTableMap.get("from");
         TreeSet<String> toSet = resultTableMap.get("to");
+        List<String> fromTableList = new ArrayList<>(fromSet);
+        List<String> toTableList = new ArrayList<>(toSet);
+        addOwnerPrefixToTable(owner,fromTableList,toTableList);
+
         AtlasEntity.AtlasEntitiesWithExtInfo atlasBloodEntities = new AtlasEntity.AtlasEntitiesWithExtInfo();
         //存在血缘关系
         log.info("存在表数据血缘关系...");
@@ -213,9 +237,9 @@ public class CalciteParseSqlTools {
         atlasBloodEntity.setTypeName("Process");
 
         StringBuilder qualifiedProcessNameFromTo = new StringBuilder();
-        List<Map<String, Object>> jsonInputs = dealInputOrOutput(fromSet,dbHostname, dbPort, dbname, qualifiedProcessNameFromTo,owner);
+        List<Map<String, Object>> jsonInputs = dealInputOrOutput(fromTableList,dbHostname, dbPort, dbname, qualifiedProcessNameFromTo);
         qualifiedProcessNameFromTo.append("@");
-        List<Map<String, Object>> jsonOutputs = dealInputOrOutput(toSet,dbHostname, dbPort, dbname, qualifiedProcessNameFromTo,owner);
+        List<Map<String, Object>> jsonOutputs = dealInputOrOutput(toTableList,dbHostname, dbPort, dbname, qualifiedProcessNameFromTo);
 
         Map<String, Object> attributeBloodMap = new HashMap<>();
         attributeBloodMap.put("inputs",jsonInputs);
@@ -284,16 +308,16 @@ public class CalciteParseSqlTools {
     /*
      * 处理数据血缘的from（inputs）、to （outputs）的字段结构数据
      */
-    private static List<Map<String,Object>> dealInputOrOutput(TreeSet<String> set,String dbHostname,String dbPort,String dbname,
-                                               StringBuilder qualifiedProcessNameFromTo,String owner){
+    private static List<Map<String,Object>> dealInputOrOutput(List<String> list,String dbHostname,String dbPort,String dbname,
+                                               StringBuilder qualifiedProcessNameFromTo){
         List<Map<String,Object>> result = new ArrayList<>();
-        set.forEach(toTable->{
-            qualifiedProcessNameFromTo.append(dbHostname+":"+dbPort+":"+dbname+":"+owner+"."+toTable+" ");
+        list.forEach(toTable->{
+            qualifiedProcessNameFromTo.append(dbHostname+":"+dbPort+":"+dbname+":"+toTable+" ");
 
             Map<String,Object> instance = new HashMap<>();
             instance.put("typeName","rdbms_table");
             Map<String,Object> uniqueAttributes  = new HashMap<>();
-            uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+owner+"."+toTable);
+            uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+toTable);
             instance.put("uniqueAttributes",uniqueAttributes);
 
             result.add(instance);

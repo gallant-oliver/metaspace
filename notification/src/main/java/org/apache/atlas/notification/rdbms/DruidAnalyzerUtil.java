@@ -139,14 +139,15 @@ public class DruidAnalyzerUtil {
                     if (stat.getCreateCount() > 0 || stat.getInsertCount() > 0
                             || stat.getDropCount() > 0 || stat.getAlterCount() > 0) {
                         String to = tableName.getName().toUpperCase();
-
-                        toSet.add(to.indexOf(".") != -1 ? to.split("\\.")[1]:to);
+                        //to.indexOf(".") != -1 ? to.split("\\.")[1]:
+                        toSet.add(to);
                         toColumnSet.addAll( columns.stream().filter(v->to.equalsIgnoreCase(v.getTable()) )
                                 .map(p->p.getTable() + ":"+p.getName()).collect(Collectors.toSet())
                         );
                     } else if (stat.getSelectCount() > 0) {
                         String from = tableName.getName().toUpperCase();
-                        fromSet.add(from.indexOf(".") != -1 ? from.split("\\.")[1] : from);
+                        //from.indexOf(".") != -1 ? from.split("\\.")[1] :
+                        fromSet.add(from);
                         //只筛选select后的字段，去除where  且 列存在别名的话，使用（别名=>原名）的格式
                         fromColumnSet.addAll( columns.stream().filter(v->v.isSelect() &&
                                 (StringUtils.equalsIgnoreCase(v.getTable(), from) || StringUtils.equalsIgnoreCase(v.getTable(), "UNKNOWN") ))
