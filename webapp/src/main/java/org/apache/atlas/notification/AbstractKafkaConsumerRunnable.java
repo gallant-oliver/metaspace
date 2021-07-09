@@ -166,7 +166,7 @@ public abstract class AbstractKafkaConsumerRunnable extends ShutdownableThread {
                         isFailedMsg = true;
 
                         failedMessages.add(message);
-
+                        commit(kafkaMsg);
                         if (failedMessages.size() >= failedMsgCacheSize) {
                             recordFailedMessages();
                         }
@@ -177,7 +177,6 @@ public abstract class AbstractKafkaConsumerRunnable extends ShutdownableThread {
                 }
             }
 
-            commit(kafkaMsg);
         } finally {
             AtlasPerfTracer.log(perf);
 

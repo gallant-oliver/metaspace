@@ -109,15 +109,35 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
                 atlasEntityStore.createOrUpdate(new AtlasEntityStream(bloodEntities), false);
             }
 
+
+            Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> dropMap = entityMap.get(RdbmsEntities.OperateType.DROP);
+            List<AtlasEntity.AtlasEntityWithExtInfo> dropEntities = mergeEntities(dropMap,null);
+            if(CollectionUtils.isNotEmpty(dropEntities)){
+                dropEntities(dropEntities);
+            }
         }
 
-        private List<AtlasEntity.AtlasEntityWithExtInfo> sortEntities(List<AtlasEntity.AtlasEntityWithExtInfo> addOrUpdateEntities){
+        private void dropEntities(List<AtlasEntity.AtlasEntityWithExtInfo> dropEntities) {
+
+                for(int i = dropEntities.size()-1; i > 0; i --){
+                    AtlasEntity entity = dropEntities.get(i).getEntity();
+                    AtlasEntityType type = typeRegistry.getEntityTypeByName(entity.getTypeName());
+                    Object qualifiedName = entity.getAttribute("qualifiedName");
+                    Map<String, Object> emptyMap = MapUtils.EMPTY_MAP;
+                    emptyMap.put("qualifiedName", qualifiedName);
+                    atlasEntityStore.deleteByUniqueAttributes(type, emptyMap);
+                }
+
+        }
+
+        private List<AtlasEntity.AtlasEntityWithExtInfo> sortEntities(List<AtlasEntity.AtlasEntityWithExtInfo> originEntities){
             List<AtlasEntity.AtlasEntityWithExtInfo> sortEntities = new LinkedList<>();
             List<AtlasEntity.AtlasEntityWithExtInfo> tmpEntities = new LinkedList<>();
-            for (AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo: addOrUpdateEntities) {
-                sort(sortEntities, addOrUpdateEntities, tmpEntities, atlasEntityWithExtInfo);
+            for (AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo: originEntities) {
+                sort(sortEntities, originEntities, tmpEntities, atlasEntityWithExtInfo);
                 if(CollectionUtils.isNotEmpty(tmpEntities)){
                     sortEntities.addAll(tmpEntities);
+                    tmpEntities.clear();
                 }
             }
             return sortEntities;
@@ -153,8 +173,9 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
             AtlasEntity entity = atlasEntityWithExtInfo.getEntity();
             String typeName = entity.getTypeName();
             if(PARENT_RELATION_MAP.containsKey(typeName)){
-                AtlasStructType.AtlasAttribute attribute = (AtlasStructType.AtlasAttribute)entity.getAttribute(PARENT_RELATION_MAP.get(typeName));
-                parentQualifiedName = attribute.getQualifiedName();
+                Map attributeMap = (Map)entity.getAttribute(PARENT_RELATION_MAP.get(typeName));
+                Map uniqueAttributeMap = (Map)attributeMap.get("uniqueAttributes");
+                parentQualifiedName = (String)uniqueAttributeMap.get("qualifiedName");
             }
             return parentQualifiedName;
         }
