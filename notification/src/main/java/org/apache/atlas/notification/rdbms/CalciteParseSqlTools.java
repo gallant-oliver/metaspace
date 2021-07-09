@@ -70,7 +70,7 @@ public class CalciteParseSqlTools {
         //表.列 格式的list 结构进行组装
         List<String> allColumnInfo = new ArrayList<>();
         connectorProperties.put("table.type",entityType);
-        connectorProperties.put("isDropTable",operateType);
+        connectorProperties.put("isDropTable",operateType.name());
         dealTableColumnEntity(fromTableList, connectorProperties, fromTableEntityList, fromColumnEntityList,allColumnInfo);
         dealTableColumnEntity(toTableList, connectorProperties, toTableEntityList, toColumnEntityList,allColumnInfo);
 
