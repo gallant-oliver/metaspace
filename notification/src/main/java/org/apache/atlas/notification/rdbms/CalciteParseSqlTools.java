@@ -70,8 +70,8 @@ public class CalciteParseSqlTools {
         //表.列 格式的list 结构进行组装
         List<String> allColumnInfo = new ArrayList<>();
         connectorProperties.put("table.type",entityType);
-        dealTableColumnEntity(fromTableList, connectorProperties, fromTableEntityList, fromColumnEntityList,allColumnInfo);
         connectorProperties.put("isDropTable",operateType);
+        dealTableColumnEntity(fromTableList, connectorProperties, fromTableEntityList, fromColumnEntityList,allColumnInfo);
         dealTableColumnEntity(toTableList, connectorProperties, toTableEntityList, toColumnEntityList,allColumnInfo);
 
         //blood relation
