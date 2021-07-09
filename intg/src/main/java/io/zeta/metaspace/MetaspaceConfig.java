@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.stream.Collectors;
 
 public class MetaspaceConfig {
     private static Configuration conf;
@@ -22,6 +23,7 @@ public class MetaspaceConfig {
     private static boolean operateLogModuleMoon;
     private static String[] dataSourceType;
     private static String[] dataSourceApiType;
+    private static String[] userGroupAuthMenus;
     public static List<String> systemCategory = new ArrayList<String>() {{
         add("1");
         add("2");
@@ -58,6 +60,13 @@ public class MetaspaceConfig {
             throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.datasource.type未正确配置");
         }
         return dataSourceType;
+    }
+
+    public static Integer[] getUserGroupAuthMenus() {
+        if (ArrayUtils.isEmpty(userGroupAuthMenus)) {
+            throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.userGroup.auth.menus未正确配置");
+        }
+        return Arrays.stream(userGroupAuthMenus).map(Integer::parseInt).collect(Collectors.toList()).toArray(new Integer[]{});
     }
     public static String[] getDataSourceApiType() {
         if (ArrayUtils.isEmpty(dataSourceApiType)) {
@@ -122,6 +131,7 @@ public class MetaspaceConfig {
             operateLogModuleMoon = conf.getBoolean("metaspace.operationlog.module.moon", false);
             dataSourceType = conf.getStringArray("metaspace.datasource.type");
             dataSourceApiType = conf.getStringArray("metaspace.datasource.api.type");
+            userGroupAuthMenus = conf.getStringArray("metaspace.userGroup.auth.menus");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

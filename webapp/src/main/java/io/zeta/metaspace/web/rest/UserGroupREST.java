@@ -18,6 +18,7 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
@@ -30,7 +31,7 @@ import io.zeta.metaspace.model.result.CategoryUpdate;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.UpdateCategory;
 import io.zeta.metaspace.model.share.ProjectHeader;
-import io.zeta.metaspace.model.share.ProjectInfo;
+import io.zeta.metaspace.model.usergroup.AuthMenuEnum;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupCategories;
 import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
@@ -44,14 +45,13 @@ import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Singleton;
 import javax.ws.rs.Consumes;
@@ -668,4 +668,27 @@ public class UserGroupREST {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取用户组目录权限列表失败");
         }
     }
+
+    /**
+     * 获取用户组-配置权限-页签列表
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/auth/menus")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getPrivilegeCategory() throws AtlasBaseException {
+        try{
+
+            List<Integer> userGroupAuthMenus = Arrays.asList(MetaspaceConfig.getUserGroupAuthMenus());
+            List<String> userGroupAuthMenuList = Arrays.stream(AuthMenuEnum.values()).filter(authMenuEnum -> MetaspaceConfig.getDataService() || !AuthMenuEnum.PROJECT_PERMISSIONS.equals(authMenuEnum))
+                    .filter(authMenuEnum -> userGroupAuthMenus.contains(authMenuEnum.getNum())).map(AuthMenuEnum::getName).collect(Collectors.toList());
+
+            return ReturnUtil.success(userGroupAuthMenuList);
+        }catch (Exception e){
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取用户组目录权限列表失败");
+        }
+    }
+
 }
