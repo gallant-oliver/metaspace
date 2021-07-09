@@ -2,12 +2,12 @@ package io.zeta.metaspace.model.usergroup;
 
 public enum AuthMenuEnum {
 
-    MEMBER("成员", 1),
-    TECHNICAL_DIRECTORY_PERMISSIONS("技术目录权限", 2),
-    BUSINESS_DIRECTORY_PERMISSIONS("业务目录权限", 3),
-    DATA_SOURCE_PERMISSIONS("数据源权限", 4),
-    PROJECT_PERMISSIONS("项目权限", 5),
-    INDICATOR_DOMAIN("指标域权限", 6);
+    MEMBER("member", 1),
+    TECHNICAL_DIRECTORY_PERMISSIONS("technical", 2),
+    BUSINESS_DIRECTORY_PERMISSIONS("business", 3),
+    DATA_SOURCE_PERMISSIONS("data-source", 4),
+    PROJECT_PERMISSIONS("project", 5),
+    INDICATOR_DOMAIN("norm", 6);
 
     private String name;
     private int num;
