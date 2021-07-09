@@ -143,6 +143,7 @@ public class CalciteParseSqlTools {
         for (String fromColumn : fromColumnSet){
             String[] columnAliasArray = fromColumn.split("=>");
             String[] tableColumn = columnAliasArray[1].split(":");
+
             if("unknown".equalsIgnoreCase(tableColumn[0])){
                 fromColumnList.add(allColumnInfo.stream().filter(v->tableColumn[1].equalsIgnoreCase(v.split(":")[1]))
                         .findFirst().map(v->columnAliasArray[0]+"=>"+v).get());
@@ -150,7 +151,7 @@ public class CalciteParseSqlTools {
             }
             if("*".equalsIgnoreCase(tableColumn[1])){
                 fromColumnList.addAll(
-                        allColumnInfo.stream().filter(v->v.split(":")[0].toLowerCase().equalsIgnoreCase((owner+"."+tableColumn[0]).toLowerCase()))
+                        allColumnInfo.stream().filter(v->v.split(":")[0].toLowerCase().equalsIgnoreCase(tableColumn[0].contains(".") ? tableColumn[0].toLowerCase() : (owner+"."+tableColumn[0]).toLowerCase()))
                                 .map(v->columnAliasArray[0]+"=>"+v).collect(Collectors.toList())
                 );
                 continue;
