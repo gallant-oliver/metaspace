@@ -124,6 +124,7 @@ public class MetadataHistoryService {
                 }
             }
         } catch (Exception e) {
+            log.error("storeHistoryMetadata exception is {}", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
