@@ -465,11 +465,13 @@ public class TenantService {
                 return dbs;
             }
         }catch (AtlasBaseException e){
+            LOG.error("租户ID："+tenantId);
             throw new AtlasBaseException(e.getAtlasErrorCode(),e,"从安全中心获取当前用户的hive库权限错误:"+e.getMessage());
         }catch (Exception e){
+            LOG.error("租户ID："+tenantId);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的hive库权限错误:"+e.getMessage());
         }
-        throw getAtlasBaseException(status,msgDesc,"从安全中心获取当前用户的hive库权限错误");
+        return null;
     }
 
     public AtlasBaseException getAtlasBaseException(Object status,Object msgDesc,String message){
