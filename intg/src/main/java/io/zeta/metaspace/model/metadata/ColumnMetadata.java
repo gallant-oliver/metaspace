@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.model.metadata;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.sql.Timestamp;
 
 /*
@@ -70,11 +72,20 @@ public class ColumnMetadata extends BasicMetadata {
         this.partitionField = partitionField;
     }
 
-    public Boolean compareColumn(ColumnMetadata columnMetadata){
-        if(this.guid.equals(columnMetadata.getGuid()) && this.name.equals(columnMetadata.getName()) && this.type.equals(columnMetadata.getType()) && this.status.equals(columnMetadata.getStatus())){
-            return true;
+    public Boolean compareColumn(ColumnMetadata columnMetadata) {
+        if (StringUtils.isNotBlank(this.guid) && !this.guid.equals(columnMetadata.getGuid())) {
+            return false;
         }
-        return false;
+        if (StringUtils.isNotBlank(this.name) && !this.name.equals(columnMetadata.getName())) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(this.type) && !this.type.equals(columnMetadata.getType())) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(this.status) && !this.status.equals(columnMetadata.getStatus())) {
+            return false;
+        }
+        return true;
     }
 
 }
