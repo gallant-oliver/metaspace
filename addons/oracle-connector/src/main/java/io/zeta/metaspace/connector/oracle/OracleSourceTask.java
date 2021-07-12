@@ -1,49 +1,40 @@
 package io.zeta.metaspace.connector.oracle;
 
-import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.SQL_REDO_FIELD;
-import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.TEMPORARY_TABLE;
-
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.LinkedBlockingQueue;
-
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.SQL_REDO_FIELD;
+import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.TEMPORARY_TABLE;
+
 /**
- * 
+ *
  * @author T480
  *
  */
 public class OracleSourceTask extends SourceTask {
-	static final Logger log = LoggerFactory.getLogger(OracleSourceTask.class);
-	private Long streamOffsetScn;
-	private Long streamOffsetCommitScn;
-	public OracleSourceConnectorConfig config;
+	static final Logger LOG = LoggerFactory.getLogger(OracleSourceTask.class);
+	private Long streamOffsetScn = 0L;
+	private OracleSourceConnectorConfig config;
+	Map<String, String> configMap;
 	private static Connection dbConn;
-	List<CallableStatement> callableStatements = new ArrayList<>();
-	static PreparedStatement logMinerSelect;
-	ResultSet logMinerData;
-	ResultSet currentScnResultSet;
+	private List<CallableStatement> callableStatements = new ArrayList<>();
+	private static PreparedStatement logMinerSelect;
+	private ResultSet logMinerData;
 	private boolean closed = false;
-	static int ix = 0;
-	BlockingQueue<SourceRecord> sourceRecordMq = new LinkedBlockingQueue<>();
-	String utlDictionary = "";
-	List<String> logFiles;
-	ExecutorService executor = Executors.newFixedThreadPool(1);
-
+	private List<String> logFiles;
+	private boolean isInit;
+	private int tryTimes = 3;
+	private static final Pattern SQL_DOC_PATTERN = Pattern.compile("(?ms)('(?:''|[^'])*')|--(?!(\\s*\\++\\s*\\S+))\\s.*?$|((/\\*)(?!(\\s*\\++\\s*\\S+)).*?(\\*/))");
+	private static final Pattern BLACK_LINE_PATTERN = Pattern.compile("(\n|↵)(?=([^\"]*\"[^\"]*\")*[^\"]*$)(?=([^']*'[^']*')*[^']*$)");
 	@Override
 	public String version() {
 		return VersionUtil.getVersion();
@@ -58,25 +49,33 @@ public class OracleSourceTask extends SourceTask {
 		dbConn.close();
 	}
 
+	private String getDbName() {
+		String dbName = null;
+		try {
+			dbName = config.getDbName();
+		} catch (RuntimeException e) {
+			LOG.warn("------------" + config.getName() + " dbName is  null ------------");
+		}
+		return dbName;
+	}
+
 	@Override
 	public void start(Map<String, String> map) {
+		this.configMap = map;
 		config = new OracleSourceConnectorConfig(map);
-		log.info("Oracle Kafka Connector is starting on {}", config.getName());
+		if (isInitor()) {
+			return;
+		}
 		try {
-
+			LOG.info("Oracle Kafka Connector {} is starting", config.getName());
 			dbConn = new OracleConnection().connect(config);
-			String dictionaryLocation = getSingleRowColumnStringResult(OracleConnectorSQL.SELECT_UTL_DICTIONARY, "VALUE");
-			CallableStatement dictionaryBuild = dbConn.prepareCall(OracleConnectorSQL.DICTIONARY_BUILD);
-			dictionaryBuild.setString(1, OracleConnectorConstant.DICTIONARY_FILENAME);
-			dictionaryBuild.setString(2, dictionaryLocation);
-			dictionaryBuild.execute();
-			dictionaryBuild.close();
 			logFiles = getSingleRowMuiltColumnStringResult(OracleConnectorSQL.SELECT_LOG_FILES, "MEMBER");
-
-			streamOffsetScn = config.getStartScn();
-			if(0L == streamOffsetScn){
-				streamOffsetScn = getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN");
+			if (0L == streamOffsetScn) {
+				streamOffsetScn = config.getStartScn() == 0L
+						? getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN")
+						: config.getStartScn();
 			}
+
 			String startLogminerSql = OracleConnectorSQL.NEW_DBMS_LOGMNR.replace("?", logFiles.get(0));
 			for (int i = 1; i < logFiles.size(); i++) {
 				startLogminerSql = startLogminerSql + OracleConnectorSQL.ADD_DBMS_LOGMNR.replace("?", logFiles.get(i));
@@ -86,120 +85,169 @@ public class OracleSourceTask extends SourceTask {
 			callableStatements.add(startLogminer);
 			CallableStatement logMinerStartCall = dbConn.prepareCall(OracleConnectorSQL.START_LOGMINER);
 			logMinerStartCall.setLong(1, streamOffsetScn);
-			logMinerStartCall.setString(2, dictionaryLocation + "\\dictionary.ora");
 			logMinerStartCall.execute();
 			callableStatements.add(logMinerStartCall);
-			streamOffsetCommitScn = streamOffsetScn;
 			logMinerSelect = dbConn.prepareCall(OracleConnectorSQL.LOGMINER_SELECT_WITHSCHEMA);
 			logMinerSelect.setFetchSize(config.getDbFetchSize());
-			log.info("LogMiner Session Started");
+			LOG.info("Oracle Kafka Connector {} is started by streamOffsetScn = {}", config.getName(), streamOffsetScn);
 		} catch (SQLException e) {
-			log.info("LogMiner Session Start error", e);
-			throw new ConnectException("Error at cennector task " + config.getName() + ", Please check : " + e.toString());
+			LOG.info("LogMiner Session Start error", e);
+			throw new ConnectException(
+					"Error at cennector task " + config.getName() + ", Please check : " + e.toString());
 		}
 	}
 
+	private boolean isInitor() {
+		String dbName = getDbName();
 
-	private String getSingleRowColumnStringResult(String sql, String columnName) throws SQLException {
-		CallableStatement prepareCall = dbConn.prepareCall(sql);
-		ResultSet resultSet = prepareCall.executeQuery();
-		String result = null;
-		while (resultSet.next()) {
-			result = resultSet.getString(columnName);
+		if (null == dbName || "".equals(dbName)) {
+			this.isInit = true;
+		} else {
+			this.isInit = false;
 		}
-		resultSet.close();
-		return result;
+		return this.isInit;
 	}
 
 	private Long getSingleRowColumnLongResult(String sql, String columnName) throws SQLException {
-		ResultSet resultSet = dbConn.prepareCall(sql).executeQuery();
 		Long result = null;
-		while (resultSet.next()) {
-			result = resultSet.getLong(columnName);
+		try (CallableStatement callableStatement = dbConn.prepareCall(sql);
+			 ResultSet resultSet = callableStatement.executeQuery()) {
+			while (resultSet.next()) {
+				result = resultSet.getLong(columnName);
+			}
+			resultSet.close();
 		}
-		resultSet.close();
+
 		return result;
 	}
 
 	private List<String> getSingleRowMuiltColumnStringResult(String sql, String columnName) throws SQLException {
-		ResultSet resultSet = dbConn.prepareCall(sql).executeQuery();
 		List<String> results = new ArrayList<>();
-		while (resultSet.next()) {
-			String result = resultSet.getString(columnName);
-			results.add(result);
+		try (CallableStatement callableStatement = dbConn.prepareCall(sql);
+			 ResultSet resultSet = callableStatement.executeQuery()) {
+			while (resultSet.next()) {
+				String result = resultSet.getString(columnName);
+				results.add(result);
+			}
+			resultSet.close();
 		}
-		resultSet.close();
 		return results;
 	}
 
 	@Override
 	public List<SourceRecord> poll() throws InterruptedException {
+
 		ArrayList<SourceRecord> records = new ArrayList<>();
+		if (closed) {
+			return records;
+		}
+		if (this.isInit) {
+			Thread.sleep(3600000);
+			return records;
+		}
 		String sqlRedo = "";
 		try {
-			log.info("poll start");
+
+			LOG.debug("poll start");
 			long streamEndScn = getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN");
-			logMinerSelect.setLong(1, streamOffsetCommitScn);
+			logMinerSelect.setLong(1, streamOffsetScn);
 			logMinerSelect.setLong(2, streamEndScn);
+			LOG.debug("Oracle Kafka Connector {} is polling data from {} to {}", config.getName(), streamOffsetScn,
+					streamEndScn);
 			logMinerData = logMinerSelect.executeQuery();
-			boolean hiveData = false;
-			while (!this.closed && logMinerData.next()) {
-				if (log.isDebugEnabled()) {
+
+			while (logMinerData.next()) {
+				if (LOG.isDebugEnabled()) {
 					logRawMinerData();
 				}
-				hiveData = true;
 				sqlRedo = logMinerData.getString(SQL_REDO_FIELD);
-				if (sqlRedo.contains(TEMPORARY_TABLE)){
+				sqlRedo = SQL_DOC_PATTERN.matcher(sqlRedo).replaceAll("$1");
+				sqlRedo = BLACK_LINE_PATTERN.matcher(sqlRedo).replaceAll(" ").trim();
+				String firstWord = sqlRedo.trim().substring(0, sqlRedo.indexOf(" ")).toLowerCase();
+				// info 用来筛选掉数据库内部生成的redo sql || userExecuteFlag :用户操作标记
+				if (sqlRedo.contains(TEMPORARY_TABLE) || firstWord.equals("truncate") || firstWord.equals("delete") || firstWord.equals("update")) {
 					continue;
 				}
+
 				SourceRecord sourceRecord = SourceRecordUtil.getSourceRecord(logMinerData, config);
 				records.add(sourceRecord);
-				log.info(sqlRedo);
 			}
-			if(hiveData){
-				streamOffsetCommitScn = streamEndScn + 1;
+			LOG.debug("Oracle Kafka Connector {} polled {} data from {} to {}", config.getName(), records.size(),
+					streamOffsetScn, streamEndScn);
+			streamOffsetScn = streamEndScn + 1;
+		} catch (Exception e) {
+			LOG.warn("warn during poll on cennector {} : ", config.getName(), e.getMessage());
+			stop();
+			LOG.info("try to restart cennector {} by streamOffsetScn = {}", config.getName(), streamOffsetScn);
+			try {
+				Thread.sleep(3000);
+				start(configMap);
+				this.closed = false;
+				tryTimes = 3;
+			} catch (Exception ex) {
+				if (tryTimes > 0) {
+					LOG.warn("cennector {} restarted error: {}", config.getName(), ex.getMessage());
+					tryTimes = tryTimes - 1;
+				} else {
+					LOG.error("cennector {} restarted error", config.getName(), ex);
+					throw ex;
+				}
 			}
-		} catch (SQLException e) {
-			log.error("SQL error during poll", e);
-		}  catch (Exception e) {
-			log.error("Error during poll on cennector task  topic {} SQL :{}", config.getName(), config.getTopic(), sqlRedo, e);
+			LOG.info("cennector {} restarted", config.getName());
 		}
-		log.info("poll end");
+		LOG.debug("poll end");
 		return records;
 
 	}
 
 	@Override
 	public void stop() {
-		log.info("Stop called for logminer");
+		LOG.info("Stop called for logminer");
 		this.closed = true;
-		try {
 
-			logMinerSelect.cancel();
+		if (this.isInit) {
+			LOG.info("init logminer stoped");
+			return;
+		}
+
+		try {
 			CallableStatement s = dbConn.prepareCall(OracleConnectorSQL.STOP_LOGMINER_CMD);
 			s.execute();
 			s.close();
+		} catch (Exception e) {
+			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
+		}
+		try {
+			logMinerSelect.cancel();
 			logMinerSelect.close();
+		} catch (Exception e) {
+			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
+		}
+		try {
 			for (int i = callableStatements.size() - 1; i >= 0; i--) {
 				callableStatements.get(i).close();
 			}
-			dbConn.close();
-
-		} catch (SQLException e) {
-			log.error(e.getMessage());
+		} catch (Exception e) {
+			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
 		}
+		try {
+			dbConn.close();
+		} catch (Exception e) {
+			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
+		}
+		LOG.info("logminer stoped");
 
 	}
 
 	private void logRawMinerData() throws SQLException {
-		if (log.isDebugEnabled()) {
+		if (LOG.isDebugEnabled()) {
 			StringBuffer b = new StringBuffer();
 			for (int i = 1; i < logMinerData.getMetaData().getColumnCount(); i++) {
 				String columnName = logMinerData.getMetaData().getColumnName(i);
 				Object columnValue = logMinerData.getObject(i);
 				b.append("[" + columnName + "=" + (columnValue == null ? "NULL" : columnValue.toString()) + "]");
 			}
-			log.debug(b.toString());
+			LOG.debug(b.toString());
 		}
 	}
 }

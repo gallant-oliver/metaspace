@@ -1,13 +1,11 @@
 package io.zeta.metaspace.connector.oracle;
 
-import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.COMMITSCN_POSITION_FIELD;
-import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.COMMIT_SCN_FIELD;
-import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.OPERATION_FIELD;
-import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.POSITION_FIELD;
-import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.ROWID_POSITION_FIELD;
-import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.ROW_ID_FIELD;
-import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.SCN_FIELD;
-import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.SQL_REDO_FIELD;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.SchemaBuilder;
+import org.apache.kafka.connect.data.Struct;
+import org.apache.kafka.connect.source.SourceRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,39 +13,32 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.kafka.connect.data.Schema;
-import org.apache.kafka.connect.data.SchemaBuilder;
-import org.apache.kafka.connect.data.Struct;
-import org.apache.kafka.connect.source.SourceRecord;
-
-import io.zeta.metaspace.connector.oracle.models.RdbmsMessage;
-import io.zeta.metaspace.connector.oracle.models.Source;
+import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.*;
 
 public class SourceRecordUtil {
-	
-	public static final String LOG_MINER_OFFSET_FIELD="logminer"; 
-	
+
+	public static final String LOG_MINER_OFFSET_FIELD="logminer";
+	private static final Logger LOG = LoggerFactory.getLogger(OracleSourceTask.class);
 	public static SourceRecord getSourceRecord(ResultSet logMinerData, OracleSourceConnectorConfig config) throws SQLException{
 		String dbName = config.getDbName();
 		String sqlRedo = logMinerData.getString(SQL_REDO_FIELD);
-		String operation = logMinerData.getString(OPERATION_FIELD);
+		int operationCode = logMinerData.getInt(OracleConnectorConstant.OPERATION_CODE_FIELD);
 
 		String op = "";
-		switch (operation) {
-			case "INSERT":
+		switch (operationCode) {
+			case 1://INSERT
 				op = "c";
 				break;
-			case "DELETE":
+			case 2: //DELETE
 				op = "d";
 				break;
-			case "UPDATE":
+			case 3: //UPDATE
 				op = "u";
 				break;
 			default:
 				op = "ddl";
 				break;
 		}
-		//Schema 主要是组装payload的数据格式
 		Schema sourceSchema = SchemaBuilder.struct().optional().name(config.getName())
 				.field("version",SchemaBuilder.string().optional().build())
 				.field("name",SchemaBuilder.string().optional().build())
@@ -66,12 +57,13 @@ public class SourceRecordUtil {
 		SchemaBuilder payLoadSchemaBuilder = SchemaBuilder.struct().required().name(config.getName())
 				.field("before", SchemaBuilder.struct().optional().build())
 				.field("after", SchemaBuilder.struct().optional().build())
-				.field("source",sourceSchema);
+				.field("source",sourceSchema)
+				.field("owner",SchemaBuilder.string().optional().build());
 
-		if("ddl".equals(op)) {// 下边参数是 ddl 的
+		if("ddl".equals(op)) {
 			payLoadSchemaBuilder.field("databaseName",SchemaBuilder.string().optional().build())
 					.field("ddl",SchemaBuilder.string().optional().build());
-		}else {//下边两个参数是 dml 中的
+		}else {
 			payLoadSchemaBuilder.field("op", SchemaBuilder.string().optional().build())
 					.field("ts_ms", SchemaBuilder.int64().optional().build());
 		}
@@ -84,6 +76,7 @@ public class SourceRecordUtil {
 
 		Struct payloadStruct = new Struct(payLoadSchemaBuilder.build());
 		payloadStruct.put("source", sourceStruct);
+		payloadStruct.put("owner", logMinerData.getString(OracleConnectorConstant.SEG_OWNER_FIELD));
 		if("ddl".equals(op)) {
 			payloadStruct.put("databaseName", dbName).put("ddl", sqlRedo);
 		}else {
@@ -97,9 +90,11 @@ public class SourceRecordUtil {
 		String rowId = logMinerData.getString(ROW_ID_FIELD);
 		Map<String, String> sourceOffset = sourceOffset(scn, commitScn, rowId);
 		Map<String, String> sourcePartition = Collections.singletonMap(LOG_MINER_OFFSET_FIELD, dbName);
+		LOG.debug("topic is " + config.getTopic());
 		return new SourceRecord(sourcePartition, sourceOffset, config.getTopic(), payloadStruct.schema(), payloadStruct);
+
 	}
-	
+
 	private static Map<String, String> sourceOffset(Long scnPosition, Long commitScnPosition, String rowId) {
 		Map<String, String> offSet = new HashMap<String, String>();
 		offSet.put(POSITION_FIELD, scnPosition.toString());
@@ -107,4 +102,5 @@ public class SourceRecordUtil {
 		offSet.put(ROWID_POSITION_FIELD, rowId);
 		return offSet;
 	}
+
 }
