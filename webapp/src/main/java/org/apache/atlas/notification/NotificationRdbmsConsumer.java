@@ -88,11 +88,11 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
             RdbmsEntities rdbmsEntities = conversion.convert(rdbmsMessage,connectorProperties);
 
             LOG.info("atlas实体及数据血缘【"+rdbmsEntities+"】插入JanusGraph数据库，并调用监听器，将数据插入PG");
-            synchronize(rdbmsEntities);
+            synchronize(rdbmsEntities, connectorProperties);
             return null;
         }
 
-        private void synchronize(RdbmsEntities rdbmsEntities){
+        private void synchronize(RdbmsEntities rdbmsEntities, Properties connectorProperties){
             Map<RdbmsEntities.OperateType, Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> entityMap = rdbmsEntities.getEntityMap();
 
             Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> modifyMap = entityMap.get(RdbmsEntities.OperateType.MODIFY);
@@ -101,7 +101,7 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
             addOrUpdateEntities = sortEntities(addOrUpdateEntities);
 
             for (AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo: addOrUpdateEntities) {
-                atlasEntityStore.createOrUpdate(new AtlasEntityStream(atlasEntityWithExtInfo), false);
+                atlasEntityStore.createOrUpdate(new AtlasEntityStream(atlasEntityWithExtInfo, connectorProperties), false);
             }
 
             AtlasEntity.AtlasEntitiesWithExtInfo bloodEntities = rdbmsEntities.getBloodEntities();
@@ -119,14 +119,14 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
 
         private void dropEntities(List<AtlasEntity.AtlasEntityWithExtInfo> dropEntities) {
 
-                for(int i = dropEntities.size()-1; i > 0; i --){
-                    AtlasEntity entity = dropEntities.get(i).getEntity();
-                    AtlasEntityType type = typeRegistry.getEntityTypeByName(entity.getTypeName());
-                    Object qualifiedName = entity.getAttribute("qualifiedName");
-                    Map<String, Object> emptyMap = MapUtils.EMPTY_MAP;
-                    emptyMap.put("qualifiedName", qualifiedName);
-                    atlasEntityStore.deleteByUniqueAttributes(type, emptyMap);
-                }
+            for (int i = dropEntities.size() - 1; i >= 0; i--) {
+                AtlasEntity entity = dropEntities.get(i).getEntity();
+                AtlasEntityType type = typeRegistry.getEntityTypeByName(entity.getTypeName());
+                Object qualifiedName = entity.getAttribute("qualifiedName");
+                Map<String, Object> emptyMap = new HashMap<>();
+                emptyMap.put("qualifiedName", qualifiedName);
+                atlasEntityStore.deleteByUniqueAttributes(type, emptyMap);
+            }
 
         }
 

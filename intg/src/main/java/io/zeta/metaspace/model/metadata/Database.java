@@ -24,13 +24,13 @@ import java.util.List;
 public class Database implements Serializable {
     private String sourceId;
     private String sourceName;
-
+    private String instanceId;
     private String databaseId;
     private String databaseName;
     private String databaseDescription;
     private String status;
     private List tableList;
-
+    private String dbType;
     private long tableCount;
     private String owner;
 

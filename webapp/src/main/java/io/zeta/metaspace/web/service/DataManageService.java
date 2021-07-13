@@ -28,6 +28,7 @@ import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
+import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.dto.indices.IndexFieldExport;
 import io.zeta.metaspace.model.dto.indices.IndexFieldNode;
 import io.zeta.metaspace.model.metadata.Table;
@@ -129,6 +130,12 @@ public class DataManageService {
     BusinessDAO businessDAO;
     @Autowired
     RelationDAO relationDAO;
+    @Autowired
+    DataSourceDAO dataSourceDAO;
+    @Autowired
+    ConnectorDAO connectorDAO;
+    @Autowired
+    DbDAO dbDAO;
 
     int technicalType = 0;
     int dataStandType = 3;
@@ -1419,32 +1426,39 @@ public class DataManageService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void addEntity(List<AtlasEntity> entities, SyncTaskDefinition definition) {
+    public void addEntity(List<AtlasEntity> entities, SyncTaskDefinition definition, Properties connectorProperties) {
         List<Column> columnList = new ArrayList<>();
         try {
-            //添加到tableinfo
             for (AtlasEntity entity : entities) {
                 String typeName = entity.getTypeName();
-                if (("hive_table").equals(typeName)) {
-                    if (entity.getAttribute("temporary") == null || entity.getAttribute("temporary").toString().equals("false")) {
+                String dbType = null;
+                switch (typeName){
+                    case "hive_db":
+                        dbType = "HIVE";
+                    case "rdbms_db":
+                        if(null != dbType){
+                            dbType = getDbType(definition, connectorProperties);
+                        }
+                        Database dbInfo = getDbInfo(entity);
+                        dbInfo.setDbType(dbType);
+                        addOrUpdateDb(dbInfo, definition);
+                        break;
+                    case "hive_table":
+                        if (entity.getAttribute("temporary") != null && entity.getAttribute("temporary").toString().equals("true")) {
+                           break;
+                        }
+                    case "rdbms_table":
                         TableInfo tableInfo = getTableInfo(entity);
-                        tableInfo.setSourceId("hive");
-                        //检查表是否存在，如果存在，删除表并替换所有关联中的表guid为新表guid
-                        deleteIfExistTable(tableInfo);
-                        tableDAO.addTable(tableInfo);
-                    }
-                } else if (("rdbms_table").equals(typeName)) {
-                    TableInfo tableInfo = getTableInfo(entity);
-                    String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
-                    tableInfo.setSourceId(qualifiedName.split("\\.")[0]);
-                    deleteIfExistTable(tableInfo);
-                    tableDAO.addTable(tableInfo);
-                } else if (("hive_column").equals(typeName)) {
-                    Column column = getColumn(entity, "type");
-                    columnList.add(column);
-                } else if (("rdbms_column").equals(typeName)) {
-                    Column column = getColumn(entity, "data_type");
-                    columnList.add(column);
+                        addOrUpdateTable(tableInfo);
+                        break;
+                    case "hive_column":
+                        Column column = getColumn(entity, "type");
+                        columnList.add(column);
+                        break;
+                    case "rdbms_column":
+                        column = getColumn(entity, "data_type");
+                        columnList.add(column);
+                        break;
                 }
             }
             if (columnList.size() > 0) {
@@ -1514,6 +1528,68 @@ public class DataManageService {
         tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
         tableInfo.setDescription(getEntityAttribute(entity, "comment"));
         return tableInfo;
+    }
+
+    private void addOrUpdateDb(Database dbInfo, SyncTaskDefinition definition){
+
+        synchronized (dbInfo.getDatabaseId()){
+            Database db = dbDAO.getDb(dbInfo.getDatabaseId());
+            if(null != db){
+                dbDAO.updateDb(dbInfo);
+            }else{
+                dbDAO.insertDb(dbInfo);
+            }
+            if(null != definition){
+                String dataSourceId = definition.getDataSourceId();
+                DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(dataSourceId);
+                String sourceDbRelationId = dbDAO.getSourceDbRelationId(dbInfo.getDatabaseId(), dataSourceInfo.getSourceId());
+                if(null == sourceDbRelationId){
+                    dbDAO.insertSourceDbRelation(UUID.randomUUID().toString(), dbInfo.getDatabaseId(), dataSourceInfo.getSourceId());
+                }
+            }
+        }
+    }
+    private void addOrUpdateTable(TableInfo tableInfo){
+        String tableGuid = tableInfo.getTableGuid();
+        synchronized (tableGuid){
+
+            TableInfo table = tableDAO.getTableInfoByTableguid(tableGuid);
+            if(null != table){
+                tableDAO.updateTable(table);
+            }else{
+                tableDAO.addTable(tableInfo);
+            }
+        }
+    }
+
+    private Database getDbInfo(AtlasEntity entity) {
+        Database database = new Database();
+        String name = getEntityAttribute(entity, "name");
+        String owner = getEntityAttribute(entity, "owner");
+        database.setOwner(owner);
+        database.setDatabaseName(name);
+        database.setDatabaseId(entity.getGuid());
+        database.setStatus(entity.getStatus().name());
+        database.setDatabaseDescription(getEntityAttribute(entity, "comment"));
+        AtlasRelatedObjectId relatedDB = getRelatedInstance(entity);
+        database.setInstanceId(relatedDB.getGuid());
+        return database;
+    }
+
+    private String getDbType(SyncTaskDefinition definition, Properties connectorProperties) {
+        String dbType = null;
+        if(definition != null){
+            String dataSourceId = definition.getDataSourceId();
+            DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(dataSourceId);
+            dbType = dataSourceInfo.getServiceType().toUpperCase();
+        }else{
+            String dbIp = connectorProperties.getProperty("db.hostname");
+            String dbPort = connectorProperties.getProperty("db.port");
+            String dbName = connectorProperties.getProperty("db.name");
+            ConnectorEntity connector = connectorDAO.getConnector(dbIp, dbPort, dbName);
+            dbType = connector.getType();
+        }
+        return dbType;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -1667,6 +1743,18 @@ public class DataManageService {
         if (entity.getTypeName().equals(hbaseTable)) {
             store = "namespace";
         }
+        if (entity.hasRelationshipAttribute(store) && Objects.nonNull(entity.getRelationshipAttribute(store))) {
+            Object obj = entity.getRelationshipAttribute(store);
+            if (obj instanceof AtlasRelatedObjectId) {
+                objectId = (AtlasRelatedObjectId) obj;
+            }
+        }
+        return objectId;
+    }
+
+    public AtlasRelatedObjectId getRelatedInstance(AtlasEntity entity) {
+        AtlasRelatedObjectId objectId = null;
+        String store = "instance";
         if (entity.hasRelationshipAttribute(store) && Objects.nonNull(entity.getRelationshipAttribute(store))) {
             Object obj = entity.getRelationshipAttribute(store);
             if (obj instanceof AtlasRelatedObjectId) {

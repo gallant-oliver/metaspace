@@ -18,7 +18,7 @@ import java.util.List;
 
 public interface TableDAO {
     @Select("select * from tableinfo where tableguid=#{guid}")
-    public TableInfo getTableInfoByTableguid(String guid) throws SQLException;
+    public TableInfo getTableInfoByTableguid(String guid);
 
     @Select("select generatetime from table_relation where tableguid=#{guid}")
     public String getDateByTableguid(String guid);
@@ -36,7 +36,7 @@ public interface TableDAO {
             "values(#{table.tableGuid},#{table.tableName},#{table.dbName},#{table.status},#{table.createTime},#{table.databaseGuid},#{table.databaseStatus},#{table.description},#{table.sourceId})")
     public int addTable(@Param("table") TableInfo table);
 
-    @Update("update tableinfo set tablename=#{table.tableName},dbname=#{table.dbName},description=#{table.description} where tableguid=#{table.tableGuid}")
+    @Update("update tableinfo set tablename=#{table.tableName},status = #{table.status} ,dbname=#{table.dbName},description=#{table.description} where tableguid=#{table.tableGuid}")
     public int updateTable(@Param("table") TableInfo table);
 
     @Select("select tableguid from tableinfo except select tableguid from table_relation")

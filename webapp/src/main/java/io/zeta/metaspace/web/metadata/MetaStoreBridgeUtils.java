@@ -135,7 +135,7 @@ public abstract class MetaStoreBridgeUtils implements IMetaDataProvider{
             for (AtlasEntityHeader createdEntity : createdEntities) {
                 if (ret == null) {
                     ret = atlasEntityStore.getById(createdEntity.getGuid());
-                    dataManageService.addEntity(Arrays.asList(ret.getEntity()), definition);
+                    dataManageService.addEntity(Arrays.asList(ret.getEntity()), definition, null);
                     LOG.info("Created {} entity: name={}, guid={}", ret.getEntity().getTypeName(), ret.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), ret.getEntity().getGuid());
                 } else if (ret.getEntity(createdEntity.getGuid()) == null) {
                     AtlasEntity.AtlasEntityWithExtInfo newEntity = atlasEntityStore.getById(createdEntity.getGuid());
@@ -147,7 +147,7 @@ public abstract class MetaStoreBridgeUtils implements IMetaDataProvider{
                             ret.addReferredEntity(entry.getKey(), entry.getValue());
                         }
                     }
-                    dataManageService.addEntity(Arrays.asList(newEntity.getEntity()), definition);
+                    dataManageService.addEntity(Arrays.asList(newEntity.getEntity()), definition, null);
                     LOG.info("Created {} entity: name={}, guid={}", newEntity.getEntity().getTypeName(), newEntity.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), newEntity.getEntity().getGuid());
                 }
             }

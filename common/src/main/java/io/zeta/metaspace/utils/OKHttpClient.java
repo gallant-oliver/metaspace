@@ -54,7 +54,6 @@ public class OKHttpClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(OKHttpClient.class);
     private static OkHttpClient client;
-    private static int size;
     private static int okHttpTimeout;
     static {
         client = new OkHttpClient().setSslSocketFactory(SSLSocketClient.getSSLSocketFactory())
@@ -62,11 +61,20 @@ public class OKHttpClient {
         client.setConnectTimeout(5, TimeUnit.SECONDS);
     }
 
+
     /**
      * get请求
      * @return
      */
     public static String doGet(String url,Map<String,String> queryParamMap, Map<String,String> headerMap) throws AtlasBaseException {
+        return doGet(url, queryParamMap, headerMap, 0);
+    }
+
+    /**
+     * get请求
+     * @return
+     */
+    public static String doGet(String url,Map<String,String> queryParamMap, Map<String,String> headerMap, int times) throws AtlasBaseException {
         try {
             HttpUrl.Builder urlBuilder = HttpUrl.parse(url).newBuilder();
 
@@ -87,7 +95,7 @@ public class OKHttpClient {
                 }
             }
             Request request = builder.build();
-            return getResponse(request);
+            return getResponse(request, times);
         } catch(AtlasBaseException e){
             throw e;
         }catch (Exception e) {
@@ -244,12 +252,19 @@ public class OKHttpClient {
     }
 
     public static String getResponse(Request request) throws AtlasBaseException, AtlasException {
+        return getResponse(request, 0);
+    }
+
+
+    public static String getResponse(Request request, int times) throws AtlasBaseException, AtlasException {
 
         int count=1;
         OkHttpClient client = OKHttpClient.client;
         okHttpTimeout = MetaspaceConfig.getOkHttpTimeout();
         client.setReadTimeout(okHttpTimeout, TimeUnit.SECONDS);
-        size = ApplicationProperties.get().getInt("okhttp.retries", 3);
+        if(0==times){
+            times = ApplicationProperties.get().getInt("okhttp.retries", 3);
+        }
         while(true){
             try {
                 Call call = client.newCall(request);
@@ -263,7 +278,7 @@ public class OKHttpClient {
                 }
                 return URLDecoder.decode(baos.toString(), "UTF-8");
             } catch (Exception e) {
-                if (count<size){
+                if (count<times){
                     LOG.error("第"+count +"次请求失败：", e);
                     client = new OkHttpClient().setSslSocketFactory(SSLSocketClient.getSSLSocketFactory())
                             .setHostnameVerifier(SSLSocketClient.getHostnameVerifier());
