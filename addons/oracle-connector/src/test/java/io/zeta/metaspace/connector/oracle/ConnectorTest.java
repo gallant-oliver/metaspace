@@ -24,10 +24,10 @@ public class ConnectorTest {
 		OracleSourceTask task = new OracleSourceTask();
 		task.start(configMap);
 
-//		while(true){
-//			Thread.sleep(30000);
+		while(true){
+			Thread.sleep(5000);
 			task.poll();
-//		}
+		}
 	}
 	@Test
 	public void testVersion() {
@@ -42,9 +42,9 @@ public class ConnectorTest {
 				put("name", "oracle-logminer-connector");
 				put("connector.class", "com.ecer.kafka.connect.oracle.OracleSourceConnector");
 				put("tasks.max", "1");
-				put("topic", "testTopic");
+				put("rest.port", "8083");
 				put("db.name", "orcl");
-				put("db.hostname", "localhost");
+				put("db.hostname", "10.141.0.78");
 				put("db.port", "1521");
 				put("db.user", "myTest");
 				put("db.user.password", "test");

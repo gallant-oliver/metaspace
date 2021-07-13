@@ -57,15 +57,25 @@ public class DruidAnalyzerUtil {
     }
 
     /**
-     * 获取创建表的列别名信息
+     * 获取创建表、视图 的列别名信息
      * @param stmt
      * @return 返回 原始表.列  --> 别名字段
      */
     private static Map<String,String> getColumnAliasMap(SQLStatement stmt){
         Map<String,String> aliasMap = new HashMap<>();
-        if(stmt instanceof SQLCreateTableStatement) {
+        SQLSelectQueryBlock selectBlock = null;
+        if(stmt instanceof SQLCreateViewStatement) {
+            SQLCreateViewStatement view = (SQLCreateViewStatement) stmt;
+            selectBlock = view.getSubQuery().getQueryBlock();
+        }else if(stmt instanceof SQLCreateMaterializedViewStatement){
+            SQLCreateMaterializedViewStatement view = (SQLCreateMaterializedViewStatement)stmt;
+            selectBlock = view.getQuery().getQueryBlock();
+        }else if(stmt instanceof SQLCreateTableStatement) {
             SQLCreateTableStatement createStmt = (SQLCreateTableStatement) stmt;
-            SQLSelectQueryBlock selectBlock =  createStmt.getSelect().getQueryBlock();
+            selectBlock =  createStmt.getSelect().getQueryBlock();
+        }
+
+        if(selectBlock != null){
             List<SQLSelectItem> list = selectBlock.getSelectList();
             for(SQLSelectItem item : list){
                 String origin = "";
@@ -84,7 +94,6 @@ public class DruidAnalyzerUtil {
                 aliasMap.put(origin, clomn);
             }
         }
-
         return aliasMap;
     }
     /**

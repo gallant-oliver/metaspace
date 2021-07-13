@@ -1,14 +1,15 @@
 package io.zeta.metaspace.connector.oracle;
 
+
 import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.SchemaBuilder;
 
 public class OracleConnectorConstant{
 
-    public static final String POSITION_FIELD = "scnposition";    
-    public static final String COMMITSCN_POSITION_FIELD = "commitscnposition";    
+    public static final String POSITION_FIELD = "scnposition";
+    public static final String COMMITSCN_POSITION_FIELD = "commitscnposition";
     public static final String ROWID_POSITION_FIELD = "rowid";
-     
+
     public static final Schema OPTIONAL_TIMESTAMP_SCHEMA = org.apache.kafka.connect.data.Timestamp.builder().optional().build();
     public static final Schema TIMESTAMP_SCHEMA = org.apache.kafka.connect.data.Timestamp.builder().build();
     public static final Schema EMPTY_SCHEMA = SchemaBuilder.struct().optional().build();
@@ -23,6 +24,8 @@ public class OracleConnectorConstant{
     public static final String COMMIT_TIMESTAMP_FIELD ="COMMIT_TIMESTAMP";
     public static final String SQL_REDO_FIELD ="SQL_REDO";
     public static final String OPERATION_FIELD ="OPERATION";
+    public static final String OPERATION_CODE_FIELD = "OPERATION_CODE";
+    public static final String INFO_FIELD = "INFO";
     public static final String DATA_ROW_FIELD ="data";
     public static final String BEFORE_DATA_ROW_FIELD ="before";
     public static final String DATA_SCALE_FIELD ="DATA_SCALE";
@@ -51,6 +54,8 @@ public class OracleConnectorConstant{
     public static final String CHAR_TYPE = "CHAR";
     public static final String FLOAT_TYPE = "FLOAT";
     public static final String TEMPORARY_TABLE = "temporary tables";
+    public static final String USER_EXECUTE_MARK = "USER DDL";
+
 
     public static final String OPERATION_START = "START";
     public static final String OPERATION_COMMIT = "COMMIT";
@@ -62,5 +67,5 @@ public class OracleConnectorConstant{
 
     public static final int ORA_DESUPPORT_CM_VERSION=190000;
     public static final String DDL_TOPIC_POSTFIX = "_GENERIC_DDL";
-    public static final String DICTIONARY_FILENAME = "dictionary.ora";
+    public static final String DEFAULT_TOPIC = "ORACLE_METADATA";
 }
