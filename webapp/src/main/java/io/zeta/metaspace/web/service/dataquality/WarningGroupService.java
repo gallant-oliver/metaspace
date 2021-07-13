@@ -15,15 +15,12 @@ package io.zeta.metaspace.web.service.dataquality;
 import com.google.gson.reflect.TypeToken;
 import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.datasource.DataSource;
-import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.utils.GsonUtils;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.dao.dataquality.WarningGroupDAO;
-import io.zeta.metaspace.web.service.CategoryRelationUtils;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeansUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -33,14 +30,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 public class WarningGroupService {
@@ -427,6 +421,10 @@ public class WarningGroupService {
                 CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(error.getObjectId(), CustomizeParam.class);
                 if(!"hive".equalsIgnoreCase(paramInfo.getDataSourceId())){
                     DataSource dataSource = warningGroupDAO.getDataSource(paramInfo.getDataSourceId());
+                    if(Objects.isNull(dataSource)){
+                        error.setObject("数据源已被删除");
+                        continue;
+                    }
                     paramInfo.setDataSourceName(dataSource.getSourceName());
                     paramInfo.setSchema(paramInfo.getSchema() + "." + dataSource.getDatabase());
                 }else{
@@ -457,6 +455,13 @@ public class WarningGroupService {
                 error.setObject(builder.toString());
             }else{
                 error.setObject(error.getSql()==null?"":error.getSql());
+            }
+        }
+        Iterator<WarnInformation> it = errors.iterator();
+        while(it.hasNext()){
+            WarnInformation warnInformation = (WarnInformation)it.next();
+            if(warnInformation.getObject().equals("数据源已被删除")){
+                it.remove();
             }
         }
         pageResult.setTotalSize(errors.get(0).getTotal());

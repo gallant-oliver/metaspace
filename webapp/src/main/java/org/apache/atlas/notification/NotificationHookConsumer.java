@@ -18,26 +18,22 @@
 package org.apache.atlas.notification;
 
 import com.google.common.annotations.VisibleForTesting;
-
 import org.apache.atlas.*;
-
 import org.apache.atlas.listener.ActiveStateChangeHandler;
 import org.apache.atlas.model.instance.AtlasEntity;
-
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.atlas.model.notification.HookNotification;
 import org.apache.atlas.model.notification.Notification;
-import org.apache.atlas.v1.model.instance.Referenceable;
-import org.apache.atlas.v1.model.notification.HookNotificationV1;
 import org.apache.atlas.repository.converters.AtlasInstanceConverter;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStream;
 import org.apache.atlas.repository.store.graph.v2.AtlasGraphUtilsV2;
 import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasTypeRegistry;
+import org.apache.atlas.v1.model.instance.Referenceable;
+import org.apache.atlas.v1.model.notification.HookNotificationV1;
 import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.service.ServiceState;
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.DependsOn;
@@ -45,7 +41,9 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+
 
 /**
  * Consumer of notifications from hooks e.g., hive hook etc.
@@ -55,6 +53,7 @@ import java.util.*;
 @DependsOn(value = {"atlasTypeDefStoreInitializer", "atlasTypeDefGraphStoreV2"})
 public class NotificationHookConsumer extends AbstractKafkaNotificationConsumer {
     private static final Logger LOG        = LoggerFactory.getLogger(NotificationHookConsumer.class);
+
     private static final String THREAD_NAME_PREFIX = NotificationHookConsumer.class.getSimpleName();
 
 

@@ -16,19 +16,13 @@
  */
 package io.zeta.metaspace.web.dao;
 
-import io.zeta.metaspace.model.dataquality2.*;
-import io.zeta.metaspace.model.metadata.Column;
-import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.metadata.Table;
-import io.zeta.metaspace.model.share.ApiAudit;
 import io.zeta.metaspace.model.timelimit.TimeLimitRelation;
 import io.zeta.metaspace.model.timelimit.TimeLimitSearch;
 import io.zeta.metaspace.model.timelimit.TimelimitEntity;
 import org.apache.ibatis.annotations.*;
 
-import java.sql.Timestamp;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 /*
  * @description
@@ -56,7 +50,8 @@ public interface TimeLimitDAO {
             " #{id} " +
             "</foreach>" +
             "</script>")
-    public void deleteTimeLimit(@Param("ids")List<String> ids);
+    public void deleteTimeLimit(@Param("ids") List<String> ids);
+
     @Select("<script>" +
             "select * from time_limit where tenantid=#{tenantId} and id in " +
             "<foreach item='id' index='index' collection='ids' " +
@@ -64,7 +59,7 @@ public interface TimeLimitDAO {
             " #{id} " +
             "</foreach>" +
             "</script>")
-    List<TimelimitEntity> getTimeLimitByIds(@Param("ids")List<String> ids, @Param("tenantId")String tenantId);
+    List<TimelimitEntity> getTimeLimitByIds(@Param("ids") List<String> ids, @Param("tenantId") String tenantId);
 
     @Select({" select id from time_limit where tenantid=#{tenantId} and name=#{timeLimitName}"})
     List<String> getTimeLimitByName(@Param("timeLimitName") String timeLimitName, @Param("tenantId") String tenantId);
@@ -72,6 +67,7 @@ public interface TimeLimitDAO {
 
     @Select({" select * from time_limit where tenantid=#{tenantId} and id=#{id}"})
     TimelimitEntity getTimeLimitById(@Param("id") String id, @Param("tenantId") String tenantId);
+
     /**
      * 获取任务列表
      *
@@ -114,6 +110,13 @@ public interface TimeLimitDAO {
             " </script>"})
     List<TimelimitEntity> getTimeLimitList(@Param("params") TimeLimitSearch params, @Param("tenantId") String tenantId);
 
+    @Select({"<script>",
+            "SELECT id,name FROM time_limit WHERE tenantid = #{tenantId} AND name in ",
+            " <foreach item='item' index='index' collection='nameList' separator=',' open='(' close=')'>",
+            " #{item} ",
+            " </foreach>",
+            " </script>"})
+    List<TimelimitEntity> getTimeLimitListByName(@Param("tenantId") String tenantId, @Param("nameList") Set<String> nameList);
 
     /**
      * 获取发布历史列表
@@ -148,9 +151,9 @@ public interface TimeLimitDAO {
             " (select a.index_name as index_name ,a.time_limit_id ,a.business_leader as business_leader  from index_derive_info a inner join (select index_id,max(version) as version from index_derive_info where tenant_id = #{tenantId} and time_limit_id = #{params.id} group by index_id) b on a.index_id = b.index_id and a.version = b.version) a ",
             " inner join users on users.userid = a.business_leader ",
             " inner join (select id,name from time_limit where id = #{params.id} and tenantid = #{tenantId}",
-                    " <if test=\"params.query != null and params.query!=''\">",
-                       " and name like '%${params.query}%' ESCAPE '/' or time_limit.mark like '%${params.query}%' ESCAPE '/'",
-                    " </if>",
+            " <if test=\"params.query != null and params.query!=''\">",
+            " and name like '%${params.query}%' ESCAPE '/' or time_limit.mark like '%${params.query}%' ESCAPE '/'",
+            " </if>",
             ") b on a.time_limit_id = b.id ",
             " <if test=\"params.sortBy!=null and params.sortBy!='' \">",
             " order by ${params.sortBy} ",
@@ -168,10 +171,8 @@ public interface TimeLimitDAO {
     List<TimeLimitRelation> getTimeLimitRelations(@Param("params") TimeLimitSearch params, @Param("tenantId") String tenantId);
 
 
-
     @Select("select count(*) from time_limit where name=#{name} and id!=#{id} and tenantid=#{tenantId}")
     public Integer isNameById(@Param("tenantId") String tenantId, @Param("name") String name, @Param("id") String id);
-
 
 
     @Update({"<script>" +

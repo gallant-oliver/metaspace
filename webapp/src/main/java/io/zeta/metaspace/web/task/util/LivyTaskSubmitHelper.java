@@ -23,21 +23,24 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
+import io.zeta.metaspace.model.dataquality2.AtomicTaskExecution;
 import io.zeta.metaspace.model.measure.Measure;
 import io.zeta.metaspace.model.measure.MeasureLivyResult;
 import io.zeta.metaspace.utils.GsonUtils;
+import io.zeta.metaspace.web.task.quartz.QuartzJob;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.kerberos.client.KerberosRestTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
@@ -56,7 +59,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class LivyTaskSubmitHelper {
     private static final String REQUEST_BY_HEADER = "X-Requested-By";
     private int SLEEP_TIME;
-    
+
     // Current number of tasks
     private RestTemplate restTemplate = new RestTemplate();
 
@@ -119,9 +122,9 @@ public class LivyTaskSubmitHelper {
 
 
     public static String getOutName(String name) {
-        String tmp=null;
-        if(!StringUtils.isEmpty(name)){
-            tmp=name.replace("-", "_");
+        String tmp = null;
+        if (!StringUtils.isEmpty(name)) {
+            tmp = name.replace("-", "_");
         }
         return "_OUT_" + tmp;
     }
@@ -151,24 +154,21 @@ public class LivyTaskSubmitHelper {
         return livyArgs;
     }
 
-    public MeasureLivyResult post2LivyWithRetry(Measure measure, String pool, Map<String, Object> config) {
-        String result = postToLivy(measure, pool, config);
-        MeasureLivyResult measureLivyResult = null;
-        if (result != null) {
-            measureLivyResult = retryLivyGetAppId(result, appIdRetryCount);
+    public MeasureLivyResult post2LivyWithRetry(Measure measure, String pool, AtomicTaskExecution task) throws Exception {
+        String result = postToLivy(measure, pool, task.getConfig());
+        if (StringUtils.isBlank(result)) {
+            return null;
         }
-        return measureLivyResult;
+        return this.retryLivyGetAppId(task.getTaskId(), result, appIdRetryCount);
     }
 
 
-    protected MeasureLivyResult retryLivyGetAppId(String result, int appIdRetryCount) {
-
+    protected MeasureLivyResult retryLivyGetAppId(String taskId, String result, int appIdRetryCount) throws Exception {
         int retryCount = appIdRetryCount;
         TypeToken<HashMap<String, Object>> type =
                 new TypeToken<HashMap<String, Object>>() {
                 };
         MeasureLivyResult measureLivyResult = GsonUtils.getInstance().fromJson(result, MeasureLivyResult.class);
-
         if (retryCount <= 0) {
             return null;
         }
@@ -182,21 +182,21 @@ public class LivyTaskSubmitHelper {
             return null;
         }
 
-        while (retryCount-- > 0) {
-            try {
-                Thread.sleep(SLEEP_TIME);
-            } catch (InterruptedException e) {
-                log.error(e.getMessage(), e);
-            }
+        while (true) {
             measureLivyResult = getResultByLivyId(sessionId);
             log.info("retry get livy resultMap: {}, batches id : {}", measureLivyResult, sessionId);
-
-            if (measureLivyResult != null && measureLivyResult.getAppId() != null) {
-                break;
+            if (measureLivyResult != null && isDone(measureLivyResult.getState())) {
+                return measureLivyResult;
             }
+            if (QuartzJob.STATE_MAP.get(taskId)) {
+                return null;
+            }
+            Thread.sleep(SLEEP_TIME);
         }
+    }
 
-        return measureLivyResult;
+    private boolean isDone(String status) {
+        return "SUCCESS".equalsIgnoreCase(status) || "DEAD".equalsIgnoreCase(status);
     }
 
     public MeasureLivyResult getResultByLivyId(Object sessionId) {
@@ -205,45 +205,29 @@ public class LivyTaskSubmitHelper {
         return GsonUtils.getInstance().fromJson(result, MeasureLivyResult.class);
     }
 
-    public String postToLivy(Measure measure, String pool, Map<String, Object> config) {
-
+    public String postToLivy(Measure measure, String pool, Map<String, Object> config) throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set(REQUEST_BY_HEADER, "admin");
-
-        if (!isNeedKerberos) {
-            String result = null;
-            try {
-                String body = GsonUtils.getInstance().toJson(buildLivyArgs(measure, pool, config)).replaceAll("\\{", "{ ").replaceAll("}", " }");
-                HttpEntity<String> springEntity = new HttpEntity<>(body, headers);
+        String body = GsonUtils.getInstance().toJson(buildLivyArgs(measure, pool, config)).replaceAll("\\{", "{ ").replaceAll("}", " }");
+        HttpEntity<String> springEntity = new HttpEntity<>(body, headers);
+        String result = null;
+        try {
+            if (!isNeedKerberos) {
                 result = restTemplate.postForObject(url, springEntity, String.class);
-                log.info(result);
-            } catch (HttpClientErrorException e) {
-                log.error("Post to livy ERROR. \n  response status : " + e.getMessage()
-                        + "\n  response header : " + e.getResponseHeaders()
-                        + "\n  response body : " + e.getResponseBodyAsString());
-            } catch (Exception e) {
-                log.error("Post to livy ERROR. \n {}", e);
+            } else {
+                KerberosRestTemplate restTemplateKerberos = new KerberosRestTemplate(keyTabLocation, userPrincipal);
+                result = restTemplateKerberos.postForObject(url, springEntity, String.class);
             }
-            return result;
-        } else {
-
-            KerberosRestTemplate restTemplate = new KerberosRestTemplate(keyTabLocation, userPrincipal);
-            HttpEntity<String> springEntity = null;
-            try {
-                String body = GsonUtils.getInstance().toJson(buildLivyArgs(measure, pool, config)).replaceAll("\\{", "{ ").replaceAll("}", " }");
-                springEntity = new HttpEntity<>(body, headers);
-            } catch (HttpClientErrorException e) {
-                log.error("Post to livy ERROR. \n  response status : " + e.getMessage()
-                        + "\n  response header : " + e.getResponseHeaders()
-                        + "\n  response body : " + e.getResponseBodyAsString());
-            } catch (Exception e) {
-                log.error("Post to livy ERROR. {}", e.getMessage(), e);
-            }
-            String result = restTemplate.postForObject(url, springEntity, String.class);
             log.info(result);
-            return result;
+        } catch (HttpClientErrorException e) {
+            log.error("Post to livy ERROR. \n  response status : " + e.getMessage()
+                    + "\n  response header : " + e.getResponseHeaders()
+                    + "\n  response body : " + e.getResponseBodyAsString());
+        } catch (Exception e) {
+            log.error("Post to livy ERROR. \n {}", e);
         }
+        return result;
     }
 
     public String getFromLivy(String uri) {
@@ -263,13 +247,16 @@ public class LivyTaskSubmitHelper {
     public void deleteByLivy(String sessionId) {
         String path = url + "/" + sessionId;
         log.info("Delete by Livy URI is: " + path);
-
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set(REQUEST_BY_HEADER, "admin");
+        HttpEntity entity = new HttpEntity<>(headers);
         try {
             if (!isNeedKerberos) {
-                new RestTemplate().delete(path);
+                restTemplate.exchange(path, HttpMethod.DELETE, entity, String.class);
             } else {
                 KerberosRestTemplate restTemplate = new KerberosRestTemplate(keyTabLocation, userPrincipal);
-                restTemplate.delete(path);
+                restTemplate.exchange(path, HttpMethod.DELETE, entity, String.class);
             }
         } catch (Exception e) {
             log.error("删除 spark 任务失败", e);

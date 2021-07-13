@@ -6,15 +6,15 @@ public class IndexDTO {
     /**
      * 指标id
      */
-    private  String  indexId ;
+    private String indexId;
     /**
-     *指标名称
+     * 指标名称
      */
-    private  String  indexName ;
+    private String indexName;
     /**
-     *指标标识
+     * 指标标识
      */
-    private  String  indexIdentification ;
+    private String indexIdentification;
     /**
      * 指标类型
      */
@@ -24,65 +24,65 @@ public class IndexDTO {
      */
     private List<String> dependentIndices;
     /**
-     *指标描述
+     * 指标描述
      */
-    private  String  description ;
+    private String description;
     /**
-     *是否核心指标
+     * 是否核心指标
      */
-    private  boolean  central ;
+    private boolean central;
     /**
      * 时间限定id
      */
-    private  String  timeLimitId;
+    private String timeLimitId;
     /**
-     *指标域id
+     * 指标域id
      */
-    private  String  indexFieldId ;
+    private String indexFieldId;
     /**
-     *审批组id
+     * 审批组id
      */
-    private  String  approvalGroupId ;
+    private String approvalGroupId;
     /**
      * 修饰词列表
      */
     private List<String> modifiers;
     /**
-     *数据源id
+     * 数据源id
      */
-    private  String  sourceId ;
+    private String sourceId;
     /**
      * 数据库名称
      */
-    private  String  dbName;
+    private String dbName;
     /**
-     *表id
+     * 表id
      */
-    private  String  tableId ;
+    private String tableId;
     /**
-     *字段id
+     * 字段id
      */
-    private  String  columnId ;
+    private String columnId;
     /**
      * 表达式
      */
     private String expression;
     /**
-     *业务口径
+     * 业务口径
      */
-    private  String  businessCaliber ;
+    private String businessCaliber;
     /**
-     *业务负责人id
+     * 业务负责人id
      */
-    private  String  businessLeader ;
+    private String businessLeader;
     /**
-     *技术口径
+     * 技术口径
      */
-    private  String  technicalCaliber ;
+    private String technicalCaliber;
     /**
-     *技术负责人id
+     * 技术负责人id
      */
-    private  String  technicalLeader ;
+    private String technicalLeader;
 
     private int version;
 
@@ -253,4 +253,5 @@ public class IndexDTO {
     public void setTechnicalLeader(String technicalLeader) {
         this.technicalLeader = technicalLeader;
     }
+
 }

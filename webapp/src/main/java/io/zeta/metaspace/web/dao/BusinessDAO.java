@@ -22,11 +22,7 @@ import io.zeta.metaspace.model.business.BusinessRelationEntity;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableHeader;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.*;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -73,6 +69,20 @@ public interface BusinessDAO {
     //查询业务信息关联的数据库表
     @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid,display_name as displayName,description from tableInfo where tableGuid in(select tableGuid from business2table where status='ACTIVE' and businessId=#{businessId})")
     public List<TechnologyInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
+
+    //查询业务信息关联的数据库表-过滤数据源
+    @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid,display_name as displayName,description from tableInfo where tableGuid in(select tableGuid from business2table where status='ACTIVE' and businessId=#{businessId}) AND (tableInfo.source_id in (SELECT source_id FROM data_source WHERE tenantid = #{tenantId}) or tableInfo.source_id = 'hive')")
+    public List<TechnologyInfo.Table> queryTablesByBusinessIdAndTenantId(@Param("businessId") String businessId, @Param("tenantId") String tenantId);
+
+    @Select({"<script>",
+            " SELECT COUNT(*), businessId FROM tableInfo INNER JOIN business2table ON tableInfo.tableGuid = business2table.tableguid WHERE tableInfo.status = 'ACTIVE' AND businessId IN",
+            " <foreach item='item' index='index' collection='businessIdS' separator=',' open='(' close=')'>" ,
+            " #{item}",
+            " </foreach>",
+            " AND ( tableInfo.source_id IN ( SELECT source_id FROM data_source WHERE tenantid = #{tenantId} ) OR tableInfo.source_id = 'hive' ) ",
+            " GROUP BY businessId",
+            " </script>"})
+    List<TechnologyInfo> getCountByBusinessIdAndTenantId(@Param("businessIdS") List<String> businessIdS, @Param("tenantId") String tenantId);
 
     //添加目录/业务对象关联
     @Insert("insert into business_relation(relationshipGuid,categoryGuid,businessId,generateTime)values(#{relationshipGuid},#{categoryGuid},#{businessId},#{generateTime})")

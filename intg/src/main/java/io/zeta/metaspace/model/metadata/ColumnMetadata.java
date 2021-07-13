@@ -16,8 +16,7 @@
  */
 package io.zeta.metaspace.model.metadata;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Timestamp;
 
@@ -71,6 +70,22 @@ public class ColumnMetadata extends BasicMetadata {
 
     public void setPartitionField(Boolean partitionField) {
         this.partitionField = partitionField;
+    }
+
+    public Boolean compareColumn(ColumnMetadata columnMetadata) {
+        if (StringUtils.isNotBlank(this.guid) && !this.guid.equals(columnMetadata.getGuid())) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(this.name) && !this.name.equals(columnMetadata.getName())) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(this.type) && !this.type.equals(columnMetadata.getType())) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(this.status) && !this.status.equals(columnMetadata.getStatus())) {
+            return false;
+        }
+        return true;
     }
 
 }

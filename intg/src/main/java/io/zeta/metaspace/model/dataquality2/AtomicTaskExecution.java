@@ -49,4 +49,5 @@ public class AtomicTaskExecution {
     private String dataSourceId;
     private String pool;
     private Map<String,Object> config;
+    private String errorMsg;
 }

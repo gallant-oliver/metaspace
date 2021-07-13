@@ -38,6 +38,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -236,7 +237,6 @@ public class BusinessService {
 
     public TechnologyInfo getRelatedTableList(String businessId, String tenantId) throws AtlasBaseException {
         try {
-
             //technicalLastUpdate && technicalOperator
             TechnologyInfo info = businessDao.queryTechnologyInfoByBusinessId(businessId);
             //editTechnical
@@ -263,7 +263,7 @@ public class BusinessService {
                 info.setEditTechnical(true);
             }
             //tables
-            List<TechnologyInfo.Table> tables = getTablesByBusinessId(businessId);
+            List<TechnologyInfo.Table> tables = getTablesByBusinessId(businessId, tenantId);
             info.setTables(tables);
             //businessId
             info.setBusinessId(businessId);
@@ -276,8 +276,8 @@ public class BusinessService {
         }
     }
 
-    private List<TechnologyInfo.Table> getTablesByBusinessId(String businessId) {
-        List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessId(businessId);
+    private List<TechnologyInfo.Table> getTablesByBusinessId(String businessId, String tenantId) {
+        List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessIdAndTenantId(businessId, tenantId);
         tables.forEach(table -> {
             String displayName = columnDAO.getTableDisplayInfoByGuid(table.getTableGuid());
             if (Objects.nonNull(displayName)) {
@@ -324,12 +324,17 @@ public class BusinessService {
                 infoHeader.setPath(joiner.toString());
                 //level2Category
                 infoHeader.setLevel2Category(level2Category);
-                List<TechnologyInfo.Table> tables = getTablesByBusinessId(infoHeader.getBusinessId());
+                List<TechnologyInfo.Table> tables = getTablesByBusinessId(infoHeader.getBusinessId(), tenantId);
                 infoHeader.setTables(tables);
+                if (CollectionUtils.isEmpty(tables)) {
+                    infoHeader.setTechnicalStatus("0");
+                } else {
+                    infoHeader.setTechnicalStatus("1");
+                }
             }
-            long totalSize = 0;
+            Long totalSize = 0L;
             if (list.size() != 0) {
-                totalSize = list.get(0).getTotal();
+                totalSize = Long.valueOf(list.get(0).getTotal());
             }
             pageResult.setTotalSize(totalSize);
             pageResult.setCurrentSize(list.size());
@@ -487,7 +492,7 @@ public class BusinessService {
                 int length = 2;
                 if (pathArr.length >= length)
                     infoHeader.setLevel2Category(pathArr[1]);
-                List<TechnologyInfo.Table> tables = getTablesByBusinessId(infoHeader.getBusinessId());
+                List<TechnologyInfo.Table> tables = getTablesByBusinessId(infoHeader.getBusinessId(), tenantId);
                 infoHeader.setTables(tables);
             }
             pageResult.setLists(businessInfoList);

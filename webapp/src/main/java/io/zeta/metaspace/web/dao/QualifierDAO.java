@@ -1,12 +1,10 @@
 package io.zeta.metaspace.web.dao;
 
-import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.modifiermanage.*;
-import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.*;
-import org.stringtemplate.v4.ST;
 
 import java.util.List;
+import java.util.Set;
 
 public interface QualifierDAO {
     //批量添加修饰词
@@ -102,6 +100,14 @@ public interface QualifierDAO {
             " </if>",
             " </script>"})
     public List<Data> getQualifierList(@Param("params") QualifierParameters params, @Param("tenantId") String tenantId);
+
+    @Select({"<script>",
+            "SELECT id,name FROM qualifier WHERE tenantid = #{tenantId} AND name in ",
+            " <foreach item='item' index='index' collection='nameList' separator=',' open='(' close=')'>",
+            " #{item} ",
+            " </foreach>",
+            " </script>"})
+    List<Data> getQualifierListByName(@Param("tenantId") String tenantId, @Param("nameList") Set<String> nameList);
 
     //获取全部修饰词
     @Select({"<script>",

@@ -85,7 +85,7 @@ public class WarnInformation {
     /**
      * 计算结果
      */
-    private int result;
+    private float result;
 
     /**
      * 结果单位

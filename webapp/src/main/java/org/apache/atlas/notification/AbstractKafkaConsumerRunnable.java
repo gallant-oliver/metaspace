@@ -1,6 +1,7 @@
 package org.apache.atlas.notification;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
 import kafka.utils.ShutdownableThread;
 import org.apache.atlas.*;
 import org.apache.atlas.kafka.AtlasKafkaMessage;
@@ -49,6 +50,7 @@ public abstract class AbstractKafkaConsumerRunnable extends ShutdownableThread {
     private static final int    SC_BAD_REQUEST = 400;
     private AtlasClientV2 atlasClientV2 = null;
     private String[] restAddresses;
+    private final IndexCounter indexCounter = new IndexCounter();
     public AbstractKafkaConsumerRunnable(NotificationConsumer<Notification> consumer, ServiceState serviceState, String name) throws AtlasException {
         super(name, false);
         this.applicationProperties = ApplicationProperties.get();
