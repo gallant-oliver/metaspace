@@ -17,7 +17,7 @@ CREATE TABLE "public"."data_quality_rule_template" (
   "tenantid" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
   "creator" varchar(255) COLLATE "pg_catalog"."default",
   "sql" text COLLATE "pg_catalog"."default",
-  "enable" varchar(255) COLLATE "pg_catalog"."default",
+  "enable" bool,
   "code" varchar COLLATE "pg_catalog"."default",
   CONSTRAINT "data_quality_rule_template_pkey" PRIMARY KEY ("id", "tenantid")
 )

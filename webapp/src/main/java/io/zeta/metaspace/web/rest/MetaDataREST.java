@@ -35,12 +35,14 @@ import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -120,6 +122,7 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Database getDatabase(@PathParam("schemaId") String schemaId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+
         return metadataService.getDatabase(schemaId);
     }
 
@@ -140,6 +143,7 @@ public class MetaDataREST {
                                                         @QueryParam("query") String query, @QueryParam("sourceType") String sourceType,
                                                         @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
+        Long start = System.currentTimeMillis();
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDataSourceList");
@@ -161,6 +165,9 @@ public class MetaDataREST {
             }
             return pageResult;
         } finally {
+            if(StringUtils.isNotBlank(query)){
+                dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "metadata");
+            }
             AtlasPerfTracer.log(perf);
         }
     }
@@ -177,6 +184,7 @@ public class MetaDataREST {
                                                 @QueryParam("query") String query,
                                                 @QueryParam("offset") long offset, @QueryParam("limit") long limit, @HeaderParam("tenantId") String tenantId) {
         AtlasPerfTracer perf = null;
+        Long start = System.currentTimeMillis();
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDatabaseList(" + sourceId + " )");
@@ -185,28 +193,12 @@ public class MetaDataREST {
             result.getLists().forEach(database -> database.setSourceId(sourceId));
             return result;
         } finally {
+            if(StringUtils.isNotBlank(query)){
+                dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "metadata");
+            }
             AtlasPerfTracer.log(perf);
         }
     }
-
-    /**
-     * 模糊查询获取库或者表  - 废弃不用
-     *
-     * @param tenantId
-     * @param name     名称
-     * @param offset
-     * @param limit
-     * @param type     db 数据库 table 数据表
-     * @return
-     */
-    @GET
-    @Path("schema/table/{name}/{type}")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Database> getDbListLikeName(@HeaderParam("tenantId") String tenantId, @PathParam("name") String name, @QueryParam("offset") Long offset, @QueryParam("limit") Long limit, @PathParam("type") String type) {
-        return dataManageService.getDbListLikeName(tenantId, name, offset, limit, type);
-    }
-
 
     //获取数据表 分页
     @GET
@@ -221,15 +213,18 @@ public class MetaDataREST {
                                                 @QueryParam("offset") long offset, @QueryParam("limit") long limit,
                                                 @QueryParam("isView") @DefaultValue("") String isViewStr) {
         AtlasPerfTracer perf = null;
+        Long start = System.currentTimeMillis();
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableList(" + schemaId + "," + limit + "," + offset + " )");
             }
             Boolean isView = StringUtils.isEmpty(isViewStr) ? null : Boolean.parseBoolean(isViewStr);
-
             PageResult<TableEntity> result = searchService.getTable(schemaId, active, offset, limit, query, isView, queryInfo, tenantId);
             return result;
         } finally {
+            if(StringUtils.isNotBlank(query)){
+                dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "metadata");
+            }
             AtlasPerfTracer.log(perf);
         }
     }
@@ -394,7 +389,10 @@ public class MetaDataREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableSQL(" + tableId + " )");
             }
-            BuildTableSql buildTableSql = searchService.getBuildTableSql(tableId);
+            Configuration conf = ApplicationProperties.get();
+            boolean secure = conf.getBoolean("metaspace.secureplus.enable", true);
+            String user = !secure ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
+            BuildTableSql buildTableSql = searchService.getBuildTableSql(tableId, user);
             return buildTableSql;
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询建表语句失败");
@@ -446,12 +444,14 @@ public class MetaDataREST {
                                             @QueryParam("depth") @DefaultValue(DEFAULT_DEPTH) int depth) throws AtlasBaseException {
         Servlets.validateQueryParamLength("guid", guid);
         AtlasPerfTracer perf = null;
+        Long start = System.currentTimeMillis();
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableLineage");
             }
             return metadataService.getTableLineage(guid, direction, depth);
         } finally {
+            dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "data_kinship");
             AtlasPerfTracer.log(perf);
         }
     }
@@ -475,12 +475,14 @@ public class MetaDataREST {
                                               @QueryParam("depth") @DefaultValue(DEFAULT_DEPTH) int depth) throws AtlasBaseException {
         Servlets.validateQueryParamLength("guid", guid);
         AtlasPerfTracer perf = null;
+        Long start = System.currentTimeMillis();
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getColumnLineage");
             }
             return metadataService.getColumnLineageV2(guid, direction, depth);
         } finally {
+            dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "data_kinship");
             AtlasPerfTracer.log(perf);
         }
     }

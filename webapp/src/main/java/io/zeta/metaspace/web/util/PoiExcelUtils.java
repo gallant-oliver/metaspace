@@ -17,8 +17,6 @@
 package io.zeta.metaspace.web.util;
 
 import io.zeta.metaspace.model.dataquality.ExcelReport;
-import io.zeta.metaspace.model.metadata.DataOwnerHeader;
-import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
@@ -26,30 +24,19 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
-
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.ss.util.RegionUtil;
 import org.apache.poi.xssf.usermodel.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.StringJoiner;
-
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
+import java.util.*;
 
 
 /*
@@ -57,7 +44,6 @@ import org.slf4j.Logger;
  * @author sunhaoning
  * @date 2019/1/10 13:37
  */
-
 
 
 /**
@@ -123,6 +109,53 @@ public class PoiExcelUtils {
         return list;
     }
 
+    /**
+     * 读取excel文件
+     *
+     * @param file
+     * @param startRow    开始行数
+     * @param lastCellNum 列数
+     * @return
+     * @throws IOException
+     */
+    public static List<String[]> readExcelFile(File file, int startRow, int lastCellNum) throws IOException {
+        // 获得工作簿对象
+        Workbook workbook = getWorkBookFile(file);
+        // 创建返回对象，把每行中的值作为一个数组，所有的行作为一个集合返回
+        List<String[]> list = new ArrayList<>();
+        if (workbook != null) {
+            // 获取当前sheet工作表
+            Sheet sheet = workbook.getSheetAt(0);
+            if (sheet == null) {
+                return list;
+            }
+            // 获得当前sheet的结束行
+            int lastRowNum = sheet.getLastRowNum();
+            if (startRow < 0 || startRow > lastRowNum) {
+                throw new RuntimeException("wrong startRow");
+            }
+            // 循环除了第一行之外的所有行
+            for (int rowNum = startRow; rowNum <= lastRowNum; rowNum++) {
+                // 获得当前行
+                Row row = sheet.getRow(rowNum);
+                if (row == null) {
+                    return list;
+                }
+                // 获得当前行的开始列
+                int firstCellNum = row.getFirstCellNum();
+                // 获得当前行的列数
+                String[] cells = new String[lastCellNum];
+                // 循环当前行
+                for (int cellNum = firstCellNum; cellNum < lastCellNum; cellNum++) {
+                    Cell cell = row.getCell(cellNum);
+                    cells[cellNum] = getCellValue(cell);
+                }
+                list.add(cells);
+            }
+        }
+        return list;
+    }
+
 
     /**
      * 生成excel文件
@@ -145,14 +178,14 @@ public class PoiExcelUtils {
             // 2007版本
             workbook = new XSSFWorkbook();
         }
-        if(workbook != null)
+        if (workbook != null)
             createSheet(workbook, "sheet1", attributes, data);
         return workbook;
     }
 
-    public static  void createSheet(Workbook workbook, String sheetName, List<String> attributes, List<List<String>> data) {
+    public static void createSheet(Workbook workbook, String sheetName, List<String> attributes, List<List<String>> data) {
         Sheet sheet = workbook.getSheet(sheetName);
-        if(sheet==null){
+        if (sheet == null) {
             sheet = workbook.createSheet(CustomStringUtils.handleExcelName(sheetName));
         }
         Row row0 = sheet.createRow(0);
@@ -163,7 +196,7 @@ public class PoiExcelUtils {
         fillData(sheet, data, 1);
     }
 
-    public static  void createSheet(Workbook workbook, String sheetName, List<String> attributes, List<List<String>> data,CellStyle cellStyle,int column) {
+    public static void createSheet(Workbook workbook, String sheetName, List<String> attributes, List<List<String>> data, CellStyle cellStyle, int column) {
         Sheet sheet = workbook.createSheet(CustomStringUtils.handleExcelName(sheetName));
         sheet.setDefaultColumnWidth(column);
         Row row0 = sheet.createRow(0);
@@ -175,7 +208,7 @@ public class PoiExcelUtils {
         fillData(sheet, data, 1);
     }
 
-    public static  void createSheet(Workbook workbook, String sheetName, List<String> attributes, Map<String,List<List<String>>> dataMap) {
+    public static void createSheet(Workbook workbook, String sheetName, List<String> attributes, Map<String, List<List<String>>> dataMap) {
         Sheet sheet = workbook.createSheet(CustomStringUtils.handleExcelName(sheetName));
         Row row0 = sheet.createRow(0);
         for (int i = 0; i < attributes.size(); i++) {
@@ -183,9 +216,9 @@ public class PoiExcelUtils {
             cell.setCellValue(attributes.get(i).trim());
         }
         mergeRegion(sheet, dataMap);
-        if(Objects.nonNull(dataMap) && dataMap.size()>0) {
+        if (Objects.nonNull(dataMap) && dataMap.size() > 0) {
             int startIndex = 1;
-            for(String key : dataMap.keySet()) {
+            for (String key : dataMap.keySet()) {
                 List<List<String>> dataList = dataMap.get(key);
                 fillData(sheet, dataList, startIndex);
                 startIndex += dataList.size();
@@ -205,7 +238,6 @@ public class PoiExcelUtils {
             }
         }
     }
-
 
 
     public static Workbook createExcelFile(ExcelReport report, String extension) {
@@ -239,13 +271,13 @@ public class PoiExcelUtils {
         return workbook;
     }
 
-    public static  void mergeRegion(Sheet sheet, Map<String,List<List<String>>> dataMap) {
+    public static void mergeRegion(Sheet sheet, Map<String, List<List<String>>> dataMap) {
         int startMergeIndex = 1;
-        for(String key : dataMap.keySet()) {
+        for (String key : dataMap.keySet()) {
             List<List<String>> dataList = dataMap.get(key);
             int size = dataList.size();
             int endMergeIndex = startMergeIndex + size - 1;
-            if(startMergeIndex < endMergeIndex)
+            if (startMergeIndex < endMergeIndex)
                 sheet.addMergedRegion(new CellRangeAddress(startMergeIndex, endMergeIndex, 0, 0));
             startMergeIndex = endMergeIndex + 1;
         }
@@ -253,9 +285,9 @@ public class PoiExcelUtils {
 
     public static HashMap<String, List<List<String>>> convertListToMap(List<List<String>> lists) {
         HashMap<String, List<List<String>>> columnMap = new HashMap<>();
-        for(List<String> list: lists) {
+        for (List<String> list : lists) {
             String columnName = list.get(0);
-            if(columnMap.containsKey(columnName)) {
+            if (columnMap.containsKey(columnName)) {
                 List<List<String>> columnList = columnMap.get(columnName);
                 columnList.add(list);
             } else {
@@ -308,7 +340,7 @@ public class PoiExcelUtils {
                 cellValue = "未知类型";
                 break;
         }
-        return cellValue;
+        return StringUtils.trim(cellValue);
     }
 
 
@@ -331,6 +363,37 @@ public class PoiExcelUtils {
                 // 2003版本
                 workbook = new HSSFWorkbook(is);
             } else if (fileName.endsWith(XLSX)) {
+                // 2007版本
+                workbook = new XSSFWorkbook(is);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return workbook;
+    }
+
+    /**
+     * 获得工作簿对象
+     *
+     * @param file excel文件
+     * @return 工作簿对象
+     */
+    public static Workbook getWorkBookFile(File file) {
+        // 获得文件名
+        String fileName = file.getName();
+        // 创建Workbook工作簿对象，表示整个excel
+        Workbook workbook = null;
+        try {
+            // 获得excel文件的io流
+            InputStream is = new FileInputStream(file);
+            // 根据文件后缀名不同(xls和xlsx)获得不同的workbook实现类对象
+            if (fileName.endsWith(XLS)) {
+                // 2003版本
+                workbook = new HSSFWorkbook(is);
+            } else if (fileName.endsWith(XLSX)) {
+                // 2007版本
+                workbook = new XSSFWorkbook(is);
+            } else {
                 // 2007版本
                 workbook = new XSSFWorkbook(is);
             }
@@ -374,23 +437,23 @@ public class PoiExcelUtils {
 
         Path template = Paths.get(tmpDir, templateEnum.getFileName());
         if (Files.notExists(template)) {
-            if(Files.notExists(Paths.get(tmpDir))){
+            if (Files.notExists(Paths.get(tmpDir))) {
                 Files.createDirectories(Paths.get(tmpDir));
             }
             Files.createFile(template);
 
             XSSFWorkbook workbook = new XSSFWorkbook();
             XSSFSheet sheet = workbook.createSheet();
-            XSSFCellStyle textStyle=  genContextStyle(workbook);
-            XSSFCellStyle titleStyle=genTitleStyle(workbook);
-            XSSFDataFormat format=workbook.createDataFormat();
+            XSSFCellStyle textStyle = genContextStyle(workbook);
+            XSSFCellStyle titleStyle = genTitleStyle(workbook);
+            XSSFDataFormat format = workbook.createDataFormat();
             textStyle.setDataFormat(format.getFormat("@"));
             titleStyle.setDataFormat(format.getFormat("@"));
 
             String[][] content = templateEnum.getContent();
-            for(int i=0;i<content[0].length;i++){
-                sheet.setDefaultColumnStyle(i,textStyle);
-                sheet.setColumnWidth(i,4000);
+            for (int i = 0; i < content[0].length; i++) {
+                sheet.setDefaultColumnStyle(i, textStyle);
+                sheet.setColumnWidth(i, 4000);
             }
 
             for (int i = 0; i < content.length; i++) {
@@ -411,7 +474,7 @@ public class PoiExcelUtils {
     }
 
     //创建文本样式
-    public static XSSFCellStyle genContextStyle(XSSFWorkbook workbook){
+    public static XSSFCellStyle genContextStyle(XSSFWorkbook workbook) {
         XSSFCellStyle style = workbook.createCellStyle();
         //文本水平居中显示
         style.setAlignment(HorizontalAlignment.CENTER);
@@ -423,7 +486,7 @@ public class PoiExcelUtils {
     }
 
     //生成标题样式
-    public static XSSFCellStyle genTitleStyle(XSSFWorkbook workbook){
+    public static XSSFCellStyle genTitleStyle(XSSFWorkbook workbook) {
 
         XSSFCellStyle style = workbook.createCellStyle();
         style.setAlignment(HorizontalAlignment.CENTER);
@@ -435,8 +498,8 @@ public class PoiExcelUtils {
         //加粗
         titleFont.setBold(true);
         //文字尺寸
-        titleFont.setFontHeight((short)10);
-        titleFont.setFontHeightInPoints((short)10);
+        titleFont.setFontHeight((short) 10);
+        titleFont.setFontHeightInPoints((short) 10);
         style.setFont(titleFont);
         return style;
     }

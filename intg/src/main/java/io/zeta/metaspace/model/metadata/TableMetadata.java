@@ -16,8 +16,7 @@
  */
 package io.zeta.metaspace.model.metadata;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.apache.commons.lang.StringUtils;
 
 import java.sql.Timestamp;
 
@@ -90,5 +89,27 @@ public class TableMetadata extends BasicMetadata {
 
     public void setStoreLocation(String storeLocation) {
         this.storeLocation = storeLocation;
+    }
+
+    public Boolean compareTable(TableMetadata tableMetadata) {
+        if (StringUtils.isNotBlank(this.guid) && !this.guid.equals(tableMetadata.getGuid())) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(this.name) && !this.name.equals(tableMetadata.getName())) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(this.tableType) && !this.tableType.equals(tableMetadata.getTableType())) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(this.tableFormat) && !this.tableFormat.equals(tableMetadata.getTableFormat())) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(this.storeLocation) && !this.storeLocation.equals(tableMetadata.getStoreLocation())) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(this.status) && !this.status.equals(tableMetadata.getStatus())) {
+            return false;
+        }
+        return true;
     }
 }

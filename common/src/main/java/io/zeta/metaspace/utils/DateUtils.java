@@ -90,7 +90,6 @@ public class DateUtils {
     }
 
     /**
-     * @param yyyy-MM
      * @return
      */
     public static String nextMonth(String month) {
@@ -100,7 +99,6 @@ public class DateUtils {
     }
 
     /**
-     * @param yyyy
      * @return
      */
     public static String nextYear(String year) {
@@ -128,6 +126,7 @@ public class DateUtils {
 
 
     public static LocalDateTime parseDateTime(String dateString) {
+        dateString = dateString.length() > 19 ? dateString.substring(0, 19) : dateString;
         return LocalDateTime.parse(dateString, DATE_TIME);
     }
 

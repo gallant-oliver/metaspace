@@ -325,7 +325,7 @@ public class TenantService {
                 //是否为“规范定义”的子菜单“我的申请”
                 if(moduleEnum == ModuleEnum.MYAPPLICATION){
                     flag = 1;
-                }else if(flag == -1){
+                } else if (flag == -1 && moduleEnum != ModuleEnum.DATASTANDARD) {
                     flag = 0;
                 }
             }
@@ -465,11 +465,13 @@ public class TenantService {
                 return dbs;
             }
         }catch (AtlasBaseException e){
+            LOG.error("租户ID："+tenantId);
             throw new AtlasBaseException(e.getAtlasErrorCode(),e,"从安全中心获取当前用户的hive库权限错误:"+e.getMessage());
         }catch (Exception e){
+            LOG.error("租户ID："+tenantId);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的hive库权限错误:"+e.getMessage());
         }
-        throw getAtlasBaseException(status,msgDesc,"从安全中心获取当前用户的hive库权限错误");
+        return null;
     }
 
     public AtlasBaseException getAtlasBaseException(Object status,Object msgDesc,String message){

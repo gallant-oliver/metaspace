@@ -4,6 +4,7 @@ import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.stream.Collectors;
 
 public class MetaspaceConfig {
     private static Configuration conf;
@@ -18,31 +20,63 @@ public class MetaspaceConfig {
     private static String hiveConfig;
     private static String metaspaceUrl;
     private static boolean dataService;
-    public static List<String> systemCategory = new ArrayList<String>(){{
+    private static boolean operateLogModuleMoon;
+    private static String[] dataSourceType;
+    private static String[] dataSourceApiType;
+    private static String[] userGroupAuthMenus;
+    public static List<String> systemCategory = new ArrayList<String>() {{
         add("1");
         add("2");
         add("3");
         add("4");
         add("5");
     }};
-    private final static String hiveAdmin="metaspace";
+    private final static String hiveAdmin = "metaspace";
 
     private static int okHttpTimeout;
 
     public static int getOkHttpTimeout() {
-        return conf.getInt("metaspace.okhttp.read.timeout",30);
+        return conf.getInt("metaspace.okhttp.read.timeout", 30);
     }
 
     public static String getHiveJobQueueName() {
-        return conf.getString("metaspace.hive.queue","metaspace");
+        return conf.getString("metaspace.hive.queue", "metaspace");
     }
-    public static String getHiveAdmin(){
+
+    public static String getHiveAdmin() {
         return hiveAdmin;
     }
-    public static boolean getDataService(){return dataService;}
+
+    public static boolean getDataService() {
+        return dataService;
+    }
+
+    public static boolean getOperateLogModuleMoon() {
+        return operateLogModuleMoon;
+    }
+
+    public static String[] getDataSourceType() {
+        if (ArrayUtils.isEmpty(dataSourceType)) {
+            throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.datasource.type未正确配置");
+        }
+        return dataSourceType;
+    }
+
+    public static Integer[] getUserGroupAuthMenus() {
+        if (ArrayUtils.isEmpty(userGroupAuthMenus)) {
+            throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.userGroup.auth.menus未正确配置");
+        }
+        return Arrays.stream(userGroupAuthMenus).map(Integer::parseInt).collect(Collectors.toList()).toArray(new Integer[]{});
+    }
+    public static String[] getDataSourceApiType() {
+        if (ArrayUtils.isEmpty(dataSourceApiType)) {
+            throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.datasource.api.type未正确配置");
+        }
+        return dataSourceApiType;
+    }
 
     public static String getImpalaResourcePool() {
-        return conf.getString("metaspace.impala.resource.pool","metaspace");
+        return conf.getString("metaspace.impala.resource.pool", "metaspace");
     }
 
     public static String getHiveConfig() {
@@ -56,7 +90,7 @@ public class MetaspaceConfig {
 
     public static Queue<String> getHiveUrlQueue() {
         String[] hiveUrlArr = conf.getStringArray("metaspace.hive.url");
-        if (hiveUrlArr == null || hiveUrlArr.length==0) {
+        if (hiveUrlArr == null || hiveUrlArr.length == 0) {
             throw new RuntimeException(new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.hive.url未正确配置"));
         }
         Queue<String> hiveUrlQueue = new LinkedList<>();
@@ -93,7 +127,11 @@ public class MetaspaceConfig {
             if (StringUtils.isEmpty(metaspaceUrl)) {
                 throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.request.address未正确配置");
             }
-            dataService=conf.getBoolean("metaspace.dataservice",false);
+            dataService = conf.getBoolean("metaspace.dataservice", false);
+            operateLogModuleMoon = conf.getBoolean("metaspace.operationlog.module.moon", false);
+            dataSourceType = conf.getStringArray("metaspace.datasource.type");
+            dataSourceApiType = conf.getStringArray("metaspace.datasource.api.type");
+            userGroupAuthMenus = conf.getStringArray("metaspace.userGroup.auth.menus");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

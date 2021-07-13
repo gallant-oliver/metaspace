@@ -2938,7 +2938,9 @@ public class DataShareService {
     }
 
     public List<DataSourceTypeInfo> getDataSourceType() {
-        List<DataSourceTypeInfo> typeNames = Arrays.stream(DataSourceType.values()).filter(type -> type.isAdapter()).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(), dataSourceType.isBuildIn())).collect(Collectors.toList());
+        // 配置的数据源类型
+        List<String> confList = Arrays.stream(MetaspaceConfig.getDataSourceApiType()).map(String::toUpperCase).collect(Collectors.toList());
+        List<DataSourceTypeInfo> typeNames = Arrays.stream(DataSourceType.values()).filter(e -> confList.contains(e.getName())).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(), dataSourceType.isBuildIn())).collect(Collectors.toList());
         return typeNames;
     }
 }

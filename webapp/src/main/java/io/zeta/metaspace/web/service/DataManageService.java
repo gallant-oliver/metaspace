@@ -128,6 +128,9 @@ public class DataManageService {
     @Autowired
     RelationDAO relationDAO;
 
+    @Autowired
+    private IndexDAO indexDAO;
+
     int technicalType = 0;
     int dataStandType = 3;
     int technicalCount = 5;
@@ -206,10 +209,10 @@ public class DataManageService {
                 }
             }
             getCount(valueList, type, tenantId);
-            if(type==5&& !CollectionUtils.isEmpty(valueList)){
-                valueList.forEach(x->{
-                    if(CategoryUtil.indexFieldId.equals(x.getGuid())){
-                        x.setPrivilege(new CategoryPrivilege.Privilege(false, false, true, false, true, false, false, false, false,false));
+            if (type == 5 && !CollectionUtils.isEmpty(valueList)) {
+                valueList.forEach(x -> {
+                    if (CategoryUtil.indexFieldId.equals(x.getGuid())) {
+                        x.setPrivilege(new CategoryPrivilege.Privilege(false, false, true, false, true, false, false, false, false, false));
                     }
                 });
             }
@@ -1414,14 +1417,68 @@ public class DataManageService {
         return gson.fromJson(gson.toJson(paramMap), cls);
     }
 
+    /**
+     * sql语句分为输入和输出型，只有输出型的表和字段才会视为修改 比如：create table a as SELECT * from b ，那么只有a表才会修改，b表不变
+     * @param entity
+     * @return
+     */
+    public Boolean getOutputFromProcesses(AtlasEntity entity) {
+        try {
+            if(entity.getRelationshipAttributes() == null){
+                return false;
+            }
+            LOG.info("inputToProcesses is {}", entity.getRelationshipAttributes().get("inputToProcesses"));
+            LOG.info("outputFromProcesses is {}", entity.getRelationshipAttributes().get("outputFromProcesses"));
+            List<Object> input = (List<Object>) entity.getRelationshipAttributes().get("inputToProcesses");
+            List<Object> output = (List<Object>) entity.getRelationshipAttributes().get("outputFromProcesses");
+            if (CollectionUtils.isEmpty(input) && !CollectionUtils.isEmpty(output)) {
+                LOG.info("getOutputFromProcesses is continue");
+                return false;
+            }
+        } catch (Exception e) {
+            LOG.error("getOutputFromProcesses exception is {}", e);
+        }
+        return true;
+    }
+
+    /**
+     * HIVE数据-检查AtlasEntity中输入和输出是否全是空
+     * @param entities
+     * @return
+     */
+    public Boolean getHiveAtlasEntityAll(List<AtlasEntity> entities){
+        int i = 0;
+        for (AtlasEntity entity : entities) {
+            //当执行删表语句时，关联关系为空
+            if(entity.getRelationshipAttributes() == null){
+                return false;
+            }
+            List<Object> input = (List<Object>) entity.getRelationshipAttributes().get("inputToProcesses");
+            List<Object> output = (List<Object>) entity.getRelationshipAttributes().get("outputFromProcesses");
+            if (CollectionUtils.isEmpty(input) && CollectionUtils.isEmpty(output)) {
+                i++;
+            }
+        }
+        LOG.info("getHiveAtlasEntityAll i = {},entities is {}", i, entities.size());
+        if(entities.size() == i){
+            return false;
+        }
+        return true;
+    }
+
+
     @Transactional(rollbackFor = Exception.class)
     public void addEntity(List<AtlasEntity> entities, SyncTaskDefinition definition) {
         List<Column> columnList = new ArrayList<>();
         try {
             //添加到tableinfo
+            Boolean hiveAtlasEntityAll = this.getHiveAtlasEntityAll(entities);
             for (AtlasEntity entity : entities) {
                 String typeName = entity.getTypeName();
                 if (("hive_table").equals(typeName)) {
+                    if(this.getOutputFromProcesses(entity) && hiveAtlasEntityAll){
+                        continue;
+                    }
                     if (entity.getAttribute("temporary") == null || entity.getAttribute("temporary").toString().equals("false")) {
                         TableInfo tableInfo = getTableInfo(entity);
                         tableInfo.setSourceId("hive");
@@ -1436,6 +1493,9 @@ public class DataManageService {
                     deleteIfExistTable(tableInfo);
                     tableDAO.addTable(tableInfo);
                 } else if (("hive_column").equals(typeName)) {
+                    if(this.getOutputFromProcesses(entity) && hiveAtlasEntityAll){
+                        continue;
+                    }
                     Column column = getColumn(entity, "type");
                     columnList.add(column);
                 } else if (("rdbms_column").equals(typeName)) {
@@ -1607,9 +1667,13 @@ public class DataManageService {
         try {
             Configuration configuration = ApplicationProperties.get();
             Boolean enableEmail = configuration.getBoolean("metaspace.mail.enable", false);
+            Boolean hiveAtlasEntityAll = this.getHiveAtlasEntityAll(entities);
             for (AtlasEntity entity : entities) {
                 String typeName = entity.getTypeName();
                 if (typeName.equals("hive_table")) {
+                    if(this.getOutputFromProcesses(entity) && hiveAtlasEntityAll){
+                        continue;
+                    }
                     if (entity.getAttribute("temporary") == null || entity.getAttribute("temporary").toString().equals("false")) {
                         TableInfo tableInfo = new TableInfo();
                         tableInfo.setTableGuid(entity.getGuid());
@@ -1634,6 +1698,9 @@ public class DataManageService {
                         sendMetadataChangedMail(entity.getGuid());
                     }
                 } else if (typeName.equals("hive_column")) {
+                    if(this.getOutputFromProcesses(entity) && hiveAtlasEntityAll){
+                        continue;
+                    }
                     String guid = entity.getGuid();
                     String name = entity.getAttribute("name").toString();
                     String type = entity.getAttribute("type").toString();
@@ -2394,16 +2461,17 @@ public class DataManageService {
             importIndexFields(addIndexFields, updateIndexFields, tenantId);
         }
     }
+
     @OperateType(INSERT)
     @Transactional(rollbackFor = Exception.class)
     public void importIndexFields(List<CategoryEntityV2> addIndexFields, List<CategoryEntityV2> updateIndexFields, String tenantId) {
         if (!CollectionUtils.isEmpty(addIndexFields)) {
             categoryDao.addAll(addIndexFields, tenantId);
-            StringBuilder sb=new StringBuilder();
+            StringBuilder sb = new StringBuilder();
             sb.append("指标域：");
-            addIndexFields.forEach(x->sb.append(x.getName()).append(","));
+            addIndexFields.forEach(x -> sb.append(x.getName()).append(","));
             sb.deleteCharAt(sb.lastIndexOf(","));
-            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), sb.toString() );
+            HttpRequestContext.get().auditLog(ModuleEnum.NORMDESIGN.getAlias(), sb.toString());
         }
         if (!CollectionUtils.isEmpty(updateIndexFields)) {
             categoryDao.updateCategoryEntityV2(updateIndexFields, tenantId);
@@ -3020,7 +3088,7 @@ public class DataManageService {
     }
 
     public List<CategoryEntityV2> queryCategoryEntitysByGuids(List<String> indexFields, String tenantId) throws SQLException {
-        List<CategoryEntityV2> categoryEntityV2s=categoryDao.queryCategoryEntitysByGuids(indexFields,tenantId);
+        List<CategoryEntityV2> categoryEntityV2s = categoryDao.queryCategoryEntitysByGuids(indexFields, tenantId);
         return categoryEntityV2s;
     }
 }

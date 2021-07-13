@@ -39,8 +39,8 @@ public class OperateLogService {
     @Autowired
     private OperateLogDAO operateLogDAO;
 
-    public PageResult<OperateLog> search(OperateLogRequest operateLogRequest,String tenantId) {
-        List<OperateLog> list = operateLogDAO.search(operateLogRequest,tenantId)
+    public PageResult<OperateLog> search(OperateLogRequest operateLogRequest, String tenantId) {
+        List<OperateLog> list = operateLogDAO.search(operateLogRequest, tenantId)
                 .stream().map(operateLog -> {
                     operateLog.setType(OperateTypeEnum.of(operateLog.getType()).getCn());
                     operateLog.setResult(OperateResultEnum.of(operateLog.getResult()).getCn());
@@ -58,9 +58,9 @@ public class OperateLogService {
         return pageResult;
     }
 
-    public void insert(OperateLog operateLog,String tenantId) {
+    public void insert(OperateLog operateLog, String tenantId) {
         operateLog.setId(UUIDUtils.uuid());
-        operateLogDAO.insert(operateLog,tenantId);
+        operateLogDAO.insert(operateLog, tenantId);
     }
 
     public List<OperateEnum> typeList() {
@@ -72,6 +72,9 @@ public class OperateLogService {
     }
 
     public List<OperateModule> moduleList() {
-        return Arrays.stream(ModuleEnum.values()).filter(module->module.getType()!=0).filter(module->MetaspaceConfig.getDataService()?!ModuleEnum.DATASHARE.equals(module):!(ModuleEnum.AUDIT.equals(module)||ModuleEnum.APIMANAGE.equals(module))).map(module -> new OperateModule(module.getName(), module.getAlias())).collect(Collectors.toList());
+        return Arrays.stream(ModuleEnum.values()).filter(module -> module.getType() != 0)
+                .filter(module -> MetaspaceConfig.getDataService() ? !ModuleEnum.DATASHARE.equals(module) : !(ModuleEnum.AUDIT.equals(module) || ModuleEnum.APIMANAGE.equals(module)))
+                .filter(module -> !(MetaspaceConfig.getOperateLogModuleMoon() && (ModuleEnum.NORMDESIGN.equals(module) || ModuleEnum.MODIFIER.equals(module) || ModuleEnum.TIMELIMIT.equals(module) || ModuleEnum.APPROVERMANAGE.equals(module) || ModuleEnum.INDEXAREAAUTH.equals(module))))
+                .map(module -> new OperateModule(module.getName(), module.getAlias())).collect(Collectors.toList());
     }
 }
