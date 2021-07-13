@@ -41,7 +41,7 @@ public class RdbmsNotification extends  Notification implements Serializable {
          * 删除数据
          */
         DELETE("d");
-        private RdbmsNotificationType(String code){
+        RdbmsNotificationType(String code){
             this.code = code;
         }
         private String code;
@@ -112,9 +112,14 @@ public class RdbmsNotification extends  Notification implements Serializable {
         }
         String firstWord = sql.trim().substring(0, sql.indexOf(" ")).toLowerCase();
         switch (firstWord){
-            case "create" : return RdbmsNotificationType.NEW;
-            case "drop" : return RdbmsNotificationType.DROP;
-            case "alter" : return RdbmsNotificationType.ALTER;
+            case "create" :
+                return RdbmsNotificationType.NEW;
+            case "drop" :
+                return RdbmsNotificationType.DROP;
+            case "truncate" :
+                return RdbmsNotificationType.DELETE;
+            case "alter" :
+                return RdbmsNotificationType.ALTER;
         }
         throw new AtlasBaseException("不识别的rdbms操作,sql = " + sql);
     }
