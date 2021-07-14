@@ -28,7 +28,7 @@ public class KafkaConnector {
     private static final List<String> KAFKA_CONNECTOR_URLS;
     private static final String ORACLE_INIT_CONNECTOR;
     private static final ObjectMapper MAPPER;
-
+    private static final String URL_PREFIX;
     static {
         try {
             MAPPER = new ObjectMapper().configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
@@ -36,6 +36,8 @@ public class KafkaConnector {
             Configuration conf = ApplicationProperties.get();
             ORACLE_INIT_CONNECTOR = conf.getString("oracle.init.connector.name", "oracle_init_connector");
             KAFKA_CONNECTOR_URLS = Arrays.asList(conf.getStringArray("oracle.kafka.connect.urls"));
+            String url = KAFKA_CONNECTOR_URLS.get(0);
+            URL_PREFIX = url.substring(0,url.indexOf("://")+3);
         } catch (Exception e) {
             throw new RuntimeException("初始化Connector失败");
         }
@@ -71,7 +73,7 @@ public class KafkaConnector {
     }
 
     private static String getHost(String url) {
-        return url.substring(url.indexOf("://") + 3);
+        return url.substring(URL_PREFIX.length());
     }
 
     /**
@@ -174,6 +176,7 @@ public class KafkaConnector {
                 }
                 if (CollectionUtils.isNotEmpty(connectorNames) && connectorNames.size() < size) {
                     addUrl = url;
+                    size = connectorNames.size();
                 }
             }
             String json = MAPPER.writeValueAsString(instance);
@@ -182,6 +185,7 @@ public class KafkaConnector {
             newInstance.setHost(getHost(addUrl));
             CONNECTOR_CACHE.put(newInstance.getName(), newInstance);
         } catch (Exception e) {
+            LOG.error("添加connector失败" ,e);
             throw new RuntimeException("添加connector失败", e);
         }
         removeConnector(ORACLE_INIT_CONNECTOR);
@@ -202,9 +206,10 @@ public class KafkaConnector {
         } else{
             try {
                 String url = connector.getHost();
-                OKHttpClient.doDelete(url + "/connectors/" + connectorName,null,null, 0);
-
+                OKHttpClient.doDelete(URL_PREFIX + url + "/connectors/" + connectorName,null,null, 0);
             } catch (Exception e) {
+                result = false;
+                LOG.error("删除connector失败" ,e);
                 throw new RuntimeException("删除connector失败", e);
             }
         }
@@ -226,8 +231,9 @@ public class KafkaConnector {
         }
         try {
             String url = connector.getHost();
-            OKHttpClient.doPut(url + "/connectors/" + connectorName + "/pause", null, null, 0);
+            OKHttpClient.doPut(URL_PREFIX + url + "/connectors/" + connectorName + "/pause", null, null, 0);
         } catch (Exception e) {
+            LOG.error("暂停connector失败" ,e);
             throw new RuntimeException("暂停connector失败", e);
         }
     }
@@ -244,8 +250,9 @@ public class KafkaConnector {
         }
         try {
             String url = connector.getHost();
-            OKHttpClient.doPut(url + "/connectors/" + connectorName + "/resume", null, null, 0);
+            OKHttpClient.doPut(URL_PREFIX + url + "/connectors/" + connectorName + "/resume", null, null, 0);
         } catch (Exception e) {
+            LOG.error("恢复connector失败" ,e);
             throw new RuntimeException("恢复connector失败", e);
         }
     }
@@ -262,9 +269,10 @@ public class KafkaConnector {
         }
         try {
             String url = connector.getHost();
-            OKHttpClient.doPost(url + "/connectors/" + connectorName + "/restart", null, null, null,0);
+            OKHttpClient.doPost(URL_PREFIX + url + "/connectors/" + connectorName + "/restart", null, null, null,0);
         } catch (Exception e) {
-            throw new RuntimeException("恢复connector失败", e);
+            LOG.error("重启connector失败" ,e);
+            throw new RuntimeException("重启connector失败", e);
         }
     }
 

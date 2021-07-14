@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Properties;
 
 
-@Path("kafka/connector")
+@Path("/kafka/connectors")
 @Singleton
 @Service
 public class KafkaConnectorRESR {
@@ -25,6 +25,7 @@ public class KafkaConnectorRESR {
     @GET
     @Path("/urls")
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public List<String> getConnectorUrls() throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -39,6 +40,7 @@ public class KafkaConnectorRESR {
 
     @GET
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public Map<String, List<String>> getConnectors() throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -54,6 +56,7 @@ public class KafkaConnectorRESR {
     @GET
     @Path("/{connectorName}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public KafkaConnector.Instance getConnector(@PathParam("connectorName")String connectorName) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -70,6 +73,7 @@ public class KafkaConnectorRESR {
     @GET
     @Path("/{connectorName}/config")
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public Properties getConnectorConfig(@PathParam("connectorName")String connectorName) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -85,6 +89,7 @@ public class KafkaConnectorRESR {
     @GET
     @Path("/{connectorName}/status")
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public KafkaConnector.Status getConnectorStatus(@PathParam("connectorName")String connectorName) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -99,6 +104,7 @@ public class KafkaConnectorRESR {
 
     @POST
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public KafkaConnector.Instance addConnector(KafkaConnector.Instance instance) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -114,6 +120,7 @@ public class KafkaConnectorRESR {
     @DELETE
     @Path("/{connectorName}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public boolean removeConnector(@PathParam("connectorName")String connectorName) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -129,6 +136,7 @@ public class KafkaConnectorRESR {
     @PUT
     @Path("/{connectorName}/pause")
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public boolean pauseConnector(@PathParam("connectorName")String connectorName) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -146,6 +154,7 @@ public class KafkaConnectorRESR {
     @PUT
     @Path("/{connectorName}/resume")
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public boolean resumeConnector(@PathParam("connectorName")String connectorName) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -162,6 +171,7 @@ public class KafkaConnectorRESR {
     @PUT
     @Path("/{connectorName}/restart")
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public boolean restartConnector(@PathParam("connectorName")String connectorName) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
