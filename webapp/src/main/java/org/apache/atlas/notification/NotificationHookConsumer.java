@@ -91,6 +91,7 @@ public class NotificationHookConsumer extends AbstractKafkaNotificationConsumer 
             String messageUser = hookMessage.getUser();
             requestContext.setUser(messageUser, null);
             AuditLog auditLog = null;
+            LOG.info("message type = {}" , hookMessage.getType());
             switch (hookMessage.getType()) {
                 case ENTITY_CREATE: {
                     final HookNotificationV1.EntityCreateRequest createRequest = (HookNotificationV1.EntityCreateRequest) hookMessage;
