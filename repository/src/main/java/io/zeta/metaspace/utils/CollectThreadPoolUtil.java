@@ -6,19 +6,19 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * @ClassName ThreadPoolUtil
- * @Descroption TODO
+ * @Descroption 元数据采集专用线程池
  * @Author Lvmengliang
  * @Date 2021/6/11 15:30
  * @Version 1.0
  */
-public class ThreadPoolUtil {
+public class CollectThreadPoolUtil {
 
 
     /** 线程池保持ALIVE状态线程数 */
-    public static final int CORE_POOL_SIZE = 20;
+    public static final int CORE_POOL_SIZE = 10;
 
     /** 线程池最大线程数 */
-    public static final int MAX_POOL_SIZE = 100;
+    public static final int MAX_POOL_SIZE = 20;
 
     /** 空闲线程回收时间 */
     public static final int KEEP_ALIVE_TIME = 1000;
@@ -31,7 +31,7 @@ public class ThreadPoolUtil {
             CORE_POOL_SIZE, MAX_POOL_SIZE, KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
             new LinkedBlockingQueue<Runnable>(BLOCKING_QUEUE_SIZE));
 
-    public static ThreadPoolExecutor getThreadPoolExecutor() {
+    public static ThreadPoolExecutor getCollectThreadPoolExecutor() {
         return processExecutor;
     }
 

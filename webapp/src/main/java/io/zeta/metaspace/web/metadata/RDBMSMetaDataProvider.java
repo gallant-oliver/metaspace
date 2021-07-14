@@ -13,8 +13,8 @@ import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.sync.SyncTaskInstance;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.AdapterUtils;
+import io.zeta.metaspace.utils.CollectThreadPoolUtil;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
-import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataSourceService;
@@ -138,7 +138,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         if (!CollectionUtils.isEmpty(schemas) && !tableSchema.isAllDatabase()) {
             LOG.info("Found {} databases", schemas.size());
 
-            ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
+            ThreadPoolExecutor threadPoolExecutor = CollectThreadPoolUtil.getCollectThreadPoolExecutor();
             List<CompletableFuture<Void>> completableFutureList = new ArrayList<>(schemas.size());
             //导入table
             for (Schema database : schemas) {
@@ -700,7 +700,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 }
 
                 List<Integer> tablesImportedList = new ArrayList<>(tableNames.size());
-                ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
+                ThreadPoolExecutor threadPoolExecutor = CollectThreadPoolUtil.getCollectThreadPoolExecutor();
                 List<CompletableFuture<Void>> completableFutureList = new ArrayList<>(tableNames.size());
                 for (Table tableName : tableNames) {
                     completableFutureList.add(CompletableFuture.runAsync(() -> {
