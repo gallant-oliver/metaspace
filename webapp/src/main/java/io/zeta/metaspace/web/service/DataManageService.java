@@ -1458,7 +1458,7 @@ public class DataManageService {
                 i++;
             }
         }
-        LOG.info("getHiveAtlasEntityAll i = {},entities is {}", i, entities.size());
+        LOG.debug("getHiveAtlasEntityAll i = {},entities is {}", i, entities.size());
         if(entities.size() == i){
             return false;
         }
