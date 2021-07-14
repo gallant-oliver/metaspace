@@ -1,11 +1,9 @@
 package org.apache.atlas.notification;
 
 import com.google.common.annotations.VisibleForTesting;
-
-import org.apache.atlas.*;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.listener.ActiveStateChangeHandler;
 import org.apache.atlas.model.instance.AtlasEntity;
-import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.instance.debezium.RdbmsEntities;
 import org.apache.atlas.model.notification.Notification;
 import org.apache.atlas.model.notification.RdbmsNotification;
@@ -14,9 +12,7 @@ import org.apache.atlas.notification.rdbms.KafkaConnector;
 import org.apache.atlas.repository.converters.AtlasInstanceConverter;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStream;
-import org.apache.atlas.repository.store.graph.v2.EntityStream;
 import org.apache.atlas.type.AtlasEntityType;
-import org.apache.atlas.type.AtlasStructType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.web.filters.AuditLog;
 import org.apache.atlas.web.service.ServiceState;
@@ -30,7 +26,6 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.util.*;
-import java.util.function.Function;
 
 @Component
 @Order(5)
@@ -42,8 +37,8 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
     private static final Map<String, String> PARENT_RELATION_MAP = new HashMap<String, String>(){
         {
             put("rdbms_db", "instance");
-            put("rdbms_table", "rdbms_db");
-            put("rdbms_column", "rdbms_table");
+            put("rdbms_table", "db");
+            put("rdbms_column", "table");
         }
     };
 

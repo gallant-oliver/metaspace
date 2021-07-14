@@ -116,13 +116,18 @@ public class DruidAnalyzerUtil {
             log.error("sql {} => parse error",sql);
             return null;
         }
-
+        /*
+        * fromset toset => 只记录表名称
+        * fromColumnSet toColumnSet => 记录格式 table:colname
+         */
         TreeSet<String> fromSet = new TreeSet<>();
         TreeSet<String> toSet = new TreeSet<>();
         TreeSet<String> fromColumnSet = new TreeSet<>();
         TreeSet<String> toColumnSet = new TreeSet<>();
+
         Map<String, TreeSet<String>> fromTo = new HashMap<>(5);
         fromTo.put("type",new TreeSet<>(Arrays.asList("table")));
+
         for (SQLStatement stmt : stmts) {
             Map<String,String> aliasMap = getColumnAliasMap(stmt);
             log.info("处理字段别名success.");
