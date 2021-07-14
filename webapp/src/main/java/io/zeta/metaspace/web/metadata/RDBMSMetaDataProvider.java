@@ -711,7 +711,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                         int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError, instanceGuid, taskInstanceId, definition);
                         if (imported == 1) {
                             this.checkTaskEnable(taskInstanceId);
-                            LOG.info("成功导入表", tableName.getFullName());
+                            LOG.info("成功导入表:{}", tableName.getFullName());
                             syncTaskInstanceDAO.appendLog(taskInstanceId, "成功导入表: " + tableName.getFullName());
                         }
                         tablesImportedList.add(imported);
