@@ -136,7 +136,7 @@ public abstract class MetaStoreBridgeUtils implements IMetaDataProvider{
                 if (ret == null) {
                     ret = atlasEntityStore.getById(createdEntity.getGuid());
                     dataManageService.addEntity(Arrays.asList(ret.getEntity()), definition);
-                    LOG.info("Created {} entity: name={}, guid={}", ret.getEntity().getTypeName(), ret.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), ret.getEntity().getGuid());
+                    LOG.debug("Created {} entity: name={}, guid={}", ret.getEntity().getTypeName(), ret.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), ret.getEntity().getGuid());
                 } else if (ret.getEntity(createdEntity.getGuid()) == null) {
                     AtlasEntity.AtlasEntityWithExtInfo newEntity = atlasEntityStore.getById(createdEntity.getGuid());
 
@@ -148,7 +148,7 @@ public abstract class MetaStoreBridgeUtils implements IMetaDataProvider{
                         }
                     }
                     dataManageService.addEntity(Arrays.asList(newEntity.getEntity()), definition);
-                    LOG.info("Created {} entity: name={}, guid={}", newEntity.getEntity().getTypeName(), newEntity.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), newEntity.getEntity().getGuid());
+                    LOG.debug("Created {} entity: name={}, guid={}", newEntity.getEntity().getTypeName(), newEntity.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), newEntity.getEntity().getGuid());
                 }
             }
         }

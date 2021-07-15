@@ -1427,12 +1427,11 @@ public class DataManageService {
             if(entity.getRelationshipAttributes() == null){
                 return false;
             }
-            LOG.info("inputToProcesses is {}", entity.getRelationshipAttributes().get("inputToProcesses"));
-            LOG.info("outputFromProcesses is {}", entity.getRelationshipAttributes().get("outputFromProcesses"));
+//            LOG.info("inputToProcesses is {}", entity.getRelationshipAttributes().get("inputToProcesses"));
+//            LOG.info("outputFromProcesses is {}", entity.getRelationshipAttributes().get("outputFromProcesses"));
             List<Object> input = (List<Object>) entity.getRelationshipAttributes().get("inputToProcesses");
             List<Object> output = (List<Object>) entity.getRelationshipAttributes().get("outputFromProcesses");
             if (CollectionUtils.isEmpty(input) && !CollectionUtils.isEmpty(output)) {
-                LOG.info("getOutputFromProcesses is continue");
                 return false;
             }
         } catch (Exception e) {
@@ -1459,7 +1458,7 @@ public class DataManageService {
                 i++;
             }
         }
-        LOG.info("getHiveAtlasEntityAll i = {},entities is {}", i, entities.size());
+        LOG.debug("getHiveAtlasEntityAll i = {},entities is {}", i, entities.size());
         if(entities.size() == i){
             return false;
         }
