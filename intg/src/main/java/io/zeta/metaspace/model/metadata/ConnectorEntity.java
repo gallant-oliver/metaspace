@@ -19,15 +19,10 @@ public class ConnectorEntity {
 
     private String pdbName;
 
-    private String dbName;
+    private String connectorUnit;
 
     private String userName;
 
     private String passWord;
 
-    private String connectorUrl;
-
-    private String status;
-
-    private String dbGuid;
 }

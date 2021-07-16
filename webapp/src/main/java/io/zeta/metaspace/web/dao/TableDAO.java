@@ -68,6 +68,9 @@ public interface TableDAO {
     @Select("select tableguid, databasestatus from tableinfo where dbname =#{dbName} and tablename =#{tableName} and source_id = #{sourceId} and status = 'ACTIVE'")
     TableInfo getTableInfo(@Param("sourceId") String sourceId, @Param("dbName") String dbName, @Param("tableName") String tableName);
 
+    @Select("select tableguid from tableinfo where db_guid in (#{databaseGuids}) and status = 'ACTIVE'")
+    List<String> getTableGuidByDataBaseGuids(@Param("databaseGuids")String databaseGuids);
+
     @Select("select organization.name,table2owner.tableGuid,table2owner.pkId from organization,table2owner where organization.pkId=table2owner.pkId and tableGuid=#{tableGuid}")
     public List<DataOwnerHeader> getDataOwnerList(@Param("tableGuid") String tableGuid);
 

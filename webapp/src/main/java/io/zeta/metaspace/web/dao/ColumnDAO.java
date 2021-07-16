@@ -118,6 +118,9 @@ public interface ColumnDAO {
     @Update("update column_info set status=#{status} where column_guid in (#{columnIds})")
     public int updateColumnStatusBatch(@Param("columnIds") String columnIds, @Param("status") String status);
 
+    @Update("update column_info set status=#{status} where table_guid in (#{tableGuids})")
+    public int updateColumnStatusByTableGuids(@Param("tableGuids") String tableGuids, @Param("status") String status);
+
     @Update("update column_info set column_name=#{columnName},type=#{type},status=#{status},description=#{description} where column_guid=#{columnId}")
     public int updateColumnBasicInfo(@Param("columnId")String columnId, @Param("columnName")String columnName, @Param("type")String type, @Param("status")String status, @Param("description")String description);
 

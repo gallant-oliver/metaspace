@@ -28,7 +28,7 @@ import java.util.List;
 
 public interface ConnectorDAO {
 
-    @Select("SELECT id, connector_name, connector_class, TYPE, db_ip, db_port, pdb_name, user_name, pass_word, connector_url, " +
-            "status, db_guid FROM connector WHERE is_deleted = FALSE AND db_ip = #{dbIp} AND db_port = #{dbPort} AND db_name = #{dbName}")
+    @Select("SELECT id, connector_name, connector_class, type, db_ip, db_port, pdb_name, connector_unit, user_name, pass_word FROM connector " +
+            "WHERE is_deleted = FALSE AND db_ip = #{dbIp} AND db_port = #{dbPort} AND connector_unit = #{dbName}")
     ConnectorEntity getConnector(@Param("dbIp")String dbIp, @Param("dbPort")String dbPort, @Param("dbName")String dbName);
 }
