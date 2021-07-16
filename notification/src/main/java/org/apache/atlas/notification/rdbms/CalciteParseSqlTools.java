@@ -98,10 +98,12 @@ public class CalciteParseSqlTools {
 
         //表.列 格式的list 结构进行组装
         List<String> allColumnInfo = new ArrayList<>();
-        connectorProperties.put("table.type",entityType);
-        connectorProperties.put("isDropTable",operateType.name());
-        dealTableColumnEntity(fromTableList, connectorProperties, fromTableEntityList, fromColumnEntityList,allColumnInfo);
-        dealTableColumnEntity(toTableList, connectorProperties, toTableEntityList, toColumnEntityList,allColumnInfo);
+        paramMap.put("table.type",entityType);
+        paramMap.put("isDropTable",operateType.name());
+        /*connectorProperties.put("table.type",entityType);
+        connectorProperties.put("isDropTable",operateType.name());*/
+        dealTableColumnEntity(fromTableList, connectorProperties,paramMap, fromTableEntityList, fromColumnEntityList,allColumnInfo);
+        dealTableColumnEntity(toTableList, connectorProperties,paramMap, toTableEntityList, toColumnEntityList,allColumnInfo);
 
         //blood relation
         AtlasEntity.AtlasEntitiesWithExtInfo atlasBloodEntities = new AtlasEntity.AtlasEntitiesWithExtInfo();
@@ -143,19 +145,19 @@ public class CalciteParseSqlTools {
      * @param tableEntityList 返回的table对象
      * @param columnEntityList 返回的column对象
      */
-    private static void dealTableColumnEntity(List<String> tableList,Properties connectorProperties,
+    private static void dealTableColumnEntity(List<String> tableList,Properties connectorProperties,Map<String,String> paramMap,
                                               List<AtlasEntity.AtlasEntityWithExtInfo> tableEntityList,
                                               List<AtlasEntity.AtlasEntityWithExtInfo> columnEntityList,List<String> allColumnInfo){
         if(CollectionUtils.isEmpty(tableList)){
             return ;
         }
-        Map<String,String> paramMap = new HashMap<>();
+        //Map<String,String> paramMap = new HashMap<>();
         for (String table : tableList){
             //table entity
             paramMap.put("table",table);
             tableEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_TABLE,connectorProperties,paramMap,null));
             //增加该表的列 entity
-            String dropTable = connectorProperties.getProperty("isDropTable");
+            String dropTable = paramMap.get("isDropTable");
             if(RdbmsEntities.OperateType.DROP.name().equalsIgnoreCase(dropTable)){
                 log.info("drop 操作，不需要获取列字段信息。");
                 continue;

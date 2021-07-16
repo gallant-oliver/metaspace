@@ -80,7 +80,8 @@ public class DatabaseUtil {
                 columnNames.add(tableColumnInfo);
             }
         } catch (SQLException e) {
-            logger.error("table {} getColumnNames failure",tableName, e);
+            logger.error("table {} getColumnNames failure,cause:{}",tableName, e.getMessage());
+            return columnNames;
         } finally {
             if (pStemt != null) {
                 try {
