@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.sun.tools.hat.internal.model.HackJavaValue;
 import io.zeta.metaspace.utils.OKHttpClient;
 import lombok.Data;
 import org.apache.atlas.ApplicationProperties;

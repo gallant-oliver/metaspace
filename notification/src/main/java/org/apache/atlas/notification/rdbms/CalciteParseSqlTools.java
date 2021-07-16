@@ -35,18 +35,18 @@ public class CalciteParseSqlTools {
         RdbmsMessage.Payload payload = notification.getRdbmsMessage().getPayload();
         Boolean isDdl = StringUtils.isBlank(payload.getOp());
         String sql = isDdl ?  payload.getDdl() : payload.getSource().getQuery() ;
-        sql = sql.replace("`","").replaceAll("\"","").replaceAll("\'","");
+        //sql = sql.replace("`","").replaceAll("\"","");
 
         String rdbmsType = getRdbmsType(connectorProperties);
         Map<String, TreeSet<String>> resultTableMap = DruidAnalyzerUtil.getFromTo(sql,rdbmsType);
         TreeSet<String> fromSet = resultTableMap.get("from");
         TreeSet<String> toSet = resultTableMap.get("to");
-        String entityType = resultTableMap.get("type").first(); //table or view
         if(resultTableMap == null
                 || (fromSet.isEmpty() && toSet.isEmpty()) ){
             log.info("sql解析没有表对象，不需要处理..");
             return new RdbmsEntities();
         }
+        String entityType = resultTableMap.get("type").first(); //table or view or user
         String upperSql = sql.trim().replaceAll("\\s+", " ").toUpperCase();
         String alterType = upperSql.startsWith("ALTER TABLE") && upperSql.split("\\s+").length > 4 ? upperSql.split("\\s+")[3] : "DEFAULT";
         RdbmsEntities.OperateType operateType =
@@ -56,14 +56,35 @@ public class CalciteParseSqlTools {
 
         log.info("execute sql :{},\n operateType:{}",sql,operateType);
 
+        RdbmsEntities rdbmsEntities = new RdbmsEntities();
+        Map<RdbmsEntities.OperateType, Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> operateEntityMap = rdbmsEntities.getEntityMap();
+        Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> modifyMap = operateEntityMap.get(RdbmsEntities.OperateType.MODIFY);
+        Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> operateMap = operateEntityMap.get(operateType);
+        //额外参数存储
+        Map<String,String> paramMap = new HashMap<>();
         //1. rdbms_instance 组装
         List<AtlasEntity.AtlasEntityWithExtInfo> instanceEntityList
-                = makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_INSTANCE,connectorProperties,null,null);
+                = makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_INSTANCE,connectorProperties,paramMap,null);
 
+        boolean isOperateUser = StringUtils.equalsIgnoreCase("user",entityType);
+        if(isOperateUser){//用户操作-》db  table、colomn没有
+            paramMap.put("username",toSet.first());
+        }
         //2. rdbms_db
         List<AtlasEntity.AtlasEntityWithExtInfo> dbEntityList
-                = makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_DB,connectorProperties,null,null);
+                = makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_DB,connectorProperties,paramMap,null);
 
+        //添加数据库实例
+        modifyMap.put(RdbmsEntities.EntityType.RDBMS_INSTANCE, instanceEntityList);
+        //添加数据库
+        if(StringUtils.equalsIgnoreCase("user",entityType)){
+            operateMap.put(RdbmsEntities.EntityType.RDBMS_DB, dbEntityList);
+            return rdbmsEntities;
+        }else {
+            modifyMap.put(RdbmsEntities.EntityType.RDBMS_DB, dbEntityList);
+        }
+
+        //  table、colomn 需要组装
         //3.rdbms_table 操作表的对象(表名处理为 table 格式 去除前缀用户等信息)
         List<String> fromTableList = new ArrayList<>(fromSet);
         List<String> toTableList = new ArrayList<>(toSet);
@@ -89,16 +110,6 @@ public class CalciteParseSqlTools {
         }else{
             atlasBloodEntities = makeAtlasBloodRelation(resultTableMap, sql, connectorProperties,allColumnInfo,owner);
         }
-
-
-        RdbmsEntities rdbmsEntities = new RdbmsEntities();
-        Map<RdbmsEntities.OperateType, Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> operateEntityMap = rdbmsEntities.getEntityMap();
-        Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> modifyMap = operateEntityMap.get(RdbmsEntities.OperateType.MODIFY);
-        Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> operateMap = operateEntityMap.get(operateType);
-        //添加数据库实例
-        modifyMap.put(RdbmsEntities.EntityType.RDBMS_INSTANCE, instanceEntityList);
-        //添加数据库
-        modifyMap.put(RdbmsEntities.EntityType.RDBMS_DB, dbEntityList);
         //添加来源的 表 列 column table
         addMapOrNot(modifyMap,RdbmsEntities.EntityType.RDBMS_TABLE,fromTableEntityList);
         addMapOrNot(modifyMap,RdbmsEntities.EntityType.RDBMS_COLUMN,fromColumnEntityList);
@@ -138,16 +149,18 @@ public class CalciteParseSqlTools {
         if(CollectionUtils.isEmpty(tableList)){
             return ;
         }
+        Map<String,String> paramMap = new HashMap<>();
         for (String table : tableList){
             //table entity
-            tableEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_TABLE,connectorProperties,table,null));
+            paramMap.put("table",table);
+            tableEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_TABLE,connectorProperties,paramMap,null));
             //增加该表的列 entity
             String dropTable = connectorProperties.getProperty("isDropTable");
             if(RdbmsEntities.OperateType.DROP.name().equalsIgnoreCase(dropTable)){
                 log.info("drop 操作，不需要获取列字段信息。");
                 continue;
             }
-            columnEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_COLUMN,connectorProperties,table,allColumnInfo));
+            columnEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_COLUMN,connectorProperties,paramMap,allColumnInfo));
         }
     }
 
@@ -369,13 +382,13 @@ public class CalciteParseSqlTools {
      * @return
      */
     private static List<AtlasEntity.AtlasEntityWithExtInfo>  makeAtlasEntity(RdbmsEntities.EntityType entityType,Properties connectorProperties,
-                                                                             String table,List<String> allColumnInfo){
+                                                                             Map<String,String> paramMap/*String table*/,List<String> allColumnInfo){
         List<AtlasEntity.AtlasEntityWithExtInfo> resultList = new ArrayList<>();
 
         String dbHostname = connectorProperties.getProperty("db.hostname");
         String dbPort = connectorProperties.getProperty("db.port");
         String dbPassword = connectorProperties.getProperty("db.user.password");
-        String username = connectorProperties.getProperty("db.user");
+        String username = StringUtils.isBlank(paramMap.get("username")) ? connectorProperties.getProperty("db.user") : paramMap.get("username");
         String dbname = connectorProperties.getProperty("db.name"); //orcl 实例名
         String rdbmsType = getRdbmsType(connectorProperties);
 
@@ -424,6 +437,7 @@ public class CalciteParseSqlTools {
             instanceJsonEntity.setEntity(atlasEntity);
             resultList.add(instanceJsonEntity);
         }else if(entityType == RdbmsEntities.EntityType.RDBMS_TABLE){
+            String table = paramMap.get("table");
             atlasEntity = new AtlasEntity();
             atlasEntity.setTypeName("rdbms_table");
             Map<String, Object> attributeTableMap = new HashMap<>();
@@ -450,6 +464,7 @@ public class CalciteParseSqlTools {
             instanceJsonEntity.setEntity(atlasEntity);
             resultList.add(instanceJsonEntity);
         }else if(entityType == RdbmsEntities.EntityType.RDBMS_COLUMN){
+            String table = paramMap.get("table");
             //获取表字段信息
             String jdbcDriver = null,jdbcURL = null;
             if("mysql".equalsIgnoreCase(rdbmsType)){

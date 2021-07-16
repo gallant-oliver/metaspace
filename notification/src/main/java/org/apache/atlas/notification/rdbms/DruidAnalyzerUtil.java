@@ -8,6 +8,7 @@ import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.statement.*;
 import com.alibaba.druid.sql.parser.ParserException;
+import com.alibaba.druid.sql.parser.Token;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
 import com.alibaba.druid.stat.TableStat;
 import com.alibaba.druid.util.JdbcConstants;
@@ -23,6 +24,112 @@ import org.slf4j.LoggerFactory;
 public class DruidAnalyzerUtil {
     private static final Logger log = LoggerFactory.getLogger(DruidAnalyzerUtil.class);
 
+    /**
+     *  获取sql的表血缘 (增加create user的逻辑)
+     * @param sql
+     * @param dbType ：mysql、oracle
+     * @return
+     * @throws ParserException
+     */
+    public static Map<String, TreeSet<String>> getFromTo (String sql,String dbType) {
+        String db = "";
+        if (JdbcConstants.MYSQL.equalsIgnoreCase(dbType) || JdbcConstants.MARIADB.equals(dbType)) {
+            db = JdbcConstants.MYSQL;
+        }
+        if (JdbcConstants.ORACLE.equals(dbType) || JdbcConstants.ALI_ORACLE.equals(dbType)) {
+            db = JdbcConstants.ORACLE;
+        }
+        sql = sql.replaceAll("`|\"|:","").toUpperCase();
+        List<SQLStatement> stmts = parseStatements(db, sql);
+        if (stmts == null) {
+            log.error("sql {} => parse error",sql);
+            return null;
+        }
+        /*
+        * fromset toset => 只记录表名称
+        * fromColumnSet toColumnSet => 记录格式 table:colname
+         */
+        TreeSet<String> fromSet = new TreeSet<>();
+        TreeSet<String> toSet = new TreeSet<>();
+        TreeSet<String> fromColumnSet = new TreeSet<>();
+        TreeSet<String> toColumnSet = new TreeSet<>();
+
+        Map<String, TreeSet<String>> fromTo = new HashMap<>(5);
+        fromTo.put("type",new TreeSet<>(Arrays.asList("table")));
+
+        for (SQLStatement stmt : stmts) {
+            Map<String,String> aliasMap = getColumnAliasMap(stmt);
+            log.info("处理字段别名success.");
+            //创建视图view  materialized view 需单独处理(否则获取不到目标视图名称)
+            if(stmt instanceof SQLCreateViewStatement) {
+                SQLCreateViewStatement view = (SQLCreateViewStatement)stmt;
+                toSet.add(view.getTableSource().toString());
+                fromTo.put("type",new TreeSet<>(Arrays.asList("view")));
+            }
+            if(stmt instanceof SQLCreateMaterializedViewStatement) {
+                SQLCreateMaterializedViewStatement view = (SQLCreateMaterializedViewStatement)stmt;
+                toSet.add(view.getName().toString());
+                fromTo.put("type",new TreeSet<>(Arrays.asList("view")));
+            }
+            if(stmt instanceof SQLCreateUserStatement) {
+                fromTo.put("type",new TreeSet<>(Arrays.asList("user")));
+                SQLCreateUserStatement userStatement = (SQLCreateUserStatement) stmt;
+                toSet.add(userStatement.getUser().getSimpleName());
+            }
+
+            SchemaStatVisitor statVisitor = SQLUtils.createSchemaStatVisitor(db);
+            stmt.accept(statVisitor);
+            Map<TableStat.Name, TableStat> tables = statVisitor.getTables();
+            Collection<TableStat.Column> columns = statVisitor.getColumns();
+
+            if (tables != null) {
+                tables.forEach((tableName, stat) -> {
+                    if (stat.getCreateCount() > 0 || stat.getInsertCount() > 0
+                            || stat.getDropCount() > 0 || stat.getAlterCount() > 0) {
+                        String to = tableName.getName().toUpperCase();
+                        //to.indexOf(".") != -1 ? to.split("\\.")[1]:
+                        toSet.add(to);
+                        toColumnSet.addAll( columns.stream().filter(v->to.equalsIgnoreCase(v.getTable()) )
+                                .map(p->p.getTable() + ":"+p.getName()).collect(Collectors.toSet())
+                        );
+                    } else if (stat.getSelectCount() > 0) {
+                        String from = tableName.getName().toUpperCase();
+                        //from.indexOf(".") != -1 ? from.split("\\.")[1] :
+                        fromSet.add(from);
+                        //只筛选select后的字段，去除where  且 列存在别名的话，使用（别名=>原名）的格式
+                        fromColumnSet.addAll( columns.stream().filter(v->v.isSelect() &&
+                                (StringUtils.equalsIgnoreCase(v.getTable(), from) || StringUtils.equalsIgnoreCase(v.getTable(), "UNKNOWN") ))
+                                .map(p-> MapUtils.getString(aliasMap,p.getTable() + ":"+p.getName(),"")+"=>"+p.getTable() + ":"+p.getName())
+                                .collect(Collectors.toSet())
+                        );
+                    }
+                });
+            }
+        }
+
+        fromTo.put("from", fromSet);
+        fromTo.put("to", toSet);
+        fromTo.put("fromColumn", fromColumnSet);
+        fromTo.put("toColumn", toColumnSet);
+        return fromTo;
+    }
+
+
+    /**
+     * 针对 druid 识别不了的特殊字符需要转换处理
+     * @param token
+     * @return
+     */
+    private static String convertToken(String token) {
+        Token[] tokens = Token.values();
+        for (Token item : tokens){
+            if(item.name().equalsIgnoreCase(token)){
+                return item.name;
+            }
+        }
+       
+        return token;
+    }
     /**
      * druid 处理 sql 的解析，增加了sql加工的逻辑
      * @param db
@@ -42,11 +149,15 @@ public class DruidAnalyzerUtil {
                 int index2 = errMsg.indexOf("EOF");
                 if(index2 != -1){
                     String[] arr = sql.split(" ");
-                    sql = sql.substring(0, sql.indexOf(arr[arr.length-1]));
+                    sql = sql.substring(0, sql.lastIndexOf(arr[arr.length-1]));
                     log.info("EOF deal after sql: {}",sql);
                 }else if(index != -1) {
                     String[] arr = errMsg.split(" ");
-                    sql = sql.substring(0, sql.indexOf(arr[arr.length-1]));
+                    StringBuilder sb = new StringBuilder(sql);
+                    String token = convertToken(arr[arr.length-1]);
+                    sb.delete(sql.lastIndexOf(token),sql.lastIndexOf(token)+token.length());
+
+                    sql = sb.toString(); //sql.substring(0, sql.indexOf(arr[arr.length-1]));
                     log.info("invalid token deal after sql: {}",sql);
                 }else {
                     break;
@@ -96,88 +207,9 @@ public class DruidAnalyzerUtil {
         }
         return aliasMap;
     }
-    /**
-     *  获取sql的表血缘
-     * @param sql
-     * @param dbType ：mysql、oracle
-     * @return
-     * @throws ParserException
-     */
-    public static Map<String, TreeSet<String>> getFromTo (String sql,String dbType) {
-        String db = "";
-        if (JdbcConstants.MYSQL.equalsIgnoreCase(dbType) || JdbcConstants.MARIADB.equals(dbType)) {
-            db = JdbcConstants.MYSQL;
-        }
-        if (JdbcConstants.ORACLE.equals(dbType) || JdbcConstants.ALI_ORACLE.equals(dbType)) {
-            db = JdbcConstants.ORACLE;
-        }
-        List<SQLStatement> stmts = parseStatements(db, sql);
-        if (stmts == null) {
-            log.error("sql {} => parse error",sql);
-            return null;
-        }
-        /*
-        * fromset toset => 只记录表名称
-        * fromColumnSet toColumnSet => 记录格式 table:colname
-         */
-        TreeSet<String> fromSet = new TreeSet<>();
-        TreeSet<String> toSet = new TreeSet<>();
-        TreeSet<String> fromColumnSet = new TreeSet<>();
-        TreeSet<String> toColumnSet = new TreeSet<>();
 
-        Map<String, TreeSet<String>> fromTo = new HashMap<>(5);
-        fromTo.put("type",new TreeSet<>(Arrays.asList("table")));
-
-        for (SQLStatement stmt : stmts) {
-            Map<String,String> aliasMap = getColumnAliasMap(stmt);
-            log.info("处理字段别名success.");
-            //创建视图view  materialized view 需单独处理(否则获取不到目标视图名称)
-            if(stmt instanceof SQLCreateViewStatement) {
-                SQLCreateViewStatement view = (SQLCreateViewStatement)stmt;
-                toSet.add(view.getTableSource().toString());
-                fromTo.put("type",new TreeSet<>(Arrays.asList("view")));
-            }
-            if(stmt instanceof SQLCreateMaterializedViewStatement) {
-                SQLCreateMaterializedViewStatement view = (SQLCreateMaterializedViewStatement)stmt;
-                toSet.add(view.getName().toString());
-                fromTo.put("type",new TreeSet<>(Arrays.asList("view")));
-            }
-
-            SchemaStatVisitor statVisitor = SQLUtils.createSchemaStatVisitor(db);
-            stmt.accept(statVisitor);
-            Map<TableStat.Name, TableStat> tables = statVisitor.getTables();
-            Collection<TableStat.Column> columns = statVisitor.getColumns();
-
-            if (tables != null) {
-                tables.forEach((tableName, stat) -> {
-                    if (stat.getCreateCount() > 0 || stat.getInsertCount() > 0
-                            || stat.getDropCount() > 0 || stat.getAlterCount() > 0) {
-                        String to = tableName.getName().toUpperCase();
-                        //to.indexOf(".") != -1 ? to.split("\\.")[1]:
-                        toSet.add(to);
-                        toColumnSet.addAll( columns.stream().filter(v->to.equalsIgnoreCase(v.getTable()) )
-                                .map(p->p.getTable() + ":"+p.getName()).collect(Collectors.toSet())
-                        );
-                    } else if (stat.getSelectCount() > 0) {
-                        String from = tableName.getName().toUpperCase();
-                        //from.indexOf(".") != -1 ? from.split("\\.")[1] :
-                        fromSet.add(from);
-                        //只筛选select后的字段，去除where  且 列存在别名的话，使用（别名=>原名）的格式
-                        fromColumnSet.addAll( columns.stream().filter(v->v.isSelect() &&
-                                (StringUtils.equalsIgnoreCase(v.getTable(), from) || StringUtils.equalsIgnoreCase(v.getTable(), "UNKNOWN") ))
-                                .map(p-> MapUtils.getString(aliasMap,p.getTable() + ":"+p.getName(),"")+"=>"+p.getTable() + ":"+p.getName())
-                                .collect(Collectors.toSet())
-                        );
-                    }
-                });
-            }
-        }
-
-        fromTo.put("from", fromSet);
-        fromTo.put("to", toSet);
-        fromTo.put("fromColumn", fromColumnSet);
-        fromTo.put("toColumn", toColumnSet);
-        return fromTo;
+    public static void main(String[] args) {
+        String originSql="create user c##zhangsan identified by values   'S:22D89817E88E5996C9A88D7BB4DEAA889E85F2E0A4FAB73FD7B029433F7A;T:BCD667BF4363BE945713CE6F6244F6A76387FFA28BC9E564C0851A146AEEDB6532A0558252441DFCB5D70022740965396153248959D7B456B55F56D763AE41FBF62ACBFF399AD383106F7B8DF18A8CD8' ";
+        getFromTo(originSql,"oracle");
     }
-
 }
