@@ -121,11 +121,13 @@ public class DruidAnalyzerUtil {
      * @return
      */
     private static String convertToken(String token) {
-        if(Token.EQ.name().equalsIgnoreCase(token) ){
-            return "=";
-        }else if(Token.EQEQ.name().equalsIgnoreCase(token) ){
-            return "==";
+        Token[] tokens = Token.values();
+        for (Token item : tokens){
+            if(item.name().equalsIgnoreCase(token)){
+                return item.name;
+            }
         }
+       
         return token;
     }
     /**
