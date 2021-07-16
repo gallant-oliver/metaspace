@@ -68,7 +68,7 @@ public class CalciteParseSqlTools {
 
         boolean isOperateUser = StringUtils.equalsIgnoreCase("user",entityType);
         if(isOperateUser){//用户操作-》db  table、colomn没有
-            paramMap.put("username",toSet.first());
+            paramMap.put("username",toSet.first().toUpperCase());
         }
         //2. rdbms_db
         List<AtlasEntity.AtlasEntityWithExtInfo> dbEntityList
@@ -98,10 +98,12 @@ public class CalciteParseSqlTools {
 
         //表.列 格式的list 结构进行组装
         List<String> allColumnInfo = new ArrayList<>();
-        connectorProperties.put("table.type",entityType);
-        connectorProperties.put("isDropTable",operateType.name());
-        dealTableColumnEntity(fromTableList, connectorProperties, fromTableEntityList, fromColumnEntityList,allColumnInfo);
-        dealTableColumnEntity(toTableList, connectorProperties, toTableEntityList, toColumnEntityList,allColumnInfo);
+        paramMap.put("table.type",entityType);
+        paramMap.put("isDropTable",operateType.name());
+        /*connectorProperties.put("table.type",entityType);
+        connectorProperties.put("isDropTable",operateType.name());*/
+        dealTableColumnEntity(fromTableList, connectorProperties,paramMap, fromTableEntityList, fromColumnEntityList,allColumnInfo);
+        dealTableColumnEntity(toTableList, connectorProperties,paramMap, toTableEntityList, toColumnEntityList,allColumnInfo);
 
         //blood relation
         AtlasEntity.AtlasEntitiesWithExtInfo atlasBloodEntities = new AtlasEntity.AtlasEntitiesWithExtInfo();
@@ -143,19 +145,19 @@ public class CalciteParseSqlTools {
      * @param tableEntityList 返回的table对象
      * @param columnEntityList 返回的column对象
      */
-    private static void dealTableColumnEntity(List<String> tableList,Properties connectorProperties,
+    private static void dealTableColumnEntity(List<String> tableList,Properties connectorProperties,Map<String,String> paramMap,
                                               List<AtlasEntity.AtlasEntityWithExtInfo> tableEntityList,
                                               List<AtlasEntity.AtlasEntityWithExtInfo> columnEntityList,List<String> allColumnInfo){
         if(CollectionUtils.isEmpty(tableList)){
             return ;
         }
-        Map<String,String> paramMap = new HashMap<>();
+        //Map<String,String> paramMap = new HashMap<>();
         for (String table : tableList){
             //table entity
             paramMap.put("table",table);
             tableEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_TABLE,connectorProperties,paramMap,null));
             //增加该表的列 entity
-            String dropTable = connectorProperties.getProperty("isDropTable");
+            String dropTable = paramMap.get("isDropTable");
             if(RdbmsEntities.OperateType.DROP.name().equalsIgnoreCase(dropTable)){
                 log.info("drop 操作，不需要获取列字段信息。");
                 continue;
@@ -245,6 +247,7 @@ public class CalciteParseSqlTools {
         TreeSet<String> toSet = resultTableMap.get("to");
         List<String> fromTableList = new ArrayList<>(fromSet);
         List<String> toTableList = new ArrayList<>(toSet);
+        owner = owner.toUpperCase();
         addOwnerPrefixToTable(owner,Boolean.FALSE,fromTableList,toTableList);
 
         AtlasEntity.AtlasEntitiesWithExtInfo atlasBloodEntities = new AtlasEntity.AtlasEntitiesWithExtInfo();
@@ -389,6 +392,7 @@ public class CalciteParseSqlTools {
         String dbPort = connectorProperties.getProperty("db.port");
         String dbPassword = connectorProperties.getProperty("db.user.password");
         String username = StringUtils.isBlank(paramMap.get("username")) ? connectorProperties.getProperty("db.user") : paramMap.get("username");
+        username = username.toUpperCase();
         String dbname = connectorProperties.getProperty("db.name"); //orcl 实例名
         String rdbmsType = getRdbmsType(connectorProperties);
 
