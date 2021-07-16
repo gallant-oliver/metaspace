@@ -183,7 +183,7 @@ public class DruidAnalyzerUtil {
             selectBlock = view.getQuery().getQueryBlock();
         }else if(stmt instanceof SQLCreateTableStatement) {
             SQLCreateTableStatement createStmt = (SQLCreateTableStatement) stmt;
-            selectBlock =  createStmt.getSelect().getQueryBlock();
+            selectBlock =  createStmt.getSelect() != null ? createStmt.getSelect().getQueryBlock() : null;
         }
 
         if(selectBlock != null){

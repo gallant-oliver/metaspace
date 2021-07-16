@@ -170,7 +170,6 @@ public abstract class AbstractKafkaConsumerRunnable extends ShutdownableThread {
                         isFailedMsg = true;
 
                         failedMessages.add(message);
-                        commit(kafkaMsg);
                         if (failedMessages.size() >= failedMsgCacheSize) {
                             recordFailedMessages();
                         }
@@ -180,10 +179,9 @@ public abstract class AbstractKafkaConsumerRunnable extends ShutdownableThread {
                     RequestContext.clear();
                 }
             }
-
         } finally {
+            commit(kafkaMsg);
             AtlasPerfTracer.log(perf);
-
             if (auditLog != null) {
                 auditLog.setHttpStatus(isFailedMsg ? SC_BAD_REQUEST : SC_OK);
                 auditLog.setTimeTaken(System.currentTimeMillis() - startTime);
