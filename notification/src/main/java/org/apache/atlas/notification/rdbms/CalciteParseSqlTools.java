@@ -68,7 +68,7 @@ public class CalciteParseSqlTools {
 
         boolean isOperateUser = StringUtils.equalsIgnoreCase("user",entityType);
         if(isOperateUser){//用户操作-》db  table、colomn没有
-            paramMap.put("username",toSet.first());
+            paramMap.put("username",toSet.first().toUpperCase());
         }
         //2. rdbms_db
         List<AtlasEntity.AtlasEntityWithExtInfo> dbEntityList
@@ -247,6 +247,7 @@ public class CalciteParseSqlTools {
         TreeSet<String> toSet = resultTableMap.get("to");
         List<String> fromTableList = new ArrayList<>(fromSet);
         List<String> toTableList = new ArrayList<>(toSet);
+        owner = owner.toUpperCase();
         addOwnerPrefixToTable(owner,Boolean.FALSE,fromTableList,toTableList);
 
         AtlasEntity.AtlasEntitiesWithExtInfo atlasBloodEntities = new AtlasEntity.AtlasEntitiesWithExtInfo();
@@ -391,6 +392,7 @@ public class CalciteParseSqlTools {
         String dbPort = connectorProperties.getProperty("db.port");
         String dbPassword = connectorProperties.getProperty("db.user.password");
         String username = StringUtils.isBlank(paramMap.get("username")) ? connectorProperties.getProperty("db.user") : paramMap.get("username");
+        username = username.toUpperCase();
         String dbname = connectorProperties.getProperty("db.name"); //orcl 实例名
         String rdbmsType = getRdbmsType(connectorProperties);
 
