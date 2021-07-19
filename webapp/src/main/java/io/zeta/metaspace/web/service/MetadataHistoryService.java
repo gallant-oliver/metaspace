@@ -73,7 +73,7 @@ public class MetadataHistoryService {
                 }
             }
         }
-        log.info("tableSet is {}", tableSet);
+        log.debug("tableSet is {}", tableSet);
         return tableSet;
     }
 
