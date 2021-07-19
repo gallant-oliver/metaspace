@@ -426,10 +426,7 @@ public interface RelationDAO {
     @Select("select count(1) from table_relation where categoryguid=#{categoryGuid} and tableguid=#{tableGuid}")
     public int ifRelationExists(@Param("categoryGuid") String categoryGuid, @Param("tableGuid") String tableGuid);
 
-    @Update("update tableInfo set databasestatus=#{status} where databaseGuid=#{databaseGuid}")
-    public int updateDatabaseStatus(@Param("databaseGuid") String databaseGuid, @Param("status") String status);
-
-    @Update("update tableInfo set databasestatus=#{status} where databaseGuid in (#{databaseGuids})")
+    @Update("update db_info set status=#{status} where database_guid in (#{databaseGuids})")
     public int updateDatabaseStatusBatch(@Param("databaseGuids") String databaseGuids, @Param("status") String status);
 
     @Select({" select tableGuid from table_relation where categoryGuid=#{categoryGuid}"})

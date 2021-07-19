@@ -19,6 +19,7 @@ package org.apache.atlas.kafka;
 
 import org.apache.atlas.notification.AbstractNotificationConsumer;
 import org.apache.atlas.notification.BaseAtlasNotificationMessageDeserializer;
+import org.apache.atlas.notification.MessageDeserializer;
 import org.apache.atlas.notification.NotificationInterface;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +50,7 @@ public class AtlasKafkaConsumer<T> extends AbstractNotificationConsumer<T> {
         this(notificationType.getDeserializer(), kafkaConsumer, autoCommitEnabled, pollTimeoutMilliSeconds);
     }
 
-    public AtlasKafkaConsumer(BaseAtlasNotificationMessageDeserializer<T> deserializer, KafkaConsumer kafkaConsumer, boolean autoCommitEnabled, long pollTimeoutMilliSeconds) {
+    public AtlasKafkaConsumer(MessageDeserializer<T> deserializer, KafkaConsumer kafkaConsumer, boolean autoCommitEnabled, long pollTimeoutMilliSeconds) {
         super(deserializer);
 
         this.autoCommitEnabled       = autoCommitEnabled;
@@ -78,10 +79,12 @@ public class AtlasKafkaConsumer<T> extends AbstractNotificationConsumer<T> {
                 T message = deserializer.deserialize(record.value().toString());
 
                 if (message == null) {
+                    TopicPartition partition = new TopicPartition(record.topic(), record.partition());
+                    LOG.info("一条消息转化结果为空：partition:{}; offset:{}; 消息{}", record.partition(), record.offset(), record.value());
+                    commit(partition, record.offset() + 1);
                     continue;
                 }
-
-                messages.add(new AtlasKafkaMessage(message, record.offset(), record.partition()));
+                messages.add(new AtlasKafkaMessage(message, record.offset(), record.partition(), record.topic()));
             }
         }
 

@@ -46,12 +46,7 @@ import org.springframework.stereotype.Component;
 import io.zeta.metaspace.web.service.DataManageService;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.apache.atlas.repository.graph.GraphHelper.isInternalType;
 import static org.apache.atlas.model.notification.EntityNotification.EntityNotificationV2.OperationType.*;
@@ -84,9 +79,9 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     }
 
     @Override
-    public void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition) throws AtlasBaseException {
+    public void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition, Properties connectorProperties) throws AtlasBaseException {
         //notifyEntityEvents(entities, ENTITY_CREATE);
-        dataManageService.addEntity(entities, definition);
+        dataManageService.addEntity(entities, definition, connectorProperties);
         metadataHistoryService.storeHistoryMetadata(entities);
     }
 

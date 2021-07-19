@@ -26,6 +26,7 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Entity change notification listener V2.
@@ -37,7 +38,7 @@ public interface EntityChangeListenerV2 {
      * @param entities the created entities
      * @param isImport
      */
-    void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition) throws AtlasBaseException;
+    void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition, Properties connectorProperties) throws AtlasBaseException;
 
     /**
      * This is upon updating an entity.

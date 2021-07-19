@@ -22,11 +22,14 @@ public class AtlasKafkaMessage<T> {
     private final T    message;
     private final long offset;
     private final int  partition;
+    private final String topic;
 
-    public AtlasKafkaMessage(T message, long offset, int partition) {
+
+    public AtlasKafkaMessage(T message, long offset, int partition, String topic) {
         this.message   = message;
         this.offset    = offset;
         this.partition = partition;
+        this.topic = topic;
     }
 
     public T getMessage() {
@@ -41,4 +44,7 @@ public class AtlasKafkaMessage<T> {
         return partition;
     }
 
+    public String getTopic() {
+        return topic;
+    }
 }

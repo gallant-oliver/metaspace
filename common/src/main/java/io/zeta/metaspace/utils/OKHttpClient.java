@@ -25,11 +25,11 @@ import com.squareup.okhttp.Request;
 import com.squareup.okhttp.RequestBody;
 import com.squareup.okhttp.Response;
 import io.zeta.metaspace.MetaspaceConfig;
-import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,9 +53,7 @@ import java.util.concurrent.TimeUnit;
 public class OKHttpClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(OKHttpClient.class);
-    private static final String TICKET_KEY = "X-SSO-FullticketId";
     private static OkHttpClient client;
-    private static int size;
     private static int okHttpTimeout;
     static {
         client = new OkHttpClient().setSslSocketFactory(SSLSocketClient.getSSLSocketFactory())
@@ -63,32 +61,27 @@ public class OKHttpClient {
         client.setConnectTimeout(5, TimeUnit.SECONDS);
     }
 
+
     /**
      * get请求
      * @return
      */
     public static String doGet(String url,Map<String,String> queryParamMap, Map<String,String> headerMap) throws AtlasBaseException {
+        return doGet(url, queryParamMap, headerMap,-1);
+    }
+
+    /**
+     * get请求
+     * @return
+     */
+    public static String doGet(String url,Map<String,String> queryParamMap, Map<String,String> headerMap, int times) throws AtlasBaseException {
         try {
-            HttpUrl.Builder urlBuilder = HttpUrl.parse(url).newBuilder();
+            String queryUrl = buildUrl(url, queryParamMap);
 
-            if(Objects.nonNull(queryParamMap)) {
-                Set<Map.Entry<String, String>> queryParamEntries = queryParamMap.entrySet();
-                for (Map.Entry<String, String> entry : queryParamEntries) {
-                    urlBuilder.addQueryParameter(entry.getKey(), entry.getValue());
-                }
-            }
-            String queryUrl = urlBuilder.build().toString();
-            Request.Builder builder = new Request.Builder()
-                    .url(queryUrl);
-
-            if(Objects.nonNull(headerMap)) {
-                Set<Map.Entry<String, String>> headerEntries = headerMap.entrySet();
-                for (Map.Entry<String, String> entry : headerEntries) {
-                    builder.addHeader(entry.getKey(), entry.getValue());
-                }
-            }
-            Request request = builder.build();
-            return getResponse(request);
+            Headers headers = buildHeaders(headerMap);
+            Request request = new Request.Builder()
+                    .url(queryUrl).headers(headers).build();
+            return getResponse(request, times);
         } catch(AtlasBaseException e){
             throw e;
         }catch (Exception e) {
@@ -96,36 +89,33 @@ public class OKHttpClient {
         }
     }
 
-    public static String doPost(String url, String json) throws AtlasBaseException {
-        try {
-            RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
-            String ticket = AdminUtils.getSSOTicket();
-            Request request = new Request.Builder()
-                    .url(url)
-                    .addHeader(TICKET_KEY, ticket)
-                    .post(body)
-                    .build();
-            return getResponse(request);
-        } catch(AtlasBaseException e){
-            throw e;
-        } catch(Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e,"请求失败"+e.getMessage());
-        }
+
+    public static String doPost(String url, String json, Map<String, Object> headerMap) throws AtlasBaseException {
+       return doPost(url,headerMap,null,json);
     }
 
+
     public static String doPost(String url, Map<String, Object> headerMap,Map<String,Object> queryParamMap, String json) throws AtlasBaseException {
+        return doPost(url,headerMap,queryParamMap,json,-1);
+    }
+
+    public static String doPost(String url, Map<String, Object> headerMap,Map<String,Object> queryParamMap, String json, int times) throws AtlasBaseException {
         try {
             //requestBody
             String queryUrl = buildUrl(url, queryParamMap);
-            RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
             Headers headers = buildHeaders(headerMap);
-            //request
-            Request request = new Request.Builder()
+            Request.Builder builder = new Request.Builder()
                     .url(queryUrl)
-                    .headers(headers)
-                    .post(body)
-                    .build();
-            return getResponse(request);
+                    .headers(headers);
+
+            if(StringUtils.isNotBlank(json)){
+                RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
+                builder.post(body);
+            }else{
+                builder.post(RequestBody.create(null, ""));
+            }
+            Request request = builder.build();
+            return getResponse(request, times);
         }catch (AtlasBaseException e){
             throw e;
         }catch(Exception e) {
@@ -133,36 +123,51 @@ public class OKHttpClient {
         }
     }
 
-    public static Headers buildHeaders(Map<String, Object> headerMap) {
+    public static Headers buildHeaders(Map<String, ? extends Object> headerMap) {
         Headers.Builder headerBuilder = new Headers.Builder();
-        Iterator<Map.Entry<String, Object>> headerIterator = headerMap.entrySet().iterator();
-        headerIterator.forEachRemaining(header -> {
-            headerBuilder.add(header.getKey(), String.valueOf(header.getValue()));
-        });
+        if(MapUtils.isNotEmpty(headerMap)){
+            Iterator<? extends Map.Entry<String, ?>> headerIterator = headerMap.entrySet().iterator();
+            headerIterator.forEachRemaining(header -> {
+                headerBuilder.add(header.getKey(), String.valueOf(header.getValue()));
+            });
+        }
         return headerBuilder.build();
     }
 
-    public static String buildUrl(String url, Map<String,Object> queryParamMap) {
+    public static String buildUrl(String url, Map<String,? extends  Object> queryParamMap) {
         HttpUrl.Builder urlBuilder = HttpUrl.parse(url).newBuilder();
         if(Objects.nonNull(queryParamMap)) {
-            Set<Map.Entry<String, Object>> queryParamEntries = queryParamMap.entrySet();
-            for (Map.Entry<String, Object> entry : queryParamEntries) {
+
+
+            Set<? extends Map.Entry<String, ?>> queryParamEntries = queryParamMap.entrySet();
+
+            for (Map.Entry<String, ?> entry : queryParamEntries) {
                 urlBuilder.addQueryParameter(entry.getKey(), String.valueOf(entry.getValue()));
             }
         }
         return urlBuilder.build().toString();
     }
 
-    public static String doPut(String url, String json) throws AtlasBaseException {
+    public static String doPut(String url, String json, Map<String, Object> headerMap) throws AtlasBaseException {
+        return doPut(url, json, headerMap, -1);
+    }
+
+    public static String doPut(String url, String json, Map<String, Object> headerMap, int times) throws AtlasBaseException {
         try {
-            RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
-            String ticket = AdminUtils.getSSOTicket();
-            Request request = new Request.Builder()
-                    .url(url)
-                    .addHeader(TICKET_KEY, ticket)
-                    .put(body)
-                    .build();
-            return getResponse(request);
+
+            Request.Builder builder = new Request.Builder().url(url);
+            if(MapUtils.isNotEmpty(headerMap)){
+                Headers headers = buildHeaders(headerMap);
+                builder.headers(headers);
+            }
+            if(StringUtils.isNotBlank(json)){
+                RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), json);
+                builder.put(body);
+            }else{
+                builder.put(RequestBody.create(null, ""));
+            }
+            Request request = builder.build();
+            return getResponse(request, times);
         } catch(AtlasBaseException e){
             throw e;
         } catch(Exception e) {
@@ -174,19 +179,34 @@ public class OKHttpClient {
      * delete
      * @return
      */
-    public static String doDelete(String url, Map<String,String> map) throws AtlasBaseException {
-        return doDelete(url,map,null);
+    public static String doDelete(String url) throws AtlasBaseException {
+        return doDelete(url, null,null, -1);
     }
 
     /**
      * delete
      * @return
      */
-    public static String doDelete(String url, Map<String,String> map,String bodyJson) throws AtlasBaseException {
+    public static String doDelete(String url, Map<String,String> map) throws AtlasBaseException {
+        return doDelete(url, map,null, -1);
+    }
+
+    /**
+     * delete
+     * @return
+     */
+    public static String doDelete(String url, Map<String,String> map, String bodyJson) throws AtlasBaseException {
+        return doDelete(url, map,bodyJson, -1);
+    }
+
+    /**
+     * delete
+     * @return
+     */
+    public static String doDelete(String url, Map<String,String> map, String bodyJson, int times) throws AtlasBaseException {
         try {
             Request.Builder builder = new Request.Builder()
                     .url(url);
-            map.put("Content-Type","application/json");
             if (StringUtils.isNotEmpty(bodyJson)){
                 RequestBody body = RequestBody.create(MediaType.parse("application/json; charset=utf-8"), bodyJson);
                 builder.delete(body);
@@ -194,13 +214,14 @@ public class OKHttpClient {
                 builder.delete();
             }
             if(Objects.nonNull(map)) {
+                map.put("Content-Type","application/json");
                 Set<Map.Entry<String, String>> headerEntries = map.entrySet();
                 for (Map.Entry<String, String> entry : headerEntries) {
                     builder.addHeader(entry.getKey(), entry.getValue());
                 }
             }
             Request request = builder.build();
-            return getResponse(request);
+            return getResponse(request, times);
         } catch(AtlasBaseException e){
             throw e;
         } catch (Exception e) {
@@ -222,27 +243,24 @@ public class OKHttpClient {
         }
     }
 
-    public static String getResponse(Request request) throws AtlasBaseException, AtlasException {
+
+    public static String getResponse(Request request, int times) throws AtlasBaseException, AtlasException {
 
         int count=1;
         OkHttpClient client = OKHttpClient.client;
         okHttpTimeout = MetaspaceConfig.getOkHttpTimeout();
         client.setReadTimeout(okHttpTimeout, TimeUnit.SECONDS);
-        size = ApplicationProperties.get().getInt("okhttp.retries", 3);
+        if(-1==times){
+            times = ApplicationProperties.get().getInt("okhttp.retries", 3);
+        }
         while(true){
             try {
                 Call call = client.newCall(request);
                 Response response = call.execute();
                 InputStream in = response.body().byteStream();
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                byte[] buffer = new byte[1024];
-                int len = 0;
-                while ((len = in.read(buffer)) != -1) {
-                    baos.write(buffer, 0, len);
-                }
-                return URLDecoder.decode(baos.toString(), "UTF-8");
+                return getResponseStr(in);
             } catch (Exception e) {
-                if (count<size){
+                if (count<times){
                     LOG.error("第"+count +"次请求失败：", e);
                     client = new OkHttpClient().setSslSocketFactory(SSLSocketClient.getSSLSocketFactory())
                             .setHostnameVerifier(SSLSocketClient.getHostnameVerifier());

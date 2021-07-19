@@ -23,6 +23,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.kafka.*;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.model.notification.HookNotification;
+import org.apache.atlas.model.notification.Notification;
 import org.apache.atlas.v1.model.instance.Referenceable;
 import org.apache.atlas.v1.model.notification.HookNotificationV1;
 import org.apache.atlas.repository.converters.AtlasInstanceConverter;
@@ -100,10 +101,9 @@ public class NotificationHookConsumerKafkaTest {
     @Test
     public void testConsumerConsumesNewMessageWithAutoCommitDisabled() throws AtlasException, InterruptedException, AtlasBaseException, AtlasServiceException {
         produceMessage(new HookNotificationV1.EntityCreateRequest("test_user1", createEntity()));
-
-        NotificationConsumer<HookNotification> consumer                 = createNewConsumer(kafkaNotification, false);
-        NotificationHookConsumer               notificationHookConsumer = new NotificationHookConsumer(notificationInterface, atlasEntityStore, serviceState, instanceConverter, typeRegistry);
-        NotificationHookConsumer.HookConsumer hookConsumer = spy(notificationHookConsumer.new HookConsumer(consumer));
+        NotificationConsumer<Notification> consumer  =(NotificationConsumer) createNewConsumer(kafkaNotification, false);
+        NotificationHookConsumer               notificationHookConsumer = new NotificationHookConsumer(atlasEntityStore, serviceState, instanceConverter, typeRegistry);
+        NotificationHookConsumer.HookConsumer hookConsumer = spy(notificationHookConsumer.new HookConsumer(consumer, mock(ServiceState.class)));
         doNothing().when(hookConsumer).refreshCache();
         consumeOneMessage(consumer, hookConsumer);
 
@@ -121,17 +121,18 @@ public class NotificationHookConsumerKafkaTest {
     public void consumerConsumesNewMessageButCommitThrowsAnException_MessageOffsetIsRecorded() throws AtlasException, InterruptedException, AtlasBaseException, AtlasServiceException {
 
         ExceptionThrowingCommitConsumer        consumer                 = createNewConsumerThatThrowsExceptionInCommit(kafkaNotification, true);
-        NotificationHookConsumer               notificationHookConsumer = new NotificationHookConsumer(notificationInterface, atlasEntityStore, serviceState, instanceConverter, typeRegistry);
-        NotificationHookConsumer.HookConsumer hookConsumer = spy(notificationHookConsumer.new HookConsumer(consumer));
+        NotificationHookConsumer               notificationHookConsumer = new NotificationHookConsumer(atlasEntityStore, serviceState, instanceConverter, typeRegistry);
+        NotificationConsumer notificationConsumer = (NotificationConsumer)consumer;
+        NotificationHookConsumer.HookConsumer hookConsumer = spy(notificationHookConsumer.new HookConsumer(notificationConsumer, mock(ServiceState.class)));
         doNothing().when(hookConsumer).refreshCache();
-        NotificationHookConsumer.FailedCommitOffsetRecorder failedCommitOffsetRecorder = hookConsumer.failedCommitOffsetRecorder;
+        AbstractKafkaConsumerRunnable.FailedCommitOffsetRecorder failedCommitOffsetRecorder = hookConsumer.failedCommitOffsetRecorder;
 
         produceMessage(new HookNotificationV1.EntityCreateRequest("test_user2", createEntity()));
 
         try {
             produceMessage(new HookNotificationV1.EntityCreateRequest("test_user1", createEntity()));
-            consumeOneMessage(consumer, hookConsumer);
-            consumeOneMessage(consumer, hookConsumer);
+            consumeOneMessage(notificationConsumer, hookConsumer);
+            consumeOneMessage(notificationConsumer, hookConsumer);
         }
         catch(KafkaException ex) {
             assertTrue(true, "ExceptionThrowing consumer throws an excepion.");
@@ -142,8 +143,8 @@ public class NotificationHookConsumerKafkaTest {
         consumer.disableCommitExpcetion();
 
         produceMessage(new HookNotificationV1.EntityCreateRequest("test_user1", createEntity()));
-        consumeOneMessage(consumer, hookConsumer);
-        consumeOneMessage(consumer, hookConsumer);
+        consumeOneMessage(notificationConsumer, hookConsumer);
+        consumeOneMessage(notificationConsumer, hookConsumer);
 
         assertNull(failedCommitOffsetRecorder.getCurrentOffset());
 
@@ -154,12 +155,12 @@ public class NotificationHookConsumerKafkaTest {
     public void testConsumerRemainsAtSameMessageWithAutoCommitEnabled() throws Exception {
         produceMessage(new HookNotificationV1.EntityCreateRequest("test_user3", createEntity()));
 
-        NotificationConsumer<HookNotification> consumer = createNewConsumer(kafkaNotification, true);
+        NotificationConsumer<Notification> consumer = (NotificationConsumer)createNewConsumer(kafkaNotification, true);
 
         assertNotNull (consumer);
 
-        NotificationHookConsumer              notificationHookConsumer = new NotificationHookConsumer(notificationInterface, atlasEntityStore, serviceState, instanceConverter, typeRegistry);
-        NotificationHookConsumer.HookConsumer hookConsumer = spy(notificationHookConsumer.new HookConsumer(consumer));
+        NotificationHookConsumer              notificationHookConsumer = new NotificationHookConsumer(atlasEntityStore, serviceState, instanceConverter, typeRegistry);
+        NotificationHookConsumer.HookConsumer hookConsumer = spy(notificationHookConsumer.new HookConsumer(consumer, mock(ServiceState.class)));
         doNothing().when(hookConsumer).refreshCache();
 
         consumeOneMessage(consumer, hookConsumer);
@@ -182,15 +183,15 @@ public class NotificationHookConsumerKafkaTest {
         return new ExceptionThrowingCommitConsumer(NotificationInterface.NotificationType.HOOK, consumer, autoCommitEnabled, 1000);
     }
 
-    void consumeOneMessage(NotificationConsumer<HookNotification> consumer,
+    void consumeOneMessage(NotificationConsumer<Notification> consumer,
                            NotificationHookConsumer.HookConsumer hookConsumer) throws InterruptedException {
         try {
             long startTime = System.currentTimeMillis(); //fetch starting time
 
             while ((System.currentTimeMillis() - startTime) < 10000) {
-                List<AtlasKafkaMessage<HookNotification>> messages = consumer.receive();
+                List<AtlasKafkaMessage<Notification>> messages = consumer.receive();
 
-                for (AtlasKafkaMessage<HookNotification> msg : messages) {
+                for (AtlasKafkaMessage<Notification> msg : messages) {
                     hookConsumer.handleMessage(msg);
                 }
 
@@ -198,7 +199,7 @@ public class NotificationHookConsumerKafkaTest {
                     break;
                 }
             }
-        } catch (AtlasServiceException e) {
+        } catch (Exception e) {
             Assert.fail("Consumer failed with exception ", e);
         }
     }

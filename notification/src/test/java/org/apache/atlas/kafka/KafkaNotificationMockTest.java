@@ -74,7 +74,8 @@ public class KafkaNotificationMockTest {
         KafkaNotification kafkaNotification = new KafkaNotification(configProperties);
 
         Producer producer = mock(Producer.class);
-        String topicName = kafkaNotification.getTopicName(NotificationInterface.NotificationType.HOOK);
+        List<String> topicNames = kafkaNotification.getTopicName(NotificationInterface.NotificationType.HOOK);
+        String topicName = topicNames.get(0);
         String message = "This is a test message";
         Future returnValue = mock(Future.class);
         TopicPartition topicPartition = new TopicPartition(topicName, 0);
@@ -96,7 +97,7 @@ public class KafkaNotificationMockTest {
         KafkaNotification kafkaNotification = new KafkaNotification(configProperties);
 
         Producer producer = mock(Producer.class);
-        String topicName = kafkaNotification.getTopicName(NotificationInterface.NotificationType.HOOK);
+        String topicName = kafkaNotification.getTopicName(NotificationInterface.NotificationType.HOOK).get(0);
         String message = "This is a test message";
         Future returnValue = mock(Future.class);
         when(returnValue.get()).thenThrow(new RuntimeException("Simulating exception"));
@@ -105,7 +106,7 @@ public class KafkaNotificationMockTest {
 
         try {
             kafkaNotification.sendInternalToProducer(producer,
-                NotificationInterface.NotificationType.HOOK, Arrays.asList(new String[]{message}));
+                    NotificationInterface.NotificationType.HOOK, Arrays.asList(new String[]{message}));
             fail("Should have thrown NotificationException");
         } catch (NotificationException e) {
             assertEquals(e.getFailedMessages().size(), 1);
@@ -121,7 +122,7 @@ public class KafkaNotificationMockTest {
         KafkaNotification kafkaNotification = new KafkaNotification(configProperties);
 
         Producer producer = mock(Producer.class);
-        String topicName = kafkaNotification.getTopicName(NotificationInterface.NotificationType.HOOK);
+        String topicName = kafkaNotification.getTopicName(NotificationInterface.NotificationType.HOOK).get(0);
         String message1 = "This is a test message1";
         String message2 = "This is a test message2";
         Future returnValue1 = mock(Future.class);

@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.service;
 
+import com.google.common.collect.Maps;
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
 import com.google.gson.Gson;
@@ -24,6 +25,7 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DataServiceUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.repository.Constants;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -256,8 +258,10 @@ public class AuditService {
         String errorReason = null;
         String proper = "0.0";
         String apiId = null;
+        Map<String, Object> headerMap = Maps.newHashMap();
+        headerMap.put(Constants.TICKET_KEY, AdminUtils.getSSOTicket());
         while(retryCount < retries) {
-            String res = OKHttpClient.doPost(mobiusURL, jsonStr);
+            String res = OKHttpClient.doPost(mobiusURL, jsonStr, headerMap);
             LOG.info(res);
             if(Objects.nonNull(res)) {
                 Map response = convertMobiusResponse(res);

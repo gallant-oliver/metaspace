@@ -14,7 +14,7 @@ import java.util.Set;
 
 public interface TableDAO {
     @Select("select * from tableinfo where tableguid=#{guid}")
-    public TableInfo getTableInfoByTableguid(String guid) throws SQLException;
+    public TableInfo getTableInfoByTableguid(String guid);
 
     @Select("select generatetime from table_relation where tableguid=#{guid}")
     public String getDateByTableguid(String guid);
@@ -31,11 +31,11 @@ public interface TableDAO {
     @Select("SELECT  businessinfo.businessid,businessinfo.NAME businessObject,category.NAME department,users.username businessLeader FROM business2table,businessinfo,category,users WHERE businessinfo.businessid = business2table.businessid AND businessinfo.departmentid = category.guid AND users.userid =  businessinfo.submitter AND business2table.tableguid = #{guid} AND category.tenantid = #{tenantId}")
     public List<Table.BusinessObject> getBusinessObjectByTableguid(@Param("guid") String guid, @Param("tenantId") String tenantId);
 
-    @Insert("insert into tableinfo(tableguid,tablename,dbname,status,createtime,databaseguid,databasestatus,description,source_id)\n" +
-            "values(#{table.tableGuid},#{table.tableName},#{table.dbName},#{table.status},#{table.createTime},#{table.databaseGuid},#{table.databaseStatus},#{table.description},#{table.sourceId})")
+    @Insert("insert into tableinfo(tableguid,tablename,dbname,status,createtime,databaseguid,databasestatus,description)\n" +
+            "values(#{table.tableGuid},#{table.tableName},#{table.dbName},#{table.status},#{table.createTime},#{table.databaseGuid},#{table.databaseStatus},#{table.description})")
     public int addTable(@Param("table") TableInfo table);
 
-    @Update("update tableinfo set tablename=#{table.tableName},dbname=#{table.dbName},description=#{table.description} where tableguid=#{table.tableGuid}")
+    @Update("update tableinfo set tablename=#{table.tableName},status = #{table.status} ,dbname=#{table.dbName},description=#{table.description} where tableguid=#{table.tableGuid}")
     public int updateTable(@Param("table") TableInfo table);
 
     @Select("select tableguid from tableinfo except select tableguid from table_relation")
@@ -67,6 +67,9 @@ public interface TableDAO {
 
     @Select("select tableguid, databasestatus from tableinfo where dbname =#{dbName} and tablename =#{tableName} and source_id = #{sourceId} and status = 'ACTIVE'")
     TableInfo getTableInfo(@Param("sourceId") String sourceId, @Param("dbName") String dbName, @Param("tableName") String tableName);
+
+    @Select("select tableguid from tableinfo where db_guid in (#{databaseGuids}) and status = 'ACTIVE'")
+    List<String> getTableGuidByDataBaseGuids(@Param("databaseGuids")String databaseGuids);
 
     @Select("select organization.name,table2owner.tableGuid,table2owner.pkId from organization,table2owner where organization.pkId=table2owner.pkId and tableGuid=#{tableGuid}")
     public List<DataOwnerHeader> getDataOwnerList(@Param("tableGuid") String tableGuid);

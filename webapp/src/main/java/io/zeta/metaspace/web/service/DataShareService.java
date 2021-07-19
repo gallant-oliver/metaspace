@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.service;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
@@ -71,6 +72,7 @@ import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
+import org.apache.atlas.repository.Constants;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
@@ -517,8 +519,10 @@ public class DataShareService {
         String errorReason = null;
         int retries = 3;
         String proper = "0.0";
+        Map<String, Object> headerMap = Maps.newHashMap();
+        headerMap.put(Constants.TICKET_KEY, AdminUtils.getSSOTicket());
         while (retryCount < retries) {
-            String res = OKHttpClient.doPost(mobiusURL, jsonStr);
+            String res = OKHttpClient.doPost(mobiusURL, jsonStr, headerMap);
             LOG.info(res);
             if (Objects.nonNull(res)) {
                 Map response = convertMobiusResponse(res);
@@ -592,8 +596,10 @@ public class DataShareService {
         String errorReason = null;
         int retries = 3;
         String proper = "0.0";
+        Map<String, Object> headerMap = Maps.newHashMap();
+        headerMap.put(Constants.TICKET_KEY, AdminUtils.getSSOTicket());
         while (retryCount < retries) {
-            String res = OKHttpClient.doPut(mobiusURL, jsonStr);
+            String res = OKHttpClient.doPut(mobiusURL, jsonStr, headerMap);
             LOG.info(res);
             if (Objects.nonNull(res)) {
                 Map response = convertMobiusResponse(res);
@@ -2468,8 +2474,10 @@ public class DataShareService {
                 String errorId = null;
                 String errorReason = null;
                 String proper = "0.0";
+                Map<String, Object> headerMap = Maps.newHashMap();
+                headerMap.put(Constants.TICKET_KEY, AdminUtils.getSSOTicket());
                 while (retryCount < retries) {
-                    String res = OKHttpClient.doPut(mobiusURL, jsonStr);
+                    String res = OKHttpClient.doPut(mobiusURL, jsonStr, headerMap);
                     LOG.info(res);
                     if (Objects.nonNull(res)) {
                         Map response = convertMobiusResponse(res);

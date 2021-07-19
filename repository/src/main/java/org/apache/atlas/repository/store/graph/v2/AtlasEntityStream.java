@@ -23,17 +23,22 @@ import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 
 import java.util.Iterator;
+import java.util.Properties;
 
 public class AtlasEntityStream implements EntityStream {
     protected final AtlasEntitiesWithExtInfo entitiesWithExtInfo;
     protected final EntityStream             entityStream;
     private         Iterator<AtlasEntity>    iterator;
     private SyncTaskDefinition definition;
+    private Properties connectorProperties;
 
     public SyncTaskDefinition getDefinition(){
         return this.definition;
     }
 
+    public Properties getConnectorProperties(){
+        return this.connectorProperties;
+    }
 
     public AtlasEntityStream(AtlasEntity entity) {
         this(new AtlasEntitiesWithExtInfo(entity));
@@ -46,6 +51,14 @@ public class AtlasEntityStream implements EntityStream {
         this(new AtlasEntitiesWithExtInfo(entityWithExtInfo));
         this.definition = definition;
     }
+
+    public AtlasEntityStream(AtlasEntityWithExtInfo entityWithExtInfo, Properties connectorProperties) {
+        this(new AtlasEntitiesWithExtInfo(entityWithExtInfo));
+        this.definition = definition;
+        this.connectorProperties = connectorProperties;
+    }
+
+
 
     public AtlasEntityStream(AtlasEntitiesWithExtInfo entitiesWithExtInfo) {
         this.entitiesWithExtInfo = entitiesWithExtInfo;

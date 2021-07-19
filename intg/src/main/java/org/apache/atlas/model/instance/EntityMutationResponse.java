@@ -23,11 +23,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -52,15 +48,20 @@ public class EntityMutationResponse {
     private Map<EntityOperation, List<AtlasEntityHeader>> mutatedEntities;
     private Map<String, String>                           guidAssignments;
     private SyncTaskDefinition definition;
+    private Properties connectorProperties;
 
     public void setDefinition(SyncTaskDefinition definition){
         this.definition = definition;
     }
-
     public SyncTaskDefinition getDefinition(){
         return this.definition;
     }
-
+    public void setConnectorProperties(Properties connectorProperties){
+        this.connectorProperties = connectorProperties;
+    }
+    public Properties getConnectorProperties(){
+        return this.connectorProperties;
+    }
     public EntityMutationResponse() {
     }
 

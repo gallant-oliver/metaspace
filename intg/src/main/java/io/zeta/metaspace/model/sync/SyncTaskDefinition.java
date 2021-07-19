@@ -12,6 +12,7 @@ import java.util.List;
  */
 @Data
 public class SyncTaskDefinition {
+
     private String id;
     private String name;
     //创建者

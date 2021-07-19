@@ -19,6 +19,7 @@ package org.apache.atlas.notification;
 
 import org.apache.atlas.notification.entity.EntityMessageDeserializer;
 import org.apache.atlas.notification.hook.HookMessageDeserializer;
+import org.apache.atlas.notification.rdbms.RdbmsMessageDeserializer;
 
 import java.util.List;
 
@@ -46,15 +47,17 @@ public interface NotificationInterface {
         HOOK(new HookMessageDeserializer()),
 
         // Notifications to entity change consumers.
-        ENTITIES(new EntityMessageDeserializer());
+        ENTITIES(new EntityMessageDeserializer()),
 
-        private final BaseAtlasNotificationMessageDeserializer deserializer;
+        RDBMS(new RdbmsMessageDeserializer());
 
-        NotificationType(BaseAtlasNotificationMessageDeserializer deserializer) {
+        private final MessageDeserializer deserializer;
+
+        NotificationType(MessageDeserializer deserializer) {
             this.deserializer = deserializer;
         }
 
-        public BaseAtlasNotificationMessageDeserializer getDeserializer() {
+        public MessageDeserializer getDeserializer() {
             return deserializer;
         }
     }

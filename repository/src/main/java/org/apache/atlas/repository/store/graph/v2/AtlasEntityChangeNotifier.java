@@ -52,11 +52,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static org.apache.atlas.model.audit.EntityAuditEventV2.EntityAuditActionV2.PROPAGATED_CLASSIFICATION_ADD;
 import static org.apache.atlas.model.audit.EntityAuditEventV2.EntityAuditActionV2.PROPAGATED_CLASSIFICATION_DELETE;
@@ -99,10 +95,11 @@ public class AtlasEntityChangeNotifier {
         List<AtlasEntityHeader> partiallyUpdatedEntities = entityMutationResponse.getPartialUpdatedEntities();
         List<AtlasEntityHeader> deletedEntities          = entityMutationResponse.getDeletedEntities();
         SyncTaskDefinition definition = entityMutationResponse.getDefinition();
-        notifyListeners(createdEntities, EntityOperation.CREATE, isImport, definition);
-        notifyListeners(updatedEntities, EntityOperation.UPDATE, isImport, definition);
-        notifyListeners(partiallyUpdatedEntities, EntityOperation.PARTIAL_UPDATE, isImport, definition);
-        notifyListeners(deletedEntities, EntityOperation.DELETE, isImport, definition);
+        Properties connectorProperties = entityMutationResponse.getConnectorProperties();
+        notifyListeners(createdEntities, EntityOperation.CREATE, isImport, definition, connectorProperties);
+        notifyListeners(updatedEntities, EntityOperation.UPDATE, isImport, definition, connectorProperties);
+        notifyListeners(partiallyUpdatedEntities, EntityOperation.PARTIAL_UPDATE, isImport, definition, connectorProperties);
+        notifyListeners(deletedEntities, EntityOperation.DELETE, isImport, definition, connectorProperties);
     }
 
     public void onClassificationAddedToEntity(AtlasEntity entity, List<AtlasClassification> addedClassifications) throws AtlasBaseException {
@@ -259,13 +256,13 @@ public class AtlasEntityChangeNotifier {
         return listener.getClass().getSimpleName();
     }
 
-    private void notifyListeners(List<AtlasEntityHeader> entityHeaders, EntityOperation operation, boolean isImport, SyncTaskDefinition definition) throws AtlasBaseException {
+    private void notifyListeners(List<AtlasEntityHeader> entityHeaders, EntityOperation operation, boolean isImport, SyncTaskDefinition definition, Properties connectorProperties) throws AtlasBaseException {
         if (CollectionUtils.isEmpty(entityHeaders)) {
             return;
         }
 
         if (isV2EntityNotificationEnabled) {
-            notifyV2Listeners(entityHeaders, operation, isImport, definition);
+            notifyV2Listeners(entityHeaders, operation, isImport, definition, connectorProperties);
         } else {
             notifyV1Listeners(entityHeaders, operation, isImport);
         }
@@ -296,13 +293,13 @@ public class AtlasEntityChangeNotifier {
         }
     }
 
-    private void notifyV2Listeners(List<AtlasEntityHeader> entityHeaders, EntityOperation operation, boolean isImport, SyncTaskDefinition definition) throws AtlasBaseException {
+    private void notifyV2Listeners(List<AtlasEntityHeader> entityHeaders, EntityOperation operation, boolean isImport, SyncTaskDefinition definition, Properties connectorProperties) throws AtlasBaseException {
         List<AtlasEntity> entities = toAtlasEntities(entityHeaders, operation);
 
         for (EntityChangeListenerV2 listener : entityChangeListenersV2) {
             switch (operation) {
                 case CREATE:
-                    listener.onEntitiesAdded(entities, isImport, definition);
+                    listener.onEntitiesAdded(entities, isImport, definition, connectorProperties);
                     break;
                 case UPDATE:
                 case PARTIAL_UPDATE:

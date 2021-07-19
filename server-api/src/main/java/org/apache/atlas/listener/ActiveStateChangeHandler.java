@@ -31,7 +31,8 @@ public interface ActiveStateChangeHandler {
         GRAPH_BACKED_SEARCH_INDEXER(1),
         TYPEDEF_STORE_INITIALIZER(2),
         DEFAULT_METADATA_SERVICE(3),
-        NOTIFICATION_HOOK_CONSUMER(4);
+        NOTIFICATION_HOOK_CONSUMER(4),
+        NOTIFICATION_RDBMS_CONSUMER(5);
 
 
         private final int order;

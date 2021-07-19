@@ -217,7 +217,7 @@ public class AbstractNotificationConsumerTest {
         public List<AtlasKafkaMessage<TestMessage>> receive(long timeoutMilliSeconds) {
             List<AtlasKafkaMessage<TestMessage>> tempMessageList = new ArrayList();
             for(Object json :  messageList) {
-                tempMessageList.add(new AtlasKafkaMessage(deserializer.deserialize((String) json), -1, -1));
+                tempMessageList.add(new AtlasKafkaMessage(deserializer.deserialize((String) json), -1, -1,"ATLAS_HOOK"));
             }
             return tempMessageList;
         }
