@@ -2,17 +2,13 @@ package io.zeta.metaspace.web.postgres;
 
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
+import org.apache.atlas.model.instance.AtlasEntity;
+import org.apache.atlas.repository.store.graph.AtlasEntityStore;
+import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
+import javax.inject.Inject;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -24,11 +20,16 @@ import java.util.*;
  * SELECT pg_reload_conf()  pg_hba.conf
  */
 @Slf4j
+@Component
 public class DataMigration {
-    private static int pageSize = 10;
-    private static final String baseUrl = "http://localhost:21000/";
+    private static final int pageSize = 10;
+    private final AtlasEntityStore entitiesStore;
+    @Inject
+    public DataMigration(AtlasEntityStore entitiesStore) {
+        this.entitiesStore = entitiesStore;
+    }
 
-    private static Connection getConnection(Boolean autoCommit,String url,String username,String password) throws Exception {
+    private  Connection getConnection(Boolean autoCommit,String url,String username,String password) throws Exception {
         Class.forName("org.postgresql.Driver");
         Connection c = DriverManager.getConnection(url,username, password);
         c.setAutoCommit(autoCommit);
@@ -41,7 +42,7 @@ public class DataMigration {
      * @param username "metaspace",
      * @param password  "metaspace"
      */
-    public static void processSourceDb(String url,String username,String password) {
+    public  void processSourceDb(String url,String username,String password) {
         Connection c = null;
         try {
             c = getConnection(false,url, username, password);
@@ -102,7 +103,7 @@ public class DataMigration {
         log.info("Operation done successfully");
     }
 
-    public static void processDbInfo(String url,String username,String password) {
+    public  void processDbInfo(String url,String username,String password) {
         Connection c = null;
         List<String> databaseGuidList = queryDataBaseGuid(url, username, password);
         if(CollectionUtils.isEmpty(databaseGuidList)){
@@ -118,7 +119,7 @@ public class DataMigration {
             PreparedStatement insertStmt = c.prepareStatement(insertDbInfo);
 
             for (String guid : databaseGuidList){
-                Map<String,Object> resultMap = queryDbInfoByGuid(guid);
+                Map<String,Object> resultMap = queryAtlasEntityByGuid(guid);// queryDbInfoByGuid(guid);
                 if(resultMap == null || resultMap.isEmpty()){
                     log.error("该 guid： {} 没查找到相关信息",guid);
                     return ;
@@ -135,7 +136,7 @@ public class DataMigration {
                 insertStmt.setString(8, instanceGuid);
 
                 if(!StringUtils.isEmpty(instanceGuid)){
-                    Map<String,Object> instanceMap = queryDbInfoByGuid(instanceGuid);
+                    Map<String,Object> instanceMap = queryAtlasEntityByGuid(instanceGuid);
                     insertStmt.setString(4, Objects.toString(resultMap.get("db_type"),""));
                 }
                 insertStmt.addBatch();
@@ -153,7 +154,7 @@ public class DataMigration {
     /*
      从source_db 获取databaseGuid
      */
-    private static List<String> queryDataBaseGuid(String url,String username,String password){
+    private  List<String> queryDataBaseGuid(String url,String username,String password){
         List<String> resultList = new ArrayList<>();
         Connection c = null;
         try {
@@ -173,91 +174,35 @@ public class DataMigration {
         }
          return resultList;
     }
-    /**
-     * 根据 db guid 查询图数据库获取相关信息
-     * @param guid dbguid、instanceGuid 只获取db_type
-     * @return
-     */
-    private static Map<String,Object> queryDbInfoByGuid(String guid){
+
+    private Map<String,Object> queryAtlasEntityByGuid(String guid){
         Map<String,Object> resultMap = new HashMap<>();
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-
-        //url 参数
-       // String guid = "98001962-6ae5-41c3-bedc-6fa86be85b8e"; //"844a5ad2-029d-441f-a35a-07cc47feb467";
-        String url = baseUrl+"api/metaspace/v2/entity/guid/"+guid ;
-
-        HttpGet httpGet = new HttpGet(url);
-        httpGet.addHeader("X-SSO-FullticketId", "TGT-13017-a9UBvf3orbhzxRZLTnWgV59MJLbFyuvxKy6DEee5TmP29lXRd2-x-sso");
-        httpGet.addHeader("tenantId", "ccb9b4fd05894248a57b4cf80dd28731");
-        //设置超时时间
-        RequestConfig requestConfig = RequestConfig.custom()
-                .setConnectTimeout(5000).setConnectionRequestTimeout(30000)
-                .setSocketTimeout(30000).build();
-        httpGet.setConfig(requestConfig);
-
-        CloseableHttpResponse response = null;
-
-        try {
-            response = httpClient.execute(httpGet);
-            String result = null;
-            HttpEntity entity = response.getEntity();
-            if(entity != null) {
-                result = EntityUtils.toString(entity);
-            }
-            release(response, httpClient);
+        AtlasEntity.AtlasEntityWithExtInfo entityWithExtInfo = entitiesStore.getById(guid, false);
+        AtlasEntity  atlasEntity = entityWithExtInfo.getEntity();
+        String typeName = atlasEntity.getTypeName();
+        log.info("atlasEntity typename = {}",typeName);
+        if("rdbms_db".equalsIgnoreCase(typeName)) {
+            resultMap.put("database_id",atlasEntity.getGuid());
+            resultMap.put("database_name",atlasEntity.getAttribute("name"));
+            resultMap.put("owner",atlasEntity.getAttribute("owner"));
+            resultMap.put("is_deleted",StringUtils.endsWithIgnoreCase(AtlasEntity.Status.DELETED.name(),atlasEntity.getStatus().name()));
+            resultMap.put("status",atlasEntity.getStatus().name());
+            resultMap.put("database_description",atlasEntity.getAttribute("description"));
 
             Gson gson = new Gson();
-            Map<String, Object> map = new HashMap<String, Object>();
-            map = gson.fromJson(result, map.getClass());
+            Map<String, Object> instanceMap = new HashMap<>();
+            instanceMap = gson.fromJson(gson.toJson(atlasEntity.getRelationshipAttribute("instance")),instanceMap.getClass() );
 
-            Map<String, Object> entityMap = new HashMap<String, Object>();
-            entityMap = gson.fromJson(gson.toJson(map.get("entity")),entityMap.getClass() );
-            String typeName = entityMap.get("typeName").toString();
-
-            Map<String, Object> attributesMap = new HashMap<String, Object>();
-            attributesMap = gson.fromJson(gson.toJson(entityMap.get("attributes")),attributesMap.getClass() );
-           // List<Object> tableList = (List<Object>) attributesMap.get("tables");
-            String instanceGuid = "";
-            if("rdbms_db".equalsIgnoreCase(typeName)) {
-                Map<String, Object> instanceMap = new HashMap<String, Object>();
-                instanceMap = gson.fromJson(gson.toJson(attributesMap.get("instance")),instanceMap.getClass() );
-                instanceGuid = instanceMap.get("guid").toString();
-                log.info("rdbms_db instanceGuid={}",instanceGuid);
-
-                String status = entityMap.get("status")+"";
-                resultMap.put("database_id",entityMap.get("guid"));
-                resultMap.put("database_name",entityMap.get("name"));
-                resultMap.put("owner",entityMap.get("owner"));
-                resultMap.put("is_deleted",StringUtils.endsWithIgnoreCase("DELETED",status));
-                resultMap.put("status",status);
-                // resultMap.put("table_count",tableList != null ? tableList.size() : 0);
-                resultMap.put("database_description",entityMap.get("description"));
-                resultMap.put("instance_id",instanceGuid);
-                return resultMap;
-            }
-            if("rdbms_instance".equalsIgnoreCase(typeName)){
-                resultMap.put("db_type",attributesMap.get("rdbms_type"));
-                return resultMap;
-            }
-        } catch (IOException e) {
-            log.error("操作出错了：{}",e);
+            resultMap.put("instance_id",instanceMap.containsKey("guid") ? instanceMap.get("guid") : "");
         }
-
+        if("rdbms_instance".equalsIgnoreCase(typeName)){
+            resultMap.put("db_type",atlasEntity.getAttribute("rdbms_type"));
+        }
         return resultMap;
     }
 
-    private static void release(CloseableHttpResponse httpResponse, CloseableHttpClient httpClient) throws IOException {
-        // 释放资源
-        if (httpResponse != null) {
-            httpResponse.close();
-        }
-        if (httpClient != null) {
-            httpClient.close();
-        }
-    }
 
     public static void main(String[] args) {
-        processSourceDb("jdbc:postgresql://localhost:5432/metaspace_dev",
-                "metaspace", "metaspace");
+        //processSourceDb("jdbc:postgresql://localhost:5432/metaspace_dev","metaspace", "metaspace");
     }
 }
