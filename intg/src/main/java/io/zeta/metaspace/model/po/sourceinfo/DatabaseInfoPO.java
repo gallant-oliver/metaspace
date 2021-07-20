@@ -1,10 +1,10 @@
-package io.zeta.metaspace.model.sourceinfo;
+package io.zeta.metaspace.model.po.sourceinfo;
 
 import io.zeta.metaspace.model.enums.SubmitType;
 import lombok.Data;
 
 @Data
-public class DatabaseInfo {
+public class DatabaseInfoPO {
     /**
     * 源信息id
      * **/
@@ -54,9 +54,21 @@ public class DatabaseInfo {
      * **/
     private String description;
     /**
-     * 记录人id
+     * 审核id
      * **/
-    private String recorderGuid;
+    private String approveId;
+    /**
+     * 更新人id
+     * **/
+    private String updater;
+    /**
+     * 创建人id
+     * **/
+    private String creator;
+    /**
+     * 状态
+     * **/
+    private String status;
     /**
      * 附件id
      * **/
@@ -102,7 +114,13 @@ public class DatabaseInfo {
      * **/
     private String businessLeader;
     /**
+     * 租户id
+     * **/
+    private String tenantId;
+    /**
      * 审核组id
      * **/
     private String approveGroupId;
+
+
 }

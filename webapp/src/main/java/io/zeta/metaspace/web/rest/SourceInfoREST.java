@@ -15,6 +15,7 @@ package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.enums.Status;
+import io.zeta.metaspace.model.enums.SubmitType;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForList;
@@ -52,7 +53,7 @@ public class SourceInfoREST {
     @POST
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result addDatabaseInfo(@HeaderParam("tenantId")String tenantId, DatabaseInfo databaseInfo){
+    public Result addDatabaseInfo(@HeaderParam("tenantId")String tenantId, @QueryParam("submitType") SubmitType submitType ,DatabaseInfo databaseInfo){
         return null;
     }
 
@@ -66,7 +67,7 @@ public class SourceInfoREST {
     @PUT
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result updateDatabaseInfo(@HeaderParam("tenantId")String tenantId, DatabaseInfo databaseInfo){
+    public Result updateDatabaseInfo(@HeaderParam("tenantId")String tenantId, @QueryParam("submitType") SubmitType submitType, DatabaseInfo databaseInfo){
         return null;
     }
 
