@@ -21,13 +21,14 @@ import java.util.*;
 
 /**
  * 数据血缘 tableInfo -> source_db\db_info 旧数据迁移处理
+ * SELECT pg_reload_conf()  pg_hba.conf
  */
 @Slf4j
 public class DataMigration {
     private static int pageSize = 10;
     private static final String baseUrl = "http://localhost:21000/";
 
-    public static Connection getConnection(Boolean autoCommit,String url,String username,String password) throws Exception {
+    private static Connection getConnection(Boolean autoCommit,String url,String username,String password) throws Exception {
         Class.forName("org.postgresql.Driver");
         Connection c = DriverManager.getConnection(url,username, password);
         c.setAutoCommit(autoCommit);
@@ -42,8 +43,6 @@ public class DataMigration {
      */
     public static void processSourceDb(String url,String username,String password) {
         Connection c = null;
-        int i = 1;
-        String idStr = System.currentTimeMillis()+"";
         try {
             c = getConnection(false,url, username, password);
             log.info("Opened database successfully");
@@ -72,13 +71,13 @@ public class DataMigration {
                     String  sourceId = rs.getString("source_id");
                     String  dbGuid = rs.getString("databaseguid");
 
-                   // log.info( "source_id = " + source_id +", db_guid = " + db_guid);
                     if(StringUtils.isEmpty(sourceId)) {//数据库该字段设置为not null
                         log.error("source_id 为空，databaseguid ={}",dbGuid);
                         hasMore = rs.next();
                         continue;
                     }
-                    insertStmt.setString(1, idStr+(i++));
+                    String uid = UUID.randomUUID().toString();
+                    insertStmt.setString(1, uid);
                     insertStmt.setString(2, sourceId);
                     insertStmt.setString(3, dbGuid);
 
@@ -255,5 +254,10 @@ public class DataMigration {
         if (httpClient != null) {
             httpClient.close();
         }
+    }
+
+    public static void main(String[] args) {
+        processSourceDb("jdbc:postgresql://localhost:5432/metaspace_dev",
+                "metaspace", "metaspace");
     }
 }
