@@ -2,8 +2,10 @@ package io.zeta.metaspace.web.postgres;
 
 import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
+import org.apache.commons.configuration.Configuration;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -24,12 +26,28 @@ import java.util.*;
 public class DataMigration {
     private static final int pageSize = 10;
     private final AtlasEntityStore entitiesStore;
+    private static Configuration conf;
+    private static String url;
+    private static String username;
+    private static String password;
+    static {
+        try {
+            conf = ApplicationProperties.get();
+            url = conf.getString("metaspace.database.url");
+            username = conf.getString("metaspace.database.username");
+            password  =conf.getString("metaspace.database.password");
+            log.info("jdbcurl:{}",url);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Inject
     public DataMigration(AtlasEntityStore entitiesStore) {
         this.entitiesStore = entitiesStore;
     }
 
-    private  Connection getConnection(Boolean autoCommit,String url,String username,String password) throws Exception {
+    private  Connection getConnection(Boolean autoCommit) throws Exception {
         Class.forName("org.postgresql.Driver");
         Connection c = DriverManager.getConnection(url,username, password);
         c.setAutoCommit(autoCommit);
@@ -38,14 +56,14 @@ public class DataMigration {
 
     /**
      *  tableinfo 数据迁移source_db
-     * @param url eg:"jdbc:postgresql://localhost:5432/metaspace_dev",     *
-     * @param username "metaspace",
-     * @param password  "metaspace"
+     *  url eg:"jdbc:postgresql://localhost:5432/metaspace_dev",     *
+     *  username "metaspace",
+     * password  "metaspace"
      */
-    public  void processSourceDb(String url,String username,String password) {
+    public  void processSourceDb() {
         Connection c = null;
         try {
-            c = getConnection(false,url, username, password);
+            c = getConnection(false);
             log.info("Opened database successfully");
 
             String insertSourceDb = "INSERT INTO public.source_db(\r\n" +
@@ -103,7 +121,10 @@ public class DataMigration {
         log.info("Operation done successfully");
     }
 
-    public  void processDbInfo(String url,String username,String password) {
+    /**
+     * db-info table data
+     */
+    public  void processDbInfo() {
         Connection c = null;
         List<String> databaseGuidList = queryDataBaseGuid(url, username, password);
         if(CollectionUtils.isEmpty(databaseGuidList)){
@@ -111,7 +132,7 @@ public class DataMigration {
             return ;
         }
         try {
-            c = getConnection(false,url, username, password);
+            c = getConnection(false);
             log.info("Opened database successfully");
             String insertDbInfo = "INSERT INTO public.db_info(\n" +
                     "\tdatabase_guid, database_name, owner, db_type, is_deleted, status, database_description, instance_guid)\n" +
@@ -158,7 +179,7 @@ public class DataMigration {
         List<String> resultList = new ArrayList<>();
         Connection c = null;
         try {
-            c = getConnection(false, url, username, password);
+            c = getConnection(false);
             log.info("Opened database successfully");
             String sql =  "SELECT db_guid FROM public.source_db";
             PreparedStatement selectStmt = c.prepareStatement(sql);
