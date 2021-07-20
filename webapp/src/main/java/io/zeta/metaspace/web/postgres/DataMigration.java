@@ -121,16 +121,22 @@ public class DataMigration {
                     "\tdatabase_guid, database_name, owner, db_type, is_deleted, status, database_description, instance_guid)\n" +
                     "\tVALUES (?, ?, ?, ?, ?, ?, ?, ?);";
             PreparedStatement insertStmt = c.prepareStatement(insertDbInfo);
+            String instanceGuid = Objects.toString(resultMap.get("instance_guid"),"");
             insertStmt.setString(1, Objects.toString(resultMap.get("database_guid"),""));
             insertStmt.setString(2, Objects.toString(resultMap.get("database_name"),""));
             insertStmt.setString(3, Objects.toString(resultMap.get("owner"),""));
-            insertStmt.setString(4, Objects.toString(resultMap.get("db_type"),""));
+            insertStmt.setString(4, "");
             insertStmt.setBoolean(5, (Boolean)resultMap.get("is_deleted"));
             insertStmt.setString(6, Objects.toString(resultMap.get("status"),""));
             insertStmt.setString(7, Objects.toString(resultMap.get("database_description"),""));
-            insertStmt.setString(8, Objects.toString(resultMap.get("instance_guid"),""));
+            insertStmt.setString(8, instanceGuid);
 
+            if(!StringUtils.isEmpty(instanceGuid)){
+                Map<String,Object> instanceMap = queryDbInfoByGuid(instanceGuid);
+                insertStmt.setString(4, Objects.toString(resultMap.get("db_type"),""));
+            }
             insertStmt.execute();
+            log.info("操作执行成功.");
         } catch (Exception e) {
             log.error("操作 db_info 出错了，{}",e);
         }
@@ -141,7 +147,7 @@ public class DataMigration {
 
     /**
      * 根据 db guid 查询相关信息
-     * @param guid
+     * @param guid dbguid、instanceGuid 只获取db_type
      * @return
      */
     private static Map<String,Object> queryDbInfoByGuid(String guid){
@@ -189,17 +195,22 @@ public class DataMigration {
                 instanceMap = gson.fromJson(gson.toJson(attributesMap.get("instance")),instanceMap.getClass() );
                 instanceGuid = instanceMap.get("guid").toString();
                 log.info("rdbms_db instanceGuid={}",instanceGuid);
+
+                String status = entityMap.get("status")+"";
+                resultMap.put("database_id",entityMap.get("guid"));
+                resultMap.put("database_name",entityMap.get("name"));
+                resultMap.put("owner",entityMap.get("owner"));
+                resultMap.put("is_deleted",StringUtils.endsWithIgnoreCase("DELETED",status));
+                resultMap.put("status",status);
+                // resultMap.put("table_count",tableList != null ? tableList.size() : 0);
+                resultMap.put("database_description",entityMap.get("description"));
+                resultMap.put("instance_id",instanceGuid);
+                return resultMap;
             }
-            String status = entityMap.get("status")+"";
-            resultMap.put("database_id",entityMap.get("guid"));
-            resultMap.put("database_name",entityMap.get("name"));
-            resultMap.put("owner",entityMap.get("owner"));
-            resultMap.put("db_type","");  //todo
-            resultMap.put("is_deleted",StringUtils.endsWithIgnoreCase("DELETED",status));
-            resultMap.put("status",status);
-           // resultMap.put("table_count",tableList != null ? tableList.size() : 0);
-            resultMap.put("database_description",entityMap.get("description"));
-            resultMap.put("instance_id",instanceGuid);
+            if("rdbms_instance".equalsIgnoreCase(typeName)){
+                resultMap.put("db_type",attributesMap.get("rdbms_type"));
+                return resultMap;
+            }
         } catch (IOException e) {
             log.error("操作出错了：{}",e);
         }
