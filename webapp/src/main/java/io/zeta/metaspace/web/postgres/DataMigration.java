@@ -1,28 +1,27 @@
 package io.zeta.metaspace.web.postgres;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 
+import com.google.gson.Gson;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.springframework.util.StringUtils;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
 import org.apache.http.HttpEntity;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import com.google.gson.Gson;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
+import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.*;
+
+/**
+ * 数据血缘 tableInfo -> source_db\db_info 旧数据迁移处理
+ */
 @Slf4j
 public class DataMigration {
     private static int pageSize = 10;
@@ -106,47 +105,77 @@ public class DataMigration {
 
     public static void processDbInfo(String url,String username,String password) {
         Connection c = null;
-        String guid = "";
-        Map<String,Object> resultMap = queryDbInfoByGuid(guid);
-        if(resultMap == null || resultMap.isEmpty()){
-            log.error("该 guid： {} 没查找到相关信息",guid);
+        List<String> databaseGuidList = queryDataBaseGuid(url, username, password);
+        if(CollectionUtils.isEmpty(databaseGuidList)){
+            log.info("没有要处理的db_guid信息");
             return ;
         }
-
         try {
             c = getConnection(false,url, username, password);
             log.info("Opened database successfully");
-
             String insertDbInfo = "INSERT INTO public.db_info(\n" +
                     "\tdatabase_guid, database_name, owner, db_type, is_deleted, status, database_description, instance_guid)\n" +
                     "\tVALUES (?, ?, ?, ?, ?, ?, ?, ?);";
             PreparedStatement insertStmt = c.prepareStatement(insertDbInfo);
-            String instanceGuid = Objects.toString(resultMap.get("instance_guid"),"");
-            insertStmt.setString(1, Objects.toString(resultMap.get("database_guid"),""));
-            insertStmt.setString(2, Objects.toString(resultMap.get("database_name"),""));
-            insertStmt.setString(3, Objects.toString(resultMap.get("owner"),""));
-            insertStmt.setString(4, "");
-            insertStmt.setBoolean(5, (Boolean)resultMap.get("is_deleted"));
-            insertStmt.setString(6, Objects.toString(resultMap.get("status"),""));
-            insertStmt.setString(7, Objects.toString(resultMap.get("database_description"),""));
-            insertStmt.setString(8, instanceGuid);
 
-            if(!StringUtils.isEmpty(instanceGuid)){
-                Map<String,Object> instanceMap = queryDbInfoByGuid(instanceGuid);
-                insertStmt.setString(4, Objects.toString(resultMap.get("db_type"),""));
+            for (String guid : databaseGuidList){
+                Map<String,Object> resultMap = queryDbInfoByGuid(guid);
+                if(resultMap == null || resultMap.isEmpty()){
+                    log.error("该 guid： {} 没查找到相关信息",guid);
+                    return ;
+                }
+
+                String instanceGuid = Objects.toString(resultMap.get("instance_guid"),"");
+                insertStmt.setString(1, Objects.toString(resultMap.get("database_guid"),""));
+                insertStmt.setString(2, Objects.toString(resultMap.get("database_name"),""));
+                insertStmt.setString(3, Objects.toString(resultMap.get("owner"),""));
+                insertStmt.setString(4, "");
+                insertStmt.setBoolean(5, (Boolean)resultMap.get("is_deleted"));
+                insertStmt.setString(6, Objects.toString(resultMap.get("status"),""));
+                insertStmt.setString(7, Objects.toString(resultMap.get("database_description"),""));
+                insertStmt.setString(8, instanceGuid);
+
+                if(!StringUtils.isEmpty(instanceGuid)){
+                    Map<String,Object> instanceMap = queryDbInfoByGuid(instanceGuid);
+                    insertStmt.setString(4, Objects.toString(resultMap.get("db_type"),""));
+                }
+                insertStmt.addBatch();
             }
-            insertStmt.execute();
+
+            insertStmt.executeBatch();
+            c.commit();
+            insertStmt.close();
+            if(c!= null) c.close();
             log.info("操作执行成功.");
         } catch (Exception e) {
             log.error("操作 db_info 出错了，{}",e);
         }
-
-
-
     }
-
+    /*
+     从source_db 获取databaseGuid
+     */
+    private static List<String> queryDataBaseGuid(String url,String username,String password){
+        List<String> resultList = new ArrayList<>();
+        Connection c = null;
+        try {
+            c = getConnection(false, url, username, password);
+            log.info("Opened database successfully");
+            String sql =  "SELECT db_guid FROM public.source_db";
+            PreparedStatement selectStmt = c.prepareStatement(sql);
+            ResultSet rs = selectStmt.executeQuery();
+            while(rs.next()){
+                resultList.add(rs.getString("db_guid"));
+            }
+            if(rs != null) rs.close();
+            selectStmt.close();
+            if(c != null) c.close();
+        }catch (Exception e){
+            log.error("获取db_guid出错，{}",e);
+        }
+         return resultList;
+    }
     /**
-     * 根据 db guid 查询相关信息
+     * 根据 db guid 查询图数据库获取相关信息
      * @param guid dbguid、instanceGuid 只获取db_type
      * @return
      */
