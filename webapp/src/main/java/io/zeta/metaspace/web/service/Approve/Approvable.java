@@ -27,6 +27,6 @@ public interface Approvable {
      * @param tenantId
      * @param items
      */
-    void changeObjectStatus(String approveResult, String tenantId, List<ApproveItem> items);
+    void changeObjectStatus(String approveResult, String tenantId, List<ApproveItem> items) throws Exception;
 
 }

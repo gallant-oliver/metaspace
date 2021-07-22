@@ -29,6 +29,7 @@ public class ApproveServiceImp implements ApproveService{
 
     private static  Map<ModuleEnum, String> moduleServiceClass = ImmutableMap.<ModuleEnum, String>builder()  //key:模块单例，value:service name
             .put(ModuleEnum.NORMDESIGN, "indexService")
+            .put(ModuleEnum.SOURCEINFO, "sourceInfoService")
             .build();
 
     @Autowired
@@ -74,7 +75,7 @@ public class ApproveServiceImp implements ApproveService{
 
     @Override
     @Transactional
-    public void deal(ApproveParas paras, String tenant_id) {
+    public void deal(ApproveParas paras, String tenant_id) throws Exception {
         ApproveOperate result = null;
         Map<String,List<ApproveItem>> moduleItemMap = new HashMap<>(); //key:moduleId value: list<approveItem>
         if(ApproveOperate.APPROVE.equals(ApproveOperate.getOprateByCode(paras.getResult()))){  //审批通过
@@ -101,6 +102,7 @@ public class ApproveServiceImp implements ApproveService{
                     approveDao.updateStatus(item);  //todo 批量优化
                 }else{
                     approveDao.deleteItemById(item); //取回与驳回对业务模块操作一致
+                    approveDao.deleteItemByObjectId(item);
                 }
                 addToMapByClass(moduleItemMap,item);
             }

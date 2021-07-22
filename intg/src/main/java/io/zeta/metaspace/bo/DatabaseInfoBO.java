@@ -1,22 +1,47 @@
-package io.zeta.metaspace.model.sourceinfo;
+package io.zeta.metaspace.bo;
 
-import io.zeta.metaspace.model.enums.SubmitType;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Data
-public class DatabaseInfo {
+public class DatabaseInfoBO {
     /**
     * 源信息id
      * **/
     private String id;
     /**
+     * 目录名
+     * **/
+    private String categoryName;
+    /**
      * 目录id
      * **/
     private String categoryId;
     /**
+     * 数据库名
+     * **/
+    private String databaseName;
+    /**
      * 数据库id
      * **/
     private String databaseId;
+    /**
+     * 数据库类型名
+     * **/
+    private String databaseTypeName;
+    /**
+     * 数据库类型名
+     * **/
+    private String databaseInstanceName;
+    /**
+     * 数据源名
+     * **/
+    private String dataSourceName;
+    /**
+     * 数据源id
+     * **/
+    private String datasourceId;
     /**
      * 数据库中文名
      * **/
@@ -94,12 +119,24 @@ public class DatabaseInfo {
      * **/
     private String toEmail;
     /**
-     * 技术负责人id
+     * 技术负责人名
      * **/
     private String technicalLeader;
     /**
-     * 业务负责人id
+     * 业务负责人名
      * **/
     private String businessLeader;
+    /**
+     * 审核组名
+     * **/
+    private String approveGroupName;
 
+    private String approveGroupId;
+    private String updateName;
+
+    private LocalDateTime updateTime;
+
+    private String auditDes;
+
+    private String auditorName;
 }

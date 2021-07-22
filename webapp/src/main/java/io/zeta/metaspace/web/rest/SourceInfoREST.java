@@ -17,9 +17,11 @@ import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.enums.SubmitType;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.sourceinfo.CreateRequest;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForList;
 import io.zeta.metaspace.model.sourceinfo.PublishRequest;
+import io.zeta.metaspace.web.service.SourceInfoService;
 import io.zeta.metaspace.web.service.UserGroupService;
 import io.zeta.metaspace.web.service.UsersService;
 import org.apache.atlas.web.util.Servlets;
@@ -46,22 +48,21 @@ public class SourceInfoREST {
     @Context
     private HttpServletResponse httpServletResponse;
     @Autowired
-    private UsersService usersService;
-    @Autowired
-    private UserGroupService userGroupService;
+    private SourceInfoService sourceInfoService;
 
     @POST
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result addDatabaseInfo(@HeaderParam("tenantId")String tenantId, @QueryParam("submitType") SubmitType submitType ,DatabaseInfo databaseInfo){
-        return null;
+    public Result addDatabaseInfo(@HeaderParam("tenantId")String tenantId, CreateRequest createRequest){
+        return sourceInfoService.addDatabaseInfo(tenantId,createRequest.getDatabaseInfo(),
+                createRequest.getApproveGroupId(),createRequest.getSubmitType());
     }
 
     @PUT
     @Path("publish")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result publishDatabaseInfo(@HeaderParam("tenantId")String tenantId, PublishRequest request){
-        return null;
+        return sourceInfoService.publish(request.getIdList(),request.getApproveGroupId(),tenantId);
     }
 
     @PUT
@@ -74,8 +75,8 @@ public class SourceInfoREST {
     @PUT
     @Path("revoke/{id}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result revokeSourceInfo(@HeaderParam("tenantId")String tenantId, @PathParam("id") String id){
-        return null;
+    public Result revokeSourceInfo(@HeaderParam("tenantId")String tenantId, @PathParam("id") String id) throws Exception {
+        return sourceInfoService.revoke(id,tenantId);
     }
 
     @DELETE
@@ -89,19 +90,19 @@ public class SourceInfoREST {
     @Path("list")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<DatabaseInfoForList> getSourceInfoList(@HeaderParam("tenantId")String tenantId,
+    public Result getSourceInfoList(@HeaderParam("tenantId")String tenantId,
                                                              @DefaultValue("0")@QueryParam("offset") int offset,
                                                              @DefaultValue ("10") @QueryParam("limit") int limit,
                                                              @QueryParam("name")String name,
                                                              @QueryParam("status")Status status){
-        return null;
+        return sourceInfoService.getDatabaseInfoListByIds(tenantId,status,name,offset,limit);
     }
 
     @GET
     @Path("{id}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getSourceInfoDetail(@HeaderParam("tenantId")String tenantId, @PathParam("id") String id){
-        return null;
+    public Result getSourceInfoDetail(@HeaderParam("tenantId")String tenantId, @PathParam("id") String id,@QueryParam("version") @DefaultValue("0") String version){
+        return sourceInfoService.getDatabaseInfoById(id,tenantId,version);
     }
 
 

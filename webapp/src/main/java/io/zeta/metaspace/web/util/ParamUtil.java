@@ -3,7 +3,9 @@ package io.zeta.metaspace.web.util;
 import java.util.*;
 
 public class ParamUtil {
-    public static Boolean isNull(Object... objArray) throws Exception {
+    private ParamUtil(){
+    }
+    public static Boolean isNull(Object... objArray){
         if (objArray == null || objArray.length == 0){
             return Boolean.TRUE;
         }
@@ -11,7 +13,7 @@ public class ParamUtil {
             if (obj == null){
                 return Boolean.TRUE;
             }
-            if (obj instanceof String && ((String) obj).isEmpty()){
+            if (obj instanceof String && ((String) obj).replace(" ","").isEmpty()){
                     return Boolean.TRUE;
                 }
             if (obj instanceof List && ((List<?>) obj).isEmpty()){

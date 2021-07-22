@@ -1,22 +1,39 @@
-package io.zeta.metaspace.model.sourceinfo;
+package io.zeta.metaspace.model.dto.sourceinfo;
 
-import io.zeta.metaspace.model.enums.SubmitType;
+import io.zeta.metaspace.model.dto.indices.ApprovalGroupMember;
+import io.zeta.metaspace.model.user.User;
 import lombok.Data;
 
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Data
-public class DatabaseInfo {
+public class DatabaseInfoDTO {
     /**
     * 源信息id
      * **/
     private String id;
     /**
-     * 目录id
+     * 目录名
      * **/
-    private String categoryId;
+    private String categoryName;
     /**
-     * 数据库id
+     * 数据库名
      * **/
-    private String databaseId;
+    private String databaseName;
+    /**
+     * 数据库类型名
+     * **/
+    private String databaseTypeName;
+    /**
+     * 数据库类型名
+     * **/
+    private String databaseInstanceName;
+    /**
+     * 数据源名
+     * **/
+    private String dataSourceName;
     /**
      * 数据库中文名
      * **/
@@ -94,12 +111,27 @@ public class DatabaseInfo {
      * **/
     private String toEmail;
     /**
-     * 技术负责人id
+     * 技术负责人名
      * **/
     private String technicalLeader;
     /**
-     * 业务负责人id
+     * 业务负责人名
      * **/
     private String businessLeader;
+    /**
+     * 审核组名
+     * **/
+    private String approveGroupName;
 
+    private List<ApprovalGroupMember> approveGroupMembers;
+    /**
+     * 提交人姓名
+     * **/
+    private String publisherName;
+    /**
+     * 提交时间
+     * **/
+    private Timestamp publishTime;
+
+    private String auditorName;
 }

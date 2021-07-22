@@ -25,7 +25,7 @@ public class DatabaseInfoForList {
     /**
      * 数据库类型
      * **/
-    private String databaseType;
+    private String databaseTypeName;
     /**
      * 数据库中文名
      * **/
@@ -51,8 +51,7 @@ public class DatabaseInfoForList {
     /**
      * 更新时间
      * **/
-    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
-    private String updateTime;
+    private Timestamp updateTime;
 
     /**
      * 审核员姓名
