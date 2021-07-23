@@ -123,7 +123,7 @@ public interface DatabaseInfoDAO {
             "(SELECT u.username FROM users u WHERE u.userid = s.business_leader ) AS business_leader,\n" +
             "ag.name AS approve_group_name,\n" +
             "(SELECT u.username FROM users u WHERE u.userid = s.updater ) AS updaterName,\n" +
-            "s.update_time,\n" +
+            "s.update_time AS updateTime,\n" +
             "ag.name AS approveGroupName,\n" +
             "ag.id AS approveGroupId,\n" +
             "ai.reason as audit_des ,\n" +

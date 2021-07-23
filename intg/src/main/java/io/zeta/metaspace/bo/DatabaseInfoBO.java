@@ -133,6 +133,7 @@ public class DatabaseInfoBO {
     private String approveGroupName;
 
     private String approveGroupId;
+
     private String updaterName;
 
     private TimeStamp updateTime;
