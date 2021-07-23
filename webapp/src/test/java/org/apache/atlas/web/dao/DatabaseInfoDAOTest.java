@@ -4,16 +4,13 @@ import com.google.gson.Gson;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.po.sourceinfo.DatabaseInfoPO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
-import io.zeta.metaspace.web.service.SourceInfoService;
 
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import javax.inject.Inject;
 import java.util.UUID;
 
 public class DatabaseInfoDAOTest {

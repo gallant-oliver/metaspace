@@ -16,14 +16,10 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.enums.SubmitType;
-import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.sourceinfo.CreateRequest;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
-import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForList;
 import io.zeta.metaspace.model.sourceinfo.PublishRequest;
-import io.zeta.metaspace.web.service.SourceInfoService;
-import io.zeta.metaspace.web.service.UserGroupService;
-import io.zeta.metaspace.web.service.UsersService;
+import io.zeta.metaspace.web.service.sourceinfo.SourceInfoService;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -68,7 +64,7 @@ public class SourceInfoREST {
     @PUT
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result updateDatabaseInfo(@HeaderParam("tenantId")String tenantId, @QueryParam("submitType") SubmitType submitType, DatabaseInfo databaseInfo){
+    public Result updateDatabaseInfo(@HeaderParam("tenantId")String tenantId,CreateRequest createRequest){
         return null;
     }
 
@@ -95,14 +91,14 @@ public class SourceInfoREST {
                                                              @DefaultValue ("10") @QueryParam("limit") int limit,
                                                              @QueryParam("name")String name,
                                                              @QueryParam("status")Status status){
-        return sourceInfoService.getDatabaseInfoListByIds(tenantId,status,name,offset,limit);
+        return sourceInfoService.getDatabaseInfoList(tenantId,status,name,offset,limit);
     }
 
     @GET
     @Path("{id}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getSourceInfoDetail(@HeaderParam("tenantId")String tenantId, @PathParam("id") String id,@QueryParam("version") @DefaultValue("0") String version){
-        return sourceInfoService.getDatabaseInfoById(id,tenantId,version);
+        return sourceInfoService.getDatabaseInfoById(id,tenantId,Integer.parseInt(version));
     }
 
 

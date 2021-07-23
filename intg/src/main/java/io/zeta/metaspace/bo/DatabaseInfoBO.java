@@ -1,6 +1,7 @@
 package io.zeta.metaspace.bo;
 
 import lombok.Data;
+import org.apache.commons.net.ntp.TimeStamp;
 
 import java.time.LocalDateTime;
 
@@ -132,9 +133,9 @@ public class DatabaseInfoBO {
     private String approveGroupName;
 
     private String approveGroupId;
-    private String updateName;
+    private String updaterName;
 
-    private LocalDateTime updateTime;
+    private TimeStamp updateTime;
 
     private String auditDes;
 
