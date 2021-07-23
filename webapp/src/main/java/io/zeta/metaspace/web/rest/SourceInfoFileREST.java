@@ -2,9 +2,11 @@ package io.zeta.metaspace.web.rest;
 
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.sourceinfo.AnalyticResult;
 import io.zeta.metaspace.model.sourceinfo.Annex;
 import io.zeta.metaspace.web.service.HdfsService;
 import io.zeta.metaspace.web.service.sourceinfo.AnnexService;
+import io.zeta.metaspace.web.service.sourceinfo.SourceInfoFileService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -37,6 +39,8 @@ public class SourceInfoFileREST {
     private HdfsService hdfsService;
     @Autowired
     private AnnexService annexService;
+    @Autowired
+    private SourceInfoFileService sourceInfoFileService;
     @Context
     private HttpServletResponse response;
     //源信息登记-导入模板下载的hdfs路径
@@ -109,14 +113,14 @@ public class SourceInfoFileREST {
         try{
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
-
             // 跟source_info、db-info对比获取比对结果  TODO
-
+            List<AnalyticResult> results = sourceInfoFileService.getFileParsedResult(excelDataList);
+            return ReturnUtil.success(results);
         }catch (IOException e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件解析失败");
         }
 
-        return ReturnUtil.success();
+
     }
 
     /**

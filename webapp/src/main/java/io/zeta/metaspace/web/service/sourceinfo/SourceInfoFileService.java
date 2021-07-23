@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.service.sourceinfo;
 
+import io.zeta.metaspace.model.sourceinfo.AnalyticResult;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ public class SourceInfoFileService {
             "数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","手机号","技术负责人","业务负责人"};
 
     //TODO
-    public void getFileParsedResult(List<String[]> excelDataList){
+    public List<AnalyticResult> getFileParsedResult(List<String[]> excelDataList){
         //获取标题头信息 找出各个索引
         String[] titleArray = excelDataList.get(0);
         Map<String,Integer> map = propertyToColumnIndexMap(titleArray);
@@ -31,9 +32,11 @@ public class SourceInfoFileService {
         //根据数据库名查询源信息表，得到是否冲突
         List<String> repeatNameList = new ArrayList<>();
         //返回比较结果
+        List<AnalyticResult> results = new ArrayList<>();
         excelDataList.stream().filter(p->unExistList.contains(p[dbEnIndex])).collect(Collectors.toList());
         excelDataList.stream().filter(p->repeatNameList.contains(p[dbEnIndex])).collect(Collectors.toList());
 
+        return results;
     }
 
     private Map<String,Integer> propertyToColumnIndexMap( String[] array){
