@@ -113,7 +113,7 @@ public class SourceInfoFileREST {
         try{
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
-            // 跟source_info、db-info对比获取比对结果  TODO
+            // 跟source_info、db-info对比获取比对结果
             List<AnalyticResult> results = sourceInfoFileService.getFileParsedResult(excelDataList);
             return ReturnUtil.success(results);
         }catch (IOException e){
