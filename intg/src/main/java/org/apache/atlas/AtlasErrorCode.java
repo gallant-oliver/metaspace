@@ -157,6 +157,8 @@ public enum AtlasErrorCode {
 
     INVALID_PARAMS(400, "METASPACE-400-00-88", " {0}"),
 
+    EMPTY_PARAMS(400, "METASPACE-400-00-89", "参数{0}不可为空"),
+
     UNAUTHORIZED_ACCESS(403, "METASPACE-403-00-001", " {0}未被授权执行{1}"),
 
     // All Not found enums go here
