@@ -119,8 +119,6 @@ public class SourceInfoFileREST {
         }catch (IOException e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件解析失败");
         }
-
-
     }
 
     /**
@@ -133,9 +131,29 @@ public class SourceInfoFileREST {
     @Path("/source/info/file/import/{duplicatePolicy}")
     @Consumes({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
     @Produces({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
-    public Result executeImportFile(@HeaderParam("tenantId")String tenantId,@PathParam("duplicatePolicy") String duplicatePolicy){
-        //TODO
-        return ReturnUtil.success();
+    public Result executeImportFile(@HeaderParam("tenantId")String tenantId,
+                                    @RequestParam("annexId") String annexId,
+                                    @PathParam("duplicatePolicy") String duplicatePolicy){
+        //"IGNORE"-忽略 有重复名称则不导入 ，"STOP"-停止 终止本次导入操作
+        if("STOP".equalsIgnoreCase(duplicatePolicy)){
+            return ReturnUtil.success("终止操作.");
+        }
+
+        Annex annex = annexService.findByAnnexId(annexId);
+        if(annex == null){
+            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.BAD_REQUEST);
+        }
+        String filePath = annex.getPath();
+        try{
+            //根据文件路径 解析excel文件
+            List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
+            // 跟source_info、db-info对比获取比对结果
+            int n = sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
+            return ReturnUtil.success(n);
+        }catch (IOException e){
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件解析失败");
+        }
+
     }
 
 
