@@ -340,6 +340,9 @@ public interface CategoryDAO {
             " </script>")
     public List<CategoryPath> getPathByIds(@Param("ids") List<String> ids, @Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
 
+    @Select("SELECT COUNT(1) FROM category WHERE guid = #{id} AND tenantid = #{tenantId}")
+    int getCategoryCountById(@Param("id")String id,@Param("tenantId") String tenantId);
+
     @Select({" <script> ",
             " select distinct c.guid from category c join category_group_relation cgr on c.guid=cgr.category_id where c.categorytype=#{categoryType} and c.tenantid=#{tenantId} and cgr.group_id in  ",
             " <foreach item='groupId' index='index' collection='groupIds' separator=',' open='(' close=')'>",

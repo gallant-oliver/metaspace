@@ -13,6 +13,7 @@
 
 package io.zeta.metaspace.web.util;
 
+import com.sun.org.apache.regexp.internal.RE;
 import io.zeta.metaspace.model.Result;
 import org.apache.atlas.exception.AtlasBaseException;
 
@@ -32,6 +33,10 @@ public class ReturnUtil {
         result.setMessage(Status.SUCCESS.getMessage());
 
         return result;
+    }
+
+    public static Boolean isSuccess(Result result) {
+       return Status.SUCCESS.getCode().equals(result.getCode());
     }
 
     /**

@@ -152,4 +152,7 @@ public interface ApproveDAO {
             " where a.tenant_id=#{tenantId} and a.id = #{id}" +
             "</script>")
     ApproveItem getApproveItemById(@Param("id") String id,@Param("tenantId") String tenantId);
+
+    @Update("delete from approval_item where object_id=#{item.objectId} and tenant_id=#{item.tenantId}")
+    void deleteItemByObjectId(@Param("item") ApproveItem item);
 }

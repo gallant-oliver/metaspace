@@ -19,9 +19,16 @@ import java.util.List;
 public class PageResult<E> implements Serializable {
     private long totalSize;
     private long currentSize;
-    private List<E> lists = new ArrayList<>();
+    private transient List<E> lists = new ArrayList<>();
     private long offset;
 
+    public PageResult(){
+
+    }
+
+    public PageResult(List<E> lists){
+        this.lists = lists;
+    }
     public long getTotalSize() {
         return totalSize;
     }

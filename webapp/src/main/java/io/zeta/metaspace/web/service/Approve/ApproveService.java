@@ -20,7 +20,7 @@ public interface ApproveService {
      * @param tenant_id
      * @return
      */
-    void deal(ApproveParas paras,String tenant_id) throws IllegalAccessException, ClassNotFoundException, InstantiationException;
+    void deal(ApproveParas paras,String tenant_id) throws Exception;
 
     void addApproveItem(ApproveItem Item);
 
