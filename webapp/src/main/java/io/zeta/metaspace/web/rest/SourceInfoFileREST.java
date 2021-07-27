@@ -14,7 +14,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Singleton;
@@ -76,7 +75,7 @@ public class SourceInfoFileREST {
     @Path("/source/info/file/upload")
     @Consumes({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
     @Produces({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
-    public Result uploadFile(@HeaderParam("tenantId")String tenantId,@RequestParam("file") MultipartFile file){
+    public Result uploadFile(@HeaderParam("tenantId")String tenantId,MultipartFile file){
         try{
             //tenantId 使用租户id作为上传文件子目录
             String uploadPath = hdfsService.uploadFile(file,tenantId);
@@ -103,7 +102,7 @@ public class SourceInfoFileREST {
     @Path("/source/info/file/explain")
     @Consumes({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
     @Produces({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
-    public Result parseFile(@HeaderParam("tenantId")String tenantId,@RequestParam("annexId") String annexId){
+    public Result parseFile(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
         //根据附件id 获取文件的路径和文件名
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
@@ -132,7 +131,7 @@ public class SourceInfoFileREST {
     @Consumes({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
     @Produces({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
     public Result executeImportFile(@HeaderParam("tenantId")String tenantId,
-                                    @RequestParam("annexId") String annexId,
+                                    @QueryParam("annexId") String annexId,
                                     @PathParam("duplicatePolicy") String duplicatePolicy){
         //"IGNORE"-忽略 有重复名称则不导入 ，"STOP"-停止 终止本次导入操作
         if("STOP".equalsIgnoreCase(duplicatePolicy)){
@@ -171,7 +170,7 @@ public class SourceInfoFileREST {
         //根据附件id 获取文件的路径和文件名
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
-            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.BAD_REQUEST);
+            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
         }
         String filePath = annex.getPath();
         String filename = annex.getFileName();
@@ -196,11 +195,11 @@ public class SourceInfoFileREST {
     @Path("/source/info/fileStream")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Result getFileStream(@HeaderParam("tenantId")String tenantId,@RequestParam("annexId") String annexId){
+    public Result getFileStream(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
         //根据附件id 获取文件的路径
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
-            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.BAD_REQUEST);
+            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
         }
         String filePath = annex.getPath();
         try{
@@ -223,7 +222,7 @@ public class SourceInfoFileREST {
     @Path("/source/info/file")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Result getFileInfo(@HeaderParam("tenantId")String tenantId,@RequestParam("annexId") String annexId){
+    public Result getFileInfo(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
         //根据附件id 获取文件的路径
         Annex annex = annexService.findByAnnexId(annexId);
         return ReturnUtil.success(annex);
