@@ -136,7 +136,7 @@ public class DatabaseInfoBO {
 
     private String updaterName;
 
-    private TimeStamp updateTime;
+    private String updateTime;
 
     private String auditDes;
 

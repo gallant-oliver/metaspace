@@ -46,6 +46,11 @@ public class SourceInfoParamCheckService {
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                     AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("数据库中文名"));
         }
+        //校验中文名重名
+        if (databaseInfoDAO.getDatabaseDuplicateName(tenantId,databaseInfo.getDatabaseAlias(),null)) {
+            return ReturnUtil.error(AtlasErrorCode.DUPLICATE_ALIAS_NAME.getErrorCode(),
+                    AtlasErrorCode.DUPLICATE_ALIAS_NAME.getFormattedErrorMessage(databaseInfo.getDatabaseAlias()));
+        }
         //校验目录
         if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getCategoryId()))){
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
@@ -87,7 +92,7 @@ public class SourceInfoParamCheckService {
         return ReturnUtil.success();
     }
 
-    public Result checkUpdateParam(DatabaseInfo databaseInfo, String approveGroupId, SubmitType submitType){
+    public Result checkUpdateParam(DatabaseInfo databaseInfo, String tenantId,String approveGroupId, SubmitType submitType){
 
         if(Boolean.TRUE.equals(ParamUtil.isNull(submitType))){
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
@@ -101,6 +106,11 @@ public class SourceInfoParamCheckService {
         if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getDatabaseAlias()))) {
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                     AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("数据库中文名"));
+        }
+        //校验中文名重名
+        if (databaseInfoDAO.getDatabaseDuplicateName(tenantId,databaseInfo.getDatabaseAlias(),databaseInfo.getId())) {
+            return ReturnUtil.error(AtlasErrorCode.DUPLICATE_ALIAS_NAME.getErrorCode(),
+                    AtlasErrorCode.DUPLICATE_ALIAS_NAME.getFormattedErrorMessage(databaseInfo.getDatabaseAlias()));
         }
         //保密期限校验
         if (databaseInfo.getSecurity() && ParamUtil.isNull(databaseInfo.getSecurityCycle())){

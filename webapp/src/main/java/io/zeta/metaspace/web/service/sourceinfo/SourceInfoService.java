@@ -50,7 +50,7 @@ import java.util.stream.Collectors;
 public class SourceInfoService implements Approvable {
 
     private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.TechnicalREST");
-    private static int CATEGORY_TYPE = 0;
+    private static final int CATEGORY_TYPE = 0;
     @Autowired
     DatabaseDAO databaseDAO;
 
@@ -87,11 +87,15 @@ public class SourceInfoService implements Approvable {
         if (Boolean.FALSE.equals((ReturnUtil.isSuccess(checkResult)))){
             return checkResult;
         }
-        this.registerDatabaseInfo(this.convertToPO(tenantId,databaseInfo));
+        DatabaseInfoPO dp = this.convertToPO(tenantId,databaseInfo);
+        this.registerDatabaseInfo(dp);
 
         List<DatabaseInfo> databaseInfoList = new ArrayList<>();
         databaseInfoList.add(databaseInfo);
         if (SubmitType.SUBMIT_AND_PUBLISH.equals(submitType)){
+            List<String> ids = new ArrayList<>();
+            ids.add(dp.getId());
+            databaseInfoDAO.updateStatusByIds(ids,Status.AUDITING.getIntValue()+"");
             this.approveItems(tenantId,databaseInfoList,approveGroupId);
         }
         return ReturnUtil.success();
@@ -147,14 +151,9 @@ public class SourceInfoService implements Approvable {
         if (Boolean.FALSE.equals(ReturnUtil.isSuccess(checkResult))){
             return checkResult;
         }
-        ApproveParas approveParas = new ApproveParas();
-        approveParas.setResult(ApproveOperate.CANCEL.getCode());
 
-        List<ApproveItem> approveItemList = new ArrayList<>();
-        DatabaseInfoBO databaseInfoBO = databaseInfoDAO.getDatabaseInfoById(id,tenantId,0);
-        approveItemList.add(this.buildApproveItem(databaseInfoBO,databaseInfoBO.getApproveGroupId(),tenantId));
-        approveParas.setApproveList(approveItemList);
-        approveServiceImp.deal(approveParas,tenantId);
+        approveServiceImp.deal(this.buildApproveParas(id,tenantId,ApproveOperate.CANCEL),tenantId);
+        databaseInfoDAO.updateStatusByIds(idList,Status.FOUNDED.getIntValue()+"");
         return ReturnUtil.success();
     }
 
@@ -169,21 +168,69 @@ public class SourceInfoService implements Approvable {
      */
 
     public Result getDatabaseInfoList(String tenantId, Status status, String name, int offset, int limit){
-        List<DatabaseInfoForList> diLists = databaseInfoDAO.getDatabaseInfoList(tenantId,status.getIntValue()+"",name,offset,limit);
-        int totalSize = databaseInfoDAO.getDatabaseInfoListCount(tenantId,status.getIntValue()+"",name);
+        List<DatabaseInfoForList> diLists = databaseInfoDAO.getDatabaseInfoList(tenantId,status==null?null:status.getIntValue()+"",null,name,offset,limit);
+        int totalSize = databaseInfoDAO.getDatabaseInfoListCount(tenantId,status==null?null:status.getIntValue()+"",name);
         PageResult<DatabaseInfoForList> pageResult=new PageResult<>(diLists);
         pageResult.setCurrentSize(diLists.size());
         pageResult.setTotalSize(totalSize);
         return ReturnUtil.success(pageResult);
     }
 
+    /**
+     *
+     * @param tenantId 租户id
+     * @param idList 被删除的idList
+     * @return 删除结果
+     */
+    public Result delete(String tenantId, List<String> idList) {
+        Result checkResult = checkService.checkSourceInfoStatus(idList,SourceInfoOperation.DELETE);
+        if (Boolean.FALSE.equals(ReturnUtil.isSuccess(checkResult))){
+            return checkResult;
+        }
+        List<DatabaseInfoForList> list=new ArrayList<>();
+        if (Boolean.FALSE.equals(ParamUtil.isNull(idList))){
+            list=databaseInfoDAO.getDatabaseInfoList(tenantId,null,idList,null,0,Integer.MAX_VALUE);
+        }
+
+        list.stream().filter(dfl->dfl.getStatus() == Status.ACTIVE.getIntValue()||dfl.getStatus() == Status.REJECT.getIntValue()).forEach(l->{
+            try {
+                approveServiceImp.deal(this.buildApproveParas(l.getId(),tenantId,ApproveOperate.CANCEL),tenantId);
+                if (Boolean.FALSE.equals(ParamUtil.isNull(l.getCategoryId()))) {
+                    dataManageService.deleteCategory(l.getCategoryId(), tenantId, CATEGORY_TYPE);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        databaseInfoDAO.deleteSourceInfoAndParentCategoryRelation(idList);
+        databaseInfoDAO.deleteSourceInfo(idList);
+
+        return ReturnUtil.success();
+    }
+
     public Result updateSourceInfo(DatabaseInfo databaseInfo,String tenantId,String approveGroupId,SubmitType submitType){
-        Result checkResult = checkService.checkUpdateParam(databaseInfo,approveGroupId,submitType);
+        Result checkResult = checkService.checkUpdateParam(databaseInfo,tenantId,approveGroupId,submitType);
         if (Boolean.FALSE.equals((ReturnUtil.isSuccess(checkResult)))){
             return checkResult;
         }
         databaseInfoDAO.updateSourceInfo(databaseInfo);
+
+        List<DatabaseInfo> databaseInfoList = new ArrayList<>();
+        databaseInfoList.add(databaseInfo);
+        if (SubmitType.SUBMIT_AND_PUBLISH.equals(submitType)){
+            this.approveItems(tenantId,databaseInfoList,approveGroupId);
+        }
         return ReturnUtil.success();
+    }
+
+    private ApproveParas buildApproveParas(String id,String tenantId,ApproveOperate operate){
+        ApproveParas approveParas = new ApproveParas();
+        approveParas.setResult(operate.getCode());
+        DatabaseInfoBO databaseInfoBO = databaseInfoDAO.getDatabaseInfoById(id,tenantId,0);
+        List<ApproveItem> approveItemList = new ArrayList<>();
+        approveItemList.add(this.buildApproveItem(databaseInfoBO,databaseInfoBO.getApproveGroupId(),tenantId));
+        approveParas.setApproveList(approveItemList);
+        return approveParas;
     }
 
     private void registerDatabaseInfo(DatabaseInfoPO databaseInfo){
@@ -219,6 +266,10 @@ public class SourceInfoService implements Approvable {
             approveItem.setObjectId(((DatabaseInfoDTO) databaseInfo).getId());
             approveItem.setObjectName(((DatabaseInfoDTO) databaseInfo).getDatabaseAlias());
         }
+        if (databaseInfo instanceof DatabaseInfoForList){
+            approveItem.setObjectId(((DatabaseInfoForList) databaseInfo).getId());
+            approveItem.setObjectName(((DatabaseInfoForList) databaseInfo).getDatabaseAlias());
+        }
         approveItem.setApproveType(ApproveType.PUBLISH.getCode());
         approveItem.setApproveGroup(approveGroupId);
         approveItem.setSubmitter(AdminUtils.getUserData().getUserId());
@@ -234,7 +285,9 @@ public class SourceInfoService implements Approvable {
         DatabaseInfoPO databaseInfoPO = new DatabaseInfoPO();
 
         BeansUtil.copyPropertiesIgnoreNull(databaseInfo,databaseInfoPO);
-        databaseInfoPO.setId(UUID.randomUUID().toString());
+        String uuid = UUID.randomUUID().toString();
+        databaseInfo.setId(uuid);
+        databaseInfoPO.setId(uuid);
         databaseInfoPO.setStatus(Status.FOUNDED.getIntValue()+"");
         databaseInfoPO.setCreator(AdminUtils.getUserData().getUserId());
         databaseInfoPO.setUpdater(AdminUtils.getUserData().getUserId());
@@ -249,6 +302,8 @@ public class SourceInfoService implements Approvable {
         DatabaseInfoBO databaseInfoBO = this.getDatabaseInfoBOById(objectId,tenantId,version);
         DatabaseInfoDTO databaseInfoDTO = new DatabaseInfoDTO();
         BeansUtil.copyPropertiesIgnoreNull(databaseInfoBO,databaseInfoDTO);
+        databaseInfoDTO.setPublisherName(databaseInfoBO.getUpdaterName());
+        databaseInfoDTO.setPublishTime(databaseInfoBO.getUpdateTime());
         List<User> users = approveDAO.getApproveUsers(databaseInfoBO.getApproveGroupId());
         if (!CollectionUtils.isEmpty(users)) {
             List<ApprovalGroupMember> approvalGroupMembers = users.stream().map(x -> BeanMapper.map(x, ApprovalGroupMember.class)).collect(Collectors.toList());
@@ -300,10 +355,13 @@ public class SourceInfoService implements Approvable {
     private CategoryInfoV2 buildCategoryInfo(DatabaseInfoForCategory databaseInfoBO){
         CategoryInfoV2 categoryInfoV2 = new CategoryInfoV2();
 
-        categoryInfoV2.setAuthorized(Boolean.FALSE);
+        categoryInfoV2.setAuthorized(Boolean.TRUE);
         categoryInfoV2.setName(databaseInfoBO.getName());
+        categoryInfoV2.setGuid(databaseInfoBO.getParentCategoryId());
         categoryInfoV2.setParentCategoryGuid(databaseInfoBO.getParentCategoryId());
 
         return categoryInfoV2;
     }
+
+
 }

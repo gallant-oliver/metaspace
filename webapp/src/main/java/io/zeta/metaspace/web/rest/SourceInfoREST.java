@@ -65,7 +65,7 @@ public class SourceInfoREST {
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result updateDatabaseInfo(@HeaderParam("tenantId")String tenantId,CreateRequest createRequest){
-        return null;
+        return sourceInfoService.updateSourceInfo(createRequest.getDatabaseInfo(),tenantId,createRequest.getApproveGroupId(),createRequest.getSubmitType());
     }
 
     @PUT
@@ -79,7 +79,7 @@ public class SourceInfoREST {
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result deleteDatabaseInfo(@HeaderParam("tenantId")String tenantId, PublishRequest request){
-        return null;
+        return sourceInfoService.delete(tenantId,request.getIdList());
     }
 
     @GET

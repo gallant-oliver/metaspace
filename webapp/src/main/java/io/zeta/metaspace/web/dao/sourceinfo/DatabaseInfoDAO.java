@@ -6,6 +6,7 @@ import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForCategory;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForList;
 import org.apache.ibatis.annotations.*;
+import org.springframework.security.access.method.P;
 
 import java.util.List;
 
@@ -19,40 +20,40 @@ public interface DatabaseInfoDAO {
             "( #{id}, #{categoryId}, NOW( ), NOW( ) )")
     void insertDatabaseInfoRelationParentCategory(@Param("id")String id,@Param("categoryId")String categoryId);
 
-    @Insert("INSERT INTO \"public\".\"source_info\" (\n" +
-            "\"id\",\n" +
-            "\"category_id\",\n" +
-            "\"database_id\",\n" +
-            "\"database_alias\",\n" +
-            "\"planning_package_code\",\n" +
-            "\"planning_package_name\",\n" +
-            "\"version\",\n" +
-            "\"extract_tool\",\n" +
-            "\"extract_cycle\",\n" +
-            "\"security\",\n" +
-            "\"security_cycle\",\n" +
-            "\"importance\",\n" +
-            "\"description\",\n" +
-            "\"updater\",\n" +
-            "\"creator\",\n" +
-            "\"status\",\n" +
-            "\"annex_id\",\n" +
-            "\"bo_name\",\n" +
-            "\"bo_department_name\",\n" +
-            "\"bo_email\",\n" +
-            "\"bo_tel\",\n" +
-            "\"to_name\",\n" +
-            "\"to_department_name\",\n" +
-            "\"to_email\",\n" +
-            "\"to_tel\",\n" +
-            "\"technical_leader\",\n" +
-            "\"business_leader\",\n" +
-            "\"tenant_id\",\n" +
-            "\"update_time\",\n" +
-            "\"record_time\",\n" +
-            "\"create_time\",\n" +
-            "\"modify_time\",\n" +
-            "\"approve_group_id\" \n" +
+    @Insert("INSERT INTO  public . source_info  (\n" +
+            " id ,\n" +
+            " category_id ,\n" +
+            " database_id ,\n" +
+            " database_alias ,\n" +
+            " planning_package_code ,\n" +
+            " planning_package_name ,\n" +
+            " version ,\n" +
+            " extract_tool ,\n" +
+            " extract_cycle ,\n" +
+            " security ,\n" +
+            " security_cycle ,\n" +
+            " importance ,\n" +
+            " description ,\n" +
+            " updater ,\n" +
+            " creator ,\n" +
+            " status ,\n" +
+            " annex_id ,\n" +
+            " bo_name ,\n" +
+            " bo_department_name ,\n" +
+            " bo_email ,\n" +
+            " bo_tel ,\n" +
+            " to_name ,\n" +
+            " to_department_name ,\n" +
+            " to_email ,\n" +
+            " to_tel ,\n" +
+            " technical_leader ,\n" +
+            " business_leader ,\n" +
+            " tenant_id ,\n" +
+            " update_time ,\n" +
+            " record_time ,\n" +
+            " create_time ,\n" +
+            " modify_time ,\n" +
+            " approve_group_id  \n" +
             ")\n" +
             "VALUES\n" +
             "(\n" +
@@ -66,7 +67,7 @@ public interface DatabaseInfoDAO {
             "#{dip.extractTool},\n" +
             "#{dip.extractCycle},\n" +
             "#{dip.security},\n" +
-            "#{dip.securityCycle}',\n" +
+            "#{dip.securityCycle},\n" +
             "#{dip.importance},\n" +
             "#{dip.description},\n" +
             "#{dip.updater},\n" +
@@ -87,7 +88,8 @@ public interface DatabaseInfoDAO {
             "NOW( ),\n" +
             "NOW( ),\n" +
             "NOW( ),\n" +
-            "NOW( ),\n")
+            "NOW( )," +
+            "#{dip.approveGroupId})\n")
     void insertDatabaseInfo(@Param("dip") DatabaseInfoPO databaseInfoPO);
 
     @Select("SELECT\n" +
@@ -178,6 +180,7 @@ public interface DatabaseInfoDAO {
             "SELECT\n" +
             " s.id ,\n" +
             " c.name AS categoryName,\n" +
+            " c.guid AS categoryId,\n" +
             " db.database_name AS databaseName,\n" +
             " ds.source_type AS databaseTypeName,\n" +
             " s.database_alias,\n" +
@@ -198,19 +201,29 @@ public interface DatabaseInfoDAO {
             " s.tenant_id = #{tenantId}\n" +
             " AND " +
             " s.version = 0 "+
-            "<if>" +
+            "<if test=\"status != null\">" +
             " AND " +
             "  s.status = #{status}" +
             "</if>" +
-            "<if>" +
+            "<if test=\"name != null and name != ''\">" +
             " AND " +
             " (s.database_alias like '%#{name}%' OR db.database_name like '%#{name}%')" +
             "</if>" +
+            "<if test=\"ids != null\">" +
+            " AND " +
+            " s.id IN " +
+            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
+            "#{id}"+
+            "</foreach>"+
+            "</if>" +
+            "<if test=\"ids == null or ids.size == 0\">" +
+               " AND 1=0 "+
+            "</if>"+
             " ORDER BY s.update_time DESC,s.database_alias\n" +
             " LIMIT #{limit} " +
             " OFFSET #{offset}" +
             "</script>")
-    List<DatabaseInfoForList> getDatabaseInfoList(@Param("tenantId") String tenantId, @Param("status") String status,
+    List<DatabaseInfoForList> getDatabaseInfoList(@Param("tenantId") String tenantId, @Param("status") String status,@Param("ids")List<String> idList,
                                                   @Param("name") String name,@Param("offset")  int offset,@Param("limit") int limit);
 
     @Select("<script>" +
@@ -227,12 +240,12 @@ public interface DatabaseInfoDAO {
             "WHERE\n" +
             " s.tenant_id = #{tenantId}\n" +
             " AND " +
-            " version = 0 "+
-            "<if>" +
+            " s.version = 0 "+
+            "<if test=\"status != null\">" +
             " AND" +
             "  s.status = #{status}" +
             "</if>" +
-            "<if>" +
+            "<if test=\"name != null and name != ''\">" +
             "AND" +
             "  AND\n" +
             " (s.database_alias like '%#{name}%' OR db.database_name like '%#{name}%')" +
@@ -243,8 +256,8 @@ public interface DatabaseInfoDAO {
     @Select("<script>" +
             "SELECT\n" +
             " s.ID,\n" +
-            " s.database_alias AS NAME,\n" +
-            " sirc.parent_category_id \n" +
+            " s.database_alias AS name,\n" +
+            " sirc.parent_category_id AS parentCategoryId \n" +
             "FROM\n" +
             " source_info s\n" +
             " LEFT JOIN source_info_relation2parent_category sirc ON s.\"id\" = sirc.source_info_id \n" +
@@ -312,7 +325,7 @@ public interface DatabaseInfoDAO {
     void updateRealCategoryRelation(@Param("id")String sourceInfoId,@Param("categoryId")String categoryId);
 
     @Delete("<script>" +
-            "DELETE source_info_relation2parent_category " +
+            "DELETE FROM source_info_relation2parent_category " +
             "   WHERE source_info_id IN " +
             "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
             "#{id}"+
@@ -326,7 +339,7 @@ public interface DatabaseInfoDAO {
             "FROM\n" +
             " source_info \n" +
             "WHERE\n" +
-            " ID IN \n" +
+            " \"id\" IN \n" +
             "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
             "#{id}"+
             "</foreach>"+
@@ -336,6 +349,52 @@ public interface DatabaseInfoDAO {
             "</script>")
     List<String> getStatusByIdList(@Param("ids") List<String> idList);
 
-    @Update("")
-    void updateSourceInfo(DatabaseInfo databaseInfo);
+    @Update("UPDATE source_info  \n" +
+            "SET database_alias = #{di.databaseAlias},\n" +
+            "planning_package_code = #{di.planningPackageCode},\n" +
+            "planning_package_name = #{di.planningPackageName},\n" +
+            "extract_tool = #{di.extractTool},\n" +
+            "extract_cycle = #{di.extractCycle},\n" +
+            "\"security\" = #{di.security},\n" +
+            "security_cycle = #{di.securityCycle},\n" +
+            "importance = #{di.importance}, description = #{di.description},\n" +
+            "bo_name = #{di.boName},\n" +
+            "bo_tel = #{di.boTel},\n" +
+            "bo_department_name = #{di.boDepartmentName},\n" +
+            "bo_email = #{di.boEmail},\n" +
+            "to_name = #{di.toName},\n" +
+            "to_tel = #{di.toTel},\n" +
+            "to_email = #{di.toEmail},\n" +
+            "to_department_name = #{di.toDepartmentName}," +
+            "technical_leader = #{di.technicalLeader},\n" +
+            "business_leader = #{di.businessLeader},\n" +
+            "annex_id = #{di.annexId} \n" +
+            "WHERE\n" +
+            " id = #{di.id} AND \"version\" = 0")
+    void updateSourceInfo(@Param("di") DatabaseInfo databaseInfo);
+
+    @Select("<script>" +
+            "SELECT\n" +
+            " \"count\" ( 1 ) > 0 \n" +
+            "FROM\n" +
+            " source_info \n" +
+            "WHERE\n" +
+            " tenant_id = #{tenantId}\n" +
+            " AND database_alias = #{databaseAlias}" +
+            "<if test = \"id !=null and id !=''\">" +
+            " AND id != #{id}" +
+            "</if>" +
+            "</script>")
+    boolean getDatabaseDuplicateName(@Param("tenantId") String tenantId,@Param("databaseAlias")String databaseAlias,@Param("id")String id);
+
+    @Delete("<script>" +
+            " DELETE " +
+            " FROM source_info " +
+            " WHERE " +
+            " id IN " +
+            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
+            "#{id}"+
+            "</foreach>"+
+            "</script>")
+    void deleteSourceInfo(@Param("ids") List<String> idList);
 }

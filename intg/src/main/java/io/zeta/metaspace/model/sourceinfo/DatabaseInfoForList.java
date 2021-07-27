@@ -18,6 +18,8 @@ public class DatabaseInfoForList {
      * 目录名
      * **/
     private String categoryName;
+
+    private String categoryId;
     /**
      * 数据库名
      * **/
