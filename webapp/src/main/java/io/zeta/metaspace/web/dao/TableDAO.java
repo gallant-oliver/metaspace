@@ -41,26 +41,27 @@ public interface TableDAO {
     @Select("select tableguid from tableinfo except select tableguid from table_relation")
     public List<String> getNewTable();
 
-    @Insert({"<script>insert into table_relation values",
-            "<foreach item='item' index='index' collection='tableRelations'",
-            "open=' ' separator=',' close=' '>",
-            "(#{item.relationshipGuid},#{item.categoryGuid},#{item.tableGuid},#{item.generateTime})",
-            "</foreach>",
-            "</script>"})
-    public int addRelations(@Param("tableRelations") List<TableRelation> tableRelations);
+    @Insert("insert into table_relation (relationshipGuid, categoryGuid, tableGuid, generateTime, tenant_id) values" +
+            "(#{tableRelation.relationshipGuid},#{tableRelation.categoryGuid},#{tableRelation.tableGuid},#{tableRelation.generateTime}," +
+                    "#{tableRelation.tenantId})")
+    public int addRelation(@Param("tableRelation") TableRelation tableRelation);
 
-    @Update("update table_relation set categoryguid = #{categoryGuid} WHERE tableguid in (select tableguid from tableinfo where source_id = #{sourceId})")
-    public void updateTableRelationBySourceId(@Param("categoryGuid") String categoryGuid, @Param("sourceId") String sourceId);
+    @Select("select relationshipGuid, categoryGuid, tableGuid, generateTime, tenant_id as tenantId from table_relation " +
+            "where categoryGuid = #{tableRelation.categoryGuid} and tableGuid = #{tableRelation.tableGuid} and tenant_id = #{tableRelation.tenantId}")
+    TableRelation selectRelation(@Param("tableRelation") TableRelation tableRelation);
 
-    @Update({"<script>",
-            "update table_relation set categoryguid = #{categoryGuid} WHERE tableguid in (",
-            "SELECT tableguid FROM tableinfo WHERE source_id = #{sourceId} and dbname in ",
-            "<foreach item='database' collection='databases' open='(' separator=',' close=')'>",
-            "#{database}",
-            "</foreach>",
-            ")",
-            "</script>"})
-    public void updateTableRelationByDb(@Param("categoryGuid") String categoryGuid, @Param("sourceId") String sourceId, @Param("databases") List<String> databases);
+//    @Update("update table_relation set categoryguid = #{categoryGuid} WHERE tableguid in (select tableguid from tableinfo where source_id = #{sourceId})")
+//    public void updateTableRelationBySourceId(@Param("categoryGuid") String categoryGuid, @Param("sourceId") String sourceId);
+
+//    @Update({"<script>",
+//            "update table_relation set categoryguid = #{categoryGuid} WHERE tableguid in (",
+//            "SELECT tableguid FROM tableinfo WHERE source_id = #{sourceId} and dbname in ",
+//            "<foreach item='database' collection='databases' open='(' separator=',' close=')'>",
+//            "#{database}",
+//            "</foreach>",
+//            ")",
+//            "</script>"})
+//    public void updateTableRelationByDb(@Param("categoryGuid") String categoryGuid, @Param("sourceId") String sourceId, @Param("databases") List<String> databases);
 
     @Select("select count(1) from tableinfo where tableguid=#{tableGuid}")
     public Integer ifTableExists(String tableGuid);
@@ -68,7 +69,10 @@ public interface TableDAO {
     @Select("select tableguid, databasestatus from tableinfo where dbname =#{dbName} and tablename =#{tableName} and source_id = #{sourceId} and status = 'ACTIVE'")
     TableInfo getTableInfo(@Param("sourceId") String sourceId, @Param("dbName") String dbName, @Param("tableName") String tableName);
 
-    @Select("select tableguid from tableinfo where db_guid in (#{databaseGuids}) and status = 'ACTIVE'")
+    @Select("select tableguid from tableinfo where databaseguid = #{databaseGuid} and status = 'ACTIVE'")
+    List<String> getTableGuidsByDbGuid(@Param("databaseGuid") String databaseGuid);
+
+    @Select("select tableguid from tableinfo where databaseguid in (#{databaseGuids}) and status = 'ACTIVE'")
     List<String> getTableGuidByDataBaseGuids(@Param("databaseGuids")String databaseGuids);
 
     @Select("select organization.name,table2owner.tableGuid,table2owner.pkId from organization,table2owner where organization.pkId=table2owner.pkId and tableGuid=#{tableGuid}")

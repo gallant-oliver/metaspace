@@ -18,6 +18,7 @@ package io.zeta.metaspace.model.metadata;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import lombok.Data;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.List;
  * @author sunhaoning
  * @date 2019/2/27 9:53
  */
+@Data
 public class TableHeader {
 
     private String tableId;
@@ -38,76 +40,7 @@ public class TableHeader {
     private String displayName;
     private String displayUpdateTime;
     private String displayOperator;
+    private String comment;
+    private String databaseStatus;
 
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(String createTime) {
-        this.createTime = createTime;
-    }
-
-    public String getTableId() {
-        return tableId;
-    }
-
-    public void setTableId(String tableId) {
-        this.tableId = tableId;
-    }
-
-    public String getTableName() {
-        return tableName;
-    }
-
-    public void setTableName(String tableName) {
-        this.tableName = tableName;
-    }
-
-    public String getDatabaseId() {
-        return databaseId;
-    }
-
-    public void setDatabaseId(String databaseId) {
-        this.databaseId = databaseId;
-    }
-
-    public String getDatabaseName() {
-        return databaseName;
-    }
-
-    public void setDatabaseName(String databaseName) {
-        this.databaseName = databaseName;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public void setDisplayName(String displayName) {
-        this.displayName = displayName;
-    }
-
-    public String getDisplayUpdateTime() {
-        return displayUpdateTime;
-    }
-
-    public void setDisplayUpdateTime(String displayUpdateTime) {
-        this.displayUpdateTime = displayUpdateTime;
-    }
-
-    public String getDisplayOperator() {
-        return displayOperator;
-    }
-
-    public void setDisplayOperator(String displayOperator) {
-        this.displayOperator = displayOperator;
-    }
 }

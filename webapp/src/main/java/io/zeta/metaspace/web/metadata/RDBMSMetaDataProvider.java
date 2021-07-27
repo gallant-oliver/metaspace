@@ -5,6 +5,8 @@ import edu.npu.fastexcel.ExcelException;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.model.TableSchema;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
+
+import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerColumn;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerForeignKey;
@@ -16,16 +18,20 @@ import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.CollectThreadPoolUtil;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
-import io.zeta.metaspace.web.dao.DataSourceDAO;
+import io.zeta.metaspace.web.dao.KafkaConnectorDAO;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataSourceService;
+import io.zeta.metaspace.web.service.KafkaConnectorService;
 import io.zeta.metaspace.web.util.LocalCacheUtils;
 import io.zeta.metaspace.web.util.ZkLockUtils;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.*;
+import org.apache.atlas.notification.rdbms.KafkaConnectorUtil;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
@@ -35,6 +41,7 @@ import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.slf4j.Logger;
@@ -87,10 +94,11 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     private DataManageService dataManageService;
     @Autowired
     private ZkLockUtils zkLockUtils;
+    @Autowired
+    private KafkaConnectorDAO kafkaConnectorDAO;
 
     @Autowired
-    private DataSourceDAO dataSourceDAO;
-
+    private KafkaConnectorService kafkaConnectorService;
     /**
      * 因为用 new 创建实例，所以不能自动注入相关参数
      */
@@ -120,6 +128,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(tableSchema.getInstance());
         tableSchema.getDefinition().setDataSourceType(dataSourceInfo.getSourceType());
         adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
+        adapterExecutor.getColumns("", "");
         metaDataInfo = adapterExecutor.getMeteDataInfo(tableSchema);
     }
 
@@ -132,7 +141,6 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         metaDataContext = new MetaDataContext();
 
         String sourceId = tableSchema.getInstance();
-        SyncTaskDefinition definition = tableSchema.getDefinition();
         checkTaskEnable(taskInstanceId);
         syncTaskInstanceDAO.appendLog(taskInstanceId, "初始化成功，导入数据源和数据库");
         //根据数据源id获取图数据库中的数据源，如果有，则更新，如果没有，则创建
@@ -142,15 +150,18 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
 
         String instanceGuid = atlasEntityWithExtInfo.getEntity().getGuid();
         Collection<Schema> schemas = metaDataInfo.getSchemas();
+        final List<String> databases = new ArrayList<>();
         if (!CollectionUtils.isEmpty(schemas) && !tableSchema.isAllDatabase()) {
             LOG.info("Found {} databases", schemas.size());
 
             ThreadPoolExecutor threadPoolExecutor = CollectThreadPoolUtil.getCollectThreadPoolExecutor();
             List<CompletableFuture<Void>> completableFutureList = new ArrayList<>(schemas.size());
+
             //导入table
             for (Schema database : schemas) {
                 completableFutureList.add(CompletableFuture.runAsync(() -> {
                     AtlasEntity.AtlasEntityWithExtInfo dbEntity;
+
                     String dbQualifiedName = getDBQualifiedName(database.getFullName());
                     if (metaDataContext.isKownEntity(dbQualifiedName)) {
                         dbEntity = metaDataContext.getEntity(dbQualifiedName);
@@ -164,18 +175,73 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                         metaDataContext.putEntity(dbQualifiedName, dbEntity);
                     }
                     importTables(dbEntity.getEntity(), sourceId, database.getFullName(), getTables(database), false, instanceGuid, taskInstanceId, tableSchema.getDefinition());
+                    databases.add(database.getFullName());
                 }, threadPoolExecutor));
             }
             CompletableFuture.allOf(completableFutureList.toArray(new CompletableFuture[]{})).join();
-            dataManageService.updateRelations(tableSchema.getDefinition());
         } else {
             LOG.info("No database found");
         }
         checkTaskEnable(taskInstanceId);
+        createKafkaConnector(tableSchema.getDefinition(), databases);
         syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
         LOG.info("import metadata end at {}", new Date());
-    }
 
+    }
+     public void createKafkaConnector(SyncTaskDefinition definition, final List<String> databases) throws AtlasException {
+        //@TODO 如果配置允许，则检查定时任务中的每一个数据库，看是否存在运行的connector，如果不存在，则启动或生成一个对应的connector并启动
+         boolean autoAddKafkaConnector = ApplicationProperties.get().getBoolean("auto.add.kafka.connector", true);
+         if(!autoAddKafkaConnector){
+             return;
+         }
+
+         String ip = dataSourceInfo.getIp();
+         int port = Integer.valueOf(dataSourceInfo.getPort());
+
+         if("ORACLE".equalsIgnoreCase(dataSourceInfo.getSourceType())){
+             String databaseName = dataSourceInfo.getDatabase();
+             String name = getInstanceQualifiedName();
+             checkConnector(ip, port, databaseName, name);
+         }else {
+             databases.forEach(databaseName -> {
+                 String name = getDBQualifiedName(databaseName);
+                 checkConnector(ip, port, databaseName, name);
+             });
+         }
+     }
+
+    private void checkConnector(String ip, int port, String databaseName, String connectorName) {
+        KafkaConnector kafkaConnector = kafkaConnectorDAO.selectConnector(ip, port, databaseName);
+        if(null == kafkaConnector){
+            KafkaConnector connector = new KafkaConnector();
+            connector.setId(UUID.randomUUID().toString());
+            connector.setName(connectorName);
+            KafkaConnector.Config config = new KafkaConnector.Config();
+            String connectorClass = KafkaConnectorUtil.getConnectorClassByType(dataSourceInfo.getSourceType());
+            config.setConnectorClass(connectorClass);
+            config.setDbType(dataSourceInfo.getSourceType());
+            config.setDbIp(dataSourceInfo.getIp());
+            config.setDbPort(Integer.valueOf(dataSourceInfo.getPort()));
+            config.setDbName(databaseName);
+            config.setName(connectorName);
+            config.setDbUser(dataSourceInfo.getUserName());
+            config.setDbPassword(dataSourceInfo.getPassword());
+            connector.setConfig(config);
+            kafkaConnectorService.addAndStartConnector(connector);
+        } else {
+            KafkaConnector.Status connectorStatus = KafkaConnectorUtil.getConnectorStatus(kafkaConnector.getName());
+
+            if(null == connectorStatus){
+                kafkaConnectorService.startConnector(kafkaConnector.getName());
+            }else{
+                String state = (String)connectorStatus.getConnector().get("state");
+                if(!"RUNNING".equalsIgnoreCase(state)){
+                    KafkaConnectorUtil.stopConnector(kafkaConnector.getName());
+                    KafkaConnectorUtil.startConnector(kafkaConnector);
+                }
+            }
+        }
+    }
 
     protected AtlasEntity.AtlasEntityWithExtInfo registerInstance(boolean allDatabase, SyncTaskDefinition definition, String taskInstanceId) throws Exception {
 
@@ -617,7 +683,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                     AtlasRelatedObjectId atlasRelatedObjectId = new AtlasRelatedObjectId();
                     atlasRelatedObjectId.setDisplayText(String.valueOf(dbEntity.getAttribute(ATTRIBUTE_NAME)));
                     ret.getEntity().setRelationshipAttribute("db", atlasRelatedObjectId);
-                    dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()), definition);
+                    dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()), definition, null);
                 }
                 return ret;
             }
@@ -647,11 +713,14 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     }
 
     public String getInstanceQualifiedName() {
-
         String ip = dataSourceInfo.getIp();
         String port = dataSourceInfo.getPort();
-
-        return String.format("%s:%s", ip, port);
+        String instanceQualifiedName = String.format("%s:%s", ip, port);
+        String serviceType = dataSourceInfo.getSourceType();
+        if("ORACLE".equalsIgnoreCase(serviceType)){
+            instanceQualifiedName = instanceQualifiedName + ":" + dataSourceInfo.getDatabase();
+        }
+        return instanceQualifiedName;
     }
 
     /**

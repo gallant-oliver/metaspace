@@ -415,8 +415,10 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                 AtlasEntity tableEntity = tableEntityWithExtInfo.getEntity();
                 String tableGuid = getGuid(tableVertex);
                 String tableName = tableEntity.getAttribute("name").toString();
+                String comment = tableEntity.getAttribute("comment").toString();
                 table.setTableId(tableGuid);
                 table.setTableName(tableName);
+                table.setComment(comment);
                 Date createTime = tableEntity.getCreateTime();
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                 String formatDateStr = sdf.format(createTime);
@@ -430,6 +432,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                         hasRecoredDB = true;
                         table.setDatabaseId(dbGuid);
                         table.setDatabaseName(dbName);
+                        table.setDatabaseStatus(database.getStatus());
                         tables = database.getTableList();
                         tables.add(table);
                         break;

@@ -18,6 +18,7 @@
 package org.apache.atlas.repository.store.graph.v2;
 
 
+import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -95,11 +96,11 @@ public class AtlasEntityChangeNotifier {
         List<AtlasEntityHeader> partiallyUpdatedEntities = entityMutationResponse.getPartialUpdatedEntities();
         List<AtlasEntityHeader> deletedEntities          = entityMutationResponse.getDeletedEntities();
         SyncTaskDefinition definition = entityMutationResponse.getDefinition();
-        Properties connectorProperties = entityMutationResponse.getConnectorProperties();
-        notifyListeners(createdEntities, EntityOperation.CREATE, isImport, definition, connectorProperties);
-        notifyListeners(updatedEntities, EntityOperation.UPDATE, isImport, definition, connectorProperties);
-        notifyListeners(partiallyUpdatedEntities, EntityOperation.PARTIAL_UPDATE, isImport, definition, connectorProperties);
-        notifyListeners(deletedEntities, EntityOperation.DELETE, isImport, definition, connectorProperties);
+        KafkaConnector.Config config = entityMutationResponse.getKafkaConnectorConfig();
+        notifyListeners(createdEntities, EntityOperation.CREATE, isImport, definition, config);
+        notifyListeners(updatedEntities, EntityOperation.UPDATE, isImport, definition, config);
+        notifyListeners(partiallyUpdatedEntities, EntityOperation.PARTIAL_UPDATE, isImport, definition, config);
+        notifyListeners(deletedEntities, EntityOperation.DELETE, isImport, definition, config);
     }
 
     public void onClassificationAddedToEntity(AtlasEntity entity, List<AtlasClassification> addedClassifications) throws AtlasBaseException {
@@ -256,13 +257,13 @@ public class AtlasEntityChangeNotifier {
         return listener.getClass().getSimpleName();
     }
 
-    private void notifyListeners(List<AtlasEntityHeader> entityHeaders, EntityOperation operation, boolean isImport, SyncTaskDefinition definition, Properties connectorProperties) throws AtlasBaseException {
+    private void notifyListeners(List<AtlasEntityHeader> entityHeaders, EntityOperation operation, boolean isImport, SyncTaskDefinition definition, KafkaConnector.Config config) throws AtlasBaseException {
         if (CollectionUtils.isEmpty(entityHeaders)) {
             return;
         }
 
         if (isV2EntityNotificationEnabled) {
-            notifyV2Listeners(entityHeaders, operation, isImport, definition, connectorProperties);
+            notifyV2Listeners(entityHeaders, operation, isImport, definition, config);
         } else {
             notifyV1Listeners(entityHeaders, operation, isImport);
         }
@@ -293,20 +294,20 @@ public class AtlasEntityChangeNotifier {
         }
     }
 
-    private void notifyV2Listeners(List<AtlasEntityHeader> entityHeaders, EntityOperation operation, boolean isImport, SyncTaskDefinition definition, Properties connectorProperties) throws AtlasBaseException {
+    private void notifyV2Listeners(List<AtlasEntityHeader> entityHeaders, EntityOperation operation, boolean isImport, SyncTaskDefinition definition, KafkaConnector.Config config) throws AtlasBaseException {
         List<AtlasEntity> entities = toAtlasEntities(entityHeaders, operation);
 
         for (EntityChangeListenerV2 listener : entityChangeListenersV2) {
             switch (operation) {
                 case CREATE:
-                    listener.onEntitiesAdded(entities, isImport, definition, connectorProperties);
+                    listener.onEntitiesAdded(entities, isImport, definition, config);
                     break;
                 case UPDATE:
                 case PARTIAL_UPDATE:
-                    listener.onEntitiesUpdated(entities, isImport);
+                    listener.onEntitiesUpdated(entities, isImport, definition, config);
                     break;
                 case DELETE:
-                    listener.onEntitiesDeleted(entities, isImport);
+                    listener.onEntitiesDeleted(entities, isImport, definition, config);
                     break;
                 default:
                     break;

@@ -810,8 +810,7 @@ public class AtlasEntityStoreV2 implements AtlasEntityStore {
             if(entityStream instanceof  AtlasEntityStream){
                 AtlasEntityStream atlasEntityStream = (AtlasEntityStream)entityStream;
                 ret.setDefinition(atlasEntityStream.getDefinition());
-                ret.setConnectorProperties(atlasEntityStream.getConnectorProperties());
-
+                ret.setKafkaConnectorConfig(atlasEntityStream.getKafkaConnectorConfig());
             }
 
             // Notify the change listeners

@@ -71,7 +71,7 @@ public class OracleSourceTask extends SourceTask {
 			dbConn = new OracleConnection().connect(config);
 			logFiles = getSingleRowMuiltColumnStringResult(OracleConnectorSQL.SELECT_LOG_FILES, "MEMBER");
 			if (0L == streamOffsetScn) {
-				streamOffsetScn = config.getStartScn() == 0L
+				streamOffsetScn = config.getStartScn() < 0L
 						? getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN")
 						: config.getStartScn();
 			}

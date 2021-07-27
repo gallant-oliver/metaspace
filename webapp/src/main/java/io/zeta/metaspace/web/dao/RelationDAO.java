@@ -31,8 +31,6 @@ import java.util.List;
  * @date 2018/11/21 10:59
  */
 public interface RelationDAO {
-    @Insert("insert into table_relation(relationshipGuid,categoryGuid,tableGuid,generateTime)values(#{relationshipGuid},#{categoryGuid},#{tableGuid},#{generateTime})")
-    public int add(RelationEntityV2 entity) throws SQLException;
 
     @Delete("delete from table_relation where relationshipGuid=#{relationshipGuid}")
     public int delete(@Param("relationshipGuid") String guid);
@@ -425,9 +423,6 @@ public interface RelationDAO {
     //判断关联是否已存在
     @Select("select count(1) from table_relation where categoryguid=#{categoryGuid} and tableguid=#{tableGuid}")
     public int ifRelationExists(@Param("categoryGuid") String categoryGuid, @Param("tableGuid") String tableGuid);
-
-    @Update("update db_info set status=#{status} where database_guid in (#{databaseGuids})")
-    public int updateDatabaseStatusBatch(@Param("databaseGuids") String databaseGuids, @Param("status") String status);
 
     @Select({" select tableGuid from table_relation where categoryGuid=#{categoryGuid}"})
     public List<String> getAllTableGuidByCategoryGuid(@Param("categoryGuid") String categoryGuid);

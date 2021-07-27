@@ -14,13 +14,18 @@
 package io.zeta.metaspace.web.util;
 
 import io.zeta.metaspace.model.dataquality2.Rule;
+import io.zeta.metaspace.model.metadata.Database;
+import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.security.Tenant;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
+import io.zeta.metaspace.web.dao.DbDAO;
 import io.zeta.metaspace.web.dao.dataquality.RuleDAO;
+import io.zeta.metaspace.web.service.TenantService;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -43,6 +48,10 @@ public class CategoryUtil {
     private DataShareDAO dataShareDAO;
     @Autowired
     private RuleDAO ruleDAO;
+    @Autowired
+    private DbDAO dbDAO;
+    @Autowired
+    private TenantService tenantService;
     private static CategoryUtil utils;
 
     @PostConstruct
@@ -159,9 +168,20 @@ public class CategoryUtil {
             utils.ruleDAO.insertAll(initRule,tenant.getTenantId());
         }
     }
+
     public static void initApiCategory(String tenantId,String projectId){
         Timestamp createTime = DateUtils.currentTimestamp();
         String uuid = UUID.randomUUID().toString();
         utils.dataShareDAO.add(new CategoryEntityV2(uuid,"默认目录","默认目录",null,null,null,2,1,"1",createTime,null),projectId,tenantId);
+    }
+
+    public static TableRelation getTableRelation(String tableGuid, String tenantId, String categoryGuid) {
+        TableRelation tableRelation = new TableRelation();
+        tableRelation.setCategoryGuid(StringUtils.isBlank(categoryGuid)? "1": categoryGuid);
+        tableRelation.setTenantId(tenantId);
+        tableRelation.setGenerateTime(io.zeta.metaspace.web.util.DateUtils.getNow());
+        tableRelation.setRelationshipGuid(UUID.randomUUID().toString());
+        tableRelation.setTableGuid(tableGuid);
+        return tableRelation;
     }
 }

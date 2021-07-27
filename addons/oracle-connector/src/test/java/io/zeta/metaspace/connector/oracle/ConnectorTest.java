@@ -44,10 +44,10 @@ public class ConnectorTest {
 				put("tasks.max", "1");
 				put("rest.port", "8083");
 				put("db.name", "orcl");
-				put("db.hostname", "10.141.0.78");
+				put("db.ip", "10.141.0.78");
 				put("db.port", "1521");
 				put("db.user", "myTest");
-				put("db.user.password", "test");
+				put("db.password", "test");
 			}
 		};
 		return configMap;

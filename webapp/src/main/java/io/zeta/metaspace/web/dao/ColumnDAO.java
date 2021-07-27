@@ -47,6 +47,11 @@ public interface ColumnDAO {
             "</script>"})
     public int addColumnDisplayInfo(@Param("columnList")List<Column> columnList);
 
+    @Insert("insert into column_info(column_guid,column_name,table_guid,type,display_name,display_operator,display_updatetime,status,description)values" +
+            "(#{column.columnId},#{column.columnName},#{column.tableId},#{column.type},#{column.displayName},#{column.displayNameOperator}," +
+            "#{column.displayNameUpdateTime},#{column.status},#{column.description})")
+    void addColumn(@Param("column")Column column);
+
     @Select("select count(*) from column_info where table_guid=#{tableGuid} and status='ACTIVE'")
     public int tableColumnExist(@Param("tableGuid")String tableGuid);
 
@@ -66,7 +71,7 @@ public interface ColumnDAO {
     @Select("select column_guid from column_info where table_guid=#{tableGuid} and column_name = #{columnName} and status='ACTIVE'")
     String getColumnGuid(@Param("tableGuid")String tableGuid, @Param("columnName")String columnName);
 
-    @Update("update column_info set status = 'DELETED' where column_guid=#{tableGuid}")
+    @Update("update column_info set status = 'DELETED' where column_guid=#{columnGuid}")
     String deleteColumn(@Param("columnGuid")String columnGuid);
 
     @Select("select column_name as columnName, display_name as displayName from column_info where table_guid=#{tableGuid} and status='ACTIVE' order by column_name")

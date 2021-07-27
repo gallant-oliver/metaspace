@@ -1,8 +1,10 @@
 package io.zeta.metaspace.web.rest;
 
 
+import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
+import io.zeta.metaspace.web.service.KafkaConnectorService;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.notification.rdbms.KafkaConnector;
+import org.apache.atlas.notification.rdbms.KafkaConnectorUtil;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.slf4j.Logger;
@@ -12,7 +14,6 @@ import javax.inject.Singleton;
 import javax.ws.rs.*;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 
 @Path("/kafka/connectors")
@@ -22,6 +23,8 @@ public class KafkaConnectorRESR {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaConnectorRESR.class);
 
+    private KafkaConnectorService kafkaConnectorService;
+    
     @GET
     @Path("/urls")
     @Produces(Servlets.JSON_MEDIA_TYPE)
@@ -32,7 +35,7 @@ public class KafkaConnectorRESR {
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(LOG, "KafkaConnectorRESR.getConnectorUrls()");
             }
-            return KafkaConnector.getConnectorUrls();
+            return KafkaConnectorUtil.getConnectorUrls();
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -41,13 +44,29 @@ public class KafkaConnectorRESR {
     @GET
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public Map<String, List<String>> getConnectors() throws AtlasBaseException {
+    public List<KafkaConnector> getConnectors() throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(LOG, "KafkaConnectorRESR.getConnectors()");
             }
-            return KafkaConnector.getConnectors();
+            return kafkaConnectorService.getConnectors();
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    @GET
+    @Path("active")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public Map<String, List<String>> getActiveConnectors() throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(LOG, "KafkaConnectorRESR.getConnectors()");
+            }
+            return KafkaConnectorUtil.getConnectors();
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -57,30 +76,13 @@ public class KafkaConnectorRESR {
     @Path("/{connectorName}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public KafkaConnector.Instance getConnector(@PathParam("connectorName")String connectorName) throws AtlasBaseException {
+    public KafkaConnector getConnector(@PathParam("connectorName")String connectorName) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(LOG, "KafkaConnectorRESR.getConnector()");
             }
-            return KafkaConnector.getConnector(connectorName);
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
-
-
-    @GET
-    @Path("/{connectorName}/config")
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public Properties getConnectorConfig(@PathParam("connectorName")String connectorName) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(LOG, "KafkaConnectorRESR.getConnectorConfig()");
-            }
-            return KafkaConnector.getConnectorConfig(connectorName);
+            return kafkaConnectorService.getConnector(connectorName);
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -96,7 +98,7 @@ public class KafkaConnectorRESR {
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(LOG, "KafkaConnectorRESR.getConnectorStatus()");
             }
-            return KafkaConnector.getConnectorStatus(connectorName);
+            return kafkaConnectorService.getConnectorStatus(connectorName);
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -105,13 +107,13 @@ public class KafkaConnectorRESR {
     @POST
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public KafkaConnector.Instance addConnector(KafkaConnector.Instance instance) throws AtlasBaseException {
+    public KafkaConnector addConnector(KafkaConnector connector) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(LOG, "KafkaConnectorRESR.addConnector()");
             }
-            return KafkaConnector.addConnector(instance);
+           return kafkaConnectorService.addKafkaConnector(connector);
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -127,7 +129,7 @@ public class KafkaConnectorRESR {
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(LOG, "KafkaConnectorRESR.removeConnector()");
             }
-            return KafkaConnector.removeConnector(connectorName);
+            return kafkaConnectorService.removeConnector(connectorName);
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -143,7 +145,7 @@ public class KafkaConnectorRESR {
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(LOG, "KafkaConnectorRESR.pauseConnector()");
             }
-            KafkaConnector.pauseConnector(connectorName);
+            KafkaConnectorUtil.pauseConnector(connectorName);
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -161,7 +163,41 @@ public class KafkaConnectorRESR {
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(LOG, "KafkaConnectorRESR.resumeConnector()");
             }
-            KafkaConnector.resumeConnector(connectorName);
+            KafkaConnectorUtil.resumeConnector(connectorName);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+        return true;
+    }
+
+    @PUT
+    @Path("/{connectorName}/start")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public boolean startConnector(@PathParam("connectorName")String connectorName) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(LOG, "KafkaConnectorRESR.startConnector()");
+            }
+            kafkaConnectorService.startConnector(connectorName);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+        return true;
+    }
+
+    @PUT
+    @Path("/{connectorName}/stop")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public boolean stopConnector(@PathParam("connectorName")String connectorName) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(LOG, "KafkaConnectorRESR.stopConnector()");
+            }
+            kafkaConnectorService.stopConnector(connectorName);
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -178,10 +214,9 @@ public class KafkaConnectorRESR {
             if (AtlasPerfTracer.isPerfTraceEnabled(LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(LOG, "KafkaConnectorRESR.restartConnector()");
             }
-            KafkaConnector.restartConnector(connectorName);
+            return kafkaConnectorService.restartConnector(connectorName);
         } finally {
             AtlasPerfTracer.log(perf);
         }
-        return true;
     }
 }

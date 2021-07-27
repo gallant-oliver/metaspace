@@ -13,7 +13,7 @@ public class TableInfo {
     private String createTime;
     private List<String> dataOwner;
     private String databaseGuid;
-    private String databaseStatus;
+    private String databaseStatus = "ACTIVE";
     private String subordinateSystem;
     private String subordinateDatabase;
     private String systemAdmin;

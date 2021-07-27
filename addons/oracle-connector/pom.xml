@@ -29,9 +29,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>ojdbc</groupId>
-			<artifactId>ojdbc</artifactId>
-			<version>14</version>
+			<groupId>com.oracle.jdbc</groupId>
+			<artifactId>ojdbc8</artifactId>
+			<version>${jdbc.oracle.version}</version>
 		</dependency>
 
 	</dependencies>
@@ -63,9 +63,9 @@
 											<version>${project.version}</version>
 										</artifactItem>
 										<artifactItem>
-											<groupId>ojdbc</groupId>
-											<artifactId>ojdbc</artifactId>
-											<version>14</version>
+											<groupId>com.oracle.jdbc</groupId>
+											<artifactId>ojdbc8</artifactId>
+											<version>${jdbc.oracle.version}</version>
 										</artifactItem>
 									</artifactItems>
 								</configuration>
