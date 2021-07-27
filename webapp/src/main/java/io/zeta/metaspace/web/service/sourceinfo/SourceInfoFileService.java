@@ -4,8 +4,10 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.po.sourceinfo.DatabaseInfoPO;
 import io.zeta.metaspace.model.sourceinfo.AnalyticResult;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForDb;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
+import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.slf4j.Logger;
@@ -141,7 +143,8 @@ public class SourceInfoFileService {
             logger.info("没有要保存的数据库信息");
             return 1;
         }
-
+        User user = AdminUtils.getUserData();
+        String username = user.getUsername();
         List<DatabaseInfoPO> saveList = new ArrayList<>();
         DatabaseInfoPO databaseInfo = null;
         for(String[] array : saveDbList){
@@ -163,7 +166,7 @@ public class SourceInfoFileService {
             databaseInfo.setSecurity("是".equals(getElementOrDefault(array,MapUtils.getIntValue(map,"是否保密",-1))));
             databaseInfo.setSecurityCycle(getElementOrDefault(array,MapUtils.getIntValue(map,"保密期限",-1)));
             databaseInfo.setImportance("是".equals(getElementOrDefault(array,MapUtils.getIntValue(map,"是否重要",-1))));
-            databaseInfo.setCreator("");
+            databaseInfo.setCreator(username);
             databaseInfo.setStatus("0");
             databaseInfo.setBoName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner姓名",-1)));
             databaseInfo.setBoDepartmentName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner部门名称",-1)));
