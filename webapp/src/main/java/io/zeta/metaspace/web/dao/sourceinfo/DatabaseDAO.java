@@ -13,12 +13,13 @@ public interface DatabaseDAO {
     int getDatabaseById(@Param("databaseId")String databaseId);
 
     @Select("<script>"+
-            "select  tb. db_type,tb.database_id,tb.database_name, ts.database_alias\n" +
+            "select  tb.db_type AS dbType,tb.database_id AS databaseId,tb.database_name AS databaseName," +
+            " ts.tenant_id AS tenantId, ts.database_alias AS databaseAlias,ts.category_id AS  categoryId \n" +
             " from db_info tb left join source_info ts on tb.database_id = ts.database_id\n" +
-            " where tb.database_name in "+
+            " where ts.tenant_id=#{tenantId} and ts.version = 0 and tb.database_name in "+
             "<foreach collection='dbNameList' item='dbName' separator=',' open='(' close=')'>"+
             "#{dbName}"+
             "</foreach>" +
             "</script>")
-    List<DatabaseInfoForDb> findDbInfoByDbName(@Param("dbNameList")List<String> dbNameList);
+    List<DatabaseInfoForDb> findDbInfoByDbName(@Param("dbNameList")List<String> dbNameList,@Param("tenantId") String tenantId);
 }

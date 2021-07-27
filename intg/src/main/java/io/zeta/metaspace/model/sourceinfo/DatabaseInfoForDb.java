@@ -8,4 +8,6 @@ public class DatabaseInfoForDb {
     private String databaseName;
     private String databaseAlias;
     private String dbType;
+    private String tenantId;
+    private String categoryId;
 }

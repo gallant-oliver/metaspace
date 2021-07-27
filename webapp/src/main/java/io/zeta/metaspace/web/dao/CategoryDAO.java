@@ -351,4 +351,6 @@ public interface CategoryDAO {
             " </script>"})
     List<String> getCategorysByGroup(@Param("groupIds") List<String> groupIds, @Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
 
+    @Select("SELECT guid,name,parentcategoryguid as parentCategoryGuid FROM public.category where tenantid=#{tenantId} ")
+    List<CategoryEntityV2> queryByTenantId(@Param("tenantId") String tenantId);
 }

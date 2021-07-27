@@ -114,7 +114,7 @@ public class SourceInfoFileREST {
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
             // 跟source_info、db-info对比获取比对结果
-            List<AnalyticResult> results = sourceInfoFileService.getFileParsedResult(excelDataList);
+            List<AnalyticResult> results = sourceInfoFileService.getFileParsedResult(excelDataList,tenantId);
             return ReturnUtil.success(results);
         }catch (IOException e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件解析失败");
