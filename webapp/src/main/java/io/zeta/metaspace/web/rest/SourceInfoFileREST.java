@@ -1,6 +1,8 @@
 package io.zeta.metaspace.web.rest;
 
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
+import com.sun.jersey.core.header.FormDataContentDisposition;
+import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.sourceinfo.AnalyticResult;
 import io.zeta.metaspace.model.sourceinfo.Annex;
@@ -10,11 +12,11 @@ import io.zeta.metaspace.web.service.sourceinfo.SourceInfoFileService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletResponse;
@@ -68,25 +70,27 @@ public class SourceInfoFileREST {
     /**
      *  上传文件到 hdfs
      * @param tenantId 租户id
-     * @param file 文件
      * @return
      */
     @POST
     @Path("/source/info/file/upload")
-    @Consumes({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
-    @Produces({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
-    public Result uploadFile(@HeaderParam("tenantId")String tenantId,MultipartFile file){
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result uploadFile(@FormDataParam("file") InputStream fileInputStream,
+                             @FormDataParam("file") FormDataContentDisposition contentDispositionHeader,
+                             @HeaderParam("tenantId")String tenantId){
         try{
             //tenantId 使用租户id作为上传文件子目录
-            String uploadPath = hdfsService.uploadFile(file,tenantId);
+            String fileName = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
+            String uploadPath = hdfsService.uploadFile(fileInputStream,fileName,tenantId);
             //组装附件表的字段
             String annexId = UUIDUtils.alphaUUID();
-            String fileName = file.getOriginalFilename();
+
             String fileType = FilenameUtils.getExtension(fileName);
             //保存数据到表 annex
             Annex annex = new Annex(annexId,fileName,fileType,uploadPath);
             annexService.saveRecord(annex);
-            return ReturnUtil.success(annexId);
+            return ReturnUtil.success("success",annexId);
         }catch (IOException e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件上传失败");
         }
@@ -100,9 +104,9 @@ public class SourceInfoFileREST {
      */
     @POST
     @Path("/source/info/file/explain")
-    @Consumes({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
-    @Produces({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
-    public Result parseFile(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Result parseFile(@HeaderParam("tenantId")String tenantId,@FormParam("annexId") String annexId){
         //根据附件id 获取文件的路径和文件名
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
@@ -128,10 +132,10 @@ public class SourceInfoFileREST {
      */
     @POST
     @Path("/source/info/file/import/{duplicatePolicy}")
-    @Consumes({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
-    @Produces({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     public Result executeImportFile(@HeaderParam("tenantId")String tenantId,
-                                    @QueryParam("annexId") String annexId,
+                                    @FormParam("annexId") String annexId,
                                     @PathParam("duplicatePolicy") String duplicatePolicy){
         //"IGNORE"-忽略 有重复名称则不导入 ，"STOP"-停止 终止本次导入操作
         if("STOP".equalsIgnoreCase(duplicatePolicy)){
