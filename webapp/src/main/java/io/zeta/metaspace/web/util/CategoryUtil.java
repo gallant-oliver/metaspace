@@ -52,13 +52,10 @@ public class CategoryUtil {
         {
             Timestamp createTime = DateUtils.currentTimestamp();
             add(new CategoryEntityV2("1", "贴源层", null, null, null, "2", 0, 1, "1", createTime,null));
-            add(new CategoryEntityV2("2","基础层",null,null,"1","3",0,1,"1",createTime,null));
-            add(new CategoryEntityV2("3","规范层",null,null,"2","4",0,1,"1", createTime,null));
-            add(new CategoryEntityV2("4","通用层",null,null,"3","5",0,1,"1", createTime,null));
+            add(new CategoryEntityV2("2","基础层",null,null,"1","4",0,1,"1",createTime,null));
+//            add(new CategoryEntityV2("3","规范层",null,null,"2","4",0,1,"1", createTime,null));
+            add(new CategoryEntityV2("4","通用层",null,null,"2","5",0,1,"1", createTime,null));
             add(new CategoryEntityV2("5","应用层",null,null,"4",null,0,1,"1", createTime,null));
-//            add(new CategoryEntityV2("6","汇总区",null,"5","null","7",0,2,"1", createTime,null));
-//            add(new CategoryEntityV2("7","整合区",null,"5","6","8",0,2,"1", createTime,null));
-//            add(new CategoryEntityV2("8","应用区",null,"5","7","null",0,2,"1", createTime,null));
             add(new CategoryEntityV2("Standard-1", "基础类数据标准","基础类数据标准",null,null,"Standard-2",3,1,"1", createTime,null));
             add(new CategoryEntityV2("Standard-2", "指标类数据标准","指标类数据标准",null,"Standard-1",null,3,1,"1", createTime,null));
             add(new CategoryEntityV2("Standard-3", "参考数据标准","参考数据标准","Standard-1",null,"Standard-4",3,2,"1", createTime,null));
