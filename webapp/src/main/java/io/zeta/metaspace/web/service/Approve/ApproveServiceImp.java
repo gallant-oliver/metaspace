@@ -90,7 +90,6 @@ public class ApproveServiceImp implements ApproveService{
                 addToMapByClass(moduleItemMap,item);
             }
         }else if(ApproveOperate.REJECTED.equals(ApproveOperate.getOprateByCode(paras.getResult())) || ApproveOperate.CANCEL.equals(ApproveOperate.getOprateByCode(paras.getResult()))){ //驳回或者取回
-            result = ApproveOperate.REJECTED;
             List<ApproveItem> approveList = paras.getApproveList(); //批量审批列表
             for(ApproveItem item : approveList) {
                 item.setId(item.getId());
@@ -99,10 +98,11 @@ public class ApproveServiceImp implements ApproveService{
                 item.setApproveStatus(ApproveStatus.REJECTED.code); //更新为驳回状态
                 item.setApprover(AdminUtils.getUserData().getUserId()); //写入审批人
                 if(ApproveOperate.REJECTED.equals(ApproveOperate.getOprateByCode(paras.getResult()))){
+                    result = ApproveOperate.REJECTED;
                     approveDao.updateStatus(item);  //todo 批量优化
                 }else{
+                    result = ApproveOperate.CANCEL;
                     approveDao.deleteItemById(item); //取回与驳回对业务模块操作一致
-                    approveDao.deleteItemByObjectId(item);
                 }
                 addToMapByClass(moduleItemMap,item);
             }

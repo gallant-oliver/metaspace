@@ -42,10 +42,6 @@ public class DatabaseInfoForList {
     private int status;
 
     /**
-     * 功能列表
-     * **/
-    private List<Action> actionList;
-    /**
      * 更新人
      * **/
     private String updaterName;

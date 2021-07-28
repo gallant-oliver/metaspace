@@ -20,6 +20,7 @@ import io.zeta.metaspace.model.sourceinfo.CreateRequest;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.PublishRequest;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoService;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -72,7 +73,7 @@ public class SourceInfoREST {
     @Path("revoke/{id}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result revokeSourceInfo(@HeaderParam("tenantId")String tenantId, @PathParam("id") String id) throws Exception {
-        return sourceInfoService.revoke(id,tenantId);
+        return ReturnUtil.success();
     }
 
     @DELETE

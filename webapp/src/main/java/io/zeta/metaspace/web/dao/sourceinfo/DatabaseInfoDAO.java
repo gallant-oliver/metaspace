@@ -109,6 +109,7 @@ public interface DatabaseInfoDAO {
             "s.extract_cycle,\n" +
             "s.security,\n" +
             "s.security_cycle,\n" +
+            "s.status,\n" +
             "s.importance,\n" +
             "s.description,\n" +
             "s.creator AS recorderGuid,\n" +
@@ -185,6 +186,7 @@ public interface DatabaseInfoDAO {
             " ds.source_type AS databaseTypeName,\n" +
             " s.database_alias,\n" +
             " s.security,\n" +
+            " s.status,\n" +
             " (SELECT u.username FROM users u WHERE u.userid = s.updater ) AS updater_name,\n" +
             " s.update_time,\n" +
             " ai.reason as audit_des ,\n" +
@@ -216,9 +218,6 @@ public interface DatabaseInfoDAO {
             "#{id}"+
             "</foreach>"+
             "</if>" +
-            "<if test=\"ids == null or ids.size == 0\">" +
-               " AND 1=0 "+
-            "</if>"+
             " ORDER BY s.update_time DESC,s.database_alias\n" +
             " LIMIT #{limit} " +
             " OFFSET #{offset}" +
@@ -256,6 +255,8 @@ public interface DatabaseInfoDAO {
     @Select("<script>" +
             "SELECT\n" +
             " s.ID,\n" +
+            " s.category_id AS categoryId,\n" +
+            " s.database_id AS databaseId,\n" +
             " s.database_alias AS name,\n" +
             " sirc.parent_category_id AS parentCategoryId \n" +
             "FROM\n" +
@@ -273,7 +274,8 @@ public interface DatabaseInfoDAO {
 
 
     @Select("<script>" +
-            "INSERT INTO source_info (\n" +
+            "INSERT INTO source_info " +
+            " (\n" +
             " SELECT\n" +
             "  \"id\",\n" +
             "  category_id,\n" +
@@ -308,18 +310,15 @@ public interface DatabaseInfoDAO {
             "  record_time,\n" +
             "  create_time,\n" +
             "  modify_time,\n" +
-            "  ( VERSION + 1 ) AS VERSION \n" +
+            "  ( SELECT MAX(version)+1 FROM source_info WHERE id = #{id} ) AS VERSION \n" +
             " FROM\n" +
             "  source_info \n" +
             " WHERE\n" +
-            "  \"id\" IN " +
-            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
-            "#{id}"+
-            "</foreach>"+
+            "  \"id\" = #{id}"+
             " AND \"version\" = 0 \n" +
             " )" +
             "</script>")
-    void insertHistoryVersion(@Param("ids") List<String> idList);
+    void insertHistoryVersion(@Param("id") String idList);
 
     @Update("UPDATE source_info SET category_id = #{categoryId} WHERE id  = #{id} AND version = 0")
     void updateRealCategoryRelation(@Param("id")String sourceInfoId,@Param("categoryId")String categoryId);
@@ -394,7 +393,20 @@ public interface DatabaseInfoDAO {
             " id IN " +
             "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
             "#{id}"+
-            "</foreach>"+
+            "</foreach>" +
+            " AND version = 0"+
             "</script>")
-    void deleteSourceInfo(@Param("ids") List<String> idList);
+    void deleteSourceInfoForVersion(@Param("ids") List<String> idList,@Param("version")int version);
+
+    @Delete("<script>" +
+            " DELETE " +
+            " FROM source_info " +
+            " WHERE " +
+            " version = #{version}" +
+            " AND id = #{id}"+
+            "</script>")
+    void removeHistoryVersion(@Param("id")String id,@Param("version")int version);
+
+    @Select("SELECT MAX(version) FROM source_info WHERE id = #{id} ")
+    int getMaxVersionById(@Param("id") String objectId);
 }

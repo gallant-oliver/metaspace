@@ -23,6 +23,7 @@ import io.zeta.metaspace.model.result.RoleModulesCategories;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.ibatis.annotations.*;
+import org.springframework.security.access.method.P;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -351,4 +352,12 @@ public interface CategoryDAO {
             " </script>"})
     List<String> getCategorysByGroup(@Param("groupIds") List<String> groupIds, @Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
 
+    @Update("UPDATE category SET name=#{name}, qualifiedname = #{name} WHERE guid = #{id}")
+    void updateCategoryName(@Param("name") String databaseAlias,@Param("id")String id);
+
+    @Select("SELECT COUNT(1) FROM category WHERE parentcategoryguid = #{parentId} AND tenantid = #{tenantId} AND name = #{databaseAlias}")
+    int getCategoryCountByParentIdAndName(@Param("tenantId") String tenantId,@Param("parentId") String parentId,@Param("databaseAlias") String databaseAlias);
+
+    @Select("SELECT COUNT(1) FROM category WHERE parentcategoryguid = (SELECT parentcategoryguid FROM source_info WHERE guid = #{categoryId}) AND tenantid = #{tenantId} AND name = #{databaseAlias}")
+    int getCategoryCountByIdAndName(@Param("tenantId") String tenantId,@Param("categoryId") String categoryId,@Param("databaseAlias") String databaseAlias);
 }

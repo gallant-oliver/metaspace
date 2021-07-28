@@ -16,6 +16,7 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.po.sourceinfo.DatabaseInfoPO;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.sourceinfo.ApproveItemForReset;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForCategory;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForList;
@@ -125,6 +126,10 @@ public class SourceInfoService implements Approvable {
         if (Boolean.TRUE.equals(ParamUtil.isNull(idList))){
             return ReturnUtil.success();
         }
+        Result checkResult = checkService.checkSourceInfoStatus(idList,SourceInfoOperation.PUBLISH);
+        if (Boolean.FALSE.equals(ReturnUtil.isSuccess(checkResult))){
+            return checkResult;
+        }
         if (Boolean.TRUE.equals(ParamUtil.isNull(approveGroupId))){
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                     AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("审核组"));
@@ -203,26 +208,45 @@ public class SourceInfoService implements Approvable {
             }
         });
         databaseInfoDAO.deleteSourceInfoAndParentCategoryRelation(idList);
-        databaseInfoDAO.deleteSourceInfo(idList);
+        databaseInfoDAO.deleteSourceInfoForVersion(idList,0);
 
         return ReturnUtil.success();
     }
 
+    /**
+     *  更新数据登记信息
+     * @param databaseInfo 更新对象
+     * @param tenantId 租户id
+     * @param approveGroupId 审核组
+     * @param submitType 提交类型
+     * @return 处理结果
+     */
     public Result updateSourceInfo(DatabaseInfo databaseInfo,String tenantId,String approveGroupId,SubmitType submitType){
         Result checkResult = checkService.checkUpdateParam(databaseInfo,tenantId,approveGroupId,submitType);
         if (Boolean.FALSE.equals((ReturnUtil.isSuccess(checkResult)))){
             return checkResult;
         }
         databaseInfoDAO.updateSourceInfo(databaseInfo);
-
+        List<String> ids = new ArrayList<>();
+        ids.add(databaseInfo.getId());
         List<DatabaseInfo> databaseInfoList = new ArrayList<>();
         databaseInfoList.add(databaseInfo);
         if (SubmitType.SUBMIT_AND_PUBLISH.equals(submitType)){
             this.approveItems(tenantId,databaseInfoList,approveGroupId);
+            databaseInfoDAO.updateStatusByIds(ids,Status.AUDITING.getIntValue()+"");
+        }else{
+            databaseInfoDAO.updateStatusByIds(ids,Status.FOUNDED.getIntValue()+"");
         }
         return ReturnUtil.success();
     }
 
+    /**
+     *  构建送审用的入参对象
+     * @param id 源信息对象id
+     * @param tenantId 租户id
+     * @param operate 具体操作
+     * @return 送审入参对象
+     */
     private ApproveParas buildApproveParas(String id,String tenantId,ApproveOperate operate){
         ApproveParas approveParas = new ApproveParas();
         approveParas.setResult(operate.getCode());
@@ -233,6 +257,10 @@ public class SourceInfoService implements Approvable {
         return approveParas;
     }
 
+     /**
+     * 执行源信息保存
+     * @param databaseInfo 源信息对象
+     */
     private void registerDatabaseInfo(DatabaseInfoPO databaseInfo){
         String parentCategoryId = databaseInfo.getCategoryId();
         databaseInfo.setCategoryId(null);
@@ -240,14 +268,28 @@ public class SourceInfoService implements Approvable {
         databaseInfoDAO.insertDatabaseInfoRelationParentCategory(databaseInfo.getId(),parentCategoryId);
     }
 
+    /**
+     * 将审批对象送审
+     * @param tenantId 租户id
+     * @param databaseInfos 要被送审的源信息对象
+     * @param approveGroupId 审核组id
+     */
     private void approveItems(String tenantId, List<DatabaseInfo> databaseInfos,String approveGroupId){
         for (DatabaseInfo databaseInfo:databaseInfos) {
             ApproveItem approveItem = this.buildApproveItem(databaseInfo,approveGroupId,tenantId);
-            approveServiceImp.addApproveItem(approveItem);
             databaseInfoDAO.updateApproveIdAndApproveGroupIdById(databaseInfo.getId(),approveItem.getId(),approveGroupId);
+            databaseInfoDAO.insertHistoryVersion(approveItem.getObjectId());
+            approveServiceImp.addApproveItem(approveItem);
         }
     }
 
+    /**
+     * 构建审批对象
+     * @param databaseInfo 源信息对象
+     * @param approveGroupId 审核组id
+     * @param tenantId 租户id
+     * @return 审批对象
+     */
     private ApproveItem buildApproveItem(Object databaseInfo,String approveGroupId,String tenantId){
 
         ApproveItem approveItem = new ApproveItem();
@@ -270,17 +312,24 @@ public class SourceInfoService implements Approvable {
             approveItem.setObjectId(((DatabaseInfoForList) databaseInfo).getId());
             approveItem.setObjectName(((DatabaseInfoForList) databaseInfo).getDatabaseAlias());
         }
+        int maxVersion = databaseInfoDAO.getMaxVersionById(approveItem.getObjectId());
         approveItem.setApproveType(ApproveType.PUBLISH.getCode());
         approveItem.setApproveGroup(approveGroupId);
         approveItem.setSubmitter(AdminUtils.getUserData().getUserId());
         approveItem.setCommitTime(Timestamp.valueOf(LocalDateTime.now()));
         approveItem.setModuleId(ModuleEnum.SOURCEINFO.getId() + "");
-        approveItem.setVersion(0);
+        approveItem.setVersion(maxVersion+1);
         approveItem.setTenantId(tenantId);
 
         return approveItem;
     }
 
+    /**
+     * 构建PO对象
+     * @param tenantId 租户id
+     * @param databaseInfo 源信息对象
+     * @return 源信息PO
+     */
     private DatabaseInfoPO convertToPO(String tenantId, DatabaseInfo databaseInfo){
         DatabaseInfoPO databaseInfoPO = new DatabaseInfoPO();
 
@@ -296,7 +345,14 @@ public class SourceInfoService implements Approvable {
         return databaseInfoPO;
     }
 
-
+    /**
+     * 获取被审批的对象详情接口实现
+     * @param objectId  对象ID
+     * @param type 业务对象类型
+     * @param version 查看版本
+     * @param tenantId 租户id
+     * @return 被审批对象
+     */
     @Override
     public Object getObjectDetail(String objectId, String type, int version, String tenantId) {
         DatabaseInfoBO databaseInfoBO = this.getDatabaseInfoBOById(objectId,tenantId,version);
@@ -314,27 +370,67 @@ public class SourceInfoService implements Approvable {
         return databaseInfoDTO;
     }
 
+    /**
+     * 根据id查看详情
+     * @param id 源信息id
+     * @param tenantId 租户id
+     * @param version 版本
+     * @return 源信息对象
+     */
+
     private DatabaseInfoBO getDatabaseInfoBOById(String id,String tenantId,int version){
         return databaseInfoDAO.getDatabaseInfoById(id,tenantId,version);
     }
 
+    /**
+     *  修改被审批对象的审批状态的接口实现
+     * @param approveResult 审核结果
+     * @param tenantId 租户id
+     * @param items 被审核对象
+     * @throws Exception
+     */
+
     @Override
     public void changeObjectStatus(String approveResult, String tenantId, List<ApproveItem> items) throws Exception {
-        List<String> idList = items.stream().map(ApproveItem::getObjectId).collect(Collectors.toList());
+        List<ApproveItemForReset> itemList = new ArrayList<>();
+        items.forEach(item->{
+            ApproveItemForReset aif = new ApproveItemForReset();
+
+            aif.setObjectId(item.getObjectId());
+            aif.setVersion(item.getVersion());
+
+            itemList.add(aif);
+        });
+                List<String> idList = items.stream().map(ApproveItem::getObjectId).collect(Collectors.toList());
         if (ApproveOperate.APPROVE.getCode().equals(approveResult)) {
             databaseInfoDAO.updateStatusByIds(idList,Status.ACTIVE.getIntValue()+"");
             List<DatabaseInfoForCategory> databaseInfoList = databaseInfoDAO.getDatabaseInfoByIds(idList);
             for (DatabaseInfoForCategory databaseInfo:databaseInfoList){
-                this.createCategoryInfo(databaseInfo,tenantId);
+                if (Boolean.FALSE.equals(ParamUtil.isNull(databaseInfo.getCategoryId()))){
+                    categoryDAO.updateCategoryName(databaseInfo.getName(),databaseInfo.getCategoryId());
+                }else{
+                    this.createCategoryInfo(databaseInfo,tenantId);
+                }
             }
-            databaseInfoDAO.insertHistoryVersion(idList);
             databaseInfoDAO.deleteSourceInfoAndParentCategoryRelation(idList);
         } else if (ApproveOperate.REJECTED.getCode().equals(approveResult)) {
-            databaseInfoDAO.updateStatusByIds(idList,Status.REJECT.getIntValue()+"");
+            if (items.stream().anyMatch(item->Boolean.FALSE.equals(ParamUtil.isNull(item.getApprover())))){
+                databaseInfoDAO.updateStatusByIds(idList,Status.REJECT.getIntValue()+"");
+            }else {
+                databaseInfoDAO.updateStatusByIds(idList,Status.FOUNDED.getIntValue()+"");
+            }
         } else if (ApproveOperate.CANCEL.getCode().equals(approveResult)) {
             databaseInfoDAO.updateStatusByIds(idList,Status.FOUNDED.getIntValue()+"");
+            itemList.forEach(itemForReset->databaseInfoDAO.removeHistoryVersion(itemForReset.getObjectId(),itemForReset.getVersion()));
         }
     }
+
+    /**
+     * 调用目录service创建目录
+     * @param databaseInfoForCategory 创建目录需要的信息
+     * @param tenantId 租户id
+     * @throws Exception
+     */
 
     private void createCategoryInfo(DatabaseInfoForCategory databaseInfoForCategory,String tenantId) throws Exception {
         AtlasPerfTracer perf = null;
@@ -345,6 +441,7 @@ public class SourceInfoService implements Approvable {
             HttpRequestContext.get().auditLog(ModuleEnum.SOURCEINFO.getAlias(), databaseInfoForCategory.getName());
             CategoryPrivilege categoryPrivilege= dataManageService.createCategory(this.buildCategoryInfo(databaseInfoForCategory), CATEGORY_TYPE, tenantId);
             databaseInfoDAO.updateRealCategoryRelation(databaseInfoForCategory.getId(),categoryPrivilege.getGuid());
+            databaseDAO.updateDatabaseRelationToCategory(databaseInfoForCategory.getDatabaseId(),categoryPrivilege.getGuid());
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -352,6 +449,11 @@ public class SourceInfoService implements Approvable {
         }
     }
 
+    /**
+     * 构建目录对象
+     * @param databaseInfoBO 源信息对象
+     * @return 目录对象
+     */
     private CategoryInfoV2 buildCategoryInfo(DatabaseInfoForCategory databaseInfoBO){
         CategoryInfoV2 categoryInfoV2 = new CategoryInfoV2();
 
