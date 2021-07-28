@@ -24,12 +24,11 @@ import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-
-import javax.annotation.PostConstruct;
 
 /**
  * @author lixiang03
@@ -53,9 +52,9 @@ public class CategoryUtil {
         {
             Timestamp createTime = DateUtils.currentTimestamp();
             add(new CategoryEntityV2("1", "贴源层", null, null, null, "2", 0, 1, "1", createTime,null));
-            add(new CategoryEntityV2("2","基础层",null,null,"1","3",0,1,"1",createTime,null));
-            add(new CategoryEntityV2("3","规范层",null,null,"2","4",0,1,"1", createTime,null));
-            add(new CategoryEntityV2("4","通用层",null,null,"3","5",0,1,"1", createTime,null));
+            add(new CategoryEntityV2("2","基础层",null,null,"1","4",0,1,"1",createTime,null));
+//            add(new CategoryEntityV2("3","规范层",null,null,"2","4",0,1,"1", createTime,null));
+            add(new CategoryEntityV2("4","通用层",null,null,"2","5",0,1,"1", createTime,null));
             add(new CategoryEntityV2("5","应用层",null,null,"4",null,0,1,"1", createTime,null));
             add(new CategoryEntityV2("Standard-1", "基础类数据标准","基础类数据标准",null,null,"Standard-2",3,1,"1", createTime,null));
             add(new CategoryEntityV2("Standard-2", "指标类数据标准","指标类数据标准",null,"Standard-1",null,3,1,"1", createTime,null));

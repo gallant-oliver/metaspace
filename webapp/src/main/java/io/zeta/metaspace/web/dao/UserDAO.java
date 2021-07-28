@@ -143,6 +143,7 @@ public interface UserDAO {
 
     @Select("select * from users")
     public List<User> getAllUser();
+
     @Update("update users set " +
             " username=#{userAndModule.userName}," +
             " account=#{userAndModule.email}, " +
@@ -180,4 +181,7 @@ public interface UserDAO {
             "    </foreach>" +
             "</script>")
     public List<User> getUsersByIds(@Param("ids")List<String> ids);
+
+    @Select("SELECT userid,username FROM users WHERE valid = TRUE")
+    List<User> getAllUserByValid();
 }
