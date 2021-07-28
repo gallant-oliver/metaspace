@@ -37,6 +37,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Stream;
 
 
 /*
@@ -187,6 +188,11 @@ public class PoiExcelUtils {
             for (int cellNum = firstCellNum; cellNum < lastCellNum; cellNum++) {
                 Cell cell = row.getCell(cellNum);
                 cells[cellNum] = getCellValue(cell);
+            }
+            //整行数据都为空，则不加入
+            boolean isEmptyRow = Stream.of(cells).allMatch(p->StringUtils.isBlank(p));
+            if(isEmptyRow){
+                continue;
             }
             list.add(cells);
         }

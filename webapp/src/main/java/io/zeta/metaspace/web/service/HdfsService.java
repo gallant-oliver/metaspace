@@ -178,7 +178,7 @@ public class HdfsService {
      * @throws IOException
      */
     public List<String[]> readExcelFile(String filePath) throws IOException {
-        log.info("读物文件路径:{}",filePath);
+        log.info("读取文件路径:{}",filePath);
         InputStream is = getFileInputStream(filePath);
         Workbook workbook = null;
         try{
