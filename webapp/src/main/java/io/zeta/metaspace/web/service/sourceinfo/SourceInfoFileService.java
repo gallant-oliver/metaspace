@@ -242,7 +242,7 @@ public class SourceInfoFileService {
             String categoryId = MapUtils.getString(categoryMap,getElementOrDefault(array,MapUtils.getIntValue(map,"数据层名称",-1)),"");
             databaseInfo = new DatabaseInfoPO();
             databaseInfo.setId(sourceId);
-            databaseInfo.setAnnexId(annexId);
+            //databaseInfo.setAnnexId(annexId);
             databaseInfo.setCategoryId(categoryId);
             DatabaseInfoForDb databaseInfoForDb = dbEnIndex == -1 ? null : dbList.stream().filter(p->p.getDatabaseName().equalsIgnoreCase(array[dbEnIndex]))
                     .findFirst().orElse(null);
