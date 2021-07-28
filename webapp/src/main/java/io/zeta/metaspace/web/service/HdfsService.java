@@ -112,13 +112,13 @@ public class HdfsService {
 
     /**
      * 上传文件方法
-     * @param file 上传的文件
+     * @param fileInputStream 上传的文件
      * @param destDir 上传路径（*基准路径不用添加）
      * @throws Exception 上传失败抛出异常
      *
      * @return 返回上传的目录路径
      */
-    public String uploadFile(MultipartFile file,String destDir) throws IOException{
+    public String uploadFile(InputStream fileInputStream,String fileName,String destDir) throws IOException{
         FileSystem fileSystem = initProxyFs();
         if(fileSystem == null){
             log.error("hdfs 初始化为空");
@@ -127,7 +127,7 @@ public class HdfsService {
 
         //处理文件路径
         destDir = getHdfsAbsoluteFilePath(destDir,true);
-        String fileName = file.getOriginalFilename();
+        //String fileName = file.getOriginalFilename();
         try{
             String filePath = destDir+ fileName;
             Path destPath = new Path(destDir);
@@ -136,7 +136,7 @@ public class HdfsService {
                 fileSystem.mkdirs(destPath);
             }
             FSDataOutputStream fSDataOutputStream = fileSystem.create(new Path(filePath));
-            IOUtils.copyBytes(file.getInputStream(),fSDataOutputStream,4096,true);
+            IOUtils.copyBytes(fileInputStream,fSDataOutputStream,4096,true);
             return destDir+ fileName;
         }catch (IOException e) {
             log.error("上传文件 {} 出错",fileName);
@@ -161,7 +161,7 @@ public class HdfsService {
     }
     public InputStream getFileInputStream(String filePath) throws IOException {
         FileSystem fileSystem = initProxyFs();
-        filePath = getHdfsAbsoluteFilePath(filePath,false);
+       // filePath = getHdfsAbsoluteFilePath(filePath,false);
         Path path = new Path(filePath);
         if (!fileSystem.exists(path)) {
             throw new RuntimeException("文件" + filePath + "不存在");

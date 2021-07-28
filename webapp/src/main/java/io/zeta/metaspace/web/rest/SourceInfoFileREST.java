@@ -1,6 +1,8 @@
 package io.zeta.metaspace.web.rest;
 
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
+import com.sun.jersey.core.header.FormDataContentDisposition;
+import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.sourceinfo.AnalyticResult;
 import io.zeta.metaspace.model.sourceinfo.Annex;
@@ -10,12 +12,11 @@ import io.zeta.metaspace.web.service.sourceinfo.SourceInfoFileService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletResponse;
@@ -69,25 +70,27 @@ public class SourceInfoFileREST {
     /**
      *  上传文件到 hdfs
      * @param tenantId 租户id
-     * @param file 文件
      * @return
      */
     @POST
     @Path("/source/info/file/upload")
-    @Consumes({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
-    @Produces({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
-    public Result uploadFile(@HeaderParam("tenantId")String tenantId,@RequestParam("file") MultipartFile file){
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result uploadFile(@FormDataParam("file") InputStream fileInputStream,
+                             @FormDataParam("file") FormDataContentDisposition contentDispositionHeader,
+                             @HeaderParam("tenantId")String tenantId){
         try{
             //tenantId 使用租户id作为上传文件子目录
-            String uploadPath = hdfsService.uploadFile(file,tenantId);
+            String fileName = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
+            String uploadPath = hdfsService.uploadFile(fileInputStream,fileName,tenantId);
             //组装附件表的字段
             String annexId = UUIDUtils.alphaUUID();
-            String fileName = file.getOriginalFilename();
+
             String fileType = FilenameUtils.getExtension(fileName);
             //保存数据到表 annex
             Annex annex = new Annex(annexId,fileName,fileType,uploadPath);
             annexService.saveRecord(annex);
-            return ReturnUtil.success(annexId);
+            return ReturnUtil.success("success",annexId);
         }catch (IOException e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件上传失败");
         }
@@ -101,9 +104,9 @@ public class SourceInfoFileREST {
      */
     @POST
     @Path("/source/info/file/explain")
-    @Consumes({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
-    @Produces({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
-    public Result parseFile(@HeaderParam("tenantId")String tenantId,@RequestParam("annexId") String annexId){
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Result parseFile(@HeaderParam("tenantId")String tenantId,@FormParam("annexId") String annexId){
         //根据附件id 获取文件的路径和文件名
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
@@ -113,14 +116,12 @@ public class SourceInfoFileREST {
         try{
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
-            // 跟source_info、db-info对比获取比对结果  TODO
-            List<AnalyticResult> results = sourceInfoFileService.getFileParsedResult(excelDataList);
+            // 跟source_info、db-info对比获取比对结果
+            List<AnalyticResult> results = sourceInfoFileService.getFileParsedResult(excelDataList,tenantId);
             return ReturnUtil.success(results);
         }catch (IOException e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件解析失败");
         }
-
-
     }
 
     /**
@@ -131,11 +132,31 @@ public class SourceInfoFileREST {
      */
     @POST
     @Path("/source/info/file/import/{duplicatePolicy}")
-    @Consumes({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
-    @Produces({MediaType.MULTIPART_FORM_DATA,MediaType.APPLICATION_JSON})
-    public Result executeImportFile(@HeaderParam("tenantId")String tenantId,@PathParam("duplicatePolicy") String duplicatePolicy){
-        //TODO
-        return ReturnUtil.success();
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Result executeImportFile(@HeaderParam("tenantId")String tenantId,
+                                    @FormParam("annexId") String annexId,
+                                    @PathParam("duplicatePolicy") String duplicatePolicy){
+        //"IGNORE"-忽略 有重复名称则不导入 ，"STOP"-停止 终止本次导入操作
+        if("STOP".equalsIgnoreCase(duplicatePolicy)){
+            return ReturnUtil.success("终止操作.");
+        }
+
+        Annex annex = annexService.findByAnnexId(annexId);
+        if(annex == null){
+            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.BAD_REQUEST);
+        }
+        String filePath = annex.getPath();
+        try{
+            //根据文件路径 解析excel文件
+            List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
+            // 跟source_info、db-info对比获取比对结果
+            int n = sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
+            return ReturnUtil.success(n);
+        }catch (IOException e){
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件解析失败");
+        }
+
     }
 
 
@@ -153,7 +174,7 @@ public class SourceInfoFileREST {
         //根据附件id 获取文件的路径和文件名
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
-            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.BAD_REQUEST);
+            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
         }
         String filePath = annex.getPath();
         String filename = annex.getFileName();
@@ -178,11 +199,11 @@ public class SourceInfoFileREST {
     @Path("/source/info/fileStream")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Result getFileStream(@HeaderParam("tenantId")String tenantId,@RequestParam("annexId") String annexId){
+    public Result getFileStream(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
         //根据附件id 获取文件的路径
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
-            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.BAD_REQUEST);
+            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
         }
         String filePath = annex.getPath();
         try{
@@ -205,7 +226,7 @@ public class SourceInfoFileREST {
     @Path("/source/info/file")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Result getFileInfo(@HeaderParam("tenantId")String tenantId,@RequestParam("annexId") String annexId){
+    public Result getFileInfo(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
         //根据附件id 获取文件的路径
         Annex annex = annexService.findByAnnexId(annexId);
         return ReturnUtil.success(annex);
