@@ -20,6 +20,7 @@ import io.zeta.metaspace.model.sourceinfo.CreateRequest;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.PublishRequest;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoService;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -65,21 +66,21 @@ public class SourceInfoREST {
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result updateDatabaseInfo(@HeaderParam("tenantId")String tenantId,CreateRequest createRequest){
-        return null;
+        return sourceInfoService.updateSourceInfo(createRequest.getDatabaseInfo(),tenantId,createRequest.getApproveGroupId(),createRequest.getSubmitType());
     }
 
     @PUT
     @Path("revoke/{id}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result revokeSourceInfo(@HeaderParam("tenantId")String tenantId, @PathParam("id") String id) throws Exception {
-        return sourceInfoService.revoke(id,tenantId);
+        return ReturnUtil.success();
     }
 
     @DELETE
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result deleteDatabaseInfo(@HeaderParam("tenantId")String tenantId, PublishRequest request){
-        return null;
+        return sourceInfoService.delete(tenantId,request.getIdList());
     }
 
     @GET

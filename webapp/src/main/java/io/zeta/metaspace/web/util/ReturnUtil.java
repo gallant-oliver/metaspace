@@ -13,7 +13,6 @@
 
 package io.zeta.metaspace.web.util;
 
-import com.sun.org.apache.regexp.internal.RE;
 import io.zeta.metaspace.model.Result;
 import org.apache.atlas.exception.AtlasBaseException;
 

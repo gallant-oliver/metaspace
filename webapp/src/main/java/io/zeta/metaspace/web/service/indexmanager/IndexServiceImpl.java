@@ -1098,7 +1098,7 @@ public class IndexServiceImpl implements IndexService {
                     if (approveResult.equals(ApproveOperate.APPROVE.getCode())) {
                         //通过
                         editIndexState(objectId, indexType, version, tenantId, IndexState.PUBLISH.getValue());
-                    } else if (approveResult.equals(ApproveOperate.REJECTED.getCode())) {
+                    } else if (approveResult.equals(ApproveOperate.REJECTED.getCode())||approveResult.equals(ApproveOperate.CANCEL.getCode())) {
                         //驳回,回退指标状态
                         if (version == 0) {
                             editIndexState(objectId, indexType, version, tenantId, IndexState.CREATE.getValue());
