@@ -1,5 +1,6 @@
 package org.apache.atlas.notification.rdbms;
 
+import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.debezium.RdbmsEntities;
@@ -457,19 +458,26 @@ public class CalciteParseSqlTools {
             resultList.add(instanceJsonEntity);
         }else if(entityType == RdbmsEntities.EntityType.RDBMS_COLUMN){
             String table = paramMap.get("table").toUpperCase();
+            DataSourceInfo dataSourceInfo = new DataSourceInfo();
             //获取表字段信息
-            String jdbcDriver = null,jdbcURL = null;
-            if("mysql".equalsIgnoreCase(rdbmsType)){
+           // String jdbcDriver = null,jdbcURL = null;
+            dataSourceInfo.setIp(dbHostname);
+            dataSourceInfo.setPort(dbPort+"");
+            dataSourceInfo.setUserName(username);
+            dataSourceInfo.setPassword(dbPassword);
+            dataSourceInfo.setDatabase(dbname);
+            dataSourceInfo.setSourceType(rdbmsType);
+           /* if("mysql".equalsIgnoreCase(rdbmsType)){
                 jdbcDriver = "com.mysql.jdbc.Driver";
                 jdbcURL = "jdbc:mysql://"+dbHostname+":"+dbPort+"/"+dbname;
             }
             if("oracle".equalsIgnoreCase(rdbmsType)){
                 jdbcDriver = "oracle.jdbc.driver.OracleDriver";
                 jdbcURL = "jdbc:oracle:thin:@"+dbHostname+":"+dbPort+":"+dbname;
-            }
-
+            }*/
+            //getInstance(jdbcDriver).getColumnNames(table,jdbcURL,username,dbPassword);
             Map<String, Object> attributeTableMap = null;
-            List<DatabaseUtil.TableColumnInfo> columnList = DatabaseUtil.getInstance(jdbcDriver).getColumnNames(table,jdbcURL,username,dbPassword);
+            List<DatabaseUtil.TableColumnInfo> columnList = DatabaseUtil.getColumnNames(dataSourceInfo,table);
             if(!CollectionUtils.isEmpty(columnList)){
                 for(DatabaseUtil.TableColumnInfo colInfo : columnList){
                     allColumnInfo.add(table+":"+colInfo.getColumnName());
