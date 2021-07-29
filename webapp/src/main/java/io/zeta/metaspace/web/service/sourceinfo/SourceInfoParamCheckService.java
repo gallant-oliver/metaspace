@@ -41,7 +41,7 @@ public class SourceInfoParamCheckService {
             return ReturnUtil.error(AtlasErrorCode.INVALID_OBJECT_ID.getErrorCode(),
                     AtlasErrorCode.INVALID_OBJECT_ID.getFormattedErrorMessage(databaseInfo.getDatabaseId()));
         }
-        if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getSourceId()))) {
+        if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getDataSourceId()))) {
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                     AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("数据源id"));
         }
