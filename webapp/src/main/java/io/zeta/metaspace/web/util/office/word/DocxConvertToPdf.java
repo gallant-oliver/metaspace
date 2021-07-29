@@ -4,7 +4,6 @@ import com.lowagie.text.Font;
 import com.lowagie.text.pdf.BaseFont;
 import fr.opensagres.xdocreport.itext.extension.font.IFontProvider;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.poi.xwpf.converter.pdf.PdfConverter;
 import org.apache.poi.xwpf.converter.pdf.PdfOptions;
 import org.apache.poi.xwpf.usermodel.LineSpacingRule;
@@ -25,32 +24,23 @@ import java.util.Iterator;
 public class DocxConvertToPdf {
     public static void main(String argv[]) throws Exception{
         //convertDocxToPdf("topdf.docx", "docx-pdf.pdf", "C:\\Users\\Gridsum\\Desktop\\daily_file");
-        DocConvertToPdf.convertToHtml("topdftest.doc", "topdfhtml.html", "C:\\Users\\Gridsum\\Desktop\\daily_file");
+        //DocConvertToPdf.convertToHtml("topdftest.doc", "topdfhtml.html", "C:\\Users\\Gridsum\\Desktop\\daily_file");
 
 
-        byte[] bytes = FileUtils.readFileToByteArray(new File("C:\\Users\\Gridsum\\Desktop\\daily_file\\topdfhtml.html"));
+       // byte[] bytes = FileUtils.readFileToByteArray(new File("C:\\Users\\Gridsum\\Desktop\\daily_file\\topdfhtml.html"));
 
-        DocConvertToPdf.htmlTopdf(new String(bytes),new File("C:\\Users\\Gridsum\\Desktop\\daily_file\\doc-pdf.pdf"));
+       // DocConvertToPdf.htmlTopdf(new String(bytes),new File("C:\\Users\\Gridsum\\Desktop\\daily_file\\doc-pdf.pdf"));
     }
 
     /**
      * docx 转成 pdf
      *
-     * @param inFileName 待转换docx文件名称
-     * @param outFileName 输出pdf文件名称
-     * @param catalogue 操作目录
+     * @param source 待转换docx文件流
+     * @param target 输出pdf文件名称
      * @throws Exception
      */
-    public static void convertDocxToPdf(String inFileName, String outFileName, String catalogue) {
-        FileInputStream source = null;
-        OutputStream target = null;
+    public static void convertDocxToPdf(InputStream source, OutputStream target) {
         try {
-            String inPath = catalogue + File.separator + inFileName;
-            String outPath = catalogue + File.separator + outFileName;
-            // 待转换文档输入流
-            source = new FileInputStream(new File(inPath));
-            // 输出目标
-            target = new FileOutputStream(outPath);
             // 转换配置
             PdfOptions options = PdfOptions.create();
             // 兼容中文配置

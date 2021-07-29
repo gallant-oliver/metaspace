@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.rest;
 
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
+import com.itextpdf.text.DocumentException;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.model.Result;
@@ -9,7 +10,12 @@ import io.zeta.metaspace.model.sourceinfo.Annex;
 import io.zeta.metaspace.web.service.HdfsService;
 import io.zeta.metaspace.web.service.sourceinfo.AnnexService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoFileService;
+import io.zeta.metaspace.web.util.Base64Utils;
 import io.zeta.metaspace.web.util.ReturnUtil;
+import io.zeta.metaspace.web.util.office.excel.Excel2Pdf;
+import io.zeta.metaspace.web.util.office.excel.ExcelObject;
+import io.zeta.metaspace.web.util.office.word.DocConvertToPdf;
+import io.zeta.metaspace.web.util.office.word.DocxConvertToPdf;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -23,10 +29,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -34,7 +39,7 @@ import java.util.List;
  */
 @Singleton
 @Service
-@Path("")
+@Path("/source/info")
 public class SourceInfoFileREST {
     @Autowired
     private HdfsService hdfsService;
@@ -52,7 +57,7 @@ public class SourceInfoFileREST {
      * @return
      */
     @GET
-    @Path("/source/info/model/download")
+    @Path("/model/download")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public void downloadTemplate(@HeaderParam("tenantId")String tenantId) throws UnsupportedEncodingException {
@@ -63,7 +68,7 @@ public class SourceInfoFileREST {
             InputStream inputStream = hdfsService.getFileInputStream(templatePath);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
         }catch(Exception e){
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "模板文件下载失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "模板文件下载失败");
         }
     }
 
@@ -73,7 +78,7 @@ public class SourceInfoFileREST {
      * @return
      */
     @POST
-    @Path("/source/info/file/upload")
+    @Path("/file/upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result uploadFile(@FormDataParam("file") InputStream fileInputStream,
@@ -92,7 +97,7 @@ public class SourceInfoFileREST {
             annexService.saveRecord(annex);
             return ReturnUtil.success("success",annexId);
         }catch (IOException e){
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件上传失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件上传失败");
         }
     }
 
@@ -103,14 +108,14 @@ public class SourceInfoFileREST {
      * @return
      */
     @POST
-    @Path("/source/info/file/explain")
+    @Path("/file/explain")
     @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Result parseFile(@HeaderParam("tenantId")String tenantId,@FormParam("annexId") String annexId){
         //根据附件id 获取文件的路径和文件名
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
-            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.BAD_REQUEST);
+            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
         }
         String filePath = annex.getPath();
         try{
@@ -120,7 +125,7 @@ public class SourceInfoFileREST {
             List<AnalyticResult> results = sourceInfoFileService.getFileParsedResult(excelDataList,tenantId);
             return ReturnUtil.success(results);
         }catch (IOException e){
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件解析失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件解析失败");
         }
     }
 
@@ -131,7 +136,7 @@ public class SourceInfoFileREST {
      * @return
      */
     @POST
-    @Path("/source/info/file/import/{duplicatePolicy}")
+    @Path("/file/import/{duplicatePolicy}")
     @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Result executeImportFile(@HeaderParam("tenantId")String tenantId,
@@ -144,7 +149,7 @@ public class SourceInfoFileREST {
 
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
-            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.BAD_REQUEST);
+            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
         }
         String filePath = annex.getPath();
         try{
@@ -154,7 +159,7 @@ public class SourceInfoFileREST {
             int n = sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
             return ReturnUtil.success(n);
         }catch (IOException e){
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件解析失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件解析失败");
         }
 
     }
@@ -167,7 +172,7 @@ public class SourceInfoFileREST {
      * @return
      */
     @GET
-    @Path("/source/info/file/download/{annexId}")
+    @Path("/file/download/{annexId}")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public void downloadFile(@HeaderParam("tenantId")String tenantId,@PathParam("annexId") String annexId){
@@ -184,7 +189,7 @@ public class SourceInfoFileREST {
             InputStream inputStream = hdfsService.getFileInputStream(filePath);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
         }catch(Exception e){
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件下载失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件下载失败");
         }
 
     }
@@ -196,7 +201,7 @@ public class SourceInfoFileREST {
      * @return
      */
     @GET
-    @Path("/source/info/fileStream")
+    @Path("/fileStream")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Result getFileStream(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
@@ -211,7 +216,7 @@ public class SourceInfoFileREST {
 
             return ReturnUtil.success(inputStream);
         }catch (IOException e){
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取文件流失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "获取文件流失败");
         }
 
     }
@@ -223,7 +228,7 @@ public class SourceInfoFileREST {
      * @return
      */
     @GET
-    @Path("/source/info/file")
+    @Path("/file")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Result getFileInfo(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
@@ -232,6 +237,52 @@ public class SourceInfoFileREST {
         return ReturnUtil.success(annex);
     }
 
+    /**
+     * 获取预览的文件 base64
+     * @param tenantId
+     * @param annexId
+     * @return
+     */
+    @GET
+    @Path("/file/preview")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Result queryPreviewFileStream(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
+        //根据附件id 获取文件的路径
+        Annex annex = annexService.findByAnnexId(annexId);
+        if(annex == null){
+            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
+        }
+        String filePath = annex.getPath();
+        String fileType = annex.getFileType();
+        File tmpFile = null;
+        try(InputStream in = hdfsService.getFileInputStream(filePath);){
+            tmpFile = File.createTempFile("sourceFileConvert","pdf");
+            String base64String = "";
+            if("xls".equalsIgnoreCase(fileType) || "xlsx".equalsIgnoreCase(fileType)){
+                Excel2Pdf excel2Pdf = new Excel2Pdf(Arrays.asList(
+                        new ExcelObject(in)
+                ), new FileOutputStream(tmpFile));
+                excel2Pdf.convert();
+                base64String = Base64Utils.fileToBase64(tmpFile.getAbsolutePath());
+            }else if("doc".equalsIgnoreCase(fileType)){
+                DocConvertToPdf.docToPdf(in,tmpFile);
+            }else if("docx".equalsIgnoreCase(fileType)){
+                DocxConvertToPdf.convertDocxToPdf(in,new FileOutputStream(tmpFile));
+                base64String = Base64Utils.fileToBase64(tmpFile.getAbsolutePath());
+            }else{
+                base64String = Base64Utils.streamToBase64(in);
+            }
+
+            return ReturnUtil.success("success",base64String);
+        }catch (IOException | DocumentException e){
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "获取文件流失败");
+        }finally {
+            if(tmpFile != null && tmpFile.exists()){
+                tmpFile.delete();
+            }
+        }
+    }
     /**
      * 设置下载文件的响应头
      * @param filename

@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.util;
 
 import org.apache.commons.codec.binary.Base64;
+import org.apache.poi.util.IOUtils;
 
 import java.io.*;
 
@@ -36,6 +37,23 @@ public class Base64Utils {
             }
         }
         return base64;
+    }
+
+    /**
+     * InputStream转Base64
+     *
+     * @param inputStream
+     * @return
+     */
+    public static String streamToBase64(InputStream inputStream) {
+        try {
+            //转换为base64
+            byte[] bytes = IOUtils.toByteArray(inputStream);
+            return new String(Base64.encodeBase64(bytes),"UTF-8");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 
     /**

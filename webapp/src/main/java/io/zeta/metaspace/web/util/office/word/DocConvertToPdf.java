@@ -16,6 +16,7 @@ import com.itextpdf.tool.xml.pipeline.css.CssResolverPipeline;
 import com.itextpdf.tool.xml.pipeline.end.PdfWriterPipeline;
 import com.itextpdf.tool.xml.pipeline.html.HtmlPipeline;
 import com.itextpdf.tool.xml.pipeline.html.HtmlPipelineContext;
+import org.apache.commons.io.FileUtils;
 import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.converter.PicturesManager;
 import org.apache.poi.hwpf.converter.WordToHtmlConverter;
@@ -43,6 +44,29 @@ import java.util.regex.Pattern;
  * doc->pdf 逻辑：doc->html->pdf
  */
 public class DocConvertToPdf {
+    /**
+     * doc转pdf （合并了doc转html，html转pdf的操作）
+     * @param in
+     * @param dest
+     */
+    public static void docToPdf(InputStream in ,File dest){
+        File tmpHtml = null;
+        try {
+            tmpHtml = File.createTempFile("tmpHtml","html");
+            String tmpDir = tmpHtml.getParent();
+            //转换doc到html成功
+            convertToHtml(in,tmpHtml.getName(),tmpDir);
+
+            htmlTopdf(new String(FileUtils.readFileToByteArray(tmpHtml)),dest);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if(tmpHtml != null && tmpHtml.exists()){
+                tmpHtml.delete();
+            }
+        }
+    }
+
     /**
      * html内容 转pdf文件
      * @param htmlContent html内容字符串
@@ -108,7 +132,7 @@ public class DocConvertToPdf {
 
     /**
      *
-     * @param docFileName doc文件名
+     * @param in doc文件流
      * @param htmlFileName 输出html文件名
      * @param catalogue 文件存储目录
      * @throws TransformerException
@@ -116,14 +140,10 @@ public class DocConvertToPdf {
      * @throws ParserConfigurationException
      * @throws Exception
      */
-    public static void convertToHtml(String docFileName, String htmlFileName, String catalogue) {
+    public static void convertToHtml(InputStream in, String htmlFileName, String catalogue) {
         ByteArrayOutputStream out = null;
-        InputStream in = null;
         try {
-            String docFilePath = catalogue + File.separator + docFileName;
             String htmlFilePath = catalogue + File.separator + htmlFileName;
-            // 输入流
-            in = new FileInputStream(docFilePath);
             // 输出流
             out = new ByteArrayOutputStream();
 
