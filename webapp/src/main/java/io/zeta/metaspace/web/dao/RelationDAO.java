@@ -46,50 +46,23 @@ public interface RelationDAO {
     public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select({"<script>",
-            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description,data_source.source_name sourceName",
-            " from table_relation,tableInfo,data_source where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and tableinfo.source_id = data_source.source_id",
-            " and status = 'ACTIVE' ",
-            " and ( tableinfo.dbname in ",
-            " <foreach item='item' index='index' collection='databases'",
-            " open='(' separator=',' close=')'>",
-            " #{item}",
-            " </foreach>  or tableinfo.source_id != 'hive')",
-            " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') ",
-            " order by tableInfo.status,table_relation.generateTime desc, tableinfo.tablename",
-            " <if test='limit!= -1'>",
-            " limit #{limit}",
-            " </if>",
-            " offset #{offset}",
-            " </script>"})
-    public List<RelationEntityV2> queryRelationByCategoryGuidV2(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset, @Param("databases") List<String> databases, @Param("tenantId") String tenantId);
-
-    @Select({"<script>",
-            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description , 'hive' as sourceName",
+            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description",
             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid ",
             " and status = 'ACTIVE' ",
-            " and ( tableinfo.dbname in ",
-            " <foreach item='item' index='index' collection='databases'",
-            " open='(' separator=',' close=')'>",
-            " #{item}",
-            " </foreach> )",
-            " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') ",
+            " AND table_relation.tenant_id = #{tenantId} ",
             " order by tableInfo.status,table_relation.generateTime desc, tableinfo.tablename",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",
             " offset #{offset}",
             " </script>"})
-    public List<RelationEntityV2> queryHiveRelationByCategoryGuidV2(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset, @Param("databases") List<String> databases, @Param("tenantId") String tenantId);
+    List<RelationEntityV2> queryRelationByCategoryGuidV2(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset,  @Param("tenantId") String tenantId);
+
 
     //获取非关系型数据库
     @Select({"<script>",
-            " select tableInfo.dbName ",
-            " from table_relation,tableInfo where ",
-            " tableInfo.tableGuid=table_relation.tableGuid ",
-            " and status = 'ACTIVE' ",
-            " and ( tableinfo.source_id != 'hive')",
-            " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') ",
-            " GROUP BY tableInfo.dbName ",
+            "SELECT db_info.database_name FROM db_info,source_db, data_source WHERE db_info.database_guid = source_db.db_guid and source_db.source_id = data_source.source_id ",
+            "and db_info.status = 'ACTIVE' and db_info.db_type != 'HIVE' AND data_source.tenantid = #{tenantId} GROUP BY db_info.database_name ",
             " </script>"})
     public List<String> queryRDBNameByCategoryGuidV2(@Param("tenantId") String tenantId);
 

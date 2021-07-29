@@ -1,4 +1,7 @@
 
+ALTER TABLE tableinfo ADD COLUMN type VARCHAR(32) DEFAULT 'table';
+
+ALTER TABLE tableinfo ADD COLUMN owner VARCHAR(32);
 -- ----------------------------
 -- Table structure for connector
 -- ----------------------------

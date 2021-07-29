@@ -1,7 +1,6 @@
 package org.apache.atlas.notification.rdbms;
 
 import io.zeta.metaspace.adapter.AdapterExecutor;
-import io.zeta.metaspace.adapter.oracle.OracleAdapterExecutor;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerColumn;
 import io.zeta.metaspace.utils.AdapterUtils;
@@ -33,11 +32,10 @@ public class DatabaseUtil {
      * @param tableName
      * @return
      */
-    public static List<TableColumnInfo> getColumnNames(DataSourceInfo dataSourceInfo,String tableName){
+    public static List<TableColumnInfo> getColumnNames(DataSourceInfo dataSourceInfo, String tableUser, String tableName){
         List<TableColumnInfo> columnNames = new ArrayList<>();
-
-        AdapterExecutor adapterExecutor = new OracleAdapterExecutor(AdapterUtils.getAdapterSource(dataSourceInfo));
-        List<SchemaCrawlerColumn> list = adapterExecutor.getColumns(dataSourceInfo.getUserName(),tableName);
+        AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
+        List<SchemaCrawlerColumn> list = adapterExecutor.getColumns(tableUser,tableName);
         if(CollectionUtils.isEmpty(list)){
             return columnNames;
         }

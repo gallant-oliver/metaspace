@@ -27,7 +27,7 @@ public class DataMigrationREST {
     @POST
     @Path("/migration/dbinfo")
     public Result processDbInfo() {
-        dataMigration.processSourceDb();
+        dataMigration.processDbInfo();
         return ReturnUtil.success();
     }
 

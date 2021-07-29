@@ -72,7 +72,7 @@ public interface ColumnDAO {
     String getColumnGuid(@Param("tableGuid")String tableGuid, @Param("columnName")String columnName);
 
     @Update("update column_info set status = 'DELETED' where column_guid=#{columnGuid}")
-    String deleteColumn(@Param("columnGuid")String columnGuid);
+    void deleteColumn(@Param("columnGuid")String columnGuid);
 
     @Select("select column_name as columnName, display_name as displayName from column_info where table_guid=#{tableGuid} and status='ACTIVE' order by column_name")
     public List<Column> getColumnNameWithDisplayList(@Param("tableGuid")String tableGuid);

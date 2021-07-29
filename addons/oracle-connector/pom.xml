@@ -28,12 +28,6 @@
 			<scope>provided</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>com.oracle.jdbc</groupId>
-			<artifactId>ojdbc8</artifactId>
-			<version>${jdbc.oracle.version}</version>
-		</dependency>
-
 	</dependencies>
 
 	<profiles>

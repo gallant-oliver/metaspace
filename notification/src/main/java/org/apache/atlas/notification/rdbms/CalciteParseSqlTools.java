@@ -63,6 +63,8 @@ public class CalciteParseSqlTools {
         Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> operateMap = operateEntityMap.get(operateType);
         //额外参数存储
         Map<String,String> paramMap = new HashMap<>();
+        String owner = payload.getOwner();
+        paramMap.put("owner", owner);
         //1. rdbms_instance 组装
         List<AtlasEntity.AtlasEntityWithExtInfo> instanceEntityList
                 = makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_INSTANCE,config,paramMap,null);
@@ -89,7 +91,7 @@ public class CalciteParseSqlTools {
         //3.rdbms_table 操作表的对象(表名处理为 table 格式 去除前缀用户等信息)
         List<String> fromTableList = new ArrayList<>(fromSet);
         List<String> toTableList = new ArrayList<>(toSet);
-        String owner = payload.getOwner();
+
         addOwnerPrefixToTable(owner,Boolean.FALSE,fromTableList,toTableList);
 
         List<AtlasEntity.AtlasEntityWithExtInfo> fromTableEntityList = new ArrayList<>();
@@ -103,6 +105,7 @@ public class CalciteParseSqlTools {
         paramMap.put("isDropTable",operateType.name());
         /*connectorProperties.put("table.type",entityType);
         connectorProperties.put("isDropTable",operateType.name());*/
+
         dealTableColumnEntity(fromTableList, config,paramMap, fromTableEntityList, fromColumnEntityList,allColumnInfo);
         dealTableColumnEntity(toTableList, config,paramMap, toTableEntityList, toColumnEntityList,allColumnInfo);
 
@@ -379,7 +382,7 @@ public class CalciteParseSqlTools {
         String dbHostname = config.getDbIp();
         int dbPort = config.getDbPort();
         String dbPassword = config.getDbPassword();
-        String username = StringUtils.isBlank(paramMap.get("username")) ? config.getDbUser() : paramMap.get("username");
+        String username =  StringUtils.isBlank(paramMap.get("owner"))? config.getDbUser() : paramMap.get("owner") ;
         username = username.toUpperCase();
         String dbname = config.getDbName(); //orcl 实例名
 
@@ -466,7 +469,8 @@ public class CalciteParseSqlTools {
             dataSourceInfo.setUserName(username);
             dataSourceInfo.setPassword(dbPassword);
             dataSourceInfo.setDatabase(dbname);
-            dataSourceInfo.setSourceType(rdbmsType);
+            dataSourceInfo.setSourceType(rdbmsType.toUpperCase());
+            dataSourceInfo.setServiceType("service_name");
            /* if("mysql".equalsIgnoreCase(rdbmsType)){
                 jdbcDriver = "com.mysql.jdbc.Driver";
                 jdbcURL = "jdbc:mysql://"+dbHostname+":"+dbPort+"/"+dbname;
@@ -477,7 +481,7 @@ public class CalciteParseSqlTools {
             }*/
             //getInstance(jdbcDriver).getColumnNames(table,jdbcURL,username,dbPassword);
             Map<String, Object> attributeTableMap = null;
-            List<DatabaseUtil.TableColumnInfo> columnList = DatabaseUtil.getColumnNames(dataSourceInfo,table);
+            List<DatabaseUtil.TableColumnInfo> columnList = DatabaseUtil.getColumnNames(dataSourceInfo,username, table);
             if(!CollectionUtils.isEmpty(columnList)){
                 for(DatabaseUtil.TableColumnInfo colInfo : columnList){
                     allColumnInfo.add(table+":"+colInfo.getColumnName());

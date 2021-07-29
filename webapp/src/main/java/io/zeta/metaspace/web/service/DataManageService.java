@@ -760,62 +760,30 @@ public class DataManageService {
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
             List<RelationEntityV2> relations = new ArrayList<>();
-            List<RelationEntityV2> hiveRelations = new ArrayList<>();
-            List<RelationEntityV2> allRelations = new ArrayList<>();
-            int totalNum = 0;
             //判断独立部署和多租户
             if (TenantService.defaultTenant.equals(tenantId)) {
                 relations = relationDao.queryRelationByCategoryGuid(categoryGuid, limit, offset);
             } else {
-                User user = AdminUtils.getUserData();
-                List<String> databases = tenantService.getDatabase(tenantId);
-                if (databases != null && databases.size() != 0) {
-                    //获取关系型表的总数
-                    relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, 1, 0, databases, tenantId);
-                    //获取hive表的总数
-                    hiveRelations = relationDao.queryHiveRelationByCategoryGuidV2(categoryGuid, 1, 0, databases, tenantId);
-                    //根据传入的limit和offset来确定从hive还是关系型数据库查数据
-                    if (relations.size() > 0 && relations != null) {
-                        //从hive数据库拿数据
-                        if (relations.get(0).getTotal() < offset + 1) {
-                            offset -= relations.get(0).getTotal();
-                            hiveRelations = relationDao.queryHiveRelationByCategoryGuidV2(categoryGuid, limit, offset, databases, tenantId);
-                            allRelations.addAll(hiveRelations);
-                            //从关系型数据库拿数据
-                        } else if (relations.get(0).getTotal() >= offset + limit) {
-                            relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset, databases, tenantId);
-                            allRelations.addAll(relations);
-                        } else if (relations.get(0).getTotal() >= offset + 1 && relations.get(0).getTotal() < offset + limit) {//从hive和关系型数据库拿数据
-                            relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, relations.get(0).getTotal() - offset, offset, databases, tenantId);
-                            hiveRelations = relationDao.queryHiveRelationByCategoryGuidV2(categoryGuid, limit - (relations.get(0).getTotal() - offset), 0, databases, tenantId);
-                            allRelations.addAll(relations);
-                            allRelations.addAll(hiveRelations);
-                        }
-                    } else if (hiveRelations.size() > 0 && hiveRelations != null) {
-                        hiveRelations = relationDao.queryHiveRelationByCategoryGuidV2(categoryGuid, limit, offset, databases, tenantId);
-                        allRelations.addAll(hiveRelations);
-                    }
-                }
-                if (!relations.isEmpty() && !hiveRelations.isEmpty()) {
-                    totalNum = relations.get(0).getTotal() + hiveRelations.get(0).getTotal();
-                } else if (relations.size() != 0 && hiveRelations.size() == 0) {
-                    totalNum = relations.get(0).getTotal();
-                } else if (relations.size() == 0 && hiveRelations.size() != 0) {
-                    totalNum = hiveRelations.get(0).getTotal();
-                }
+                relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset, tenantId);
             }
-            for (RelationEntityV2 entity : allRelations) {
-                String tableGuid = entity.getTableGuid();
-                List<Tag> tableTageList = tableTagDAO.getTable2Tag(tableGuid, tenantId);
-                List<String> tableTagNameList = tableTageList.stream().map(tag -> tag.getTagName()).collect(Collectors.toList());
-                entity.setTableTagList(tableTagNameList);
-                List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
-                entity.setDataOwner(ownerHeaders);
+            if(!CollectionUtils.isEmpty(relations)){
+                for (RelationEntityV2 entity : relations) {
+                    String tableGuid = entity.getTableGuid();
+                    List<Tag> tableTageList = tableTagDAO.getTable2Tag(tableGuid, tenantId);
+                    List<String> tableTagNameList = tableTageList.stream().map(tag -> tag.getTagName()).collect(Collectors.toList());
+                    entity.setTableTagList(tableTagNameList);
+                    List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
+                    entity.setDataOwner(ownerHeaders);
+                }
+                getPath(relations, tenantId);
+                pageResult.setCurrentSize(relations.size());
+                pageResult.setLists(relations);
+                pageResult.setTotalSize(relations.get(0).getTotal());
+            }else{
+                pageResult.setCurrentSize(0);
+                pageResult.setLists(relations);
+                pageResult.setTotalSize(0);
             }
-            getPath(allRelations, tenantId);
-            pageResult.setCurrentSize(allRelations.size());
-            pageResult.setLists(allRelations);
-            pageResult.setTotalSize(totalNum);
             return pageResult;
         } catch (AtlasBaseException e) {
             throw e;
@@ -1529,9 +1497,18 @@ public class DataManageService {
     }
 
     private TableInfo getTableInfo(AtlasEntity entity) {
+        String guid = entity.getGuid();
+        String qualifiedName = getEntityAttribute(entity, "qualifiedName");
+        LOG.info("组装表信息，guid:{},qualifiedName:{} ", guid,qualifiedName);
         String name = getEntityAttribute(entity, "name");
+        String owner = getEntityAttribute(entity, "owner");
+        String type = getEntityAttribute(entity, "type");
         TableInfo tableInfo = new TableInfo();
-        tableInfo.setTableGuid(entity.getGuid());
+        if(null != type){
+            tableInfo.setType(type);
+        }
+        tableInfo.setOwner(owner);
+        tableInfo.setTableGuid(guid);
         tableInfo.setTableName(name);
         Object createTime = entity.getAttribute("createTime");
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -1605,12 +1582,15 @@ public class DataManageService {
     }
 
     private Database getDbInfo(AtlasEntity entity) {
+        String guid = entity.getGuid();
+        String qualifiedName = getEntityAttribute(entity, "qualifiedName");
+        LOG.info("组装数据库信息，guid:{},qualifiedName:{} ", guid,qualifiedName);
         Database database = new Database();
         String name = getEntityAttribute(entity, "name");
         String owner = getEntityAttribute(entity, "owner");
         database.setOwner(owner);
         database.setDatabaseName(name);
-        database.setDatabaseId(entity.getGuid());
+        database.setDatabaseId(guid);
         database.setStatus(entity.getStatus().name());
         database.setDatabaseDescription(getEntityAttribute(entity, "comment"));
         AtlasRelatedObjectId relatedDB = getRelatedInstance(entity);
@@ -1624,10 +1604,12 @@ public class DataManageService {
             String dataSourceId = definition.getDataSourceId();
             DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(dataSourceId);
             dbType = dataSourceInfo.getSourceType().toUpperCase();
-        }else{
+        }else if(config != null){
             KafkaConnector kafkaConnector = kafkaConnectorDAO.selectConnector(config.getDbIp(), config.getDbPort(), config.getDbName());
             dbType = kafkaConnector.getType();
             config.setDbType(dbType);
+        }else {
+            dbType = "UN_KNOW";
         }
         return dbType;
     }

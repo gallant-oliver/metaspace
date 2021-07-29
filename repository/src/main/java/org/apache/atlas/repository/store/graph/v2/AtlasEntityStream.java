@@ -55,7 +55,6 @@ public class AtlasEntityStream implements EntityStream {
 
     public AtlasEntityStream(AtlasEntityWithExtInfo entityWithExtInfo, KafkaConnector.Config config) {
         this(new AtlasEntitiesWithExtInfo(entityWithExtInfo));
-        this.definition = definition;
         this.config = config;
     }
 
@@ -65,6 +64,13 @@ public class AtlasEntityStream implements EntityStream {
         this.entitiesWithExtInfo = entitiesWithExtInfo;
         this.iterator            = this.entitiesWithExtInfo.getEntities().iterator();
         this.entityStream        = null;
+    }
+
+    public AtlasEntityStream(AtlasEntitiesWithExtInfo entitiesWithExtInfo, KafkaConnector.Config config) {
+        this.entitiesWithExtInfo = entitiesWithExtInfo;
+        this.iterator            = this.entitiesWithExtInfo.getEntities().iterator();
+        this.entityStream        = null;
+        this.config = config;
     }
 
     public AtlasEntityStream(AtlasEntity entity, EntityStream entityStream) {
