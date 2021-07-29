@@ -145,11 +145,15 @@ public class HdfsService {
     }
     //组装 hdfs 的全路径
     private String getHdfsAbsoluteFilePath(String destPath,boolean isDir){
+        if(destPath.startsWith(hdfsBasePath)){
+            return destPath;
+        }
+
         if(isDir){//目录路径
             if(StringUtils.isBlank(destPath)){
                 destPath = "/";
             }else{
-                destPath = destPath.startsWith("/") ? destPath : "/"+destPath;
+                destPath = StringUtils.prependIfMissingIgnoreCase(destPath,"/");//destPath.startsWith("/") ? destPath : "/"+destPath;
                 destPath = destPath.endsWith("/") ? destPath : destPath+"/";
             }
 
@@ -157,11 +161,12 @@ public class HdfsService {
         }
 
         //文件路径组装
-        return hdfsBasePath+(destPath.startsWith("/") ? destPath : "/"+destPath);
+        destPath = destPath.startsWith("/") ? destPath : "/"+destPath ;
+        return StringUtils.prependIfMissingIgnoreCase(destPath,hdfsBasePath);
     }
     public InputStream getFileInputStream(String filePath) throws IOException {
         FileSystem fileSystem = initProxyFs();
-       // filePath = getHdfsAbsoluteFilePath(filePath,false);
+        filePath = getHdfsAbsoluteFilePath(filePath,false);
         Path path = new Path(filePath);
         if (!fileSystem.exists(path)) {
             throw new RuntimeException("文件" + filePath + "不存在");
