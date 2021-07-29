@@ -6,6 +6,7 @@ import io.zeta.metaspace.model.approve.ApproveItem;
 import io.zeta.metaspace.model.approve.ApproveOperate;
 import io.zeta.metaspace.model.approve.ApproveParas;
 import io.zeta.metaspace.model.approve.ApproveStatus;
+import io.zeta.metaspace.model.enums.BusinessType;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.ApproveDAO;
@@ -64,6 +65,9 @@ public class ApproveServiceImp implements ApproveService{
 
 
         List<ApproveItem> approveItems = approveDao.getApproveItems(tenantId, paras, groups);
+       for(ApproveItem item:approveItems){
+           item.setBusinessTypeText(BusinessType.getTextByCode(item.getBusinessType()));
+       }
         if (approveItems == null || approveItems.size() == 0) {
             return result;
         }

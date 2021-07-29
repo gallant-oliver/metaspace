@@ -24,6 +24,7 @@ public interface DatabaseInfoDAO {
             " id ,\n" +
             " category_id ,\n" +
             " database_id ,\n" +
+            " data_source_id ,\n" +
             " database_alias ,\n" +
             " planning_package_code ,\n" +
             " planning_package_name ,\n" +
@@ -60,6 +61,7 @@ public interface DatabaseInfoDAO {
             "#{dip.id},\n" +
             "#{dip.categoryId},\n" +
             "#{dip.databaseId},\n" +
+            "#{dip.dataSourceId},\n" +
             "#{dip.databaseAlias},\n" +
             "#{dip.planningPackageCode},\n" +
             "#{dip.planningPackageName},\n" +
@@ -134,8 +136,7 @@ public interface DatabaseInfoDAO {
             "FROM\n" +
             "source_info s LEFT JOIN category c ON s.category_id = c.guid AND c.tenantid = s.tenant_id\n" +
             "LEFT JOIN db_info db ON s.database_id = db.database_guid \n" +
-            "LEFT JOIN source_db sd ON sd.db_guid = db.database_guid \n" +
-            "LEFT JOIN data_source ds ON sd.source_id = ds.source_id\n" +
+            "LEFT JOIN data_source ds ON s.source_id = ds.source_id\n" +
             "LEFT JOIN approval_group ag ON s.approve_group_id = ag.\"id\"\n" +
             "LEFT JOIN approval_item ai ON s.approve_id = ai.\"id\"\n" +
             "WHERE\n" +
@@ -180,6 +181,7 @@ public interface DatabaseInfoDAO {
     @Select("<script>" +
             "SELECT\n" +
             " s.id ,\n" +
+            " s.database_id AS databaseId ,\n" +
             " c.name AS categoryName,\n" +
             " c.guid AS categoryId,\n" +
             " db.database_name AS databaseName,\n" +
@@ -195,8 +197,7 @@ public interface DatabaseInfoDAO {
             " source_info s LEFT JOIN category c ON s.category_id = c.guid AND \n" +
             " c.tenantid = s.tenant_id\n" +
             " LEFT JOIN db_info db ON s.database_id = db.database_guid \n" +
-            " LEFT JOIN source_db sd ON sd.db_guid = db.database_guid \n" +
-            " LEFT JOIN data_source ds ON sd.source_id = ds.source_id\n" +
+            " LEFT JOIN data_source ds ON s.source_id = ds.source_id\n" +
             " LEFT JOIN approval_group ag ON s.approve_group_id = ag.\"id\"\n" +
             " LEFT JOIN approval_item ai ON s.approve_id = ai.\"id\"\n" +
             "WHERE\n" +
@@ -232,8 +233,7 @@ public interface DatabaseInfoDAO {
             " source_info s LEFT JOIN category c ON s.category_id = c.guid AND \n" +
             " c.tenantid = s.tenant_id\n" +
             " LEFT JOIN db_info db ON s.database_id = db.database_guid \n" +
-            " LEFT JOIN source_db sd ON sd.db_guid = db.database_guid \n" +
-            " LEFT JOIN data_source ds ON sd.source_id = ds.source_id\n" +
+            " LEFT JOIN data_source ds ON s.source_id = ds.source_id\n" +
             " LEFT JOIN approval_group ag ON s.approve_group_id = ag.\"id\"\n" +
             " LEFT JOIN approval_item ai ON s.approve_id = ai.\"id\"\n" +
             "WHERE\n" +

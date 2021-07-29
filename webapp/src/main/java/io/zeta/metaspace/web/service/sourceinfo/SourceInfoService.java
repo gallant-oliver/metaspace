@@ -9,6 +9,7 @@ import io.zeta.metaspace.model.approve.ApproveParas;
 import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.dto.indices.ApprovalGroupMember;
 import io.zeta.metaspace.model.dto.sourceinfo.DatabaseInfoDTO;
+import io.zeta.metaspace.model.enums.BusinessType;
 import io.zeta.metaspace.model.enums.SourceInfoOperation;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.enums.SubmitType;
@@ -91,9 +92,9 @@ public class SourceInfoService implements Approvable {
         DatabaseInfoPO dp = this.convertToPO(tenantId,databaseInfo);
         this.registerDatabaseInfo(dp);
 
-        List<DatabaseInfo> databaseInfoList = new ArrayList<>();
-        databaseInfoList.add(databaseInfo);
         if (SubmitType.SUBMIT_AND_PUBLISH.equals(submitType)){
+            List<DatabaseInfo> databaseInfoList = new ArrayList<>();
+            databaseInfoList.add(databaseInfo);
             List<String> ids = new ArrayList<>();
             ids.add(dp.getId());
             databaseInfoDAO.updateStatusByIds(ids,Status.AUDITING.getIntValue()+"");
@@ -202,6 +203,7 @@ public class SourceInfoService implements Approvable {
                 approveServiceImp.deal(this.buildApproveParas(l.getId(),tenantId,ApproveOperate.CANCEL),tenantId);
                 if (Boolean.FALSE.equals(ParamUtil.isNull(l.getCategoryId()))) {
                     dataManageService.deleteCategory(l.getCategoryId(), tenantId, CATEGORY_TYPE);
+                    databaseDAO.updateDatabaseRelationToCategory(l.getDatabaseId(),null);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -315,6 +317,8 @@ public class SourceInfoService implements Approvable {
         int maxVersion = databaseInfoDAO.getMaxVersionById(approveItem.getObjectId());
         approveItem.setApproveType(ApproveType.PUBLISH.getCode());
         approveItem.setApproveGroup(approveGroupId);
+        approveItem.setBusinessType(BusinessType.DATABASE_INFO_REGISTER.getTypeCode());
+        approveItem.setBusinessTypeText(BusinessType.DATABASE_INFO_REGISTER.getTypeText());
         approveItem.setSubmitter(AdminUtils.getUserData().getUserId());
         approveItem.setCommitTime(Timestamp.valueOf(LocalDateTime.now()));
         approveItem.setModuleId(ModuleEnum.SOURCEINFO.getId() + "");
