@@ -11,7 +11,8 @@ import java.sql.SQLException;
 
 public class OracleConnection{    
     
-    public Connection connect(OracleSourceConnectorConfig config) throws SQLException{
+    public Connection connect(OracleSourceConnectorConfig config) throws SQLException, ClassNotFoundException {
+        Class.forName("oracle.jdbc.driver.OracleDriver");
         return DriverManager.getConnection(
             "jdbc:oracle:thin:@"+config.getDbIp()+":"+config.getDbPort()+"/"+config.getDbName(),
             config.getDbUser(),
