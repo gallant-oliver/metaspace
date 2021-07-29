@@ -211,9 +211,7 @@ public class SourceInfoFileREST {
             throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
         }
         String filePath = annex.getPath();
-        try{
-            InputStream inputStream = hdfsService.getFileInputStream(filePath);
-
+        try(InputStream inputStream = hdfsService.getFileInputStream(filePath);){
             return ReturnUtil.success(inputStream);
         }catch (IOException e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "获取文件流失败");
