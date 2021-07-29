@@ -25,6 +25,10 @@ public class DatabaseInfoForList {
      * **/
     private String databaseName;
     /**
+     * 数据库id
+     * **/
+    private String databaseId;
+    /**
      * 数据库类型
      * **/
     private String databaseTypeName;

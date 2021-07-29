@@ -22,7 +22,7 @@ public enum ModuleEnum {
     COLUMNDOWN(2,"数据资产","业务目录",5,"字段下载", "columndown", "columndown",0, 5),
     BUSINESSEDIT(2,"数据资产","业务目录",6,"数据编辑", "businessedit", "businessedit",0, 6),
     METADATA(2,"数据资产","元数据管理",7,"元数据管理", "metadata", "metadata",1, 7),
-    SOURCEINFO(2,"数据资产","源信息登记",8,"源信息登记", "sourceinfo", "sourceinfo",1, 8),
+    SOURCEINFO(2,"数据资产","源信息登记",38,"源信息登记", "sourceinfo", "sourceinfo",1, 38),
 
     //以下数据资产在安全中心不存在
     TECHNICALEDIT(2,"数据资产","技术数据关联",8,"技术数据关联", "technicaledit", "technicaledit",0, 8),

@@ -36,7 +36,7 @@ import javax.ws.rs.core.Context;
  * @author wuqianhe
  * @Data 2020/7/19 15:15
  */
-@Path("source/info")
+@Path("source/info1")
 @Singleton
 @Service
 public class SourceInfoREST {

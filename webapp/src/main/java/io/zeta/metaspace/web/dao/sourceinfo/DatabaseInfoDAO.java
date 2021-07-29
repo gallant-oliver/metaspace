@@ -14,16 +14,22 @@ public interface DatabaseInfoDAO {
     @Select("SELECT COUNT(1) FROM db_info WHERE database_guid = #{databaseId}")
     int getDatabaseById(@Param("databaseId")String databaseId);
 
-    @Select("INSERT INTO source_info_relation2parent_category \n" +
+    @Select("<script>" +
+            "INSERT INTO source_info_relation2parent_category \n" +
             "( source_info_id, parent_category_id, create_time, modify_time )\n" +
             "VALUES\n" +
-            "( #{id}, #{categoryId}, NOW( ), NOW( ) )")
-    void insertDatabaseInfoRelationParentCategory(@Param("id")String id,@Param("categoryId")String categoryId);
+            "  <foreach item='dif' index='index' collection='difList' separator=','> " +
+            "( #{dif.id}, #{dif.parentCategoryId}, NOW( ), NOW( ) )" +
+            "</foreach>" +
+            "</script>")
+    void insertDatabaseInfoRelationParentCategory(@Param("difList")List<DatabaseInfoForCategory> difList);
 
-    @Insert("INSERT INTO  public . source_info  (\n" +
+    @Insert("<script>" +
+            "INSERT INTO  public . source_info  (\n" +
             " id ,\n" +
             " category_id ,\n" +
             " database_id ,\n" +
+            " data_source_id ,\n" +
             " database_alias ,\n" +
             " planning_package_code ,\n" +
             " planning_package_name ,\n" +
@@ -56,10 +62,12 @@ public interface DatabaseInfoDAO {
             " approve_group_id  \n" +
             ")\n" +
             "VALUES\n" +
-            "(\n" +
+            "    <foreach item='dip' index='index' collection='dips' separator=','>" +
+            "(" +
             "#{dip.id},\n" +
             "#{dip.categoryId},\n" +
             "#{dip.databaseId},\n" +
+            "#{dip.dataSourceId},\n" +
             "#{dip.databaseAlias},\n" +
             "#{dip.planningPackageCode},\n" +
             "#{dip.planningPackageName},\n" +
@@ -89,8 +97,10 @@ public interface DatabaseInfoDAO {
             "NOW( ),\n" +
             "NOW( ),\n" +
             "NOW( )," +
-            "#{dip.approveGroupId})\n")
-    void insertDatabaseInfo(@Param("dip") DatabaseInfoPO databaseInfoPO);
+            "#{dip.approveGroupId} )\n" +
+            "</foreach>" +
+            "</script>")
+    void insertDatabaseInfo(@Param("dips") List<DatabaseInfoPO> databaseInfoPOs);
 
     @Select("SELECT\n" +
             "s.id ,\n" +
@@ -134,8 +144,7 @@ public interface DatabaseInfoDAO {
             "FROM\n" +
             "source_info s LEFT JOIN category c ON s.category_id = c.guid AND c.tenantid = s.tenant_id\n" +
             "LEFT JOIN db_info db ON s.database_id = db.database_guid \n" +
-            "LEFT JOIN source_db sd ON sd.db_guid = db.database_guid \n" +
-            "LEFT JOIN data_source ds ON sd.source_id = ds.source_id\n" +
+            "LEFT JOIN data_source ds ON s.source_id = ds.source_id\n" +
             "LEFT JOIN approval_group ag ON s.approve_group_id = ag.\"id\"\n" +
             "LEFT JOIN approval_item ai ON s.approve_id = ai.\"id\"\n" +
             "WHERE\n" +
@@ -180,6 +189,7 @@ public interface DatabaseInfoDAO {
     @Select("<script>" +
             "SELECT\n" +
             " s.id ,\n" +
+            " s.database_id AS databaseId ,\n" +
             " c.name AS categoryName,\n" +
             " c.guid AS categoryId,\n" +
             " db.database_name AS databaseName,\n" +
@@ -195,8 +205,7 @@ public interface DatabaseInfoDAO {
             " source_info s LEFT JOIN category c ON s.category_id = c.guid AND \n" +
             " c.tenantid = s.tenant_id\n" +
             " LEFT JOIN db_info db ON s.database_id = db.database_guid \n" +
-            " LEFT JOIN source_db sd ON sd.db_guid = db.database_guid \n" +
-            " LEFT JOIN data_source ds ON sd.source_id = ds.source_id\n" +
+            " LEFT JOIN data_source ds ON s.source_id = ds.source_id\n" +
             " LEFT JOIN approval_group ag ON s.approve_group_id = ag.\"id\"\n" +
             " LEFT JOIN approval_item ai ON s.approve_id = ai.\"id\"\n" +
             "WHERE\n" +
@@ -232,8 +241,7 @@ public interface DatabaseInfoDAO {
             " source_info s LEFT JOIN category c ON s.category_id = c.guid AND \n" +
             " c.tenantid = s.tenant_id\n" +
             " LEFT JOIN db_info db ON s.database_id = db.database_guid \n" +
-            " LEFT JOIN source_db sd ON sd.db_guid = db.database_guid \n" +
-            " LEFT JOIN data_source ds ON sd.source_id = ds.source_id\n" +
+            " LEFT JOIN data_source ds ON s.source_id = ds.source_id\n" +
             " LEFT JOIN approval_group ag ON s.approve_group_id = ag.\"id\"\n" +
             " LEFT JOIN approval_item ai ON s.approve_id = ai.\"id\"\n" +
             "WHERE\n" +

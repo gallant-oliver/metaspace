@@ -18,6 +18,10 @@ public class DatabaseInfo {
      * **/
     private String databaseId;
     /**
+     * 数据源id
+     */
+    private String dataSourceId;
+    /**
      * 数据库中文名
      * **/
     private String databaseAlias;
