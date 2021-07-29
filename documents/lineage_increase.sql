@@ -80,6 +80,6 @@ COMMENT ON COLUMN "public"."source_db"."db_guid" IS '数据库id';
 
 ALTER TABLE "public"."source_db" ADD CONSTRAINT "source_db_pkey" PRIMARY KEY ("id");
 
-ALTER TABLE tableinfo DROP COLUMN IF EXISTS "source_id";
-
 ALTER TABLE table_relation ADD COLUMN IF NOT EXISTS "tenant_id" VARCHAR(64);
+
+-- ALTER TABLE tableinfo DROP COLUMN IF EXISTS "source_id";
