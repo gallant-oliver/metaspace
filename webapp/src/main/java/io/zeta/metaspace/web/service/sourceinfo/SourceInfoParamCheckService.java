@@ -101,6 +101,74 @@ public class SourceInfoParamCheckService {
         return ReturnUtil.success();
     }
 
+    public Result checkCreateListParam(List<DatabaseInfo> databaseInfos, String tenantId){
+        for (DatabaseInfo databaseInfo:databaseInfos) {
+            //校验数据合法性
+            if (databaseInfo == null) {
+                return ReturnUtil.error(AtlasErrorCode.INVALID_PARAMETERS.getErrorCode(),
+                        AtlasErrorCode.INVALID_PARAMETERS.getFormattedErrorMessage());
+            }
+            //校验数据库是否存在
+            if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getDatabaseId()))) {
+                return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                        AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("数据库id"));
+            }
+            if (databaseDAO.getDatabaseById(databaseInfo.getDatabaseId()) == 0) {
+                return ReturnUtil.error(AtlasErrorCode.INVALID_OBJECT_ID.getErrorCode(),
+                        AtlasErrorCode.INVALID_OBJECT_ID.getFormattedErrorMessage(databaseInfo.getDatabaseId()));
+            }
+            if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getDataSourceId()))) {
+                return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                        AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("数据源id"));
+            }
+            //校验中文名
+            if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getDatabaseAlias()))) {
+                return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                        AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("数据库中文名"));
+            }
+            //校验中文名重名
+            if (databaseInfoDAO.getDatabaseDuplicateName(tenantId, databaseInfo.getDatabaseAlias(), null)) {
+                return ReturnUtil.error(AtlasErrorCode.DUPLICATE_ALIAS_NAME.getErrorCode(),
+                        AtlasErrorCode.DUPLICATE_ALIAS_NAME.getFormattedErrorMessage(databaseInfo.getDatabaseAlias()));
+            }
+            int count = categoryDAO.getCategoryCountByParentIdAndName(tenantId, databaseInfo.getCategoryId(), databaseInfo.getDatabaseAlias());
+            if (count > 0) {
+                return ReturnUtil.error(AtlasErrorCode.DUPLICATE_ALIAS_NAME.getErrorCode(),
+                        AtlasErrorCode.DUPLICATE_ALIAS_NAME.getFormattedErrorMessage(databaseInfo.getDatabaseAlias()));
+            }
+            //校验目录
+            if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getCategoryId()))) {
+                return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                        AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("所属层级目录id"));
+            }
+            if (categoryDAO.getCategoryCountById(databaseInfo.getCategoryId(), tenantId) == 0) {
+                return ReturnUtil.error(AtlasErrorCode.INVALID_OBJECT_ID.getErrorCode(),
+                        AtlasErrorCode.INVALID_OBJECT_ID.getFormattedErrorMessage(databaseInfo.getCategoryId()));
+            }
+            //保密期限校验
+            if (databaseInfo.getSecurity() && ParamUtil.isNull(databaseInfo.getSecurityCycle())) {
+                return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                        AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("保密期限"));
+            }
+            //对接人信息校验
+            if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getBoDepartmentName(), databaseInfo.getBoName(), databaseInfo.getBoEmail(), databaseInfo.getBoTel(),
+                    databaseInfo.getToDepartmentName(), databaseInfo.getToName(), databaseInfo.getToEmail(), databaseInfo.getToTel()))) {
+                return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                        AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("对接人信息"));
+            }
+
+            if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getTechnicalLeader()))) {
+                return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                        AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("技术负责人"));
+            }
+            if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getBusinessLeader()))) {
+                return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                        AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("业务负责人"));
+            }
+        }
+        return ReturnUtil.success();
+    }
+
     public Result checkUpdateParam(DatabaseInfo databaseInfo, String tenantId,String approveGroupId, SubmitType submitType){
 
         if(Boolean.TRUE.equals(ParamUtil.isNull(submitType))){

@@ -14,13 +14,18 @@ public interface DatabaseInfoDAO {
     @Select("SELECT COUNT(1) FROM db_info WHERE database_guid = #{databaseId}")
     int getDatabaseById(@Param("databaseId")String databaseId);
 
-    @Select("INSERT INTO source_info_relation2parent_category \n" +
+    @Select("<script>" +
+            "INSERT INTO source_info_relation2parent_category \n" +
             "( source_info_id, parent_category_id, create_time, modify_time )\n" +
             "VALUES\n" +
-            "( #{id}, #{categoryId}, NOW( ), NOW( ) )")
-    void insertDatabaseInfoRelationParentCategory(@Param("id")String id,@Param("categoryId")String categoryId);
+            "  <foreach item='dif' index='index' collection='difList' separator=','> " +
+            "( #{dif.id}, #{dif.parentCategoryId}, NOW( ), NOW( ) )" +
+            "</foreach>" +
+            "</script>")
+    void insertDatabaseInfoRelationParentCategory(@Param("difList")List<DatabaseInfoForCategory> difList);
 
-    @Insert("INSERT INTO  public . source_info  (\n" +
+    @Insert("<script>" +
+            "INSERT INTO  public . source_info  (\n" +
             " id ,\n" +
             " category_id ,\n" +
             " database_id ,\n" +
@@ -57,7 +62,8 @@ public interface DatabaseInfoDAO {
             " approve_group_id  \n" +
             ")\n" +
             "VALUES\n" +
-            "(\n" +
+            "    <foreach item='dip' index='index' collection='dips' separator=','>" +
+            "(" +
             "#{dip.id},\n" +
             "#{dip.categoryId},\n" +
             "#{dip.databaseId},\n" +
@@ -91,8 +97,10 @@ public interface DatabaseInfoDAO {
             "NOW( ),\n" +
             "NOW( ),\n" +
             "NOW( )," +
-            "#{dip.approveGroupId})\n")
-    void insertDatabaseInfo(@Param("dip") DatabaseInfoPO databaseInfoPO);
+            "#{dip.approveGroupId} )\n" +
+            "</foreach>" +
+            "</script>")
+    void insertDatabaseInfo(@Param("dips") List<DatabaseInfoPO> databaseInfoPOs);
 
     @Select("SELECT\n" +
             "s.id ,\n" +

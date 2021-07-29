@@ -90,7 +90,9 @@ public class SourceInfoService implements Approvable {
             return checkResult;
         }
         DatabaseInfoPO dp = this.convertToPO(tenantId,databaseInfo);
-        this.registerDatabaseInfo(dp);
+        List<DatabaseInfoPO> dpList = new ArrayList<>();
+        dpList.add(dp);
+        this.registerDatabaseInfo(dpList);
 
         if (SubmitType.SUBMIT_AND_PUBLISH.equals(submitType)){
             List<DatabaseInfo> databaseInfoList = new ArrayList<>();
@@ -103,6 +105,22 @@ public class SourceInfoService implements Approvable {
         return ReturnUtil.success();
     }
 
+    /**
+     * 批量新增新增源信息数据库登记
+     * @param tenantId 租户id
+     * @param databaseInfos 数据库信息对象
+     * @return result
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Result addDatabaseInfoList(String tenantId, List<DatabaseInfo> databaseInfos){
+        Result checkResult = checkService.checkCreateListParam(databaseInfos,tenantId);
+        if (Boolean.FALSE.equals((ReturnUtil.isSuccess(checkResult)))){
+            return checkResult;
+        }
+        List<DatabaseInfoPO> dps = this.convertToPOs(tenantId,databaseInfos);
+        this.registerDatabaseInfo(dps);
+        return ReturnUtil.success();
+    }
     /**
      * 查询源信息数据库登记详情
      * @param id 信息id
@@ -263,11 +281,18 @@ public class SourceInfoService implements Approvable {
      * 执行源信息保存
      * @param databaseInfo 源信息对象
      */
-    private void registerDatabaseInfo(DatabaseInfoPO databaseInfo){
-        String parentCategoryId = databaseInfo.getCategoryId();
-        databaseInfo.setCategoryId(null);
-        databaseInfoDAO.insertDatabaseInfo(databaseInfo);
-        databaseInfoDAO.insertDatabaseInfoRelationParentCategory(databaseInfo.getId(),parentCategoryId);
+    private void registerDatabaseInfo(List<DatabaseInfoPO> databaseInfos){
+        List<DatabaseInfoForCategory> parentCategoryIds = new ArrayList<>();
+        databaseInfos.forEach(di->{
+            DatabaseInfoForCategory dif = new DatabaseInfoForCategory();
+            String parentCategoryId = di.getCategoryId();
+            dif.setId(di.getId());
+            dif.setParentCategoryId(parentCategoryId);
+            di.setCategoryId(null);
+            parentCategoryIds.add(dif);
+        });
+        databaseInfoDAO.insertDatabaseInfo(databaseInfos);
+        databaseInfoDAO.insertDatabaseInfoRelationParentCategory(parentCategoryIds);
     }
 
     /**
@@ -349,6 +374,30 @@ public class SourceInfoService implements Approvable {
         return databaseInfoPO;
     }
 
+    /**
+     * 批量构建PO对象
+     * @param tenantId 租户id
+     * @param databaseInfos 源信息对象
+     * @return 源信息PO
+     */
+    private List<DatabaseInfoPO> convertToPOs(String tenantId, List<DatabaseInfo> databaseInfos){
+        List<DatabaseInfoPO> databaseInfoPOs = new ArrayList<>();
+        databaseInfos.forEach(databaseInfo->{
+            DatabaseInfoPO databaseInfoPO = new DatabaseInfoPO();
+
+            BeansUtil.copyPropertiesIgnoreNull(databaseInfo,databaseInfoPO);
+            String uuid = UUID.randomUUID().toString();
+            databaseInfo.setId(uuid);
+            databaseInfoPO.setId(uuid);
+            databaseInfoPO.setStatus(Status.FOUNDED.getIntValue()+"");
+            databaseInfoPO.setCreator(AdminUtils.getUserData().getUserId());
+            databaseInfoPO.setUpdater(AdminUtils.getUserData().getUserId());
+            databaseInfoPO.setTenantId(tenantId);
+            databaseInfoPOs.add(databaseInfoPO);
+                }
+        );
+        return databaseInfoPOs;
+    }
     /**
      * 获取被审批的对象详情接口实现
      * @param objectId  对象ID
