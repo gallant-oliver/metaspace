@@ -26,7 +26,6 @@ public class KafkaConnectorUtil {
     private static final Cache<String, KafkaConnector> CONNECTOR_CACHE = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(60000, TimeUnit.MINUTES).build();
 
     private static final List<String> KAFKA_CONNECTOR_URLS;
-    private static final String ORACLE_INIT_CONNECTOR;
     private static final ObjectMapper MAPPER;
     private static final String URL_PREFIX;
     private static final Map<String, String> CONNECTOR_CLASS_MAP;
@@ -35,7 +34,6 @@ public class KafkaConnectorUtil {
             MAPPER = new ObjectMapper().configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
             MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
             Configuration conf = ApplicationProperties.get();
-            ORACLE_INIT_CONNECTOR = conf.getString("oracle.init.connector.name", "oracle_init_connector");
             KAFKA_CONNECTOR_URLS = Arrays.asList(conf.getStringArray("oracle.kafka.connect.urls"));
             String url = KAFKA_CONNECTOR_URLS.get(0);
             URL_PREFIX = url.substring(0,url.indexOf("://")+3);
@@ -213,7 +211,6 @@ public class KafkaConnectorUtil {
             LOG.error("启动connector失败" ,e);
             throw new RuntimeException("启动connector失败", e);
         }
-        stopConnector(ORACLE_INIT_CONNECTOR);
         return true;
     }
 
