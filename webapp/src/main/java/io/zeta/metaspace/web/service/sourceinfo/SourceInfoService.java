@@ -348,7 +348,7 @@ public class SourceInfoService implements Approvable {
         approveItem.setBusinessTypeText(BusinessType.DATABASE_INFO_REGISTER.getTypeText());
         approveItem.setSubmitter(AdminUtils.getUserData().getUserId());
         approveItem.setCommitTime(Timestamp.valueOf(LocalDateTime.now()));
-        approveItem.setModuleId(ModuleEnum.SOURCEINFO.getId() + "");
+        approveItem.setModuleId(ModuleEnum.DATABASEREGISTER.getId() + "");
         approveItem.setVersion(maxVersion+1);
         approveItem.setTenantId(tenantId);
 
@@ -493,7 +493,7 @@ public class SourceInfoService implements Approvable {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.createMetadataCategory()");
             }
-            HttpRequestContext.get().auditLog(ModuleEnum.SOURCEINFO.getAlias(), databaseInfoForCategory.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), databaseInfoForCategory.getName());
             CategoryPrivilege categoryPrivilege= dataManageService.createCategory(this.buildCategoryInfo(databaseInfoForCategory), CATEGORY_TYPE, tenantId);
             databaseInfoDAO.updateRealCategoryRelation(databaseInfoForCategory.getId(),categoryPrivilege.getGuid());
             databaseDAO.updateDatabaseRelationToCategory(databaseInfoForCategory.getDatabaseId(),categoryPrivilege.getGuid());
@@ -512,7 +512,8 @@ public class SourceInfoService implements Approvable {
     private CategoryInfoV2 buildCategoryInfo(DatabaseInfoForCategory databaseInfoBO){
         CategoryInfoV2 categoryInfoV2 = new CategoryInfoV2();
 
-        categoryInfoV2.setAuthorized(Boolean.TRUE);
+        categoryInfoV2.setAuthorized(Boolean.FALSE);
+        categoryInfoV2.setCreator(databaseInfoBO.getCreator());
         categoryInfoV2.setName(databaseInfoBO.getName());
         categoryInfoV2.setGuid(databaseInfoBO.getParentCategoryId());
         categoryInfoV2.setParentCategoryGuid(databaseInfoBO.getParentCategoryId());

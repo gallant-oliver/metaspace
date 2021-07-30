@@ -30,7 +30,7 @@ public class ApproveServiceImp implements ApproveService{
 
     private static  Map<ModuleEnum, String> moduleServiceClass = ImmutableMap.<ModuleEnum, String>builder()  //key:模块单例，value:service name
             .put(ModuleEnum.NORMDESIGN, "indexService")
-            .put(ModuleEnum.SOURCEINFO, "sourceInfoService")
+            .put(ModuleEnum.DATABASEREGISTER, "sourceInfoService")
             .build();
 
     @Autowired

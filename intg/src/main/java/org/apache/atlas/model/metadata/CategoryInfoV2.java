@@ -29,6 +29,7 @@ public class CategoryInfoV2 {
     private String direction;
     private String parentCategoryGuid;
     private Integer categoryType;
+    private String creator;
     private String safe;
     private boolean authorized;
     private String code;
@@ -47,6 +48,12 @@ public class CategoryInfoV2 {
 
     public void setSafe(String safe) {
         this.safe = safe;
+    }
+
+    public String getCreator(){return creator;}
+
+    public void setCreator(String creator){
+        this.creator = creator;
     }
 
     public String getGuid() {

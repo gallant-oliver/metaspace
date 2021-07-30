@@ -41,6 +41,10 @@ public class SourceInfoParamCheckService {
             return ReturnUtil.error(AtlasErrorCode.INVALID_OBJECT_ID.getErrorCode(),
                     AtlasErrorCode.INVALID_OBJECT_ID.getFormattedErrorMessage(databaseInfo.getDatabaseId()));
         }
+        if(databaseInfoDAO.getDatabaseByDbId(databaseInfo.getDatabaseId(),tenantId)){
+            return ReturnUtil.error(AtlasErrorCode.INVALID_OBJECT_ID.getErrorCode(),
+                    AtlasErrorCode.INVALID_OBJECT_ID.getFormattedErrorMessage(databaseInfo.getDatabaseId()+"已经登记，无法重复登记"));
+        }
         if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getDataSourceId()))) {
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                     AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("数据源id"));
@@ -120,6 +124,10 @@ public class SourceInfoParamCheckService {
             if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getDataSourceId()))) {
                 return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                         AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("数据源id"));
+            }
+            if(databaseInfoDAO.getDatabaseByDbId(databaseInfo.getDatabaseId(),tenantId)){
+                return ReturnUtil.error(AtlasErrorCode.INVALID_OBJECT_ID.getErrorCode(),
+                        AtlasErrorCode.INVALID_OBJECT_ID.getFormattedErrorMessage(databaseInfo.getDatabaseId()+"已经登记，无法重复登记"));
             }
             //校验中文名
             if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getDatabaseAlias()))) {

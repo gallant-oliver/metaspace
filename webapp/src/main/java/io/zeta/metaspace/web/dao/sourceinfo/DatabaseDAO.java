@@ -25,7 +25,7 @@ public interface DatabaseDAO {
             "WHERE " +
             "sd.source_id = #{sourceId} " +
             "AND info.db_type = #{dbType} " +
-            "AND info.database_id NOT IN ( SELECT DISTINCT database_id FROM source_info WHERE tenant_id = #{tenantId} AND ( category_id IS NULL OR category_id = '' ))")
+            "AND info.database_id NOT IN ( SELECT DISTINCT database_id FROM source_info WHERE tenant_id = #{tenantId} AND version = 0)")
     List<DataBaseInfo> getDataBaseCode(@Param("sourceId") String sourceId, @Param("dbType") String dbType, @Param("tenantId") String tenantId);
 
     @Select("<script>"+
