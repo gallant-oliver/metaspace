@@ -140,6 +140,7 @@ public interface DatabaseInfoDAO {
             "ag.name AS approveGroupName,\n" +
             "ag.id AS approveGroupId,\n" +
             "ai.reason as audit_des ,\n" +
+            "ai.approve_time AS auditTime,\n" +
             "(SELECT u.username FROM users u WHERE u.userid = ai.approver ) AS auditorName\n" +
             "FROM\n" +
             "source_info s LEFT JOIN category c ON s.category_id = c.guid AND c.tenantid = s.tenant_id\n" +
@@ -167,7 +168,7 @@ public interface DatabaseInfoDAO {
 
     @Update("<script>" +
             "UPDATE source_info \n" +
-            "SET status = #{status} \n" +
+            "SET status = #{status},update_time = NOW(),modify_time = NOW() \n" +
             "WHERE\n" +
             " id IN " +
             "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
@@ -179,7 +180,7 @@ public interface DatabaseInfoDAO {
     void updateStatusByIds(@Param("ids") List<String> idList,@Param("status") String status);
 
     @Update("UPDATE source_info \n" +
-            "SET approve_id = #{approveId},approve_group_id = #{approveGroupId} \n" +
+            "SET approve_id = #{approveId},approve_group_id = #{approveGroupId},update_time = NOW(),modify_time = NOW() \n" +
             "WHERE\n" +
             " id = #{id} " +
             " AND " +
@@ -328,7 +329,7 @@ public interface DatabaseInfoDAO {
             "</script>")
     void insertHistoryVersion(@Param("id") String idList);
 
-    @Update("UPDATE source_info SET category_id = #{categoryId} WHERE id  = #{id} AND version = 0")
+    @Update("UPDATE source_info SET category_id = #{categoryId},update_time = NOW(), modify_time = NOW() WHERE id  = #{id} AND version = 0")
     void updateRealCategoryRelation(@Param("id")String sourceInfoId,@Param("categoryId")String categoryId);
 
     @Delete("<script>" +
@@ -375,10 +376,13 @@ public interface DatabaseInfoDAO {
             "to_department_name = #{di.toDepartmentName}," +
             "technical_leader = #{di.technicalLeader},\n" +
             "business_leader = #{di.businessLeader},\n" +
-            "annex_id = #{di.annexId} \n" +
-            "WHERE\n" +
+            "annex_id = #{di.annexId}, \n" +
+            "updater  = #{userId}," +
+            "update_time = NOW()," +
+            "modify_time = NOW() " +
+            " WHERE\n" +
             " id = #{di.id} AND \"version\" = 0")
-    void updateSourceInfo(@Param("di") DatabaseInfo databaseInfo);
+    void updateSourceInfo(@Param("di") DatabaseInfo databaseInfo,@Param("userId") String userId);
 
     @Select("<script>" +
             "SELECT\n" +
