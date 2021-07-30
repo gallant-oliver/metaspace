@@ -267,6 +267,7 @@ public interface DatabaseInfoDAO {
             " s.category_id AS categoryId,\n" +
             " s.database_id AS databaseId,\n" +
             " s.database_alias AS name,\n" +
+            " s.creator AS creator,\n" +
             " sirc.parent_category_id AS parentCategoryId \n" +
             "FROM\n" +
             " source_info s\n" +
@@ -437,4 +438,26 @@ public interface DatabaseInfoDAO {
             "</foreach>"+
             "</script>")
     int batchInsert(@Param("list") List<DatabaseInfoPO> saveList);
+
+    @Select("SELECT COUNT(1)>0 FROM source_info WHERE database_id = #{databaseId} AND tenant_id = tenantId AND version = 0")
+    boolean getDatabaseByDbId(@Param("databaseId") String databaseId,@Param("tenantId") String tenantId);
+
+    @Select("<script>" +
+            "SELECT\n" +
+            " s.ID,\n" +
+            " s.category_id AS categoryId,\n" +
+            " s.database_id AS databaseId,\n" +
+            " s.database_alias AS name,\n" +
+            " sirc.parent_category_id AS parentCategoryId \n" +
+            "FROM\n" +
+            " source_info s\n" +
+            " LEFT JOIN source_info_relation2parent_category sirc ON s.\"id\" = sirc.source_info_id \n" +
+            "WHERE\n" +
+            " s.category_id =#{id}"+
+            " AND " +
+            " s.tenant_id =#{tenantId}"+
+            " AND " +
+            " version = 0"+
+            "</script>")
+    DatabaseInfoForCategory getDatabaseInfoByCategoryId(@Param("id")String id,@Param("tenantId")String tenantId);
 }
