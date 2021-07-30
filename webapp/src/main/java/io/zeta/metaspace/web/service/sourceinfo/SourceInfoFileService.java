@@ -6,7 +6,6 @@ import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForDb;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
-import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
@@ -28,19 +27,20 @@ public class SourceInfoFileService {
     private final Logger logger  = LoggerFactory.getLogger(SourceInfoFileService.class);
     @Autowired
     private DatabaseDAO databaseDAO;
-    @Autowired
-    private DatabaseInfoDAO databaseInfoDAO;
+  /*  @Autowired
+    private DatabaseInfoDAO databaseInfoDAO;*/
     @Autowired
     private CategoryDAO categoryDao;
     @Autowired
     private SourceInfoService sourceInfoService;
 
-    private Map<String,String> categoryMap  = new HashMap<String,String>(){{
+    private Map<String,String> categoryMap  = new HashMap<String,String>();
+    /*{{
         put("贴源层","1");
         put("基础层","2");
         put("通用层","4");
         put("应用层","5");
-    }};
+    }};*/
 
     /**
      * 获取存在重复名称或者不存在的库信息
@@ -133,6 +133,7 @@ public class SourceInfoFileService {
 
         String[] titleArray = excelDataList.get(0);
         Map<String,Integer> map = propertyToColumnIndexMap(titleArray);
+        categoryMap = getCategoryFromDb();
 
         Map<String,List<String[]>> resultMap = new HashMap<>();
         getExcludeExcelData(map,excelDataList, tenantId,
@@ -177,6 +178,26 @@ public class SourceInfoFileService {
         }
         return "";
     }
+
+    /**
+     * 目录数据库获取顶级的目录名和guid
+     * @return
+     */
+    private Map<String,String> getCategoryFromDb(){
+        if(categoryMap != null && !categoryMap.isEmpty()){
+            return categoryMap;
+        }
+        Map<String,String> result = new HashMap<>();
+        List<CategoryEntityV2> list = categoryDao.queryNameByType(0);
+        if(CollectionUtils.isEmpty(list)){
+            return result;
+        }
+
+        for(CategoryEntityV2 item : list){
+            result.put(item.getName(),item.getGuid());
+        }
+        return result;
+    }
     private Map<String,Integer> propertyToColumnIndexMap( String[] array){
         Map<String,Integer> result = new HashMap<>();
         for(int i = 0,len = array.length; i < len;i++){
@@ -215,6 +236,7 @@ public class SourceInfoFileService {
         int dbEnIndex = map.getOrDefault("数据库英文名称", -1);
         int dbZhIndex = map.getOrDefault("数据库中文名", -1);
         int categoryIndex = map.getOrDefault("数据层名称", -1);
+        categoryMap = getCategoryFromDb();
 
         Map<String,List<String[]>> resultMap = new HashMap<>();
         List<DatabaseInfoForDb> dbList = getExcludeExcelData(map,excelDataList, tenantId,

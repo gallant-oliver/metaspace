@@ -362,4 +362,7 @@ public interface CategoryDAO {
     int getCategoryCountByIdAndName(@Param("tenantId") String tenantId,@Param("categoryId") String categoryId,@Param("databaseAlias") String databaseAlias);
     @Select("SELECT guid,name,parentcategoryguid as parentCategoryGuid FROM public.category where tenantid=#{tenantId} ")
     List<CategoryEntityV2> queryByTenantId(@Param("tenantId") String tenantId);
+
+    @Select(" select distinct guid,name from category where categorytype = #{categorytype} order by guid ")
+    List<CategoryEntityV2> queryNameByType(@Param("categorytype")int categorytype);
 }
