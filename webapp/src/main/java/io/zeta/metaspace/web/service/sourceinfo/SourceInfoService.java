@@ -206,6 +206,7 @@ public class SourceInfoService implements Approvable {
      * @param idList 被删除的idList
      * @return 删除结果
      */
+    @Transactional(rollbackFor = Exception.class)
     public Result delete(String tenantId, List<String> idList) {
         Result checkResult = checkService.checkSourceInfoStatus(idList,SourceInfoOperation.DELETE);
         if (Boolean.FALSE.equals(ReturnUtil.isSuccess(checkResult))){
@@ -241,12 +242,13 @@ public class SourceInfoService implements Approvable {
      * @param submitType 提交类型
      * @return 处理结果
      */
+    @Transactional(rollbackFor = Exception.class)
     public Result updateSourceInfo(DatabaseInfo databaseInfo,String tenantId,String approveGroupId,SubmitType submitType){
         Result checkResult = checkService.checkUpdateParam(databaseInfo,tenantId,approveGroupId,submitType);
         if (Boolean.FALSE.equals((ReturnUtil.isSuccess(checkResult)))){
             return checkResult;
         }
-        databaseInfoDAO.updateSourceInfo(databaseInfo);
+        databaseInfoDAO.updateSourceInfo(databaseInfo,AdminUtils.getUserData().getUserId());
         List<String> ids = new ArrayList<>();
         ids.add(databaseInfo.getId());
         List<DatabaseInfo> databaseInfoList = new ArrayList<>();
@@ -279,7 +281,7 @@ public class SourceInfoService implements Approvable {
 
      /**
      * 执行源信息保存
-     * @param databaseInfo 源信息对象
+     * @param databaseInfos 源信息对象
      */
     private void registerDatabaseInfo(List<DatabaseInfoPO> databaseInfos){
         List<DatabaseInfoForCategory> parentCategoryIds = new ArrayList<>();

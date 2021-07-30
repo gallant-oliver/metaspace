@@ -148,4 +148,6 @@ public class DatabaseInfoBO {
     private String auditDes;
 
     private String auditorName;
+
+    private String auditTime;
 }
