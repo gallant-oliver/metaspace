@@ -20,11 +20,15 @@ import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.enums.Status;
+import io.zeta.metaspace.model.source.CodeInfo;
+import io.zeta.metaspace.model.source.DataBaseInfo;
 import io.zeta.metaspace.model.sourceinfo.AnalyticResult;
 import io.zeta.metaspace.model.sourceinfo.Annex;
 import io.zeta.metaspace.model.sourceinfo.CreateRequest;
 import io.zeta.metaspace.model.sourceinfo.PublishRequest;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.service.HdfsService;
+import io.zeta.metaspace.web.service.SourceService;
 import io.zeta.metaspace.web.service.sourceinfo.AnnexService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoFileService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoService;
@@ -68,6 +72,8 @@ public class SourceInfoREST {
     private HttpServletResponse httpServletResponse;
     @Autowired
     private SourceInfoService sourceInfoService;
+    @Autowired
+    private SourceService sourceService;
 
     @Autowired
     private HdfsService hdfsService;
@@ -378,4 +384,47 @@ public class SourceInfoREST {
     }
 
 
+    /**
+     * 获取数据源下某种类型的数据库
+     *
+     * @param dataSourceId
+     * @param dataSourceType
+     * @return
+     */
+    @GET
+    @Path("database")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDatabaseByType(@HeaderParam("tenantId") String tenantId, @QueryParam("dataSourceId") String dataSourceId, @QueryParam("dataSourceType") String dataSourceType) {
+        List<DataBaseInfo> dataBaseInfoList = sourceService.getDatabaseByType(dataSourceId, dataSourceType, tenantId);
+        return ReturnUtil.success(dataBaseInfoList);
+    }
+
+    /**
+     * 获取可用用户列表
+     *
+     * @return
+     */
+    @GET
+    @Path("user/list")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getUserList(@HeaderParam("tenantId") String tenantId) {
+        List<User> userList = sourceService.getUserList();
+        return ReturnUtil.success(userList);
+    }
+
+    /**
+     * 获取源信息状态列表
+     *
+     * @return
+     */
+    @GET
+    @Path("status/list")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getStatusList() {
+        List<CodeInfo> codeInfoList = sourceService.getStatusList();
+        return ReturnUtil.success(codeInfoList);
+    }
 }
