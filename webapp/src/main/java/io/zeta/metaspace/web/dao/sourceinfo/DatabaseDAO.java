@@ -30,7 +30,8 @@ public interface DatabaseDAO {
 
     @Select("<script>"+
             "select  tb.db_type AS dbType,tb.database_guid AS databaseId,tb.database_name AS databaseName," +
-            " ts.tenant_id AS tenantId, ts.database_alias AS databaseAlias,ts.category_id AS  categoryId \n" +
+            " ts.tenant_id AS tenantId, ts.database_alias AS databaseAlias,ts.category_id AS  categoryId ,\n" +
+            "  (select source_id from source_db where db_guid=tb.database_guid limit 1 ) AS sourceId "+
             " from db_info tb left join source_info ts on tb.database_guid = ts.database_id\n" +
             " where ts.tenant_id=#{tenantId} and ts.version = 0 and tb.database_name in "+
             "<foreach collection='dbNameList' item='dbName' separator=',' open='(' close=')'>"+

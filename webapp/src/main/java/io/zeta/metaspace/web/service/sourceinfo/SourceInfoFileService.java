@@ -277,6 +277,7 @@ public class SourceInfoFileService {
                     .findFirst().orElse(null);
             String databaseId = databaseInfoForDb != null ? databaseInfoForDb.getDatabaseId() : "";
             databaseInfo.setDatabaseId(databaseId);
+            databaseInfo.setDataSourceId(databaseInfoForDb != null ? databaseInfoForDb.getSourceId() : "");
             databaseInfo.setDatabaseAlias(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库中文名",-1)));
             databaseInfo.setPlanningPackageCode(getElementOrDefault(array,MapUtils.getIntValue(map,"规划包编号",-1)));
             databaseInfo.setPlanningPackageCode(getElementOrDefault(array,MapUtils.getIntValue(map,"规划包名称",-1)));

@@ -10,4 +10,5 @@ public class DatabaseInfoForDb {
     private String dbType;
     private String tenantId;
     private String categoryId;
+    private String sourceId;
 }
