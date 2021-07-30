@@ -42,7 +42,8 @@ import java.util.List;
  */
 @Singleton
 @Service
-@Path("/source/info")
+//@Path("/source/info-old")
+@Deprecated
 public class SourceInfoFileREST {
     @Autowired
     private HdfsService hdfsService;
