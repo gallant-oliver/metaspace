@@ -426,13 +426,13 @@ public interface DatabaseInfoDAO {
     @Insert("<script>" +
             "INSERT INTO public.source_info(\n" +
             "\t id, category_id, database_id, database_alias, planning_package_code, planning_package_name, extract_tool, extract_cycle," +
-            " security, security_cycle, importance, description, creator, status, annex_id, " +
+            " security, security_cycle, importance, description, creator, status, version, " +
             "bo_name, bo_department_name, bo_email, bo_tel, to_name, to_department_name, to_email, to_tel, technical_leader, business_leader, " +
             "tenant_id, update_time, record_time, create_time, modify_time)\n" +
             "\t VALUES "+
             "<foreach collection=\"list\" item=\"item\" index=\"index\" separator=\",\">\n" +
             "(#{item.id},#{item.categoryId},#{item.databaseId},#{item.databaseAlias},#{item.planningPackageCode},#{item.extractTool},#{item.extractCycle}," +
-            "#{item.security},#{item.securityCycle},#{item.importance},#{item.description},#{item.creator},#{item.status},#{item.annexId}," +
+            "#{item.security},#{item.securityCycle},#{item.importance},#{item.description},#{item.creator},#{item.status},0," +
             "#{item.boName},#{item.boDepartmentName},#{item.boEmail},#{item.boTel},#{item.toName},#{item.toDepartmentName},#{item.toEmail},#{item.toTel},#{item.technicalLeader},#{item.businessLeader}," +
             "#{item.tenantId},NOW(),NOW(),NOW(),NOW())\n" +
             "</foreach>"+

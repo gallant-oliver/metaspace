@@ -1,14 +1,11 @@
 package io.zeta.metaspace.web.service.sourceinfo;
 
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
-import io.zeta.metaspace.model.po.sourceinfo.DatabaseInfoPO;
 import io.zeta.metaspace.model.sourceinfo.AnalyticResult;
+import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForDb;
-import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
-import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
-import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
@@ -30,17 +27,20 @@ public class SourceInfoFileService {
     private final Logger logger  = LoggerFactory.getLogger(SourceInfoFileService.class);
     @Autowired
     private DatabaseDAO databaseDAO;
-    @Autowired
-    private DatabaseInfoDAO databaseInfoDAO;
+  /*  @Autowired
+    private DatabaseInfoDAO databaseInfoDAO;*/
     @Autowired
     private CategoryDAO categoryDao;
+    @Autowired
+    private SourceInfoService sourceInfoService;
 
-    private Map<String,String> categoryMap  = new HashMap<String,String>(){{
+    private Map<String,String> categoryMap  = new HashMap<String,String>();
+    /*{{
         put("贴源层","1");
         put("基础层","2");
         put("通用层","4");
         put("应用层","5");
-    }};
+    }};*/
 
     /**
      * 获取存在重复名称或者不存在的库信息
@@ -133,6 +133,8 @@ public class SourceInfoFileService {
 
         String[] titleArray = excelDataList.get(0);
         Map<String,Integer> map = propertyToColumnIndexMap(titleArray);
+        categoryMap = getCategoryFromDb();
+        excelDataList.remove(0);
 
         Map<String,List<String[]>> resultMap = new HashMap<>();
         getExcludeExcelData(map,excelDataList, tenantId,
@@ -177,9 +179,34 @@ public class SourceInfoFileService {
         }
         return "";
     }
+
+    /**
+     * 目录数据库获取顶级的目录名和guid
+     * @return
+     */
+    private Map<String,String> getCategoryFromDb(){
+        if(categoryMap != null && !categoryMap.isEmpty()){
+            return categoryMap;
+        }
+        Map<String,String> result = new HashMap<>();
+        List<CategoryEntityV2> list = categoryDao.queryNameByType(0);
+        if(CollectionUtils.isEmpty(list)){
+            return result;
+        }
+
+        for(CategoryEntityV2 item : list){
+            result.put(item.getName(),item.getGuid());
+        }
+        return result;
+    }
     private Map<String,Integer> propertyToColumnIndexMap( String[] array){
         Map<String,Integer> result = new HashMap<>();
         for(int i = 0,len = array.length; i < len;i++){
+            //增加处理手机号的字段  模板有两个问题
+            if("手机号".equals(array[i]) && result.containsKey("手机号") ){
+                result.put("技术Owner手机号",i);
+                continue;
+            }
             result.put(array[i],i);
         }
         return result;
@@ -215,6 +242,8 @@ public class SourceInfoFileService {
         int dbEnIndex = map.getOrDefault("数据库英文名称", -1);
         int dbZhIndex = map.getOrDefault("数据库中文名", -1);
         int categoryIndex = map.getOrDefault("数据层名称", -1);
+        categoryMap = getCategoryFromDb();
+        excelDataList.remove(0);
 
         Map<String,List<String[]>> resultMap = new HashMap<>();
         List<DatabaseInfoForDb> dbList = getExcludeExcelData(map,excelDataList, tenantId,
@@ -232,22 +261,23 @@ public class SourceInfoFileService {
             logger.info("没有要保存的数据库信息");
             return 1;
         }
-        User user = AdminUtils.getUserData();
-        String username = user.getUsername();
-        List<DatabaseInfoPO> saveList = new ArrayList<>();
-        DatabaseInfoPO databaseInfo = null;
+        /*User user = AdminUtils.getUserData();
+        String username = user.getUsername();*/
+        List<DatabaseInfo> saveList = new ArrayList<>();
+        DatabaseInfo databaseInfo = null;
 
         for(String[] array : saveDbList){
             String sourceId = UUIDUtils.alphaUUID();
             String categoryId = MapUtils.getString(categoryMap,getElementOrDefault(array,MapUtils.getIntValue(map,"数据层名称",-1)),"");
-            databaseInfo = new DatabaseInfoPO();
+            databaseInfo = new DatabaseInfo();
             databaseInfo.setId(sourceId);
-            databaseInfo.setAnnexId(annexId);
+            //databaseInfo.setAnnexId(annexId);
             databaseInfo.setCategoryId(categoryId);
             DatabaseInfoForDb databaseInfoForDb = dbEnIndex == -1 ? null : dbList.stream().filter(p->p.getDatabaseName().equalsIgnoreCase(array[dbEnIndex]))
                     .findFirst().orElse(null);
             String databaseId = databaseInfoForDb != null ? databaseInfoForDb.getDatabaseId() : "";
             databaseInfo.setDatabaseId(databaseId);
+            databaseInfo.setDataSourceId(databaseInfoForDb != null ? databaseInfoForDb.getSourceId() : "");
             databaseInfo.setDatabaseAlias(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库中文名",-1)));
             databaseInfo.setPlanningPackageCode(getElementOrDefault(array,MapUtils.getIntValue(map,"规划包编号",-1)));
             databaseInfo.setPlanningPackageCode(getElementOrDefault(array,MapUtils.getIntValue(map,"规划包名称",-1)));
@@ -256,24 +286,24 @@ public class SourceInfoFileService {
             databaseInfo.setSecurity("是".equals(getElementOrDefault(array,MapUtils.getIntValue(map,"是否保密",-1))));
             databaseInfo.setSecurityCycle(getElementOrDefault(array,MapUtils.getIntValue(map,"保密期限",-1)));
             databaseInfo.setImportance("是".equals(getElementOrDefault(array,MapUtils.getIntValue(map,"是否重要",-1))));
-            databaseInfo.setCreator(username);
-            databaseInfo.setStatus("0");
+           // databaseInfo.setCreator(username);
             databaseInfo.setBoName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner姓名",-1)));
             databaseInfo.setBoDepartmentName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner部门名称",-1)));
-            databaseInfo.setBoTel(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner手机号",-1)));
-            databaseInfo.setBoEmail(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner姓名",-1)));
+            databaseInfo.setBoTel(getElementOrDefault(array,MapUtils.getIntValue(map,"手机号",-1)));
+            databaseInfo.setBoEmail(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner电子邮箱",-1)));
             databaseInfo.setToName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner姓名",-1)));
             databaseInfo.setToDepartmentName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner部门名称",-1)));
-            databaseInfo.setToTel(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner手机号",-1)));
+            databaseInfo.setToTel(getElementOrDefault(array,MapUtils.getIntValue(map,"技术Owner手机号",-1)));
             databaseInfo.setToEmail(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner电子邮箱",-1)));
             databaseInfo.setTechnicalLeader(getElementOrDefault(array,MapUtils.getIntValue(map,"技术负责人",-1)));
             databaseInfo.setBusinessLeader(getElementOrDefault(array,MapUtils.getIntValue(map,"业务负责人",-1)));
-            databaseInfo.setTenantId(tenantId);
+            //databaseInfo.setTenantId(tenantId);
             saveList.add(databaseInfo);
         }
 
         //批量保存处理
-        databaseInfoDAO.batchInsert(saveList);
+        sourceInfoService.addDatabaseInfoList(tenantId,saveList);
+        //databaseInfoDAO.batchInsert(saveList);
         logger.info("文件导入处理完毕。");
         return 1;
     }

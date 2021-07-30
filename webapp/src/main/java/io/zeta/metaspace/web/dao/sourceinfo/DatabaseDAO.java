@@ -29,9 +29,10 @@ public interface DatabaseDAO {
     List<DataBaseInfo> getDataBaseCode(@Param("sourceId") String sourceId, @Param("dbType") String dbType, @Param("tenantId") String tenantId);
 
     @Select("<script>"+
-            "select  tb.db_type AS dbType,tb.database_id AS databaseId,tb.database_name AS databaseName," +
-            " ts.tenant_id AS tenantId, ts.database_alias AS databaseAlias,ts.category_id AS  categoryId \n" +
-            " from db_info tb left join source_info ts on tb.database_id = ts.database_id\n" +
+            "select  tb.db_type AS dbType,tb.database_guid AS databaseId,tb.database_name AS databaseName," +
+            " ts.tenant_id AS tenantId, ts.database_alias AS databaseAlias,ts.category_id AS  categoryId ,\n" +
+            "  (select source_id from source_db where db_guid=tb.database_guid limit 1 ) AS sourceId "+
+            " from db_info tb left join source_info ts on tb.database_guid = ts.database_id\n" +
             " where ts.tenant_id=#{tenantId} and ts.version = 0 and tb.database_name in "+
             "<foreach collection='dbNameList' item='dbName' separator=',' open='(' close=')'>"+
             "#{dbName}"+
