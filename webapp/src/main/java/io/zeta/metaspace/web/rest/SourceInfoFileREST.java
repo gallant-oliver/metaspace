@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.rest;
 
+import com.gridsum.gdp.library.commons.utils.DateTimeUtils;
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import com.itextpdf.text.DocumentException;
 import com.sun.jersey.core.header.FormDataContentDisposition;
@@ -20,6 +21,8 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.time.DateFormatUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -87,7 +90,8 @@ public class SourceInfoFileREST {
         try{
             //tenantId 使用租户id作为上传文件子目录
             String fileName = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
-            String uploadPath = hdfsService.uploadFile(fileInputStream,fileName,tenantId);
+            String uploadDir = tenantId + "/" + DateTimeUtils.formatTime(System.currentTimeMillis(),"yyyyMMddHHmmss");
+            String uploadPath = hdfsService.uploadFile(fileInputStream,fileName,uploadDir);
             //组装附件表的字段
             String annexId = UUIDUtils.alphaUUID();
 
