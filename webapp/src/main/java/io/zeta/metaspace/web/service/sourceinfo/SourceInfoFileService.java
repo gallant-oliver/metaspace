@@ -134,6 +134,7 @@ public class SourceInfoFileService {
         String[] titleArray = excelDataList.get(0);
         Map<String,Integer> map = propertyToColumnIndexMap(titleArray);
         categoryMap = getCategoryFromDb();
+        excelDataList.remove(0);
 
         Map<String,List<String[]>> resultMap = new HashMap<>();
         getExcludeExcelData(map,excelDataList, tenantId,
@@ -237,6 +238,7 @@ public class SourceInfoFileService {
         int dbZhIndex = map.getOrDefault("数据库中文名", -1);
         int categoryIndex = map.getOrDefault("数据层名称", -1);
         categoryMap = getCategoryFromDb();
+        excelDataList.remove(0);
 
         Map<String,List<String[]>> resultMap = new HashMap<>();
         List<DatabaseInfoForDb> dbList = getExcludeExcelData(map,excelDataList, tenantId,
