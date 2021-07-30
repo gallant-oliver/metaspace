@@ -512,7 +512,8 @@ public class SourceInfoService implements Approvable {
     private CategoryInfoV2 buildCategoryInfo(DatabaseInfoForCategory databaseInfoBO){
         CategoryInfoV2 categoryInfoV2 = new CategoryInfoV2();
 
-        categoryInfoV2.setAuthorized(Boolean.TRUE);
+        categoryInfoV2.setAuthorized(Boolean.FALSE);
+        categoryInfoV2.setCreator(databaseInfoBO.getCreator());
         categoryInfoV2.setName(databaseInfoBO.getName());
         categoryInfoV2.setGuid(databaseInfoBO.getParentCategoryId());
         categoryInfoV2.setParentCategoryGuid(databaseInfoBO.getParentCategoryId());

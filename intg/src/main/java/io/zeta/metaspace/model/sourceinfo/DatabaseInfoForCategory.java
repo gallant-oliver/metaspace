@@ -9,6 +9,8 @@ public class DatabaseInfoForCategory {
 
     private String parentCategoryId;
 
+    private String creator;
+
     private String databaseId;
 
     private String categoryId;

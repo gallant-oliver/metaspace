@@ -202,6 +202,11 @@ public class SourceInfoFileService {
     private Map<String,Integer> propertyToColumnIndexMap( String[] array){
         Map<String,Integer> result = new HashMap<>();
         for(int i = 0,len = array.length; i < len;i++){
+            //增加处理手机号的字段  模板有两个问题
+            if("手机号".equals(array[i]) && result.containsKey("手机号") ){
+                result.put("技术Owner手机号",i);
+                continue;
+            }
             result.put(array[i],i);
         }
         return result;
@@ -272,6 +277,7 @@ public class SourceInfoFileService {
                     .findFirst().orElse(null);
             String databaseId = databaseInfoForDb != null ? databaseInfoForDb.getDatabaseId() : "";
             databaseInfo.setDatabaseId(databaseId);
+            databaseInfo.setDataSourceId(databaseInfoForDb != null ? databaseInfoForDb.getSourceId() : "");
             databaseInfo.setDatabaseAlias(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库中文名",-1)));
             databaseInfo.setPlanningPackageCode(getElementOrDefault(array,MapUtils.getIntValue(map,"规划包编号",-1)));
             databaseInfo.setPlanningPackageCode(getElementOrDefault(array,MapUtils.getIntValue(map,"规划包名称",-1)));
@@ -283,11 +289,11 @@ public class SourceInfoFileService {
            // databaseInfo.setCreator(username);
             databaseInfo.setBoName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner姓名",-1)));
             databaseInfo.setBoDepartmentName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner部门名称",-1)));
-            databaseInfo.setBoTel(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner手机号",-1)));
-            databaseInfo.setBoEmail(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner姓名",-1)));
+            databaseInfo.setBoTel(getElementOrDefault(array,MapUtils.getIntValue(map,"手机号",-1)));
+            databaseInfo.setBoEmail(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner电子邮箱",-1)));
             databaseInfo.setToName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner姓名",-1)));
             databaseInfo.setToDepartmentName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner部门名称",-1)));
-            databaseInfo.setToTel(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner手机号",-1)));
+            databaseInfo.setToTel(getElementOrDefault(array,MapUtils.getIntValue(map,"技术Owner手机号",-1)));
             databaseInfo.setToEmail(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner电子邮箱",-1)));
             databaseInfo.setTechnicalLeader(getElementOrDefault(array,MapUtils.getIntValue(map,"技术负责人",-1)));
             databaseInfo.setBusinessLeader(getElementOrDefault(array,MapUtils.getIntValue(map,"业务负责人",-1)));
