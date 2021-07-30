@@ -36,6 +36,10 @@ public class DataSourceHead {
     private boolean isSchema;
     private String oracleDb;
     private String serviceType;
+    /**
+     * 数据库名
+     */
+    private String database;
 
     public String getServiceType() {
         return serviceType;
@@ -165,5 +169,13 @@ public class DataSourceHead {
 
     public void setUpdateUserName(String updateUserName) {
         this.updateUserName = updateUserName;
+    }
+
+    public String getDatabase() {
+        return database;
+    }
+
+    public void setDatabase(String database) {
+        this.database = database;
     }
 }
