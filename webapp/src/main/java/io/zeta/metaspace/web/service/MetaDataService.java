@@ -191,12 +191,12 @@ public class MetaDataService {
             if ("hive_table".equalsIgnoreCase(type)) {
                 tableType = getEntityAttribute(entity, "tableType");
                 result.put("isHiveTable", true);
-                result.put("sourceId", "hive");
+//                result.put("sourceId", "hive");
             } else if ("rdbms_table".equalsIgnoreCase(type)) {
                 tableType = getEntityAttribute(entity, "type");
                 result.put("isHiveTable", false);
-                String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
-                result.put("sourceId", StringUtils.isNotEmpty(qualifiedName) ? qualifiedName.split("\\.")[0] : "");
+//                String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
+//                result.put("sourceId", StringUtils.isNotEmpty(qualifiedName) ? qualifiedName.split("\\.")[0] : "");
             } else {
                 throw new AtlasBaseException("查找节点类型不是表");
             }

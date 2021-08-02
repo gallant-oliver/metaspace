@@ -18,6 +18,7 @@
 
 package org.apache.atlas.listener;
 
+import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.glossary.AtlasGlossaryTerm;
@@ -38,7 +39,7 @@ public interface EntityChangeListenerV2 {
      * @param entities the created entities
      * @param isImport
      */
-    void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition, Properties connectorProperties) throws AtlasBaseException;
+    void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition, KafkaConnector.Config config) throws AtlasBaseException;
 
     /**
      * This is upon updating an entity.
@@ -46,7 +47,7 @@ public interface EntityChangeListenerV2 {
      * @param entities the updated entities
      * @param isImport
      */
-    void onEntitiesUpdated(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException;
+    void onEntitiesUpdated(List<AtlasEntity> entities, boolean isImport,  SyncTaskDefinition definition, KafkaConnector.Config config) throws AtlasBaseException;
 
     /**
      * This is upon deleting entities from the repository.
@@ -54,7 +55,7 @@ public interface EntityChangeListenerV2 {
      * @param entities the deleted entities
      * @param isImport
      */
-    void onEntitiesDeleted(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException;
+    void onEntitiesDeleted(List<AtlasEntity> entities, boolean isImport,  SyncTaskDefinition definition, KafkaConnector.Config config) throws AtlasBaseException;
 
     /**
      * This is upon adding new classifications to an entity.

@@ -13,8 +13,6 @@
     <packaging>jar</packaging>
 
     <properties>
-        <jdbc.oracle.version>18.3.0.0</jdbc.oracle.version>
-
         <plugin.id>ORACLE</plugin.id>
         <plugin.class>io.zeta.metaspace.adapter.oracle.OracleComponent</plugin.class>
         <plugin.version>${project.version}</plugin.version>

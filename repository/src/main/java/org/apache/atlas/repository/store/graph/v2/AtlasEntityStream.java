@@ -17,6 +17,7 @@
  */
 package org.apache.atlas.repository.store.graph.v2;
 
+import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
@@ -30,14 +31,14 @@ public class AtlasEntityStream implements EntityStream {
     protected final EntityStream             entityStream;
     private         Iterator<AtlasEntity>    iterator;
     private SyncTaskDefinition definition;
-    private Properties connectorProperties;
+    private KafkaConnector.Config config;
 
     public SyncTaskDefinition getDefinition(){
         return this.definition;
     }
 
-    public Properties getConnectorProperties(){
-        return this.connectorProperties;
+    public KafkaConnector.Config getKafkaConnectorConfig(){
+        return this.config;
     }
 
     public AtlasEntityStream(AtlasEntity entity) {
@@ -52,10 +53,9 @@ public class AtlasEntityStream implements EntityStream {
         this.definition = definition;
     }
 
-    public AtlasEntityStream(AtlasEntityWithExtInfo entityWithExtInfo, Properties connectorProperties) {
+    public AtlasEntityStream(AtlasEntityWithExtInfo entityWithExtInfo, KafkaConnector.Config config) {
         this(new AtlasEntitiesWithExtInfo(entityWithExtInfo));
-        this.definition = definition;
-        this.connectorProperties = connectorProperties;
+        this.config = config;
     }
 
 
@@ -64,6 +64,13 @@ public class AtlasEntityStream implements EntityStream {
         this.entitiesWithExtInfo = entitiesWithExtInfo;
         this.iterator            = this.entitiesWithExtInfo.getEntities().iterator();
         this.entityStream        = null;
+    }
+
+    public AtlasEntityStream(AtlasEntitiesWithExtInfo entitiesWithExtInfo, KafkaConnector.Config config) {
+        this.entitiesWithExtInfo = entitiesWithExtInfo;
+        this.iterator            = this.entitiesWithExtInfo.getEntities().iterator();
+        this.entityStream        = null;
+        this.config = config;
     }
 
     public AtlasEntityStream(AtlasEntity entity, EntityStream entityStream) {

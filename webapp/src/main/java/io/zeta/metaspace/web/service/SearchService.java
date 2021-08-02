@@ -90,14 +90,21 @@ public class SearchService {
     public PageResult<Database> getDatabases(String sourceId, long offset, long limit, String query, boolean active, String tenantId, boolean queryCount) {
         List<String> dbs = tenantService.getDatabase(tenantId);
         String guids = "";
+        DataSourceInfo dataSourceInfo = null;
         if (StringUtils.isEmpty(sourceId)) {
             dbs = dbs.stream().filter(db->db.contains(query)).collect(Collectors.toList());
             List<TableInfo> rdbmsTableInfoList = tableDAO.selectDatabaseByTenantId(tenantId);
             List<String> collect = rdbmsTableInfoList.stream().filter(rdbmsTableInfo -> rdbmsTableInfo.getDbName().contains(query)).map(TableInfo::getDatabaseGuid).collect(Collectors.toList());
             guids = dbsToString(collect);
+        }else if ("hive".equalsIgnoreCase(sourceId)){
+                dataSourceInfo = new DataSourceInfo();
+                dataSourceInfo.setSourceId(sourceId);
+        }else{
+            dataSourceInfo = dataSourceService.getDataSourceInfo(sourceId);
         }
         String dbsToString = dbsToString(dbs);
-        return metaspaceEntityService.getSchemaList(sourceId, guids, offset, limit, dbsToString, queryCount);
+
+        return metaspaceEntityService.getSchemaList(dataSourceInfo, guids, offset, limit, dbsToString, queryCount);
 
     }
 
@@ -124,10 +131,8 @@ public class SearchService {
                     completableFutures.add(CompletableFuture.runAsync(() -> {
                         AtlasVertex atlasVertex = vertices.stream().filter(vertex -> Objects.equals(tableEntity.getId(), vertex.getProperty("__guid", String.class))).findAny().get();
                         Map<String, Object> tableInfo = metaDataService.getTableType(metaDataService.vertexToEntityInfo(atlasVertex, null, null).getEntity());
-                        String sourceId = String.valueOf(tableInfo.get("sourceId"));
                         String databasesId = String.valueOf(tableInfo.get("schemaId"));
                         String schema = String.valueOf(tableInfo.get("schemaName"));
-                        tableEntity.setSourceId(sourceId);
                         tableEntity.setDatabaseId(databasesId);
                         boolean view = tableEntity.getTableType().toLowerCase().contains("view");
                         if (tableEntity.isHiveTable()) {
@@ -146,7 +151,7 @@ public class SearchService {
                             if (view) {
                                 tableEntity.setSql(this.getBuildRDBMSTableSql(tableEntity.getId()).getSql());
                             } else {
-                                AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceService.getUnencryptedDataSourceInfo(sourceId));
+                                AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceService.getAnyOneDataSourceByDbGuid(schemaId));
                                 float size = adapterExecutor.getTableSize(schema, tableEntity.getName(), null);
                                 tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
                             }

@@ -1,6 +1,7 @@
 package org.apache.atlas.util;
 
-import org.apache.atlas.notification.rdbms.KafkaConnector;
+import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
+import org.apache.atlas.notification.rdbms.KafkaConnectorUtil;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -12,30 +13,30 @@ public class TestKafkaConnector {
     public void testConnector(){
 
         String connectorName = "10.200.64.102:1521:orcl";
-        KafkaConnector.Instance instance = new KafkaConnector.Instance();
-        instance.setName(connectorName);
-        Properties properties = new Properties();
-        properties.setProperty("name", connectorName);
-        properties.setProperty("connector.class", "io.zeta.metaspace.connector.oracle.OracleSourceConnector");
-        properties.setProperty("tasks.max", "1");
-        properties.setProperty("db.hostname", "10.200.64.102");
-        properties.setProperty("db.user", "test");
-        properties.setProperty("db.port", "2181");
-        properties.setProperty("db.user.password", "123456");
-        properties.setProperty("db.name", "orcl");
-        instance.setConfig(properties);
+        KafkaConnector kafkaConnector = new KafkaConnector();
+        kafkaConnector.setName(connectorName);
+        KafkaConnector.Config config = new KafkaConnector.Config();
+        config.setName(connectorName);
+        config.setConnectorClass("io.zeta.metaspace.connector.oracle.OracleSourceConnector");
+        config.setTasksMax(1);
+        config.setDbIp("10.200.64.102");
+        config.setDbPort(1521);
+        config.setDbUser("test");
+        config.setDbPassword("123456");
+        config.setDbName("orcl");
+        kafkaConnector.setConfig(config);
 
 
-        KafkaConnector.Instance connector = KafkaConnector.addConnector(instance);
-        Assert.assertEquals(connector.getName(), instance.getName());
+        boolean isStart = KafkaConnectorUtil.startConnector(kafkaConnector);
+        Assert.assertEquals(isStart, true);
 
-        connector = KafkaConnector.getConnector(connectorName, false);
-        Assert.assertEquals(connector.getName(), instance.getName());
-        connector = KafkaConnector.getConnector(connectorName);
-        Assert.assertEquals(connector.getName(), instance.getName());
-        KafkaConnector.removeConnector(connectorName);
+        KafkaConnector connector = KafkaConnectorUtil.getConnector(connectorName, false);
+        Assert.assertEquals(connector.getName(), kafkaConnector.getName());
+        connector = KafkaConnectorUtil.getConnector(connectorName);
+        Assert.assertEquals(connector.getName(), kafkaConnector.getName());
+        KafkaConnectorUtil.stopConnector(connectorName);
 
-        connector = KafkaConnector.getConnector(connectorName);
+        connector = KafkaConnectorUtil.getConnector(connectorName);
 
         Assert.assertNull(connector);
     }

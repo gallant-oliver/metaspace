@@ -1,6 +1,7 @@
 package org.apache.atlas.notification;
 
 import com.google.common.annotations.VisibleForTesting;
+import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.listener.ActiveStateChangeHandler;
 import org.apache.atlas.model.instance.AtlasEntity;
@@ -8,7 +9,7 @@ import org.apache.atlas.model.instance.debezium.RdbmsEntities;
 import org.apache.atlas.model.notification.Notification;
 import org.apache.atlas.model.notification.RdbmsNotification;
 import org.apache.atlas.notification.rdbms.Conversion;
-import org.apache.atlas.notification.rdbms.KafkaConnector;
+import org.apache.atlas.notification.rdbms.KafkaConnectorUtil;
 import org.apache.atlas.repository.converters.AtlasInstanceConverter;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStream;
@@ -76,18 +77,18 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
 
             String name = rdbmsMessage.getRdbmsMessage().getPayload().getSource().getName();
 
-            Properties connectorProperties = KafkaConnector.getConnectorConfig(name);
-            if(null == connectorProperties){
+            KafkaConnector.Config config = KafkaConnectorUtil.getConnectorConfig(name);
+            if(null == config){
                 throw new RuntimeException("获取connector失败");
             }
-            RdbmsEntities rdbmsEntities = conversion.convert(rdbmsMessage,connectorProperties);
+            RdbmsEntities rdbmsEntities = conversion.convert(rdbmsMessage,config);
 
             LOG.info("atlas实体及数据血缘【"+rdbmsEntities+"】插入JanusGraph数据库，并调用监听器，将数据插入PG");
-            synchronize(rdbmsEntities, connectorProperties);
+            synchronize(rdbmsEntities, config);
             return null;
         }
 
-        private void synchronize(RdbmsEntities rdbmsEntities, Properties connectorProperties){
+        private void synchronize(RdbmsEntities rdbmsEntities, KafkaConnector.Config config){
             Map<RdbmsEntities.OperateType, Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> entityMap = rdbmsEntities.getEntityMap();
 
             Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> modifyMap = entityMap.get(RdbmsEntities.OperateType.MODIFY);
@@ -96,7 +97,7 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
             addOrUpdateEntities = sortEntities(addOrUpdateEntities);
 
             for (AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo: addOrUpdateEntities) {
-                atlasEntityStore.createOrUpdate(new AtlasEntityStream(atlasEntityWithExtInfo, connectorProperties), false);
+                atlasEntityStore.createOrUpdate(new AtlasEntityStream(atlasEntityWithExtInfo, config), false);
             }
 
             AtlasEntity.AtlasEntitiesWithExtInfo bloodEntities = rdbmsEntities.getBloodEntities();
