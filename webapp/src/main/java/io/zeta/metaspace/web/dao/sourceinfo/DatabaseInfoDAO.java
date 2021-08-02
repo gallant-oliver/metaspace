@@ -134,7 +134,7 @@ public interface DatabaseInfoDAO {
             "s.to_email,\n" +
             "(SELECT u.username FROM users u WHERE u.userid = s.technical_leader ) AS technicalLeader,\n" +
             "(SELECT u.username FROM users u WHERE u.userid = s.business_leader ) AS business_leader,\n" +
-            "ag.name AS approve_group_name,\n" +
+            "ag.name AS approveGroupName,\n" +
             "(SELECT u.username FROM users u WHERE u.userid = s.updater ) AS updaterName,\n" +
             "s.update_time AS updateTime,\n" +
             "ag.name AS approveGroupName,\n" +
@@ -145,7 +145,7 @@ public interface DatabaseInfoDAO {
             "FROM\n" +
             "source_info s LEFT JOIN category c ON s.category_id = c.guid AND c.tenantid = s.tenant_id\n" +
             "LEFT JOIN db_info db ON s.database_id = db.database_guid \n" +
-            "LEFT JOIN data_source ds ON s.source_id = ds.source_id\n" +
+            "LEFT JOIN data_source ds ON s.data_source_id = ds.source_id\n" +
             "LEFT JOIN approval_group ag ON s.approve_group_id = ag.\"id\"\n" +
             "LEFT JOIN approval_item ai ON s.approve_id = ai.\"id\"\n" +
             "WHERE\n" +
@@ -206,7 +206,7 @@ public interface DatabaseInfoDAO {
             " source_info s LEFT JOIN category c ON s.category_id = c.guid AND \n" +
             " c.tenantid = s.tenant_id\n" +
             " LEFT JOIN db_info db ON s.database_id = db.database_guid \n" +
-            " LEFT JOIN data_source ds ON s.source_id = ds.source_id\n" +
+            " LEFT JOIN data_source ds ON s.data_source_id = ds.source_id\n" +
             " LEFT JOIN approval_group ag ON s.approve_group_id = ag.\"id\"\n" +
             " LEFT JOIN approval_item ai ON s.approve_id = ai.\"id\"\n" +
             "WHERE\n" +
@@ -242,7 +242,7 @@ public interface DatabaseInfoDAO {
             " source_info s LEFT JOIN category c ON s.category_id = c.guid AND \n" +
             " c.tenantid = s.tenant_id\n" +
             " LEFT JOIN db_info db ON s.database_id = db.database_guid \n" +
-            " LEFT JOIN data_source ds ON s.source_id = ds.source_id\n" +
+            " LEFT JOIN data_source ds ON s.data_source_id = ds.source_id\n" +
             " LEFT JOIN approval_group ag ON s.approve_group_id = ag.\"id\"\n" +
             " LEFT JOIN approval_item ai ON s.approve_id = ai.\"id\"\n" +
             "WHERE\n" +
