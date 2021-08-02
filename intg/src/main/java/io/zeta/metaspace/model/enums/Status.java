@@ -32,4 +32,19 @@ public enum Status {
     private Status(int intValue) {
         this.intValue = intValue;
     }
+
+    public static String getStatusByValue(String intValue){
+        switch (intValue){
+            case "0":
+                return Status.FOUNDED.name();
+            case "1":
+                return Status.AUDITING.name();
+            case "2":
+                return Status.REJECT.name();
+            case "3":
+                return Status.ACTIVE.name();
+            default:
+                return Status.FOUNDED.name();
+        }
+    }
 }
