@@ -19,7 +19,8 @@ public interface TableDAO {
     @Select("select generatetime from table_relation where tableguid=#{guid}")
     public String getDateByTableguid(String guid);
 
-    @Select("SELECT DISTINCT tableinfo.databaseguid FROM tableinfo INNER JOIN data_source on tableinfo.source_id=data_source.source_id WHERE data_source.tenantid = #{tenantId}")
+    @Select("SELECT DISTINCT db_info.database_guid FROM db_info INNER JOIN source_db on db_info.database_guid=source_db.db_guid INNER JOIN data_source on source_db.source_id = data_source.source_id\n" +
+            "WHERE data_source.tenantid = #{tenantId} AND db_info.is_deleted = false and db_info.status = 'ACTIVE'")
     List<String> selectDatabaseGuidByTenantId(@Param("tenantId") String tenantId);
 
     @Select("SELECT tableinfo.databaseguid,tableinfo.dbname FROM tableinfo INNER JOIN data_source on tableinfo.source_id=data_source.source_id WHERE data_source.tenantid = #{tenantId} group by tableinfo.databaseguid,tableinfo.dbname")
@@ -31,36 +32,22 @@ public interface TableDAO {
     @Select("SELECT  businessinfo.businessid,businessinfo.NAME businessObject,category.NAME department,users.username businessLeader FROM business2table,businessinfo,category,users WHERE businessinfo.businessid = business2table.businessid AND businessinfo.departmentid = category.guid AND users.userid =  businessinfo.submitter AND business2table.tableguid = #{guid} AND category.tenantid = #{tenantId}")
     public List<Table.BusinessObject> getBusinessObjectByTableguid(@Param("guid") String guid, @Param("tenantId") String tenantId);
 
-    @Insert("insert into tableinfo(tableguid,tablename,dbname,status,createtime,databaseguid,databasestatus,description)\n" +
-            "values(#{table.tableGuid},#{table.tableName},#{table.dbName},#{table.status},#{table.createTime},#{table.databaseGuid},#{table.databaseStatus},#{table.description})")
+    @Insert("insert into tableinfo(tableguid,tablename,dbname,status,createtime,databaseguid,databasestatus,description, owner, type)\n" +
+            "values(#{table.tableGuid},#{table.tableName},#{table.dbName},#{table.status},#{table.createTime},#{table.databaseGuid},#{table.databaseStatus},#{table.description}" +
+            ",#{table.owner},#{table.type})")
     public int addTable(@Param("table") TableInfo table);
 
     @Update("update tableinfo set tablename=#{table.tableName},status = #{table.status} ,dbname=#{table.dbName},description=#{table.description} where tableguid=#{table.tableGuid}")
     public int updateTable(@Param("table") TableInfo table);
 
-    @Select("select tableguid from tableinfo except select tableguid from table_relation")
-    public List<String> getNewTable();
+    @Insert("insert into table_relation (relationshipGuid, categoryGuid, tableGuid, generateTime, tenant_id) values" +
+            "(#{tableRelation.relationshipGuid},#{tableRelation.categoryGuid},#{tableRelation.tableGuid},#{tableRelation.generateTime}," +
+                    "#{tableRelation.tenantId})")
+    public int addRelation(@Param("tableRelation") TableRelation tableRelation);
 
-    @Insert({"<script>insert into table_relation values",
-            "<foreach item='item' index='index' collection='tableRelations'",
-            "open=' ' separator=',' close=' '>",
-            "(#{item.relationshipGuid},#{item.categoryGuid},#{item.tableGuid},#{item.generateTime})",
-            "</foreach>",
-            "</script>"})
-    public int addRelations(@Param("tableRelations") List<TableRelation> tableRelations);
-
-    @Update("update table_relation set categoryguid = #{categoryGuid} WHERE tableguid in (select tableguid from tableinfo where source_id = #{sourceId})")
-    public void updateTableRelationBySourceId(@Param("categoryGuid") String categoryGuid, @Param("sourceId") String sourceId);
-
-    @Update({"<script>",
-            "update table_relation set categoryguid = #{categoryGuid} WHERE tableguid in (",
-            "SELECT tableguid FROM tableinfo WHERE source_id = #{sourceId} and dbname in ",
-            "<foreach item='database' collection='databases' open='(' separator=',' close=')'>",
-            "#{database}",
-            "</foreach>",
-            ")",
-            "</script>"})
-    public void updateTableRelationByDb(@Param("categoryGuid") String categoryGuid, @Param("sourceId") String sourceId, @Param("databases") List<String> databases);
+    @Select("select relationshipGuid, categoryGuid, tableGuid, generateTime, tenant_id as tenantId from table_relation " +
+            "where categoryGuid = #{tableRelation.categoryGuid} and tableGuid = #{tableRelation.tableGuid} and tenant_id = #{tableRelation.tenantId}")
+    TableRelation selectRelation(@Param("tableRelation") TableRelation tableRelation);
 
     @Select("select count(1) from tableinfo where tableguid=#{tableGuid}")
     public Integer ifTableExists(String tableGuid);
@@ -68,7 +55,10 @@ public interface TableDAO {
     @Select("select tableguid, databasestatus from tableinfo where dbname =#{dbName} and tablename =#{tableName} and source_id = #{sourceId} and status = 'ACTIVE'")
     TableInfo getTableInfo(@Param("sourceId") String sourceId, @Param("dbName") String dbName, @Param("tableName") String tableName);
 
-    @Select("select tableguid from tableinfo where db_guid in (#{databaseGuids}) and status = 'ACTIVE'")
+    @Select("select tableguid from tableinfo where databaseguid = #{databaseGuid} and status = 'ACTIVE'")
+    List<String> getTableGuidsByDbGuid(@Param("databaseGuid") String databaseGuid);
+
+    @Select("select tableguid from tableinfo where databaseguid in (#{databaseGuids}) and status = 'ACTIVE'")
     List<String> getTableGuidByDataBaseGuids(@Param("databaseGuids")String databaseGuids);
 
     @Select("select organization.name,table2owner.tableGuid,table2owner.pkId from organization,table2owner where organization.pkId=table2owner.pkId and tableGuid=#{tableGuid}")

@@ -15,12 +15,11 @@ public class OracleSourceConnectorConfig extends AbstractConfig {
 
 	public static final String NAME = "name";
 	public static final String TOPIC_CONFIG = "topic";
-	public static final String CONNECTOR_TYPE = "connector.type";
 	public static final String DB_NAME_CONFIG = "db.name";
-	public static final String DB_HOST_NAME_CONFIG = "db.hostname";
+	public static final String DB_IP_CONFIG = "db.ip";
 	public static final String DB_PORT_CONFIG = "db.port";
 	public static final String DB_USER_CONFIG = "db.user";
-	public static final String DB_USER_PASSWORD_CONFIG = "db.user.password";
+	public static final String DB_PASSWORD_CONFIG = "db.password";
 	public static final String DB_FETCH_SIZE = "db.fetch.size";
 	public static final String START_SCN = "start.scn";
 	public static final String REST_PORT = "rest.port";
@@ -38,13 +37,13 @@ public class OracleSourceConnectorConfig extends AbstractConfig {
 				.define(NAME, Type.STRING, Importance.HIGH, "Connector name")
 				.define(TOPIC_CONFIG, Type.STRING, OracleConnectorConstant.DEFAULT_TOPIC, Importance.LOW, "Topic")
 				.define(DB_NAME_CONFIG, Type.STRING, "", Importance.LOW, "Db Name")
-				.define(DB_HOST_NAME_CONFIG, Type.STRING,  "", Importance.LOW, "Db HostName")
+				.define(DB_IP_CONFIG, Type.STRING,  "", Importance.LOW, "Db Ip")
 				.define(DB_PORT_CONFIG, Type.INT,  0, Importance.LOW, "Db Port")
 				.define(DB_USER_CONFIG, Type.STRING,  "", Importance.LOW, "Db User")
-				.define(DB_USER_PASSWORD_CONFIG, Type.STRING,  "", Importance.LOW, "Db User Password")
+				.define(DB_PASSWORD_CONFIG, Type.STRING,  "", Importance.LOW, "Db Password")
 				.define(DB_FETCH_SIZE, Type.INT, 10, Importance.LOW, "Database Record Fetch Size")
 				.define(REST_PORT, Type.INT, 8083, Importance.LOW, "Rest Port")
-				.define(START_SCN, Type.LONG, 0L, Importance.LOW, "Start SCN");
+				.define(START_SCN, Type.LONG, -1L, Importance.LOW, "Start SCN");
 	}
 
 	public String getTopic() {
@@ -55,8 +54,8 @@ public class OracleSourceConnectorConfig extends AbstractConfig {
 		return super.getString(DB_NAME_CONFIG);
 	}
 
-	public String getDbHostName() {
-		return super.getString(DB_HOST_NAME_CONFIG);
+	public String getDbIp() {
+		return super.getString(DB_IP_CONFIG);
 	}
 
 	public int getDbPort() {
@@ -67,8 +66,8 @@ public class OracleSourceConnectorConfig extends AbstractConfig {
 		return super.getString(DB_USER_CONFIG);
 	}
 
-	public String getDbUserPassword() {
-		return super.getString(DB_USER_PASSWORD_CONFIG);
+	public String getDbPassword() {
+		return super.getString(DB_PASSWORD_CONFIG);
 	}
 
 	public int getDbFetchSize() {

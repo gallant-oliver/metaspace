@@ -17,6 +17,7 @@
  */
 package org.apache.atlas.repository.audit;
 
+import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import org.apache.atlas.EntityAuditEvent.EntityAuditAction;
 import org.apache.atlas.RequestContext;
@@ -75,7 +76,7 @@ public class EntityAuditListenerV2 implements EntityChangeListenerV2 {
     }
 
     @Override
-    public void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition, Properties connectorProperties) throws AtlasBaseException {
+    public void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition, KafkaConnector.Config config) throws AtlasBaseException {
         List<EntityAuditEventV2> events = new ArrayList<>();
 
         for (AtlasEntity entity : entities) {
@@ -88,7 +89,7 @@ public class EntityAuditListenerV2 implements EntityChangeListenerV2 {
     }
 
     @Override
-    public void onEntitiesUpdated(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
+    public void onEntitiesUpdated(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition, KafkaConnector.Config config) throws AtlasBaseException {
         List<EntityAuditEventV2> events = new ArrayList<>();
 
         for (AtlasEntity entity : entities) {
@@ -101,7 +102,7 @@ public class EntityAuditListenerV2 implements EntityChangeListenerV2 {
     }
 
     @Override
-    public void onEntitiesDeleted(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
+    public void onEntitiesDeleted(List<AtlasEntity> entities, boolean isImport,  SyncTaskDefinition definition, KafkaConnector.Config config) throws AtlasBaseException {
         List<EntityAuditEventV2> events = new ArrayList<>();
 
         for (AtlasEntity entity : entities) {

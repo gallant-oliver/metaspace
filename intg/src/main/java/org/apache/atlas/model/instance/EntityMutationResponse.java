@@ -29,6 +29,7 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.instance.EntityMutations.EntityOperation;
@@ -48,7 +49,7 @@ public class EntityMutationResponse {
     private Map<EntityOperation, List<AtlasEntityHeader>> mutatedEntities;
     private Map<String, String>                           guidAssignments;
     private SyncTaskDefinition definition;
-    private Properties connectorProperties;
+    private KafkaConnector.Config config;
 
     public void setDefinition(SyncTaskDefinition definition){
         this.definition = definition;
@@ -56,11 +57,11 @@ public class EntityMutationResponse {
     public SyncTaskDefinition getDefinition(){
         return this.definition;
     }
-    public void setConnectorProperties(Properties connectorProperties){
-        this.connectorProperties = connectorProperties;
+    public void setKafkaConnectorConfig(KafkaConnector.Config config){
+        this.config = config;
     }
-    public Properties getConnectorProperties(){
-        return this.connectorProperties;
+    public KafkaConnector.Config getKafkaConnectorConfig(){
+        return this.config;
     }
     public EntityMutationResponse() {
     }

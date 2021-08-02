@@ -1,14 +1,20 @@
 package io.zeta.metaspace.web.task.sync;
 
 import io.zeta.metaspace.model.TableSchema;
+import io.zeta.metaspace.model.metadata.Database;
+import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.sync.SyncTaskInstance;
+import io.zeta.metaspace.web.dao.DbDAO;
 import io.zeta.metaspace.web.dao.SyncTaskDefinitionDAO;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.metadata.RDBMSMetaDataProvider;
+import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
+import io.zeta.metaspace.web.util.CategoryUtil;
+import io.zeta.metaspace.web.util.DateUtils;
 import io.zeta.metaspace.web.util.HiveMetaStoreBridgeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -22,6 +28,7 @@ import org.springframework.util.CollectionUtils;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * 元数据采集任务 job
@@ -42,6 +49,8 @@ public class SyncTaskJob implements Job {
     TableDAO tableDAO;
     @Autowired
     private IndexCounter indexCounter;
+    @Autowired
+    private DbDAO dbDAO;
 
     @Override
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
@@ -52,7 +61,6 @@ public class SyncTaskJob implements Job {
             String definitionId = group.replace("job_group_", "");
             JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
             String executor =  (String)jobDataMap.getOrDefault("executor", null);
-            Boolean isSimple =  (Boolean)jobDataMap.getOrDefault("isSimple", false);
             SyncTaskDefinition definition = syncTaskDefinitionDAO.getById(definitionId);
             if (definition == null) {
                 throw new AtlasBaseException("采集任务找不到任务定义");
@@ -60,15 +68,27 @@ public class SyncTaskJob implements Job {
             if(null == definition.getCategoryGuid()){
                 definition.setCategoryGuid("1");
             }
-            List<String> schemas = definition.getSchemas();
-            if(!isSimple){
-                if(CollectionUtils.isEmpty(schemas)&&definition.isSyncAll()){
-                    tableDAO.updateTableRelationBySourceId(definition.getCategoryGuid(),definition.getDataSourceId());
-                }else{
-                    tableDAO.updateTableRelationByDb(definition.getCategoryGuid(),definition.getDataSourceId(),schemas);
+            List<Database> sourceDbs = dbDAO.getSourceDbs(definition.getDataSourceId(), definition.getSchemas());
+            if(!CollectionUtils.isEmpty(sourceDbs)){
+                List<String> schemas = definition.getSchemas();
+                if(!CollectionUtils.isEmpty(schemas)){
+                    sourceDbs = sourceDbs.stream().filter(sdb->schemas.contains(sdb.getDatabaseName())).
+                            collect(Collectors.toList());
                 }
+                sourceDbs.forEach(sdb -> {
+                    String sourceDbRelationId = dbDAO.getSourceDbRelationId(sdb.getDatabaseId(), definition.getDataSourceId());
+                    if(null == sourceDbRelationId){
+                        dbDAO.insertSourceDbRelation(UUID.randomUUID().toString(),sdb.getDatabaseId(),definition.getDataSourceId());
+                    }
+                    List<String> tableGuids = tableDAO.getTableGuidsByDbGuid(sdb.getDatabaseId());
+                    if(!CollectionUtils.isEmpty(tableGuids)){
+                        tableGuids.forEach(tg -> {
+                            TableRelation tableRelation = CategoryUtil.getTableRelation(tg, definition.getTenantId(), "1");
+                            tableDAO.addRelation(tableRelation);
+                        });
+                    }
+                });
             }
-
             SyncTaskInstance instance = new SyncTaskInstance();
             instance.setId(instanceId);
             instance.setDefinitionId(definitionId);
@@ -89,6 +109,9 @@ public class SyncTaskJob implements Job {
                 rdbmsMetaDataProvider.importDatabases(instance.getId(), schema);
                 indexCounter.plusOneSuccess(schema.getDefinition().getDataSourceType());
             }
+
+            List<String> schemas = definition.getSchemas();
+
         } catch (Exception e) {
             SyncTaskInstance syncTaskInstance = syncTaskInstanceDAO.getById(instanceId);
             if (syncTaskInstance != null) {
@@ -99,4 +122,5 @@ public class SyncTaskJob implements Job {
             throw new AtlasBaseException(e);
         }
     }
+
 }

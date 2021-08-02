@@ -33,6 +33,7 @@ import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.dto.indices.IndexFieldExport;
 import io.zeta.metaspace.model.dto.indices.IndexFieldNode;
 import io.zeta.metaspace.model.enums.Status;
+import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
@@ -76,6 +77,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
@@ -142,10 +144,11 @@ public class DataManageService {
     @Autowired
     DataSourceDAO dataSourceDAO;
     @Autowired
-    ConnectorDAO connectorDAO;
+    KafkaConnectorDAO kafkaConnectorDAO;
     @Autowired
     DbDAO dbDAO;
-
+    @Autowired
+    TenantDAO tenantDAO;
     @Autowired
     private IndexDAO indexDAO;
 
@@ -735,17 +738,6 @@ public class DataManageService {
         }
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    public int addRelation(RelationEntityV2 relationEntity) throws AtlasBaseException {
-        try {
-            String relationshiGuid = UUID.randomUUID().toString();
-            relationEntity.setRelationshipGuid(relationshiGuid);
-            return relationDao.add(relationEntity);
-        } catch (SQLException e) {
-            LOG.error("数据库服务异常", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        }
-    }
 
 
     //1.4删除表关联，取消子目录表关联关系时数据表自动回到一级目录
@@ -765,6 +757,7 @@ public class DataManageService {
                         tableRelation.setCategoryGuid(topGuid);
                         tableRelation.setTableGuid(relationInfo.getTableGuid());
                         tableRelation.setGenerateTime(DateUtils.getNow());
+                        tableRelation.setTenantId(tenantId);
                         relationDao.addRelation(tableRelation);
                     }
                 }
@@ -787,62 +780,30 @@ public class DataManageService {
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
             List<RelationEntityV2> relations = new ArrayList<>();
-            List<RelationEntityV2> hiveRelations = new ArrayList<>();
-            List<RelationEntityV2> allRelations = new ArrayList<>();
-            int totalNum = 0;
             //判断独立部署和多租户
             if (TenantService.defaultTenant.equals(tenantId)) {
                 relations = relationDao.queryRelationByCategoryGuid(categoryGuid, limit, offset);
             } else {
-                User user = AdminUtils.getUserData();
-                List<String> databases = tenantService.getDatabase(tenantId);
-                if (databases != null && databases.size() != 0) {
-                    //获取关系型表的总数
-                    relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, 1, 0, databases, tenantId);
-                    //获取hive表的总数
-                    hiveRelations = relationDao.queryHiveRelationByCategoryGuidV2(categoryGuid, 1, 0, databases, tenantId);
-                    //根据传入的limit和offset来确定从hive还是关系型数据库查数据
-                    if (relations.size() > 0 && relations != null) {
-                        //从hive数据库拿数据
-                        if (relations.get(0).getTotal() < offset + 1) {
-                            offset -= relations.get(0).getTotal();
-                            hiveRelations = relationDao.queryHiveRelationByCategoryGuidV2(categoryGuid, limit, offset, databases, tenantId);
-                            allRelations.addAll(hiveRelations);
-                            //从关系型数据库拿数据
-                        } else if (relations.get(0).getTotal() >= offset + limit) {
-                            relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset, databases, tenantId);
-                            allRelations.addAll(relations);
-                        } else if (relations.get(0).getTotal() >= offset + 1 && relations.get(0).getTotal() < offset + limit) {//从hive和关系型数据库拿数据
-                            relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, relations.get(0).getTotal() - offset, offset, databases, tenantId);
-                            hiveRelations = relationDao.queryHiveRelationByCategoryGuidV2(categoryGuid, limit - (relations.get(0).getTotal() - offset), 0, databases, tenantId);
-                            allRelations.addAll(relations);
-                            allRelations.addAll(hiveRelations);
-                        }
-                    } else if (hiveRelations.size() > 0 && hiveRelations != null) {
-                        hiveRelations = relationDao.queryHiveRelationByCategoryGuidV2(categoryGuid, limit, offset, databases, tenantId);
-                        allRelations.addAll(hiveRelations);
-                    }
-                }
-                if (!relations.isEmpty() && !hiveRelations.isEmpty()) {
-                    totalNum = relations.get(0).getTotal() + hiveRelations.get(0).getTotal();
-                } else if (relations.size() != 0 && hiveRelations.size() == 0) {
-                    totalNum = relations.get(0).getTotal();
-                } else if (relations.size() == 0 && hiveRelations.size() != 0) {
-                    totalNum = hiveRelations.get(0).getTotal();
-                }
+                relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset, tenantId);
             }
-            for (RelationEntityV2 entity : allRelations) {
-                String tableGuid = entity.getTableGuid();
-                List<Tag> tableTageList = tableTagDAO.getTable2Tag(tableGuid, tenantId);
-                List<String> tableTagNameList = tableTageList.stream().map(tag -> tag.getTagName()).collect(Collectors.toList());
-                entity.setTableTagList(tableTagNameList);
-                List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
-                entity.setDataOwner(ownerHeaders);
+            if(!CollectionUtils.isEmpty(relations)){
+                for (RelationEntityV2 entity : relations) {
+                    String tableGuid = entity.getTableGuid();
+                    List<Tag> tableTageList = tableTagDAO.getTable2Tag(tableGuid, tenantId);
+                    List<String> tableTagNameList = tableTageList.stream().map(tag -> tag.getTagName()).collect(Collectors.toList());
+                    entity.setTableTagList(tableTagNameList);
+                    List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
+                    entity.setDataOwner(ownerHeaders);
+                }
+                getPath(relations, tenantId);
+                pageResult.setCurrentSize(relations.size());
+                pageResult.setLists(relations);
+                pageResult.setTotalSize(relations.get(0).getTotal());
+            }else{
+                pageResult.setCurrentSize(0);
+                pageResult.setLists(relations);
+                pageResult.setTotalSize(0);
             }
-            getPath(allRelations, tenantId);
-            pageResult.setCurrentSize(allRelations.size());
-            pageResult.setLists(allRelations);
-            pageResult.setTotalSize(totalNum);
             return pageResult;
         } catch (AtlasBaseException e) {
             throw e;
@@ -1094,7 +1055,7 @@ public class DataManageService {
         }
     }
 
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_UNCOMMITTED)
     public void updateStatus(List<AtlasEntity> entities) {
 
         List<String> tableStatus = new ArrayList<>();
@@ -1116,7 +1077,8 @@ public class DataManageService {
 
         if (!CollectionUtils.isEmpty(databaseStatus)) {
             String databaseStatusStr = StringUtils.join(databaseStatus, ",");
-            relationDao.updateDatabaseStatusBatch(databaseStatusStr, "DELETED");
+            dbDAO.updateDatabaseStatusBatch(databaseStatusStr, "DELETED");
+            dbDAO.deleteSourceDbRelationId(databaseStatusStr);
             List<String> tableGuids = tableDAO.getTableGuidByDataBaseGuids(databaseStatusStr);
             if(!CollectionUtils.isEmpty(tableGuids)){
                 tableStatus.addAll(tableGuids);
@@ -1508,75 +1470,27 @@ public class DataManageService {
     }
 
 
-    @Transactional(rollbackFor = Exception.class)
-    public void addEntity(List<AtlasEntity> entities, SyncTaskDefinition definition, Properties connectorProperties) {
-        List<Column> columnList = new ArrayList<>();
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_UNCOMMITTED)
+    public void addEntity(List<AtlasEntity> entities, SyncTaskDefinition definition, KafkaConnector.Config config) {
         try {
-            Boolean hiveAtlasEntityAll = getHiveAtlasEntityAll(entities);
-            for (AtlasEntity entity : entities) {
-                String typeName = entity.getTypeName();
-                String dbType = null;
-                switch (typeName){
-                    case "hive_db":
-                        dbType = "HIVE";
-                    case "rdbms_db":
-                        if(null == dbType){
-                            dbType = getDbType(definition, connectorProperties);
-                        }
-                        Database dbInfo = getDbInfo(entity);
-                        dbInfo.setDbType(dbType);
-                        addOrUpdateDb(dbInfo, definition);
-                        break;
-                    case "hive_table":
-                        if(getOutputFromProcesses(entity) && hiveAtlasEntityAll){
-                            continue;
-                        }
-                        if (entity.getAttribute("temporary") != null && entity.getAttribute("temporary").toString().equals("true")) {
-                            continue;
-                        }
-                    case "rdbms_table":
-                        TableInfo tableInfo = getTableInfo(entity);
-                        addOrUpdateTable(tableInfo);
-                        break;
-                    case "hive_column":
-                        if(this.getOutputFromProcesses(entity) && hiveAtlasEntityAll){
-                            continue;
-                        }
-                        Column column = getColumn(entity, "type");
-                        columnList.add(column);
-                        break;
-                    case "rdbms_column":
-                        column = getColumn(entity, "data_type");
-                        columnList.add(column);
-                        break;
-                }
-            }
-            if (columnList.size() > 0) {
-                columnDAO.addColumnDisplayInfo(columnList);
-            }
-            addFullRelation();
-            updateRelations(definition);
+            createOrUpdateEntities(entities, definition, config, false);
         } catch (Exception e) {
             LOG.error("添加entity失败", e);
         }
     }
 
-    private void deleteIfExistTable(TableInfo tableInfo) {
 
-        TableInfo table = tableDAO.getTableInfo(tableInfo.getSourceId(), tableInfo.getDbName(), tableInfo.getTableName());
-        if (null != table) {
-            tableDAO.deleteTableInfo(table.getTableGuid());
-            tableDAO.updateTableRelatedOwner(tableInfo.getTableGuid(), table.getTableGuid());
-            tableDAO.updateTableRelations(tableInfo.getTableGuid(), table.getTableGuid());
-            tableDAO.updateTableTags(tableInfo.getTableGuid(), table.getTableGuid());
-            businessDAO.UpdateBusinessRelationByTableGuid(tableInfo.getTableGuid(), table.getTableGuid());
-            businessDAO.updateBusinessTrustTableByTableId(tableInfo.getTableGuid(), table.getTableGuid());
-
+    private void addOrUpdateColumn(Column column){
+        Column c = columnDAO.getColumnInfoByGuid(column.getColumnId());
+        if(null == c){
+            columnDAO.addColumn(column);
+        }else{
+            columnDAO.updateColumnInfo(column);
         }
-
     }
 
-    private Column getColumn(AtlasEntity entity, String typeKey) {
+
+    private Column getAndRemoveColumn(AtlasEntity entity, String typeKey) {
         AtlasRelatedObjectId table = (AtlasRelatedObjectId) entity.getRelationshipAttribute("table");
         String tableGuid = table.getGuid();
         String guid = entity.getGuid();
@@ -1603,9 +1517,18 @@ public class DataManageService {
     }
 
     private TableInfo getTableInfo(AtlasEntity entity) {
+        String guid = entity.getGuid();
+        String qualifiedName = getEntityAttribute(entity, "qualifiedName");
+        LOG.info("组装表信息，guid:{},qualifiedName:{} ", guid,qualifiedName);
         String name = getEntityAttribute(entity, "name");
+        String owner = getEntityAttribute(entity, "owner");
+        String type = getEntityAttribute(entity, "type");
         TableInfo tableInfo = new TableInfo();
-        tableInfo.setTableGuid(entity.getGuid());
+        if(null != type){
+            tableInfo.setType(type);
+        }
+        tableInfo.setOwner(owner);
+        tableInfo.setTableGuid(guid);
         tableInfo.setTableName(name);
         Object createTime = entity.getAttribute("createTime");
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -1615,12 +1538,14 @@ public class DataManageService {
         AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
         tableInfo.setDatabaseGuid(relatedDB.getGuid());
         tableInfo.setDbName(relatedDB.getDisplayText());
-        tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
+        if(null != relatedDB.getEntityStatus()){
+            tableInfo.setDatabaseStatus(relatedDB.getEntityStatus().name());
+        }
         tableInfo.setDescription(getEntityAttribute(entity, "comment"));
         return tableInfo;
     }
 
-    private void addOrUpdateDb(Database dbInfo, SyncTaskDefinition definition){
+    public void addOrUpdateDb(Database dbInfo, SyncTaskDefinition definition){
 
         synchronized (dbInfo.getDatabaseId()){
             Database db = dbDAO.getDb(dbInfo.getDatabaseId());
@@ -1639,7 +1564,7 @@ public class DataManageService {
             }
         }
     }
-    private void addOrUpdateTable(TableInfo tableInfo){
+    private void addOrUpdateTable(TableInfo tableInfo, SyncTaskDefinition definition){
         String tableGuid = tableInfo.getTableGuid();
         synchronized (tableGuid){
 
@@ -1648,17 +1573,44 @@ public class DataManageService {
                 tableDAO.updateTable(table);
             }else{
                 tableDAO.addTable(tableInfo);
+                addRelation(tableInfo, definition);
             }
         }
     }
 
+    @Transactional(rollbackFor = Exception.class)
+    public void addRelation(TableInfo tableInfo, SyncTaskDefinition definition) {
+
+        List<String> tenantIds = tenantDAO.getAllTenantId();
+        //添加关联
+        if(null != definition){
+            TableRelation tableRelation = CategoryUtil.getTableRelation(tableInfo.getTableGuid(), definition.getTenantId(), definition.getCategoryGuid());
+            synchronized (Object.class){
+                if(null == tableDAO.selectRelation(tableRelation)){
+                    tableDAO.addRelation(tableRelation);
+                }
+            }
+            tenantIds.remove(tableInfo.getTableGuid());
+        }
+        if(CollectionUtils.isEmpty(tenantIds)){
+            return;
+        }
+        tenantIds.forEach(tenantId -> {
+            TableRelation tableRelation = CategoryUtil.getTableRelation(tableInfo.getTableGuid(), tenantId, "1");
+            tableDAO.addRelation(tableRelation);
+        });
+    }
+
     private Database getDbInfo(AtlasEntity entity) {
+        String guid = entity.getGuid();
+        String qualifiedName = getEntityAttribute(entity, "qualifiedName");
+        LOG.info("组装数据库信息，guid:{},qualifiedName:{} ", guid,qualifiedName);
         Database database = new Database();
         String name = getEntityAttribute(entity, "name");
         String owner = getEntityAttribute(entity, "owner");
         database.setOwner(owner);
         database.setDatabaseName(name);
-        database.setDatabaseId(entity.getGuid());
+        database.setDatabaseId(guid);
         database.setStatus(entity.getStatus().name());
         database.setDatabaseDescription(getEntityAttribute(entity, "comment"));
         AtlasRelatedObjectId relatedDB = getRelatedInstance(entity);
@@ -1666,57 +1618,27 @@ public class DataManageService {
         return database;
     }
 
-    private String getDbType(SyncTaskDefinition definition, Properties connectorProperties) {
+    private String getDbType(SyncTaskDefinition definition, KafkaConnector.Config config) {
         String dbType = null;
         if(definition != null){
             String dataSourceId = definition.getDataSourceId();
             DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(dataSourceId);
-            dbType = dataSourceInfo.getServiceType().toUpperCase();
-        }else{
-            String dbIp = connectorProperties.getProperty("db.hostname");
-            String dbPort = connectorProperties.getProperty("db.port");
-            String dbName = connectorProperties.getProperty("db.name");
-            ConnectorEntity connector = connectorDAO.getConnector(dbIp, dbPort, dbName);
-            dbType = connector.getType();
+            dbType = dataSourceInfo.getSourceType().toUpperCase();
+        }else if(config != null){
+            KafkaConnector kafkaConnector = kafkaConnectorDAO.selectConnector(config.getDbIp(), config.getDbPort(), config.getDbName());
+            dbType = kafkaConnector.getType();
+            config.setDbType(dbType);
+        }else {
+            dbType = "UN_KNOW";
         }
         return dbType;
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public void addFullRelation() {
-        //添加关联
-        List<String> newTable = tableDAO.getNewTable();
-        List<TableRelation> tableRelations = new ArrayList<>();
-        for (String s : newTable) {
-            TableRelation tableRelation = new TableRelation();
-            tableRelation.setCategoryGuid("1");
-            tableRelation.setGenerateTime(DateUtils.getNow());
-            tableRelation.setRelationshipGuid(UUID.randomUUID().toString());
-            tableRelation.setTableGuid(s);
-            tableRelations.add(tableRelation);
-        }
-        if (tableRelations.size() > 0)
-            tableDAO.addRelations(tableRelations);
-    }
-
-    public void updateRelations(SyncTaskDefinition definition) {
-        if (null != definition) {
-            if (null == definition.getCategoryGuid()) {
-                definition.setCategoryGuid("1");
-            }
-            List<String> schemas = definition.getSchemas();
-            if (CollectionUtils.isEmpty(schemas) && definition.isSyncAll()) {
-                tableDAO.updateTableRelationBySourceId(definition.getCategoryGuid(), definition.getDataSourceId());
-            } else {
-                tableDAO.updateTableRelationByDb(definition.getCategoryGuid(), definition.getDataSourceId(), schemas);
-            }
-        }
     }
 
     @Transactional(rollbackFor = Exception.class)
     public void supplementTable(String tenantId) throws AtlasBaseException {
         try {
             PageResult<Table> tableNameAndDbNameByQuery;
+            List<TableHeader> tables = new ArrayList<>();
             List<String> tableByDB;
             //判断独立部署和多租户
             if (TenantService.defaultTenant.equals(tenantId)) {
@@ -1725,111 +1647,118 @@ public class DataManageService {
             } else {
                 List<String> dbs = tenantService.getDatabase(tenantId);
                 String dbsToString = dbsToString(dbs);
-                tableNameAndDbNameByQuery = metaspaceEntityService.getTableNameAndDbNameByQuery("", false, 0, -1, dbsToString);
+                List<Database> databases = metaspaceEntityService.getAllDBAndTable(dbsToString, 0, -1).getLists();
+                if(!CollectionUtils.isEmpty(databases)){
+                    databases.forEach(dbInfo -> {
+                        dbInfo.setDbType("HIVE");
+                        addOrUpdateDb(dbInfo, null);
+                        List<TableHeader> tableList = dbInfo.getTableList();
+                        if(!CollectionUtils.isEmpty(tableList)){
+                            tables.addAll(tableList);
+                        }
+                    });
+                }
                 tableByDB = tableDAO.getTableByDB(dbs);
             }
-            List<Table> lists = tableNameAndDbNameByQuery.getLists();
-            List<String> tableIds = lists.stream().map(table -> table.getTableId()).collect(Collectors.toList());
+            List<String> tableIds = tables.stream().map(table -> table.getTableId()).collect(Collectors.toList());
             List<String> deleteIds = new ArrayList<>();
             for (String table : tableByDB) {
                 if (!tableIds.contains(table)) {
                     deleteIds.add(table);
                 }
             }
-            for (Table list : lists) {
-                String tableId = list.getTableId();
+            for (TableHeader table : tables) {
+                String tableId = table.getTableId();
                 if (tableDAO.ifTableExists(tableId) == 0) {
                     TableInfo tableInfo = new TableInfo();
                     tableInfo.setTableGuid(tableId);
-                    tableInfo.setTableName(list.getTableName());
-                    tableInfo.setCreateTime(list.getCreateTime());
-                    tableInfo.setStatus(list.getStatus());
-                    tableInfo.setDatabaseGuid(list.getDatabaseId());
-                    tableInfo.setDbName(list.getDatabaseName());
-                    tableInfo.setDatabaseStatus(list.getDatabaseStatus());
-                    tableInfo.setDescription(list.getDescription());
-                    tableDAO.addTable(tableInfo);
+                    tableInfo.setTableName(table.getTableName());
+                    tableInfo.setCreateTime(table.getCreateTime());
+                    tableInfo.setStatus(table.getStatus());
+                    tableInfo.setDatabaseGuid(table.getDatabaseId());
+                    tableInfo.setDbName(table.getDatabaseName());
+                    tableInfo.setDatabaseStatus(table.getDatabaseStatus());
+                    tableInfo.setDescription(table.getComment());
+                    addOrUpdateTable(tableInfo, null);
                 }
             }
             for (String tableGuid : deleteIds) {
-                //表详情
-                tableDAO.deleteTableInfo(tableGuid);
-                //owner
-                tableDAO.deleteTableRelatedOwner(tableGuid);
-                //关联关系
-                relationDAO.deleteByTableGuid(tableGuid);
-                //business2table
-                businessDAO.deleteBusinessRelationByTableGuid(tableGuid);
-                //表标签
-                tableTagDAO.delAllTable2Tag(tableGuid);
-                //唯一信任数据
-                businessDAO.removeBusinessTrustTableByTableId(tableGuid);
+                deleteTable(tableGuid);
             }
-            addFullRelation();
         } catch (Exception e) {
             LOG.error("补充元数据失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "补充元数据失败");
         }
     }
 
-    @Transactional(rollbackFor = Exception.class)
-    public void updateEntityInfo(List<AtlasEntity> entities, SyncTaskDefinition definition) {
+    private void deleteTable(String tableGuid) {
+        //表详情
+        tableDAO.deleteTableInfo(tableGuid);
+        //owner
+        tableDAO.deleteTableRelatedOwner(tableGuid);
+        //关联关系
+        relationDAO.deleteByTableGuid(tableGuid);
+        //business2table
+        businessDAO.deleteBusinessRelationByTableGuid(tableGuid);
+        //表标签
+        tableTagDAO.delAllTable2Tag(tableGuid);
+        //唯一信任数据
+        businessDAO.removeBusinessTrustTableByTableId(tableGuid);
+    }
+
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_UNCOMMITTED)
+    public void updateEntityInfo(List<AtlasEntity> entities, SyncTaskDefinition definition, KafkaConnector.Config config) {
         try {
             Configuration configuration = ApplicationProperties.get();
             Boolean enableEmail = configuration.getBoolean("metaspace.mail.enable", false);
-            Boolean hiveAtlasEntityAll = this.getHiveAtlasEntityAll(entities);
-            for (AtlasEntity entity : entities) {
-                String typeName = entity.getTypeName();
-                if (typeName.equals("hive_table")) {
-                    if(this.getOutputFromProcesses(entity) && hiveAtlasEntityAll){
+            createOrUpdateEntities(entities, definition, config, enableEmail);
+        } catch (Exception e) {
+            LOG.error("更新tableinfo表失败", e);
+        }
+    }
+
+    private void createOrUpdateEntities(List<AtlasEntity> entities, SyncTaskDefinition definition, KafkaConnector.Config config, Boolean enableEmail) {
+        Boolean hiveAtlasEntityAll = getHiveAtlasEntityAll(entities);
+        for (AtlasEntity entity : entities) {
+            String typeName = entity.getTypeName();
+            String dbType = null;
+            switch (typeName){
+                case "hive_db":
+                    dbType = "HIVE";
+                case "rdbms_db":
+                    if(null == dbType){
+                        dbType = getDbType(definition, config);
+                    }
+                    Database dbInfo = getDbInfo(entity);
+                    dbInfo.setDbType(dbType);
+                    addOrUpdateDb(dbInfo, definition);
+                    break;
+                case "hive_table":
+                    if(getOutputFromProcesses(entity) && hiveAtlasEntityAll){
                         continue;
                     }
-                    if (entity.getAttribute("temporary") == null || entity.getAttribute("temporary").toString().equals("false")) {
-                        TableInfo tableInfo = new TableInfo();
-                        tableInfo.setTableGuid(entity.getGuid());
-                        tableInfo.setTableName(getEntityAttribute(entity, "name"));
-                        tableInfo.setDescription(getEntityAttribute(entity, "comment"));
-                        AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
-                        tableInfo.setDbName(relatedDB.getDisplayText());
-                        tableDAO.updateTable(tableInfo);
-                        if (enableEmail) {
-                            sendMetadataChangedMail(entity.getGuid());
-                        }
+                    if (entity.getAttribute("temporary") != null && entity.getAttribute("temporary").toString().equals("true")) {
+                        continue;
                     }
-                } else if (("rdbms_table").equals(typeName)) {
-                    TableInfo tableInfo = new TableInfo();
-                    tableInfo.setTableGuid(entity.getGuid());
-                    tableInfo.setTableName(getEntityAttribute(entity, "name"));
-                    tableInfo.setDescription(getEntityAttribute(entity, "comment"));
-                    AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
-                    tableInfo.setDbName(relatedDB.getDisplayText());
-                    tableDAO.updateTable(tableInfo);
+                case "rdbms_table":
+                    TableInfo tableInfo = getTableInfo(entity);
+                    addOrUpdateTable(tableInfo,definition);
                     if (enableEmail) {
                         sendMetadataChangedMail(entity.getGuid());
                     }
-                } else if (typeName.equals("hive_column")) {
+                    break;
+                case "hive_column":
                     if(this.getOutputFromProcesses(entity) && hiveAtlasEntityAll){
                         continue;
                     }
-                    String guid = entity.getGuid();
-                    String name = entity.getAttribute("name").toString();
-                    String type = entity.getAttribute("type").toString();
-                    String status = entity.getStatus().name();
-                    String description = entity.getAttribute("comment") == null ? null : entity.getAttribute("comment").toString();
-                    columnDAO.updateColumnBasicInfo(guid, name, type, status, description);
-                } else if (("rdbms_column").equals(typeName)) {
-                    String guid = entity.getGuid();
-                    String name = entity.getAttribute("name").toString();
-                    String type = entity.getAttribute("data_type").toString();
-                    String status = entity.getStatus().name();
-                    String description = entity.getAttribute("comment") == null ? null : entity.getAttribute("comment").toString();
-                    columnDAO.updateColumnBasicInfo(guid, name, type, status, description);
-                }
+                    Column column = getAndRemoveColumn(entity, "type");
+                    addOrUpdateColumn(column);
+                    break;
+                case "rdbms_column":
+                    column = getAndRemoveColumn(entity, "data_type");
+                    addOrUpdateColumn(column);
+                    break;
             }
-            addFullRelation();
-            updateRelations(definition);
-        } catch (Exception e) {
-            LOG.error("更新tableinfo表失败", e);
         }
     }
 
