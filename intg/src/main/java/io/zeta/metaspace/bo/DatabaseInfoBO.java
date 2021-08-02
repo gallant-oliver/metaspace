@@ -39,7 +39,7 @@ public class DatabaseInfoBO {
      * **/
     private String databaseTypeName;
     /**
-     * 数据库类型名
+     * 数据库实例名
      * **/
     private String databaseInstanceName;
     /**
