@@ -8,17 +8,19 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.*;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.solr.common.util.ContentStreamBase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -140,6 +142,9 @@ public class HdfsService {
             return destDir+ fileName;
         }catch (IOException e) {
             log.error("上传文件 {} 出错",fileName);
+            if(e instanceof AccessControlException){
+                log.error("该用户没有执行权限，请检查..");
+            }
             throw e;
         }
     }
@@ -173,7 +178,14 @@ public class HdfsService {
         }
         //FileStatus fileStatus = fileSystem.getFileStatus(path);
         //long len = fileStatus.getLen();
-        return fileSystem.open(path);
+        //FSDataInputStream dataInputStream = null;
+        try(FSDataInputStream dataInputStream = fileSystem.open(path);){
+            return dataInputStream;
+        }catch (IOException e){
+            log.error("获取文件流失败,{}",e);
+        }
+
+        return null;
     }
 
     /**
