@@ -26,9 +26,10 @@ public interface DatabaseDAO {
             "</foreach>" +
             "</script>")
     void updateDatabaseRelationToCategoryNull(@Param("databaseIds") List<String> databaseId);
+
     @Select("SELECT " +
-            "info.database_guid, " +
-            "info.database_name  " +
+            "info.database_guid as databaseId, " +
+            "info.database_name as databaseName " +
             "FROM " +
             "db_info AS info " +
             "INNER JOIN source_db AS sd ON info.database_guid = sd.db_guid " +
