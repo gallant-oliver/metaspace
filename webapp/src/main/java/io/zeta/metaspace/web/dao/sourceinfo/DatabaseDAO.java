@@ -21,7 +21,7 @@ public interface DatabaseDAO {
             "info.database_name  " +
             "FROM " +
             "db_info AS info " +
-            "INNER JOIN source_db AS sd ON info.database_guid = sd.source_id " +
+            "INNER JOIN source_db AS sd ON info.database_guid = sd.db_guid " +
             "WHERE " +
             "sd.source_id = #{sourceId} " +
             "AND info.db_type = #{dbType} " +
