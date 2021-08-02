@@ -316,11 +316,12 @@ public interface DatabaseInfoDAO {
             "  technical_leader,\n" +
             "  business_leader,\n" +
             "  tenant_id,\n" +
+            "  ( SELECT MAX(version)+1 FROM source_info WHERE id = #{id} ) AS VERSION ,\n" +
             "  update_time,\n" +
             "  record_time,\n" +
             "  create_time,\n" +
             "  modify_time,\n" +
-            "  ( SELECT MAX(version)+1 FROM source_info WHERE id = #{id} ) AS VERSION \n" +
+            "  data_source_id \n" +
             " FROM\n" +
             "  source_info \n" +
             " WHERE\n" +
@@ -453,11 +454,14 @@ public interface DatabaseInfoDAO {
             " source_info s\n" +
             " LEFT JOIN source_info_relation2parent_category sirc ON s.\"id\" = sirc.source_info_id \n" +
             "WHERE\n" +
-            " s.category_id =#{id}"+
+            " version = 0"+
+            " AND " +
+            " s.category_id IN "+
+            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
+            "#{id}"+
+            "</foreach>" +
             " AND " +
             " s.tenant_id =#{tenantId}"+
-            " AND " +
-            " version = 0"+
             "</script>")
-    DatabaseInfoForCategory getDatabaseInfoByCategoryId(@Param("id")String id,@Param("tenantId")String tenantId);
+    List<DatabaseInfoForCategory> getDatabaseInfoByCategoryId(@Param("ids")List<String> id,@Param("tenantId")String tenantId);
 }

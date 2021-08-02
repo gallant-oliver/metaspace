@@ -607,9 +607,9 @@ public class DataManageService {
      */
     @Transactional(rollbackFor = Exception.class)
     public CategoryDeleteReturn deleteCategory(String guid, String tenantId, int type) throws Exception {
-        this.removeSourceInfo(guid,tenantId);
         List<String> categoryIds = categoryDao.queryChildrenCategoryId(guid, tenantId);
         categoryIds.add(guid);
+        this.removeSourceInfo(categoryIds,tenantId);
         int item = 0;
         if (type == 0) {
             item = relationDao.updateRelationByCategoryGuid(categoryIds, "1");
@@ -653,13 +653,13 @@ public class DataManageService {
         return deleteReturn;
     }
 
-    private void removeSourceInfo(String guid, String tenantId){
-        DatabaseInfoForCategory dif = databaseInfoDAO.getDatabaseInfoByCategoryId(guid,tenantId);
+    private void removeSourceInfo(List<String> guid, String tenantId){
+        List<DatabaseInfoForCategory> dif = databaseInfoDAO.getDatabaseInfoByCategoryId(guid,tenantId);
         if (Boolean.FALSE.equals(ParamUtil.isNull(dif))){
-            List<String> idList = new ArrayList<>();
-            idList.add(dif.getId());
+            List<String> idList = dif.stream().map(DatabaseInfoForCategory::getId).collect(Collectors.toList());
+            List<String> databaseIdList = dif.stream().map(DatabaseInfoForCategory::getDatabaseId).collect(Collectors.toList());
             databaseInfoDAO.updateStatusByIds(idList, Status.FOUNDED.getIntValue()+"");
-            databaseDAO.updateDatabaseRelationToCategory(dif.getDatabaseId(),null);
+            databaseDAO.updateDatabaseRelationToCategoryNull(databaseIdList);
         }
     }
 
