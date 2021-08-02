@@ -17,15 +17,15 @@ public interface DatabaseDAO {
     @Update("UPDATE db_info SET category_id = #{categoryId}  WHERE database_guid = #{databaseId}")
     void updateDatabaseRelationToCategory(@Param("databaseId") String databaseId, @Param("categoryId") String categoryId);
     @Select("SELECT " +
-            "info.database_id, " +
+            "info.database_guid, " +
             "info.database_name  " +
-            "FROM" +
+            "FROM " +
             "db_info AS info " +
-            "INNER JOIN source_db AS sd ON info.database_id = sd.source_id " +
+            "INNER JOIN source_db AS sd ON info.database_guid = sd.source_id " +
             "WHERE " +
             "sd.source_id = #{sourceId} " +
             "AND info.db_type = #{dbType} " +
-            "AND info.database_id NOT IN ( SELECT DISTINCT database_id FROM source_info WHERE tenant_id = #{tenantId} AND version = 0)")
+            "AND info.database_guid NOT IN ( SELECT DISTINCT database_id FROM source_info WHERE tenant_id = #{tenantId} AND version = 0)")
     List<DataBaseInfo> getDataBaseCode(@Param("sourceId") String sourceId, @Param("dbType") String dbType, @Param("tenantId") String tenantId);
 
     @Select("<script>"+
