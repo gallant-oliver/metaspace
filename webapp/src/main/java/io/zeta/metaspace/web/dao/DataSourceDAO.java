@@ -119,7 +119,7 @@ public interface DataSourceDAO {
 
     //搜索数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
             " from data_source ds left join ( " +
             "  select distinct dgr.source_id from datasource_group_relation dgr join user_group_relation ug on ug.group_id=dgr.group_id " +
             "  where ug.user_id=#{userId} " +
@@ -157,7 +157,7 @@ public interface DataSourceDAO {
 
     //搜索Api权限数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
+            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
             " from data_source ds left join ( " +
             "  select distinct dgr.source_id from datasource_group_relation dgr join user_group_relation ug on ug.group_id=dgr.group_id " +
             "  where ug.user_id=#{userId} " +
