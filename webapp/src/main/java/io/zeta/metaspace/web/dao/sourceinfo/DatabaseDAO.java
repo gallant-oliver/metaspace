@@ -16,6 +16,16 @@ public interface DatabaseDAO {
 
     @Update("UPDATE db_info SET category_id = #{categoryId}  WHERE database_guid = #{databaseId}")
     void updateDatabaseRelationToCategory(@Param("databaseId") String databaseId, @Param("categoryId") String categoryId);
+
+    @Update("<script>" +
+            " UPDATE db_info " +
+            " SET category_id = null  " +
+            " WHERE database_guid IN " +
+            "<foreach collection='databaseIds' item='databaseId' separator=',' open='(' close=')'>"+
+            "#{databaseId}"+
+            "</foreach>" +
+            "</script>")
+    void updateDatabaseRelationToCategoryNull(@Param("databaseIds") List<String> databaseId);
     @Select("SELECT " +
             "info.database_guid, " +
             "info.database_name  " +

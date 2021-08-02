@@ -454,11 +454,14 @@ public interface DatabaseInfoDAO {
             " source_info s\n" +
             " LEFT JOIN source_info_relation2parent_category sirc ON s.\"id\" = sirc.source_info_id \n" +
             "WHERE\n" +
-            " s.category_id =#{id}"+
+            " version = 0"+
+            " AND " +
+            " s.category_id IN "+
+            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
+            "#{id}"+
+            "</foreach>" +
             " AND " +
             " s.tenant_id =#{tenantId}"+
-            " AND " +
-            " version = 0"+
             "</script>")
-    DatabaseInfoForCategory getDatabaseInfoByCategoryId(@Param("id")String id,@Param("tenantId")String tenantId);
+    List<DatabaseInfoForCategory> getDatabaseInfoByCategoryId(@Param("ids")List<String> id,@Param("tenantId")String tenantId);
 }
