@@ -439,7 +439,7 @@ public interface DatabaseInfoDAO {
             "</script>")
     int batchInsert(@Param("list") List<DatabaseInfoPO> saveList);
 
-    @Select("SELECT COUNT(1)>0 FROM source_info WHERE database_id = #{databaseId} AND tenant_id = tenantId AND version = 0")
+    @Select("SELECT COUNT(1)>0 FROM source_info WHERE database_id = #{databaseId} AND tenant_id = #{tenantId} AND version = 0")
     boolean getDatabaseByDbId(@Param("databaseId") String databaseId,@Param("tenantId") String tenantId);
 
     @Select("<script>" +
