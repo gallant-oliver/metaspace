@@ -316,11 +316,12 @@ public interface DatabaseInfoDAO {
             "  technical_leader,\n" +
             "  business_leader,\n" +
             "  tenant_id,\n" +
+            "  ( SELECT MAX(version)+1 FROM source_info WHERE id = #{id} ) AS VERSION ,\n" +
             "  update_time,\n" +
             "  record_time,\n" +
             "  create_time,\n" +
             "  modify_time,\n" +
-            "  ( SELECT MAX(version)+1 FROM source_info WHERE id = #{id} ) AS VERSION \n" +
+            "  data_source_id \n" +
             " FROM\n" +
             "  source_info \n" +
             " WHERE\n" +
