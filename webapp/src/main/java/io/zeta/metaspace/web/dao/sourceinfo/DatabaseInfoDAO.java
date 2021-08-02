@@ -219,7 +219,7 @@ public interface DatabaseInfoDAO {
             "</if>" +
             "<if test=\"name != null and name != ''\">" +
             " AND " +
-            " (s.database_alias like '%#{name}%' OR db.database_name like '%#{name}%')" +
+            " (s.database_alias like CONCAT('%',#{name},'%') OR db.database_name like CONCAT('%',#{name},'%'))" +
             "</if>" +
             "<if test=\"ids != null\">" +
             " AND " +
@@ -254,9 +254,8 @@ public interface DatabaseInfoDAO {
             "  s.status = #{status}" +
             "</if>" +
             "<if test=\"name != null and name != ''\">" +
-            "AND" +
             "  AND\n" +
-            " (s.database_alias like '%#{name}%' OR db.database_name like '%#{name}%')" +
+            " (s.database_alias like CONCAT('%',#{name},'%') OR db.database_name like CONCAT('%',#{name},'%'))" +
             "</if>" +
             "</script>")
     int getDatabaseInfoListCount(@Param("tenantId") String tenantId, @Param("status") String status,@Param("name") String name);
