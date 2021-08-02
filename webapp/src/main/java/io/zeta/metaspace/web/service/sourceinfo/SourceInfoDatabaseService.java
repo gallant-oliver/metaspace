@@ -49,7 +49,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-public class SourceInfoService implements Approvable {
+public class SourceInfoDatabaseService implements Approvable {
 
     private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.TechnicalREST");
     private static final int CATEGORY_TYPE = 0;

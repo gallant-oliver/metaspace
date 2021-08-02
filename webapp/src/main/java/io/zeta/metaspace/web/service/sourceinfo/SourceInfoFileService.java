@@ -32,7 +32,7 @@ public class SourceInfoFileService {
     @Autowired
     private CategoryDAO categoryDao;
     @Autowired
-    private SourceInfoService sourceInfoService;
+    private SourceInfoDatabaseService sourceInfoDatabaseService;
 
     private Map<String,String> categoryMap  = new HashMap<String,String>();
     /*{{
@@ -302,7 +302,7 @@ public class SourceInfoFileService {
         }
 
         //批量保存处理
-        sourceInfoService.addDatabaseInfoList(tenantId,saveList);
+        sourceInfoDatabaseService.addDatabaseInfoList(tenantId,saveList);
         //databaseInfoDAO.batchInsert(saveList);
         logger.info("文件导入处理完毕。");
         return 1;

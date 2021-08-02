@@ -31,7 +31,7 @@ import io.zeta.metaspace.web.service.HdfsService;
 import io.zeta.metaspace.web.service.SourceService;
 import io.zeta.metaspace.web.service.sourceinfo.AnnexService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoFileService;
-import io.zeta.metaspace.web.service.sourceinfo.SourceInfoService;
+import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.util.Base64Utils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import io.zeta.metaspace.web.util.office.excel.Excel2Pdf;
@@ -65,13 +65,13 @@ import java.util.List;
 @Path("source/info")
 @Singleton
 @Service
-public class SourceInfoREST {
+public class SourceInfoDatabaseREST {
     @Context
     private HttpServletRequest httpServletRequest;
     @Context
     private HttpServletResponse httpServletResponse;
     @Autowired
-    private SourceInfoService sourceInfoService;
+    private SourceInfoDatabaseService sourceInfoDatabaseService;
     @Autowired
     private SourceService sourceService;
 
@@ -89,7 +89,7 @@ public class SourceInfoREST {
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result addDatabaseInfo(@HeaderParam("tenantId")String tenantId, CreateRequest createRequest){
-        return sourceInfoService.addDatabaseInfo(tenantId,createRequest.getDatabaseInfo(),
+        return sourceInfoDatabaseService.addDatabaseInfo(tenantId,createRequest.getDatabaseInfo(),
                 createRequest.getApproveGroupId(),createRequest.getSubmitType());
     }
 
@@ -97,14 +97,14 @@ public class SourceInfoREST {
     @Path("publish")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result publishDatabaseInfo(@HeaderParam("tenantId")String tenantId, PublishRequest request){
-        return sourceInfoService.publish(request.getIdList(),request.getApproveGroupId(),tenantId);
+        return sourceInfoDatabaseService.publish(request.getIdList(),request.getApproveGroupId(),tenantId);
     }
 
     @PUT
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result updateDatabaseInfo(@HeaderParam("tenantId")String tenantId,CreateRequest createRequest){
-        return sourceInfoService.updateSourceInfo(createRequest.getDatabaseInfo(),tenantId,createRequest.getApproveGroupId(),createRequest.getSubmitType());
+        return sourceInfoDatabaseService.updateSourceInfo(createRequest.getDatabaseInfo(),tenantId,createRequest.getApproveGroupId(),createRequest.getSubmitType());
     }
 
     @PUT
@@ -118,7 +118,7 @@ public class SourceInfoREST {
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result deleteDatabaseInfo(@HeaderParam("tenantId")String tenantId, PublishRequest request){
-        return sourceInfoService.delete(tenantId,request.getIdList());
+        return sourceInfoDatabaseService.delete(tenantId,request.getIdList());
     }
 
     @GET
@@ -130,7 +130,7 @@ public class SourceInfoREST {
                                                              @DefaultValue ("10") @QueryParam("limit") int limit,
                                                              @QueryParam("name")String name,
                                                              @QueryParam("status")Status status){
-        return sourceInfoService.getDatabaseInfoList(tenantId,status,name,offset,limit);
+        return sourceInfoDatabaseService.getDatabaseInfoList(tenantId,status,name,offset,limit);
     }
 
     /**
@@ -380,7 +380,7 @@ public class SourceInfoREST {
     @Path("{id}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getSourceInfoDetail(@HeaderParam("tenantId")String tenantId, @PathParam("id") String id,@QueryParam("version") @DefaultValue("0") String version){
-        return sourceInfoService.getDatabaseInfoById(id,tenantId,Integer.parseInt(version));
+        return sourceInfoDatabaseService.getDatabaseInfoById(id,tenantId,Integer.parseInt(version));
     }
 
 
