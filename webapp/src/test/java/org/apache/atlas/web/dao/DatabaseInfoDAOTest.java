@@ -26,7 +26,7 @@ public class DatabaseInfoDAOTest {
     public void insertTest(){
 
 
-        databaseInfoDAO.insertDatabaseInfo(this.build());
+
     }
 
     private  DatabaseInfoPO build(){

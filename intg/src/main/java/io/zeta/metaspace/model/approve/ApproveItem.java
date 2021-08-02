@@ -27,6 +27,7 @@ public class ApproveItem {
       * 审批对象类型
       */
      private String businessType;
+     private String businessTypeText;
      /**
       * 审批类型(发布、下线)
       */

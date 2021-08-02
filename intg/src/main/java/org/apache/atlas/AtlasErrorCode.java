@@ -157,6 +157,9 @@ public enum AtlasErrorCode {
 
     INVALID_PARAMS(400, "METASPACE-400-00-88", " {0}"),
 
+    DUPLICATE_ALIAS_NAME(400, "METASPACE-400-00-89A", " 重名的中文名参数：{0}"),
+    DUPLICATE_CATEGORY_NAME(400, "METASPACE-400-00-89B", " 已存在同名目录：{0}"),
+
     EMPTY_PARAMS(400, "METASPACE-400-00-89", "参数{0}不可为空"),
 
     UNAUTHORIZED_ACCESS(403, "METASPACE-403-00-001", " {0}未被授权执行{1}"),

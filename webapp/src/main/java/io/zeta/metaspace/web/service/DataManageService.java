@@ -28,9 +28,11 @@ import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.dto.indices.IndexFieldExport;
 import io.zeta.metaspace.model.dto.indices.IndexFieldNode;
+import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
@@ -45,12 +47,15 @@ import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.share.APIDataOwner;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.Organization;
+import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForCategory;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
+import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
@@ -110,6 +115,10 @@ public class DataManageService {
     TableDAO tableDAO;
     @Autowired
     DataShareDAO shareDAO;
+    @Autowired
+    DatabaseDAO databaseDAO;
+    @Autowired
+    DatabaseInfoDAO databaseInfoDAO;
     @Autowired
     MetaspaceGremlinQueryService metaspaceEntityService;
     @Autowired
@@ -322,12 +331,12 @@ public class DataManageService {
             StringBuffer qualifiedName = new StringBuffer();
             String newCategoryGuid = UUID.randomUUID().toString();
             String name = info.getName();
+            String creatorId = Boolean.TRUE.equals(ParamUtil.isNull(info.getCreator()))?AdminUtils.getUserData().getUserId():info.getCreator();
             if (Objects.isNull(name)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名不能为空");
             }
-            User user = AdminUtils.getUserData();
             //判断独立部署和多租户
-            List<Module> moduleByUserId = TenantService.defaultTenant.equals(tenantId) ? userDAO.getModuleByUserId(user.getUserId()) : tenantService.getModule(tenantId);
+            List<Module> moduleByUserId = TenantService.defaultTenant.equals(tenantId) ? userDAO.getModuleByUserId(creatorId) : tenantService.getModule(tenantId);
             List<Integer> modules = new ArrayList<>();
             for (Module module : moduleByUserId) {
                 modules.add(module.getModuleId());
@@ -337,7 +346,7 @@ public class DataManageService {
             //name
             entity.setName(name);
             //创建人
-            entity.setCreator(user.getUserId());
+            entity.setCreator(creatorId);
             //createtime
             entity.setCreateTime(io.zeta.metaspace.utils.DateUtils.currentTimestamp());
             //description
@@ -359,7 +368,7 @@ public class DataManageService {
                     }
                 }
                 if (TenantService.defaultTenant.equals(tenantId)) {
-                    List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
+                    List<Role> roles = roleDao.getRoleByUsersId(creatorId);
                     if (!roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))) {
                         throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED, "当前用户没有创建目录权限");
                     }
@@ -404,7 +413,7 @@ public class DataManageService {
             } else {
                 boolean isAdmin = modules.contains(ModuleEnum.AUTHORIZATION.getId());
                 //无当前目录权限
-                boolean isPrivilege = !userGroupService.isPrivilegeCategory(user.getUserId(), newCategoryGuid, tenantId, type);
+                boolean isPrivilege = !userGroupService.isPrivilegeCategory(creatorId, newCategoryGuid, tenantId, type);
                 boolean typeBoolean = type == 1 || type == 0;
                 if (isAdmin) {
                     privilege.adminPrivilege(returnEntity.getGuid());
@@ -598,6 +607,7 @@ public class DataManageService {
      */
     @Transactional(rollbackFor = Exception.class)
     public CategoryDeleteReturn deleteCategory(String guid, String tenantId, int type) throws Exception {
+        this.removeSourceInfo(guid,tenantId);
         List<String> categoryIds = categoryDao.queryChildrenCategoryId(guid, tenantId);
         categoryIds.add(guid);
         int item = 0;
@@ -641,6 +651,16 @@ public class DataManageService {
         deleteReturn.setCategory(category);
         deleteReturn.setItem(item);
         return deleteReturn;
+    }
+
+    private void removeSourceInfo(String guid, String tenantId){
+        DatabaseInfoForCategory dif = databaseInfoDAO.getDatabaseInfoByCategoryId(guid,tenantId);
+        if (Boolean.FALSE.equals(ParamUtil.isNull(dif))){
+            List<String> idList = new ArrayList<>();
+            idList.add(dif.getId());
+            databaseInfoDAO.updateStatusByIds(idList, Status.FOUNDED.getIntValue()+"");
+            databaseDAO.updateDatabaseRelationToCategory(dif.getDatabaseId(),null);
+        }
     }
 
     /**

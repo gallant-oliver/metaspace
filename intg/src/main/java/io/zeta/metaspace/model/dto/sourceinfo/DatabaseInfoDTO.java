@@ -131,7 +131,7 @@ public class DatabaseInfoDTO {
     /**
      * 提交时间
      * **/
-    private Timestamp publishTime;
+    private String publishTime;
 
     private String auditorName;
 }

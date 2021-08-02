@@ -15,10 +15,17 @@ public class DatabaseInfoBO {
      * 目录名
      * **/
     private String categoryName;
+
+    private String status;
     /**
      * 目录id
      * **/
     private String categoryId;
+
+    /**
+     * 版本
+     */
+    private String version;
     /**
      * 数据库名
      * **/
@@ -32,7 +39,7 @@ public class DatabaseInfoBO {
      * **/
     private String databaseTypeName;
     /**
-     * 数据库类型名
+     * 数据库实例名
      * **/
     private String databaseInstanceName;
     /**
@@ -136,9 +143,11 @@ public class DatabaseInfoBO {
 
     private String updaterName;
 
-    private TimeStamp updateTime;
+    private String updateTime;
 
     private String auditDes;
 
     private String auditorName;
+
+    private String auditTime;
 }

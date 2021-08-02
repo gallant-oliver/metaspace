@@ -18,10 +18,16 @@ public class DatabaseInfoForList {
      * 目录名
      * **/
     private String categoryName;
+
+    private String categoryId;
     /**
      * 数据库名
      * **/
     private String databaseName;
+    /**
+     * 数据库id
+     * **/
+    private String databaseId;
     /**
      * 数据库类型
      * **/
@@ -39,10 +45,6 @@ public class DatabaseInfoForList {
      * **/
     private int status;
 
-    /**
-     * 功能列表
-     * **/
-    private List<Action> actionList;
     /**
      * 更新人
      * **/

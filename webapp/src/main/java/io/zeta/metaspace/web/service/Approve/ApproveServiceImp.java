@@ -6,6 +6,7 @@ import io.zeta.metaspace.model.approve.ApproveItem;
 import io.zeta.metaspace.model.approve.ApproveOperate;
 import io.zeta.metaspace.model.approve.ApproveParas;
 import io.zeta.metaspace.model.approve.ApproveStatus;
+import io.zeta.metaspace.model.enums.BusinessType;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.ApproveDAO;
@@ -29,7 +30,7 @@ public class ApproveServiceImp implements ApproveService{
 
     private static  Map<ModuleEnum, String> moduleServiceClass = ImmutableMap.<ModuleEnum, String>builder()  //key:模块单例，value:service name
             .put(ModuleEnum.NORMDESIGN, "indexService")
-            .put(ModuleEnum.SOURCEINFO, "sourceInfoService")
+            .put(ModuleEnum.DATABASEREGISTER, "sourceInfoService")
             .build();
 
     @Autowired
@@ -64,6 +65,9 @@ public class ApproveServiceImp implements ApproveService{
 
 
         List<ApproveItem> approveItems = approveDao.getApproveItems(tenantId, paras, groups);
+       for(ApproveItem item:approveItems){
+           item.setBusinessTypeText(BusinessType.getTextByCode(item.getBusinessType()));
+       }
         if (approveItems == null || approveItems.size() == 0) {
             return result;
         }
@@ -90,7 +94,6 @@ public class ApproveServiceImp implements ApproveService{
                 addToMapByClass(moduleItemMap,item);
             }
         }else if(ApproveOperate.REJECTED.equals(ApproveOperate.getOprateByCode(paras.getResult())) || ApproveOperate.CANCEL.equals(ApproveOperate.getOprateByCode(paras.getResult()))){ //驳回或者取回
-            result = ApproveOperate.REJECTED;
             List<ApproveItem> approveList = paras.getApproveList(); //批量审批列表
             for(ApproveItem item : approveList) {
                 item.setId(item.getId());
@@ -99,10 +102,11 @@ public class ApproveServiceImp implements ApproveService{
                 item.setApproveStatus(ApproveStatus.REJECTED.code); //更新为驳回状态
                 item.setApprover(AdminUtils.getUserData().getUserId()); //写入审批人
                 if(ApproveOperate.REJECTED.equals(ApproveOperate.getOprateByCode(paras.getResult()))){
+                    result = ApproveOperate.REJECTED;
                     approveDao.updateStatus(item);  //todo 批量优化
                 }else{
+                    result = ApproveOperate.CANCEL;
                     approveDao.deleteItemById(item); //取回与驳回对业务模块操作一致
-                    approveDao.deleteItemByObjectId(item);
                 }
                 addToMapByClass(moduleItemMap,item);
             }
