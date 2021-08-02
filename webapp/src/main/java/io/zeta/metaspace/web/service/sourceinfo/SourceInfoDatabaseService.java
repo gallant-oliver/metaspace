@@ -195,6 +195,12 @@ public class SourceInfoDatabaseService implements Approvable {
         List<DatabaseInfoForList> diLists = databaseInfoDAO.getDatabaseInfoList(tenantId,status==null?null:status.getIntValue()+"",null,name,offset,limit);
         int totalSize = databaseInfoDAO.getDatabaseInfoListCount(tenantId,status==null?null:status.getIntValue()+"",name);
         PageResult<DatabaseInfoForList> pageResult=new PageResult<>(diLists);
+       if (Boolean.FALSE.equals(ParamUtil.isNull(diLists))){
+           for (DatabaseInfoForList di:diLists){
+               String statusValue = Status.getStatusByValue(di.getStatus());
+               di.setStatus(statusValue);
+           }
+       }
         pageResult.setCurrentSize(diLists.size());
         pageResult.setTotalSize(totalSize);
         return ReturnUtil.success(pageResult);
@@ -217,7 +223,7 @@ public class SourceInfoDatabaseService implements Approvable {
             list=databaseInfoDAO.getDatabaseInfoList(tenantId,null,idList,null,0,Integer.MAX_VALUE);
         }
 
-        list.stream().filter(dfl->dfl.getStatus() == Status.ACTIVE.getIntValue()||dfl.getStatus() == Status.REJECT.getIntValue()).forEach(l->{
+        list.stream().filter(dfl->Status.ACTIVE.name().equals(Status.getStatusByValue(dfl.getStatus()))|| Status.REJECT.name().equals(Status.getStatusByValue(dfl.getStatus()))).forEach(l->{
             try {
                 approveServiceImp.deal(this.buildApproveParas(l.getId(),tenantId,ApproveOperate.CANCEL),tenantId);
                 if (Boolean.FALSE.equals(ParamUtil.isNull(l.getCategoryId()))) {

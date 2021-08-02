@@ -43,7 +43,7 @@ public class DatabaseInfoForList {
     /**
      * 源信息状态
      * **/
-    private int status;
+    private String status;
 
     /**
      * 更新人
@@ -53,7 +53,7 @@ public class DatabaseInfoForList {
     /**
      * 更新时间
      * **/
-    private Timestamp updateTime;
+    private String updateTime;
 
     /**
      * 审核员姓名

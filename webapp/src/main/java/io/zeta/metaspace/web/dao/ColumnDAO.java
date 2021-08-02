@@ -68,6 +68,9 @@ public interface ColumnDAO {
     @Select("select column_guid as columnId,column_name as columnName,type from column_info where table_guid=#{tableGuid} and status='ACTIVE'")
     public List<Column> getColumnInfoList(@Param("tableGuid")String tableGuid);
 
+    @Select("select column_guid as columnId,column_name as columnName,type,description from column_info where table_guid=#{tableGuid} and status='ACTIVE'")
+    List<Column> getColumnInfoListByTableGuid(@Param("tableGuid")String tableGuid);
+
     @Select("select column_guid from column_info where table_guid=#{tableGuid} and column_name = #{columnName} and status='ACTIVE'")
     String getColumnGuid(@Param("tableGuid")String tableGuid, @Param("columnName")String columnName);
 

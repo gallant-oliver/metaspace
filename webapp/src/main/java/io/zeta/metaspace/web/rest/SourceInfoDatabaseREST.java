@@ -88,6 +88,7 @@ public class SourceInfoDatabaseREST {
     @POST
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public Result addDatabaseInfo(@HeaderParam("tenantId")String tenantId, CreateRequest createRequest){
         return sourceInfoDatabaseService.addDatabaseInfo(tenantId,createRequest.getDatabaseInfo(),
                 createRequest.getApproveGroupId(),createRequest.getSubmitType());
@@ -96,6 +97,7 @@ public class SourceInfoDatabaseREST {
     @PUT
     @Path("publish")
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public Result publishDatabaseInfo(@HeaderParam("tenantId")String tenantId, PublishRequest request){
         return sourceInfoDatabaseService.publish(request.getIdList(),request.getApproveGroupId(),tenantId);
     }
@@ -103,6 +105,7 @@ public class SourceInfoDatabaseREST {
     @PUT
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public Result updateDatabaseInfo(@HeaderParam("tenantId")String tenantId,CreateRequest createRequest){
         return sourceInfoDatabaseService.updateSourceInfo(createRequest.getDatabaseInfo(),tenantId,createRequest.getApproveGroupId(),createRequest.getSubmitType());
     }
@@ -110,6 +113,7 @@ public class SourceInfoDatabaseREST {
     @PUT
     @Path("revoke/{id}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public Result revokeSourceInfo(@HeaderParam("tenantId")String tenantId, @PathParam("id") String id) throws Exception {
         return ReturnUtil.success();
     }
@@ -117,6 +121,7 @@ public class SourceInfoDatabaseREST {
     @DELETE
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public Result deleteDatabaseInfo(@HeaderParam("tenantId")String tenantId, PublishRequest request){
         return sourceInfoDatabaseService.delete(tenantId,request.getIdList());
     }
@@ -379,6 +384,7 @@ public class SourceInfoDatabaseREST {
     @GET
     @Path("{id}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
     public Result getSourceInfoDetail(@HeaderParam("tenantId")String tenantId, @PathParam("id") String id,@QueryParam("version") @DefaultValue("0") String version){
         return sourceInfoDatabaseService.getDatabaseInfoById(id,tenantId,Integer.parseInt(version));
     }

@@ -134,7 +134,7 @@ public interface DatabaseInfoDAO {
             "s.to_email,\n" +
             "(SELECT u.username FROM users u WHERE u.userid = s.technical_leader ) AS technicalLeader,\n" +
             "(SELECT u.username FROM users u WHERE u.userid = s.business_leader ) AS business_leader,\n" +
-            "ag.name AS approve_group_name,\n" +
+            "ag.name AS approveGroupName,\n" +
             "(SELECT u.username FROM users u WHERE u.userid = s.updater ) AS updaterName,\n" +
             "s.update_time AS updateTime,\n" +
             "ag.name AS approveGroupName,\n" +
@@ -145,7 +145,7 @@ public interface DatabaseInfoDAO {
             "FROM\n" +
             "source_info s LEFT JOIN category c ON s.category_id = c.guid AND c.tenantid = s.tenant_id\n" +
             "LEFT JOIN db_info db ON s.database_id = db.database_guid \n" +
-            "LEFT JOIN data_source ds ON s.source_id = ds.source_id\n" +
+            "LEFT JOIN data_source ds ON s.data_source_id = ds.source_id\n" +
             "LEFT JOIN approval_group ag ON s.approve_group_id = ag.\"id\"\n" +
             "LEFT JOIN approval_item ai ON s.approve_id = ai.\"id\"\n" +
             "WHERE\n" +
@@ -206,7 +206,7 @@ public interface DatabaseInfoDAO {
             " source_info s LEFT JOIN category c ON s.category_id = c.guid AND \n" +
             " c.tenantid = s.tenant_id\n" +
             " LEFT JOIN db_info db ON s.database_id = db.database_guid \n" +
-            " LEFT JOIN data_source ds ON s.source_id = ds.source_id\n" +
+            " LEFT JOIN data_source ds ON s.data_source_id = ds.source_id\n" +
             " LEFT JOIN approval_group ag ON s.approve_group_id = ag.\"id\"\n" +
             " LEFT JOIN approval_item ai ON s.approve_id = ai.\"id\"\n" +
             "WHERE\n" +
@@ -219,7 +219,7 @@ public interface DatabaseInfoDAO {
             "</if>" +
             "<if test=\"name != null and name != ''\">" +
             " AND " +
-            " (s.database_alias like '%#{name}%' OR db.database_name like '%#{name}%')" +
+            " (s.database_alias like CONCAT('%',#{name},'%') OR db.database_name like CONCAT('%',#{name},'%'))" +
             "</if>" +
             "<if test=\"ids != null\">" +
             " AND " +
@@ -242,7 +242,7 @@ public interface DatabaseInfoDAO {
             " source_info s LEFT JOIN category c ON s.category_id = c.guid AND \n" +
             " c.tenantid = s.tenant_id\n" +
             " LEFT JOIN db_info db ON s.database_id = db.database_guid \n" +
-            " LEFT JOIN data_source ds ON s.source_id = ds.source_id\n" +
+            " LEFT JOIN data_source ds ON s.data_source_id = ds.source_id\n" +
             " LEFT JOIN approval_group ag ON s.approve_group_id = ag.\"id\"\n" +
             " LEFT JOIN approval_item ai ON s.approve_id = ai.\"id\"\n" +
             "WHERE\n" +
@@ -254,9 +254,8 @@ public interface DatabaseInfoDAO {
             "  s.status = #{status}" +
             "</if>" +
             "<if test=\"name != null and name != ''\">" +
-            "AND" +
             "  AND\n" +
-            " (s.database_alias like '%#{name}%' OR db.database_name like '%#{name}%')" +
+            " (s.database_alias like CONCAT('%',#{name},'%') OR db.database_name like CONCAT('%',#{name},'%'))" +
             "</if>" +
             "</script>")
     int getDatabaseInfoListCount(@Param("tenantId") String tenantId, @Param("status") String status,@Param("name") String name);
@@ -316,11 +315,12 @@ public interface DatabaseInfoDAO {
             "  technical_leader,\n" +
             "  business_leader,\n" +
             "  tenant_id,\n" +
+            "  ( SELECT MAX(version)+1 FROM source_info WHERE id = #{id} ) AS VERSION ,\n" +
             "  update_time,\n" +
             "  record_time,\n" +
             "  create_time,\n" +
             "  modify_time,\n" +
-            "  ( SELECT MAX(version)+1 FROM source_info WHERE id = #{id} ) AS VERSION \n" +
+            "  data_source_id \n" +
             " FROM\n" +
             "  source_info \n" +
             " WHERE\n" +
@@ -439,7 +439,7 @@ public interface DatabaseInfoDAO {
             "</script>")
     int batchInsert(@Param("list") List<DatabaseInfoPO> saveList);
 
-    @Select("SELECT COUNT(1)>0 FROM source_info WHERE database_id = #{databaseId} AND tenant_id = tenantId AND version = 0")
+    @Select("SELECT COUNT(1)>0 FROM source_info WHERE database_id = #{databaseId} AND tenant_id = #{tenantId} AND version = 0")
     boolean getDatabaseByDbId(@Param("databaseId") String databaseId,@Param("tenantId") String tenantId);
 
     @Select("<script>" +
@@ -453,11 +453,14 @@ public interface DatabaseInfoDAO {
             " source_info s\n" +
             " LEFT JOIN source_info_relation2parent_category sirc ON s.\"id\" = sirc.source_info_id \n" +
             "WHERE\n" +
-            " s.category_id =#{id}"+
+            " version = 0"+
+            " AND " +
+            " s.category_id IN "+
+            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
+            "#{id}"+
+            "</foreach>" +
             " AND " +
             " s.tenant_id =#{tenantId}"+
-            " AND " +
-            " version = 0"+
             "</script>")
-    DatabaseInfoForCategory getDatabaseInfoByCategoryId(@Param("id")String id,@Param("tenantId")String tenantId);
+    List<DatabaseInfoForCategory> getDatabaseInfoByCategoryId(@Param("ids")List<String> id,@Param("tenantId")String tenantId);
 }
