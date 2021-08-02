@@ -1,9 +1,11 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.metadata.Database;
+import io.zeta.metaspace.model.sourceinfo.derivetable.vo.TechnicalCategory;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
+import java.util.Map;
 
 public interface DbDAO {
 
@@ -48,5 +50,25 @@ public interface DbDAO {
 
     @Insert("insert into source_db(id, source_id, db_guid) values (#{id}, #{sourceId}, #{databaseId})")
     void insertSourceDbRelation(@Param("id")String id, @Param("databaseId")String databaseId, @Param("sourceId")String sourceId);
+	
+	@Select({"<script>",
+            "select t1.category_id as guid,t1.db_type as dbType ,t1.database_guid as dbId, t2.data_source_id as sourceId",
+            " from db_info t1",
+            " inner join source_info t2 ",
+            " on t1.database_guid = t2.database_id ",
+            " where t2.tenant_id = #{tenantId} and t1.category_id in ",
+            " <foreach item='categoryId' index='index' collection='categoryIds' separator=',' open='(' close=')'>",
+            " #{categoryId}",
+            " </foreach>",
+            "</script>"})
+    List<TechnicalCategory> queryDbTypeByCategoryIds(@Param("tenantId") String tenantId, @Param("categoryIds") List<String> categoryIds);
+
+
+    @Select({"<script>",
+            "select database_guid as id,database_name as name from db_info where database_guid = #{dbId}",
+            "union ",
+            "select source_id as id,source_name as name from data_source where source_id = #{sourceId}",
+            "</script>"})
+    List<Map<String, String>> queryDbNameAndSourceNameByIds(@Param("dbId") String dbId, @Param("sourceId") String sourceId);
 }
 
