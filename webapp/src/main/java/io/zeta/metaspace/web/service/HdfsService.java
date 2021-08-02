@@ -59,7 +59,7 @@ public class HdfsService {
         log.info("Kerberos 是否开启验证:{}",enableKerberos);
         if(enableKerberos){
             UserGroupInformation loginUser = getLoginUser();
-            UserGroupInformation proxyUser = UserGroupInformation.createProxyUser("user", loginUser);
+            UserGroupInformation proxyUser = UserGroupInformation.createProxyUser("metaspace", loginUser);
             fs = proxyUser.doAs((PrivilegedAction<FileSystem>) () -> {
                 try {
                     return FileSystem.get(conf);
