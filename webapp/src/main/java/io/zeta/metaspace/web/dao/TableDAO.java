@@ -16,6 +16,9 @@ public interface TableDAO {
     @Select("select * from tableinfo where tableguid=#{guid}")
     public TableInfo getTableInfoByTableguid(String guid);
 
+    @Select("select * from tableinfo where status = 'ACTIVE' and tableguid=#{guid}")
+    public TableInfo getTableInfoByTableguidAndStatus(@Param("guid") String guid);
+
     @Select("select generatetime from table_relation where tableguid=#{guid}")
     public String getDateByTableguid(String guid);
 
@@ -199,4 +202,8 @@ public interface TableDAO {
             " </foreach>",
             "</script>"})
     List<TableInfoId> selectListByName(@Param("tenantId") String tenantId, @Param("sourceNameList") Set<String> sourceNameList, @Param("dbNameListHive") List<String> dbNameListHive, @Param("dbNameList") Set<String> dbNameList, @Param("tableNameList") Set<String> tableNameList, @Param("columnNameList") Set<String> columnNameList);
+
+    @Select("select * from tableinfo where status = 'ACTIVE' and databaseguid = (select database_guid from db_info where category_id = #{categoryId})")
+    List<TableInfo> getTableInfoByCategoryId(@Param("categoryId") String categoryId);
+
 }
