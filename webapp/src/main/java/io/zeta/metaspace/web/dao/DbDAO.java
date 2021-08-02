@@ -7,8 +7,12 @@ import java.util.List;
 
 public interface DbDAO {
 
-    @Select("select database_guid as databaseId, database_name, owner, db_type, status, instance_guid, database_description from db_info where database_guid = #{databaseId} and is_deleted = false")
+    @Select("select database_guid as databaseId, database_name, owner, db_type, status, instance_guid, database_description from db_info where database_guid = #{databaseId}")
     Database getDb(@Param("databaseId")String databaseId);
+
+    @Delete("delete from db_info " +
+            "where database_guid != #{dbGuid} and instance_guid = #{instanceGuid} and lower(database_name) = lower(#{dbName}) ")
+    void deleteIfExitDbByName(@Param("dbGuid")String dbGuid, @Param("instanceGuid")String instanceGuid, @Param("dbName")String dbName);
 
     @Select({"<script>",
                 "select t5.database_guid as databaseId, t5.database_name, t5.owner, t5.db_type, t5.status, t5.instance_guid, t5.database_description ",
@@ -29,21 +33,21 @@ public interface DbDAO {
 
 
     @Update("update db_info set database_name = #{database.databaseName},owner = #{database.owner}, status = #{database.status}, " +
-            "database_Description = #{database.databaseDescription} where database_guid = #{database.databaseId} and is_deleted = false")
+            "database_Description = #{database.databaseDescription} where database_guid = #{database.databaseId}")
     void updateDb(@Param("database")Database database);
 
     @Insert("insert into db_info(database_guid, database_name, owner, db_type, status, instance_guid, database_description)" +
-            "values(#{database.databaseId}, #{database.databaseName}, #{database.owner}, #{database.dbType}, #{database.status}, #{database.instanceId}, " +
-            " #{database.databaseDescription})")
+            "values(#{database.databaseId}, #{database.databaseName}, #{database.owner}, #{database.dbType}, #{database.status}, " +
+            "#{database.instanceId}, #{database.databaseDescription})")
     void insertDb(@Param("database")Database database);
 
     @Select("select id from source_db where source_id = #{sourceId} and db_guid = #{databaseId}")
     String getSourceDbRelationId(@Param("databaseId")String databaseId, @Param("sourceId")String sourceId);
 
-    @Delete("delete from source_db where db_guid in (#{databaseIds})")
+    @Delete("delete from source_db where db_guid in ('${databaseIds}')")
     void deleteSourceDbRelationId(@Param("databaseIds")String databaseIds);
 
-    @Update("update db_info set status=#{status} where database_guid in (#{databaseGuids})")
+    @Update("update db_info set status=#{status} where database_guid in ('${databaseGuids}')")
     int updateDatabaseStatusBatch(@Param("databaseGuids") String databaseGuids, @Param("status") String status);
 
     @Insert("insert into source_db(id, source_id, db_guid) values (#{id}, #{sourceId}, #{databaseId})")
