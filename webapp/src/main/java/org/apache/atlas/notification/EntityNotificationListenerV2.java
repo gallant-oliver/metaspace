@@ -17,6 +17,7 @@
  */
 package org.apache.atlas.notification;
 
+import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.service.MetadataHistoryService;
@@ -79,21 +80,21 @@ public class EntityNotificationListenerV2 implements EntityChangeListenerV2 {
     }
 
     @Override
-    public void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition, Properties connectorProperties) throws AtlasBaseException {
+    public void onEntitiesAdded(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition, KafkaConnector.Config config) throws AtlasBaseException {
         //notifyEntityEvents(entities, ENTITY_CREATE);
-        dataManageService.addEntity(entities, definition, connectorProperties);
+        dataManageService.addEntity(entities, definition, config);
         metadataHistoryService.storeHistoryMetadata(entities);
     }
 
     @Override
-    public void onEntitiesUpdated(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
+    public void onEntitiesUpdated(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition, KafkaConnector.Config config) throws AtlasBaseException {
         //notifyEntityEvents(entities, ENTITY_UPDATE);
-        dataManageService.updateEntityInfo(entities, null);
+        dataManageService.updateEntityInfo(entities, definition, config);
         metadataHistoryService.storeHistoryMetadata(entities);
     }
 
     @Override
-    public void onEntitiesDeleted(List<AtlasEntity> entities, boolean isImport) throws AtlasBaseException {
+    public void onEntitiesDeleted(List<AtlasEntity> entities, boolean isImport, SyncTaskDefinition definition, KafkaConnector.Config config) throws AtlasBaseException {
         //notifyEntityEvents(entities, ENTITY_DELETE);
         dataManageService.updateStatus(entities);
         metadataHistoryService.storeHistoryMetadata(entities);

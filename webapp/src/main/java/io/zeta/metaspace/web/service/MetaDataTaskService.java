@@ -364,11 +364,6 @@ public class MetaDataTaskService {
             String jobName = buildJobName(definitionId + now);
             String jobGroupName = buildJobGroupName(definitionId);
             List<String> schemas = definition.getSchemas();
-            if(org.springframework.util.CollectionUtils.isEmpty(schemas)&&definition.isSyncAll()){
-                tableDAO.updateTableRelationBySourceId(definition.getCategoryGuid(),definition.getDataSourceId());
-            }else{
-                tableDAO.updateTableRelationByDb(definition.getCategoryGuid(),definition.getDataSourceId(),schemas);
-            }
             quartzManager.addSimpleJob(jobName, jobGroupName, SyncTaskJob.class, AdminUtils.getUserName());
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "手动触发失败");

@@ -40,7 +40,7 @@ public class RelationEntityV2 {
     private List<DataOwnerHeader> dataOwner;
     private List<String> tableTagList;
     private String description;
-    private String sourceName;
+    private String sourceName = "10.141.0.111";
 
     @JsonIgnore
     private int total;

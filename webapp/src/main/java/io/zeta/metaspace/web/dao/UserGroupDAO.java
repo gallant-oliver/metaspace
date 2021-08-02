@@ -982,7 +982,7 @@ public interface UserGroupDAO {
             "    <when test=\"categoryType==0\">" +
             "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and " +
             "        tableinfo.status='ACTIVE' and "+
-            "        ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') and " +
+            "        table_relation.tenant_id = #{tenantId} and " +
             "        (dbname is null " +
             "        <if test='dbNames!=null and dbNames.size()>0'>" +
             "          or dbname in " +
@@ -1024,7 +1024,7 @@ public interface UserGroupDAO {
             "    #{id}" +
             "    </foreach>" +
             "</script>")
-    public List<CategoryPrivilegeV2> getUserGroupsCategory(@Param("userGroupIds")List<String> userGroupIds, @Param("tenantId")String tenantId, @Param("categoryType") int categoryType,@Param("dbNames") List<String> dbNames);
+    List<CategoryPrivilegeV2> getUserGroupsCategory(@Param("userGroupIds")List<String> userGroupIds, @Param("tenantId")String tenantId, @Param("categoryType") int categoryType,@Param("dbNames") List<String> dbNames);
 
     //递归找父节点
     @Select("<script>WITH RECURSIVE categoryTree AS" +

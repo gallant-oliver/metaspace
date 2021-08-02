@@ -250,7 +250,8 @@
         <cdh.avro.version>1.7.6-${cdh.version}</cdh.avro.version>
         <sonar.host.url>http://sonar.gridsum.com</sonar.host.url>
         <sonar.login>650355477e0df2b67087537edb8552bdd079509b</sonar.login>
-        <connect-api.version>0.10.2.0-cp1</connect-api.version>
+        <connect-api.version>1.1.1</connect-api.version>
+        <jdbc.oracle.version>18.3.0.0</jdbc.oracle.version>
     </properties>
 
     <modules>
@@ -303,6 +304,10 @@
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
+        </repository>
+        <repository>
+            <id>confluent</id>
+            <url>http://packages.confluent.io/maven</url>
         </repository>
     </repositories>
 

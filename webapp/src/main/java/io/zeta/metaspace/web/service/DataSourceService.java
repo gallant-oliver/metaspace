@@ -273,6 +273,19 @@ public class DataSourceService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源信息获取失败\n" + e.getMessage());
         }
     }
+    public DataSourceInfo getAnyOneDataSourceByDbGuid(String dbGuid) {
+        try {
+            DataSourceInfo dataSourceInfo = dataSourceDAO.getAnyOneDataSourceByDbGuid(dbGuid);
+            if (Objects.isNull(dataSourceInfo)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有找到与数据库"+dbGuid+"相关联的数据源");
+            }
+            dataSourceInfo.setPassword(AESUtils.aesDecode(dataSourceInfo.getPassword()));
+            return dataSourceInfo;
+        } catch (Exception e) {
+            LOG.error("数据源信息获取失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源信息获取失败\n" + e.getMessage());
+        }
+    }
 
     /**
      * 获取数据源详情

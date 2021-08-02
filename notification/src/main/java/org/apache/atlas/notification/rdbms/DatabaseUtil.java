@@ -1,10 +1,18 @@
 package org.apache.atlas.notification.rdbms;
 
+import io.zeta.metaspace.adapter.AdapterExecutor;
+import io.zeta.metaspace.model.datasource.DataSourceInfo;
+import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerColumn;
+import io.zeta.metaspace.utils.AdapterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.CollectionUtils;
 
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 数据库元数据工具类   （根据连接获取所有表、表的列信息）
@@ -18,6 +26,30 @@ public class DatabaseUtil {
     private static DatabaseUtil databaseUtil = null;
 
     private DatabaseUtil(){}
+
+    /**
+     * 定义新的获取列方式
+     * @param tableName
+     * @return
+     */
+    public static List<TableColumnInfo> getColumnNames(DataSourceInfo dataSourceInfo, String tableUser, String tableName){
+        List<TableColumnInfo> columnNames = new ArrayList<>();
+        AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
+        List<SchemaCrawlerColumn> list = adapterExecutor.getColumns(tableUser,tableName);
+        if(CollectionUtils.isEmpty(list)){
+            return columnNames;
+        }
+        TableColumnInfo tableColumnInfo = null;
+        for(SchemaCrawlerColumn item : list){
+            tableColumnInfo = new TableColumnInfo();
+            tableColumnInfo.setColumnName(item.getName());
+            tableColumnInfo.setDataType(item.getDataType());
+            tableColumnInfo.setNullable(item.isNullable());
+            tableColumnInfo.setLength(item.getLength());
+            columnNames.add(tableColumnInfo);
+        }
+        return columnNames;
+    }
 
     public static DatabaseUtil getInstance(String driver){
         try{

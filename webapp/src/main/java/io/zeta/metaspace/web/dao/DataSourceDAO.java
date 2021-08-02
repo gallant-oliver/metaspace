@@ -114,8 +114,16 @@ public interface DataSourceDAO {
 
     //获取数据源详情
     @Select("select source_id,source_type sourceType,source_name sourceName,description,ip,port,username userName,password,database,jdbc_parameter jdbcParameter,oracle_db oracleDb,manager managerId,servicetype,create_time,update_time " +
-            "from data_source where source_id=#{sourceId};")
+            "from data_source where source_id=#{sourceId}")
     public DataSourceInfo getDataSourceInfo(@Param("sourceId") String sourceId);
+
+    //获取数据源详情
+    @Select("select data_source.source_id,data_source.source_type sourceType,data_source.source_name sourceName," +
+            "data_source.description,data_source.ip,data_source.port,data_source.username userName,data_source.password," +
+            "data_source.database,data_source.jdbc_parameter jdbcParameter,data_source.oracle_db oracleDb,data_source.manager managerId," +
+            "data_source.servicetype,data_source.create_time,data_source.update_time from " +
+            "source_db join data_source on source_db.source_id = data_source.source_id where source_db.db_guid = #{dbGuid} limit 1")
+    public DataSourceInfo getAnyOneDataSourceByDbGuid(@Param("dbGuid") String dbGuid);
 
     //搜索数据源
     @Select("<script>" +

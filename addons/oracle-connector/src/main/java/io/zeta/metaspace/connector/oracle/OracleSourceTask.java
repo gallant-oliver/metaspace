@@ -71,7 +71,7 @@ public class OracleSourceTask extends SourceTask {
 			dbConn = new OracleConnection().connect(config);
 			logFiles = getSingleRowMuiltColumnStringResult(OracleConnectorSQL.SELECT_LOG_FILES, "MEMBER");
 			if (0L == streamOffsetScn) {
-				streamOffsetScn = config.getStartScn() == 0L
+				streamOffsetScn = config.getStartScn() < 0L
 						? getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN")
 						: config.getStartScn();
 			}
@@ -90,7 +90,7 @@ public class OracleSourceTask extends SourceTask {
 			logMinerSelect = dbConn.prepareCall(OracleConnectorSQL.LOGMINER_SELECT_WITHSCHEMA);
 			logMinerSelect.setFetchSize(config.getDbFetchSize());
 			LOG.info("Oracle Kafka Connector {} is started by streamOffsetScn = {}", config.getName(), streamOffsetScn);
-		} catch (SQLException e) {
+		} catch (Exception e) {
 			LOG.info("LogMiner Session Start error", e);
 			throw new ConnectException(
 					"Error at cennector task " + config.getName() + ", Please check : " + e.toString());

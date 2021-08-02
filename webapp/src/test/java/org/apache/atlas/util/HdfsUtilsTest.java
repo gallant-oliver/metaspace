@@ -27,4 +27,13 @@ public class HdfsUtilsTest {
        log.info("内容："+ String.join("\n", hdfsUtils.catFile(tmp, -1)));
 
     }
+
+    @Test
+    public void testOracleDriver(){
+        try {
+            Class.forName("oracle.jdbc.driver.OracleDriver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
 }

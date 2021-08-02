@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.utils.OKHttpClient;
 import lombok.Data;
 import org.apache.atlas.ApplicationProperties;
@@ -20,26 +21,41 @@ import java.util.concurrent.TimeUnit;
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE;
 import static com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.PUBLIC_ONLY;
 
-public class KafkaConnector {
-    private static final Logger LOG = LoggerFactory.getLogger(KafkaConnector.class);
-    private static final Cache<String, Instance> CONNECTOR_CACHE = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(60000, TimeUnit.MINUTES).build();
+public class KafkaConnectorUtil {
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaConnectorUtil.class);
+    private static final Cache<String, KafkaConnector> CONNECTOR_CACHE = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(60000, TimeUnit.MINUTES).build();
 
     private static final List<String> KAFKA_CONNECTOR_URLS;
-    private static final String ORACLE_INIT_CONNECTOR;
     private static final ObjectMapper MAPPER;
     private static final String URL_PREFIX;
+    private static final Map<String, String> CONNECTOR_CLASS_MAP;
     static {
         try {
             MAPPER = new ObjectMapper().configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
             MAPPER.setSerializationInclusion(JsonInclude.Include.NON_NULL);
             Configuration conf = ApplicationProperties.get();
-            ORACLE_INIT_CONNECTOR = conf.getString("oracle.init.connector.name", "oracle_init_connector");
             KAFKA_CONNECTOR_URLS = Arrays.asList(conf.getStringArray("oracle.kafka.connect.urls"));
             String url = KAFKA_CONNECTOR_URLS.get(0);
             URL_PREFIX = url.substring(0,url.indexOf("://")+3);
+            CONNECTOR_CLASS_MAP = new HashMap<String, String>(){
+                {
+                    put("ORACLE", "io.zeta.metaspace.connector.oracle.OracleSourceConnector");
+                }
+            };
         } catch (Exception e) {
             throw new RuntimeException("初始化Connector失败");
         }
+    }
+
+    public static String getConnectorClassByType(String dbType){
+        if(dbType == null){
+            throw new RuntimeException("获取ConnectorClass时数据库类型不能为空");
+        }
+        String type = dbType.toUpperCase();
+        if(!CONNECTOR_CLASS_MAP.containsKey(type)){
+            throw new RuntimeException("Connector不支持类型为" + dbType + "的数据库");
+        }
+        return CONNECTOR_CLASS_MAP.get(type);
     }
 
     /**
@@ -80,7 +96,7 @@ public class KafkaConnector {
      * @param connectorName
      * @return
      */
-    public static Instance getConnector(String connectorName) {
+    public static KafkaConnector getConnector(String connectorName) {
 
         return getConnector(connectorName, true);
     }
@@ -90,9 +106,9 @@ public class KafkaConnector {
      * @param connectorName
      * @return
      */
-    public static Properties getConnectorConfig(String connectorName) {
-        Properties config = null;
-        Instance connector = getConnector(connectorName);
+    public static KafkaConnector.Config getConnectorConfig(String connectorName) {
+        KafkaConnector.Config config = null;
+        KafkaConnector connector = getConnector(connectorName);
         if (null != connector) {
             config = connector.getConfig();
         }
@@ -106,8 +122,8 @@ public class KafkaConnector {
      * @param useCache
      * @return
      */
-    public static Instance getConnector(String connectorName, boolean useCache) {
-        Instance instance = null;
+    public static KafkaConnector getConnector(String connectorName, boolean useCache) {
+        KafkaConnector instance = null;
         if (useCache) {
             instance = CONNECTOR_CACHE.getIfPresent(connectorName);
         }
@@ -115,7 +131,7 @@ public class KafkaConnector {
             for (String url : KAFKA_CONNECTOR_URLS) {
                 try {
                     String content = OKHttpClient.doGet(url + "/connectors/" + connectorName, null, null, 0);
-                    instance = MAPPER.readValue(content, Instance.class);
+                    instance = MAPPER.readValue(content, KafkaConnector.class);
                     if (null != instance && instance.getName() != null) {
                         instance.setHost(getHost(url));
                         CONNECTOR_CACHE.put(connectorName, instance);
@@ -127,6 +143,9 @@ public class KafkaConnector {
                     LOG.warn("获取connector失败:" + e.getMessage());
                 }
             }
+            if (null == instance && null != CONNECTOR_CACHE.getIfPresent(connectorName)) {
+                CONNECTOR_CACHE.invalidate(connectorName);
+            }
 
         }
         return instance;
@@ -137,12 +156,12 @@ public class KafkaConnector {
      * @param connectorName
      * @return
      */
-    public static Status getConnectorStatus(String connectorName) {
-        Status status = null;
+    public static KafkaConnector.Status getConnectorStatus(String connectorName) {
+        KafkaConnector.Status status = null;
         for (String url : KAFKA_CONNECTOR_URLS) {
             try {
                 String content = OKHttpClient.doGet(url + "/connectors/" + connectorName + "/status", null, null, 0);
-                status = MAPPER.readValue(content, Status.class);
+                status = MAPPER.readValue(content, KafkaConnector.Status.class);
                 if (null != status && status.getName() != null) {
                     break;
                 } else {
@@ -155,11 +174,12 @@ public class KafkaConnector {
         return status;
     }
 
-    public synchronized static Instance addConnector(Instance instance) {
-        Instance newInstance = null;
-        Instance connector = getConnector(instance.getName());
+    public synchronized static boolean startConnector(KafkaConnector kafkaConnector) {
+        KafkaConnector newInstance = null;
+        KafkaConnector connector = getConnector(kafkaConnector.getName());
         if (null != connector) {
-            throw new RuntimeException("添加connector失败: 名称为" + instance.getName() + "的connector已经存在");
+            LOG.warn("名称为{}的connector早已启动，本次启动未做任何改动", kafkaConnector.getName());
+            return false;
         }
         try {
             JavaType javaType = MAPPER.getTypeFactory().constructParametricType(ArrayList.class, String.class);
@@ -178,29 +198,32 @@ public class KafkaConnector {
                     size = connectorNames.size();
                 }
             }
-            String json = MAPPER.writeValueAsString(instance);
+            String json = MAPPER.writeValueAsString(kafkaConnector);
+            LOG.debug("启动connector,url {}/connectors; body {}", addUrl, json);
             String content = OKHttpClient.doPost(addUrl + "/connectors", null, null, json, 0);
-            newInstance = MAPPER.readValue(content, Instance.class);
+            newInstance = MAPPER.readValue(content, KafkaConnector.class);
+            if(null == newInstance || !kafkaConnector.getName().equalsIgnoreCase(newInstance.getName())){
+                throw new RuntimeException("调用kafka connector启动服务异常，返回结果为：" + content );
+            }
             newInstance.setHost(getHost(addUrl));
             CONNECTOR_CACHE.put(newInstance.getName(), newInstance);
         } catch (Exception e) {
-            LOG.error("添加connector失败" ,e);
-            throw new RuntimeException("添加connector失败", e);
+            LOG.error("启动connector失败" ,e);
+            throw new RuntimeException("启动connector失败", e);
         }
-        removeConnector(ORACLE_INIT_CONNECTOR);
-        return newInstance;
+        return true;
     }
 
     /**
-     * 删除connector
+     * 停止connector
      * @param connectorName
      */
-    public synchronized static boolean removeConnector(String connectorName) {
+    public synchronized static boolean stopConnector(String connectorName) {
 
         boolean result = true;
-        Instance connector = getConnector(connectorName, false);
+        KafkaConnector connector = getConnector(connectorName, false);
         if (null == connector) {
-            LOG.warn("connector {} 不存在，删除操作未执行", connectorName);
+            LOG.warn("名称为{}的connector早已停止，本次停止未做任何改动", connectorName);
             result = false;
         } else{
             try {
@@ -224,9 +247,9 @@ public class KafkaConnector {
      */
     public synchronized static void pauseConnector(String connectorName) {
 
-        Instance connector = getConnector(connectorName, false);
+        KafkaConnector connector = getConnector(connectorName, false);
         if (null == connector) {
-            throw new RuntimeException("connector " + connectorName + "不存在");
+            throw new RuntimeException("connector " + connectorName + "不存在或未启动");
         }
         try {
             String url = connector.getHost();
@@ -243,9 +266,9 @@ public class KafkaConnector {
      */
     public synchronized static void resumeConnector(String connectorName) {
 
-        Instance connector = getConnector(connectorName, false);
+        KafkaConnector connector = getConnector(connectorName, false);
         if (null == connector) {
-            throw new RuntimeException("connector " + connectorName + "不存在");
+            throw new RuntimeException("connector " + connectorName + "不存在或未启动");
         }
         try {
             String url = connector.getHost();
@@ -262,9 +285,9 @@ public class KafkaConnector {
      */
     public synchronized static void restartConnector(String connectorName) {
 
-        Instance connector = getConnector(connectorName, false);
+        KafkaConnector connector = getConnector(connectorName, false);
         if (null == connector) {
-            throw new RuntimeException("connector " + connectorName + "不存在");
+            throw new RuntimeException("connector " + connectorName + "不存在或未启动");
         }
         try {
             String url = connector.getHost();
@@ -275,42 +298,18 @@ public class KafkaConnector {
         }
     }
 
-    @JsonAutoDetect(getterVisibility = PUBLIC_ONLY, setterVisibility = PUBLIC_ONLY, fieldVisibility = NONE)
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    @Data
-    public static class Instance {
-        @JsonAutoDetect(getterVisibility = PUBLIC_ONLY, setterVisibility = PUBLIC_ONLY, fieldVisibility = NONE)
-        @JsonIgnoreProperties(ignoreUnknown = true)
-        @Data
-        public static class Task {
-            private String connector;
-            private Integer task;
-        }
-        private String name;
-        @JsonIgnore
-        private String host;
-        private Properties config;
-        private String type;
-        private List<Task> tasks;
-    }
 
-
-    @JsonAutoDetect(getterVisibility = PUBLIC_ONLY, setterVisibility = PUBLIC_ONLY, fieldVisibility = NONE)
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    @Data
-    public static class Status {
-        @JsonAutoDetect(getterVisibility = PUBLIC_ONLY, setterVisibility = PUBLIC_ONLY, fieldVisibility = NONE)
-        @JsonIgnoreProperties(ignoreUnknown = true)
-        @Data
-        public static class Task {
-            private Integer id;
-            private String state;
-            @JsonProperty("worker_id")
-            private String workerId;
+    /**
+     * 根据connector class获取数据源类型
+     * @param connectorClass
+     * @return
+     */
+    public static String getRdbmsType(String connectorClass){
+        String rdbmsType = "";
+        if(connectorClass != null){
+            String[] arr = connectorClass.split("\\.");
+            rdbmsType = arr.length > 1 ? arr[arr.length-2] : arr[0];
         }
-        private String name;
-        private Map<String,Object> connector;
-        private String type;
-        private List<Task> tasks;
+        return rdbmsType.toUpperCase();
     }
 }

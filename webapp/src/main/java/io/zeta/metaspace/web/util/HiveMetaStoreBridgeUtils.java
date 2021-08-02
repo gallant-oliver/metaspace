@@ -402,7 +402,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
                         updateInstance(ret);
 
-                        dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()), definition);
+                        dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()), definition, null);
                     }
                     return ret;
                 }
@@ -437,7 +437,7 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
                 AtlasRelatedObjectId atlasRelatedObjectId = new AtlasRelatedObjectId();
                 atlasRelatedObjectId.setDisplayText(String.valueOf(dbEntity.getAttribute(ATTRIBUTE_NAME)));
                 ret.getEntity().setRelationshipAttribute("db", atlasRelatedObjectId);
-                dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()), definition);
+                dataManageService.updateEntityInfo(Arrays.asList(ret.getEntity()), definition, null);
                 ret.getEntity().removeRelationshipAttribute("db");
             }
 
