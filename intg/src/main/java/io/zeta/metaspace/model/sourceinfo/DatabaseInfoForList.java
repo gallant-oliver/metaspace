@@ -53,7 +53,7 @@ public class DatabaseInfoForList {
     /**
      * 更新时间
      * **/
-    private Timestamp updateTime;
+    private String updateTime;
 
     /**
      * 审核员姓名
