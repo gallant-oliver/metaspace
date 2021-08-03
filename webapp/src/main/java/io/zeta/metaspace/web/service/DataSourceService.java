@@ -1272,7 +1272,11 @@ public class DataSourceService {
      *
      * @return
      */
-    public List<DataSourceTypeInfo> getDataSourceType() {
+    public List<DataSourceTypeInfo> getDataSourceType(String type) {
+        if ("dbr".equalsIgnoreCase(type)) {
+            List<String> list = Arrays.asList("HIVE", "ORACLE");
+            return Arrays.stream(DataSourceType.values()).filter(e -> list.contains(e.getName())).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(), dataSourceType.getDefaultPort())).collect(Collectors.toList());
+        }
         if (!MetaspaceConfig.getDataService()) {
             DataSourceTypeInfo dataSourceTypeInfo = new DataSourceTypeInfo(DataSourceType.ORACLE.getName(), DataSourceType.ORACLE.getDefaultPort());
             return Lists.newArrayList(dataSourceTypeInfo);
