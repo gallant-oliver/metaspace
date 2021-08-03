@@ -17,7 +17,7 @@ CREATE TABLE "public"."connector" (
   "db_name" varchar(128) COLLATE "pg_catalog"."default",
   "db_user" varchar(256) COLLATE "pg_catalog"."default",
   "db_password" varchar(256) COLLATE "pg_catalog"."default",
-  "is_deleted" bool DEFAULT true,
+  "is_deleted" bool DEFAULT false,
   "tasks_max" int4 DEFAULT 1,
   "db_fetch_size" int4 DEFAULT 10,
   "start_scn" int8 DEFAULT -1,
@@ -50,7 +50,6 @@ CREATE TABLE "public"."db_info" (
   "database_name" varchar(256) COLLATE "pg_catalog"."default",
   "owner" varchar(256) COLLATE "pg_catalog"."default",
   "db_type" varchar(64) COLLATE "pg_catalog"."default",
-  "is_deleted" bool DEFAULT false,
   "status" varchar(64) COLLATE "pg_catalog"."default",
   "database_description" varchar(255) COLLATE "pg_catalog"."default",
   "instance_guid" varchar COLLATE "pg_catalog"."default",
@@ -60,7 +59,6 @@ COMMENT ON COLUMN "public"."db_info"."database_guid" IS '唯一标识符';
 COMMENT ON COLUMN "public"."db_info"."database_name" IS '数据库名称';
 COMMENT ON COLUMN "public"."db_info"."owner" IS '创建者';
 COMMENT ON COLUMN "public"."db_info"."db_type" IS '数据库类型';
-COMMENT ON COLUMN "public"."db_info"."is_deleted" IS '是否删除';
 COMMENT ON COLUMN "public"."db_info"."status" IS '状态:已删除-DELETED;未删除-ACTIVE';
 COMMENT ON COLUMN "public"."db_info"."database_description" IS '数据库描述';
 COMMENT ON COLUMN "public"."db_info"."instance_guid" IS '图数据库中数据源（实例）guid';

@@ -20,6 +20,7 @@ import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
+import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
 import org.apache.atlas.AtlasClient;
@@ -885,18 +886,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
 
 //    private static final String clusterName = AtlasConfiguration.ATLAS_CLUSTER_NAME.getString();
 
-    public String getInstanceQualifiedName(DataSourceInfo dataSourceInfo) {
-        String ip = dataSourceInfo.getIp();
-        String port = dataSourceInfo.getPort();
-        String database = dataSourceInfo.getDatabase();
-        String sourceType = dataSourceInfo.getSourceType();
-        String qualifiedName = String.format("%s:%s", ip, port);
-        if("ORACLE".equalsIgnoreCase(sourceType)){
-            qualifiedName = qualifiedName + ":" + database;
-        }
-        return qualifiedName;
-    }
-
     public PageResult<Database> getSchemaList(DataSourceInfo dataSourceInfo, String guids, long offset, long limit, String dbs, boolean queryTableCount) throws AtlasBaseException {
         ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
         PageResult<Database> databasePageResult = new PageResult<>();
@@ -916,7 +905,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                 format = "g.V().has('__typeName','hive_db').has('__guid')%s.has('Asset.name', within(" + dbs + ")).order().by('__timestamp').dedup()%s.toList()";
             } else {
                 //关系型数据源搜索
-                format = "g.V().has('__typeName','rdbms_instance').has('Referenceable.qualifiedName','" + getInstanceQualifiedName(dataSourceInfo) + "').inE().outV().has('__typeName','rdbms_db').has('__guid')%s.order().by('__timestamp').dedup()%s.toList()";
+                format = "g.V().has('__typeName','rdbms_instance').has('Referenceable.qualifiedName','" + AdapterUtils.getInstanceQualifiedName(dataSourceInfo) + "').inE().outV().has('__typeName','rdbms_db').has('__guid')%s.order().by('__timestamp').dedup()%s.toList()";
             }
 
             String queryStr = String.format(format, activeQuery, pageQuery);

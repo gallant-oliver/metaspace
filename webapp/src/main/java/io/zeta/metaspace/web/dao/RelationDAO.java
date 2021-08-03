@@ -324,7 +324,7 @@ public interface RelationDAO {
     @Update("update tableInfo set status=#{status} where tableGuid=#{tableGuid}")
     public int updateTableStatus(@Param("tableGuid") String tableGuid, @Param("status") String status);
 
-    @Update("update tableInfo set status=#{status} where tableGuid in (#{tableGuids})")
+    @Update("update tableInfo set status=#{status} where tableGuid in ('${tableGuids}')")
     public int updateTableStatusBatch(@Param("tableGuids") String tableGuids, @Param("status") String status);
 
     @Select("select count(*) from tableinfo where tableGuid=#{tableGuid}")

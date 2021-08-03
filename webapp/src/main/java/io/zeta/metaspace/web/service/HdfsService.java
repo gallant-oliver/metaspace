@@ -178,9 +178,8 @@ public class HdfsService {
         }
         //FileStatus fileStatus = fileSystem.getFileStatus(path);
         //long len = fileStatus.getLen();
-        //FSDataInputStream dataInputStream = null;
-        try(FSDataInputStream dataInputStream = fileSystem.open(path);){
-            return dataInputStream;
+        try{
+            return fileSystem.open(path);
         }catch (IOException e){
             log.error("获取文件流失败,{}",e);
         }

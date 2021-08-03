@@ -42,6 +42,7 @@ import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -131,8 +132,13 @@ public class MetaDataREST {
     @Path("/info/table/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Map<String, Object> getDatabase(@PathParam("guid") String guid) throws AtlasBaseException {
-        return metadataService.getTableType(guid);
+    public Map<String, Object> getTableTree(@PathParam("guid") String guid, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
+
+        Map<String, Object> tableType = metadataService.getTableType(guid);
+        if(StringUtils.isNotBlank(sourceId)){
+            tableType.put("sourceId", sourceId);
+        }
+        return tableType;
     }
 
     @GET
@@ -210,6 +216,7 @@ public class MetaDataREST {
                                                 @QueryParam("schemaId") String schemaId,
                                                 @QueryParam("queryInfo") @DefaultValue("false") boolean queryInfo,
                                                 @QueryParam("query") String query,
+                                                @QueryParam("sourceId") @DefaultValue("")String sourceId,
                                                 @QueryParam("offset") long offset, @QueryParam("limit") long limit,
                                                 @QueryParam("isView") @DefaultValue("") String isViewStr) {
         AtlasPerfTracer perf = null;
@@ -220,6 +227,10 @@ public class MetaDataREST {
             }
             Boolean isView = StringUtils.isEmpty(isViewStr) ? null : Boolean.parseBoolean(isViewStr);
             PageResult<TableEntity> result = searchService.getTable(schemaId, active, offset, limit, query, isView, queryInfo, tenantId);
+            List<TableEntity> tables = result.getLists();
+            if(CollectionUtils.isNotEmpty(tables)){
+                tables.forEach(t -> t.setSourceId(sourceId));
+            }
             return result;
         } finally {
             if(StringUtils.isNotBlank(query)){
@@ -903,8 +914,20 @@ public class MetaDataREST {
     @Path("/rdbms/table/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public RDBMSTable getTableInfoById(@PathParam("tableId") String tableId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        return metadataService.getRDBMSTableInfoById(tableId, tenantId);
+    public RDBMSTable getTableInfoById(@PathParam("tableId") String tableId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
+        RDBMSTable table = metadataService.getRDBMSTableInfoById(tableId, tenantId, sourceId);
+        if(StringUtils.isNotBlank(sourceId)){
+            if("hive".equalsIgnoreCase(sourceId)){
+                table.setSourceType("HIVE");
+            }else{
+                DataSourceInfo dataSourceInfo = dataSourceService.getDataSourceInfo(sourceId);
+                if(null != dataSourceInfo){
+                    table.setSourceType(dataSourceInfo.getSourceType().toUpperCase());
+                }
+            }
+        }
+        table.setSourceId(sourceId);
+        return table;
     }
 
     /**
