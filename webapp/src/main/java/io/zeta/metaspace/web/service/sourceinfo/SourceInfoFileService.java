@@ -1,11 +1,13 @@
 package io.zeta.metaspace.web.service.sourceinfo;
 
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.sourceinfo.AnalyticResult;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForDb;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
@@ -255,7 +257,7 @@ public class SourceInfoFileService {
                 }).collect(Collectors.toList());
     }
     @Transactional
-    public int executeImportParsedResult(List<String[]> excelDataList,String annexId, String tenantId) {
+    public Result executeImportParsedResult(List<String[]> excelDataList,String annexId, String tenantId) {
         List<String[]> excelRepeatDataList = new ArrayList<>();
         String[] titleArray = excelDataList.get(0);
         Map<String,Integer> map = propertyToColumnIndexMap(titleArray);
@@ -280,7 +282,7 @@ public class SourceInfoFileService {
         //组装保存数据的参数
         if(CollectionUtils.isEmpty(saveDbList)){
             logger.info("没有要保存的数据库信息");
-            return 1;
+            return ReturnUtil.success();
         }
         /*User user = AdminUtils.getUserData();
         String username = user.getUsername();*/
@@ -323,9 +325,9 @@ public class SourceInfoFileService {
         }
 
         //批量保存处理
-        sourceInfoDatabaseService.addDatabaseInfoList(tenantId,saveList);
+        Result result =  sourceInfoDatabaseService.addDatabaseInfoList(tenantId,saveList);
         //databaseInfoDAO.batchInsert(saveList);
         logger.info("文件导入处理完毕。");
-        return 1;
+        return result;
     }
 }
