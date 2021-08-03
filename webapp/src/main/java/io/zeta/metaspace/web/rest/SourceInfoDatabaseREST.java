@@ -234,12 +234,11 @@ public class SourceInfoDatabaseREST {
     @Produces({MediaType.APPLICATION_JSON})
     public Result executeImportFile(@HeaderParam("tenantId")String tenantId,
                                     @PathParam("duplicatePolicy") String duplicatePolicy,
-                                    Annex annexParam){
+                                    @FormParam("annexId") String annexId){
         //"IGNORE"-忽略 有重复名称则不导入 ，"STOP"-停止 终止本次导入操作
         if("STOP".equalsIgnoreCase(duplicatePolicy)){
             return ReturnUtil.success("终止操作.");
         }
-        String annexId = annexParam.getAnnexId();
         log.info("executeImportFile 文件的id:{}",annexId);
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
