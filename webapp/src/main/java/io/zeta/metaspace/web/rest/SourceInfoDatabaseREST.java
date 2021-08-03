@@ -42,6 +42,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -151,11 +152,21 @@ public class SourceInfoDatabaseREST {
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public void downloadTemplate(@HeaderParam("tenantId")String tenantId) throws UnsupportedEncodingException {
-        //根据模板路径获取
-        String filename = FilenameUtils.getName(templatePath);
+        //根据模板路径获取 (id=1的为模板id)
+        Annex annex = annexService.findByAnnexId("1");
+        String filename = "";
+        String path = templatePath;
+        if(annex != null && StringUtils.isNotBlank(annex.getPath())){
+            filename = annex.getFileName();
+            path = annex.getPath();
+            log.info("附件表设置了模板记录：{}",path);
+        }else{
+            filename = FilenameUtils.getName(templatePath);
+        }
+
         try{
             setDownloadResponseheader(filename);
-            InputStream inputStream = hdfsService.getFileInputStream(templatePath);
+            InputStream inputStream = hdfsService.getFileInputStream(path);
             IOUtils.copyBytes(inputStream, httpServletResponse.getOutputStream(), 4096, true);
         }catch(Exception e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "模板文件下载失败");
@@ -195,7 +206,7 @@ public class SourceInfoDatabaseREST {
     /**
      * 源信息文件解析
      * @param tenantId 租户 id
-     * @param annexId 附件 id
+     * @param annexParam 附件 
      * @return
      */
     @POST
@@ -234,12 +245,11 @@ public class SourceInfoDatabaseREST {
     @Produces({MediaType.APPLICATION_JSON})
     public Result executeImportFile(@HeaderParam("tenantId")String tenantId,
                                     @PathParam("duplicatePolicy") String duplicatePolicy,
-                                    Annex annexParam){
+                                    @FormParam("annexId") String annexId){
         //"IGNORE"-忽略 有重复名称则不导入 ，"STOP"-停止 终止本次导入操作
         if("STOP".equalsIgnoreCase(duplicatePolicy)){
             return ReturnUtil.success("终止操作.");
         }
-        String annexId = annexParam.getAnnexId();
         log.info("executeImportFile 文件的id:{}",annexId);
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
@@ -267,7 +277,7 @@ public class SourceInfoDatabaseREST {
      */
     @GET
     @Path("/file/download/{annexId}")
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public void downloadFile(@HeaderParam("tenantId")String tenantId,@PathParam("annexId") String annexId){
         //根据附件id 获取文件的路径和文件名
@@ -296,7 +306,7 @@ public class SourceInfoDatabaseREST {
      */
     @GET
     @Path("/fileStream")
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Result getFileStream(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
         //根据附件id 获取文件的路径
@@ -321,7 +331,7 @@ public class SourceInfoDatabaseREST {
      */
     @GET
     @Path("/file")
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Result getFileInfo(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
         //根据附件id 获取文件的路径
@@ -337,7 +347,7 @@ public class SourceInfoDatabaseREST {
      */
     @GET
     @Path("/file/preview")
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Result queryPreviewFileStream(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
         //根据附件id 获取文件的路径
