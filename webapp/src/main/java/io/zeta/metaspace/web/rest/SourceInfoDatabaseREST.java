@@ -42,6 +42,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -151,11 +152,21 @@ public class SourceInfoDatabaseREST {
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public void downloadTemplate(@HeaderParam("tenantId")String tenantId) throws UnsupportedEncodingException {
-        //根据模板路径获取
-        String filename = FilenameUtils.getName(templatePath);
+        //根据模板路径获取 (id=1的为模板id)
+        Annex annex = annexService.findByAnnexId("1");
+        String filename = "";
+        String path = templatePath;
+        if(annex != null && StringUtils.isNotBlank(annex.getPath())){
+            filename = annex.getFileName();
+            path = annex.getPath();
+            log.info("附件表设置了模板记录：{}",path);
+        }else{
+            filename = FilenameUtils.getName(templatePath);
+        }
+
         try{
             setDownloadResponseheader(filename);
-            InputStream inputStream = hdfsService.getFileInputStream(templatePath);
+            InputStream inputStream = hdfsService.getFileInputStream(path);
             IOUtils.copyBytes(inputStream, httpServletResponse.getOutputStream(), 4096, true);
         }catch(Exception e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "模板文件下载失败");
