@@ -2,6 +2,7 @@ package org.apache.atlas.notification.rdbms;
 
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
+import io.zeta.metaspace.utils.AdapterUtils;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.debezium.RdbmsEntities;
 import org.apache.atlas.model.instance.debezium.RdbmsMessage;
@@ -65,9 +66,25 @@ public class CalciteParseSqlTools {
         Map<String,String> paramMap = new HashMap<>();
         String owner = payload.getOwner();
         paramMap.put("owner", owner);
+
+        String username =  StringUtils.isBlank(paramMap.get("owner"))? config.getDbUser() : paramMap.get("owner") ;
+        username = username.toUpperCase();
+        //String dbname = config.getDbName(); //orcl 实例名
+
+        DataSourceInfo dataSourceInfo = new DataSourceInfo();
+        //获取表字段信息
+        // String jdbcDriver = null,jdbcURL = null;
+        dataSourceInfo.setIp(config.getDbIp());
+        dataSourceInfo.setPort(config.getDbPort()+"");
+        dataSourceInfo.setUserName(username);
+        dataSourceInfo.setPassword(config.getDbPassword());
+        dataSourceInfo.setDatabase( config.getDbName());
+        dataSourceInfo.setSourceType(rdbmsType.toUpperCase());
+        dataSourceInfo.setServiceType("service_name");
+
         //1. rdbms_instance 组装
         List<AtlasEntity.AtlasEntityWithExtInfo> instanceEntityList
-                = makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_INSTANCE,config,paramMap,null);
+                = makeAtlasEntity(dataSourceInfo,RdbmsEntities.EntityType.RDBMS_INSTANCE,config,paramMap,null);
 
         boolean isOperateUser = StringUtils.equalsIgnoreCase("user",entityType);
         if(isOperateUser){//用户操作-》db  table、colomn没有
@@ -75,7 +92,7 @@ public class CalciteParseSqlTools {
         }
         //2. rdbms_db
         List<AtlasEntity.AtlasEntityWithExtInfo> dbEntityList
-                = makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_DB,config,paramMap,null);
+                = makeAtlasEntity(dataSourceInfo,RdbmsEntities.EntityType.RDBMS_DB,config,paramMap,null);
 
         //添加数据库实例
         modifyMap.put(RdbmsEntities.EntityType.RDBMS_INSTANCE, instanceEntityList);
@@ -106,15 +123,15 @@ public class CalciteParseSqlTools {
         /*connectorProperties.put("table.type",entityType);
         connectorProperties.put("isDropTable",operateType.name());*/
 
-        dealTableColumnEntity(fromTableList, config,paramMap, fromTableEntityList, fromColumnEntityList,allColumnInfo);
-        dealTableColumnEntity(toTableList, config,paramMap, toTableEntityList, toColumnEntityList,allColumnInfo);
+        dealTableColumnEntity(dataSourceInfo,fromTableList, config,paramMap, fromTableEntityList, fromColumnEntityList,allColumnInfo);
+        dealTableColumnEntity(dataSourceInfo,toTableList, config,paramMap, toTableEntityList, toColumnEntityList,allColumnInfo);
 
         //blood relation
         AtlasEntity.AtlasEntitiesWithExtInfo atlasBloodEntities = new AtlasEntity.AtlasEntitiesWithExtInfo();
         if(CollectionUtils.isEmpty(fromSet) || CollectionUtils.isEmpty(toSet)){
             log.info("该 sql {} ...不存在血缘关系。",sql.substring(0,30));
         }else{
-            atlasBloodEntities = makeAtlasBloodRelation(resultTableMap, sql, config,allColumnInfo,owner);
+            atlasBloodEntities = makeAtlasBloodRelation(dataSourceInfo,resultTableMap, sql, config,allColumnInfo,owner);
         }
         //添加来源的 表 列 column table
         addMapOrNot(modifyMap,RdbmsEntities.EntityType.RDBMS_TABLE,fromTableEntityList);
@@ -149,7 +166,7 @@ public class CalciteParseSqlTools {
      * @param tableEntityList 返回的table对象
      * @param columnEntityList 返回的column对象
      */
-    private static void dealTableColumnEntity(List<String> tableList,KafkaConnector.Config config,Map<String,String> paramMap,
+    private static void dealTableColumnEntity(DataSourceInfo dataSourceInfo,List<String> tableList,KafkaConnector.Config config,Map<String,String> paramMap,
                                               List<AtlasEntity.AtlasEntityWithExtInfo> tableEntityList,
                                               List<AtlasEntity.AtlasEntityWithExtInfo> columnEntityList,List<String> allColumnInfo){
         if(CollectionUtils.isEmpty(tableList)){
@@ -159,14 +176,14 @@ public class CalciteParseSqlTools {
         for (String table : tableList){
             //table entity
             paramMap.put("table",table);
-            tableEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_TABLE,config,paramMap,null));
+            tableEntityList.addAll(makeAtlasEntity(dataSourceInfo,RdbmsEntities.EntityType.RDBMS_TABLE,config,paramMap,null));
             //增加该表的列 entity
             String dropTable = paramMap.get("isDropTable");
             if(RdbmsEntities.OperateType.DROP.name().equalsIgnoreCase(dropTable)){
                 log.info("drop 操作，不需要获取列字段信息。");
                 continue;
             }
-            columnEntityList.addAll(makeAtlasEntity(RdbmsEntities.EntityType.RDBMS_COLUMN,config,paramMap,allColumnInfo));
+            columnEntityList.addAll(makeAtlasEntity(dataSourceInfo,RdbmsEntities.EntityType.RDBMS_COLUMN,config,paramMap,allColumnInfo));
         }
     }
 
@@ -244,7 +261,7 @@ public class CalciteParseSqlTools {
      * @param config
      * @return
      */
-    private static AtlasEntity.AtlasEntitiesWithExtInfo makeAtlasBloodRelation(Map<String, TreeSet<String>> resultTableMap,
+    private static AtlasEntity.AtlasEntitiesWithExtInfo makeAtlasBloodRelation(DataSourceInfo dataSourceInfo,Map<String, TreeSet<String>> resultTableMap,
                                                                                String sql,KafkaConnector.Config config,
                                                                                List<String> allColumnInfo,String owner){
         TreeSet<String> fromSet = resultTableMap.get("from");
@@ -265,9 +282,9 @@ public class CalciteParseSqlTools {
         atlasBloodEntity.setTypeName("Process");
 
         StringBuilder qualifiedProcessNameFromTo = new StringBuilder();
-        List<Map<String, Object>> jsonInputs = dealInputOrOutput(fromTableList,dbHostname, dbPort, dbname,owner, qualifiedProcessNameFromTo);
+        List<Map<String, Object>> jsonInputs = dealInputOrOutput(dataSourceInfo ,fromTableList,owner, qualifiedProcessNameFromTo);
         qualifiedProcessNameFromTo.append("@");
-        List<Map<String, Object>> jsonOutputs = dealInputOrOutput(toTableList,dbHostname, dbPort, dbname,owner, qualifiedProcessNameFromTo);
+        List<Map<String, Object>> jsonOutputs = dealInputOrOutput(dataSourceInfo,toTableList,owner, qualifiedProcessNameFromTo);
 
         Map<String, Object> attributeBloodMap = new HashMap<>();
         attributeBloodMap.put("inputs",jsonInputs);
@@ -289,9 +306,9 @@ public class CalciteParseSqlTools {
             Map<String, Object> attributeMap = new HashMap<>();
             attributeMap.put("name",sql);
             StringBuilder qualifiedProcessColumn = new StringBuilder();
-            List<Map<String, Object>> jsonColumnInputs = processColumnRelation(entry.getValue(),dbHostname, dbPort, dbname,owner,qualifiedProcessColumn);
+            List<Map<String, Object>> jsonColumnInputs = processColumnRelation(dataSourceInfo,entry.getValue(),dbHostname, dbPort, dbname,owner,qualifiedProcessColumn);
             qualifiedProcessColumn.append("@");
-            List<Map<String, Object>> jsonColumnOutputs = processColumnRelation(Arrays.asList(entry.getKey()),dbHostname, dbPort, dbname,owner,qualifiedProcessColumn);
+            List<Map<String, Object>> jsonColumnOutputs = processColumnRelation(dataSourceInfo,Arrays.asList(entry.getKey()),dbHostname, dbPort, dbname,owner,qualifiedProcessColumn);
             attributeMap.put("qualifiedName",qualifiedProcessColumn.toString());
             attributeMap.put("inputs",jsonColumnInputs);
             attributeMap.put("outputs",jsonColumnOutputs);
@@ -305,7 +322,7 @@ public class CalciteParseSqlTools {
         return atlasBloodEntities;
     }
 
-    private static List<Map<String,Object>> processColumnRelation(List<String> valueList, String dbHostname,
+    private static List<Map<String,Object>> processColumnRelation(DataSourceInfo dataSourceInfo,List<String> valueList, String dbHostname,
                                                    int dbPort, String dbname,String username,
                                                    StringBuilder qualifiedProcessColumn) {
         List<Map<String,Object>> result = new ArrayList<>();
@@ -313,7 +330,7 @@ public class CalciteParseSqlTools {
         valueList.forEach(value->{
             qualifiedProcessColumn.append(dbHostname+":"+dbPort+":"+dbname+":"+username+":"+value+"");
 
-            Map<String, Object> instance = toInstance(dbHostname, dbPort, dbname, username, value, "rdbms_column");
+            Map<String, Object> instance = toInstance(dataSourceInfo, username, value, "rdbms_column");
 
             result.add(instance);
         });
@@ -347,24 +364,24 @@ public class CalciteParseSqlTools {
     /*
      * 处理数据血缘的from（inputs）、to （outputs）的字段结构数据
      */
-    private static List<Map<String,Object>> dealInputOrOutput(List<String> list,String dbHostname,int dbPort,String dbname,String username,
+    private static List<Map<String,Object>> dealInputOrOutput(DataSourceInfo dataSourceInfo,List<String> list,String username,
                                                StringBuilder qualifiedProcessNameFromTo){
         List<Map<String,Object>> result = new ArrayList<>();
         list.forEach(toTable->{
-            qualifiedProcessNameFromTo.append(dbHostname+":"+dbPort+":"+dbname+":"+username+":"+toTable+" ");
+            qualifiedProcessNameFromTo.append(dataSourceInfo.getIp()+":"+dataSourceInfo.getPort()+":"+dataSourceInfo.getDatabase()+":"+username+":"+toTable+" ");
 
-            Map<String, Object> instance = toInstance(dbHostname, dbPort, dbname, username, toTable, "rdbms_table");
+            Map<String, Object> instance = toInstance(dataSourceInfo, username, toTable, "rdbms_table");
 
             result.add(instance);
         });
         return result;
     }
 
-    private static Map<String, Object> toInstance(String dbHostname, int dbPort, String dbname, String username, String toTable, String rdbms_table) {
+    private static Map<String, Object> toInstance(DataSourceInfo dataSourceInfo, String username, String toTable, String rdbms_table) {
         Map<String, Object> instance = new HashMap<>();
         instance.put("typeName", rdbms_table);
         Map<String, Object> uniqueAttributes = new HashMap<>();
-        uniqueAttributes.put("qualifiedName", dbHostname + ":" + dbPort + ":" + dbname + ":" + username + ":" + toTable);
+        uniqueAttributes.put("qualifiedName",AdapterUtils.getTableQualifiedName(dataSourceInfo,username,toTable));// dbHostname + ":" + dbPort + ":" + dbname + ":" + username + ":" + toTable);
         instance.put("uniqueAttributes", uniqueAttributes);
         return instance;
     }
@@ -375,7 +392,7 @@ public class CalciteParseSqlTools {
      * @param config
      * @return
      */
-    private static List<AtlasEntity.AtlasEntityWithExtInfo>  makeAtlasEntity(RdbmsEntities.EntityType entityType,KafkaConnector.Config config,
+    private static List<AtlasEntity.AtlasEntityWithExtInfo>  makeAtlasEntity(DataSourceInfo dataSourceInfo,RdbmsEntities.EntityType entityType,KafkaConnector.Config config,
                                                                              Map<String,String> paramMap/*String table*/,List<String> allColumnInfo){
         List<AtlasEntity.AtlasEntityWithExtInfo> resultList = new ArrayList<>();
 
@@ -389,12 +406,15 @@ public class CalciteParseSqlTools {
         String rdbmsType = KafkaConnectorUtil.getRdbmsType(config.getConnectorClass());
 
         AtlasEntity atlasEntity = null;
+
+
+
         // rdbms_instance
         if(entityType == RdbmsEntities.EntityType.RDBMS_INSTANCE){
             atlasEntity = new AtlasEntity();
             atlasEntity.setTypeName("rdbms_instance");
             Map<String, Object> attributeMap = new HashMap<>();
-            attributeMap.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname);
+            attributeMap.put("qualifiedName", AdapterUtils.getInstanceQualifiedName(dataSourceInfo)); //dbHostname+":"+dbPort+":"+dbname.toUpperCase()
             attributeMap.put("name",dbname);
             attributeMap.put("rdbms_type",rdbmsType);
             attributeMap.put("platform","zeta");
@@ -415,7 +435,7 @@ public class CalciteParseSqlTools {
             atlasEntity = new AtlasEntity();
             atlasEntity.setTypeName("rdbms_db");
             Map<String, Object> attributeDbMap = new HashMap<>();
-            attributeDbMap.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+username);
+            attributeDbMap.put("qualifiedName",AdapterUtils.getDBQualifiedName(dataSourceInfo,username)); //dbHostname+":"+dbPort+":"+dbname+":"+username
             attributeDbMap.put("name",username);
             attributeDbMap.put("owner",username);
             attributeDbMap.put("description","rdbms_db data API ");
@@ -424,7 +444,7 @@ public class CalciteParseSqlTools {
             Map<String,Object> instance = new HashMap<>();
             instance.put("typeName","rdbms_instance");
             Map<String,Object> uniqueAttributes  = new HashMap<>();
-            uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname);
+            uniqueAttributes.put("qualifiedName", AdapterUtils.getInstanceQualifiedName(dataSourceInfo));
             instance.put("uniqueAttributes",uniqueAttributes);
             attributeDbMap.put("instance",instance);
             atlasEntity.setAttributes(attributeDbMap);
@@ -437,7 +457,7 @@ public class CalciteParseSqlTools {
             atlasEntity = new AtlasEntity();
             atlasEntity.setTypeName("rdbms_table");
             Map<String, Object> attributeTableMap = new HashMap<>();
-            attributeTableMap.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+username+":"+table);
+            attributeTableMap.put("qualifiedName",AdapterUtils.getTableQualifiedName(dataSourceInfo,username,table)); //dbHostname+":"+dbPort+":"+dbname+":"+username+":"+table
             attributeTableMap.put("name",table);
             attributeTableMap.put("createTime", new Date());
             attributeTableMap.put("comment","rdbms table API");
@@ -450,7 +470,7 @@ public class CalciteParseSqlTools {
             Map<String,Object> instance = new HashMap<>();
             instance.put("typeName","rdbms_db");
             Map<String,Object> uniqueAttributes  = new HashMap<>();
-            uniqueAttributes.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+username);
+            uniqueAttributes.put("qualifiedName",AdapterUtils.getDBQualifiedName(dataSourceInfo,username));
             instance.put("uniqueAttributes",uniqueAttributes);
 
             attributeTableMap.put("db",instance);
@@ -461,16 +481,7 @@ public class CalciteParseSqlTools {
             resultList.add(instanceJsonEntity);
         }else if(entityType == RdbmsEntities.EntityType.RDBMS_COLUMN){
             String table = paramMap.get("table").toUpperCase();
-            DataSourceInfo dataSourceInfo = new DataSourceInfo();
-            //获取表字段信息
-           // String jdbcDriver = null,jdbcURL = null;
-            dataSourceInfo.setIp(dbHostname);
-            dataSourceInfo.setPort(dbPort+"");
-            dataSourceInfo.setUserName(username);
-            dataSourceInfo.setPassword(dbPassword);
-            dataSourceInfo.setDatabase(dbname);
-            dataSourceInfo.setSourceType(rdbmsType.toUpperCase());
-            dataSourceInfo.setServiceType("service_name");
+
            /* if("mysql".equalsIgnoreCase(rdbmsType)){
                 jdbcDriver = "com.mysql.jdbc.Driver";
                 jdbcURL = "jdbc:mysql://"+dbHostname+":"+dbPort+"/"+dbname;
@@ -488,7 +499,7 @@ public class CalciteParseSqlTools {
                     attributeTableMap = new HashMap<>();
                     atlasEntity = new AtlasEntity();
                     atlasEntity.setTypeName("rdbms_column");
-                    attributeTableMap.put("qualifiedName",dbHostname+":"+dbPort+":"+dbname+":"+username+":"+table+":"+colInfo.getColumnName().toUpperCase());
+                    attributeTableMap.put("qualifiedName",AdapterUtils.getColumnQualifiedName(dataSourceInfo,username,table,colInfo.getColumnName())); //dbHostname+":"+dbPort+":"+dbname+":"+username+":"+table+":"+colInfo.getColumnName().toUpperCase()
                     attributeTableMap.put("name",colInfo.getColumnName().toUpperCase());
                     attributeTableMap.put("comment","rdbms_column input");
                     attributeTableMap.put("owner",username);
@@ -498,7 +509,7 @@ public class CalciteParseSqlTools {
                     attributeTableMap.put("isNullable",colInfo.isNullable());
                     attributeTableMap.put("isPrimaryKey",false);
 
-                    Map<String, Object> instance = toInstance(dbHostname, dbPort, dbname, username, table, "rdbms_table");
+                    Map<String, Object> instance = toInstance(dataSourceInfo, username, table, "rdbms_table");
                     attributeTableMap.put("table",instance);
 
                     atlasEntity.setAttributes(attributeTableMap);

@@ -1061,7 +1061,6 @@ public class DataManageService {
         }
     }
 
-    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_UNCOMMITTED)
     public void updateStatus(List<AtlasEntity> entities) {
 
         List<String> tableStatus = new ArrayList<>();
@@ -1082,22 +1081,24 @@ public class DataManageService {
         }
 
         if (!CollectionUtils.isEmpty(databaseStatus)) {
-            String databaseStatusStr = StringUtils.join(databaseStatus, ",");
+            String databaseStatusStr = StringUtils.join(databaseStatus, "','");
             dbDAO.updateDatabaseStatusBatch(databaseStatusStr, "DELETED");
             dbDAO.deleteSourceDbRelationId(databaseStatusStr);
             List<String> tableGuids = tableDAO.getTableGuidByDataBaseGuids(databaseStatusStr);
             if(!CollectionUtils.isEmpty(tableGuids)){
+                tableDAO.updateTableDatabaseStatusBatch(databaseStatusStr,"DELETED");
+                tableStatus.retainAll(tableGuids);
                 tableStatus.addAll(tableGuids);
             }
         }
         if (!CollectionUtils.isEmpty(tableStatus)) {
-            String tableStatusStr = StringUtils.join(tableStatus, ",");
+            String tableStatusStr = StringUtils.join(tableStatus, "','");
             relationDao.updateTableStatusBatch(tableStatusStr, "DELETED");
             columnDAO.updateColumnStatusByTableGuids(tableStatusStr, "DELETED");
         }
 
         if (!CollectionUtils.isEmpty(columnStatus)) {
-            String columnStatusStr = StringUtils.join(columnStatus, ",");
+            String columnStatusStr = StringUtils.join(columnStatus, "','");
             columnDAO.updateColumnStatusBatch(columnStatusStr, "DELETED");
         }
 
@@ -1476,7 +1477,6 @@ public class DataManageService {
     }
 
 
-    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_UNCOMMITTED)
     public void addEntity(List<AtlasEntity> entities, SyncTaskDefinition definition, KafkaConnector.Config config) {
         try {
             createOrUpdateEntities(entities, definition, config, false);
@@ -1552,8 +1552,9 @@ public class DataManageService {
     }
 
     public void addOrUpdateDb(Database dbInfo, SyncTaskDefinition definition){
-
-        synchronized (dbInfo.getDatabaseId()){
+        String var = dbInfo.getInstanceId().intern();
+        synchronized (var){
+            dbDAO.deleteIfExitDbByName(dbInfo.getDatabaseId(), dbInfo.getInstanceId(), dbInfo.getDatabaseName());
             Database db = dbDAO.getDb(dbInfo.getDatabaseId());
             if(null != db){
                 dbDAO.updateDb(dbInfo);
@@ -1573,7 +1574,7 @@ public class DataManageService {
     private void addOrUpdateTable(TableInfo tableInfo, SyncTaskDefinition definition){
         String tableGuid = tableInfo.getTableGuid();
         synchronized (tableGuid){
-
+            tableDAO.deleteIfExist(tableGuid, tableInfo.getDatabaseGuid(), tableInfo.getTableName());
             TableInfo table = tableDAO.getTableInfoByTableguid(tableGuid);
             if(null != table){
                 tableDAO.updateTable(table);
@@ -1603,7 +1604,9 @@ public class DataManageService {
         }
         tenantIds.forEach(tenantId -> {
             TableRelation tableRelation = CategoryUtil.getTableRelation(tableInfo.getTableGuid(), tenantId, "1");
-            tableDAO.addRelation(tableRelation);
+            if(null == tableDAO.selectRelation(tableRelation)){
+                tableDAO.addRelation(tableRelation);
+            }
         });
     }
 
@@ -1712,7 +1715,6 @@ public class DataManageService {
         businessDAO.removeBusinessTrustTableByTableId(tableGuid);
     }
 
-    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_UNCOMMITTED)
     public void updateEntityInfo(List<AtlasEntity> entities, SyncTaskDefinition definition, KafkaConnector.Config config) {
         try {
             Configuration configuration = ApplicationProperties.get();

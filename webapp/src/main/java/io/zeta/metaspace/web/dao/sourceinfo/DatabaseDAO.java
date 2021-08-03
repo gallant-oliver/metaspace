@@ -33,17 +33,17 @@ public interface DatabaseDAO {
             "</foreach>" +
             "</script>")
     void deleteDbCategoryRelationByList(@Param("categoryIds") List<String> categoryId);
+
     @Select("SELECT " +
-            "info.database_guid, " +
-            "info.database_name  " +
+            "info.database_guid as databaseId, " +
+            "info.database_name as databaseName " +
             "FROM " +
             "db_info AS info " +
             "INNER JOIN source_db AS sd ON info.database_guid = sd.db_guid " +
             "WHERE " +
             "sd.source_id = #{sourceId} " +
-            "AND info.db_type = #{dbType} " +
             "AND info.database_guid NOT IN ( SELECT DISTINCT database_id FROM source_info WHERE tenant_id = #{tenantId} AND version = 0)")
-    List<DataBaseInfo> getDataBaseCode(@Param("sourceId") String sourceId, @Param("dbType") String dbType, @Param("tenantId") String tenantId);
+    List<DataBaseInfo> getDataBaseCode(@Param("sourceId") String sourceId,  @Param("tenantId") String tenantId);
 
     @Select("<script>"+
             "select  tb.db_type AS dbType,tb.database_guid AS databaseId,tb.database_name AS databaseName," +

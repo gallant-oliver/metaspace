@@ -183,7 +183,7 @@ public class KafkaConnectorUtil {
         }
         try {
             JavaType javaType = MAPPER.getTypeFactory().constructParametricType(ArrayList.class, String.class);
-            String addUrl = null;
+            String addUrl = KAFKA_CONNECTOR_URLS.get(0);
             int size = Integer.MAX_VALUE;
             for (String url : KAFKA_CONNECTOR_URLS) {
                 List<String> connectorNames = null;
@@ -193,7 +193,10 @@ public class KafkaConnectorUtil {
                 } catch (Exception e) {
                     LOG.warn("connector url {} 调用失败:{}", url, e.getMessage());
                 }
-                if (CollectionUtils.isNotEmpty(connectorNames) && connectorNames.size() < size) {
+                if(CollectionUtils.isEmpty(connectorNames)){
+                    addUrl = url;
+                    break;
+                }else if (connectorNames.size() < size) {
                     addUrl = url;
                     size = connectorNames.size();
                 }

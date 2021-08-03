@@ -41,7 +41,7 @@ public class RelationEntityV2 {
     private List<DataOwnerHeader> dataOwner;
     private List<String> tableTagList;
     private String description;
-    private String sourceName = "10.141.0.111";
+    private String sourceName;
 
     @JsonIgnore
     private int total;

@@ -14,13 +14,19 @@ import java.util.Set;
 
 public interface TableDAO {
     @Select("select * from tableinfo where tableguid=#{guid}")
-    public TableInfo getTableInfoByTableguid(String guid);
+    TableInfo getTableInfoByTableguid(String guid);
+
+    @Delete("delete from tableinfo where tableguid != 'tableGuid' and databaseguid = #{dbGuid} and lower(tablename) = lower(#{tableName}) and status = 'ACTIVE'")
+    void deleteIfExist(@Param("tableGuid")String tableGuid, @Param("dbGuid") String dbGuid, @Param("tableName") String tableName);
+
+    @Select("select * from tableinfo where status = 'ACTIVE' and tableguid=#{guid}")
+    public TableInfo getTableInfoByTableguidAndStatus(@Param("guid") String guid);
 
     @Select("select generatetime from table_relation where tableguid=#{guid}")
     public String getDateByTableguid(String guid);
 
     @Select("SELECT DISTINCT db_info.database_guid FROM db_info INNER JOIN source_db on db_info.database_guid=source_db.db_guid INNER JOIN data_source on source_db.source_id = data_source.source_id\n" +
-            "WHERE data_source.tenantid = #{tenantId} AND db_info.is_deleted = false and db_info.status = 'ACTIVE'")
+            "WHERE data_source.tenantid = #{tenantId} and db_info.status = 'ACTIVE'")
     List<String> selectDatabaseGuidByTenantId(@Param("tenantId") String tenantId);
 
     @Select("SELECT tableinfo.databaseguid,tableinfo.dbname FROM tableinfo INNER JOIN data_source on tableinfo.source_id=data_source.source_id WHERE data_source.tenantid = #{tenantId} group by tableinfo.databaseguid,tableinfo.dbname")
@@ -60,6 +66,10 @@ public interface TableDAO {
 
     @Select("select tableguid from tableinfo where databaseguid in (#{databaseGuids}) and status = 'ACTIVE'")
     List<String> getTableGuidByDataBaseGuids(@Param("databaseGuids")String databaseGuids);
+
+    @Update("update tableInfo set databasestatus=#{databaseStatus} where databaseguid in ('${databaseGuids}')")
+    void updateTableDatabaseStatusBatch(@Param("databaseGuids") String databaseGuids, @Param("databaseStatus") String databaseStatus);
+
 
     @Select("select organization.name,table2owner.tableGuid,table2owner.pkId from organization,table2owner where organization.pkId=table2owner.pkId and tableGuid=#{tableGuid}")
     public List<DataOwnerHeader> getDataOwnerList(@Param("tableGuid") String tableGuid);
@@ -199,4 +209,8 @@ public interface TableDAO {
             " </foreach>",
             "</script>"})
     List<TableInfoId> selectListByName(@Param("tenantId") String tenantId, @Param("sourceNameList") Set<String> sourceNameList, @Param("dbNameListHive") List<String> dbNameListHive, @Param("dbNameList") Set<String> dbNameList, @Param("tableNameList") Set<String> tableNameList, @Param("columnNameList") Set<String> columnNameList);
+
+    @Select("select * from tableinfo where status = 'ACTIVE' and databaseguid = (select database_guid from db_info where category_id = #{categoryId})")
+    List<TableInfo> getTableInfoByCategoryId(@Param("categoryId") String categoryId);
+
 }
