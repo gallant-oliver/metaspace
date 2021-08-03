@@ -32,6 +32,7 @@ public class RelationEntityV2 {
     private String categoryGuid;
     private String tableName;
     private String dbName;
+    private String sourceId;
     private String tableGuid;
     private String path;
     private String status;
@@ -79,6 +80,13 @@ public class RelationEntityV2 {
         return sourceName;
     }
 
+    public String getSourceId(){
+        return sourceId;
+    }
+
+    public void setSourceId(String sourceId){
+        this.sourceId = sourceId;
+    }
     public void setSourceName(String sourceName) {
         this.sourceName = sourceName;
     }

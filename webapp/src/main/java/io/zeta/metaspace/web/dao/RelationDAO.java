@@ -36,7 +36,7 @@ public interface RelationDAO {
     public int delete(@Param("relationshipGuid") String guid);
 
     @Select({"<script>",
-            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description,data_source.source_name sourceName",
+            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid,tableInfo.source_id as sourceId, tableInfo.status,table_relation.generateTime,tableInfo.description,data_source.source_name sourceName",
             " from table_relation,tableInfo,data_source where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and tableinfo.source_id = data_source.source_id order by tableInfo.status,table_relation.generateTime desc, tableinfo.tablename",
             " <if test='limit!= -1'>",
             " limit #{limit}",
@@ -46,7 +46,7 @@ public interface RelationDAO {
     public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select({"<script>",
-            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description",
+            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.source_id as sourceId ,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description",
             " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid ",
             " and status = 'ACTIVE' ",
             " AND table_relation.tenant_id = #{tenantId} ",

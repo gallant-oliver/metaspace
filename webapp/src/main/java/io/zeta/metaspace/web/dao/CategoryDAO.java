@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.dto.indices.IndexFieldDTO;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -365,4 +366,7 @@ public interface CategoryDAO {
 
     @Select(" select distinct guid,name from category where categorytype = #{categorytype} order by guid ")
     List<CategoryEntityV2> queryNameByType(@Param("categorytype")int categorytype);
+
+    @Select(" select parentcategoryguid from category where guid = #{id} ")
+    String getParentIdByGuid(@Param("id") String guid);
 }

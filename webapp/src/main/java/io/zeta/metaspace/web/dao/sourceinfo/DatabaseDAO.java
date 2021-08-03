@@ -2,9 +2,7 @@ package io.zeta.metaspace.web.dao.sourceinfo;
 
 import io.zeta.metaspace.model.source.DataBaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForDb;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.*;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -17,15 +15,24 @@ public interface DatabaseDAO {
     @Update("UPDATE db_info SET category_id = #{categoryId}  WHERE database_guid = #{databaseId}")
     void updateDatabaseRelationToCategory(@Param("databaseId") String databaseId, @Param("categoryId") String categoryId);
 
+    @Delete("DELETE FROM db_category_relation " +
+            "WHERE db_guid = #{databaseId} AND category_id = #{categoryId}")
+    void deleteDbCategoryRelation(@Param("databaseId") String databaseId, @Param("categoryId") String categoryId);
+
+    @Insert("INSERT INTO db_category_relation" +
+            " (id,db_guid,category_id,tenant_id) " +
+            "VALUES" +
+            " (#{uuid},#{databaseId},#{categoryId},#{tenantId})")
+    void insertDbCategoryRelation(@Param("tenantId")String tenantId,@Param("uuid") String uuid,@Param("databaseId") String databaseId, @Param("categoryId") String categoryId);
+
     @Update("<script>" +
-            " UPDATE db_info " +
-            " SET category_id = null  " +
-            " WHERE database_guid IN " +
-            "<foreach collection='databaseIds' item='databaseId' separator=',' open='(' close=')'>"+
-            "#{databaseId}"+
+            "DELETE FROM db_category_relation " +
+            " WHERE category_id IN " +
+            "<foreach collection='categoryIds' item='categoryId' separator=',' open='(' close=')'>"+
+            "#{categoryId}"+
             "</foreach>" +
             "</script>")
-    void updateDatabaseRelationToCategoryNull(@Param("databaseIds") List<String> databaseId);
+    void deleteDbCategoryRelationByList(@Param("categoryIds") List<String> categoryId);
     @Select("SELECT " +
             "info.database_guid, " +
             "info.database_name  " +
