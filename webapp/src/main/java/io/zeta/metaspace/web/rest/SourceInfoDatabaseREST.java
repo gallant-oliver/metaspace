@@ -266,7 +266,7 @@ public class SourceInfoDatabaseREST {
      */
     @GET
     @Path("/file/download/{annexId}")
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public void downloadFile(@HeaderParam("tenantId")String tenantId,@PathParam("annexId") String annexId){
         //根据附件id 获取文件的路径和文件名
@@ -295,7 +295,7 @@ public class SourceInfoDatabaseREST {
      */
     @GET
     @Path("/fileStream")
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Result getFileStream(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
         //根据附件id 获取文件的路径
@@ -320,7 +320,7 @@ public class SourceInfoDatabaseREST {
      */
     @GET
     @Path("/file")
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Result getFileInfo(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
         //根据附件id 获取文件的路径
@@ -336,7 +336,7 @@ public class SourceInfoDatabaseREST {
      */
     @GET
     @Path("/file/preview")
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Result queryPreviewFileStream(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
         //根据附件id 获取文件的路径
