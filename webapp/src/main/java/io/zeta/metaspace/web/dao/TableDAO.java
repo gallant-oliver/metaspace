@@ -210,7 +210,7 @@ public interface TableDAO {
             "</script>"})
     List<TableInfoId> selectListByName(@Param("tenantId") String tenantId, @Param("sourceNameList") Set<String> sourceNameList, @Param("dbNameListHive") List<String> dbNameListHive, @Param("dbNameList") Set<String> dbNameList, @Param("tableNameList") Set<String> tableNameList, @Param("columnNameList") Set<String> columnNameList);
 
-    @Select("select * from tableinfo where status = 'ACTIVE' and databaseguid = (select database_guid from db_info where category_id = #{categoryId})")
+    @Select("select * from tableinfo where status = 'ACTIVE' and databaseguid = (select database_id from source_info where category_id = #{categoryId})")
     List<TableInfo> getTableInfoByCategoryId(@Param("categoryId") String categoryId);
 
 }
