@@ -391,18 +391,17 @@ public class SourceInfoDatabaseREST {
 
 
     /**
-     * 获取数据源下某种类型的数据库
+     * 获取数据源下未登记的数据库
      *
      * @param dataSourceId
-     * @param dataSourceType
      * @return
      */
     @GET
     @Path("database")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getDatabaseByType(@HeaderParam("tenantId") String tenantId, @QueryParam("dataSourceId") String dataSourceId, @QueryParam("dataSourceType") String dataSourceType) {
-        List<DataBaseInfo> dataBaseInfoList = sourceService.getDatabaseByType(dataSourceId, dataSourceType, tenantId);
+    public Result getDatabaseByType(@HeaderParam("tenantId") String tenantId, @QueryParam("dataSourceId") String dataSourceId) {
+        List<DataBaseInfo> dataBaseInfoList = sourceService.getDatabaseByType(dataSourceId, tenantId);
         return ReturnUtil.success(dataBaseInfoList);
     }
 
