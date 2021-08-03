@@ -74,7 +74,7 @@ public interface ColumnDAO {
     @Select("select column_guid from column_info where table_guid=#{tableGuid} and column_name = #{columnName} and status='ACTIVE'")
     String getColumnGuid(@Param("tableGuid")String tableGuid, @Param("columnName")String columnName);
 
-    @Update("update column_info set status = 'DELETED' where column_guid=#{columnGuid}")
+    @Update("delete from column_info where column_guid=#{columnGuid}")
     void deleteColumn(@Param("columnGuid")String columnGuid);
 
     @Select("select column_name as columnName, display_name as displayName from column_info where table_guid=#{tableGuid} and status='ACTIVE' order by column_name")
@@ -123,7 +123,7 @@ public interface ColumnDAO {
     @Update("update column_info set status=#{status} where column_guid=#{columnId}")
     public int updateColumnStatus(@Param("columnId") String columnId, @Param("status") String status);
 
-    @Update("update column_info set status=#{status} where column_guid in (#{columnIds})")
+    @Update("update column_info set status=#{status} where column_guid in ('${columnIds}')")
     public int updateColumnStatusBatch(@Param("columnIds") String columnIds, @Param("status") String status);
 
     @Update("update column_info set status=#{status} where table_guid in (#{tableGuids})")

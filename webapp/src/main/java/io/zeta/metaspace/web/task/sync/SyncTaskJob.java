@@ -84,7 +84,9 @@ public class SyncTaskJob implements Job {
                     if(!CollectionUtils.isEmpty(tableGuids)){
                         tableGuids.forEach(tg -> {
                             TableRelation tableRelation = CategoryUtil.getTableRelation(tg, definition.getTenantId(), "1");
-                            tableDAO.addRelation(tableRelation);
+                            if(null == tableDAO.selectRelation(tableRelation)){
+                                tableDAO.addRelation(tableRelation);
+                            }
                         });
                     }
                 });

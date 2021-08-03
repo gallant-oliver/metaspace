@@ -135,7 +135,7 @@ public class DataMigration {
             c = getConnection(false);
             log.info("Opened database successfully");
             String insertDbInfo = "INSERT INTO public.db_info(\n" +
-                    "\tdatabase_guid, database_name, owner, db_type, is_deleted, status, database_description, instance_guid)\n" +
+                    "\tdatabase_guid, database_name, owner, db_type, status, database_description, instance_guid)\n" +
                     "\tVALUES (?, ?, ?, ?, ?, ?, ?, ?);";
             PreparedStatement insertStmt = c.prepareStatement(insertDbInfo);
 
@@ -151,7 +151,6 @@ public class DataMigration {
                 insertStmt.setString(2, Objects.toString(resultMap.get("database_name"),""));
                 insertStmt.setString(3, Objects.toString(resultMap.get("owner"),""));
                 insertStmt.setString(4, "");
-                insertStmt.setBoolean(5, (Boolean)resultMap.get("is_deleted"));
                 insertStmt.setString(6, Objects.toString(resultMap.get("status"),""));
                 insertStmt.setString(7, Objects.toString(resultMap.get("database_description"),""));
                 insertStmt.setString(8, instanceGuid);

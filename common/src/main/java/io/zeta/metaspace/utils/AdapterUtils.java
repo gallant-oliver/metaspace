@@ -191,4 +191,30 @@ public class AdapterUtils {
         dataSourceInfo.setPool(MetaspaceConfig.getHiveJobQueueName());
         return dataSourceInfo;
     }
+
+    public static String getInstanceQualifiedName(DataSourceInfo dataSourceInfo) {
+        String ip = dataSourceInfo.getIp();
+        String port = dataSourceInfo.getPort();
+        String instanceQualifiedName = String.format("%s:%s", ip, port);
+        String serviceType = dataSourceInfo.getSourceType();
+        if("ORACLE".equalsIgnoreCase(serviceType)){
+            instanceQualifiedName = instanceQualifiedName + ":" + dataSourceInfo.getDatabase().toUpperCase();
+        }
+        return instanceQualifiedName;
+    }
+
+    public static String getDBQualifiedName(DataSourceInfo dataSourceInfo, String dbName) {
+        return String.format("%s:%s", getInstanceQualifiedName(dataSourceInfo), dbName.toUpperCase());
+    }
+
+    public static String getTableQualifiedName(DataSourceInfo dataSourceInfo, String dbName, String tableName) {
+        return String.format("%s:%s", getDBQualifiedName(dataSourceInfo,dbName), tableName.toUpperCase());
+    }
+
+    public static String getColumnQualifiedName(DataSourceInfo dataSourceInfo, String dbName, String tableName, String colName) {
+        return String.format("%s:%s", getTableQualifiedName(dataSourceInfo,dbName,tableName), colName);
+    }
+    public static String getColumnQualifiedName(String tableTableQualifiedName, String colName) {
+        return String.format("%s:%s", tableTableQualifiedName, colName);
+    }
 }
