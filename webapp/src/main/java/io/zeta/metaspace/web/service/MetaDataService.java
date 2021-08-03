@@ -546,6 +546,11 @@ public class MetaDataService {
 
 
     public RDBMSTable getRDBMSTableInfoById(String guid, String tenantId) throws AtlasBaseException {
+        return getRDBMSTableInfoById(guid, tenantId, null);
+    }
+
+
+    public RDBMSTable getRDBMSTableInfoById(String guid, String tenantId, String sourceId) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getRDBMSTableInfoById({})", guid);
         }
@@ -592,8 +597,8 @@ public class MetaDataService {
             table.setTableName(getEntityAttribute(entity, "name"));
             //状态
             table.setStatus(entity.getStatus().name());
-            String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
-            String sourceId = StringUtils.isNotEmpty(qualifiedName) ? qualifiedName.split("\\.")[0] : "";
+//            String qualifiedName = String.valueOf(entity.getAttribute("qualifiedName"));
+//            String sourceId = StringUtils.isNotEmpty(qualifiedName) ? qualifiedName.split("\\.")[0] : "";
 
             //创建时间
             Object createTime = entity.getAttribute("createTime");
@@ -620,7 +625,7 @@ public class MetaDataService {
             table.setDatabaseName(relatedObject.getDisplayText());
             table.setDatabaseStatus(relatedObject.getEntityStatus().name());
 
-            table.setSourceId(sourceId);
+//            table.setSourceId(sourceId);
             table.setSourceName(relatedInstance.getDisplayText());
             table.setSourceStatus(relatedInstance.getEntityStatus().name());
             ColumnQuery columnQuery = new ColumnQuery();
@@ -631,7 +636,7 @@ public class MetaDataService {
             table.setForeignKeys(cik.getForeignKeys());
             table.setIndexes(cik.getIndexes());
             table.setColumns(cik.getColumns());
-            table.setOwner((getEntityAttribute(entity, "owner") == null) ? dataSourceDAO.getDataSourceInfo(sourceId).getSourceType() : getEntityAttribute(entity, "owner"));
+            table.setOwner(getEntityAttribute(entity, "owner"));
 
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
@@ -797,7 +802,7 @@ public class MetaDataService {
                     column.setDatabaseName(relatedDB.getDisplayText());
                     column.setDatabaseStatus(relatedDB.getEntityStatus().name());
 
-                    column.setSourceId(relatedInstance.getGuid());
+//                    column.setSourceId(relatedInstance.getGuid());
                     column.setSourceName(relatedInstance.getDisplayText());
                     column.setSourceStatus(relatedInstance.getEntityStatus().name());
 

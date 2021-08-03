@@ -37,6 +37,7 @@ public class RDBMSTable implements Serializable {
     private String sourceId;
     private String sourceName;
     private String sourceStatus;
+    private String sourceType;
     private String displayName;
     private List<RDBMSColumn> columns;
     private List<RDBMSForeignKey> foreignKeys;
