@@ -228,7 +228,6 @@ public class SourceInfoDatabaseService implements Approvable {
                 approveServiceImp.deal(this.buildApproveParas(l.getId(),tenantId,ApproveOperate.CANCEL),tenantId);
                 if (Boolean.FALSE.equals(ParamUtil.isNull(l.getCategoryId()))) {
                     dataManageService.deleteCategory(l.getCategoryId(), tenantId, CATEGORY_TYPE);
-                    databaseDAO.updateDatabaseRelationToCategory(l.getDatabaseId(),null);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -502,7 +501,7 @@ public class SourceInfoDatabaseService implements Approvable {
             HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), databaseInfoForCategory.getName());
             CategoryPrivilege categoryPrivilege= dataManageService.createCategory(this.buildCategoryInfo(databaseInfoForCategory), CATEGORY_TYPE, tenantId);
             databaseInfoDAO.updateRealCategoryRelation(databaseInfoForCategory.getId(),categoryPrivilege.getGuid());
-            databaseDAO.updateDatabaseRelationToCategory(databaseInfoForCategory.getDatabaseId(),categoryPrivilege.getGuid());
+            databaseDAO.insertDbCategoryRelation(tenantId,UUID.randomUUID().toString(),databaseInfoForCategory.getDatabaseId(),categoryPrivilege.getGuid());
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
