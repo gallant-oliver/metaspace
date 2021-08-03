@@ -1,11 +1,13 @@
 package io.zeta.metaspace.web.service.sourceinfo;
 
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.sourceinfo.AnalyticResult;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForDb;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
@@ -52,29 +54,49 @@ public class SourceInfoFileService {
         int dbEnIndex = map.getOrDefault("数据库英文名称", -1);
         int dbZhIndex = map.getOrDefault("数据库中文名", -1);
         int categoryIndex = map.getOrDefault("数据层名称", -1);
-        //获数据库英文名称   用于查询存在或冲突的数据
+        //获数据库英文名称   用于查询db-info表中存在的数据
         List<String> dbEnList = dbEnIndex == -1 ? new ArrayList<>()
                 : excelDataList.stream().map(p->p[dbEnIndex]).collect(Collectors.toList());
-        //目录id@中文名格式
-        List<String> dbZhList = dbZhIndex == -1 ? new ArrayList<>()
-                : excelDataList.stream().map(p->(categoryIndex == -1 ? "-1" : categoryMap.getOrDefault(p[categoryIndex],"-1"))+"@"+p[dbZhIndex]).collect(Collectors.toList());
-        List<DatabaseInfoForDb> dbList = CollectionUtils.isEmpty(dbEnList) ? new ArrayList<>()
-                : databaseDAO.findDbInfoByDbName(dbEnList,tenantId);
-        // 查看db-info是否存在，得出库是否存在
-        if(CollectionUtils.isEmpty(dbList)){
-            logger.info("数据库名检索的数据都不存在");
-            unExistList = dbEnList;
-        }else{
-            unExistList = dbEnList.stream()
-                    .filter(p->dbList.stream().anyMatch(v->!p.equals(v.getDatabaseName())))
-                    .collect(Collectors.toList());
-            List<CategoryEntityV2> categoryEntityV2List = categoryDao.queryByTenantId(tenantId);
+        List<DatabaseInfoForDb> dbInfoExistList = CollectionUtils.isEmpty(dbEnList) ? new ArrayList<>()
+                : databaseDAO.findExistDbName(dbEnList);
 
-            repeatNameList = dbZhList.stream()
-                    .filter(p->dbList.stream().anyMatch(v->p.equals(v.getCategoryId()+"@"+v.getDatabaseAlias()) && tenantId.equalsIgnoreCase(v.getTenantId()))
-                     || categoryEntityV2List.stream().anyMatch(v->p.equalsIgnoreCase(v.getGuid()+"@"+v.getName())))
+        //目录id@中文名格式 用于校验source-info表中是否存在
+        List<DatabaseInfoForDb> result = new ArrayList<>(dbInfoExistList);
+        if(dbZhIndex != -1){ //存在中文名字段
+            List<String> searchDbZHList =  excelDataList.stream()
+                    .map(p->p[dbZhIndex])
                     .collect(Collectors.toList());
+            //根据租户id和中文查询sourceinfo表，再进一步根据目录筛选
+            List<DatabaseInfoForDb> sourceInfoExistList = CollectionUtils.isEmpty(searchDbZHList) ? new ArrayList<>()
+                    : databaseDAO.findSourceInfoByDbZHName(searchDbZHList,tenantId); //findDbInfoByDbName
+
+            // 查看db-info是否存在，得出库是否存在
+            if(CollectionUtils.isEmpty(dbInfoExistList)){
+                logger.info("导入的源信息在 db-info 中都不存在");
+                unExistList = dbEnList;
+            }else{
+                logger.info("导入的源信息在 db-info 存在部分缺失，进行筛选");
+                unExistList = dbEnList.stream()
+                        .filter(p->dbInfoExistList.stream().anyMatch(v->!p.equals(v.getDatabaseName())))
+                        .collect(Collectors.toList());
+
+                if(!CollectionUtils.isEmpty(sourceInfoExistList)){//source-info 表存在重复的数据
+                    List<CategoryEntityV2> categoryEntityV2List = categoryDao.queryByTenantId(tenantId);
+                    List<String> finalUnexistList = new ArrayList<>(unExistList);
+                    List<String> dbZhList =  excelDataList.stream()
+                            .filter(p->!finalUnexistList.contains(p[dbEnIndex])) //排除不存在的数据
+                            .map(p->(categoryIndex == -1 ? "-1" : categoryMap.getOrDefault(p[categoryIndex],"-1"))+"@"+p[dbZhIndex])
+                            .collect(Collectors.toList());
+
+                    repeatNameList = dbZhList.stream()
+                            .filter(p->sourceInfoExistList.stream().anyMatch(v->p.equals(v.getCategoryId()+"@"+v.getDatabaseAlias()) && tenantId.equalsIgnoreCase(v.getTenantId()))
+                                    || categoryEntityV2List.stream().anyMatch(v->p.equalsIgnoreCase(v.getGuid()+"@"+v.getName())))
+                            .collect(Collectors.toList());
+                }
+
+            }
         }
+
         if(!CollectionUtils.isEmpty(unExistList)){
             resultMap.put("unExistList",unExistList);
         }
@@ -82,7 +104,7 @@ public class SourceInfoFileService {
             resultMap.put("repeatNameList",repeatNameList);
         }
 
-        return dbList;
+        return result;
     }
 
     private List<DatabaseInfoForDb> getExcludeExcelData(Map<String,Integer> map,List<String[]> excelDataList,String tenantId,
@@ -103,9 +125,10 @@ public class SourceInfoFileService {
                 }
             }
         }
-        //排除内部重复的数据进行别的校验
+        // 排除内部重复的数据进行别的校验
         excelDataList = dbZhIndex == -1 ? excelDataList : excelDataList.stream()
                 .filter(p->!fileZhNameRepeat.contains(p[dbZhIndex])).collect(Collectors.toList());
+
         Map<String,List<String>> resultMidMap = new HashMap<>();
         List<DatabaseInfoForDb> dbList = obtainRepeatAndUnExistedData(excelDataList,tenantId,map,resultMidMap);
         List<String> unExistList = resultMidMap.getOrDefault("unExistList",new ArrayList<>());
@@ -214,7 +237,7 @@ public class SourceInfoFileService {
     private List<String[]> removeArrayList(List<String[]> allList, List<String[]> excludeList,int... baseFieldIndex){
         List<String[]> result = new ArrayList<>();
         if(CollectionUtils.isEmpty(excludeList)){
-            return result;
+            return allList;
         }
         List<String> filterList = new ArrayList<>();
         for(String[] strArr : excludeList){
@@ -234,7 +257,7 @@ public class SourceInfoFileService {
                 }).collect(Collectors.toList());
     }
     @Transactional
-    public int executeImportParsedResult(List<String[]> excelDataList,String annexId, String tenantId) {
+    public Result executeImportParsedResult(List<String[]> excelDataList,String annexId, String tenantId) {
         List<String[]> excelRepeatDataList = new ArrayList<>();
         String[] titleArray = excelDataList.get(0);
         Map<String,Integer> map = propertyToColumnIndexMap(titleArray);
@@ -259,7 +282,7 @@ public class SourceInfoFileService {
         //组装保存数据的参数
         if(CollectionUtils.isEmpty(saveDbList)){
             logger.info("没有要保存的数据库信息");
-            return 1;
+            return ReturnUtil.success();
         }
         /*User user = AdminUtils.getUserData();
         String username = user.getUsername();*/
@@ -302,9 +325,9 @@ public class SourceInfoFileService {
         }
 
         //批量保存处理
-        sourceInfoDatabaseService.addDatabaseInfoList(tenantId,saveList);
+        Result result =  sourceInfoDatabaseService.addDatabaseInfoList(tenantId,saveList);
         //databaseInfoDAO.batchInsert(saveList);
         logger.info("文件导入处理完毕。");
-        return 1;
+        return result;
     }
 }

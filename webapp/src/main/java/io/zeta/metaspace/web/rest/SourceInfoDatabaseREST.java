@@ -260,10 +260,9 @@ public class SourceInfoDatabaseREST {
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
             // 跟source_info、db-info对比获取比对结果
-            int n = sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
-            return ReturnUtil.success(n);
+            return sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
         }catch (IOException e){
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件解析失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件导入失败");
         }
 
     }
