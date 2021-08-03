@@ -43,6 +43,8 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.hadoop.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -66,6 +68,7 @@ import java.util.List;
 @Singleton
 @Service
 public class SourceInfoDatabaseREST {
+    private static Logger log = LoggerFactory.getLogger(SourceInfoDatabaseREST.class);
     @Context
     private HttpServletRequest httpServletRequest;
     @Context
@@ -199,8 +202,10 @@ public class SourceInfoDatabaseREST {
     @Path("/file/explain")
     @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Result parseFile(@HeaderParam("tenantId")String tenantId,@FormParam("annexId") String annexId){
+    public Result parseFile(@HeaderParam("tenantId")String tenantId,Annex annexParam){
         //根据附件id 获取文件的路径和文件名
+        String annexId =annexParam.getAnnexId();
+        log.info("解析文件的id:{}",annexId);
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
             throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
@@ -228,13 +233,14 @@ public class SourceInfoDatabaseREST {
     @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
     public Result executeImportFile(@HeaderParam("tenantId")String tenantId,
-                                    @FormParam("annexId") String annexId,
-                                    @PathParam("duplicatePolicy") String duplicatePolicy){
+                                    @PathParam("duplicatePolicy") String duplicatePolicy,
+                                    Annex annexParam){
         //"IGNORE"-忽略 有重复名称则不导入 ，"STOP"-停止 终止本次导入操作
         if("STOP".equalsIgnoreCase(duplicatePolicy)){
             return ReturnUtil.success("终止操作.");
         }
-
+        String annexId = annexParam.getAnnexId();
+        log.info("executeImportFile 文件的id:{}",annexId);
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
             throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
