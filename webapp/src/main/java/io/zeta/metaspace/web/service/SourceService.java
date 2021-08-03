@@ -32,8 +32,8 @@ public class SourceService {
      * @param dataSourceType 数据库类型
      * @return
      */
-    public List<DataBaseInfo> getDatabaseByType(String dataSourceId, String dataSourceType, String tenantId) {
-        return databaseDAO.getDataBaseCode(dataSourceId, dataSourceType, tenantId);
+    public List<DataBaseInfo> getDatabaseByType(String dataSourceId, String tenantId) {
+        return databaseDAO.getDataBaseCode(dataSourceId, tenantId);
     }
 
     public List<User> getUserList() {
