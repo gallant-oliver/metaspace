@@ -182,6 +182,7 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableInfo.setCreateTime(LocalDateTime.parse(sourceInfoDeriveTableColumnDto.getCreateTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         sourceInfoDeriveTableInfo.setUpdater(user.getUserId());
         sourceInfoDeriveTableInfo.setUpdateTime(LocalDateTime.now());
+        sourceInfoDeriveTableInfo.setTenantId(tenantId);
 
         // 操作保存
         if (!sourceInfoDeriveTableColumnDto.isSubmit()) {
@@ -288,6 +289,7 @@ public class SourceInfoDeriveTableInfoService {
         List<SourceInfoDeriveTableVO> sourceInfoDeriveTableVOS = sourceInfoDeriveTableInfos.stream().map(sourceInfoDeriveTableInfo -> {
             SourceInfoDeriveTableVO sourceInfoDeriveTableVO = new SourceInfoDeriveTableVO();
             BeanUtils.copyProperties(sourceInfoDeriveTableInfo, sourceInfoDeriveTableVO);
+            sourceInfoDeriveTableVO.setUpdater(sourceInfoDeriveTableInfo.getUpdaterName());
             sourceInfoDeriveTableVO.setBusiness(getBusiness(sourceInfoDeriveTableInfo.getBusinessId(), tenantId));
             sourceInfoDeriveTableVO.setCategory(getCategory(sourceInfoDeriveTableInfo.getCategoryId(), tenantId));
             sourceInfoDeriveTableVO.setState(DeriveTableStateEnum.getName(sourceInfoDeriveTableInfo.getState()));
@@ -831,6 +833,10 @@ public class SourceInfoDeriveTableInfoService {
         // 检验表英文名
         if (!checkTableOrColumnNameEnPattern(sourceInfoDeriveTableColumnDto.getTableNameEn())) {
             return ReturnUtil.error("400", "衍生表英文名不符合规范");
+        }
+        // 检验更新频率
+        if (StringUtils.isEmpty(sourceInfoDeriveTableColumnDto.getUpdateFrequency())){
+            return ReturnUtil.error("400", "更新频率不能为空");
         }
         // 字段
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();

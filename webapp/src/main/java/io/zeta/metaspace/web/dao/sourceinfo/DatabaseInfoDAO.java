@@ -90,8 +90,8 @@ public interface DatabaseInfoDAO {
             "#{dip.toDepartmentName},\n" +
             "#{dip.toEmail},\n" +
             "#{dip.toTel},\n" +
-            "#{dip.technicalLeader},\n" +
-            "#{dip.businessLeader},\n" +
+            "#{dip.technicalLeaderId},\n" +
+            "#{dip.businessLeaderId},\n" +
             "#{dip.tenantId},\n" +
             "NOW( ),\n" +
             "NOW( ),\n" +
@@ -132,8 +132,10 @@ public interface DatabaseInfoDAO {
             "s.to_tel,\n" +
             "s.to_department_name,\n" +
             "s.to_email,\n" +
-            "(SELECT u.username FROM users u WHERE u.userid = s.technical_leader ) AS technicalLeader,\n" +
-            "(SELECT u.username FROM users u WHERE u.userid = s.business_leader ) AS business_leader,\n" +
+            "s.technical_leader AS technicalLeaderId,\n" +
+            "s.business_leader AS businessLeaderId,\n" +
+            "(SELECT u.username FROM users u WHERE u.userid = s.technical_leader ) AS technicalLeaderName,\n" +
+            "(SELECT u.username FROM users u WHERE u.userid = s.business_leader ) AS businessLeaderName,\n" +
             "ag.name AS approveGroupName,\n" +
             "(SELECT u.username FROM users u WHERE u.userid = s.updater ) AS updaterName,\n" +
             "s.update_time AS updateTime,\n" +
