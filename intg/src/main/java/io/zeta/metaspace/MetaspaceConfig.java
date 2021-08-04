@@ -31,7 +31,7 @@ public class MetaspaceConfig {
         add("4");
         add("5");
     }};
-    private static String[] sourceInfoRegisterType;
+    private static String[] dataSourceTypeBuiltIn;
     private final static String hiveAdmin = "metaspace";
 
     private static int okHttpTimeout;
@@ -63,11 +63,11 @@ public class MetaspaceConfig {
         return dataSourceType;
     }
 
-    public static String[] getSourceInfoRegisterType(){
-        if (ArrayUtils.isEmpty(sourceInfoRegisterType)) {
-            throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.sourceinfo.register.type未正确配置");
+    public static String[] getDataSourceTypeBuiltIn(){
+        if (ArrayUtils.isEmpty(dataSourceTypeBuiltIn)) {
+            throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.datasource.type.builtIn未正确配置");
         }
-        return sourceInfoRegisterType;
+        return dataSourceTypeBuiltIn;
     }
 
     public static Integer[] getUserGroupAuthMenus() {
@@ -140,7 +140,7 @@ public class MetaspaceConfig {
             dataSourceType = conf.getStringArray("metaspace.datasource.type");
             dataSourceApiType = conf.getStringArray("metaspace.datasource.api.type");
             userGroupAuthMenus = conf.getStringArray("metaspace.userGroup.auth.menus");
-            sourceInfoRegisterType = conf.getStringArray("metaspace.sourceinfo.register.type");
+            dataSourceTypeBuiltIn = conf.getStringArray("metaspace.datasource.type.builtIn");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
