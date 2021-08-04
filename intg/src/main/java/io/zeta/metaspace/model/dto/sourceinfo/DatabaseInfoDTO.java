@@ -113,11 +113,19 @@ public class DatabaseInfoDTO {
     /**
      * 技术负责人名
      * **/
-    private String technicalLeader;
+    private String technicalLeaderName;
     /**
      * 业务负责人名
      * **/
-    private String businessLeader;
+    private String businessLeaderName;
+    /**
+     * 技术负责人id
+     * **/
+    private String technicalLeaderId;
+    /**
+     * 业务负责人id
+     * **/
+    private String businessLeaderId;
     /**
      * 审核组名
      * **/
