@@ -132,8 +132,8 @@ public interface DatabaseInfoDAO {
             "s.to_tel,\n" +
             "s.to_department_name,\n" +
             "s.to_email,\n" +
-            "s.technical_leader AS technicalLeaderId,,\n" +
-            "s.business_leader AS businessLeaderId,,\n" +
+            "s.technical_leader AS technicalLeaderId,\n" +
+            "s.business_leader AS businessLeaderId,\n" +
             "(SELECT u.username FROM users u WHERE u.userid = s.technical_leader ) AS technicalLeaderName,\n" +
             "(SELECT u.username FROM users u WHERE u.userid = s.business_leader ) AS businessLeaderName,\n" +
             "ag.name AS approveGroupName,\n" +
