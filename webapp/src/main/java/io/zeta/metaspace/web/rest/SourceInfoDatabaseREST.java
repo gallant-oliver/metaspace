@@ -20,6 +20,7 @@ import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.enums.Status;
+import io.zeta.metaspace.model.source.Base64Info;
 import io.zeta.metaspace.model.source.CodeInfo;
 import io.zeta.metaspace.model.source.DataBaseInfo;
 import io.zeta.metaspace.model.sourceinfo.AnalyticResult;
@@ -374,8 +375,9 @@ public class SourceInfoDatabaseREST {
             }else{
                 base64String = Base64Utils.streamToBase64(in);
             }
-
-            return ReturnUtil.success("success",base64String);
+            Base64Info info = new Base64Info();
+            info.getInstance(fileType,base64String);
+            return ReturnUtil.success("success",info);
         }catch (IOException | DocumentException e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "获取文件流失败");
         }finally {
