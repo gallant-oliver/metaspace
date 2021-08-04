@@ -160,9 +160,9 @@ public interface RelationDAO {
     List<String> queryTableCategoryIdsFromDb(@Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
 
     @Select({"<script>",
-                "select name from category where tenantid = #{tenantId} and and guid in ",
+                "select name from category where tenantid = #{tenantId} and guid in ",
                 " <foreach item='categoryId' index='index' collection='categoryIds' separator=',' open='(' close=')'>",
-                    " #{categoryIds}",
+                    " #{categoryId}",
                 " </foreach>",
             " </script>"})
     List<String> queryCategoryNames(@Param("categoryIds") List<String> categoryIds, @Param("tenantId") String tenantId);
