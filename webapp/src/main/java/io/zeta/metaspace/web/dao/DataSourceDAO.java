@@ -113,7 +113,8 @@ public interface DataSourceDAO {
     public int deleteApiAuthorizeBySourceIds(@Param("sourceIds") List<String> sourceIds);
 
     //获取数据源详情
-    @Select("select source_id,source_type sourceType,source_name sourceName,description,ip,port,username userName,password,database,jdbc_parameter jdbcParameter,oracle_db oracleDb,manager managerId,servicetype,create_time,update_time " +
+    @Select("select source_id,source_type sourceType,source_name sourceName,description,ip,port,username userName,password,database,jdbc_parameter jdbcParameter,oracle_db oracleDb," +
+            "manager managerId,servicetype,create_time,update_time, tenantid as tenantId " +
             "from data_source where source_id=#{sourceId}")
     public DataSourceInfo getDataSourceInfo(@Param("sourceId") String sourceId);
 

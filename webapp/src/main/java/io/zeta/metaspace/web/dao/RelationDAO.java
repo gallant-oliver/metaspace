@@ -152,8 +152,20 @@ public interface RelationDAO {
             " </script>"})
     public List<RelationEntityV2> selectListByDbName(@Param("dbName") String dbName, @Param("tenantId") String tenantId, @Param("limit") Long limit, @Param("offset") Long offset, @Param("databases") List<String> databases);
 
-    @Select("select id,category_id,table_id,data_source_id,tenant_id from table_data_source_relation where data_source_id = #{sourceId} and table_id = =#{tableGuid}")
-    List<RelationEntityV2> queryTableRelations(@Param("tableGuid") String tableGuid, @Param("sourceId") String sourceId);
+    @Select("select category_id from table_data_source_relation where tenant_id = #{tenantId} and table_id = #{tableGuid}")
+    List<String> queryTableCategoryIds(@Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
+
+    @Select("select category_id from tableinfo t1 join source_info t2 on t1.databaseguid = t2.database_id " +
+            "where t2.tenant_id = #{tenantId} and t1.tableguid = #{tableGuid} and t2.version = 0")
+    List<String> queryTableCategoryIdsFromDb(@Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
+
+    @Select({"<script>",
+                "select name from category where tenantid = #{tenantId} and and guid in ",
+                " <foreach item='categoryId' index='index' collection='categoryIds' separator=',' open='(' close=')'>",
+                    " #{categoryIds}",
+                " </foreach>",
+            " </script>"})
+    List<String> queryCategoryNames(@Param("categoryIds") List<String> categoryIds, @Param("tenantId") String tenantId);
 
 
 

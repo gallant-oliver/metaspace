@@ -481,7 +481,7 @@ public class MetaDataService {
                     List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
                     boolean edit = false;
                     if (categoryIds.size() > 0) {
-                        int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds.get(0), tenantId);
+                        int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds, tenantId);
                         if (count > 0) {
                             edit = true;
                         }
@@ -550,13 +550,7 @@ public class MetaDataService {
         return table;
     }
 
-
     public RDBMSTable getRDBMSTableInfoById(String guid, String tenantId) throws AtlasBaseException {
-        return getRDBMSTableInfoById(guid, tenantId, null);
-    }
-
-
-    public RDBMSTable getRDBMSTableInfoById(String guid, String tenantId, String sourceId) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getRDBMSTableInfoById({})", guid);
         }
@@ -594,9 +588,6 @@ public class MetaDataService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
         }
     }
-
-
-    public
 
 
     public RDBMSTable extractRDBMSTableInfo(AtlasEntity entity, String guid, AtlasEntity.AtlasEntityWithExtInfo info, String tenantId) throws AtlasBaseException {
@@ -651,10 +642,10 @@ public class MetaDataService {
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
             try {
-                List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
+                List<String> categoryIds = getCategoryIds(guid, tenantId);
                 boolean edit = false;
                 if (categoryIds.size() > 0) {
-                    int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds.get(0), tenantId);
+                    int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds, tenantId);
                     if (count > 0) {
                         edit = true;
                     }
@@ -1143,21 +1134,26 @@ public class MetaDataService {
         return objectId;
     }
 
-    public List<String> getRelationList(String guid, String tenantId) throws AtlasBaseException {
-        try {
-            List<RelationEntityV2> relationEntities = relationDAO.queryRelationByTableGuid(guid);
-            dataManageService.getPath(relationEntities, tenantId);
-            List<String> relations = new ArrayList<>();
-            if (Objects.nonNull(relationEntities)) {
-                for (RelationEntityV2 entity : relationEntities)
-                    relations.add(entity.getPath());
-            }
-            return relations;
-        } catch (MyBatisSystemException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
+    public List<String> getCategoryIds(String tableGuid, String tenantId) throws AtlasBaseException {
+        List<String> categoryIds = new ArrayList<>();
+        List<String> categoryIdsFromRelation = relationDAO.queryTableCategoryIds(tableGuid, tenantId);
+        if(CollectionUtils.isNotEmpty(categoryIdsFromRelation)){
+            categoryIds.addAll(categoryIdsFromRelation);
         }
+        List<String> categoryIdsFromDb = relationDAO.queryTableCategoryIdsFromDb(tableGuid, tenantId);
+        if(CollectionUtils.isNotEmpty(categoryIdsFromDb)){
+            categoryIds.addAll(categoryIdsFromDb);
+        }
+        return categoryIds;
+    }
+
+    public List<String> getRelationList(String tableGuid, String tenantId)  {
+        List<String> categoryNames = new ArrayList<>();
+        List<String> categoryIds = getCategoryIds(tableGuid, tenantId);
+        if(CollectionUtils.isNotEmpty(categoryIds)){
+            categoryNames = relationDAO.queryCategoryNames(categoryIds, tenantId);
+        }
+        return categoryNames;
     }
 
     @Cacheable(value = "columnCache", key = "#query.guid + #query.columnFilter.columnName + #query.columnFilter.type + #query.columnFilter.description", condition = "#refreshCache==false")
