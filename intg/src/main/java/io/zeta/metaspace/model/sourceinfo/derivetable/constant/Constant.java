@@ -14,15 +14,16 @@ import java.util.Map;
  */
 public class Constant {
 
+
     // 表英文名和字段英文名校验规则：包含英文字母、下划线和数字，不能以下划线开头
-    public static final String pattern = "^(?!_)[a-zA-Z0-9_]+$";
+    public static final String PATTERN = "^(?!_)[a-zA-Z0-9_]+$";
 
     // hive的数据类型
     private static final List<String> HIVE_DATA_TYPE = Arrays.asList("boolean", "tinyint", "smallint", "int", "bigint", "float", "double", "decimal",
             "string", "varchar", "char", "binary", "timestamp", "date", "array", "map", "struct");
 
     // oracle数据类型
-    private static final List<String> ORACLE_DATA_TYPE = Arrays.asList("char", "nchar", "varchar", "varchar2", "nvarchar2 ", "number", "integer",
+    private static final List<String> ORACLE_DATA_TYPE = Arrays.asList("char", "nchar", "varchar", "varchar2", "nvarchar2", "number", "integer",
             "binary_float", "binary_double", "float", "date", "timestamp", "timestamp with time zone", "timestamp with local time zone",
             "interval year to month", "interval day to second", "blob", "clob", "nclob", "bfile", "long", "raw", "long raw");
 
@@ -38,7 +39,7 @@ public class Constant {
     private static final List<String> HIVE_DATA_LENGTH_TYPE = Arrays.asList("varchar", "char");
 
     // oracle必须要加长度的数据类型
-    private static final List<String> ORACLE_DATA_LENGTH_TYPE = Arrays.asList("varchar", "varchar2", "nvarchar2 ", "raw");
+    private static final List<String> ORACLE_DATA_LENGTH_TYPE = Arrays.asList("varchar", "varchar2", "nvarchar2", "raw");
 
     public static final Map<String, List<String>> DATA_LENGTH_TYPE_MAP = new HashMap<String, List<String>>() {
         {
@@ -77,7 +78,7 @@ public class Constant {
             put("nchar", "'c'" );
             put("varchar", "'varchar_value'" );
             put("varchar2", "'varchar2_value'" );
-            put("nvarchar2 ", "'nvarchar2_value'" );
+            put("nvarchar2", "'nvarchar2_value'" );
             put("number", "10" );
             put("integer", "10" );
             put("binary_float", "3.14" );
