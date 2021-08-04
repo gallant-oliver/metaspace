@@ -26,14 +26,17 @@ public interface SourceInfoDeriveTableInfoDAO {
     int updateVersionByTableGuid(@Param("tableGuid") String tableGuid);
 
     @Select({"<script>",
-            " select *,count(*)over() total from source_info_derive_table_info where version = -1 and tenant_id = #{tenantId} ",
+            " select t1.*,t2.username as creatorName,t3.username as updaterName,count(*)over() total from source_info_derive_table_info t1 ",
+            " left join users t2 on t1.creator = t2.userid",
+            " left join users t3 on t1.updater = t3.userid",
+            " where t1.version = -1 and t1.tenant_id = #{tenantId} ",
             " <if test='tableName != null '>",
-            " and ( table_name_en like #{tableName} or table_name_zh like #{tableName})",
+            " and ( t1.table_name_en like #{tableName} or t1.table_name_zh like #{tableName})",
             " </if>",
             " <if test='state != null '>",
-            " and state = #{state}",
+            " and t1.state = #{state}",
             " </if>",
-            " order by update_time desc,table_name_zh asc",
+            " order by t1.update_time desc,t1.table_name_zh asc",
             " <if test='limit != null and limit != -1'>",
             " limit #{limit} offset #{offset}",
             " </if>",
@@ -45,8 +48,8 @@ public interface SourceInfoDeriveTableInfoDAO {
     int updateVersionByTableId(@Param("tableId") String tableId, @Param("version") int version);
 
     @Select({"<script>",
-            " select version,updater,cast(update_time as varchar) as updateTime,count(*)over() total",
-            " from source_info_derive_table_info ",
+            " select t1.version,t2.username as updater,cast(t1.update_time as varchar) as updateTime,count(*)over() total",
+            " from source_info_derive_table_info t1 left join users t2 on t1.updater = t2.userid",
             " where table_guid = #{tableGuid} and version >= 1 ",
             " order by version ",
             " <if test='limit != null and limit != -1'>",
@@ -110,16 +113,20 @@ public interface SourceInfoDeriveTableInfoDAO {
     int upsert(@Param("deriveTable") SourceInfoDeriveTableInfo deriveTable);
 
     @Select({"<script>",
-            " select id as id, ",
-            " table_guid as tableGuid, table_name_en as tableNameEn, table_name_zh as tableNameZh,",
-            " procedure as procedure, category_id as categoryId, db_type as dbType, ",
-            " business_id as businessId, db_id as dbId, source_id as sourceId,",
-            " update_frequency as updateFrequency, etl_policy as etlPolicy, ",
-            " incre_standard as increStandard, clean_rule as cleanRule, filter as filter,",
-            " tenant_id as tenantId, remark as remark, version as version,",
-            " source_table_guid as sourceTableGuid, creator as creator, cast(create_time as varchar) as createTimeStr,",
-            " updater as updater, cast(update_time as varchar) as updateTimeStr, ddl as ddl, dml as dml, state as state",
-            " from source_info_derive_table_info where id = #{tableId} and tenant_id = #{tenantId}",
+            " select t1.id as id, ",
+            " t1.table_guid as tableGuid, t1.table_name_en as tableNameEn, t1.table_name_zh as tableNameZh,",
+            " t1.procedure as procedure, t1.category_id as categoryId, t1.db_type as dbType, ",
+            " t1.business_id as businessId, t1.db_id as dbId, t1.source_id as sourceId,",
+            " t1.update_frequency as updateFrequency, t1.etl_policy as etlPolicy, ",
+            " t1.incre_standard as increStandard, t1.clean_rule as cleanRule, t1.filter as filter,",
+            " t1.tenant_id as tenantId, t1.remark as remark, t1.version as version,",
+            " t1.source_table_guid as sourceTableGuid, t1.creator as creator, cast(t1.create_time as varchar) as createTimeStr,",
+            " t1.updater as updater, cast(t1.update_time as varchar) as updateTimeStr, t1.ddl as ddl, t1.dml as dml, t1.state as state,",
+            " t2.username as creatorName, t3.username as updaterName ",
+            " from source_info_derive_table_info t1",
+            " left join users t2 on t1.creator = t2.userid",
+            " left join users t3 on t1.updater = t3.userid",
+            " where t1.id = #{tableId} and t1.tenant_id = #{tenantId}",
             "</script>"})
     SourceInfoDeriveTableInfo getByIdAndTenantId(@Param("tableId") String tableId, @Param("tenantId") String tenantId);
 
