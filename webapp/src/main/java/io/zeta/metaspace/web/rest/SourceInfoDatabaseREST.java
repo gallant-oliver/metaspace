@@ -20,6 +20,7 @@ import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.enums.Status;
+import io.zeta.metaspace.model.source.Base64Info;
 import io.zeta.metaspace.model.source.CodeInfo;
 import io.zeta.metaspace.model.source.DataBaseInfo;
 import io.zeta.metaspace.model.sourceinfo.AnalyticResult;
@@ -260,10 +261,9 @@ public class SourceInfoDatabaseREST {
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
             // 跟source_info、db-info对比获取比对结果
-            int n = sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
-            return ReturnUtil.success(n);
+            return sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
         }catch (IOException e){
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件解析失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件导入失败");
         }
 
     }
@@ -375,8 +375,10 @@ public class SourceInfoDatabaseREST {
             }else{
                 base64String = Base64Utils.streamToBase64(in);
             }
-
-            return ReturnUtil.success("success",base64String);
+            Base64Info info = new Base64Info();
+            String finalType = StringUtils.containsAny(fileType,"xls","xlsx","doc","docx") ? "pdf" : fileType;
+            info.getInstance(finalType,base64String);
+            return ReturnUtil.success("success",info);
         }catch (IOException | DocumentException e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "获取文件流失败");
         }finally {

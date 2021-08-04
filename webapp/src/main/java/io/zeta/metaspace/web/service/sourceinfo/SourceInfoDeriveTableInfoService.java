@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.service.sourceinfo;
 
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.metadata.Column;
@@ -28,23 +29,27 @@ import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.rest.BusinessREST;
 import io.zeta.metaspace.web.rest.TechnicalREST;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveColumnInfo;
 import io.zeta.metaspace.model.dto.sourceinfo.SourceInfoDeriveTableColumnDTO;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableColumnRelation;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
+import org.apache.commons.collections.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -62,6 +67,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class SourceInfoDeriveTableInfoService {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SourceInfoDeriveTableInfoService.class);
 
     private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao;
     private DbDAO dbDao;
@@ -175,6 +182,7 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableInfo.setCreateTime(LocalDateTime.parse(sourceInfoDeriveTableColumnDto.getCreateTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         sourceInfoDeriveTableInfo.setUpdater(user.getUserId());
         sourceInfoDeriveTableInfo.setUpdateTime(LocalDateTime.now());
+        sourceInfoDeriveTableInfo.setTenantId(tenantId);
 
         // 操作保存
         if (!sourceInfoDeriveTableColumnDto.isSubmit()) {
@@ -281,6 +289,7 @@ public class SourceInfoDeriveTableInfoService {
         List<SourceInfoDeriveTableVO> sourceInfoDeriveTableVOS = sourceInfoDeriveTableInfos.stream().map(sourceInfoDeriveTableInfo -> {
             SourceInfoDeriveTableVO sourceInfoDeriveTableVO = new SourceInfoDeriveTableVO();
             BeanUtils.copyProperties(sourceInfoDeriveTableInfo, sourceInfoDeriveTableVO);
+            sourceInfoDeriveTableVO.setUpdater(sourceInfoDeriveTableInfo.getUpdaterName());
             sourceInfoDeriveTableVO.setBusiness(getBusiness(sourceInfoDeriveTableInfo.getBusinessId(), tenantId));
             sourceInfoDeriveTableVO.setCategory(getCategory(sourceInfoDeriveTableInfo.getCategoryId(), tenantId));
             sourceInfoDeriveTableVO.setState(DeriveTableStateEnum.getName(sourceInfoDeriveTableInfo.getState()));
@@ -310,16 +319,6 @@ public class SourceInfoDeriveTableInfoService {
         pageResult.setTotalSize(CollectionUtils.isEmpty(deriveTableVersions) ? 0 : deriveTableVersions.get(0).getTotal());
         pageResult.setLists(deriveTableVersions);
         return pageResult;
-    }
-
-    /**
-     * 删除衍生表
-     *
-     * @param tableGuids
-     * @return
-     */
-    public boolean deleteByTableGuids(List<String> tableGuids) {
-        return sourceInfoDeriveTableInfoDao.deleteByTableGuids(tableGuids) > 0;
     }
 
     /**
@@ -520,11 +519,20 @@ public class SourceInfoDeriveTableInfoService {
      * @return
      */
     private String getBusiness(String businessId, String tenantId) {
-        // 根据业务对象id获取关联的业务目录id
-        BusinessInfo businessInfo = businessDAO.queryBusinessByBusinessId(businessId);
-        // 获取该租户下所有的业务目录
-        List<BusinessCategory> businessCategoryList = getBusinessCategory(tenantId);
-        return getBusinessCategoryParentPath(businessCategoryList, businessInfo);
+        try {
+            // 根据业务对象id获取关联的业务目录id
+            BusinessInfo businessInfo = businessDAO.queryBusinessByBusinessId(businessId);
+            if (null == businessInfo) {
+                return null;
+            }
+            // 获取该租户下所有的业务目录
+            List<BusinessCategory> businessCategoryList = getBusinessCategory(tenantId);
+            return getBusinessCategoryParentPath(businessCategoryList, businessInfo);
+        } catch (Exception e) {
+            LOG.error("拼接业务目录异常");
+            return "";
+        }
+
     }
 
     /**
@@ -535,13 +543,18 @@ public class SourceInfoDeriveTableInfoService {
      * @return
      */
     private String getCategory(String categoryId, String tenantId) {
-        List<TechnicalCategory> technicalCategoryList = getTechnicalCategory(false, tenantId);
-        LinkedList<String> technicalCategoryPaths = new LinkedList<>();
-        getCategoryPath(technicalCategoryList, technicalCategoryPaths, categoryId);
-        StringBuilder path = new StringBuilder();
-        technicalCategoryPaths.forEach(e -> path.append(e).append("/"));
-        // 去掉最后一个/
-        return path.substring(0, path.length() - 1);
+        try {
+            List<TechnicalCategory> technicalCategoryList = getTechnicalCategory(false, tenantId);
+            LinkedList<String> technicalCategoryPaths = new LinkedList<>();
+            getCategoryPath(technicalCategoryList, technicalCategoryPaths, categoryId);
+            StringBuilder path = new StringBuilder();
+            technicalCategoryPaths.forEach(e -> path.append(e).append("/"));
+            // 去掉最后一个/
+            return path.substring(0, path.length() - 1);
+        } catch (Exception e) {
+            LOG.error("拼接技术目录异常");
+            return "";
+        }
     }
 
     /**
@@ -552,12 +565,18 @@ public class SourceInfoDeriveTableInfoService {
      * @return
      */
     private String getBusinessCategoryParentPath(List<BusinessCategory> businessCategoryList, BusinessInfo businessInfo) {
-        LinkedList<String> businessCategoryPaths = new LinkedList<>();
-        getCategoryPath(businessCategoryList, businessCategoryPaths, businessInfo.getDepartmentId());
-        StringBuilder path = new StringBuilder();
-        businessCategoryPaths.forEach(e -> path.append(e).append("/"));
-        path.append(businessInfo.getName());
-        return path.toString();
+        try {
+            LinkedList<String> businessCategoryPaths = new LinkedList<>();
+            getCategoryPath(businessCategoryList, businessCategoryPaths, businessInfo.getDepartmentId());
+            StringBuilder path = new StringBuilder();
+            businessCategoryPaths.forEach(e -> path.append(e).append("/"));
+            path.append(businessInfo.getName());
+            return path.toString();
+        } catch (Exception e) {
+            LOG.error("拼接业务目录异常");
+            return "";
+        }
+
     }
 
     /**
@@ -629,29 +648,33 @@ public class SourceInfoDeriveTableInfoService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "衍生表不存在");
         }
 
-        TableInfo sourceTableInfo = tableDAO.getTableInfoByTableguidAndStatus(byId.getSourceTableGuid());
-        List<Column> sourceColumnInfoList = columnDAO.getColumnInfoListByTableGuid(byId.getSourceTableGuid());
-
-        Map<String, Column> idColumnMap = sourceColumnInfoList.stream().collect(Collectors.toMap(Column::getColumnId, e -> e));
         // 查询主键id查询列
         List<SourceInfoDeriveColumnInfo> deriveColumnInfoListByTableId = sourceInfoDeriveColumnInfoService.getDeriveColumnInfoListByTableId(tableId);
         SourceInfoDeriveTableColumnVO sourceInfoDeriveTableColumnVO = new SourceInfoDeriveTableColumnVO();
         BeanUtils.copyProperties(byId, sourceInfoDeriveTableColumnVO);
 
+        TableInfo sourceTableInfo = tableDAO.getTableInfoByTableguidAndStatus(byId.getSourceTableGuid());
+        if (null == sourceTableInfo) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "原表不存在");
+        }
+        List<Column> sourceColumnInfoList = columnDAO.getColumnInfoListByTableGuid(byId.getSourceTableGuid());
+        Map<String, Column> idColumnMap = sourceColumnInfoList.stream().collect(Collectors.toMap(Column::getColumnId, e -> e));
         // 设置表的技术目录和业务目录
         CategoryPrivilege categoryPrivilege = categoryDAO.queryByGuidV2(sourceInfoDeriveTableColumnVO.getCategoryId(), tenantId);
         CategoryPrivilege categoryPrivilegeSource = categoryDAO.queryByGuidByDBId(sourceTableInfo.getDatabaseGuid(), tenantId);
         BusinessInfo businessInfo = businessDAO.queryBusinessByBusinessId(sourceInfoDeriveTableColumnVO.getBusinessId());
-        CategoryPrivilege businessHeaderInfo = categoryDAO.queryByGuidV2(businessInfo.getDepartmentId(), tenantId);
+        if (null != businessInfo) {
+            sourceInfoDeriveTableColumnVO.setBusiness(businessInfo.getName());
+            CategoryPrivilege businessHeaderInfo = categoryDAO.queryByGuidV2(businessInfo.getDepartmentId(), tenantId);
+            sourceInfoDeriveTableColumnVO.setBusinessHeaderId(null == businessHeaderInfo ? null : businessHeaderInfo.getGuid());
+            sourceInfoDeriveTableColumnVO.setBusinessHeader(null == businessHeaderInfo ? null : businessHeaderInfo.getName());
+        }
 
-        sourceInfoDeriveTableColumnVO.setCategory(categoryPrivilege.getName());
-        sourceInfoDeriveTableColumnVO.setBusiness(businessInfo.getName());
-        sourceInfoDeriveTableColumnVO.setBusinessHeaderId(businessHeaderInfo.getGuid());
-        sourceInfoDeriveTableColumnVO.setBusinessHeader(businessHeaderInfo.getName());
+        sourceInfoDeriveTableColumnVO.setCategory(null == categoryPrivilege ? null : categoryPrivilege.getName());
         sourceInfoDeriveTableColumnVO.setSourceTable(sourceTableInfo.getTableName());
         // 获取源数据层、库
-        sourceInfoDeriveTableColumnVO.setSourceDbGuid(categoryPrivilegeSource.getGuid());
-        sourceInfoDeriveTableColumnVO.setSourceDb(categoryPrivilegeSource.getName());
+        sourceInfoDeriveTableColumnVO.setSourceDbGuid(null == categoryPrivilegeSource ? null : categoryPrivilegeSource.getGuid());
+        sourceInfoDeriveTableColumnVO.setSourceDb(null == categoryPrivilegeSource ? null : categoryPrivilegeSource.getName());
 
         // 开始设置数据库和数据源名称
         String dbId = sourceInfoDeriveTableColumnVO.getDbId();
@@ -684,6 +707,7 @@ public class SourceInfoDeriveTableInfoService {
 
     /**
      * 删除衍生表记录
+     *
      * @param tableGuids
      * @return
      */
@@ -798,6 +822,140 @@ public class SourceInfoDeriveTableInfoService {
         });
         columnBuilder.append(")").append(valueBuilder).append(")");
         return columnBuilder.toString();
+    }
+
+    public Result checkAddOrEditDeriveTableEntity(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String tenantId, boolean edit) throws SQLException {
+
+        // 编辑衍生表ID不能为空
+        if (edit && !checkTableByIdAndGuid(sourceInfoDeriveTableColumnDto.getId(), sourceInfoDeriveTableColumnDto.getTableGuid(), tenantId)) {
+            return ReturnUtil.error("400", "编辑衍生表ID或GUID为空或记录不存在");
+        }
+        // 检验表英文名
+        if (!checkTableOrColumnNameEnPattern(sourceInfoDeriveTableColumnDto.getTableNameEn())) {
+            return ReturnUtil.error("400", "衍生表英文名不符合规范");
+        }
+        // 检验更新频率
+        if (StringUtils.isEmpty(sourceInfoDeriveTableColumnDto.getUpdateFrequency())){
+            return ReturnUtil.error("400", "更新频率不能为空");
+        }
+        // 字段
+        List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
+
+        // 校验字段英文名
+        List<String> errorNames = sourceInfoDeriveColumnInfos.stream().filter(e -> !checkColumnNameEn(e.getColumnNameEn())).map(SourceInfoDeriveColumnInfo::getColumnNameEn).collect(Collectors.toList());
+        if (!org.springframework.util.CollectionUtils.isEmpty(errorNames)) {
+            return ReturnUtil.error("400", "衍生表字段英文名不符合规范:" + errorNames.toString());
+        }
+        // 根据数据源类型校验数据类型
+        List<String> dataTypeList = Constant.DATA_TYPE_MAP.get((sourceInfoDeriveTableColumnDto.getDbType()));
+        List<String> errorDbTypes = sourceInfoDeriveColumnInfos.stream().filter(e -> !dataTypeList.contains(e.getDataType())).map(SourceInfoDeriveColumnInfo::getDataType).collect(Collectors.toList());
+        if (!org.springframework.util.CollectionUtils.isEmpty(errorNames)) {
+            return ReturnUtil.error("400", "衍生表字段数据类型不符合规范:" + errorDbTypes.toString());
+        }
+        if (sourceInfoDeriveTableColumnDto.getDbType().equals("ORACLE")) {
+            long count = sourceInfoDeriveColumnInfos.stream().filter(e -> Arrays.asList("long", "long raw").contains(e.getDataType())).count();
+            if (count > 1) {
+                return ReturnUtil.error("400", "一张表最多存在一个long类型数据，包含'long' 和 'long raw'数据类型");
+            }
+        }
+        // 校验技术目录
+        if (!checkCategoryByGuid(sourceInfoDeriveTableColumnDto.getCategoryId(), tenantId)) {
+            return ReturnUtil.error("400", "目标层/库为空或不存在");
+        }
+        // 校验业务对象
+        if (!checkBusinessByGuid(sourceInfoDeriveTableColumnDto.getBusinessId())) {
+            return ReturnUtil.error("400", "业务对象为空或不存在");
+        }
+        // 校验数据库和数据源
+        if (!checkDatabaseAndDataSource(sourceInfoDeriveTableColumnDto.getDbId(), sourceInfoDeriveTableColumnDto.getSourceId())) {
+            return ReturnUtil.error("400", "数据库或数据源不存在");
+        }
+        // 校验源表
+        if (!checkSourceTableByGuid(sourceInfoDeriveTableColumnDto.getSourceTableGuid())) {
+            return ReturnUtil.error("400", "源表不存在");
+        }
+        // 校验源字段
+        List<String> sourceColumnIds = sourceInfoDeriveColumnInfos.stream().map(SourceInfoDeriveColumnInfo::getSourceColumnGuid).collect(Collectors.toList());
+        if (!checkSourceColumnsByGuid(sourceColumnIds)) {
+            return ReturnUtil.error("400", "部分源字段不存在");
+        }
+        return ReturnUtil.success();
+    }
+
+    /**
+     * 校验tableId和tableGuid
+     *
+     * @param id
+     * @param tenantId
+     * @return
+     */
+    boolean checkTableByIdAndGuid(String id, String guid, String tenantId) {
+        return !StringUtils.isEmpty(id) && !StringUtils.isEmpty(guid) && null != sourceInfoDeriveTableInfoDao.getByIdAndGuidAndTenantId(id, guid, tenantId);
+    }
+
+    /**
+     * 校验categoryid
+     *
+     * @param guid
+     * @param tenantId
+     * @return
+     * @throws SQLException
+     */
+    boolean checkCategoryByGuid(String guid, String tenantId) throws SQLException {
+        return !StringUtils.isEmpty(guid) && null != categoryDAO.queryByGuidV2(guid, tenantId);
+    }
+
+    /**
+     * 校验businessid
+     *
+     * @param guid
+     * @return
+     */
+    boolean checkBusinessByGuid(String guid) {
+        return !StringUtils.isEmpty(guid) && null != businessDAO.queryBusinessByBusinessId(guid);
+    }
+
+    /**
+     * 校验sourceTableGuid
+     *
+     * @param guid
+     * @return
+     */
+    boolean checkSourceTableByGuid(String guid) {
+        return !StringUtils.isEmpty(guid) && null != tableDAO.getTableInfoByTableguidAndStatus(guid);
+
+    }
+
+    /**
+     * 校验sourceColumnGuid
+     *
+     * @return
+     */
+    boolean checkSourceColumnsByGuid(List<String> guids) {
+        List<String> sourceColumnInfoList = columnDAO.queryColumnidBycolumnIds(guids);
+        return sourceColumnInfoList.containsAll(guids);
+    }
+
+    /**
+     * 校验数据库id和数据源id
+     *
+     * @return
+     */
+    boolean checkDatabaseAndDataSource(String dbId, String sourceId) {
+        if (StringUtils.isEmpty(dbId) || StringUtils.isEmpty(sourceId)) {
+            return false;
+        }
+        List<Map<String, String>> maps = dbDao.queryDbNameAndSourceNameByIds(dbId, sourceId);
+        return maps.size() == 2;
+    }
+
+
+    private boolean checkTableOrColumnNameEnPattern(String name) {
+        return name.matches(Constant.PATTERN);
+    }
+
+    public boolean checkColumnNameEn(String name) {
+        return checkTableOrColumnNameEnPattern(name) && !Constant.HIVE_KEYWORD.contains(name.toUpperCase());
     }
 
 }

@@ -36,7 +36,7 @@ public interface RelationDAO {
     public int delete(@Param("relationshipGuid") String guid);
 
     @Select({"<script>",
-            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description,data_source.source_name sourceName",
+            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid,tableInfo.source_id as sourceId, tableInfo.status,table_relation.generateTime,tableInfo.description,data_source.source_name sourceName",
             " from table_relation,tableInfo,data_source where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and tableinfo.source_id = data_source.source_id order by tableInfo.status,table_relation.generateTime desc, tableinfo.tablename",
             " <if test='limit!= -1'>",
             " limit #{limit}",
@@ -46,11 +46,32 @@ public interface RelationDAO {
     public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select({"<script>",
-            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,table_relation.generateTime,tableInfo.description",
-            " from table_relation,tableInfo where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid ",
-            " and status = 'ACTIVE' ",
-            " AND table_relation.tenant_id = #{tenantId} ",
-            " order by tableInfo.status,table_relation.generateTime desc, tableinfo.tablename",
+            "SELECT DISTINCT\n" +
+                    " ti.tableGuid,\n" +
+                    " COUNT ( * ) OVER () total,\n" +
+                    " COALESCE(tdsr.data_source_id,(SELECT data_source_id FROM source_info WHERE \"version\" = 0 AND category_id = #{categoryGuid} AND tenant_id = #{tenantId} ),'ID') AS sourceId,\n" +
+                    " tdsr.category_id AS categoryGuid,\n" +
+                    " ti.tableName,\n" +
+                    " ti.dbName,\n" +
+                    " ti.tableGuid,\n" +
+                    " ti.status,\n" +
+                    " tdsr.update_time AS generateTime,\n" +
+                    " ti.description \n" +
+                    "FROM\n" +
+                    " tableinfo ti\n" +
+                    " LEFT JOIN table_data_source_relation tdsr ON tdsr.table_id = ti.tableGuid \n" +
+                    "WHERE\n" +
+                    " ((\n" +
+                    "   tdsr.category_id = #{categoryGuid} \n" +
+                    "   AND tdsr.tenant_id = #{tenantId} \n" +
+                    "   ) \n" +
+                    "  OR ti.databaseguid = ( SELECT db_guid FROM db_category_relation dcr WHERE dcr.category_id = #{categoryGuid} AND dcr.tenant_id = #{tenantId} ) \n" +
+                    " ) \n" +
+                    " AND ti.status = 'ACTIVE' \n" +
+                    "ORDER BY\n" +
+                    " ti.status,\n" +
+                    " tdsr.create_time DESC,\n" +
+                    " ti.tablename",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",

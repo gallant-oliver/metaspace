@@ -12,7 +12,7 @@ import java.util.List;
 
 public interface DatabaseInfoDAO {
     @Select("SELECT COUNT(1) FROM db_info WHERE database_guid = #{databaseId}")
-    int getDatabaseById(@Param("databaseId")String databaseId);
+    int getDatabaseById(@Param("databaseId") String databaseId);
 
     @Select("<script>" +
             "INSERT INTO source_info_relation2parent_category \n" +
@@ -22,7 +22,7 @@ public interface DatabaseInfoDAO {
             "( #{dif.id}, #{dif.parentCategoryId}, NOW( ), NOW( ) )" +
             "</foreach>" +
             "</script>")
-    void insertDatabaseInfoRelationParentCategory(@Param("difList")List<DatabaseInfoForCategory> difList);
+    void insertDatabaseInfoRelationParentCategory(@Param("difList") List<DatabaseInfoForCategory> difList);
 
     @Insert("<script>" +
             "INSERT INTO  public . source_info  (\n" +
@@ -90,8 +90,8 @@ public interface DatabaseInfoDAO {
             "#{dip.toDepartmentName},\n" +
             "#{dip.toEmail},\n" +
             "#{dip.toTel},\n" +
-            "#{dip.technicalLeader},\n" +
-            "#{dip.businessLeader},\n" +
+            "#{dip.technicalLeaderId},\n" +
+            "#{dip.businessLeaderId},\n" +
             "#{dip.tenantId},\n" +
             "NOW( ),\n" +
             "NOW( ),\n" +
@@ -132,8 +132,10 @@ public interface DatabaseInfoDAO {
             "s.to_tel,\n" +
             "s.to_department_name,\n" +
             "s.to_email,\n" +
-            "(SELECT u.username FROM users u WHERE u.userid = s.technical_leader ) AS technicalLeader,\n" +
-            "(SELECT u.username FROM users u WHERE u.userid = s.business_leader ) AS business_leader,\n" +
+            "s.technical_leader AS technicalLeaderId,\n" +
+            "s.business_leader AS businessLeaderId,\n" +
+            "(SELECT u.username FROM users u WHERE u.userid = s.technical_leader ) AS technicalLeaderName,\n" +
+            "(SELECT u.username FROM users u WHERE u.userid = s.business_leader ) AS businessLeaderName,\n" +
             "ag.name AS approveGroupName,\n" +
             "(SELECT u.username FROM users u WHERE u.userid = s.updater ) AS updaterName,\n" +
             "s.update_time AS updateTime,\n" +
@@ -150,19 +152,19 @@ public interface DatabaseInfoDAO {
             "LEFT JOIN approval_item ai ON s.approve_id = ai.\"id\"\n" +
             "WHERE\n" +
             "s.id = #{id} AND s.version = #{version}\n")
-    DatabaseInfoBO getDatabaseInfoById(@Param("id") String id,@Param("tenantId") String tenantId,@Param("version") int version);
+    DatabaseInfoBO getDatabaseInfoById(@Param("id") String id, @Param("tenantId") String tenantId, @Param("version") int version);
 
-    @Select("<script>"+
+    @Select("<script>" +
             "SELECT id,database_alias " +
             "FROM " +
-            " source_info "+
+            " source_info " +
             "WHERE\n" +
             " id IN " +
-            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
-            "#{id}"+
+            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>" +
+            "#{id}" +
             "</foreach>" +
             " AND " +
-            " version = 0"+
+            " version = 0" +
             "</script>")
     List<DatabaseInfo> getDatabaseIdAndAliasByIds(@Param("ids") List<String> idList);
 
@@ -171,13 +173,13 @@ public interface DatabaseInfoDAO {
             "SET status = #{status},update_time = NOW(),modify_time = NOW() \n" +
             "WHERE\n" +
             " id IN " +
-            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
-            "#{id}"+
-            "</foreach>"+
+            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
             " AND " +
-            " version = 0"+
+            " version = 0" +
             "</script>")
-    void updateStatusByIds(@Param("ids") List<String> idList,@Param("status") String status);
+    void updateStatusByIds(@Param("ids") List<String> idList, @Param("status") String status);
 
     @Update("UPDATE source_info \n" +
             "SET approve_id = #{approveId},approve_group_id = #{approveGroupId},update_time = NOW(),modify_time = NOW() \n" +
@@ -185,7 +187,7 @@ public interface DatabaseInfoDAO {
             " id = #{id} " +
             " AND " +
             " version = 0")
-    void updateApproveIdAndApproveGroupIdById(@Param("id") String id,@Param("approveId") String approveId,@Param("approveGroupId") String approveGroupId);
+    void updateApproveIdAndApproveGroupIdById(@Param("id") String id, @Param("approveId") String approveId, @Param("approveGroupId") String approveGroupId);
 
     @Select("<script>" +
             "SELECT\n" +
@@ -212,7 +214,7 @@ public interface DatabaseInfoDAO {
             "WHERE\n" +
             " s.tenant_id = #{tenantId}\n" +
             " AND " +
-            " s.version = 0 "+
+            " s.version = 0 " +
             "<if test=\"status != null\">" +
             " AND " +
             "  s.status = #{status}" +
@@ -224,20 +226,20 @@ public interface DatabaseInfoDAO {
             "<if test=\"ids != null\">" +
             " AND " +
             " s.id IN " +
-            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
-            "#{id}"+
-            "</foreach>"+
+            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
             "</if>" +
             " ORDER BY s.update_time DESC,s.database_alias\n" +
             " LIMIT #{limit} " +
             " OFFSET #{offset}" +
             "</script>")
-    List<DatabaseInfoForList> getDatabaseInfoList(@Param("tenantId") String tenantId, @Param("status") String status,@Param("ids")List<String> idList,
-                                                  @Param("name") String name,@Param("offset")  int offset,@Param("limit") int limit);
+    List<DatabaseInfoForList> getDatabaseInfoList(@Param("tenantId") String tenantId, @Param("status") String status, @Param("ids") List<String> idList,
+                                                  @Param("name") String name, @Param("offset") int offset, @Param("limit") int limit);
 
     @Select("<script>" +
             "SELECT\n" +
-            " COUNT(1)"+
+            " COUNT(1)" +
             "FROM\n" +
             " source_info s LEFT JOIN category c ON s.category_id = c.guid AND \n" +
             " c.tenantid = s.tenant_id\n" +
@@ -248,7 +250,7 @@ public interface DatabaseInfoDAO {
             "WHERE\n" +
             " s.tenant_id = #{tenantId}\n" +
             " AND " +
-            " s.version = 0 "+
+            " s.version = 0 " +
             "<if test=\"status != null\">" +
             " AND" +
             "  s.status = #{status}" +
@@ -258,7 +260,7 @@ public interface DatabaseInfoDAO {
             " (s.database_alias like CONCAT('%',#{name},'%') OR db.database_name like CONCAT('%',#{name},'%'))" +
             "</if>" +
             "</script>")
-    int getDatabaseInfoListCount(@Param("tenantId") String tenantId, @Param("status") String status,@Param("name") String name);
+    int getDatabaseInfoListCount(@Param("tenantId") String tenantId, @Param("status") String status, @Param("name") String name);
 
     @Select("<script>" +
             "SELECT\n" +
@@ -273,13 +275,13 @@ public interface DatabaseInfoDAO {
             " LEFT JOIN source_info_relation2parent_category sirc ON s.\"id\" = sirc.source_info_id \n" +
             "WHERE\n" +
             " s.ID IN " +
-            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
-            "#{id}"+
-            "</foreach>"+
+            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
             " AND " +
-            " version = 0"+
+            " version = 0" +
             "</script>")
-    List<DatabaseInfoForCategory> getDatabaseInfoByIds(@Param("ids")List<String> idList);
+    List<DatabaseInfoForCategory> getDatabaseInfoByIds(@Param("ids") List<String> idList);
 
 
     @Select("<script>" +
@@ -324,21 +326,21 @@ public interface DatabaseInfoDAO {
             " FROM\n" +
             "  source_info \n" +
             " WHERE\n" +
-            "  \"id\" = #{id}"+
+            "  \"id\" = #{id}" +
             " AND \"version\" = 0 \n" +
             " )" +
             "</script>")
     void insertHistoryVersion(@Param("id") String idList);
 
     @Update("UPDATE source_info SET category_id = #{categoryId},update_time = NOW(), modify_time = NOW() WHERE id  = #{id} AND version = 0")
-    void updateRealCategoryRelation(@Param("id")String sourceInfoId,@Param("categoryId")String categoryId);
+    void updateRealCategoryRelation(@Param("id") String sourceInfoId, @Param("categoryId") String categoryId);
 
     @Delete("<script>" +
             "DELETE FROM source_info_relation2parent_category " +
             "   WHERE source_info_id IN " +
-            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
-            "#{id}"+
-            "</foreach>"+
+            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
             "</script>")
     void deleteSourceInfoAndParentCategoryRelation(@Param("ids") List<String> idList);
 
@@ -349,9 +351,9 @@ public interface DatabaseInfoDAO {
             " source_info \n" +
             "WHERE\n" +
             " \"id\" IN \n" +
-            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
-            "#{id}"+
-            "</foreach>"+
+            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
             " AND \"version\" = 0 \n" +
             "GROUP BY\n" +
             " status" +
@@ -383,7 +385,7 @@ public interface DatabaseInfoDAO {
             "modify_time = NOW() " +
             " WHERE\n" +
             " id = #{di.id} AND \"version\" = 0")
-    void updateSourceInfo(@Param("di") DatabaseInfo databaseInfo,@Param("userId") String userId);
+    void updateSourceInfo(@Param("di") DatabaseInfo databaseInfo, @Param("userId") String userId);
 
     @Select("<script>" +
             "SELECT\n" +
@@ -397,28 +399,28 @@ public interface DatabaseInfoDAO {
             " AND id != #{id}" +
             "</if>" +
             "</script>")
-    boolean getDatabaseDuplicateName(@Param("tenantId") String tenantId,@Param("databaseAlias")String databaseAlias,@Param("id")String id);
+    boolean getDatabaseDuplicateName(@Param("tenantId") String tenantId, @Param("databaseAlias") String databaseAlias, @Param("id") String id);
 
     @Delete("<script>" +
             " DELETE " +
             " FROM source_info " +
             " WHERE " +
             " id IN " +
-            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
-            "#{id}"+
+            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>" +
+            "#{id}" +
             "</foreach>" +
-            " AND version = 0"+
+            " AND version = 0" +
             "</script>")
-    void deleteSourceInfoForVersion(@Param("ids") List<String> idList,@Param("version")int version);
+    void deleteSourceInfoForVersion(@Param("ids") List<String> idList, @Param("version") int version);
 
     @Delete("<script>" +
             " DELETE " +
             " FROM source_info " +
             " WHERE " +
             " version = #{version}" +
-            " AND id = #{id}"+
+            " AND id = #{id}" +
             "</script>")
-    void removeHistoryVersion(@Param("id")String id,@Param("version")int version);
+    void removeHistoryVersion(@Param("id") String id, @Param("version") int version);
 
     @Select("SELECT MAX(version) FROM source_info WHERE id = #{id} ")
     int getMaxVersionById(@Param("id") String objectId);
@@ -429,18 +431,18 @@ public interface DatabaseInfoDAO {
             " security, security_cycle, importance, description, creator, status, version, " +
             "bo_name, bo_department_name, bo_email, bo_tel, to_name, to_department_name, to_email, to_tel, technical_leader, business_leader, " +
             "tenant_id, update_time, record_time, create_time, modify_time)\n" +
-            "\t VALUES "+
+            "\t VALUES " +
             "<foreach collection=\"list\" item=\"item\" index=\"index\" separator=\",\">\n" +
             "(#{item.id},#{item.categoryId},#{item.databaseId},#{item.databaseAlias},#{item.planningPackageCode},#{item.extractTool},#{item.extractCycle}," +
             "#{item.security},#{item.securityCycle},#{item.importance},#{item.description},#{item.creator},#{item.status},0," +
             "#{item.boName},#{item.boDepartmentName},#{item.boEmail},#{item.boTel},#{item.toName},#{item.toDepartmentName},#{item.toEmail},#{item.toTel},#{item.technicalLeader},#{item.businessLeader}," +
             "#{item.tenantId},NOW(),NOW(),NOW(),NOW())\n" +
-            "</foreach>"+
+            "</foreach>" +
             "</script>")
     int batchInsert(@Param("list") List<DatabaseInfoPO> saveList);
 
     @Select("SELECT COUNT(1)>0 FROM source_info WHERE database_id = #{databaseId} AND tenant_id = #{tenantId} AND version = 0")
-    boolean getDatabaseByDbId(@Param("databaseId") String databaseId,@Param("tenantId") String tenantId);
+    boolean getDatabaseByDbId(@Param("databaseId") String databaseId, @Param("tenantId") String tenantId);
 
     @Select("<script>" +
             "SELECT\n" +
@@ -453,14 +455,11 @@ public interface DatabaseInfoDAO {
             " source_info s\n" +
             " LEFT JOIN source_info_relation2parent_category sirc ON s.\"id\" = sirc.source_info_id \n" +
             "WHERE\n" +
-            " version = 0"+
+            " version = 0" +
             " AND " +
-            " s.category_id IN "+
-            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
-            "#{id}"+
-            "</foreach>" +
+            " s.category_id = #{id}" +
             " AND " +
-            " s.tenant_id =#{tenantId}"+
+            " s.tenant_id =#{tenantId}" +
             "</script>")
-    List<DatabaseInfoForCategory> getDatabaseInfoByCategoryId(@Param("ids")List<String> id,@Param("tenantId")String tenantId);
+    DatabaseInfoForCategory getDatabaseInfoByCategoryId(@Param("id") String id, @Param("tenantId") String tenantId);
 }

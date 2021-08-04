@@ -56,11 +56,11 @@ public interface DbDAO {
     void insertSourceDbRelation(@Param("id")String id, @Param("databaseId")String databaseId, @Param("sourceId")String sourceId);
 	
 	@Select({"<script>",
-            "select t1.category_id as guid,t1.db_type as dbType ,t1.database_guid as dbId, t2.data_source_id as sourceId",
+            "select t2.category_id as guid,t1.db_type as dbType ,t1.database_guid as dbId, t2.data_source_id as sourceId",
             " from db_info t1",
             " inner join source_info t2 ",
             " on t1.database_guid = t2.database_id ",
-            " where t2.tenant_id = #{tenantId} and t1.category_id in ",
+            " where t2.tenant_id = #{tenantId} and t2.version = 0 and t2.category_id in ",
             " <foreach item='categoryId' index='index' collection='categoryIds' separator=',' open='(' close=')'>",
             " #{categoryId}",
             " </foreach>",

@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.dto.indices.IndexFieldDTO;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -84,7 +85,7 @@ public interface CategoryDAO {
     @Select("select * from category where guid=#{guid} and tenantid=#{tenantId}")
     public CategoryPrivilege queryByGuidV2(@Param("guid") String categoryGuid, @Param("tenantId") String tenantId) throws SQLException;
 
-    @Select("select * from category where tenantid=#{tenantId} and guid = (select category_id from db_info where database_guid  = #{databaseId})")
+    @Select("select * from category where tenantid=#{tenantId} and guid = (select category_id from source_info where version = 0 and database_id  = #{databaseId} and tenant_id = #{tenantId} and category_id is not null)")
     public CategoryPrivilege queryByGuidByDBId(@Param("databaseId") String databaseId, @Param("tenantId") String tenantId);
 
     @Select("select name from category where guid=#{guid} and tenantid=#{tenantId}")
@@ -368,4 +369,7 @@ public interface CategoryDAO {
 
     @Select(" select distinct guid,name from category where categorytype = #{categorytype} order by guid ")
     List<CategoryEntityV2> queryNameByType(@Param("categorytype")int categorytype);
+
+    @Select(" select parentcategoryguid from category where guid = #{id} ")
+    String getParentIdByGuid(@Param("id") String guid);
 }

@@ -609,7 +609,7 @@ public class DataManageService {
     public CategoryDeleteReturn deleteCategory(String guid, String tenantId, int type) throws Exception {
         List<String> categoryIds = categoryDao.queryChildrenCategoryId(guid, tenantId);
         categoryIds.add(guid);
-        this.removeSourceInfo(categoryIds,tenantId);
+        this.removeSourceInfo(guid,tenantId);
         int item = 0;
         if (type == 0) {
             item = relationDao.updateRelationByCategoryGuid(categoryIds, "1");
@@ -653,15 +653,21 @@ public class DataManageService {
         return deleteReturn;
     }
 
-    private void removeSourceInfo(List<String> guid, String tenantId){
-        List<DatabaseInfoForCategory> dif = databaseInfoDAO.getDatabaseInfoByCategoryId(guid,tenantId);
+    private void removeSourceInfo(String guid, String tenantId){
+        DatabaseInfoForCategory dif = databaseInfoDAO.getDatabaseInfoByCategoryId(guid,tenantId);
         if (Boolean.FALSE.equals(ParamUtil.isNull(dif))){
-            List<String> idList = dif.stream().map(DatabaseInfoForCategory::getId).collect(Collectors.toList());
-            List<String> databaseIdList = dif.stream().map(DatabaseInfoForCategory::getDatabaseId).collect(Collectors.toList());
+            List<String> idList = new ArrayList<>();
+            idList.add(dif.getId());
             databaseInfoDAO.updateStatusByIds(idList, Status.FOUNDED.getIntValue()+"");
-            databaseDAO.updateDatabaseRelationToCategoryNull(databaseIdList);
+            databaseInfoDAO.updateRealCategoryRelation(dif.getId(),null);
+            String parentCategoryId = categoryDao.getParentIdByGuid(guid);
+            List<DatabaseInfoForCategory> disList = new ArrayList<>();
+            dif.setParentCategoryId(parentCategoryId);
+            disList.add(dif);
+            databaseInfoDAO.insertDatabaseInfoRelationParentCategory(disList);
+            databaseDAO.deleteDbCategoryRelation(guid,tenantId);
         }
-    }
+        }
 
     /**
      * 更新目录
