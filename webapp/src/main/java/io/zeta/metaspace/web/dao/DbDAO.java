@@ -60,7 +60,7 @@ public interface DbDAO {
             " from db_info t1",
             " inner join source_info t2 ",
             " on t1.database_guid = t2.database_id ",
-            " where t2.tenant_id = #{tenantId} and t2.category_id in ",
+            " where t2.tenant_id = #{tenantId} and t2.version = 0 and t2.category_id in ",
             " <foreach item='categoryId' index='index' collection='categoryIds' separator=',' open='(' close=')'>",
             " #{categoryId}",
             " </foreach>",

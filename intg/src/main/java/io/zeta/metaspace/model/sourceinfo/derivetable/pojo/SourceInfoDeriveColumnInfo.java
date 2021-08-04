@@ -21,7 +21,7 @@ import java.util.Objects;
 @Data
 @EqualsAndHashCode(callSuper = false)
 @Accessors(chain = true)
-@ApiModel(value = "DeriveColumnInfo对象", description = "衍生表对应的字段")
+@ApiModel(value = "SourceInfoDeriveColumnInfo", description = "衍生表对应的字段")
 public class SourceInfoDeriveColumnInfo implements Serializable {
 
     private static final long serialVersionUID = 1L;
