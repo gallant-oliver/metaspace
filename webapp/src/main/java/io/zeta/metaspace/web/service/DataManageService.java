@@ -1574,34 +1574,8 @@ public class DataManageService {
                 tableDAO.updateTable(table);
             }else{
                 tableDAO.addTable(tableInfo);
-                addRelation(tableInfo, definition);
             }
         }
-    }
-
-    @Transactional(rollbackFor = Exception.class)
-    public void addRelation(TableInfo tableInfo, SyncTaskDefinition definition) {
-
-        List<String> tenantIds = tenantDAO.getAllTenantId();
-        //添加关联
-        if(null != definition){
-            TableRelation tableRelation = CategoryUtil.getTableRelation(tableInfo.getTableGuid(), definition.getTenantId(), definition.getCategoryGuid());
-            synchronized (Object.class){
-                if(null == tableDAO.selectRelation(tableRelation)){
-                    tableDAO.addRelation(tableRelation);
-                }
-            }
-            tenantIds.remove(tableInfo.getTableGuid());
-        }
-        if(CollectionUtils.isEmpty(tenantIds)){
-            return;
-        }
-        tenantIds.forEach(tenantId -> {
-            TableRelation tableRelation = CategoryUtil.getTableRelation(tableInfo.getTableGuid(), tenantId, "1");
-            if(null == tableDAO.selectRelation(tableRelation)){
-                tableDAO.addRelation(tableRelation);
-            }
-        });
     }
 
     private Database getDbInfo(AtlasEntity entity) {

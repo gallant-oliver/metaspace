@@ -80,15 +80,6 @@ public class SyncTaskJob implements Job {
                     if(null == sourceDbRelationId){
                         dbDAO.insertSourceDbRelation(UUID.randomUUID().toString(),sdb.getDatabaseId(),definition.getDataSourceId());
                     }
-                    List<String> tableGuids = tableDAO.getTableGuidsByDbGuid(sdb.getDatabaseId());
-                    if(!CollectionUtils.isEmpty(tableGuids)){
-                        tableGuids.forEach(tg -> {
-                            TableRelation tableRelation = CategoryUtil.getTableRelation(tg, definition.getTenantId(), "1");
-                            if(null == tableDAO.selectRelation(tableRelation)){
-                                tableDAO.addRelation(tableRelation);
-                            }
-                        });
-                    }
                 });
             }
             SyncTaskInstance instance = new SyncTaskInstance();

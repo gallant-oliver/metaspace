@@ -131,8 +131,9 @@ public interface RelationDAO {
             " </script>"})
     public List<RelationEntityV2> selectListByDbName(@Param("dbName") String dbName, @Param("tenantId") String tenantId, @Param("limit") Long limit, @Param("offset") Long offset, @Param("databases") List<String> databases);
 
-    @Select("select * from table_relation,tableInfo where table_relation.tableGuid=#{tableGuid} and tableinfo.tableGuid=#{tableGuid}")
-    public List<RelationEntityV2> queryRelationByTableGuid(@Param("tableGuid") String tableGuid) throws SQLException;
+    @Select("select id,category_id,table_id,data_source_id,tenant_id from table_data_source_relation where data_source_id = #{sourceId} and table_id = =#{tableGuid}")
+    List<RelationEntityV2> queryTableRelations(@Param("tableGuid") String tableGuid, @Param("sourceId") String sourceId);
+
 
 
     @Select({"<script>",

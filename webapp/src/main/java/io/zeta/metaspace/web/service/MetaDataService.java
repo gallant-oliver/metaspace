@@ -20,6 +20,7 @@ import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
+import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
@@ -40,6 +41,7 @@ import io.zeta.metaspace.web.util.HivePermissionUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.glossary.enums.AtlasTermRelationshipStatus;
 import org.apache.atlas.model.instance.*;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.model.metadata.RelationEntityV2;
@@ -312,7 +314,7 @@ public class MetaDataService {
         return entityRetriever.toAtlasEntityWithAttribute(atlasVertex, attributes, relationshipAttributes, isMinExtInfo);
     }
 
-    public Database getDatabase(String guid) throws AtlasBaseException {
+    public Database getDatabase(String guid, String sourceId) throws AtlasBaseException {
         if (Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
@@ -329,13 +331,17 @@ public class MetaDataService {
             database.setStatus(entity.getStatus().name());
             database.setOwner(getEntityAttribute(entity, "owner"));
 
-            if (entity.getTypeName().contains("hive")) {
-                database.setSourceId("hive");
-                database.setSourceName("hive");
-            } else {
-                AtlasRelatedObjectId relatedInstance = getRelatedInstance(entity);
-                database.setSourceId(relatedInstance.getGuid());
-                database.setSourceName(relatedInstance.getDisplayText());
+            if(StringUtils.isNotBlank(sourceId)){
+                if("hive".equalsIgnoreCase(sourceId)){
+                    database.setSourceId("hive");
+                    database.setSourceName("hive");
+                }else{
+                    DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(sourceId);
+                    if(null != dataSourceInfo){
+                        database.setSourceId(dataSourceInfo.getSourceId());
+                        database.setSourceName(dataSourceInfo.getSourceName());
+                    }
+                }
             }
             return database;
         } catch (Exception e) {
@@ -567,7 +573,7 @@ public class MetaDataService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
             //table
-            RDBMSTable table = this.extractRDBMSTableInfo(entity, guid, info, tenantId);
+            RDBMSTable table = extractRDBMSTableInfo(entity, guid, info, tenantId);
 
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
@@ -588,6 +594,10 @@ public class MetaDataService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
         }
     }
+
+
+    public
+
 
     public RDBMSTable extractRDBMSTableInfo(AtlasEntity entity, String guid, AtlasEntity.AtlasEntityWithExtInfo info, String tenantId) throws AtlasBaseException {
         RDBMSTable table = new RDBMSTable();
@@ -1458,6 +1468,107 @@ public class MetaDataService {
         info.setRelations(resultRelations);
         return info;
     }
+
+
+    public ColumnLineageInfo getColumnLineages(String tableGuid, AtlasLineageInfo.LineageDirection direction, int depth) throws AtlasBaseException {
+
+        Map<String, Object> cache = new HashMap<>();
+
+        AtlasLineageInfo lineageInfo = metaspaceLineageService.getColumnLineageInfo(tableGuid, direction, depth);
+        Set<LineageTrace> lineageRelations = getRelations(lineageInfo);
+
+//        Set<LineageTrace> lineageRelations = getLineageRelations(tableGuid, direction, depth, cache);
+        List<ColumnLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
+
+        for (LineageTrace resultRelation : lineageRelations) {
+            addLineageEntity(resultRelation.getFromEntityId(), lineageEntities, cache);
+            addLineageEntity(resultRelation.getToEntityId(), lineageEntities, cache);
+        }
+
+        Set<LineageTrace> resultRelations = reOrderRelation(lineageEntities, lineageRelations);
+        ColumnLineageInfo info = new ColumnLineageInfo();
+        //guid
+        info.setGuid(tableGuid);
+        info.setEntities(lineageEntities);
+        info.setRelations(resultRelations);
+        return info;
+    }
+
+    private Set<LineageTrace> getLineageRelations(String tableGuid, AtlasLineageInfo.LineageDirection direction, int depth, Map<String, Object> cache) {
+        AtlasEntity tableEntity = getAtlasEntity(tableGuid, cache);
+        List<AtlasRelatedObjectId> columns = (List<AtlasRelatedObjectId>) tableEntity.getRelationshipAttribute("columns");
+        Set<LineageTrace> lineageRelations = new HashSet<>();
+
+        for (int i = 0, size = columns.size(); i < size; i++) {
+            AtlasRelatedObjectId column = columns.get(i);
+            String columnGuid = column.getGuid();
+            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(columnGuid, direction, depth);
+            if(null == lineageInfo){
+                continue;
+            }
+            Set<LineageTrace> relations = getRelations(lineageInfo);
+            if(null != relations && !relations.isEmpty()){
+                lineageRelations.addAll(relations);
+            }
+        }
+        return lineageRelations;
+    }
+
+    private ColumnLineageInfo.LineageEntity addLineageEntity(String columnGuid, List<ColumnLineageInfo.LineageEntity> lineageEntities, Map<String, Object> cache) {
+        String columnLineageKey = "columnLineage_" + columnGuid;
+        if(cache.containsKey(columnLineageKey)){
+            return (ColumnLineageInfo.LineageEntity)cache.get(columnLineageKey);
+        }
+        ColumnLineageInfo.LineageEntity entity;
+        AtlasEntity columnEntity = getAtlasEntity(columnGuid, cache);
+        String typeName = columnEntity.getTypeName();
+        if(!"rdbms_column".equalsIgnoreCase(typeName)&&!"hive_column".equalsIgnoreCase(typeName)&&!"column".equalsIgnoreCase(typeName)){
+            return null;
+        }
+        entity = new ColumnLineageInfo.LineageEntity();
+        entity.setGuid(columnGuid);
+        entity.setColumnName(getAttName(columnEntity));
+        entity.setColumnStatus(getAttStatus(columnEntity));
+        AtlasRelatedObjectId table = (AtlasRelatedObjectId) columnEntity.getRelationshipAttribute("table");
+        String tableGuid = table.getGuid();
+        entity.setTableGuid(tableGuid);
+        entity.setTableName(table.getDisplayText());
+        entity.setTableStatus(table.getRelationshipStatus().name());
+        AtlasEntity tableEntity = getAtlasEntity(tableGuid, cache);
+        AtlasRelatedObjectId db = (AtlasRelatedObjectId) tableEntity.getRelationshipAttribute("db");
+        String dbGuid = db.getGuid();
+        entity.setDbGuid(dbGuid);
+        entity.setDbName(db.getDisplayText());
+        entity.setDbStatus(db.getRelationshipStatus().name());
+        lineageEntities.add(entity);
+        cache.put(columnLineageKey, entity);
+        return entity;
+    }
+
+    private AtlasEntity getAtlasEntity(String guid, Map<String, Object> cache){
+        if(cache.containsKey(guid)){
+            return (AtlasEntity)cache.get(guid);
+        }
+        return entitiesStore.getById(guid).getEntity();
+    }
+
+    public String getAttName(AtlasEntity fromEntity){
+        return (String)fromEntity.getAttribute("name");
+    }
+    public String getAttStatus(AtlasEntity fromEntity){
+        String status = null;
+        Object object = fromEntity.getStatus();
+        if (object instanceof AtlasTermRelationshipStatus) {
+            status = ((AtlasTermRelationshipStatus) object).name();
+        }else if(object instanceof AtlasEntity.Status){
+            status = ((AtlasEntity.Status)object).name();
+        }else{
+            status = (String)object;
+        }
+        return status;
+
+    }
+
 
     public void removeTableEntityAndRelation(List<ColumnLineageInfo.LineageEntity> lineageEntities, Set<LineageTrace> lineageRelations) throws AtlasBaseException {
         Set<LineageTrace> removeNode = new HashSet<>();
