@@ -376,7 +376,8 @@ public class SourceInfoDatabaseREST {
                 base64String = Base64Utils.streamToBase64(in);
             }
             Base64Info info = new Base64Info();
-            info.getInstance(fileType,base64String);
+            String finalType = StringUtils.containsAny(fileType,"xls","xlsx","doc","docx") ? "pdf" : fileType;
+            info.getInstance(finalType,base64String);
             return ReturnUtil.success("success",info);
         }catch (IOException | DocumentException e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "获取文件流失败");
