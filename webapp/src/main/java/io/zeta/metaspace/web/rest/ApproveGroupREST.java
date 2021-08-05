@@ -77,7 +77,7 @@ public class ApproveGroupREST {
             PageResult<ApproveGroupListAndSearchResult> pageResult = approveGroupService.getApproveGroupListAndSearch(tenantId, params);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"用户组列表及搜索失败，您的租户ID为:" + tenantId + ",请检查好是否配置正确");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,"用户组列表及搜索失败，您的租户ID为:" + tenantId + ",请检查好是否配置正确");
         }
     }
 
@@ -105,7 +105,7 @@ public class ApproveGroupREST {
             PageResult<ApproveGroupListAndSearchResult> pageResult = approveGroupService.getApproveGroupByModuleId(params,tenantId);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"用户组列表及搜索失败，您的租户ID为:" + tenantId + ",请检查好是否配置正确");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, "用户组列表及搜索失败，您的租户ID为:" + tenantId + ",请检查好是否配置正确");
         }
     }
 

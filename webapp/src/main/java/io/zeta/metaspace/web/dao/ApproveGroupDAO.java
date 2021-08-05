@@ -50,14 +50,15 @@ public interface ApproveGroupDAO {
             "left join users on u.updater = users.userid" +
             " where u.tenantid=#{tenantId} and u.valid=true" +
             "<if test='search!=null'>" +
-            " and u.name like '%${search}%' ESCAPE '/' " +
+            " and u.name like concat('%',#{search},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='sortBy!=null'>" +
             "order by ${sortBy} " +
+                "<if test='order!=null '>" +
+                " ${order} " +
+                "</if>" +
             "</if>" +
-            "<if test='order!=null '>" +
-            " ${order} " +
-            "</if>" +
+
             "<if test='limit!=-1'>" +
             " limit ${limit} " +
             "</if>" +
