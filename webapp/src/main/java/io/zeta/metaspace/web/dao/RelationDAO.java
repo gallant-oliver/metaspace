@@ -70,7 +70,7 @@ public interface RelationDAO {
                     " AND ti.status = 'ACTIVE' \n" +
                     "ORDER BY\n" +
                     " ti.status,\n" +
-                    " tdsr.create_time DESC,\n" +
+                    " tdsr.update_time DESC,\n" +
                     " ti.tablename",
             " <if test='limit!= -1'>",
             " limit #{limit}",
