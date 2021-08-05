@@ -53,6 +53,7 @@ public interface RelationDAO {
                     " tdsr.category_id AS categoryGuid,\n" +
                     " ti.tableName,\n" +
                     " ti.dbName,\n" +
+                    " ti.databaseguid AS dbId,\n" +
                     " ti.tableGuid,\n" +
                     " ti.status,\n" +
                     " tdsr.update_time AS generateTime,\n" +
