@@ -81,6 +81,11 @@ public class RdbmsEntities {
         }
     };
 
+    /**
+     * key:未修改之前实体的qualifyName
+     * value:修改之后的实体
+     */
+    private final Map<String, AtlasEntity.AtlasEntityWithExtInfo> renameMap = new HashMap<>();
 
     /**
      * 数据血缘
@@ -91,9 +96,12 @@ public class RdbmsEntities {
         return entityMap;
     }
 
-
     public AtlasEntity.AtlasEntitiesWithExtInfo getBloodEntities() {
         return bloodEntities;
+    }
+
+    public Map<String, AtlasEntity.AtlasEntityWithExtInfo> getRenameMap() {
+        return renameMap;
     }
 
     public void setBloodEntities(AtlasEntity.AtlasEntitiesWithExtInfo bloodEntities) {
