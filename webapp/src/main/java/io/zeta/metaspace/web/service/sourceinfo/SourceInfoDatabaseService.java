@@ -181,6 +181,14 @@ public class SourceInfoDatabaseService implements Approvable {
         return ReturnUtil.success();
     }
 
+    public Result validate(String tenantId,String name,String categoryId) {
+        int count = categoryDAO.getCategoryCountByParentIdAndName(tenantId,categoryId,name);
+        if (count>0){
+            return ReturnUtil.error(AtlasErrorCode.DUPLICATE_ALIAS_NAME.getErrorCode(),
+                    AtlasErrorCode.DUPLICATE_ALIAS_NAME.getFormattedErrorMessage(name));
+        }
+        return ReturnUtil.success();
+    }
     /**
      * 源信息数据库登记信息列表
      * @param tenantId 租户id
@@ -418,6 +426,7 @@ public class SourceInfoDatabaseService implements Approvable {
         DatabaseInfoBO databaseInfoBO = this.getDatabaseInfoBOById(objectId,tenantId,version);
         DatabaseInfoDTO databaseInfoDTO = new DatabaseInfoDTO();
         BeansUtil.copyPropertiesIgnoreNull(databaseInfoBO,databaseInfoDTO);
+        databaseInfoDTO.setCategoryName(this.getAllPath(objectId,tenantId));
         databaseInfoDTO.setPublisherName(databaseInfoBO.getUpdaterName());
         databaseInfoDTO.setPublishTime(databaseInfoBO.getUpdateTime());
         List<User> users = approveDAO.getApproveUsers(databaseInfoBO.getApproveGroupId());
@@ -507,6 +516,20 @@ public class SourceInfoDatabaseService implements Approvable {
         } finally {
             AtlasPerfTracer.log(perf);
         }
+    }
+
+    private String getAllPath(String sourceInfoId,String tenantId){
+        String parentCategoryId = databaseInfoDAO.getParentCategoryIdById(sourceInfoId);
+        StringBuilder sb = new StringBuilder("/");
+        while (Boolean.FALSE.equals(ParamUtil.isNull(parentCategoryId))){
+            String name=categoryDAO.getCategoryNameById(parentCategoryId,tenantId);
+            StringBuilder sbInner = new StringBuilder("/");
+            sbInner.append(name);
+            sbInner.append(sb);
+            sb = sbInner;
+            parentCategoryId = categoryDAO.getParentIdByGuid(parentCategoryId,tenantId);
+        }
+        return sb.toString();
     }
 
     /**

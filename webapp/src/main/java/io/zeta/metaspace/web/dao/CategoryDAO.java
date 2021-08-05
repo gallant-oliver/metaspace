@@ -362,7 +362,7 @@ public interface CategoryDAO {
     @Select("SELECT COUNT(1) FROM category WHERE parentcategoryguid = #{parentId} AND tenantid = #{tenantId} AND name = #{databaseAlias}")
     int getCategoryCountByParentIdAndName(@Param("tenantId") String tenantId,@Param("parentId") String parentId,@Param("databaseAlias") String databaseAlias);
 
-    @Select("SELECT COUNT(1) FROM category WHERE parentcategoryguid = (SELECT parentcategoryguid FROM source_info WHERE guid = #{categoryId}) AND tenantid = #{tenantId} AND name = #{databaseAlias}")
+    @Select("SELECT COUNT(1) FROM category WHERE parentcategoryguid = (SELECT parentcategoryguid FROM category WHERE guid = #{categoryId}) AND tenantid = #{tenantId} AND name = #{databaseAlias}")
     int getCategoryCountByIdAndName(@Param("tenantId") String tenantId,@Param("categoryId") String categoryId,@Param("databaseAlias") String databaseAlias);
     @Select("SELECT guid,name,parentcategoryguid as parentCategoryGuid FROM public.category where tenantid=#{tenantId} ")
     List<CategoryEntityV2> queryByTenantId(@Param("tenantId") String tenantId);
@@ -370,6 +370,6 @@ public interface CategoryDAO {
     @Select(" select distinct guid,name from category where categorytype = #{categorytype} order by guid ")
     List<CategoryEntityV2> queryNameByType(@Param("categorytype")int categorytype);
 
-    @Select(" select parentcategoryguid from category where guid = #{id} ")
-    String getParentIdByGuid(@Param("id") String guid);
+    @Select(" select parentcategoryguid from category where guid = #{id} AND tenantid = #{tenant} ")
+    String getParentIdByGuid(@Param("id") String guid,@Param("tenant") String tenant);
 }
