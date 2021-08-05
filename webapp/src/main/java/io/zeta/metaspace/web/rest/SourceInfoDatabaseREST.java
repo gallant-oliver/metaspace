@@ -191,15 +191,18 @@ public class SourceInfoDatabaseREST {
             //tenantId 使用租户id作为上传文件子目录
             String fileName = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
             String uploadDir = tenantId + "/" + DateTimeUtils.formatTime(System.currentTimeMillis(),"yyyyMMddHHmmss");
-            String uploadPath = hdfsService.uploadFile(fileInputStream,fileName,uploadDir);
+
+            File file = new File(fileName);
+            FileUtils.copyInputStreamToFile(fileInputStream, file);
+            long fileSize = file.length();//contentDispositionHeader.getSize();
+
+            String uploadPath = hdfsService.uploadFile(new FileInputStream(file),fileName,uploadDir);
             //组装附件表的字段
             String annexId = UUIDUtils.alphaUUID();
 
             String fileType = FilenameUtils.getExtension(fileName);
             //保存数据到表 annex
-            File file = new File(fileName);
-            FileUtils.copyInputStreamToFile(fileInputStream, file);
-            long fileSize = file.length();//contentDispositionHeader.getSize();
+
             Annex annex = new Annex(annexId,fileName,fileType,uploadPath,fileSize);
             annexService.saveRecord(annex);
             return ReturnUtil.success("success",annexId);
