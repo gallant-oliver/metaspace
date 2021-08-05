@@ -1272,13 +1272,18 @@ public class DataSourceService {
      *
      * @return
      */
-    public List<DataSourceTypeInfo> getDataSourceType() {
+    public List<DataSourceTypeInfo> getDataSourceType(String type) {
+        // 配置的数据源类型
+        List<String> confList = Arrays.stream(MetaspaceConfig.getDataSourceType()).map(String::toUpperCase).collect(Collectors.toList());
+        if ("dbr".equalsIgnoreCase(type)) {
+            List<String> builtInList = Arrays.stream(MetaspaceConfig.getDataSourceTypeBuiltIn()).map(String::toUpperCase).collect(Collectors.toList());
+            builtInList.addAll(confList);
+            return Arrays.stream(DataSourceType.values()).filter(e -> builtInList.contains(e.getName())).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(), dataSourceType.getDefaultPort())).collect(Collectors.toList());
+        }
         if (!MetaspaceConfig.getDataService()) {
             DataSourceTypeInfo dataSourceTypeInfo = new DataSourceTypeInfo(DataSourceType.ORACLE.getName(), DataSourceType.ORACLE.getDefaultPort());
             return Lists.newArrayList(dataSourceTypeInfo);
         }
-        // 配置的数据源类型
-        List<String> confList = Arrays.stream(MetaspaceConfig.getDataSourceType()).map(String::toUpperCase).collect(Collectors.toList());
         return Arrays.stream(DataSourceType.values()).filter(e -> confList.contains(e.getName())).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(), dataSourceType.getDefaultPort())).collect(Collectors.toList());
     }
 }

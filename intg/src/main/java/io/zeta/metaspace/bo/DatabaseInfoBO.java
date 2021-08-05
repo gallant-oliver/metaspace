@@ -49,7 +49,7 @@ public class DatabaseInfoBO {
     /**
      * 数据源id
      * **/
-    private String datasourceId;
+    private String dataSourceId;
     /**
      * 数据库中文名
      * **/

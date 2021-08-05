@@ -56,6 +56,7 @@ import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
+import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
@@ -119,6 +120,8 @@ public class DataManageService {
     DatabaseDAO databaseDAO;
     @Autowired
     DatabaseInfoDAO databaseInfoDAO;
+    @Autowired
+    SourceInfoDatabaseService sourceInfoDatabaseService;
     @Autowired
     MetaspaceGremlinQueryService metaspaceEntityService;
     @Autowired
@@ -609,7 +612,7 @@ public class DataManageService {
     public CategoryDeleteReturn deleteCategory(String guid, String tenantId, int type) throws Exception {
         List<String> categoryIds = categoryDao.queryChildrenCategoryId(guid, tenantId);
         categoryIds.add(guid);
-        this.removeSourceInfo(guid,tenantId);
+        this.removeSourceInfo(categoryIds,tenantId,guid);
         int item = 0;
         if (type == 0) {
             item = relationDao.updateRelationByCategoryGuid(categoryIds, "1");
@@ -653,19 +656,21 @@ public class DataManageService {
         return deleteReturn;
     }
 
-    private void removeSourceInfo(String guid, String tenantId){
-        DatabaseInfoForCategory dif = databaseInfoDAO.getDatabaseInfoByCategoryId(guid,tenantId);
+    private void removeSourceInfo(List<String> categoryIds, String tenantId,String guid){
+        List<DatabaseInfoForCategory> dif = databaseInfoDAO.getDatabaseInfoByCategoryId(categoryIds,tenantId,guid);
         if (Boolean.FALSE.equals(ParamUtil.isNull(dif))){
-            List<String> idList = new ArrayList<>();
-            idList.add(dif.getId());
-            databaseInfoDAO.updateStatusByIds(idList, Status.FOUNDED.getIntValue()+"");
-            databaseInfoDAO.updateRealCategoryRelation(dif.getId(),null);
-            String parentCategoryId = categoryDao.getParentIdByGuid(guid);
-            List<DatabaseInfoForCategory> disList = new ArrayList<>();
-            dif.setParentCategoryId(parentCategoryId);
-            disList.add(dif);
-            databaseInfoDAO.insertDatabaseInfoRelationParentCategory(disList);
-            databaseDAO.deleteDbCategoryRelation(guid,tenantId);
+            List<String> idList = dif.stream().map(DatabaseInfoForCategory::getId).collect(Collectors.toList());
+            sourceInfoDatabaseService.delete(tenantId,idList);
+//            List<String> idList = new ArrayList<>();
+//            idList.add(dif.getId());
+//            databaseInfoDAO.updateStatusByIds(idList, Status.FOUNDED.getIntValue()+"");
+//            databaseInfoDAO.updateRealCategoryRelation(dif.getId(),null);
+//            String parentCategoryId = categoryDao.getParentIdByGuid(guid);
+//            List<DatabaseInfoForCategory> disList = new ArrayList<>();
+//            dif.setParentCategoryId(parentCategoryId);
+//            disList.add(dif);
+//            databaseInfoDAO.insertDatabaseInfoRelationParentCategory(disList);
+//            databaseDAO.deleteDbCategoryRelation(guid,tenantId);
         }
         }
 

@@ -5,7 +5,9 @@ import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.sourceinfo.AnalyticResult;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForDb;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -16,7 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,6 +31,8 @@ public class SourceInfoFileService {
     private final Logger logger  = LoggerFactory.getLogger(SourceInfoFileService.class);
     @Autowired
     private DatabaseDAO databaseDAO;
+    @Autowired
+    private UserDAO userDAO;
   /*  @Autowired
     private DatabaseInfoDAO databaseInfoDAO;*/
     @Autowired
@@ -119,7 +123,7 @@ public class SourceInfoFileService {
                 : excelDataList.stream().collect(Collectors.groupingBy(p->p[dbZhIndex]));
         if(fileZhNameRepeatMap != null && !fileZhNameRepeatMap.isEmpty()){
             for(Map.Entry<String,List<String[]>> entry : fileZhNameRepeatMap.entrySet()){
-                if(!StringUtils.isEmpty(entry.getKey()) && entry.getValue().size() > 1){
+                if(StringUtils.isNotBlank(entry.getKey()) && entry.getValue().size() > 1){
                     fileZhNameRepeat.add(entry.getKey());
                     excelRepeatDataList.add(entry.getValue().get(0));
                 }
@@ -284,11 +288,10 @@ public class SourceInfoFileService {
             logger.info("没有要保存的数据库信息");
             return ReturnUtil.success();
         }
-        /*User user = AdminUtils.getUserData();
-        String username = user.getUsername();*/
+
         List<DatabaseInfo> saveList = new ArrayList<>();
         DatabaseInfo databaseInfo = null;
-
+        List<User> userList = userDAO.getAllUserByValid();
         for(String[] array : saveDbList){
             String sourceId = UUIDUtils.alphaUUID();
             String categoryId = MapUtils.getString(categoryMap,getElementOrDefault(array,MapUtils.getIntValue(map,"数据层名称",-1)),"");
@@ -318,8 +321,8 @@ public class SourceInfoFileService {
             databaseInfo.setToDepartmentName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner部门名称",-1)));
             databaseInfo.setToTel(getElementOrDefault(array,MapUtils.getIntValue(map,"技术Owner手机号",-1)));
             databaseInfo.setToEmail(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner电子邮箱",-1)));
-            databaseInfo.setTechnicalLeader(getElementOrDefault(array,MapUtils.getIntValue(map,"技术负责人",-1)));
-            databaseInfo.setBusinessLeader(getElementOrDefault(array,MapUtils.getIntValue(map,"业务负责人",-1)));
+            databaseInfo.setTechnicalLeader(convertUsernameToUserId(getElementOrDefault(array,MapUtils.getIntValue(map,"技术负责人",-1)),userList));
+            databaseInfo.setBusinessLeader(convertUsernameToUserId(getElementOrDefault(array,MapUtils.getIntValue(map,"业务负责人",-1)),userList));
             //databaseInfo.setTenantId(tenantId);
             saveList.add(databaseInfo);
         }
@@ -329,5 +332,25 @@ public class SourceInfoFileService {
         //databaseInfoDAO.batchInsert(saveList);
         logger.info("文件导入处理完毕。");
         return result;
+    }
+
+    /**
+     * 用户名转换为用户id ，找不到返回原始名
+     * @param name
+     * @param userList
+     * @return
+     */
+    private String convertUsernameToUserId(String name,List<User> userList){
+        if(CollectionUtils.isEmpty(userList)){
+            return name;
+        }
+
+        User user = userList.stream().filter(p-> StringUtils.equalsIgnoreCase(p.getUsername(),name))
+                .findFirst().orElseGet(null);
+        if(user == null){
+            return name;
+        }
+
+        return user.getUserId();
     }
 }
