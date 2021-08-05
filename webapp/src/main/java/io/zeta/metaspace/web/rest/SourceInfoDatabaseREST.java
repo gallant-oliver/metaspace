@@ -42,6 +42,7 @@ import io.zeta.metaspace.web.util.office.word.DocxConvertToPdf;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.IOUtils;
@@ -196,7 +197,9 @@ public class SourceInfoDatabaseREST {
 
             String fileType = FilenameUtils.getExtension(fileName);
             //保存数据到表 annex
-            long fileSize = contentDispositionHeader.getSize();
+            File file = new File(fileName);
+            FileUtils.copyInputStreamToFile(fileInputStream, file);
+            long fileSize = file.length();//contentDispositionHeader.getSize();
             Annex annex = new Annex(annexId,fileName,fileType,uploadPath,fileSize);
             annexService.saveRecord(annex);
             return ReturnUtil.success("success",annexId);
