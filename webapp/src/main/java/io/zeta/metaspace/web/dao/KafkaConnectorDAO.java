@@ -34,7 +34,7 @@ public interface KafkaConnectorDAO {
      * @return
      */
     @Select("select name, connector_class, db_type, db_ip, db_port, db_name, db_user, db_password, tasks_max, db_fetch_size, start_scn " +
-            "from connector where name = #{name} and is_deleted = false")
+            "from connector where id = #{id} and is_deleted = false")
     KafkaConnector.Config selectConnectorConfig(@Param("id") String id);
 
     @Select("select id, name from connector where is_deleted = false")
