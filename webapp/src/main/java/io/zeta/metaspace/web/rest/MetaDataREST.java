@@ -890,7 +890,7 @@ public class MetaDataREST {
     @Path("/rdbms/table/sql/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BuildTableSql getRDBMSTableSQL(@PathParam("tableId") String tableId, @QueryParam("sourceId") String sourceId) throws AtlasBaseException {
+    public BuildTableSql getRDBMSTableSQL(@PathParam("tableId") String tableId, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
