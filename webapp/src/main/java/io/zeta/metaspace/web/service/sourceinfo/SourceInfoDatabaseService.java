@@ -181,6 +181,14 @@ public class SourceInfoDatabaseService implements Approvable {
         return ReturnUtil.success();
     }
 
+    public Result validate(String tenantId,String name,String categoryId) {
+        int count = categoryDAO.getCategoryCountByParentIdAndName(tenantId,categoryId,name);
+        if (count>0){
+            return ReturnUtil.error(AtlasErrorCode.DUPLICATE_ALIAS_NAME.getErrorCode(),
+                    AtlasErrorCode.DUPLICATE_ALIAS_NAME.getFormattedErrorMessage(name));
+        }
+        return ReturnUtil.success();
+    }
     /**
      * 源信息数据库登记信息列表
      * @param tenantId 租户id
