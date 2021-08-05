@@ -11,13 +11,15 @@ public class Annex {
     private String fileName;
     private String fileType;
     private String path;
+    private long fileSize;
 
     public Annex(){}
 
-    public Annex(String annexId, String fileName, String fileType, String path) {
+    public Annex(String annexId, String fileName, String fileType, String path,long fileSize) {
         this.annexId = annexId;
         this.fileName = fileName;
         this.fileType = fileType;
         this.path = path;
+        this.fileSize = fileSize;
     }
 }

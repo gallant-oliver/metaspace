@@ -196,7 +196,8 @@ public class SourceInfoDatabaseREST {
 
             String fileType = FilenameUtils.getExtension(fileName);
             //保存数据到表 annex
-            Annex annex = new Annex(annexId,fileName,fileType,uploadPath);
+            long fileSize = contentDispositionHeader.getSize();
+            Annex annex = new Annex(annexId,fileName,fileType,uploadPath,fileSize);
             annexService.saveRecord(annex);
             return ReturnUtil.success("success",annexId);
         }catch (IOException e){
