@@ -466,4 +466,7 @@ public interface DatabaseInfoDAO {
             " s.tenant_id =#{tenantId}"+
             "</script>")
     List<DatabaseInfoForCategory> getDatabaseInfoByCategoryId(@Param("ids")List<String> ids,@Param("tenantId")String tenantId,@Param("guid")String guid);
+
+    @Select("SELECT parent_category_id FROM source_info_relation2parent_category WHERE source_info_id = #{objectId}")
+    String getParentCategoryIdById(@Param("objectId") String objectId);
 }
