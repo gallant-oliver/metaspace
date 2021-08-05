@@ -13,20 +13,11 @@
 
 package io.zeta.metaspace.web.rest;
 
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
-
-import com.google.gson.Gson;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datasource.*;
-import io.zeta.metaspace.model.datasource.DataSourceAuthorizeUser;
-import io.zeta.metaspace.model.datasource.DataSourceAuthorizeUserId;
-import io.zeta.metaspace.model.datasource.DataSourceBody;
-import io.zeta.metaspace.model.datasource.DataSourceConnection;
-import io.zeta.metaspace.model.datasource.DataSourceHead;
-import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -34,14 +25,9 @@ import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIIdAndName;
 import io.zeta.metaspace.model.user.UserIdAndName;
-import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
-import io.zeta.metaspace.web.model.Progress;
-import io.zeta.metaspace.model.TableSchema;
-import io.zeta.metaspace.web.service.DataShareService;
+import io.zeta.metaspace.utils.AESUtils;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.MetaDataService;
-import io.zeta.metaspace.utils.AESUtils;
-import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -50,36 +36,24 @@ import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URLDecoder;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.inject.Singleton;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 @Path("datasource")
 @Singleton
@@ -616,14 +590,15 @@ public class DataSourceREST {
 
     /**
      * 获取数据源类型
+     * @param type dbr 数据库登记的类型
      * @return
      */
     @GET
     @Path("/type")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getDataSourceType(){
-        List<DataSourceTypeInfo> dataSourceType = dataSourceService.getDataSourceType();
+    public Result getDataSourceType(@QueryParam("type") String type){
+        List<DataSourceTypeInfo> dataSourceType = dataSourceService.getDataSourceType(type);
         return ReturnUtil.success(dataSourceType);
     }
 }
