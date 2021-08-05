@@ -286,13 +286,17 @@ public class SourceInfoDeriveTableInfoService {
     public List<SourceInfoDeriveTableVO> queryDeriveTableList(String tenantId, String tableName, Integer state, int offset, int limit) {
         tableName = StringUtils.isEmpty(tableName) ? null : "%" + tableName + "%";
         List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos = sourceInfoDeriveTableInfoDao.queryDeriveTableList(tenantId, tableName, state, offset, limit);
+        // 获取该租户下所有的业务目录
+        List<BusinessCategory> businessCategoryList = getBusinessCategory(tenantId);
+        // 获取租户下所有的技术目录
+        List<TechnicalCategory> technicalCategoryList = getTechnicalCategory(false, tenantId);
         List<SourceInfoDeriveTableVO> sourceInfoDeriveTableVOS = sourceInfoDeriveTableInfos.stream().map(sourceInfoDeriveTableInfo -> {
             SourceInfoDeriveTableVO sourceInfoDeriveTableVO = new SourceInfoDeriveTableVO();
             BeanUtils.copyProperties(sourceInfoDeriveTableInfo, sourceInfoDeriveTableVO);
+            sourceInfoDeriveTableVO.setUpdateTime(sourceInfoDeriveTableInfo.getUpdateTimeStr());
             sourceInfoDeriveTableVO.setUpdater(sourceInfoDeriveTableInfo.getUpdaterName());
-            sourceInfoDeriveTableVO.setBusiness(getBusiness(sourceInfoDeriveTableInfo.getBusinessId(), tenantId));
-            sourceInfoDeriveTableVO.setCategory(getCategory(sourceInfoDeriveTableInfo.getCategoryId(), tenantId));
-            sourceInfoDeriveTableVO.setState(DeriveTableStateEnum.getName(sourceInfoDeriveTableInfo.getState()));
+            sourceInfoDeriveTableVO.setBusiness(getBusiness(sourceInfoDeriveTableInfo.getBusinessId(), businessCategoryList));
+            sourceInfoDeriveTableVO.setCategory(getCategory(sourceInfoDeriveTableInfo.getCategoryId(), technicalCategoryList));
             sourceInfoDeriveTableVO.setQueryDDL(!StringUtils.isEmpty(sourceInfoDeriveTableInfo.getDdl()));
             return sourceInfoDeriveTableVO;
         }).collect(Collectors.toList());
@@ -515,18 +519,16 @@ public class SourceInfoDeriveTableInfoService {
      * 获取拼接的业务目录和业务对象
      *
      * @param businessId
-     * @param tenantId
+     * @param businessCategoryList
      * @return
      */
-    private String getBusiness(String businessId, String tenantId) {
+    private String getBusiness(String businessId, List<BusinessCategory> businessCategoryList) {
         try {
             // 根据业务对象id获取关联的业务目录id
             BusinessInfo businessInfo = businessDAO.queryBusinessByBusinessId(businessId);
             if (null == businessInfo) {
                 return null;
             }
-            // 获取该租户下所有的业务目录
-            List<BusinessCategory> businessCategoryList = getBusinessCategory(tenantId);
             return getBusinessCategoryParentPath(businessCategoryList, businessInfo);
         } catch (Exception e) {
             LOG.error("拼接业务目录异常");
@@ -539,12 +541,11 @@ public class SourceInfoDeriveTableInfoService {
      * 获取拼接的技术目录
      *
      * @param categoryId
-     * @param tenantId
+     * @param technicalCategoryList
      * @return
      */
-    private String getCategory(String categoryId, String tenantId) {
+    private String getCategory(String categoryId, List<TechnicalCategory> technicalCategoryList) {
         try {
-            List<TechnicalCategory> technicalCategoryList = getTechnicalCategory(false, tenantId);
             LinkedList<String> technicalCategoryPaths = new LinkedList<>();
             getCategoryPath(technicalCategoryList, technicalCategoryPaths, categoryId);
             StringBuilder path = new StringBuilder();
@@ -824,18 +825,14 @@ public class SourceInfoDeriveTableInfoService {
         return columnBuilder.toString();
     }
 
-    public Result checkAddOrEditDeriveTableEntity(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String tenantId, boolean edit) throws SQLException {
+    public Result checkAddOrEditDeriveTableEntity(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String tenantId) throws SQLException {
 
-        // 编辑衍生表ID不能为空
-        if (edit && !checkTableByIdAndGuid(sourceInfoDeriveTableColumnDto.getId(), sourceInfoDeriveTableColumnDto.getTableGuid(), tenantId)) {
-            return ReturnUtil.error("400", "编辑衍生表ID或GUID为空或记录不存在");
-        }
         // 检验表英文名
         if (!checkTableOrColumnNameEnPattern(sourceInfoDeriveTableColumnDto.getTableNameEn())) {
             return ReturnUtil.error("400", "衍生表英文名不符合规范");
         }
         // 检验更新频率
-        if (StringUtils.isEmpty(sourceInfoDeriveTableColumnDto.getUpdateFrequency())){
+        if (StringUtils.isEmpty(sourceInfoDeriveTableColumnDto.getUpdateFrequency())) {
             return ReturnUtil.error("400", "更新频率不能为空");
         }
         // 字段
@@ -889,8 +886,8 @@ public class SourceInfoDeriveTableInfoService {
      * @param tenantId
      * @return
      */
-    boolean checkTableByIdAndGuid(String id, String guid, String tenantId) {
-        return !StringUtils.isEmpty(id) && !StringUtils.isEmpty(guid) && null != sourceInfoDeriveTableInfoDao.getByIdAndGuidAndTenantId(id, guid, tenantId);
+    public SourceInfoDeriveTableInfo getTableByIdAndGuid(String id, String guid, String tenantId) {
+        return  sourceInfoDeriveTableInfoDao.getByIdAndGuidAndTenantId(id, guid, tenantId);
     }
 
     /**

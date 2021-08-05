@@ -10,6 +10,7 @@ import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.Constant;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.DeriveTableStateEnum;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.DeriveTableStateModel;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceInfoDeriveTableVO;
 import io.zeta.metaspace.model.result.PageResult;
@@ -22,6 +23,8 @@ import org.apache.atlas.exception.AtlasBaseException;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveColumnInfo;
 import io.zeta.metaspace.model.dto.sourceinfo.SourceInfoDeriveTableColumnDTO;
 import org.apache.atlas.web.util.Servlets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -63,6 +66,8 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 @Service
 public class SourceInfoDeriveTableInfoRest {
 
+    private static final Logger LOG = LoggerFactory.getLogger(SourceInfoDeriveTableInfoRest.class);
+
     @Autowired
     private SourceInfoDeriveTableInfoService sourceInfoDeriveTableInfoService;
 
@@ -85,7 +90,7 @@ public class SourceInfoDeriveTableInfoRest {
                                                      @ApiParam(value = "请求头-租户Id", type = "String", required = true) @HeaderParam(value = "tenantId") String tenantId,
                                                      SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto) {
         try {
-            Result result = sourceInfoDeriveTableInfoService.checkAddOrEditDeriveTableEntity(sourceInfoDeriveTableColumnDto, tenantId,false);
+            Result result = sourceInfoDeriveTableInfoService.checkAddOrEditDeriveTableEntity(sourceInfoDeriveTableColumnDto, tenantId);
             if (!result.getCode().equals("200")) {
                 return result;
             }
@@ -95,7 +100,7 @@ public class SourceInfoDeriveTableInfoRest {
             HttpRequestContext.get().auditLog(ModuleEnum.DERIVEDTABLESREGISTER.getAlias(), operateContent);
             return ReturnUtil.success(true);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("新建衍生表登记异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新建衍生表登记异常");
         }
     }
@@ -115,19 +120,32 @@ public class SourceInfoDeriveTableInfoRest {
     public Result updateSaveAndSubmitDeriveTableInfo(@ApiParam(value = "请求头-用户token", required = true) @HeaderParam(value = "X-SSO-FullticketId") String ticket,
                                                      @ApiParam(value = "请求头-租户Id", required = true) @HeaderParam(value = "tenantId") String tenantId,
                                                      SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto) {
-
         try {
-            Result result = sourceInfoDeriveTableInfoService.checkAddOrEditDeriveTableEntity(sourceInfoDeriveTableColumnDto, tenantId,true);
+            Result result = sourceInfoDeriveTableInfoService.checkAddOrEditDeriveTableEntity(sourceInfoDeriveTableColumnDto, tenantId);
             if (!result.getCode().equals("200")) {
                 return result;
             }
+            // 编辑衍生表ID不能为空
+            String id = sourceInfoDeriveTableColumnDto.getId();
+            String tableGuid = sourceInfoDeriveTableColumnDto.getTableGuid();
+            if (StringUtils.isEmpty(id) || StringUtils.isEmpty(tableGuid)) {
+                return ReturnUtil.error("400", "编辑衍生表ID或GUID为空或记录不存在");
+            }
+            SourceInfoDeriveTableInfo tableByIdAndGuid = sourceInfoDeriveTableInfoService.getTableByIdAndGuid(id, tableGuid, tenantId);
+            if (null == tableByIdAndGuid) {
+                return ReturnUtil.error("400", "编辑的记录不存在");
+            }
+            // 老信息的一些默认属性
+            sourceInfoDeriveTableColumnDto.setCreateTime(tableByIdAndGuid.getCreateTimeStr());
+            sourceInfoDeriveTableColumnDto.setCreator(tableByIdAndGuid.getCreator());
+            sourceInfoDeriveTableColumnDto.setState(tableByIdAndGuid.getState());
             sourceInfoDeriveTableInfoService.updateSaveAndSubmitDeriveTableInfo(sourceInfoDeriveTableColumnDto, tenantId);
             boolean submit = sourceInfoDeriveTableColumnDto.isSubmit();
             String operateContent = "编辑衍生表登记记录，操作:" + (submit ? "保存" : "保存并提交");
             HttpRequestContext.get().auditLog(ModuleEnum.DERIVEDTABLESREGISTER.getAlias(), operateContent);
             return ReturnUtil.success(true);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("编辑衍生表登记异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编辑衍生表登记异常");
         }
 
@@ -146,7 +164,7 @@ public class SourceInfoDeriveTableInfoRest {
         try {
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.getTechnicalCategory(source, tenantId));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("查询数据层/库异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询数据层/库异常");
         }
     }
@@ -164,7 +182,7 @@ public class SourceInfoDeriveTableInfoRest {
         try {
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.getSourceTableByCategoryId(categoryId));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("查询表列表异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询表列表异常");
         }
     }
@@ -181,8 +199,8 @@ public class SourceInfoDeriveTableInfoRest {
         try {
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.getColumnInfoByTableId(sourceTableId));
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询表列表异常");
+            LOG.error("查询字段列表异常", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询字段列表异常");
         }
     }
 
@@ -197,7 +215,7 @@ public class SourceInfoDeriveTableInfoRest {
         try {
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.getBusinessCategory(tenantId));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("查询业务目录异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询业务目录异常");
         }
     }
@@ -214,7 +232,7 @@ public class SourceInfoDeriveTableInfoRest {
         try {
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.getBusinessByCategoryId(categoryId, tenantId));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("查询业务对象异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询业务对象异常");
         }
     }
@@ -241,21 +259,9 @@ public class SourceInfoDeriveTableInfoRest {
             pageResult.setLists(sourceInfoDeriveTableVOS);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("查询衍生表列表异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询衍生表列表异常");
         }
-    }
-
-    @ApiOperation(value = "衍生表查询状态下拉框列表", tags = "源信息登记-衍生表登记")
-    @Path("/state")
-    @GET
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getDeriveTableList(
-            @ApiParam(value = "请求头-用户token", required = true) @HeaderParam(value = "X-SSO-FullticketId") String ticket,
-            @ApiParam(value = "请求头-租户Id", required = true) @HeaderParam(value = "tenantId") String tenantId) {
-        return ReturnUtil.success(Stream.of(DeriveTableStateEnum.values()).map(e ->
-                new DeriveTableStateModel().setName(e.getName()).setState(e.getState())).collect(Collectors.toList()));
     }
 
     @ApiOperation(value = "根据表ID查看衍生表详情", tags = "源信息登记-衍生表登记")
@@ -270,7 +276,7 @@ public class SourceInfoDeriveTableInfoRest {
         try {
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.getDeriveTableColumnDetail(tenantId, tableId));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("查询衍生表详情异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询衍生表详情异常");
         }
     }
@@ -289,9 +295,21 @@ public class SourceInfoDeriveTableInfoRest {
         try {
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.getDeriveTableVersion(tableGuid, offset, limit));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("查询衍生表版本异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询衍生表版本异常");
         }
+    }
+
+    @ApiOperation(value = "衍生表查询状态下拉框列表", tags = "源信息登记-衍生表登记")
+    @Path("/state")
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDeriveTableList(
+            @ApiParam(value = "请求头-用户token", required = true) @HeaderParam(value = "X-SSO-FullticketId") String ticket,
+            @ApiParam(value = "请求头-租户Id", required = true) @HeaderParam(value = "tenantId") String tenantId) {
+        return ReturnUtil.success(Stream.of(DeriveTableStateEnum.values()).map(e ->
+                new DeriveTableStateModel().setName(e.getName()).setState(e.getState())).collect(Collectors.toList()));
     }
 
     @ApiOperation(value = "根据数据库类型校验字段英文名", tags = "源信息登记-衍生表登记")
@@ -341,7 +359,7 @@ public class SourceInfoDeriveTableInfoRest {
             }
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.deleteDeriveTable(tableGuids));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("删除衍生表异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除衍生表异常");
         }
     }
