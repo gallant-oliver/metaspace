@@ -90,8 +90,8 @@ public interface DatabaseInfoDAO {
             "#{dip.toDepartmentName},\n" +
             "#{dip.toEmail},\n" +
             "#{dip.toTel},\n" +
-            "#{dip.technicalLeaderId},\n" +
-            "#{dip.businessLeaderId},\n" +
+            "#{dip.technicalLeader},\n" +
+            "#{dip.businessLeader},\n" +
             "#{dip.tenantId},\n" +
             "NOW( ),\n" +
             "NOW( ),\n" +
