@@ -122,9 +122,8 @@ public class MetaDataREST {
     @Path("/info/schema/{schemaId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Database getDatabase(@PathParam("schemaId") String schemaId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-
-        return metadataService.getDatabase(schemaId);
+    public Database getDatabase(@PathParam("schemaId") String schemaId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId")@DefaultValue("") String sourceId) throws AtlasBaseException {
+        return metadataService.getDatabase(schemaId, sourceId);
     }
 
 
@@ -491,7 +490,8 @@ public class MetaDataREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getColumnLineage");
             }
-            return metadataService.getColumnLineageV2(guid, direction, depth);
+//            return metadataService.getColumnLineageV2(guid, direction, depth);
+            return metadataService.getColumnLineages(guid, direction, depth);
         } finally {
             dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "data_kinship");
             AtlasPerfTracer.log(perf);
@@ -915,7 +915,7 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public RDBMSTable getTableInfoById(@PathParam("tableId") String tableId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
-        RDBMSTable table = metadataService.getRDBMSTableInfoById(tableId, tenantId, sourceId);
+        RDBMSTable table = metadataService.getRDBMSTableInfoById(tableId, tenantId);
         if(StringUtils.isNotBlank(sourceId)){
             if("hive".equalsIgnoreCase(sourceId)){
                 table.setSourceType("HIVE");

@@ -148,7 +148,7 @@ public class OracleSourceTask extends SourceTask {
 		String sqlRedo = "";
 		try {
 
-			LOG.debug("poll start");
+			LOG.info("poll start");
 			long streamEndScn = getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN");
 			logMinerSelect.setLong(1, streamOffsetScn);
 			logMinerSelect.setLong(2, streamEndScn);
@@ -172,13 +172,13 @@ public class OracleSourceTask extends SourceTask {
 				SourceRecord sourceRecord = SourceRecordUtil.getSourceRecord(logMinerData, config);
 				records.add(sourceRecord);
 			}
-			LOG.debug("Oracle Kafka Connector {} polled {} data from {} to {}", config.getName(), records.size(),
+			LOG.info("Oracle Kafka Connector {} polled {} data from {} to {}", config.getName(), records.size(),
 					streamOffsetScn, streamEndScn);
 			streamOffsetScn = streamEndScn + 1;
 		} catch (Exception e) {
-			LOG.warn("warn during poll on cennector {} : ", config.getName(), e.getMessage());
+			LOG.error("during poll on connector {} : ", config.getName(), e.getMessage(), e);
 			stop();
-			LOG.info("try to restart cennector {} by streamOffsetScn = {}", config.getName(), streamOffsetScn);
+			LOG.info("try to restart connector {} by streamOffsetScn = {}", config.getName(), streamOffsetScn);
 			try {
 				Thread.sleep(3000);
 				start(configMap);
@@ -186,16 +186,16 @@ public class OracleSourceTask extends SourceTask {
 				tryTimes = 3;
 			} catch (Exception ex) {
 				if (tryTimes > 0) {
-					LOG.warn("cennector {} restarted error: {}", config.getName(), ex.getMessage());
+					LOG.warn("connector {} restarted error: {}", config.getName(), ex.getMessage());
 					tryTimes = tryTimes - 1;
 				} else {
 					LOG.error("cennector {} restarted error", config.getName(), ex);
 					throw ex;
 				}
 			}
-			LOG.info("cennector {} restarted", config.getName());
+			LOG.info("connector {} restarted", config.getName());
 		}
-		LOG.debug("poll end");
+		LOG.info("poll end");
 		return records;
 
 	}

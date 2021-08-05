@@ -206,7 +206,7 @@ public class BusinessService {
                 List<String> categoryIds = categoryDAO.getCategoryGuidByBusinessGuid(businessId, tenantId);
                 boolean edit = false;
                 if (categoryIds.size() > 0) {
-                    int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds.get(0), tenantId);
+                    int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds, tenantId);
                     if (count > 0) {
                         edit = true;
                     }

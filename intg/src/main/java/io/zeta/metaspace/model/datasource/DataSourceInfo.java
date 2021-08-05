@@ -33,6 +33,7 @@ public class DataSourceInfo {
     private String managerId;
     private String serviceType;
     private String pool;
+    private String tenantId;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private String createTime;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")

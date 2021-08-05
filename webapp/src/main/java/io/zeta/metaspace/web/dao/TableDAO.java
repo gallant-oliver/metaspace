@@ -46,15 +46,6 @@ public interface TableDAO {
     @Update("update tableinfo set tablename=#{table.tableName},status = #{table.status} ,dbname=#{table.dbName},description=#{table.description} where tableguid=#{table.tableGuid}")
     public int updateTable(@Param("table") TableInfo table);
 
-    @Insert("insert into table_relation (relationshipGuid, categoryGuid, tableGuid, generateTime, tenant_id) values" +
-            "(#{tableRelation.relationshipGuid},#{tableRelation.categoryGuid},#{tableRelation.tableGuid},#{tableRelation.generateTime}," +
-                    "#{tableRelation.tenantId})")
-    public int addRelation(@Param("tableRelation") TableRelation tableRelation);
-
-    @Select("select relationshipGuid, categoryGuid, tableGuid, generateTime, tenant_id as tenantId from table_relation " +
-            "where categoryGuid = #{tableRelation.categoryGuid} and tableGuid = #{tableRelation.tableGuid} and tenant_id = #{tableRelation.tenantId}")
-    TableRelation selectRelation(@Param("tableRelation") TableRelation tableRelation);
-
     @Select("select count(1) from tableinfo where tableguid=#{tableGuid}")
     public Integer ifTableExists(String tableGuid);
 

@@ -1155,7 +1155,12 @@ public interface UserGroupDAO {
             "</script>")
     public int updateUserGroups(@Param("ids") List<String> ids, @Param("updateTime") Timestamp updateTime,@Param("userId") String userId);
 
-    @Select(" select count(*) from user_group_relation u join user_group g on u.group_id=g.id and g.tenant=#{tenantId} join category_group_relation c on g.id=c.group_id " +
-            " where u.user_id=#{userId} and c.category_id=#{categoryId} and c.edit_item=true")
-    public int useCategoryPrivilege(@Param("userId") String userId,@Param("categoryId") String categoryId,@Param("tenantId") String tenantId);
+    @Select({"<script>" ,
+                "select count(*) from user_group_relation u join user_group g on u.group_id=g.id and g.tenant=#{tenantId} join category_group_relation c on g.id=c.group_id " +
+                " where u.user_id=#{userId} and c.edit_item=true and c.category_id in ",
+                "<foreach item='categoryId' index='index' collection='categoryIds' open='(' separator=',' close=')'>" ,
+                    "#{categoryId}",
+                "</foreach>" +
+            "</script>"})
+    public int useCategoryPrivilege(@Param("userId") String userId,@Param("categoryIds") List<String> categoryIds,@Param("tenantId") String tenantId);
 }
