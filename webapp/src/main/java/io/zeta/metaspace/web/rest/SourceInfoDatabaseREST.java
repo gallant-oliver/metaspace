@@ -206,8 +206,8 @@ public class SourceInfoDatabaseREST {
             Annex annex = new Annex(annexId,fileName,fileType,uploadPath,fileSize);
             annexService.saveRecord(annex);
             return ReturnUtil.success("success",annexId);
-        }catch (IOException e){
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件上传失败");
+        }catch (Exception e){
+            throw new AtlasBaseException("文件上传失败", AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件上传失败");
         }
     }
 
