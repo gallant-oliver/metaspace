@@ -108,7 +108,8 @@ public class SearchService {
 
     }
 
-    public PageResult<TableEntity> getTable(String schemaId, boolean active, long offset, long limit, String query, Boolean isView, boolean queryInfo, String tenantId) {
+    public PageResult<TableEntity> getTable(String schemaId, boolean active, long offset, long limit, String query,
+                                            Boolean isView, boolean queryInfo, String tenantId, String sourceId) {
         ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
         try {
             // 在主线程获取用户信息，下面任务子线程获取不到，共享的话session混乱
@@ -149,7 +150,7 @@ public class SearchService {
                             }
                         } else {
                             if (view) {
-                                tableEntity.setSql(this.getBuildRDBMSTableSql(tableEntity.getId()).getSql());
+                                tableEntity.setSql(this.getBuildRDBMSTableSql(tableEntity.getId(), sourceId).getSql());
                             } else {
                                 AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceService.getAnyOneDataSourceByDbGuid(schemaId));
                                 float size = adapterExecutor.getTableSize(schema, tableEntity.getName(), null);
@@ -468,55 +469,16 @@ public class SearchService {
         }
     }
 
-    public TableShow getRDBMSTableShow(GuidCount guidCount) throws AtlasBaseException, SQLException, IOException {
+    public TableShow getRDBMSTableShow(GuidCount guidCount) throws AtlasBaseException {
         TableShow tableShow = new TableShow();
-        List<String> attributes = new ArrayList<>();
-        attributes.add("name");
-        attributes.add("name_path");
-        attributes.add("qualifiedName");
-        List<String> relationshipAttributes = new ArrayList<>();
-        relationshipAttributes.add("db");
-        if (Objects.isNull(guidCount.getGuid()) || guidCount.getGuid().isEmpty()) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
-        }
-        AtlasEntity entity = entitiesStore.getByIdWithAttributes(guidCount.getGuid(), attributes, relationshipAttributes).getEntity();
-
-        String namePath = entity.getAttribute("name_path") == null ? "" : entity.getAttribute("name_path").toString();
-        String name = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
-        String qualifiedName = entity.getAttribute("qualifiedName") == null ? "" : entity.getAttribute("qualifiedName").toString();
-        String sourceId = qualifiedName.split("\\.")[0];
-        DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(sourceId);
-        StringBuffer dbName = new StringBuffer();
-        StringBuffer tableName = new StringBuffer();
-        String[] strs = namePath.split("\\.");
-        for (int i = 0; i < strs.length; i++) {
-            if (i < strs.length - name.split("\\.").length) {
-                dbName.append(strs[i]);
-                dbName.append(".");
-            } else {
-                tableName.append(strs[i]);
-                tableName.append(".");
-            }
-        }
-
-        String db = dbName.substring(0, dbName.length() - 1);
-        String start = "\"";
-        if (db.startsWith(start)) {
-            db = db.substring(1, db.length() - 1);
-        }
-        String table = "";
-        if (tableName.substring(0, tableName.length() - 1).equalsIgnoreCase(name)) {
-            table = tableName.substring(0, tableName.length() - 1);
-        } else {
-            table = tableName.substring(1, tableName.length() - 2);
-        }
-
+        String[] names = getDbTableNames(guidCount.getGuid());
+        DataSourceInfo dataSourceInfo = dataSourceService.getAnyDataSourceInfoByTableId(guidCount.getSourceId(),guidCount.getGuid());
         AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
         AdapterTransformer adapterTransformer = adapterExecutor.getAdapterSource().getAdapter().getAdapterTransformer();
         SelectQuery selectQuery = adapterTransformer.addLimit(
                 new SelectQuery()
                         .addAllColumns()
-                        .addCustomFromTable(new CustomSql(adapterTransformer.caseSensitive(db) + "." + adapterTransformer.caseSensitive(table)))
+                        .addCustomFromTable(new CustomSql(adapterTransformer.caseSensitive(names[0]) + "." + adapterTransformer.caseSensitive(names[1])))
                 , guidCount.getCount(), 0);
 
         try (Connection conn = adapterExecutor.getAdapterSource().getConnection()) {
@@ -570,58 +532,31 @@ public class SearchService {
 
     }
 
-    public BuildTableSql getBuildRDBMSTableSql(String tableId) throws AtlasBaseException {
+    public BuildTableSql getBuildRDBMSTableSql(String tableId, String sourceId) throws AtlasBaseException {
         BuildTableSql buildTableSql = new BuildTableSql();
-        List<String> attributes = new ArrayList<>();
-        attributes.add("name");
-        attributes.add("name_path");
-        attributes.add("qualifiedName");
-        List<String> relationshipAttributes = new ArrayList<>();
-        relationshipAttributes.add("db");
-        if (Objects.isNull(tableId) || tableId.isEmpty()) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
-        }
-        AtlasEntity entity = entitiesStore.getByIdWithAttributes(tableId, attributes, relationshipAttributes).getEntity();
-
-        String namePath = entity.getAttribute("name_path") == null ? "" : entity.getAttribute("name_path").toString();
-        String name = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
-        String qualifiedName = entity.getAttribute("qualifiedName") == null ? "" : entity.getAttribute("qualifiedName").toString();
-        String sourceId = qualifiedName.split("\\.")[0];
-        StringBuffer dbName = new StringBuffer();
-        StringBuffer tableName = new StringBuffer();
-        String[] strs = namePath.split("\\.");
-        for (int i = 0; i < strs.length; i++) {
-            if (i < strs.length - name.split("\\.").length) {
-                dbName.append(strs[i]);
-                dbName.append(".");
-            } else {
-                tableName.append(strs[i]);
-                tableName.append(".");
-            }
-        }
-        String db = dbName.substring(0, dbName.length() - 1);
-        String start = "\"";
-        if (db.startsWith(start)) {
-            db = db.substring(1, db.length() - 1);
-        }
-        String table = "";
-        if (tableName.substring(0, tableName.length() - 1).equalsIgnoreCase(name)) {
-            table = tableName.substring(0, tableName.length() - 1);
-        } else {
-            table = tableName.substring(1, tableName.length() - 2);
-        }
-
-        if (name.equals("")) {
-            System.out.println("该id不存在");
-        }
-        DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(sourceId);
-
+        String[] names = getDbTableNames(tableId);
+        DataSourceInfo dataSourceInfo = dataSourceService.getAnyDataSourceInfoByTableId(sourceId, tableId);
         AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
         AdapterTransformer adapterTransformer = adapterExecutor.getAdapterSource().getAdapter().getAdapterTransformer();
-        //buildTableSql.setSql(adapterExecutor.getCreateTableSql(adapterTransformer.caseSensitive(db),adapterTransformer.caseSensitive(table)));
-        buildTableSql.setSql("");
+        String createTableSql = adapterExecutor.getCreateTableSql(adapterTransformer.caseSensitive(names[0]), adapterTransformer.caseSensitive(names[1]));
+        buildTableSql.setSql(createTableSql);
         buildTableSql.setTableId(tableId);
         return buildTableSql;
+    }
+
+    private String[] getDbTableNames(String tableId) {
+        String[] names = new String[2];
+        TableInfo table = tableDAO.getTableInfoByTableguid(tableId);
+        if(null != table){
+            names[1] = table.getTableName().toUpperCase();
+            names[0] = table.getDbName().toUpperCase();
+        }else{
+            AtlasEntity entity = entitiesStore.getById(tableId).getEntity();
+            names[1] = ((String)entity.getAttribute("name")).toUpperCase();
+            AtlasRelatedObjectId obj = (AtlasRelatedObjectId)entity.getRelationshipAttribute("db");
+            names[0] = obj.getDisplayText().toUpperCase();
+        }
+        return names;
     }
 
     public Connection getConnectionByDataSourceInfo(DataSourceInfo dataSourceInfo, String dbName) throws AtlasBaseException {

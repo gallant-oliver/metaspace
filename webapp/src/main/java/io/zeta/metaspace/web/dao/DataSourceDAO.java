@@ -118,6 +118,14 @@ public interface DataSourceDAO {
             "from data_source where source_id=#{sourceId}")
     public DataSourceInfo getDataSourceInfo(@Param("sourceId") String sourceId);
 
+
+    @Select("select data_source.source_id,data_source.source_type sourceType,data_source.source_name sourceName,data_source.description,data_source.ip,data_source.port," +
+            "data_source.username userName,data_source.password,data_source.database,data_source.jdbc_parameter jdbcParameter,data_source.oracle_db oracleDb," +
+            "data_source.manager managerId,data_source.servicetype,data_source.create_time,data_source.update_time,data_source.tenantid as tenantId " +
+            "from tableinfo join db_info on tableinfo.databaseguid = db_info.database_guid join source_db on db_info.database_guid = source_db.db_guid " +
+            "join data_source on source_db.source_id = data_source.source_id where tableinfo.tableguid = #{tableGuid} limit 1")
+    public DataSourceInfo getAnyDataSourceInfoByTableGuid(@Param("tableGuid") String tableGuid);
+
     //获取数据源详情
     @Select("select data_source.source_id,data_source.source_type sourceType,data_source.source_name sourceName," +
             "data_source.description,data_source.ip,data_source.port,data_source.username userName,data_source.password," +

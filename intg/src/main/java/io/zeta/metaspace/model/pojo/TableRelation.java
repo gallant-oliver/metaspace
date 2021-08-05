@@ -2,6 +2,8 @@ package io.zeta.metaspace.model.pojo;
 
 import lombok.Data;
 
+import java.util.Date;
+
 @Data
 public class TableRelation {
     private String relationshipGuid;
@@ -9,5 +11,6 @@ public class TableRelation {
     private String tableGuid;
     private String generateTime;
     private String tenantId;
-
+    private String categoryName;
+    private Date createDate;
 }
