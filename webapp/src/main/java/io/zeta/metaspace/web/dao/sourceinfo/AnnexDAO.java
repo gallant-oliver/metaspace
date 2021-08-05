@@ -11,7 +11,7 @@ public interface AnnexDAO {
 
     @Insert("INSERT INTO annex(\n" +
             "annex_id, file_name, file_type, path,file_size, create_time, modify_time)\n" +
-            " VALUES (#{item.annexId},#{item.fileName}, #{item.fileType}, #{item.path},#{item.fileSize} NOW(), NOW() ) ")
+            " VALUES (#{item.annexId},#{item.fileName}, #{item.fileType}, #{item.path},#{item.fileSize}, NOW(), NOW() ) ")
     int save(@Param("item") Annex item);
 
     @Select("SELECT annex_id as annexId, file_name as fileName, file_type as fileType, path,file_size AS fileSize \n" +
