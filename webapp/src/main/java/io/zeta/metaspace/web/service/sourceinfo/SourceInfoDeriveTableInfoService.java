@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.service.sourceinfo;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
+import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.Constant;
@@ -29,6 +30,7 @@ import io.zeta.metaspace.web.dao.SourceInfoDeriveTableInfoDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.rest.BusinessREST;
 import io.zeta.metaspace.web.rest.TechnicalREST;
+import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -52,7 +54,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -70,9 +71,6 @@ import java.util.stream.Collectors;
 @Service
 public class SourceInfoDeriveTableInfoService {
 
-    private final int TECHNIACL_CATEGORY_TYPE = 0;
-    private final int BUSINESS_CATEGORY_TYPE = 1;
-
     private static final Logger LOG = LoggerFactory.getLogger(SourceInfoDeriveTableInfoService.class);
 
     private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao;
@@ -85,12 +83,14 @@ public class SourceInfoDeriveTableInfoService {
     private SourceInfoDeriveTableColumnRelationService sourceInfoDeriveTableColumnRelationService;
     private BusinessREST businessREST;
     private TechnicalREST technicalREST;
+    private DataSourceService dataSourceService;
 
     @Autowired
     public SourceInfoDeriveTableInfoService(SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao, DbDAO dbDao, BusinessDAO businessDAO,
                                             TableDAO tableDAO, ColumnDAO columnDAO, BusinessREST businessREST, TechnicalREST technicalREST,
                                             CategoryDAO categoryDAO, SourceInfoDeriveColumnInfoService sourceInfoDeriveColumnInfoService,
-                                            SourceInfoDeriveTableColumnRelationService sourceInfoDeriveTableColumnRelationService) {
+                                            SourceInfoDeriveTableColumnRelationService sourceInfoDeriveTableColumnRelationService,
+                                            DataSourceService dataSourceService) {
         this.sourceInfoDeriveTableInfoDao = sourceInfoDeriveTableInfoDao;
         this.dbDao = dbDao;
         this.tableDAO = tableDAO;
@@ -99,6 +99,7 @@ public class SourceInfoDeriveTableInfoService {
         this.categoryDAO = categoryDAO;
         this.businessREST = businessREST;
         this.technicalREST = technicalREST;
+        this.dataSourceService = dataSourceService;
         this.sourceInfoDeriveColumnInfoService = sourceInfoDeriveColumnInfoService;
         this.sourceInfoDeriveTableColumnRelationService = sourceInfoDeriveTableColumnRelationService;
     }
@@ -293,8 +294,10 @@ public class SourceInfoDeriveTableInfoService {
         List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos = sourceInfoDeriveTableInfoDao.queryDeriveTableList(tenantId, tableName, state, offset, limit);
 
         // 获取租户下所有的技术目录guid - path
+        int TECHNIACL_CATEGORY_TYPE = 0;
         Map<String, String> technicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE);
         // 获取该租户下所有的业务目录guid - path
+        int BUSINESS_CATEGORY_TYPE = 1;
         Map<String, String> businessCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, BUSINESS_CATEGORY_TYPE);
 
         List<SourceInfoDeriveTableVO> sourceInfoDeriveTableVOS = sourceInfoDeriveTableInfos.stream().map(sourceInfoDeriveTableInfo -> {
@@ -303,7 +306,7 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveTableVO.setUpdateTime(sourceInfoDeriveTableInfo.getUpdateTimeStr());
             sourceInfoDeriveTableVO.setUpdater(sourceInfoDeriveTableInfo.getUpdaterName());
             sourceInfoDeriveTableVO.setBusiness(getBusiness(sourceInfoDeriveTableInfo.getBusinessId(), businessCategoryGuidPathMap));
-            sourceInfoDeriveTableVO.setCategory(technicalCategoryGuidPathMap.getOrDefault(sourceInfoDeriveTableInfo.getCategoryId(),""));
+            sourceInfoDeriveTableVO.setCategory(technicalCategoryGuidPathMap.getOrDefault(sourceInfoDeriveTableInfo.getCategoryId(), ""));
             sourceInfoDeriveTableVO.setQueryDDL(!StringUtils.isEmpty(sourceInfoDeriveTableInfo.getDdl()));
             return sourceInfoDeriveTableVO;
         }).collect(Collectors.toList());
@@ -694,6 +697,8 @@ public class SourceInfoDeriveTableInfoService {
      * 构造DDL
      */
     private String createDDL(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto) {
+        // 必须有长度的拼接长度
+        String lengthStr = "(255)";
         String tableNameEn = sourceInfoDeriveTableColumnDto.getTableNameEn();
         String dbType = sourceInfoDeriveTableColumnDto.getDbType();
         StringBuilder tableDDL = new StringBuilder("CREATE TABLE ").append(tableNameEn).append("(\r\n");
@@ -709,7 +714,8 @@ public class SourceInfoDeriveTableInfoService {
             String columnNameEn = sourceInfoDeriveColumnInfo.getColumnNameEn();
             String dataType = sourceInfoDeriveColumnInfo.getDataType();
             // 对特殊的dbType进行拼接长度
-            dataType = Constant.DATA_LENGTH_TYPE_MAP.get(dbType).contains(dataType) ? dataType.concat("(255)") : dataType;
+
+            dataType = Constant.DATA_LENGTH_TYPE_MAP.get(dbType).contains(dataType) ? dataType.concat(lengthStr) : dataType;
             Map<String, String> stringStringMap = Constant.REPLACE_TYPE_MAP.get(dbType);
             if (!CollectionUtils.isEmpty(stringStringMap)) {
                 dataType = stringStringMap.getOrDefault(dataType, dataType);
@@ -720,7 +726,7 @@ public class SourceInfoDeriveTableInfoService {
             // 有中文名添加注释
             String columnNameZh = sourceInfoDeriveColumnInfo.getColumnNameZh();
             if (!StringUtils.isEmpty(columnNameZh)) {
-                if (Arrays.asList("HIVE", "MYSQL").contains(dbType.toUpperCase())) {
+                if (Arrays.asList(Constant.HIVE, Constant.MYSQL).contains(dbType.toUpperCase())) {
                     columnDDL.append(" COMMENT '").append(columnNameZh).append("'");
                 } else {
                     commentDDL.append("COMMENT ON COLUMN ").append(tableNameEn).append(".").append(columnNameEn).append(" IS '").append(columnNameZh).append("';\r\n");
@@ -730,7 +736,7 @@ public class SourceInfoDeriveTableInfoService {
                 columnDDL.append(",\r\n");
             }
             // 添加主键
-            if (!Objects.equals(dbType, "HIVE") && sourceInfoDeriveColumnInfo.isPrimaryKey()) {
+            if (!Objects.equals(dbType, Constant.HIVE) && sourceInfoDeriveColumnInfo.isPrimaryKey()) {
                 primaryKeyField.append(columnNameEn).append(",");
             }
         }
@@ -775,7 +781,7 @@ public class SourceInfoDeriveTableInfoService {
             String mappingDescribe = e.getMappingDescribe();
             String remark = e.getRemark();
             columnBuilder.append(columnNameEn);
-            if (i < sourceInfoDeriveColumnInfos.size() - 1){
+            if (i < sourceInfoDeriveColumnInfos.size() - 1) {
                 columnBuilder.append(",");
             }
             columnBuilder.append(" --  ");
@@ -826,6 +832,17 @@ public class SourceInfoDeriveTableInfoService {
 
     public Result checkAddOrEditDeriveTableEntity(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String tenantId) throws SQLException {
 
+        String sourceInfoDbTypeKey = "dbr";
+
+        String dbType = sourceInfoDeriveTableColumnDto.getDbType();
+        if (StringUtils.isEmpty(dbType)) {
+            return ReturnUtil.error("400", "数据源类型不能为空");
+        }
+        // 校验数据源类型
+        List<DataSourceTypeInfo> dataSourceType = dataSourceService.getDataSourceType(sourceInfoDbTypeKey);
+        if (dataSourceType.stream().noneMatch(e -> e.getName().equalsIgnoreCase(dbType))) {
+            return ReturnUtil.error("400", "数据源类型不符合规范");
+        }
         // 检验表英文名
         if (!checkTableOrColumnNameEnPattern(sourceInfoDeriveTableColumnDto.getTableNameEn())) {
             return ReturnUtil.error("400", "衍生表英文名不符合规范");
@@ -843,12 +860,12 @@ public class SourceInfoDeriveTableInfoService {
             return ReturnUtil.error("400", "衍生表字段英文名不符合规范:" + errorNames.toString());
         }
         // 根据数据源类型校验数据类型
-        List<String> dataTypeList = Constant.DATA_TYPE_MAP.get((sourceInfoDeriveTableColumnDto.getDbType()));
+        List<String> dataTypeList = Constant.DATA_TYPE_MAP.get(dbType);
         List<String> errorDbTypes = sourceInfoDeriveColumnInfos.stream().filter(e -> !dataTypeList.contains(e.getDataType())).map(SourceInfoDeriveColumnInfo::getDataType).collect(Collectors.toList());
         if (!CollectionUtils.isEmpty(errorDbTypes)) {
             return ReturnUtil.error("400", "衍生表字段数据类型不符合规范:" + errorDbTypes.toString());
         }
-        if (sourceInfoDeriveTableColumnDto.getDbType().equals("ORACLE")) {
+        if (dbType.equals(Constant.ORACLE)) {
             long count = sourceInfoDeriveColumnInfos.stream().filter(e -> Arrays.asList("long", "long raw").contains(e.getDataType())).count();
             if (count > 1) {
                 return ReturnUtil.error("400", "一张表最多存在一个long类型数据，包含'long' 和 'long raw'数据类型");

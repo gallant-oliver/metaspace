@@ -14,9 +14,9 @@ import java.util.Map;
  */
 public class Constant {
 
-    private static final String HIVE = "HIVE";
-    private static final String ORACLE = "ORACLE";
-    private static final String MYSQL = "MYSQL";
+    public static final String HIVE = "HIVE";
+    public static final String ORACLE = "ORACLE";
+    public static final String MYSQL = "MYSQL";
 
 
     // 表英文名和字段英文名校验规则：包含英文字母、下划线和数字，不能以下划线开头
