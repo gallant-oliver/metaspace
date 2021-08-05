@@ -471,7 +471,7 @@ public class SearchService {
 
     public TableShow getRDBMSTableShow(GuidCount guidCount) throws AtlasBaseException {
         TableShow tableShow = new TableShow();
-        String[] names = getNames(guidCount.getGuid());
+        String[] names = getDbTableNames(guidCount.getGuid());
         DataSourceInfo dataSourceInfo = dataSourceService.getAnyDataSourceInfoByTableId(guidCount.getSourceId(),guidCount.getGuid());
         AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
         AdapterTransformer adapterTransformer = adapterExecutor.getAdapterSource().getAdapter().getAdapterTransformer();
@@ -534,7 +534,7 @@ public class SearchService {
 
     public BuildTableSql getBuildRDBMSTableSql(String tableId, String sourceId) throws AtlasBaseException {
         BuildTableSql buildTableSql = new BuildTableSql();
-        String[] names = getNames(tableId);
+        String[] names = getDbTableNames(tableId);
         DataSourceInfo dataSourceInfo = dataSourceService.getAnyDataSourceInfoByTableId(sourceId, tableId);
         AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
         AdapterTransformer adapterTransformer = adapterExecutor.getAdapterSource().getAdapter().getAdapterTransformer();
@@ -544,7 +544,7 @@ public class SearchService {
         return buildTableSql;
     }
 
-    private String[] getNames(String tableId) {
+    private String[] getDbTableNames(String tableId) {
         String[] names = new String[2];
         TableInfo table = tableDAO.getTableInfoByTableguid(tableId);
         if(null != table){
