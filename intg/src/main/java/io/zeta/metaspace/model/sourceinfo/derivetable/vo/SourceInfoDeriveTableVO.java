@@ -52,7 +52,7 @@ public class SourceInfoDeriveTableVO implements Serializable {
     private String updateTime;
 
     @ApiModelProperty(value = "衍生表状态")
-    private String state;
+    private int state;
 
     @ApiModelProperty(value = "DDL语句")
     private String ddl;
