@@ -375,21 +375,28 @@ public class SourceInfoDatabaseREST {
         try(InputStream in = hdfsService.getFileInputStream(filePath);){
             tmpFile = File.createTempFile("sourceFileConvert"+System.currentTimeMillis(),"pdf");
             String base64String = "";
+            log.info("文件类型：{},",fileType);
             if("xls".equalsIgnoreCase(fileType) || "xlsx".equalsIgnoreCase(fileType)){
                 Excel2Pdf excel2Pdf = new Excel2Pdf(Arrays.asList(
                         new ExcelObject(in)
                 ), new FileOutputStream(tmpFile));
                 excel2Pdf.convert();
+                log.info("excel 转pdf成功");
                 base64String = Base64Utils.fileToBase64(tmpFile.getAbsolutePath());
             }else if("doc".equalsIgnoreCase(fileType)){
                 DocConvertToPdf.docToPdf(in,tmpFile);
+                log.info("doc 转pdf成功");
                 base64String = Base64Utils.fileToBase64(tmpFile.getAbsolutePath());
             }else if("docx".equalsIgnoreCase(fileType)){
                 DocxConvertToPdf.convertDocxToPdf(in,new FileOutputStream(tmpFile));
+                log.info("docx 转pdf成功");
                 base64String = Base64Utils.fileToBase64(tmpFile.getAbsolutePath());
             }else{
+                log.info("不需要转换处理.");
                 base64String = Base64Utils.streamToBase64(in);
             }
+
+            log.info("base64 值为空：{}",StringUtils.isBlank(base64String));
             Base64Info info = new Base64Info();
             String finalType = StringUtils.containsAny(fileType,"xls","xlsx","doc","docx") ? "pdf" : fileType;
             info.getInstance(finalType,base64String);
