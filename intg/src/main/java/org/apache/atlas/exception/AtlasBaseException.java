@@ -18,6 +18,7 @@
 package org.apache.atlas.exception;
 
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.ws.rs.core.Response;
 import java.util.List;
@@ -99,5 +100,14 @@ public class AtlasBaseException extends RuntimeException {
 
     public String getDetail() {
         return detail;
+    }
+
+    private void modifyDetail(String detail){
+        int sqlIndex= StringUtils.indexOfIgnoreCase(detail,"PSQLException");
+        if(sqlIndex == -1){
+            this.detail=detail;
+        }else{
+            this.detail=detail.substring(0,sqlIndex+"PSQLException".length());
+        }
     }
 }

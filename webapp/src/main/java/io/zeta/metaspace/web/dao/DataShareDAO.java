@@ -82,7 +82,7 @@ public interface DataShareDAO {
              " select count(1)over() total,apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,apiInfo.keeper,apiInfo.version,apiInfo.updater,apiInfo.updateTime,",
              " apiGroup.name as groupName,apiInfo.used_count as usedCount,manager",
              " from apiInfo,apiGroup where apiInfo.tenantid=#{tenantId} and ",
-             " apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%' ESCAPE '/'",
+             " apiInfo.groupGuid=apiGroup.guid and apiInfo.name like concat('%',#{query},'%') ESCAPE '/'",
              " <if test=\"groupGuid!='1'.toString()\">",
              " and apiInfo.groupGuid=#{groupGuid}",
              " </if>",

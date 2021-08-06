@@ -71,14 +71,15 @@ public interface UserGroupDAO {
             " on u.id=m.id " +
             " where u.tenant=#{tenantId} and valid=true" +
             "<if test='search!=null'>" +
-            " and u.name like '%${search}%' ESCAPE '/' " +
+            " and u.name like concat('%',#{search},'%') ESCAPE '/' " +
             "</if>" +
             "<if test=\"sortBy!=null and sortBy!=''\">" +
             "order by ${sortBy} " +
+                "<if test=\"order!=null and order!=''\">" +
+                " ${order} " +
+                "</if>" +
             "</if>" +
-            "<if test=\"order!=null and order!=''\">" +
-            " ${order} " +
-            "</if>" +
+
             "<if test='limit!=-1'>" +
             " limit ${limit} " +
             "</if>" +
@@ -162,7 +163,7 @@ public interface UserGroupDAO {
             "#{userId}" +
             "</foreach>" +
             "<if test='search!=null'>" +
-            " and u.username like '%${search}%' ESCAPE '/' " +
+            " and u.username like concat('%',#{search},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='limit!=-1'>" +
             " limit ${limit} " +
