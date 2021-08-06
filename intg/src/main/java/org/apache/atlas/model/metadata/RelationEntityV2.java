@@ -34,6 +34,7 @@ public class RelationEntityV2 {
     private String dbName;
     private String dbId;
     private String sourceId;
+    private String sourceInfoId;
     private String tableGuid;
     private String path;
     private String status;
@@ -95,6 +96,13 @@ public class RelationEntityV2 {
 
     public void setSourceId(String sourceId){
         this.sourceId = sourceId;
+    }
+    public String getSourceInfoId(){
+        return sourceInfoId;
+    }
+
+    public void setSourceInfoId(String sourceInfoId){
+        this.sourceInfoId = sourceInfoId;
     }
     public void setSourceName(String sourceName) {
         this.sourceName = sourceName;

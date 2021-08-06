@@ -903,7 +903,7 @@ public class SourceInfoDeriveTableInfoService {
         }
         // 校验源字段
         List<String> sourceColumnIds = sourceInfoDeriveColumnInfos.stream().map(SourceInfoDeriveColumnInfo::getSourceColumnGuid).filter(StringUtils::isNotBlank).collect(Collectors.toList());
-        if (!checkSourceColumnsByGuid(sourceColumnIds)) {
+        if (!CollectionUtils.isEmpty(sourceColumnIds) && !checkSourceColumnsByGuid(sourceColumnIds)) {
             return ReturnUtil.error("400", "部分源字段不存在");
         }
         return ReturnUtil.success();
