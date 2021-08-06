@@ -366,7 +366,7 @@ public class SourceInfoDatabaseREST {
         String fileType = annex.getFileType();
         File tmpFile = null;
         try(InputStream in = hdfsService.getFileInputStream(filePath);){
-            tmpFile = File.createTempFile("sourceFileConvert","pdf");
+            tmpFile = File.createTempFile("sourceFileConvert"+System.currentTimeMillis(),"pdf");
             String base64String = "";
             if("xls".equalsIgnoreCase(fileType) || "xlsx".equalsIgnoreCase(fileType)){
                 Excel2Pdf excel2Pdf = new Excel2Pdf(Arrays.asList(
@@ -376,6 +376,7 @@ public class SourceInfoDatabaseREST {
                 base64String = Base64Utils.fileToBase64(tmpFile.getAbsolutePath());
             }else if("doc".equalsIgnoreCase(fileType)){
                 DocConvertToPdf.docToPdf(in,tmpFile);
+                base64String = Base64Utils.fileToBase64(tmpFile.getAbsolutePath());
             }else if("docx".equalsIgnoreCase(fileType)){
                 DocxConvertToPdf.convertDocxToPdf(in,new FileOutputStream(tmpFile));
                 base64String = Base64Utils.fileToBase64(tmpFile.getAbsolutePath());
