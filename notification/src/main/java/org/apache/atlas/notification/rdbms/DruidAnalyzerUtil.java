@@ -1,9 +1,6 @@
 package org.apache.atlas.notification.rdbms;
 
 
-import java.util.*;
-import java.util.stream.Collectors;
-
 import com.alibaba.druid.sql.SQLUtils;
 import com.alibaba.druid.sql.ast.SQLStatement;
 import com.alibaba.druid.sql.ast.statement.*;
@@ -12,10 +9,14 @@ import com.alibaba.druid.sql.parser.Token;
 import com.alibaba.druid.sql.visitor.SchemaStatVisitor;
 import com.alibaba.druid.stat.TableStat;
 import com.alibaba.druid.util.JdbcConstants;
+import net.bytebuddy.implementation.bind.MethodDelegationBinder;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * druid 解析sql 工具类
@@ -23,6 +24,7 @@ import org.slf4j.LoggerFactory;
  */
 public class DruidAnalyzerUtil {
     private static final Logger log = LoggerFactory.getLogger(DruidAnalyzerUtil.class);
+    public static final String RENAME_FLAG = "RENAME";
 
     /**
      *  获取sql的表血缘 (增加create user的逻辑)
@@ -39,23 +41,39 @@ public class DruidAnalyzerUtil {
         if (JdbcConstants.ORACLE.equals(dbType) || JdbcConstants.ALI_ORACLE.equals(dbType)) {
             db = JdbcConstants.ORACLE;
         }
-        sql = sql.replaceAll("`|\"|:","").toUpperCase();
-        List<SQLStatement> stmts = parseStatements(db, sql);
-        if (stmts == null) {
-            log.error("sql {} => parse error",sql);
-            return null;
-        }
+        sql = sql.replaceAll("\\r\\n|\\r|\\n", " ")//去除换行符
+                .replaceAll("`|\"|:","").toUpperCase();
         /*
-        * fromset toset => 只记录表名称
-        * fromColumnSet toColumnSet => 记录格式 table:colname
+         * fromset toset => 只记录表名称
+         * fromColumnSet toColumnSet => 记录格式 table:colname
          */
         TreeSet<String> fromSet = new TreeSet<>();
         TreeSet<String> toSet = new TreeSet<>();
         TreeSet<String> fromColumnSet = new TreeSet<>();
         TreeSet<String> toColumnSet = new TreeSet<>();
 
-        Map<String, TreeSet<String>> fromTo = new HashMap<>(5);
+        Map<String, TreeSet<String>> fromTo = new HashMap<>(6);
         fromTo.put("type",new TreeSet<>(Arrays.asList("table")));
+        fromTo.put("from", fromSet);
+        fromTo.put("to", toSet);
+        fromTo.put("fromColumn", fromColumnSet);
+        fromTo.put("toColumn", toColumnSet);
+        fromTo.put("renameFlag",new TreeSet<>());
+
+        //rename 语法的处理,
+        boolean isRenameSyntax = StringUtils.containsAny(" "+sql," "+RENAME_FLAG+" ");
+        if(isRenameSyntax){
+            log.info("当前sql {} 属于重命名语法.",sql);
+            fromTo.put("renameFlag",new TreeSet<>(Arrays.asList(RENAME_FLAG)));
+            return processRenameGrammer(sql,fromTo);
+        }
+
+        List<SQLStatement> stmts = parseStatements(db, sql);
+        if (stmts == null) {
+            log.error("sql {} => parse error",sql);
+            return null;
+        }
+
 
         for (SQLStatement stmt : stmts) {
             Map<String,String> aliasMap = getColumnAliasMap(stmt);
@@ -107,14 +125,40 @@ public class DruidAnalyzerUtil {
             }
         }
 
-        fromTo.put("from", fromSet);
-        fromTo.put("to", toSet);
-        fromTo.put("fromColumn", fromColumnSet);
-        fromTo.put("toColumn", toColumnSet);
+
         return fromTo;
     }
 
+    /**
+     * 处理rename语法的逻辑
+     * @param sql
+     * @param resultSetMap
+     * @return
+     */
+    private static Map<String, TreeSet<String>> processRenameGrammer(String sql,Map<String, TreeSet<String>> resultSetMap){
+        if(StringUtils.isBlank(sql)){
+            return resultSetMap;
+        }
+        String[] sqlArray = sql.split(" ");
+        List<String> filterList = new ArrayList<>();
+        for(String str : sqlArray){
+            if(!Arrays.asList("ALTER","TABLE","RENAME","TO").contains(str.trim())){
+                filterList.add(str.replaceFirst(";","").trim());
+            }
+        }
 
+        boolean renameColumn = filterList.contains("COLUMN");
+        if(renameColumn){//重命名列字段
+            filterList.remove("COLUMN");
+            resultSetMap.get("to").add(filterList.get(0));
+            resultSetMap.get("fromColumn").add(filterList.get(1));
+            resultSetMap.get("toColumn").add(filterList.get(2));
+        }else{// 重命名表名
+            resultSetMap.get("from").add(filterList.get(0));
+            resultSetMap.get("to").add(filterList.get(1));
+        }
+        return resultSetMap;
+    }
     /**
      * 针对 druid 识别不了的特殊字符需要转换处理
      * @param token
@@ -127,7 +171,7 @@ public class DruidAnalyzerUtil {
                 return item.name;
             }
         }
-       
+
         return token;
     }
     /**
@@ -209,7 +253,9 @@ public class DruidAnalyzerUtil {
     }
 
     public static void main(String[] args) {
-        String originSql="create user c##zhangsan identified by values   'S:22D89817E88E5996C9A88D7BB4DEAA889E85F2E0A4FAB73FD7B029433F7A;T:BCD667BF4363BE945713CE6F6244F6A76387FFA28BC9E564C0851A146AEEDB6532A0558252441DFCB5D70022740965396153248959D7B456B55F56D763AE41FBF62ACBFF399AD383106F7B8DF18A8CD8' ";
-        getFromTo(originSql,"oracle");
+        String originSql="rename oldtablename to newtablename;";
+        originSql = "alter table tabelx rename column oldcolumn to newcolumn;";
+        Map<String, TreeSet<String>> result = getFromTo(originSql,"oracle");
+        System.out.println(result);
     }
 }

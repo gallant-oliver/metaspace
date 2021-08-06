@@ -24,6 +24,7 @@ import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
+import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
@@ -531,12 +532,12 @@ public class MetaDataService {
             }
             try {
                 //表关联信息
-                List<String> relations = getRelationList(guid, tenantId);
-                table.setRelations(relations);
-                //目录管理员
+                List<TableRelation> relations = getRelationList(guid, tenantId);
+                table.setRelations(relations.stream().map(r -> r.getCategoryName()).collect(Collectors.toList()));
                 //关联时间
-                if (relations.size() == 1)
-                    table.setRelationTime(tableDAO.getDateByTableguid(guid));
+                String createDates = relations.stream().map(r -> DateUtils.date2String(r.getCreateDate())).collect(Collectors.joining(","));
+                table.setRelationTime(createDates);
+
             } catch (Exception e) {
                 LOG.error("获取数据目录维度失败,错误信息:" + e.getMessage(), e);
             }
@@ -642,9 +643,10 @@ public class MetaDataService {
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
             try {
-                List<String> categoryIds = getCategoryIds(guid, tenantId);
+                List<TableRelation> relationList = getRelationList(guid, tenantId);
                 boolean edit = false;
-                if (categoryIds.size() > 0) {
+                if (relationList.size() > 0) {
+                    List<String> categoryIds = relationList.stream().map(r -> r.getCategoryGuid()).collect(Collectors.toList());
                     int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds, tenantId);
                     if (count > 0) {
                         edit = true;
@@ -696,12 +698,12 @@ public class MetaDataService {
 
             try {
                 //表关联信息
-                List<String> relations = getRelationList(guid, tenantId);
-                table.setRelations(relations);
-                //目录管理员
+                List<TableRelation> relations = getRelationList(guid, tenantId);
+                table.setRelations(relations.stream().map(r -> r.getCategoryName()).collect(Collectors.toList()));
                 //关联时间
-                if (relations.size() == 1)
-                    table.setRelationTime(tableDAO.getDateByTableguid(guid));
+                String createDates = relations.stream().map(r -> DateUtils.date2String(r.getCreateDate())).collect(Collectors.joining(","));
+                table.setRelationTime(createDates);
+
             } catch (Exception e) {
                 LOG.error("获取数据目录维度失败,错误信息:" + e.getMessage(), e);
             }
@@ -1134,26 +1136,29 @@ public class MetaDataService {
         return objectId;
     }
 
-    public List<String> getCategoryIds(String tableGuid, String tenantId) throws AtlasBaseException {
-        List<String> categoryIds = new ArrayList<>();
-        List<String> categoryIdsFromRelation = relationDAO.queryTableCategoryIds(tableGuid, tenantId);
-        if(CollectionUtils.isNotEmpty(categoryIdsFromRelation)){
-            categoryIds.addAll(categoryIdsFromRelation);
+    public List<TableRelation> getRelationList(String tableGuid, String tenantId) throws AtlasBaseException {
+        List<TableRelation> categoryRelations = new ArrayList<>();
+        List<TableRelation> categoryRelationsFromRelation = relationDAO.queryTableCategoryRelations(tableGuid, tenantId);
+        if(CollectionUtils.isNotEmpty(categoryRelationsFromRelation)){
+            categoryRelations.addAll(categoryRelationsFromRelation);
         }
-        List<String> categoryIdsFromDb = relationDAO.queryTableCategoryIdsFromDb(tableGuid, tenantId);
-        if(CollectionUtils.isNotEmpty(categoryIdsFromDb)){
-            categoryIds.addAll(categoryIdsFromDb);
-        }
-        return categoryIds;
-    }
+        List<TableRelation> categoryRelationsFromDb = relationDAO.queryTableCategoryRelationsFromDb(tableGuid, tenantId);
+        if(CollectionUtils.isNotEmpty(categoryRelationsFromDb)){
+            for(int i = categoryRelationsFromDb.size() -1; i>=0; i--){
+                String categoryGuid = categoryRelationsFromDb.get(i).getCategoryGuid();
+                for(TableRelation categoryRelation : categoryRelations){
+                    if(categoryRelation.getCategoryGuid().equalsIgnoreCase(categoryGuid)){
+                        categoryRelationsFromDb.remove(i);
+                        break;
+                    }
+                }
+            }
+            if(CollectionUtils.isNotEmpty(categoryRelationsFromDb)){
+                categoryRelations.addAll(categoryRelationsFromDb);
+            }
 
-    public List<String> getRelationList(String tableGuid, String tenantId)  {
-        List<String> categoryNames = new ArrayList<>();
-        List<String> categoryIds = getCategoryIds(tableGuid, tenantId);
-        if(CollectionUtils.isNotEmpty(categoryIds)){
-            categoryNames = relationDAO.queryCategoryNames(categoryIds, tenantId);
         }
-        return categoryNames;
+        return categoryRelations;
     }
 
     @Cacheable(value = "columnCache", key = "#query.guid + #query.columnFilter.columnName + #query.columnFilter.type + #query.columnFilter.description", condition = "#refreshCache==false")

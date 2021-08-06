@@ -133,6 +133,13 @@ public class SourceInfoDatabaseREST {
     }
 
     @GET
+    @Path("name/validation")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public Result deleteDatabaseInfo(@HeaderParam("tenantId")String tenantId, @QueryParam("name") String name, @QueryParam("categoryId") String categoryId, @QueryParam("id") String id){
+        return sourceInfoDatabaseService.validate(tenantId,name,categoryId,id);
+    }
+    @GET
     @Path("list")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)

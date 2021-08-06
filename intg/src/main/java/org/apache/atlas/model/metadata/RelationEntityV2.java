@@ -32,6 +32,7 @@ public class RelationEntityV2 {
     private String categoryGuid;
     private String tableName;
     private String dbName;
+    private String dbId;
     private String sourceId;
     private String tableGuid;
     private String path;
@@ -60,6 +61,14 @@ public class RelationEntityV2 {
 
     public void setTotal(int total) {
         this.total = total;
+    }
+
+    public String getDbId() {
+        return dbId;
+    }
+
+    public void setDbId(String dbId) {
+        this.dbId = dbId;
     }
 
     public RelationEntityV2() {

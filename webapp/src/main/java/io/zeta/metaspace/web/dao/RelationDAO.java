@@ -53,6 +53,7 @@ public interface RelationDAO {
                     " tdsr.category_id AS categoryGuid,\n" +
                     " ti.tableName,\n" +
                     " ti.dbName,\n" +
+                    " ti.databaseguid AS dbId,\n" +
                     " ti.tableGuid,\n" +
                     " ti.status,\n" +
                     " tdsr.update_time AS generateTime,\n" +
@@ -152,12 +153,16 @@ public interface RelationDAO {
             " </script>"})
     public List<RelationEntityV2> selectListByDbName(@Param("dbName") String dbName, @Param("tenantId") String tenantId, @Param("limit") Long limit, @Param("offset") Long offset, @Param("databases") List<String> databases);
 
-    @Select("select category_id from table_data_source_relation where tenant_id = #{tenantId} and table_id = #{tableGuid}")
-    List<String> queryTableCategoryIds(@Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
+    @Select("select table_data_source_relation.category_id as categoryGuid, table_data_source_relation.table_id as tableGuid, table_data_source_relation.table_id as tenantId, " +
+            "table_data_source_relation.create_time as createDate,category.name as categoryName " +
+            "from table_data_source_relation join category on (table_data_source_relation.tenant_id = category.tenantid and category.guid = table_data_source_relation.category_id) " +
+            "where table_data_source_relation.tenant_id = #{tenantId} and table_data_source_relation.table_id = #{tableGuid}")
+    List<TableRelation> queryTableCategoryRelations(@Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
 
-    @Select("select category_id from tableinfo t1 join source_info t2 on t1.databaseguid = t2.database_id " +
+    @Select("select category_id as categoryGuid, category.name as categoryName, #{tableGuid} as tableGuid , #{tenantId} as tenantId, create_time as createDate " +
+            "from tableinfo t1 join source_info t2 on t1.databaseguid = t2.database_id join category on (t2.category_id = category.guid and t2.tenant_id=category.tenantid) " +
             "where t2.tenant_id = #{tenantId} and t1.tableguid = #{tableGuid} and t2.version = 0")
-    List<String> queryTableCategoryIdsFromDb(@Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
+    List<TableRelation> queryTableCategoryRelationsFromDb(@Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
 
     @Select({"<script>",
                 "select name from category where tenantid = #{tenantId} and guid in ",

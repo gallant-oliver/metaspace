@@ -9,6 +9,7 @@ import io.zeta.metaspace.model.pojo.TableRelation;
 import org.apache.ibatis.annotations.*;
 
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -21,9 +22,6 @@ public interface TableDAO {
 
     @Select("select * from tableinfo where status = 'ACTIVE' and tableguid=#{guid}")
     public TableInfo getTableInfoByTableguidAndStatus(@Param("guid") String guid);
-
-    @Select("select generatetime from table_relation where tableguid=#{guid}")
-    public String getDateByTableguid(String guid);
 
     @Select("SELECT DISTINCT db_info.database_guid FROM db_info INNER JOIN source_db on db_info.database_guid=source_db.db_guid INNER JOIN data_source on source_db.source_id = data_source.source_id\n" +
             "WHERE data_source.tenantid = #{tenantId} and db_info.status = 'ACTIVE'")

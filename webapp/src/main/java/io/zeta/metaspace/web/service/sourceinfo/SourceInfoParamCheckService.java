@@ -201,7 +201,7 @@ public class SourceInfoParamCheckService {
             return ReturnUtil.error(AtlasErrorCode.DUPLICATE_ALIAS_NAME.getErrorCode(),
                     AtlasErrorCode.DUPLICATE_ALIAS_NAME.getFormattedErrorMessage(databaseInfo.getDatabaseAlias()));
         }
-        int count = categoryDAO.getCategoryCountByIdAndName(tenantId,databaseInfo.getCategoryId(),databaseInfo.getDatabaseAlias());
+        int count = categoryDAO.getCategoryCountByParentIdAndName(tenantId,databaseInfo.getCategoryId(),databaseInfo.getDatabaseAlias());
         if (count>0){
             return ReturnUtil.error(AtlasErrorCode.DUPLICATE_ALIAS_NAME.getErrorCode(),
                     AtlasErrorCode.DUPLICATE_ALIAS_NAME.getFormattedErrorMessage(databaseInfo.getDatabaseAlias()));
