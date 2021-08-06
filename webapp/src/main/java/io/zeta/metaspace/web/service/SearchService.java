@@ -659,9 +659,17 @@ public class SearchService {
             return databasePageResult;
         }
 
-        List<DataSourceHeader> databaseHeaders = userGroupDAO.getSourceInfo(strings, query, parameters.getOffset(), parameters.getLimit(), tenantId);
-
+        List<DataSourceHeader> databaseHeaders = new ArrayList<>();
         List<String> databases = tenantService.getDatabase(tenantId);
+        if(CollectionUtils.isNotEmpty(databases)){
+            DataSourceHeader dataSourceHeader = new DataSourceHeader();
+            dataSourceHeader.setSourceId("hive");
+            dataSourceHeader.setSourceName("hive");
+            dataSourceHeader.setSourceStatus("ACTIVE");
+            databaseHeaders.add(dataSourceHeader);
+        }
+        databaseHeaders.addAll(userGroupDAO.getSourceInfo(strings, query, parameters.getOffset(), parameters.getLimit(), tenantId));
+
         //获取用户有权限的全部表和该目录已加关联的全部表
         List<TechnologyInfo.Table> tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1, databases, tenantId);
 
@@ -672,7 +680,7 @@ public class SearchService {
         Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getSourceId));
         databaseHeaders.forEach(e -> {
             String sourceId = e.getSourceId();
-            List<String> table = collect.get(sourceId).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
+            List<String> table = collect.get(sourceId) == null? new ArrayList<>() : collect.get(sourceId).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
             if (collect != null && collect.size() > 0) {
                 if (relationTableGuids.containsAll(table)) {
                     //全被勾选
