@@ -181,6 +181,14 @@ public class SourceInfoDatabaseService implements Approvable {
         return ReturnUtil.success();
     }
 
+    /**
+     * 重名验证
+     * @param tenantId 租户id
+     * @param name 中文名
+     * @param categoryId 挂载的目录id
+     * @param id 源信息id
+     * @return 处理结果
+     */
     public Result validate(String tenantId,String name,String categoryId,String id) {
         if (databaseInfoDAO.getDatabaseDuplicateName(tenantId,name, id)) {
             return ReturnUtil.error(AtlasErrorCode.DUPLICATE_ALIAS_NAME.getErrorCode(),
