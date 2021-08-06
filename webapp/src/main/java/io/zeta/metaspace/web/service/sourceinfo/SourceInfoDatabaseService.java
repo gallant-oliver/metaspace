@@ -181,7 +181,11 @@ public class SourceInfoDatabaseService implements Approvable {
         return ReturnUtil.success();
     }
 
-    public Result validate(String tenantId,String name,String categoryId) {
+    public Result validate(String tenantId,String name,String categoryId,String id) {
+        if (databaseInfoDAO.getDatabaseDuplicateName(tenantId,name, id)) {
+            return ReturnUtil.error(AtlasErrorCode.DUPLICATE_ALIAS_NAME.getErrorCode(),
+                    AtlasErrorCode.DUPLICATE_ALIAS_NAME.getFormattedErrorMessage(name));
+        }
         int count = categoryDAO.getCategoryCountByParentIdAndName(tenantId,categoryId,name);
         if (count>0){
             return ReturnUtil.error(AtlasErrorCode.DUPLICATE_ALIAS_NAME.getErrorCode(),
