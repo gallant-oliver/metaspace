@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.source.CodeInfo;
 import io.zeta.metaspace.model.source.DataBaseInfo;
 import io.zeta.metaspace.model.source.DataSourceInfo;
@@ -41,7 +42,11 @@ public class SourceService {
     }
 
     public List<CodeInfo> getStatusList() {
-        return codeSourceInfoStatusDAO.getAll();
+        List<CodeInfo> all = codeSourceInfoStatusDAO.getAll();
+        for (CodeInfo codeInfo : all) {
+            codeInfo.setCode(Status.getStatusByValue(codeInfo.getCode()));
+        }
+        return all;
     }
 
     public List<DataSourceInfo> getDatasourceList() {

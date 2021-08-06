@@ -122,9 +122,8 @@ public class MetaDataREST {
     @Path("/info/schema/{schemaId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Database getDatabase(@PathParam("schemaId") String schemaId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-
-        return metadataService.getDatabase(schemaId);
+    public Database getDatabase(@PathParam("schemaId") String schemaId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId")@DefaultValue("") String sourceId) throws AtlasBaseException {
+        return metadataService.getDatabase(schemaId, sourceId);
     }
 
 
@@ -226,7 +225,7 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableList(" + schemaId + "," + limit + "," + offset + " )");
             }
             Boolean isView = StringUtils.isEmpty(isViewStr) ? null : Boolean.parseBoolean(isViewStr);
-            PageResult<TableEntity> result = searchService.getTable(schemaId, active, offset, limit, query, isView, queryInfo, tenantId);
+            PageResult<TableEntity> result = searchService.getTable(schemaId, active, offset, limit, query, isView, queryInfo, tenantId, sourceId);
             List<TableEntity> tables = result.getLists();
             if(CollectionUtils.isNotEmpty(tables)){
                 tables.forEach(t -> t.setSourceId(sourceId));
@@ -491,7 +490,8 @@ public class MetaDataREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getColumnLineage");
             }
-            return metadataService.getColumnLineageV2(guid, direction, depth);
+//            return metadataService.getColumnLineageV2(guid, direction, depth);
+            return metadataService.getColumnLineages(guid, direction, depth);
         } finally {
             dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "data_kinship");
             AtlasPerfTracer.log(perf);
@@ -890,13 +890,13 @@ public class MetaDataREST {
     @Path("/rdbms/table/sql/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BuildTableSql getRDBMSTableSQL(@PathParam("tableId") String tableId) throws AtlasBaseException {
+    public BuildTableSql getRDBMSTableSQL(@PathParam("tableId") String tableId, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableSQL(" + tableId + " )");
             }
-            BuildTableSql buildTableSql = searchService.getBuildRDBMSTableSql(tableId);
+            BuildTableSql buildTableSql = searchService.getBuildRDBMSTableSql(tableId, sourceId);
             return buildTableSql;
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取建表语句失败");
@@ -915,7 +915,7 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public RDBMSTable getTableInfoById(@PathParam("tableId") String tableId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
-        RDBMSTable table = metadataService.getRDBMSTableInfoById(tableId, tenantId, sourceId);
+        RDBMSTable table = metadataService.getRDBMSTableInfoById(tableId, tenantId);
         if(StringUtils.isNotBlank(sourceId)){
             if("hive".equalsIgnoreCase(sourceId)){
                 table.setSourceType("HIVE");

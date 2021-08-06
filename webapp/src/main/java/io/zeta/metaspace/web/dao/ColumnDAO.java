@@ -139,4 +139,12 @@ public interface ColumnDAO {
             " </foreach>" +
             "</script>")
     public List<Column> checkDescriptionColumnByTableIds(@Param("tables")List<Table> tables);
+
+    @Select("<script>" +
+            "select column_guid  from column_info where column_guid in " +
+            " <foreach item='columnId' index='index' collection='columnIds' separator=',' open='(' close=')'>" +
+            " #{columnId}" +
+            " </foreach>" +
+            "</script>")
+    public List<String> queryColumnidBycolumnIds(@Param("columnIds")List<String> columnIds);
 }

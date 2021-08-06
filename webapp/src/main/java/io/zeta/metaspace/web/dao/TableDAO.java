@@ -9,6 +9,7 @@ import io.zeta.metaspace.model.pojo.TableRelation;
 import org.apache.ibatis.annotations.*;
 
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -21,9 +22,6 @@ public interface TableDAO {
 
     @Select("select * from tableinfo where status = 'ACTIVE' and tableguid=#{guid}")
     public TableInfo getTableInfoByTableguidAndStatus(@Param("guid") String guid);
-
-    @Select("select generatetime from table_relation where tableguid=#{guid}")
-    public String getDateByTableguid(String guid);
 
     @Select("SELECT DISTINCT db_info.database_guid FROM db_info INNER JOIN source_db on db_info.database_guid=source_db.db_guid INNER JOIN data_source on source_db.source_id = data_source.source_id\n" +
             "WHERE data_source.tenantid = #{tenantId} and db_info.status = 'ACTIVE'")
@@ -45,15 +43,6 @@ public interface TableDAO {
 
     @Update("update tableinfo set tablename=#{table.tableName},status = #{table.status} ,dbname=#{table.dbName},description=#{table.description} where tableguid=#{table.tableGuid}")
     public int updateTable(@Param("table") TableInfo table);
-
-    @Insert("insert into table_relation (relationshipGuid, categoryGuid, tableGuid, generateTime, tenant_id) values" +
-            "(#{tableRelation.relationshipGuid},#{tableRelation.categoryGuid},#{tableRelation.tableGuid},#{tableRelation.generateTime}," +
-                    "#{tableRelation.tenantId})")
-    public int addRelation(@Param("tableRelation") TableRelation tableRelation);
-
-    @Select("select relationshipGuid, categoryGuid, tableGuid, generateTime, tenant_id as tenantId from table_relation " +
-            "where categoryGuid = #{tableRelation.categoryGuid} and tableGuid = #{tableRelation.tableGuid} and tenant_id = #{tableRelation.tenantId}")
-    TableRelation selectRelation(@Param("tableRelation") TableRelation tableRelation);
 
     @Select("select count(1) from tableinfo where tableguid=#{tableGuid}")
     public Integer ifTableExists(String tableGuid);
@@ -210,7 +199,7 @@ public interface TableDAO {
             "</script>"})
     List<TableInfoId> selectListByName(@Param("tenantId") String tenantId, @Param("sourceNameList") Set<String> sourceNameList, @Param("dbNameListHive") List<String> dbNameListHive, @Param("dbNameList") Set<String> dbNameList, @Param("tableNameList") Set<String> tableNameList, @Param("columnNameList") Set<String> columnNameList);
 
-    @Select("select * from tableinfo where status = 'ACTIVE' and databaseguid = (select database_guid from db_info where category_id = #{categoryId})")
+    @Select("select * from tableinfo where status = 'ACTIVE' and databaseguid = (select database_id from source_info where version = 0 and category_id = #{categoryId})")
     List<TableInfo> getTableInfoByCategoryId(@Param("categoryId") String categoryId);
 
 }

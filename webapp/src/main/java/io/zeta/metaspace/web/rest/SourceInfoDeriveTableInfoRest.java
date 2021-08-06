@@ -3,9 +3,14 @@ package io.zeta.metaspace.web.rest;
 
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.Constant;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.DeriveTableStateEnum;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.DeriveTableStateModel;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceInfoDeriveTableVO;
 import io.zeta.metaspace.model.result.PageResult;
@@ -18,10 +23,13 @@ import org.apache.atlas.exception.AtlasBaseException;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveColumnInfo;
 import io.zeta.metaspace.model.dto.sourceinfo.SourceInfoDeriveTableColumnDTO;
 import org.apache.atlas.web.util.Servlets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.inject.Singleton;
@@ -42,6 +50,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
+
 /**
  * <p>
  * 衍生表信息表 前端控制器
@@ -54,6 +65,8 @@ import java.util.stream.Stream;
 @Singleton
 @Service
 public class SourceInfoDeriveTableInfoRest {
+
+    private static final Logger LOG = LoggerFactory.getLogger(SourceInfoDeriveTableInfoRest.class);
 
     @Autowired
     private SourceInfoDeriveTableInfoService sourceInfoDeriveTableInfoService;
@@ -72,20 +85,24 @@ public class SourceInfoDeriveTableInfoRest {
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(INSERT)
     public Result createSaveAndSubmitDeriveTableInfo(@ApiParam(value = "请求头-用户token", required = true) @HeaderParam(value = "X-SSO-FullticketId") String ticket,
                                                      @ApiParam(value = "请求头-租户Id", type = "String", required = true) @HeaderParam(value = "tenantId") String tenantId,
                                                      SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto) {
-        Result result = checkAddOrEditDeriveTableEntity(sourceInfoDeriveTableColumnDto);
-        if (!result.getCode().equals("200")) {
-            return result;
-        }
         try {
+            Result result = sourceInfoDeriveTableInfoService.checkAddOrEditDeriveTableEntity(sourceInfoDeriveTableColumnDto, tenantId);
+            if (!result.getCode().equals("200")) {
+                return result;
+            }
             sourceInfoDeriveTableInfoService.createSaveAndSubmitDeriveTableInfo(sourceInfoDeriveTableColumnDto, tenantId);
+            boolean submit = sourceInfoDeriveTableColumnDto.isSubmit();
+            String operateContent = "新增衍生表登记记录，操作:" + (submit ? "保存" : "保存并提交");
+            HttpRequestContext.get().auditLog(ModuleEnum.DERIVEDTABLESREGISTER.getAlias(), operateContent);
+            return ReturnUtil.success(true);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("新建衍生表登记异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新建衍生表登记异常");
         }
-        return ReturnUtil.success(true);
     }
 
     /**
@@ -99,55 +116,41 @@ public class SourceInfoDeriveTableInfoRest {
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public Result updateSaveAndSubmitDeriveTableInfo(@ApiParam(value = "请求头-用户token", required = true) @HeaderParam(value = "X-SSO-FullticketId") String ticket,
                                                      @ApiParam(value = "请求头-租户Id", required = true) @HeaderParam(value = "tenantId") String tenantId,
                                                      SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto) {
-
-        Result result = checkAddOrEditDeriveTableEntity(sourceInfoDeriveTableColumnDto);
-        if (!result.getCode().equals("200")) {
-            return result;
-        }
         try {
+            Result result = sourceInfoDeriveTableInfoService.checkAddOrEditDeriveTableEntity(sourceInfoDeriveTableColumnDto, tenantId);
+            if (!result.getCode().equals("200")) {
+                return result;
+            }
+            // 编辑衍生表ID不能为空
+            String id = sourceInfoDeriveTableColumnDto.getId();
+            String tableGuid = sourceInfoDeriveTableColumnDto.getTableGuid();
+            if (StringUtils.isEmpty(id) || StringUtils.isEmpty(tableGuid)) {
+                return ReturnUtil.error("400", "编辑衍生表ID或GUID为空或记录不存在");
+            }
+            SourceInfoDeriveTableInfo tableByIdAndGuid = sourceInfoDeriveTableInfoService.getTableByIdAndGuid(id, tableGuid, tenantId);
+            if (null == tableByIdAndGuid) {
+                return ReturnUtil.error("400", "编辑的记录不存在");
+            }
+            // 老信息的一些默认属性
+            sourceInfoDeriveTableColumnDto.setCreateTime(tableByIdAndGuid.getCreateTimeStr());
+            sourceInfoDeriveTableColumnDto.setCreator(tableByIdAndGuid.getCreator());
+            sourceInfoDeriveTableColumnDto.setState(tableByIdAndGuid.getState());
             sourceInfoDeriveTableInfoService.updateSaveAndSubmitDeriveTableInfo(sourceInfoDeriveTableColumnDto, tenantId);
+            boolean submit = sourceInfoDeriveTableColumnDto.isSubmit();
+            String operateContent = "编辑衍生表登记记录，操作:" + (submit ? "保存" : "保存并提交");
+            HttpRequestContext.get().auditLog(ModuleEnum.DERIVEDTABLESREGISTER.getAlias(), operateContent);
+            return ReturnUtil.success(true);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("编辑衍生表登记异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编辑衍生表登记异常");
         }
-        return ReturnUtil.success(true);
+
     }
 
-    /**
-     * 校验新增-编辑衍生表中参数
-     *
-     * @param sourceInfoDeriveTableColumnDto
-     * @return
-     */
-    private Result checkAddOrEditDeriveTableEntity(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto) {
-        // 检验表英文名
-        if (!checkTableOrColumnNameEnPattern(sourceInfoDeriveTableColumnDto.getTableNameEn())) {
-            return ReturnUtil.error("400", "衍生表英文名不符合规范");
-        }
-        // 字段
-        List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
-        // 校验字段英文名
-        List<String> errorNames = sourceInfoDeriveColumnInfos.stream().filter(e -> !checkColumnNameEn(e.getColumnNameEn())).map(SourceInfoDeriveColumnInfo::getColumnNameEn).collect(Collectors.toList());
-        if (!CollectionUtils.isEmpty(errorNames)) {
-            return ReturnUtil.error("400", "衍生表字段英文名不符合规范:" + errorNames.toString());
-        }
-        // 根据数据源类型校验数据类型
-        List<String> dataTypeList = Constant.DATA_TYPE_MAP.get((sourceInfoDeriveTableColumnDto.getDbType()));
-        List<String> errorDbTypes = sourceInfoDeriveColumnInfos.stream().filter(e -> !dataTypeList.contains(e.getDataType())).map(SourceInfoDeriveColumnInfo::getDataType).collect(Collectors.toList());
-        if (!CollectionUtils.isEmpty(errorNames)) {
-            return ReturnUtil.error("400", "衍生表字段数据类型不符合规范:" + errorDbTypes.toString());
-        }
-        if (sourceInfoDeriveTableColumnDto.getDbType().equals("ORACLE")) {
-            long count = sourceInfoDeriveColumnInfos.stream().filter(e -> Arrays.asList("long", "long raw").contains(e.getDataType())).count();
-            if (count > 1) {
-                return ReturnUtil.error("400", "一张表最多存在一个long类型数据，包含'long' 和 'long raw'数据类型");
-            }
-        }
-        return ReturnUtil.success();
-    }
 
     @ApiOperation(value = "获取数据层", tags = "源信息登记-衍生表登记")
     @Path("/technical/category")
@@ -161,7 +164,7 @@ public class SourceInfoDeriveTableInfoRest {
         try {
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.getTechnicalCategory(source, tenantId));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("查询数据层/库异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询数据层/库异常");
         }
     }
@@ -179,7 +182,7 @@ public class SourceInfoDeriveTableInfoRest {
         try {
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.getSourceTableByCategoryId(categoryId));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("查询表列表异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询表列表异常");
         }
     }
@@ -196,8 +199,8 @@ public class SourceInfoDeriveTableInfoRest {
         try {
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.getColumnInfoByTableId(sourceTableId));
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询表列表异常");
+            LOG.error("查询字段列表异常", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询字段列表异常");
         }
     }
 
@@ -212,7 +215,7 @@ public class SourceInfoDeriveTableInfoRest {
         try {
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.getBusinessCategory(tenantId));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("查询业务目录异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询业务目录异常");
         }
     }
@@ -229,7 +232,7 @@ public class SourceInfoDeriveTableInfoRest {
         try {
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.getBusinessByCategoryId(categoryId, tenantId));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("查询业务对象异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询业务对象异常");
         }
     }
@@ -256,21 +259,9 @@ public class SourceInfoDeriveTableInfoRest {
             pageResult.setLists(sourceInfoDeriveTableVOS);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("查询衍生表列表异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询衍生表列表异常");
         }
-    }
-
-    @ApiOperation(value = "衍生表查询状态下拉框列表", tags = "源信息登记-衍生表登记")
-    @Path("/state")
-    @GET
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getDeriveTableList(
-            @ApiParam(value = "请求头-用户token", required = true) @HeaderParam(value = "X-SSO-FullticketId") String ticket,
-            @ApiParam(value = "请求头-租户Id", required = true) @HeaderParam(value = "tenantId") String tenantId) {
-        return ReturnUtil.success(Stream.of(DeriveTableStateEnum.values()).map(e ->
-                new DeriveTableStateModel().setName(e.getName()).setState(e.getState())).collect(Collectors.toList()));
     }
 
     @ApiOperation(value = "根据表ID查看衍生表详情", tags = "源信息登记-衍生表登记")
@@ -285,7 +276,7 @@ public class SourceInfoDeriveTableInfoRest {
         try {
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.getDeriveTableColumnDetail(tenantId, tableId));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("查询衍生表详情异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询衍生表详情异常");
         }
     }
@@ -304,9 +295,21 @@ public class SourceInfoDeriveTableInfoRest {
         try {
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.getDeriveTableVersion(tableGuid, offset, limit));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("查询衍生表版本异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询衍生表版本异常");
         }
+    }
+
+    @ApiOperation(value = "衍生表查询状态下拉框列表", tags = "源信息登记-衍生表登记")
+    @Path("/state")
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDeriveTableList(
+            @ApiParam(value = "请求头-用户token", required = true) @HeaderParam(value = "X-SSO-FullticketId") String ticket,
+            @ApiParam(value = "请求头-租户Id", required = true) @HeaderParam(value = "tenantId") String tenantId) {
+        return ReturnUtil.success(Stream.of(DeriveTableStateEnum.values()).map(e ->
+                new DeriveTableStateModel().setName(e.getName()).setState(e.getState())).collect(Collectors.toList()));
     }
 
     @ApiOperation(value = "根据数据库类型校验字段英文名", tags = "源信息登记-衍生表登记")
@@ -319,7 +322,7 @@ public class SourceInfoDeriveTableInfoRest {
             @ApiParam(value = "请求头-租户Id", required = true) @HeaderParam(value = "tenantId") String tenantId,
             @ApiParam(value = "数据库类型", required = true) @QueryParam(value = "dbType") String dbType,
             @ApiParam(value = "字段英文名", required = true) @QueryParam(value = "name") String name) {
-        return ReturnUtil.success(checkColumnNameEn(name));
+        return ReturnUtil.success(sourceInfoDeriveTableInfoService.checkColumnNameEn(name));
 
     }
 
@@ -356,18 +359,11 @@ public class SourceInfoDeriveTableInfoRest {
             }
             return ReturnUtil.success(sourceInfoDeriveTableInfoService.deleteDeriveTable(tableGuids));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("删除衍生表异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除衍生表异常");
         }
     }
 
-    private boolean checkTableOrColumnNameEnPattern(String name) {
-        return name.matches(Constant.pattern);
-    }
-
-    private boolean checkColumnNameEn(String name) {
-        return checkTableOrColumnNameEnPattern(name) && !Constant.HIVE_KEYWORD.contains(name.toUpperCase());
-    }
 
 }
 

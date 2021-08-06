@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.sourceinfo.derivetable.vo.CategoryGuidPath;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.ibatis.annotations.*;
@@ -85,7 +86,7 @@ public interface CategoryDAO {
     @Select("select * from category where guid=#{guid} and tenantid=#{tenantId}")
     public CategoryPrivilege queryByGuidV2(@Param("guid") String categoryGuid, @Param("tenantId") String tenantId) throws SQLException;
 
-    @Select("select * from category where tenantid=#{tenantId} and guid = (select category_id from db_info where database_guid  = #{databaseId})")
+    @Select("select * from category where tenantid=#{tenantId} and guid = (select category_id from source_info where version = 0 and database_id  = #{databaseId} and tenant_id = #{tenantId} and category_id is not null)")
     public CategoryPrivilege queryByGuidByDBId(@Param("databaseId") String databaseId, @Param("tenantId") String tenantId);
 
     @Select("select name from category where guid=#{guid} and tenantid=#{tenantId}")
@@ -372,4 +373,14 @@ public interface CategoryDAO {
 
     @Select(" select parentcategoryguid from category where guid = #{id} AND tenantid = #{tenant} ")
     String getParentIdByGuid(@Param("id") String guid,@Param("tenant") String tenant);
+
+    @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH)  AS" +
+            " (SELECT guid,name,parentCategoryGuid, name as  PATH" +
+            " FROM category WHERE parentCategoryGuid IS NULL and tenantid= #{tenantId} and categorytype = #{type}" +
+            " UNION ALL " +
+            " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH ||'/'|| D.name" +
+            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid='2f5eced9c1c64609bc2d8172562bf1da')" +
+            "SELECT  * FROM T ")
+    List<CategoryGuidPath> getGuidPathByTenantIdAndCategoryType(@Param("tenantId")String tenantId, @Param("type") int type);
+
 }

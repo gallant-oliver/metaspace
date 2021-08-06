@@ -273,6 +273,27 @@ public class DataSourceService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源信息获取失败\n" + e.getMessage());
         }
     }
+
+    public DataSourceInfo getAnyDataSourceInfoByTableId(String sourceId, String tableId) {
+        try {
+            DataSourceInfo dataSourceInfo = null;
+            if(StringUtils.isNotBlank(sourceId)){
+                dataSourceInfo = dataSourceDAO.getDataSourceInfo(sourceId);
+            }
+            if(Objects.isNull(dataSourceInfo) && StringUtils.isNotBlank(tableId)){
+                dataSourceInfo = dataSourceDAO.getAnyDataSourceInfoByTableGuid(tableId);
+            }
+            if(Objects.isNull(dataSourceInfo)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "库表" + tableId + "没有匹配到数据源");
+            }
+            dataSourceInfo.setPassword(AESUtils.aesDecode(dataSourceInfo.getPassword()));
+            return dataSourceInfo;
+        } catch (Exception e) {
+            LOG.error("数据源信息获取失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源信息获取失败\n" + e.getMessage());
+        }
+    }
+
     public DataSourceInfo getAnyOneDataSourceByDbGuid(String dbGuid) {
         try {
             DataSourceInfo dataSourceInfo = dataSourceDAO.getAnyOneDataSourceByDbGuid(dbGuid);
@@ -1272,13 +1293,18 @@ public class DataSourceService {
      *
      * @return
      */
-    public List<DataSourceTypeInfo> getDataSourceType() {
+    public List<DataSourceTypeInfo> getDataSourceType(String type) {
+        // 配置的数据源类型
+        List<String> confList = Arrays.stream(MetaspaceConfig.getDataSourceType()).map(String::toUpperCase).collect(Collectors.toList());
+        if ("dbr".equalsIgnoreCase(type)) {
+            List<String> builtInList = Arrays.stream(MetaspaceConfig.getDataSourceTypeBuiltIn()).map(String::toUpperCase).collect(Collectors.toList());
+            builtInList.addAll(confList);
+            return Arrays.stream(DataSourceType.values()).filter(e -> builtInList.contains(e.getName())).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(), dataSourceType.getDefaultPort())).collect(Collectors.toList());
+        }
         if (!MetaspaceConfig.getDataService()) {
             DataSourceTypeInfo dataSourceTypeInfo = new DataSourceTypeInfo(DataSourceType.ORACLE.getName(), DataSourceType.ORACLE.getDefaultPort());
             return Lists.newArrayList(dataSourceTypeInfo);
         }
-        // 配置的数据源类型
-        List<String> confList = Arrays.stream(MetaspaceConfig.getDataSourceType()).map(String::toUpperCase).collect(Collectors.toList());
         return Arrays.stream(DataSourceType.values()).filter(e -> confList.contains(e.getName())).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(), dataSourceType.getDefaultPort())).collect(Collectors.toList());
     }
 }

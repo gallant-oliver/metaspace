@@ -49,11 +49,10 @@ public class SourceInfoDeriveTableVO implements Serializable {
     private String updater;
 
     @ApiModelProperty(value = "修改时间")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime updateTime;
+    private String updateTime;
 
     @ApiModelProperty(value = "衍生表状态")
-    private String state;
+    private int state;
 
     @ApiModelProperty(value = "DDL语句")
     private String ddl;

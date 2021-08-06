@@ -176,7 +176,7 @@ public class KafkaConnectorUtil {
 
     public synchronized static boolean startConnector(KafkaConnector kafkaConnector) {
         KafkaConnector newInstance = null;
-        KafkaConnector connector = getConnector(kafkaConnector.getName());
+        KafkaConnector connector = getConnector(kafkaConnector.getName(), false);
         if (null != connector) {
             LOG.warn("名称为{}的connector早已启动，本次启动未做任何改动", kafkaConnector.getName());
             return false;

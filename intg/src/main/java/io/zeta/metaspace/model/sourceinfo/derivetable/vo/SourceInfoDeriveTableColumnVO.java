@@ -111,11 +111,17 @@ public class SourceInfoDeriveTableColumnVO implements Serializable {
     @ApiModelProperty(value = "设计人")
     private String creator;
 
+    @ApiModelProperty(value = "设计人名称")
+    private String creatorName;
+
     @ApiModelProperty(value = "创建时间")
     private String createTime;
 
     @ApiModelProperty(value = "修改人")
     private String updater;
+
+    @ApiModelProperty(value = "修改人名称")
+    private String updaterName;
 
     @ApiModelProperty(value = "修改时间")
     private String updateTime;
