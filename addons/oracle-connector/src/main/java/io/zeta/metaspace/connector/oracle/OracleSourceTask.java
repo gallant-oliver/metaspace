@@ -150,10 +150,10 @@ public class OracleSourceTask extends SourceTask {
 			long streamEndScn = getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN");
 			logMinerSelect.setLong(1, streamOffsetScn);
 			logMinerSelect.setLong(2, streamEndScn);
-			LOG.debug("Oracle Kafka Connector {} is polling data from {} to {}", config.getName(), streamOffsetScn,
+			LOG.info("Oracle Kafka Connector {} is polling data from {} to {}", config.getName(), streamOffsetScn,
 					streamEndScn);
 			logMinerData = logMinerSelect.executeQuery();
-
+			LOG.info("logMinerSelect executeQuery finish");
 			while (logMinerData.next()) {
 				if (LOG.isDebugEnabled()) {
 					logRawMinerData();
@@ -173,7 +173,7 @@ public class OracleSourceTask extends SourceTask {
 			LOG.info("Oracle Kafka Connector {} polled {} data from {} to {}", config.getName(), records.size(),
 					streamOffsetScn, streamEndScn);
 			streamOffsetScn = streamEndScn + 1;
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			LOG.error("during poll on connector {} : ", config.getName(), e.getMessage(), e);
 			stop();
 			LOG.info("try to restart connector {} by streamOffsetScn = {}", config.getName(), streamOffsetScn);

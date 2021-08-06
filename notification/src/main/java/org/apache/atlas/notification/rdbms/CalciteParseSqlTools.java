@@ -52,7 +52,7 @@ public class CalciteParseSqlTools {
         String upperSql = sql.trim().replaceAll("\\s+", " ").toUpperCase();
         String alterType = upperSql.startsWith("ALTER TABLE") && upperSql.split("\\s+").length > 4 ? upperSql.split("\\s+")[3] : "DEFAULT";
         RdbmsEntities.OperateType operateType =
-                StringUtils.startsWithAny(upperSql, new String[] { "CREATE", "INSERT","RENAME"}) || StringUtils.equalsIgnoreCase("ADD",alterType) ? RdbmsEntities.OperateType.ADD :
+                StringUtils.startsWithAny(upperSql, new String[] { "CREATE", "INSERT"}) || StringUtils.equalsIgnoreCase("ADD",alterType) ? RdbmsEntities.OperateType.ADD :
                         (StringUtils.startsWithAny(upperSql,new String[] { "DROP", "DELETE"}) || StringUtils.equalsIgnoreCase("DROP",alterType) ? RdbmsEntities.OperateType.DROP :
                         RdbmsEntities.OperateType.MODIFY);
 
@@ -132,16 +132,11 @@ public class CalciteParseSqlTools {
             atlasBloodEntities = makeAtlasBloodRelation(dataSourceInfo,resultTableMap, sql, config,allColumnInfo,owner);
         }
         //添加来源的 表 列 column table
-        if(isRenameOperation && !fromSet.isEmpty()){
-            addMapOrNot(dropMap,RdbmsEntities.EntityType.RDBMS_TABLE,fromTableEntityList);
-        }else{
+        if(!isRenameOperation){
             addMapOrNot(modifyMap,RdbmsEntities.EntityType.RDBMS_TABLE,fromTableEntityList);
-        }
-        if(isRenameOperation && fromSet.isEmpty()){
-            addMapOrNot(dropMap,RdbmsEntities.EntityType.RDBMS_COLUMN,fromColumnEntityList);
-        }else{
             addMapOrNot(modifyMap,RdbmsEntities.EntityType.RDBMS_COLUMN,fromColumnEntityList);
         }
+
 
         //添加输出（最终）表 列 column table
         if(operateType == RdbmsEntities.OperateType.MODIFY){
