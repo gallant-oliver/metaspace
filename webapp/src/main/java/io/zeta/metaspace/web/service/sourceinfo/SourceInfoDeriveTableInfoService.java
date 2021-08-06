@@ -672,9 +672,9 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveColumnVO.setSourceTableGuid(sourceTableInfo.getTableGuid());
             sourceInfoDeriveColumnVO.setSourceTableNameEn(sourceTableInfo.getTableName());
             sourceInfoDeriveColumnVO.setSourceTableNameZh(sourceTableInfo.getDescription());
-            sourceInfoDeriveColumnVO.setSourceColumnNameEn(column.getColumnName());
-            sourceInfoDeriveColumnVO.setSourceColumnNameZh(column.getDescription());
-            sourceInfoDeriveColumnVO.setSourceColumnType(column.getType());
+            sourceInfoDeriveColumnVO.setSourceColumnNameEn(null == column ? null : column.getColumnName());
+            sourceInfoDeriveColumnVO.setSourceColumnNameZh(null == column ? null : column.getDescription());
+            sourceInfoDeriveColumnVO.setSourceColumnType(null == column ? null : column.getType());
             return sourceInfoDeriveColumnVO;
         }).collect(Collectors.toList()));
         return sourceInfoDeriveTableColumnVO;
@@ -860,9 +860,9 @@ public class SourceInfoDeriveTableInfoService {
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
 
         // 校验是否有etl_date
-       if (sourceInfoDeriveColumnInfos.stream().anyMatch(e -> Objects.equals(timeField, e.getColumnNameEn()))){
-           return ReturnUtil.error("400", "衍生表字段不能包含默认字段:" + timeField);
-       }
+        if (sourceInfoDeriveColumnInfos.stream().anyMatch(e -> Objects.equals(timeField, e.getColumnNameEn()))) {
+            return ReturnUtil.error("400", "衍生表字段不能包含默认字段:" + timeField);
+        }
         // 校验字段英文名
         List<String> errorNames = sourceInfoDeriveColumnInfos.stream().filter(e -> !checkColumnNameEn(e.getColumnNameEn())).map(SourceInfoDeriveColumnInfo::getColumnNameEn).collect(Collectors.toList());
         if (!CollectionUtils.isEmpty(errorNames)) {
@@ -870,7 +870,7 @@ public class SourceInfoDeriveTableInfoService {
         }
         // 校验重名
         List<String> dumpNames = sourceInfoDeriveColumnInfos.stream().collect(Collectors.groupingBy(SourceInfoDeriveColumnInfo::getColumnNameEn, Collectors.counting())).entrySet().stream().filter(e -> e.getValue() > 1).map(Map.Entry::getKey).collect(Collectors.toList());
-        if (!CollectionUtils.isEmpty(dumpNames)){
+        if (!CollectionUtils.isEmpty(dumpNames)) {
             return ReturnUtil.error("400", "衍生表字段英文名不允许重复:" + dumpNames.toString());
         }
         // 根据数据源类型校验数据类型
