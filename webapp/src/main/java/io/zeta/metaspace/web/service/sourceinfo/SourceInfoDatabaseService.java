@@ -210,6 +210,8 @@ public class SourceInfoDatabaseService implements Approvable {
        if (Boolean.FALSE.equals(ParamUtil.isNull(diLists))){
            for (DatabaseInfoForList di:diLists){
                String statusValue = Status.getStatusByValue(di.getStatus());
+               di.setCategoryName(di.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
+                       this.getActiveInfoAllPath(di.getCategoryId(),tenantId):this.getAllPath(di.getId(),tenantId));
                di.setStatus(statusValue);
            }
        }
@@ -452,7 +454,11 @@ public class SourceInfoDatabaseService implements Approvable {
      */
 
     private DatabaseInfoBO getDatabaseInfoBOById(String id,String tenantId,int version){
-        return databaseInfoDAO.getDatabaseInfoById(id,tenantId,version);
+        DatabaseInfoBO databaseInfoBO=databaseInfoDAO.getDatabaseInfoById(id,tenantId,version);
+
+        databaseInfoBO.setCategoryName(databaseInfoBO.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
+                this.getActiveInfoAllPath(databaseInfoBO.getCategoryId(),tenantId):this.getAllPath(id,tenantId));
+        return databaseInfoBO;
     }
 
     /**
@@ -522,6 +528,19 @@ public class SourceInfoDatabaseService implements Approvable {
         }
     }
 
+    private String getActiveInfoAllPath(String categoryId,String tenantId){
+        String parentCategoryId = categoryId;
+        StringBuilder sb = new StringBuilder("/");
+        while (Boolean.FALSE.equals(ParamUtil.isNull(parentCategoryId))){
+            String name=categoryDAO.getCategoryNameById(parentCategoryId,tenantId);
+            StringBuilder sbInner = new StringBuilder("/");
+            sbInner.append(name);
+            sbInner.append(sb);
+            sb = sbInner;
+            parentCategoryId = categoryDAO.getParentIdByGuid(parentCategoryId,tenantId);
+        }
+        return sb.toString();
+    }
     private String getAllPath(String sourceInfoId,String tenantId){
         String parentCategoryId = databaseInfoDAO.getParentCategoryIdById(sourceInfoId);
         StringBuilder sb = new StringBuilder("/");
