@@ -557,10 +557,12 @@ public class SourceInfoDatabaseService implements Approvable {
         StringBuilder sb = new StringBuilder("/");
         while (Boolean.FALSE.equals(ParamUtil.isNull(parentCategoryId))){
             String name=categoryDAO.getCategoryNameById(parentCategoryId,tenantId);
-            StringBuilder sbInner = new StringBuilder("/");
-            sbInner.append(name);
-            sbInner.append(sb);
-            sb = sbInner;
+            if (Boolean.FALSE.equals(ParamUtil.isNull(name))){
+                StringBuilder sbInner = new StringBuilder("/");
+                sbInner.append(name);
+                sbInner.append(sb);
+                sb = sbInner;
+            }
             parentCategoryId = categoryDAO.getParentIdByGuid(parentCategoryId,tenantId);
         }
         return sb.toString();
