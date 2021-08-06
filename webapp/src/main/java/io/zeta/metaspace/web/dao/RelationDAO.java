@@ -50,6 +50,7 @@ public interface RelationDAO {
                     " ti.tableGuid,\n" +
                     " COUNT ( * ) OVER () total,\n" +
                     " COALESCE(tdsr.data_source_id,(SELECT data_source_id FROM source_info WHERE \"version\" = 0 AND category_id = #{categoryGuid} AND tenant_id = #{tenantId} ),'ID') AS sourceId,\n" +
+                    " (SELECT id FROM source_info WHERE \"version\" = 0 AND category_id = #{categoryGuid} AND tenant_id = #{tenantId} ) AS sourceInfoId" +
                     " tdsr.category_id AS categoryGuid,\n" +
                     " ti.tableName,\n" +
                     " ti.dbName,\n" +
