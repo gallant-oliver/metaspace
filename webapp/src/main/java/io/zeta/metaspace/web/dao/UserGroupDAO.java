@@ -619,7 +619,7 @@ public interface UserGroupDAO {
     @Select("<script> " +
             "select count(*)over() totalSize,u.id,u.name from user_group u where u.tenant=#{tenantId} and u.valid=true" +
             "<if test='parameters.query!=null'>" +
-            " and u.name like '%${parameters.query}%' ESCAPE '/'  " +
+            " and u.name like concat('%',#{parameters.query},'%') ESCAPE '/'  " +
             "</if>" +
             "<if test='parameters.limit!=-1'>" +
             " limit ${parameters.limit} " +
@@ -637,7 +637,7 @@ public interface UserGroupDAO {
             " on d.source_id=g.source_id " +
             " where g.group_id = #{groupId} " +
             "<if test='search!=null'>" +
-            " and d.source_name like '%${search}%' ESCAPE '/' " +
+            " and d.source_name like concat('%',#{search},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='limit!=-1'>" +
             " limit ${limit} " +
@@ -654,7 +654,7 @@ public interface UserGroupDAO {
             " select r.source_id from datasource_group_relation r  where r.group_id=#{groupId} ) " +
             " and d.tenantid= #{tenantId} " +
             "<if test='search!=null'>" +
-            " and d.source_name like '%${search}%' ESCAPE '/' " +
+            " and d.source_name like concat('%',#{search},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='limit!=-1'>" +
             " limit ${limit} " +
@@ -776,7 +776,7 @@ public interface UserGroupDAO {
             "select count(*)over() totalSize,p.id,p.name,p.description from project_group_relation r join project p on r.project_id=p.id where " +
             "r.group_id=#{groupId} and p.tenantid=#{tenantId} and p.valid=true " +
             "<if test=\"param.query!=null and param.query!=''\">" +
-            " and p.name like '%${param.query}%' ESCAPE '/' " +
+            " and p.name like concat('%',#{param.query},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='param.limit!=-1'>" +
             " limit ${param.limit} " +
@@ -792,7 +792,7 @@ public interface UserGroupDAO {
             " select * from project_group_relation where group_id=#{groupId} ) r " +
             " on r.project_id=p.id where p.tenantid=#{tenantId} and r.group_id is null and p.valid=true " +
             "<if test=\"param.query!=null and param.query!=''\">" +
-            " and p.name like '%${param.query}%' ESCAPE '/' " +
+            " and p.name like concat('%',#{param.query},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='param.limit!=-1'>" +
             " limit ${param.limit} " +
@@ -806,7 +806,7 @@ public interface UserGroupDAO {
     @Select("<script>" +
             "select count(*)over() totalSize,id,name,description from project where tenantid=#{tenantId} and valid=true " +
             "<if test=\"param.query!=null and param.query!=''\">" +
-            " and name like '%${param.query}%' ESCAPE '/' " +
+            " and name like concat('%',#{param.query},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='param.limit!=-1'>" +
             " limit ${param.limit} " +
@@ -1129,7 +1129,7 @@ public interface UserGroupDAO {
             " and c.edit_item=true " +
             "</if>" +
             "<if test='parameters.query!=null'>" +
-            " and u.name like '%${parameters.query}%' ESCAPE '/' " +
+            " and u.name like concat('%',#{parameters.query},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='parameters.sortBy!=null'>" +
             " order by ${parameters.sortBy} " +
