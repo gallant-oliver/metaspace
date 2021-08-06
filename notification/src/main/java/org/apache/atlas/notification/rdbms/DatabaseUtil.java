@@ -35,7 +35,13 @@ public class DatabaseUtil {
     public static List<TableColumnInfo> getColumnNames(DataSourceInfo dataSourceInfo, String tableUser, String tableName){
         List<TableColumnInfo> columnNames = new ArrayList<>();
         AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
-        List<SchemaCrawlerColumn> list = adapterExecutor.getColumns(tableUser,tableName);
+        List<SchemaCrawlerColumn> list = null;
+        try{
+            list = adapterExecutor.getColumns(tableUser,tableName);
+        }catch (Exception e){//查找不到列的时候error
+            logger.error("获取表 {} 列信息出错,{}",tableName,e);
+        }
+
         if(CollectionUtils.isEmpty(list)){
             return columnNames;
         }

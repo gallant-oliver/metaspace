@@ -38,7 +38,6 @@ public class CalciteParseSqlTools {
         RdbmsMessage.Payload payload = notification.getRdbmsMessage().getPayload();
         Boolean isDdl = StringUtils.isBlank(payload.getOp());
         String sql = isDdl ?  payload.getDdl() : payload.getSource().getQuery() ;
-        //sql = sql.replace("`","").replaceAll("\"","");
         String rdbmsType = KafkaConnectorUtil.getRdbmsType(config.getConnectorClass());
         Map<String, TreeSet<String>> resultTableMap = DruidAnalyzerUtil.getFromTo(sql,rdbmsType);
         TreeSet<String> fromSet = resultTableMap.get("from");
@@ -48,11 +47,12 @@ public class CalciteParseSqlTools {
             log.info("sql解析没有表对象，不需要处理..");
             return new RdbmsEntities();
         }
+        boolean isRenameOperation = DruidAnalyzerUtil.RENAME_FLAG.equals(resultTableMap.get("renameFlag").first()); // 空或者rename值
         String entityType = resultTableMap.get("type").first(); //table or view or user
         String upperSql = sql.trim().replaceAll("\\s+", " ").toUpperCase();
         String alterType = upperSql.startsWith("ALTER TABLE") && upperSql.split("\\s+").length > 4 ? upperSql.split("\\s+")[3] : "DEFAULT";
         RdbmsEntities.OperateType operateType =
-                StringUtils.startsWithAny(upperSql, new String[] { "CREATE", "INSERT"}) || StringUtils.equalsIgnoreCase("ADD",alterType) ? RdbmsEntities.OperateType.ADD :
+                StringUtils.startsWithAny(upperSql, new String[] { "CREATE", "INSERT","RENAME"}) || StringUtils.equalsIgnoreCase("ADD",alterType) ? RdbmsEntities.OperateType.ADD :
                         (StringUtils.startsWithAny(upperSql,new String[] { "DROP", "DELETE"}) || StringUtils.equalsIgnoreCase("DROP",alterType) ? RdbmsEntities.OperateType.DROP :
                         RdbmsEntities.OperateType.MODIFY);
 
@@ -61,7 +61,9 @@ public class CalciteParseSqlTools {
         RdbmsEntities rdbmsEntities = new RdbmsEntities();
         Map<RdbmsEntities.OperateType, Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> operateEntityMap = rdbmsEntities.getEntityMap();
         Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> modifyMap = operateEntityMap.get(RdbmsEntities.OperateType.MODIFY);
+        Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> dropMap = operateEntityMap.get(RdbmsEntities.OperateType.DROP);
         Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> operateMap = operateEntityMap.get(operateType);
+        Map<String, AtlasEntity.AtlasEntityWithExtInfo> renameMap = rdbmsEntities.getRenameMap();
         //额外参数存储
         Map<String,String> paramMap = new HashMap<>();
         String owner = payload.getOwner();
@@ -73,7 +75,6 @@ public class CalciteParseSqlTools {
 
         DataSourceInfo dataSourceInfo = new DataSourceInfo();
         //获取表字段信息
-        // String jdbcDriver = null,jdbcURL = null;
         dataSourceInfo.setIp(config.getDbIp());
         dataSourceInfo.setPort(config.getDbPort()+"");
         dataSourceInfo.setUserName(username);
@@ -120,9 +121,6 @@ public class CalciteParseSqlTools {
         List<String> allColumnInfo = new ArrayList<>();
         paramMap.put("table.type",entityType);
         paramMap.put("isDropTable",operateType.name());
-        /*connectorProperties.put("table.type",entityType);
-        connectorProperties.put("isDropTable",operateType.name());*/
-
         dealTableColumnEntity(dataSourceInfo,fromTableList, config,paramMap, fromTableEntityList, fromColumnEntityList,allColumnInfo);
         dealTableColumnEntity(dataSourceInfo,toTableList, config,paramMap, toTableEntityList, toColumnEntityList,allColumnInfo);
 
@@ -134,8 +132,16 @@ public class CalciteParseSqlTools {
             atlasBloodEntities = makeAtlasBloodRelation(dataSourceInfo,resultTableMap, sql, config,allColumnInfo,owner);
         }
         //添加来源的 表 列 column table
-        addMapOrNot(modifyMap,RdbmsEntities.EntityType.RDBMS_TABLE,fromTableEntityList);
-        addMapOrNot(modifyMap,RdbmsEntities.EntityType.RDBMS_COLUMN,fromColumnEntityList);
+        if(isRenameOperation && !fromSet.isEmpty()){
+            addMapOrNot(dropMap,RdbmsEntities.EntityType.RDBMS_TABLE,fromTableEntityList);
+        }else{
+            addMapOrNot(modifyMap,RdbmsEntities.EntityType.RDBMS_TABLE,fromTableEntityList);
+        }
+        if(isRenameOperation && fromSet.isEmpty()){
+            addMapOrNot(dropMap,RdbmsEntities.EntityType.RDBMS_COLUMN,fromColumnEntityList);
+        }else{
+            addMapOrNot(modifyMap,RdbmsEntities.EntityType.RDBMS_COLUMN,fromColumnEntityList);
+        }
 
         //添加输出（最终）表 列 column table
         if(operateType == RdbmsEntities.OperateType.MODIFY){
@@ -150,7 +156,39 @@ public class CalciteParseSqlTools {
             rdbmsEntities.setBloodEntities(atlasBloodEntities);
         }
 
+        //新增renameMap的逻辑
+        if(isRenameOperation){
+            String toTable = toSet.first();
+            String oldQualifiedName = "";
+            AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = null;
+            if(fromSet.isEmpty()){//来源表为空，则为列的重命名逻辑
+                TreeSet<String> fromColumnSet = resultTableMap.get("fromColumn");
+                TreeSet<String> toColumnSet = resultTableMap.get("toColumn");
+                oldQualifiedName = AdapterUtils.getColumnQualifiedName(dataSourceInfo,username,toTable,fromColumnSet.first());
+                String newQualifiedName = AdapterUtils.getColumnQualifiedName(dataSourceInfo,username,toTable,toColumnSet.first());
+                atlasEntityWithExtInfo = getEntityByQualifiedName(newQualifiedName,rdbmsEntities,RdbmsEntities.EntityType.RDBMS_COLUMN);
+            }else{//表的重命名逻辑
+                oldQualifiedName = AdapterUtils.getTableQualifiedName(dataSourceInfo,username,fromSet.first());
+                String newQualifiedName = AdapterUtils.getTableQualifiedName(dataSourceInfo,username,toTable);
+                atlasEntityWithExtInfo = getEntityByQualifiedName(newQualifiedName,rdbmsEntities,RdbmsEntities.EntityType.RDBMS_TABLE);
+            }
+            renameMap.put(oldQualifiedName,atlasEntityWithExtInfo);
+        }
+
+
         return rdbmsEntities;
+    }
+
+    /*
+     根据qualifiedName 获取 entity
+     */
+    private static AtlasEntity.AtlasEntityWithExtInfo getEntityByQualifiedName(String qualifiedName,RdbmsEntities rdbmsEntities,RdbmsEntities.EntityType entityType){
+        Map<RdbmsEntities.OperateType, Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> map = rdbmsEntities.getEntityMap();
+        for(Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> valueMap : map.values()){
+            List<AtlasEntity.AtlasEntityWithExtInfo> list = valueMap.get(entityType);
+            return list.stream().filter(p->qualifiedName.equals(p.getEntity().getAttribute("qualifiedName"))).findFirst().orElse(null);
+        }
+        return null;
     }
 
     private static void addMapOrNot(Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> map,
@@ -398,7 +436,6 @@ public class CalciteParseSqlTools {
 
         String dbHostname = config.getDbIp();
         int dbPort = config.getDbPort();
-        String dbPassword = config.getDbPassword();
         String username =  StringUtils.isBlank(paramMap.get("owner"))? config.getDbUser() : paramMap.get("owner") ;
         username = username.toUpperCase();
         String dbname = config.getDbName(); //orcl 实例名
@@ -481,16 +518,6 @@ public class CalciteParseSqlTools {
             resultList.add(instanceJsonEntity);
         }else if(entityType == RdbmsEntities.EntityType.RDBMS_COLUMN){
             String table = paramMap.get("table").toUpperCase();
-
-           /* if("mysql".equalsIgnoreCase(rdbmsType)){
-                jdbcDriver = "com.mysql.jdbc.Driver";
-                jdbcURL = "jdbc:mysql://"+dbHostname+":"+dbPort+"/"+dbname;
-            }
-            if("oracle".equalsIgnoreCase(rdbmsType)){
-                jdbcDriver = "oracle.jdbc.driver.OracleDriver";
-                jdbcURL = "jdbc:oracle:thin:@"+dbHostname+":"+dbPort+":"+dbname;
-            }*/
-            //getInstance(jdbcDriver).getColumnNames(table,jdbcURL,username,dbPassword);
             Map<String, Object> attributeTableMap = null;
             List<DatabaseUtil.TableColumnInfo> columnList = DatabaseUtil.getColumnNames(dataSourceInfo,username, table);
             if(!CollectionUtils.isEmpty(columnList)){
