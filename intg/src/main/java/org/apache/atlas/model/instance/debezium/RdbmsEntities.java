@@ -107,4 +107,13 @@ public class RdbmsEntities {
     public void setBloodEntities(AtlasEntity.AtlasEntitiesWithExtInfo bloodEntities) {
         this.bloodEntities =  bloodEntities;
     }
+
+    public static EntityType getType(String type){
+        for(EntityType entityType :EntityType.values()){
+            if(entityType.name().equalsIgnoreCase(type)){
+                return entityType;
+            }
+        }
+        return null;
+    }
 }

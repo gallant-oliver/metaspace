@@ -56,12 +56,13 @@ public class SyncTaskJob implements Job {
     public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
         String instanceId = UUID.randomUUID().toString();
         TableSchema schema = new TableSchema();
+        SyncTaskDefinition definition = null;
         try {
             String group = jobExecutionContext.getJobDetail().getKey().getGroup();
             String definitionId = group.replace("job_group_", "");
             JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
             String executor =  (String)jobDataMap.getOrDefault("executor", null);
-            SyncTaskDefinition definition = syncTaskDefinitionDAO.getById(definitionId);
+            definition = syncTaskDefinitionDAO.getById(definitionId);
             if (definition == null) {
                 throw new AtlasBaseException("采集任务找不到任务定义");
             }
@@ -75,12 +76,12 @@ public class SyncTaskJob implements Job {
                     sourceDbs = sourceDbs.stream().filter(sdb->schemas.contains(sdb.getDatabaseName())).
                             collect(Collectors.toList());
                 }
-                sourceDbs.forEach(sdb -> {
+                for(Database sdb : sourceDbs){
                     String sourceDbRelationId = dbDAO.getSourceDbRelationId(sdb.getDatabaseId(), definition.getDataSourceId());
                     if(null == sourceDbRelationId){
                         dbDAO.insertSourceDbRelation(UUID.randomUUID().toString(),sdb.getDatabaseId(),definition.getDataSourceId());
                     }
-                });
+                }
             }
             SyncTaskInstance instance = new SyncTaskInstance();
             instance.setId(instanceId);
@@ -110,7 +111,10 @@ public class SyncTaskJob implements Job {
             if (syncTaskInstance != null) {
                 syncTaskInstanceDAO.updateStatusAndAppendLog(instanceId, SyncTaskInstance.Status.FAIL, "执行异常：" + e.getMessage());
             }
-            indexCounter.plusOneFail(schema.getDefinition().getDataSourceType());
+            if(null != definition){
+                indexCounter.plusOneFail(definition.getDataSourceType());
+            }
+
             log.error("任务实例异常 " + instanceId, e);
             throw new AtlasBaseException(e);
         }

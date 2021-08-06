@@ -22,8 +22,8 @@ public class OracleSourceConnectorConfig extends AbstractConfig {
 	public static final String DB_PASSWORD_CONFIG = "db.password";
 	public static final String DB_FETCH_SIZE = "db.fetch.size";
 	public static final String START_SCN = "start.scn";
-	public static final String REST_PORT = "rest.port";
 
+	private static final String ORACLE_CONNECTOR_CLASS = "io.zeta.metaspace.connector.oracle.OracleSourceConnector";
 	public OracleSourceConnectorConfig(ConfigDef config, Map<String, String> parsedConfig) {
 		super(config, parsedConfig);
 	}
@@ -34,7 +34,7 @@ public class OracleSourceConnectorConfig extends AbstractConfig {
 
 	public static ConfigDef conf() {
 		return new ConfigDef()
-				.define(NAME, Type.STRING, Importance.HIGH, "Connector name")
+				.define(NAME, Type.STRING, ORACLE_CONNECTOR_CLASS,Importance.LOW, "Connector name")
 				.define(TOPIC_CONFIG, Type.STRING, OracleConnectorConstant.DEFAULT_TOPIC, Importance.LOW, "Topic")
 				.define(DB_NAME_CONFIG, Type.STRING, "", Importance.LOW, "Db Name")
 				.define(DB_IP_CONFIG, Type.STRING,  "", Importance.LOW, "Db Ip")
@@ -42,7 +42,6 @@ public class OracleSourceConnectorConfig extends AbstractConfig {
 				.define(DB_USER_CONFIG, Type.STRING,  "", Importance.LOW, "Db User")
 				.define(DB_PASSWORD_CONFIG, Type.STRING,  "", Importance.LOW, "Db Password")
 				.define(DB_FETCH_SIZE, Type.INT, 10, Importance.LOW, "Database Record Fetch Size")
-				.define(REST_PORT, Type.INT, 8083, Importance.LOW, "Rest Port")
 				.define(START_SCN, Type.LONG, -1L, Importance.LOW, "Start SCN");
 	}
 
@@ -80,10 +79,6 @@ public class OracleSourceConnectorConfig extends AbstractConfig {
 
 	public String getName() {
 		return super.getString(NAME);
-	}
-
-	public int getRestPort() {
-		return super.getInt(REST_PORT);
 	}
 
 }

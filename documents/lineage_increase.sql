@@ -20,8 +20,7 @@ CREATE TABLE "public"."connector" (
   "is_deleted" bool DEFAULT false,
   "tasks_max" int4 DEFAULT 1,
   "db_fetch_size" int4 DEFAULT 10,
-  "start_scn" int8 DEFAULT -1,
-  "rest_port" int4 DEFAULT 8083
+  "start_scn" int8 DEFAULT -1
 );
 ALTER TABLE "public"."connector" ADD CONSTRAINT "connector_pkey" PRIMARY KEY ("id");
 COMMENT ON COLUMN "public"."connector"."id" IS 'id';
@@ -38,7 +37,6 @@ COMMENT ON COLUMN "public"."connector"."is_deleted" IS '是否已删除';
 COMMENT ON COLUMN "public"."connector"."tasks_max" IS '最大任务数';
 COMMENT ON COLUMN "public"."connector"."db_fetch_size" IS '每次读取的条数';
 COMMENT ON COLUMN "public"."connector"."start_scn" IS '数据库初始日志时间戳';
-COMMENT ON COLUMN "public"."connector"."rest_port" IS '服务端口';
 
 
 -- ----------------------------
