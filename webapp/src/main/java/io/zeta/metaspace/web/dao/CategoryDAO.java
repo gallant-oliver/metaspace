@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.sourceinfo.derivetable.vo.CategoryGuidPath;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.ibatis.annotations.*;
@@ -372,4 +373,14 @@ public interface CategoryDAO {
 
     @Select(" select parentcategoryguid from category where guid = #{id} AND tenantid = #{tenant} ")
     String getParentIdByGuid(@Param("id") String guid,@Param("tenant") String tenant);
+
+    @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH)  AS" +
+            " (SELECT guid,name,parentCategoryGuid, name as  PATH" +
+            " FROM category WHERE parentCategoryGuid IS NULL and tenantid= #{tenantId} and categorytype = #{type}" +
+            " UNION ALL " +
+            " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH ||'/'|| D.name" +
+            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid='2f5eced9c1c64609bc2d8172562bf1da')" +
+            "SELECT  * FROM T ")
+    List<CategoryGuidPath> getGuidPathByTenantIdAndCategoryType(@Param("tenantId")String tenantId, @Param("type") int type);
+
 }
