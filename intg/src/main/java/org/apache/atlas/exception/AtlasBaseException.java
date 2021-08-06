@@ -85,19 +85,15 @@ public class AtlasBaseException extends RuntimeException {
     public AtlasBaseException(String detail,final AtlasErrorCode errorCode, String ... params) {
         super(errorCode.getFormattedErrorMessage(params));
         this.atlasErrorCode = errorCode;
-        int sqlIndex= StringUtils.indexOfIgnoreCase(detail,"PSQLException");
-        if(sqlIndex == -1){
-            this.detail=detail;
-        }else{
-            this.detail=detail.substring(0,sqlIndex+"PSQLException".length());
-        }
-
+       // this.detail=detail;
+        modifyDetail(detail);
     }
 
     public AtlasBaseException(String detail,AtlasErrorCode errorCode, Throwable cause, String ... params) {
         super(errorCode.getFormattedErrorMessage(params), cause);
         this.atlasErrorCode = errorCode;
-        this.detail=detail;
+        //this.detail=detail;
+        modifyDetail(detail);
     }
 
     public AtlasErrorCode getAtlasErrorCode() {
@@ -106,5 +102,14 @@ public class AtlasBaseException extends RuntimeException {
 
     public String getDetail() {
         return detail;
+    }
+
+    private void modifyDetail(String detail){
+        int sqlIndex= StringUtils.indexOfIgnoreCase(detail,"PSQLException");
+        if(sqlIndex == -1){
+            this.detail=detail;
+        }else{
+            this.detail=detail.substring(0,sqlIndex+"PSQLException".length());
+        }
     }
 }
