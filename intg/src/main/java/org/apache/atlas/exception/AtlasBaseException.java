@@ -85,15 +85,13 @@ public class AtlasBaseException extends RuntimeException {
     public AtlasBaseException(String detail,final AtlasErrorCode errorCode, String ... params) {
         super(errorCode.getFormattedErrorMessage(params));
         this.atlasErrorCode = errorCode;
-       // this.detail=detail;
-        modifyDetail(detail);
+        this.detail=detail;
     }
 
     public AtlasBaseException(String detail,AtlasErrorCode errorCode, Throwable cause, String ... params) {
         super(errorCode.getFormattedErrorMessage(params), cause);
         this.atlasErrorCode = errorCode;
-        //this.detail=detail;
-        modifyDetail(detail);
+        this.detail=detail;
     }
 
     public AtlasErrorCode getAtlasErrorCode() {
