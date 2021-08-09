@@ -17,14 +17,8 @@ import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.CategoryExport;
-import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
-import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.result.CategoryGroupPrivilege;
-import io.zeta.metaspace.model.result.CategoryPrivilege;
-import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
-import io.zeta.metaspace.model.result.GroupPrivilege;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.share.ProjectHeader;
 import io.zeta.metaspace.model.table.DataSourceHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
@@ -35,17 +29,11 @@ import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.*;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
-
-import javax.ws.rs.DELETE;
 
 /**
  * @author lixiang03
@@ -520,18 +508,30 @@ public interface UserGroupDAO {
     public List<RoleModulesCategories.Category> getChildAndOwnerCategorys(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("categoryType") int categoryType,@Param("tenantId") String tenantId);
 
 
-    @Select("<script>select count(*) over() as total , t.* from ( select DISTINCT tableinfo.source_id as sourceId,(case tableinfo.source_id = 'hive' when true then  'hive' else  data_source.source_name end) as sourceName ,( case (select count(*)>0  from data_source where source_id = tableinfo.source_id) or (tableinfo.source_id = 'hive') when true then 'ACTIVE' else 'DELETED' end ) as sourceStatus from category,table_relation,tableinfo " +
-            " left join data_source on data_source.source_id = tableinfo.source_id " +
-            " where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and databasestatus='ACTIVE' and category.tenantid=#{tenantId} " +
-            " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive')" +
-            "  and category.guid in " +
-            "    <foreach item='item' index='index' collection='guids'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{item}" +
-            "    </foreach>" +
-            "    ) t " +
-            "  where t.sourceName like '%'||#{query}||'%' ESCAPE '/' " +
-            "order by t.sourceId <if test='limit!= -1'>limit #{limit}</if> offset #{offset} " +
+//    @Select("<script>select count(*) over() as total , t.* from ( select DISTINCT tableinfo.source_id as sourceId,(case tableinfo.source_id = 'hive' when true then  'hive' else  data_source.source_name end) as sourceName ,( case (select count(*)>0  from data_source where source_id = tableinfo.source_id) or (tableinfo.source_id = 'hive') when true then 'ACTIVE' else 'DELETED' end ) as sourceStatus from category,table_relation,tableinfo " +
+//            " left join data_source on data_source.source_id = tableinfo.source_id " +
+//            " where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and databasestatus='ACTIVE' and category.tenantid=#{tenantId} " +
+//            " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive')" +
+//            "  and category.guid in " +
+//            "    <foreach item='item' index='index' collection='guids'" +
+//            "    open='(' separator=',' close=')'>" +
+//            "    #{item}" +
+//            "    </foreach>" +
+//            "    ) t " +
+//            "  where t.sourceName like '%'||#{query}||'%' ESCAPE '/' " +
+//            "order by t.sourceId <if test='limit!= -1'>limit #{limit}</if> offset #{offset} " +
+//            "</script>")
+    @Select("<script>" +
+            " SELECT" +
+            " source.source_id AS sourceId," +
+            " source.source_name AS sourceName," +
+            " 'ACTIVE' AS sourceStatus " +
+            " FROM" +
+            " data_source AS source " +
+            " WHERE" +
+            " source.tenantid = #{tenantId} " +
+            " AND source.source_name  like '%'||#{query}||'%' ESCAPE '/' " +
+            " ORDER BY source.source_id <if test='limit!= -1'>limit #{limit}</if> offset #{offset}"+
             "</script>")
     public List<DataSourceHeader> getSourceInfo(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit, @Param("tenantId") String tenantId);
 
@@ -552,24 +552,31 @@ public interface UserGroupDAO {
     public List<DatabaseHeader> getDBInfo(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
 
-    @Select("<script>select count(*) over() as total , t.* from ( select DISTINCT tableinfo.databaseGuid,tableinfo.dbname,tableinfo.databasestatus from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and databasestatus='ACTIVE' and category.tenantid=#{tenantId} and category.guid in " +
-            "    <foreach item='item' index='index' collection='guids'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{item}" +
-            "    </foreach>" +
-            "    and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/' " +
-            "    and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') " +
-            "    and ( tableinfo.source_id != 'hive' or tableinfo.dbname in " +
-            "    <foreach item='item' index='index' collection='databases'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{item}" +
-            "    </foreach>)" +
-            " <if test='sourceId!=null'>"+
+    @Select("<script>" +
+            " SELECT COUNT ( * ) OVER ( ) AS total, T.* " +
+            " FROM ( SELECT DISTINCT tableinfo.databaseGuid,tableinfo.dbname,tableinfo.databasestatus" +
+            " FROM tableinfo WHERE databasestatus = 'ACTIVE'" +
+            " and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/'"+
+            " <if test='sourceId != null'>"+
             " and tableinfo.source_id = #{sourceId}"+
             " </if>"+
-            "    order by tableinfo.dbname <if test='limit!= -1'>limit #{limit}</if> offset #{offset} ) t" +
+            " AND tableinfo.source_id IN ( SELECT source_id FROM data_source WHERE tenantid = #{tenantId}) "+
+            " <if test='databases != null and databases.size>0 '>"+
+            " UNION" +
+            " SELECT DISTINCT tableinfo.databaseGuid,tableinfo.dbname,tableinfo.databasestatus FROM tableinfo" +
+            " WHERE databasestatus = 'ACTIVE' and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/'" +
+            " <if test='sourceId != null'>"+
+            "  and tableinfo.source_id = #{sourceId}"+
+            " </if>"+
+            " AND tableinfo.source_id = 'hive' AND tableinfo.dbname IN" +
+            " <foreach item='item' index='index' collection='databases' open='(' separator=',' close=')'>" +
+            "   #{item}" +
+            " </foreach>" +
+            " </if>"+
+            " ) AS T ORDER BY t.dbname"+
+            " <if test='limit != -1'>limit #{limit}</if> offset #{offset} "+
             "</script>")
-    public List<DatabaseHeader> getDBInfo2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases, @Param("sourceId") String sourceId,@Param("tenantId") String tenantId);
+    public List<DatabaseHeader> getDBInfo2(@Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases, @Param("sourceId") String sourceId,@Param("tenantId") String tenantId);
 
 
     @Select("<script>select COUNT(DISTINCT tableinfo.databaseGuid) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and databasestatus='ACTIVE' and category.tenantid=#{tenantId} and category.guid in " +
@@ -586,19 +593,49 @@ public interface UserGroupDAO {
             "</script>")
     public long getDBCountV2(@Param("guids") List<String> guids, @Param("query") String query,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
-    @Select("<script>select count(*) over() as total, t.* from (select distinct tableinfo.tableguid,tableinfo.tablename,tableinfo.dbname,tableinfo.status,tableinfo.createtime,tableinfo.databaseguid,tableinfo.source_id from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.tenantid=#{tenantId} and category.guid in " +
-            "    <foreach item='item' index='index' collection='guids'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{item}" +
-            "    </foreach>" +
-            "     and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/' " +
-            "    and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') " +
-            "    and ( tableinfo.source_id != 'hive' or tableinfo.dbname in " +
-            "    <foreach item='item' index='index' collection='databases'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{item}" +
-            "    </foreach>) ) t" +
-            "     order by t.tableguid <if test='limit!= -1'>limit #{limit}</if> offset #{offset}" +
+//    @Select("<script>select count(*) over() as total, t.* from (select distinct tableinfo.tableguid,tableinfo.tablename,tableinfo.dbname,tableinfo.status,tableinfo.createtime,tableinfo.databaseguid,tableinfo.source_id from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.tenantid=#{tenantId} and category.guid in " +
+//            "    <foreach item='item' index='index' collection='guids'" +
+//            "    open='(' separator=',' close=')'>" +
+//            "    #{item}" +
+//            "    </foreach>" +
+//            "     and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/' " +
+//            "    and (tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) " +
+//            "    <if test='databases != null and databases.size()>0'>" +
+//            "    or (tableinfo.source_id = 'hive'  AND tableinfo.dbname IN " +
+//            "    <foreach item='item' index='index' collection='databases'" +
+//            "    open='(' separator=',' close=')'>" +
+//            "    #{item}" +
+//            "    </foreach>) " +
+//            "    </if>" +
+//            "    )) t " +
+//            "    order by t.tableguid <if test='limit!= -1'>limit #{limit}</if> offset #{offset}" +
+//            "</script>")
+    @Select("<script>" +
+            " SELECT count(*) over() as total,t.* FROM ("+
+            " SELECT tableinfo.source_id," +
+            " tableinfo.databaseguid," +
+            " tableinfo.dbname," +
+            " tableinfo.tableguid," +
+            " tableinfo.tablename," +
+            " tableinfo.status," +
+            " tableinfo.createtime FROM tableinfo INNER JOIN data_source as source on tableinfo.source_id = source.source_id" +
+            " WHERE source.tenantid = #{tenantId} and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/'" +
+            " <if test='databases != null and databases.size()>0'>" +
+            " union" +
+            " SELECT tableinfo.source_id," +
+            " tableinfo.databaseguid," +
+            " tableinfo.dbname," +
+            " tableinfo.tableguid," +
+            " tableinfo.tablename," +
+            " tableinfo.status," +
+            " tableinfo.createtime FROM tableinfo WHERE tableinfo.source_id = 'hive' AND tableinfo.dbname in " +
+            " <foreach item='item' index='index' collection='databases' open='(' separator=',' close=')'>" +
+            "   #{item}" +
+            " </foreach> " +
+            " and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/'" +
+            " </if>" +
+            " ) as t order by t.tableguid " +
+            " <if test='limit!= -1'>limit #{limit}</if> offset #{offset}" +
             "</script>")
     public List<TechnologyInfo.Table> getTableInfosV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 

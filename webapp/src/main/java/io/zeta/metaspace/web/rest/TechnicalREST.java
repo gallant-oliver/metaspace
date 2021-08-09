@@ -1,7 +1,5 @@
 package io.zeta.metaspace.web.rest;
 
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
-
 import com.google.common.base.Joiner;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
@@ -13,41 +11,38 @@ import io.zeta.metaspace.model.metadata.CategoryItem;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.metadata.TableOwner;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.DataSourceHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
-import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.web.model.TemplateEnum;
-import io.zeta.metaspace.web.service.CategoryRelationUtils;
-import io.zeta.metaspace.web.service.DataManageService;
-import io.zeta.metaspace.web.service.MetaDataService;
-import io.zeta.metaspace.web.service.SearchService;
-import io.zeta.metaspace.web.service.TenantService;
+import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.metadata.CategoryDeleteReturn;
-import org.apache.atlas.model.metadata.CategoryEntityV2;
-import org.apache.atlas.model.metadata.CategoryInfoV2;
-import org.apache.atlas.model.metadata.ImportCategory;
-import org.apache.atlas.model.metadata.MigrateCategory;
-import org.apache.atlas.model.metadata.MoveCategory;
-import org.apache.atlas.model.metadata.RelationEntityV2;
-import org.apache.atlas.model.metadata.SortCategory;
+import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.hadoop.io.IOUtils;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 
+import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -61,14 +56,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-import javax.inject.Singleton;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
 
 @Path("technical")
@@ -108,7 +96,7 @@ public class TechnicalREST {
     }
 
     /**
-     * 添加关联表时搜库
+     * 添加关联-库搜库
      *
      * @return List<DatabaseHeader>
      */
@@ -122,6 +110,15 @@ public class TechnicalREST {
     }
 
 
+    /**
+     * 根据数据源获取数据库列表
+     * @param parameters
+     * @param sourceId
+     * @param categoryId
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
     @POST
     @Path("/search/database/{sourceId}/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -146,7 +143,7 @@ public class TechnicalREST {
     }
 
     /**
-     * 添加关联表时搜表
+     * 添加关联-表搜表
      *
      * @return List<Table>
      */
@@ -324,7 +321,7 @@ public class TechnicalREST {
             String categoryName = dataManageService.getCategoryNameById(categoryGuid, tenantId);
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "目录添加关联:" + categoryName);
             List<String> ids = relations.stream().map(relation -> relation.getTableGuid()).collect(Collectors.toList());
-            dataManageService.assignTablesToCategory(categoryGuid, ids);
+            dataManageService.assignTablesToCategory(categoryGuid, ids, tenantId);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -752,7 +749,7 @@ public class TechnicalREST {
                 HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "迁移表关联:[" + Joiner.on("、").join(tableNames) + "]到" + path);
 
             }
-            dataManageService.assignTablesToCategory(item.getCategoryId(), item.getIds());
+            dataManageService.assignTablesToCategory(item.getCategoryId(), item.getIds(), tenantId);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "迁移表关联失败");
