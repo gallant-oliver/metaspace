@@ -58,7 +58,7 @@ public class DocxConvertToPdf {
                         Font fontChinese = new Font(bfChinese, size, style, color);
                         if (familyName != null)
                             fontChinese.setFamily(familyName);
-                        log.info("中文字体注册成功.");
+                       // log.info("中文字体注册成功.");
                         return fontChinese;
                     } catch (Exception e) {
                         log.error("中文字体注册失败.",e);
