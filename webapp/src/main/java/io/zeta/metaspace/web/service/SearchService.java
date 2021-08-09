@@ -970,8 +970,6 @@ public class SearchService {
             List<String> categoryGuidByTableGuid = sourceInfoDAO.selectByTableGuidAndTenantId(table.getTableId(), tenantId);
             if (CollectionUtils.isEmpty(categoryGuidByTableGuid)) {
                 table.setPath("");
-            } else if (categoryGuidByTableGuid.size() != 1) {
-                table.setPath("");
             } else {
                 String categoryGuid = categoryGuidByTableGuid.get(0);
                 if (category2Path.containsKey(categoryGuid)) {
