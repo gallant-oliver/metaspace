@@ -47,7 +47,8 @@ public class CalciteParseSqlTools {
             log.info("sql解析没有表对象，不需要处理..");
             return new RdbmsEntities();
         }
-        boolean isRenameOperation = DruidAnalyzerUtil.RENAME_FLAG.equals(resultTableMap.get("renameFlag").first()); // 空或者rename值
+
+        boolean isRenameOperation = resultTableMap.get("renameFlag").isEmpty()? false : DruidAnalyzerUtil.RENAME_FLAG.equals(resultTableMap.get("renameFlag").first()); // 空或者rename值
         String entityType = resultTableMap.get("type").first(); //table or view or user
         String upperSql = sql.trim().replaceAll("\\s+", " ").toUpperCase();
         String alterType = upperSql.startsWith("ALTER TABLE") && upperSql.split("\\s+").length > 4 ? upperSql.split("\\s+")[3] : "DEFAULT";
@@ -181,6 +182,9 @@ public class CalciteParseSqlTools {
         Map<RdbmsEntities.OperateType, Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> map = rdbmsEntities.getEntityMap();
         for(Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> valueMap : map.values()){
             List<AtlasEntity.AtlasEntityWithExtInfo> list = valueMap.get(entityType);
+            if(CollectionUtils.isEmpty(list)){
+                continue;
+            }
             return list.stream().filter(p->qualifiedName.equals(p.getEntity().getAttribute("qualifiedName"))).findFirst().orElse(null);
         }
         return null;
