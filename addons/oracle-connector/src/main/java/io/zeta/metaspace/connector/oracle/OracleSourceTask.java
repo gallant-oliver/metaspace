@@ -61,6 +61,7 @@ public class OracleSourceTask extends SourceTask {
 
 	@Override
 	public void start(Map<String, String> map) {
+		this.closed = false;
 		this.configMap = map;
 		config = new OracleSourceConnectorConfig(map);
 		if (isNullDbName()) {
@@ -176,22 +177,18 @@ public class OracleSourceTask extends SourceTask {
 		} catch (Throwable e) {
 			LOG.error("during poll on connector {} : ", config.getName(), e.getMessage(), e);
 			stop();
-			LOG.info("try to restart connector {} by streamOffsetScn = {}", config.getName(), streamOffsetScn);
-			try {
-				Thread.sleep(3000);
-				start(configMap);
-				this.closed = false;
-				tryTimes = 3;
-			} catch (Exception ex) {
-				if (tryTimes > 0) {
-					LOG.warn("connector {} restarted error: {}", config.getName(), ex.getMessage());
-					tryTimes = tryTimes - 1;
-				} else {
-					LOG.error("connector {} restarted error", config.getName(), ex);
-					throw ex;
+			int totalTimePlusOne = tryTimes + 1;
+			while(tryTimes > 0){
+				try{
+					Thread.sleep(5000);
+					LOG.info("{} : try to restart connector {} by streamOffsetScn = {}", (totalTimePlusOne-tryTimes), config.getName(), streamOffsetScn);
+					tryTimes = tryTimes-1;
+					start(configMap);
+					LOG.info("connector {} restarted", config.getName());
+				} catch (Exception ex) {
+					LOG.error("{} : connector {} restarted error: {}", (totalTimePlusOne-tryTimes), config.getName(), ex);
 				}
 			}
-			LOG.info("connector {} restarted", config.getName());
 		}
 		long endTime = System.currentTimeMillis();
 
@@ -215,15 +212,19 @@ public class OracleSourceTask extends SourceTask {
 		}
 
 		try {
-			CallableStatement s = dbConn.prepareCall(OracleConnectorSQL.STOP_LOGMINER_CMD);
-			s.execute();
-			s.close();
+			if(null != dbConn){
+				CallableStatement s = dbConn.prepareCall(OracleConnectorSQL.STOP_LOGMINER_CMD);
+				s.execute();
+				s.close();
+			}
 		} catch (Exception e) {
 			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
 		}
 		try {
-			logMinerSelect.cancel();
-			logMinerSelect.close();
+			if(null != logMinerSelect){
+				logMinerSelect.cancel();
+				logMinerSelect.close();
+			}
 		} catch (Exception e) {
 			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
 		}
@@ -235,7 +236,9 @@ public class OracleSourceTask extends SourceTask {
 			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
 		}
 		try {
-			dbConn.close();
+			if(null != dbConn){
+				dbConn.close();
+			}
 		} catch (Exception e) {
 			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
 		}
