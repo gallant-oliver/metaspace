@@ -108,7 +108,7 @@ public class SourceInfoDeriveTableInfo implements Serializable {
     private String updateTimeStr;
 
     @ApiModelProperty(value = "1:已提交，0：未提交", example = "1")
-    private int state;
+    private Integer state;
 
     @ApiModelProperty(value = "DDL语句")
     private String ddl;

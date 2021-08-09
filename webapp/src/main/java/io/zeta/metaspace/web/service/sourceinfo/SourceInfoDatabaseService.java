@@ -181,6 +181,14 @@ public class SourceInfoDatabaseService implements Approvable {
         return ReturnUtil.success();
     }
 
+    /**
+     * 重名验证
+     * @param tenantId 租户id
+     * @param name 中文名
+     * @param categoryId 挂载的目录id
+     * @param id 源信息id
+     * @return 处理结果
+     */
     public Result validate(String tenantId,String name,String categoryId,String id) {
         if (databaseInfoDAO.getDatabaseDuplicateName(tenantId,name, id)) {
             return ReturnUtil.error(AtlasErrorCode.DUPLICATE_ALIAS_NAME.getErrorCode(),
@@ -456,6 +464,9 @@ public class SourceInfoDatabaseService implements Approvable {
     private DatabaseInfoBO getDatabaseInfoBOById(String id,String tenantId,int version){
         DatabaseInfoBO databaseInfoBO=databaseInfoDAO.getDatabaseInfoById(id,tenantId,version);
 
+        if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfoBO))){
+            databaseInfoBO.setCategoryId(databaseInfoDAO.getParentCategoryIdById(databaseInfoBO.getId()));
+        }
         databaseInfoBO.setCategoryName(databaseInfoBO.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
                 this.getActiveInfoAllPath(databaseInfoBO.getCategoryId(),tenantId):this.getAllPath(id,tenantId));
         return databaseInfoBO;
@@ -546,10 +557,12 @@ public class SourceInfoDatabaseService implements Approvable {
         StringBuilder sb = new StringBuilder("/");
         while (Boolean.FALSE.equals(ParamUtil.isNull(parentCategoryId))){
             String name=categoryDAO.getCategoryNameById(parentCategoryId,tenantId);
-            StringBuilder sbInner = new StringBuilder("/");
-            sbInner.append(name);
-            sbInner.append(sb);
-            sb = sbInner;
+            if (Boolean.FALSE.equals(ParamUtil.isNull(name))){
+                StringBuilder sbInner = new StringBuilder("/");
+                sbInner.append(name);
+                sbInner.append(sb);
+                sb = sbInner;
+            }
             parentCategoryId = categoryDAO.getParentIdByGuid(parentCategoryId,tenantId);
         }
         return sb.toString();
