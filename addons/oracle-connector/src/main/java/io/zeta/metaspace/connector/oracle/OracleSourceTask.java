@@ -177,15 +177,16 @@ public class OracleSourceTask extends SourceTask {
 		} catch (Throwable e) {
 			LOG.error("during poll on connector {} : ", config.getName(), e.getMessage(), e);
 			stop();
+			int totalTimePlusOne = tryTimes + 1;
 			while(tryTimes > 0){
 				try{
 					Thread.sleep(5000);
-					LOG.info("{} : try to restart connector {} by streamOffsetScn = {}", (4-tryTimes), config.getName(), streamOffsetScn);
+					LOG.info("{} : try to restart connector {} by streamOffsetScn = {}", (totalTimePlusOne-tryTimes), config.getName(), streamOffsetScn);
 					tryTimes = tryTimes-1;
 					start(configMap);
 					LOG.info("connector {} restarted", config.getName());
 				} catch (Exception ex) {
-					LOG.error("{} : connector {} restarted error: {}", (4-tryTimes), config.getName(), ex);
+					LOG.error("{} : connector {} restarted error: {}", (totalTimePlusOne-tryTimes), config.getName(), ex);
 				}
 			}
 		}
