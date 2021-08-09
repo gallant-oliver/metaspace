@@ -381,7 +381,7 @@ public class SourceInfoDatabaseREST {
         String fileType = annex.getFileType();
         File tmpFile = null;
         try(InputStream in = hdfsService.getFileInputStream(filePath);){
-            tmpFile = File.createTempFile("sourceFileConvert"+System.currentTimeMillis(),"pdf");
+            tmpFile = File.createTempFile("tmp-"+System.currentTimeMillis(),".pdf");
             String base64String = "";
             log.info("文件类型：{},",fileType);
             if("xls".equalsIgnoreCase(fileType) || "xlsx".equalsIgnoreCase(fileType)){
