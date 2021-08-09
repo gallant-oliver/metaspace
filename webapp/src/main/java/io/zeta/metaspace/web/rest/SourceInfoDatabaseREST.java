@@ -396,7 +396,7 @@ public class SourceInfoDatabaseREST {
                 log.info("doc 转pdf成功");
                 base64String = Base64Utils.fileToBase64(tmpFile.getAbsolutePath());
             }else if("docx".equalsIgnoreCase(fileType)){
-                DocxConvertToPdf.convertDocxToPdf(in,new FileOutputStream(tmpFile));
+                DocxConvertToPdf.docxToPdf(in,tmpFile); //convertDocxToPdf(in,new FileOutputStream(tmpFile));
                 log.info("docx 转pdf成功，文件大小：{}",tmpFile.length());
                 base64String = Base64Utils.fileToBase64(tmpFile.getAbsolutePath());
             }else{

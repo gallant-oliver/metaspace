@@ -28,16 +28,15 @@ import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
-import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.dto.indices.IndexFieldExport;
 import io.zeta.metaspace.model.dto.indices.IndexFieldNode;
-import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.privilege.Module;
@@ -56,6 +55,7 @@ import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
+import io.zeta.metaspace.web.dao.sourceinfo.TableDataSourceRelationDAO;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
@@ -79,7 +79,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
@@ -154,7 +153,7 @@ public class DataManageService {
     @Autowired
     TenantDAO tenantDAO;
     @Autowired
-    private IndexDAO indexDAO;
+    private TableDataSourceRelationDAO tableDataSourceRelationDAO;
 
     @Autowired
     private AtlasEntityStoreV2 atlasEntityStore;
@@ -740,14 +739,29 @@ public class DataManageService {
      * @throws AtlasBaseException
      */
     @Transactional(rollbackFor = Exception.class)
-    public void assignTablesToCategory(String categoryGuid, List<String> ids) throws AtlasBaseException {
+    public void assignTablesToCategory(String categoryGuid, List<String> ids, String tenantId) throws AtlasBaseException {
         try {
             if (ids == null || ids.size() == 0) {
                 return;
             }
-            relationDao.updateByTableGuids(ids, categoryGuid, DateUtils.getNow());
+            List<TableInfo> tableInfoList = tableDAO.selectListByTableGuid(ids);
+            if(CollectionUtils.isEmpty(tableInfoList)){
+                return;
+            }
+            Map<String, String> map = tableInfoList.stream().collect(Collectors.toMap(TableInfo::getTableGuid, TableInfo::getSourceId));
+            List<TableDataSourceRelationPO> tableDataSourceRelationPOList = new ArrayList<>();
+            for (String id : ids) {
+                TableDataSourceRelationPO tableDataSourceRelationPO = new TableDataSourceRelationPO();
+                tableDataSourceRelationPO.setId(UUID.randomUUID().toString());
+                tableDataSourceRelationPO.setCategoryId(categoryGuid);
+                tableDataSourceRelationPO.setTableId(id);
+                tableDataSourceRelationPO.setDataSourceId(map.get(id));
+                tableDataSourceRelationPO.setTenantId(tenantId);
+                tableDataSourceRelationPOList.add(tableDataSourceRelationPO);
+            }
+            tableDataSourceRelationDAO.insertBatch(tableDataSourceRelationPOList);
         } catch (Exception e) {
-            LOG.error("添加关联失败", e);
+            LOG.error("添加关联失败{}", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加关联失败");
         }
     }

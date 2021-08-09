@@ -315,15 +315,9 @@ public interface RoleDAO {
     @Update("update role set description=#{description},updateTime=#{updateTime},updater=#{updater} where roleid=#{roleId}")
     public int editRole(Role role);
 
-    @Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid,tableinfo.status,tableinfo.createtime from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid" +
-            "   and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') " +
-            "  and tableinfo.status='ACTIVE'" +
-            "  and category.guid in " +
-            "    <foreach item='item' index='index' collection='guids'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{item}" +
-            "    </foreach>" +
-            "     and tableinfo.databaseGuid=#{db} order by tableinfo.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
+    @Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid,tableinfo.status,tableinfo.createtime" +
+            " FROM tableinfo WHERE tableinfo.status = 'ACTIVE' "+
+            " AND tableinfo.databaseGuid=#{db} order by tableinfo.tablename <if test='limit!= -1'>limit #{limit}</if> offset #{offset}</script>")
     public List<TechnologyInfo.Table> getTableInfosByDBIdByParameters(@Param("guids") List<String> guids, @Param("db") String db, @Param("offset") long offset, @Param("limit") long limit ,@Param("tenantId")String tenantId);
 
     @Select("<script>select count(distinct tableinfo.tableGuid) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.guid in " +
