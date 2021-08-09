@@ -61,7 +61,8 @@ public class DruidAnalyzerUtil {
         fromTo.put("renameFlag",new TreeSet<>());
 
         //rename 语法的处理,
-        boolean isRenameSyntax = StringUtils.containsAny(" "+sql," "+RENAME_FLAG+" ");
+        boolean isRenameSyntax = sql.matches(".*"+RENAME_FLAG+".+");
+        //StringUtils.containsAny(" "+sql," "+RENAME_FLAG+" ");
         if(isRenameSyntax){
             log.info("当前sql {} 属于重命名语法.",sql);
             fromTo.put("renameFlag",new TreeSet<>(Arrays.asList(RENAME_FLAG)));
