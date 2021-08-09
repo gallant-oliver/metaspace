@@ -10,6 +10,7 @@ import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.util.ReturnUtil;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.commons.collections.MapUtils;
 import org.slf4j.Logger;
@@ -20,10 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,13 +32,14 @@ public class SourceInfoFileService {
     private DatabaseDAO databaseDAO;
     @Autowired
     private UserDAO userDAO;
-  /*  @Autowired
-    private DatabaseInfoDAO databaseInfoDAO;*/
     @Autowired
     private CategoryDAO categoryDao;
     @Autowired
     private SourceInfoDatabaseService sourceInfoDatabaseService;
 
+    private final String[] validFields = new String[]{"数据层名称","数据库中文名","数据库类型","数据库英文名称",
+            "数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","手机号",
+            "数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","技术Owner手机号","技术负责人","业务负责人"};
     private Map<String,String> categoryMap  = new HashMap<String,String>();
     /*{{
         put("贴源层","1");
@@ -48,6 +48,31 @@ public class SourceInfoFileService {
         put("应用层","5");
     }};*/
 
+    /**
+     * 校验excel导入必填字段
+     * @param excelDataList
+     */
+    public boolean checkExcelField(List<String[]> excelDataList){
+        if(CollectionUtils.isEmpty(excelDataList) || excelDataList.size() == 1){
+            logger.info("导入的excel没有要处理的数据");
+            return false;
+        }
+        String[] titleArray = excelDataList.get(0);
+        Map<String,Integer> map = propertyToColumnIndexMap(titleArray);
+        //循环遍历校验必填数据
+        for (int i = 1,len = excelDataList.size(); i < len;i++ ){
+            String[] array = excelDataList.get(i);
+            for(String fieldName : validFields){
+                String v = getElementOrDefault(array,MapUtils.getIntValue(map,fieldName,-1));
+                if(StringUtils.isBlank(v)){
+                    throw new RuntimeException("第"+(i+1)+"行的列名["+fieldName+"]的值为空。");
+                }
+            }
+
+        }
+
+        return true;
+    }
     /**
      * 获取存在重复名称或者不存在的库信息
      */
@@ -306,7 +331,7 @@ public class SourceInfoFileService {
             databaseInfo.setDataSourceId(databaseInfoForDb != null ? databaseInfoForDb.getSourceId() : "");
             databaseInfo.setDatabaseAlias(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库中文名",-1)));
             databaseInfo.setPlanningPackageCode(getElementOrDefault(array,MapUtils.getIntValue(map,"规划包编号",-1)));
-            databaseInfo.setPlanningPackageCode(getElementOrDefault(array,MapUtils.getIntValue(map,"规划包名称",-1)));
+            databaseInfo.setPlanningPackageName(getElementOrDefault(array,MapUtils.getIntValue(map,"规划包名称",-1)));
             databaseInfo.setExtractCycle(getElementOrDefault(array,MapUtils.getIntValue(map,"抽取频率",-1)));
             databaseInfo.setExtractTool(getElementOrDefault(array,MapUtils.getIntValue(map,"抽取工具",-1)));
             databaseInfo.setSecurity("是".equals(getElementOrDefault(array,MapUtils.getIntValue(map,"是否保密",-1))));
@@ -345,12 +370,12 @@ public class SourceInfoFileService {
             return name;
         }
 
-        User user = userList.stream().filter(p-> StringUtils.equalsIgnoreCase(p.getUsername(),name))
-                .findFirst().orElseGet(null);
-        if(user == null){
+        Optional<User> user = userList.stream().filter(p-> StringUtils.equalsIgnoreCase(p.getUsername(),name))
+                .findFirst();
+        if(user == null || !user.isPresent()){
             return name;
         }
 
-        return user.getUserId();
+        return user.get().getUserId();
     }
 }

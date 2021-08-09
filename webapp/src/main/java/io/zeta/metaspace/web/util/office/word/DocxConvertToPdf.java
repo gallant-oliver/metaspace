@@ -3,7 +3,6 @@ package io.zeta.metaspace.web.util.office.word;
 import com.lowagie.text.Font;
 import com.lowagie.text.pdf.BaseFont;
 import fr.opensagres.xdocreport.itext.extension.font.IFontProvider;
-import org.apache.commons.io.FileUtils;
 import org.apache.poi.xwpf.converter.pdf.PdfConverter;
 import org.apache.poi.xwpf.converter.pdf.PdfOptions;
 import org.apache.poi.xwpf.usermodel.LineSpacingRule;
@@ -12,9 +11,13 @@ import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTPPr;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTSpacing;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.STLineSpacingRule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.Iterator;
 
@@ -22,6 +25,7 @@ import java.util.Iterator;
  * docx 转 pdf
  */
 public class DocxConvertToPdf {
+    private static final Logger log = LoggerFactory.getLogger(DocxConvertToPdf.class);
     public static void main(String argv[]) throws Exception{
         //convertDocxToPdf("topdf.docx", "docx-pdf.pdf", "C:\\Users\\Gridsum\\Desktop\\daily_file");
         //DocConvertToPdf.convertToHtml("topdftest.doc", "topdfhtml.html", "C:\\Users\\Gridsum\\Desktop\\daily_file");
@@ -54,9 +58,10 @@ public class DocxConvertToPdf {
                         Font fontChinese = new Font(bfChinese, size, style, color);
                         if (familyName != null)
                             fontChinese.setFamily(familyName);
+                       // log.info("中文字体注册成功.");
                         return fontChinese;
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        log.error("中文字体注册失败.",e);
                         return null;
                     }
                 }
@@ -68,7 +73,7 @@ public class DocxConvertToPdf {
             // 转换成pdf
             PdfConverter.getInstance().convert(doc, target, options);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("docx->pdf 转换失败.",e);
         } finally {
             // 关闭流
             close(source);
