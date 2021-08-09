@@ -212,15 +212,19 @@ public class OracleSourceTask extends SourceTask {
 		}
 
 		try {
-			CallableStatement s = dbConn.prepareCall(OracleConnectorSQL.STOP_LOGMINER_CMD);
-			s.execute();
-			s.close();
+			if(null != dbConn){
+				CallableStatement s = dbConn.prepareCall(OracleConnectorSQL.STOP_LOGMINER_CMD);
+				s.execute();
+				s.close();
+			}
 		} catch (Exception e) {
 			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
 		}
 		try {
-			logMinerSelect.cancel();
-			logMinerSelect.close();
+			if(null != logMinerSelect){
+				logMinerSelect.cancel();
+				logMinerSelect.close();
+			}
 		} catch (Exception e) {
 			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
 		}
@@ -232,7 +236,9 @@ public class OracleSourceTask extends SourceTask {
 			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
 		}
 		try {
-			dbConn.close();
+			if(null != dbConn){
+				dbConn.close();
+			}
 		} catch (Exception e) {
 			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
 		}
