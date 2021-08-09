@@ -36,7 +36,7 @@ public enum ModuleEnum {
     BUSINESSADMIN(2,"数据资产","业务目录编辑",11,"业务目录编辑", "businessadmin", "businessadmin",0, 11),
     DATASHARE(2,"数据资产","数据分享",12,"数据分享", "datashare", "datashare",0, 12),
 
-    //规范定义,
+    //规范定义
     NORMDESIGN(3,"规范定义","指标管理",13,"指标设计", "normdesign", "normdesign",1, 13),
     MODIFIER (3,"规范定义","指标管理",14,"修饰词", "modifier", "modifier",1, 14),
     TIMELIMIT(3,"规范定义","指标管理",15,"时间限定", "timelimit", "timelimit",1, 15),
