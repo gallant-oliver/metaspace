@@ -171,7 +171,7 @@ public enum ModuleEnum {
      */
     public static List<ModuleEnum> getApproveModuleEnum(){
         List<ModuleEnum> result = new LinkedList<>();
-        //result.add(ModuleEnum.NORMDESIGN);
+        result.add(ModuleEnum.NORMDESIGN);
         result.add(ModuleEnum.DATABASEREGISTER);
         return result;
     }
