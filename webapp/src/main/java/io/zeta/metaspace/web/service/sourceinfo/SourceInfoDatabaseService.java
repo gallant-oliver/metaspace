@@ -182,6 +182,26 @@ public class SourceInfoDatabaseService implements Approvable {
     }
 
     /**
+     * 重名验证
+     * @param tenantId 租户id
+     * @param name 中文名
+     * @param categoryId 挂载的目录id
+     * @param id 源信息id
+     * @return 处理结果
+     */
+    public Result validate(String tenantId,String name,String categoryId,String id) {
+        if (databaseInfoDAO.getDatabaseDuplicateName(tenantId,name, id)) {
+            return ReturnUtil.error(AtlasErrorCode.DUPLICATE_ALIAS_NAME.getErrorCode(),
+                    AtlasErrorCode.DUPLICATE_ALIAS_NAME.getFormattedErrorMessage(name));
+        }
+        int count = categoryDAO.getCategoryCountByParentIdAndName(tenantId,categoryId,name);
+        if (count>0){
+            return ReturnUtil.error(AtlasErrorCode.DUPLICATE_ALIAS_NAME.getErrorCode(),
+                    AtlasErrorCode.DUPLICATE_ALIAS_NAME.getFormattedErrorMessage(name));
+        }
+        return ReturnUtil.success();
+    }
+    /**
      * 源信息数据库登记信息列表
      * @param tenantId 租户id
      * @param status 信息状态
@@ -198,6 +218,8 @@ public class SourceInfoDatabaseService implements Approvable {
        if (Boolean.FALSE.equals(ParamUtil.isNull(diLists))){
            for (DatabaseInfoForList di:diLists){
                String statusValue = Status.getStatusByValue(di.getStatus());
+               di.setCategoryName(di.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
+                       this.getActiveInfoAllPath(di.getCategoryId(),tenantId):this.getAllPath(di.getId(),tenantId));
                di.setStatus(statusValue);
            }
        }
@@ -418,6 +440,7 @@ public class SourceInfoDatabaseService implements Approvable {
         DatabaseInfoBO databaseInfoBO = this.getDatabaseInfoBOById(objectId,tenantId,version);
         DatabaseInfoDTO databaseInfoDTO = new DatabaseInfoDTO();
         BeansUtil.copyPropertiesIgnoreNull(databaseInfoBO,databaseInfoDTO);
+        databaseInfoDTO.setCategoryName(this.getAllPath(objectId,tenantId));
         databaseInfoDTO.setPublisherName(databaseInfoBO.getUpdaterName());
         databaseInfoDTO.setPublishTime(databaseInfoBO.getUpdateTime());
         List<User> users = approveDAO.getApproveUsers(databaseInfoBO.getApproveGroupId());
@@ -439,7 +462,14 @@ public class SourceInfoDatabaseService implements Approvable {
      */
 
     private DatabaseInfoBO getDatabaseInfoBOById(String id,String tenantId,int version){
-        return databaseInfoDAO.getDatabaseInfoById(id,tenantId,version);
+        DatabaseInfoBO databaseInfoBO=databaseInfoDAO.getDatabaseInfoById(id,tenantId,version);
+
+        if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfoBO))){
+            databaseInfoBO.setCategoryId(databaseInfoDAO.getParentCategoryIdById(databaseInfoBO.getId()));
+        }
+        databaseInfoBO.setCategoryName(databaseInfoBO.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
+                this.getActiveInfoAllPath(databaseInfoBO.getCategoryId(),tenantId):this.getAllPath(id,tenantId));
+        return databaseInfoBO;
     }
 
     /**
@@ -507,6 +537,35 @@ public class SourceInfoDatabaseService implements Approvable {
         } finally {
             AtlasPerfTracer.log(perf);
         }
+    }
+
+    private String getActiveInfoAllPath(String categoryId,String tenantId){
+        String parentCategoryId = categoryId;
+        StringBuilder sb = new StringBuilder("/");
+        while (Boolean.FALSE.equals(ParamUtil.isNull(parentCategoryId))){
+            String name=categoryDAO.getCategoryNameById(parentCategoryId,tenantId);
+            StringBuilder sbInner = new StringBuilder("/");
+            sbInner.append(name);
+            sbInner.append(sb);
+            sb = sbInner;
+            parentCategoryId = categoryDAO.getParentIdByGuid(parentCategoryId,tenantId);
+        }
+        return sb.toString();
+    }
+    private String getAllPath(String sourceInfoId,String tenantId){
+        String parentCategoryId = databaseInfoDAO.getParentCategoryIdById(sourceInfoId);
+        StringBuilder sb = new StringBuilder("/");
+        while (Boolean.FALSE.equals(ParamUtil.isNull(parentCategoryId))){
+            String name=categoryDAO.getCategoryNameById(parentCategoryId,tenantId);
+            if (Boolean.FALSE.equals(ParamUtil.isNull(name))){
+                StringBuilder sbInner = new StringBuilder("/");
+                sbInner.append(name);
+                sbInner.append(sb);
+                sb = sbInner;
+            }
+            parentCategoryId = categoryDAO.getParentIdByGuid(parentCategoryId,tenantId);
+        }
+        return sb.toString();
     }
 
     /**

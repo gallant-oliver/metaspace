@@ -24,6 +24,10 @@ public enum ModuleEnum {
     METADATA(2,"数据资产","元数据管理",7,"元数据管理", "metadata", "metadata",1, 7),
     DATABASEREGISTER(2,"数据资产","源信息登记",38,"数据库登记", "databaseregister", "databaseregister",1, 38),
     DERIVEDTABLESREGISTER(2,"数据资产","源信息登记",39,"衍生表登记", "derivedtablesregister", "derivedtablesregister",1, 39),
+    APPROVERMANAGE(2,"数据资产","资产审批管理",17,"审批人管理", "approvermanage", "approvermanage",1, 17),
+    MYAPPLICATION(2,"数据资产","资产审批管理",18,"我的申请", "myapplication", "myapplication",1, 18),
+    APPROVALPENDING(2,"数据资产","资产审批管理",40,"待审批", "approvalpending", "approvalpending",1, 40),
+    ALREADYAPPROVE(2,"数据资产","资产审批管理",41,"已审批", "alreadyapprove", "alreadyapprove",1, 41),
 
     //以下数据资产在安全中心不存在
     TECHNICALEDIT(2,"数据资产","技术数据关联",8,"技术数据关联", "technicaledit", "technicaledit",0, 8),
@@ -37,8 +41,6 @@ public enum ModuleEnum {
     MODIFIER (3,"规范定义","指标管理",14,"修饰词", "modifier", "modifier",1, 14),
     TIMELIMIT(3,"规范定义","指标管理",15,"时间限定", "timelimit", "timelimit",1, 15),
     DATASTANDARD(3,"规范定义","标准管理",16,"数据标准", "datastandard", "datastandard",1,16),
-    APPROVERMANAGE(3,"规范定义","审批中心",17,"审批人管理", "approvermanage", "approvermanage",1, 17),
-    MYAPPLICATION(3,"规范定义","审批中心",18,"我的申请", "myapplication", "myapplication",1, 18),
     APPROVALMANAGE(3,"规范定义","审批中心",19,"审批管理", "approvalmanage", "approvalmanage",1, 19),
 
     //数据质量

@@ -13,7 +13,7 @@ public class ParamUtil {
             if (obj == null){
                 return Boolean.TRUE;
             }
-            if (obj instanceof String && ((String) obj).replace(" ","").isEmpty()){
+            if (obj instanceof String && ( ((String) obj).replace(" ","").isEmpty()||((String) obj).replace(" ","").equals("null"))){
                     return Boolean.TRUE;
                 }
             if (obj instanceof List && ((List<?>) obj).isEmpty()){

@@ -89,8 +89,10 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
         }
 
         private void synchronize(RdbmsEntities rdbmsEntities, KafkaConnector.Config config){
-            Map<RdbmsEntities.OperateType, Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> entityMap = rdbmsEntities.getEntityMap();
 
+            dealRenameEntities(rdbmsEntities);
+
+            Map<RdbmsEntities.OperateType, Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> entityMap = rdbmsEntities.getEntityMap();
             Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> modifyMap = entityMap.get(RdbmsEntities.OperateType.MODIFY);
             Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> addMap = entityMap.get(RdbmsEntities.OperateType.ADD);
             List<AtlasEntity.AtlasEntityWithExtInfo> addOrUpdateEntities = mergeEntities(modifyMap,addMap);
@@ -202,5 +204,38 @@ public class NotificationRdbmsConsumer extends AbstractKafkaNotificationConsumer
             return addOrUpdateEntities;
         }
 
+    }
+
+    /**
+     * 查询重命名的实体，该更新后的实体赋值对应旧实体的guid
+     * @param rdbmsEntities
+     */
+    private void dealRenameEntities(RdbmsEntities rdbmsEntities) {
+
+        Map<RdbmsEntities.OperateType, Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>>> entityMap = rdbmsEntities.getEntityMap();
+        Map<RdbmsEntities.EntityType, List<AtlasEntity.AtlasEntityWithExtInfo>> modifyMap = entityMap.get(RdbmsEntities.OperateType.MODIFY);
+        Map<String, AtlasEntity.AtlasEntityWithExtInfo> renameMap = rdbmsEntities.getRenameMap();
+        renameMap.forEach((k,v) -> {
+            String typeName = v.getEntity().getTypeName();
+            try{
+                AtlasEntityType entityType = typeRegistry.getEntityTypeByName(typeName);
+                Map<String, Object> uniqueAttributes = new HashMap<>();
+                uniqueAttributes.put("qualifiedName", k);
+                AtlasEntity.AtlasEntityWithExtInfo oldEntityWithExtInfo = atlasEntityStore.getByUniqueAttributes(entityType, uniqueAttributes);
+                if(null != oldEntityWithExtInfo){
+                    String guid = oldEntityWithExtInfo.getEntity().getGuid();
+                    Object qualifiedName = v.getEntity().getAttribute("qualifiedName");
+                    RdbmsEntities.EntityType type = RdbmsEntities.getType(typeName);
+                    List<AtlasEntity.AtlasEntityWithExtInfo> atlasEntityWithExtInfos = modifyMap.get(type);
+                    atlasEntityWithExtInfos.forEach(a->{
+                        if(a.getEntity().getAttribute("qualifiedName").equals(qualifiedName)){
+                            a.getEntity().setGuid(guid);
+                        }
+                    });
+                }
+            }catch (Exception e){
+                LOG.warn("更新{}失败，没有找到类型为{}的对应实体", k, typeName, k);
+            }
+        });
     }
 }

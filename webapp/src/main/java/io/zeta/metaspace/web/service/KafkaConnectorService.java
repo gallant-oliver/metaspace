@@ -80,11 +80,19 @@ public class KafkaConnectorService {
     }
 
     public boolean startConnector(String connectorName){
+        KafkaConnector kafkaConnector = getKafkaConnector(connectorName);
+        return KafkaConnectorUtil.startConnector(kafkaConnector);
+    }
+
+    private KafkaConnector getKafkaConnector(String connectorName) {
         KafkaConnector kafkaConnector = kafkaConnectorDAO.selectConnectorByName(connectorName);
         if(null == kafkaConnector){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "kafka connector " + connectorName + "不存在");
         }
-        return KafkaConnectorUtil.startConnector(kafkaConnector);
+        KafkaConnector.Config config = kafkaConnector.getConfig();
+        String passWord = AESUtils.aesDecode(config.getDbPassword());
+        config.setDbPassword(passWord);
+        return kafkaConnector;
     }
 
     public boolean stopConnector(String connectorName){
@@ -101,7 +109,7 @@ public class KafkaConnectorService {
             KafkaConnectorUtil.restartConnector(connectorName);
         }else{
 
-            KafkaConnector kafkaConnector = kafkaConnectorDAO.selectConnectorByName(connectorName);
+            KafkaConnector kafkaConnector = getKafkaConnector(connectorName);
             if(null != kafkaConnector){
                 KafkaConnectorUtil.startConnector(kafkaConnector);
                 LOG.warn("重启connector {}失败： 因为connector {}原本没有启动。本次操作直接启动了connector {}", connectorName, connectorName, connectorName);
@@ -116,7 +124,7 @@ public class KafkaConnectorService {
         KafkaConnector.Config config = connector.getConfig();
         config.setDbType(KafkaConnectorUtil.getRdbmsType(config.getConnectorClass()));
         String dbPassword = config.getDbPassword();
-        String passWord = AESUtils.aesEncode(config.getDbPassword());
+        String passWord = AESUtils.aesEncode(dbPassword);
         config.setDbPassword(passWord);
         kafkaConnectorDAO.insertConnector(connector);
         config.setDbPassword(dbPassword);

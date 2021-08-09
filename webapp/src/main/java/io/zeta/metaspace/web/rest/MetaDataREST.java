@@ -225,7 +225,7 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableList(" + schemaId + "," + limit + "," + offset + " )");
             }
             Boolean isView = StringUtils.isEmpty(isViewStr) ? null : Boolean.parseBoolean(isViewStr);
-            PageResult<TableEntity> result = searchService.getTable(schemaId, active, offset, limit, query, isView, queryInfo, tenantId);
+            PageResult<TableEntity> result = searchService.getTable(schemaId, active, offset, limit, query, isView, queryInfo, tenantId, sourceId);
             List<TableEntity> tables = result.getLists();
             if(CollectionUtils.isNotEmpty(tables)){
                 tables.forEach(t -> t.setSourceId(sourceId));
@@ -890,13 +890,13 @@ public class MetaDataREST {
     @Path("/rdbms/table/sql/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BuildTableSql getRDBMSTableSQL(@PathParam("tableId") String tableId) throws AtlasBaseException {
+    public BuildTableSql getRDBMSTableSQL(@PathParam("tableId") String tableId, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableSQL(" + tableId + " )");
             }
-            BuildTableSql buildTableSql = searchService.getBuildRDBMSTableSql(tableId);
+            BuildTableSql buildTableSql = searchService.getBuildRDBMSTableSql(tableId, sourceId);
             return buildTableSql;
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取建表语句失败");

@@ -2,6 +2,8 @@ package io.zeta.metaspace.web.rest;
 
 
 import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
+import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.web.service.KafkaConnectorService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.notification.rdbms.KafkaConnectorUtil;
@@ -9,6 +11,7 @@ import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import javax.inject.Singleton;
 import javax.ws.rs.*;
@@ -16,13 +19,14 @@ import java.util.List;
 import java.util.Map;
 
 
-@Path("/kafka/connectors")
+@Path("/metadata/connectors")
 @Singleton
 @Service
-public class KafkaConnectorRESR {
+public class MetadataConnectorREST {
 
-    private static final Logger LOG = LoggerFactory.getLogger(KafkaConnectorRESR.class);
+    private static final Logger LOG = LoggerFactory.getLogger(MetadataConnectorREST.class);
 
+    @Autowired
     private KafkaConnectorService kafkaConnectorService;
     
     @GET
@@ -107,6 +111,7 @@ public class KafkaConnectorRESR {
     @POST
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.INSERT)
     public KafkaConnector addConnector(KafkaConnector connector) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
@@ -123,6 +128,7 @@ public class KafkaConnectorRESR {
     @Path("/{connectorName}")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
     public boolean removeConnector(@PathParam("connectorName")String connectorName) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {

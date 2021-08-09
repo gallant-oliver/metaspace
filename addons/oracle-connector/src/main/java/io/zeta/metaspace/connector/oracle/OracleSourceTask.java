@@ -31,8 +31,8 @@ public class OracleSourceTask extends SourceTask {
 	private ResultSet logMinerData;
 	private boolean closed = false;
 	private List<String> logFiles;
-	private boolean isInit;
 	private int tryTimes = 3;
+	private static final long MIN_POLL_PERIOD = 5000;
 	private static final Pattern SQL_DOC_PATTERN = Pattern.compile("(?ms)('(?:''|[^'])*')|--(?!(\\s*\\++\\s*\\S+))\\s.*?$|((/\\*)(?!(\\s*\\++\\s*\\S+)).*?(\\*/))");
 	private static final Pattern BLACK_LINE_PATTERN = Pattern.compile("(\n|↵)(?=([^\"]*\"[^\"]*\")*[^\"]*$)(?=([^']*'[^']*')*[^']*$)");
 	@Override
@@ -63,7 +63,7 @@ public class OracleSourceTask extends SourceTask {
 	public void start(Map<String, String> map) {
 		this.configMap = map;
 		config = new OracleSourceConnectorConfig(map);
-		if (isInitor()) {
+		if (isNullDbName()) {
 			return;
 		}
 		try {
@@ -97,15 +97,14 @@ public class OracleSourceTask extends SourceTask {
 		}
 	}
 
-	private boolean isInitor() {
+	private boolean isNullDbName() {
 		String dbName = getDbName();
 
 		if (null == dbName || "".equals(dbName)) {
-			this.isInit = true;
+			return true;
 		} else {
-			this.isInit = false;
+			return false;
 		}
-		return this.isInit;
 	}
 
 	private Long getSingleRowColumnLongResult(String sql, String columnName) throws SQLException {
@@ -115,7 +114,6 @@ public class OracleSourceTask extends SourceTask {
 			while (resultSet.next()) {
 				result = resultSet.getLong(columnName);
 			}
-			resultSet.close();
 		}
 
 		return result;
@@ -136,26 +134,26 @@ public class OracleSourceTask extends SourceTask {
 
 	@Override
 	public List<SourceRecord> poll() throws InterruptedException {
-
+		LOG.info("poll start");
+		long startTime = System.currentTimeMillis();
 		ArrayList<SourceRecord> records = new ArrayList<>();
 		if (closed) {
 			return records;
 		}
-		if (this.isInit) {
-			Thread.sleep(3600000);
+		if (isNullDbName()) {
+			LOG.info("config is unavailable, db.name is empty");
+			Thread.sleep(10000);
 			return records;
 		}
 		String sqlRedo = "";
 		try {
-
-			LOG.info("poll start");
 			long streamEndScn = getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN");
 			logMinerSelect.setLong(1, streamOffsetScn);
 			logMinerSelect.setLong(2, streamEndScn);
-			LOG.debug("Oracle Kafka Connector {} is polling data from {} to {}", config.getName(), streamOffsetScn,
+			LOG.info("Oracle Kafka Connector {} is polling data from {} to {}", config.getName(), streamOffsetScn,
 					streamEndScn);
 			logMinerData = logMinerSelect.executeQuery();
-
+			LOG.info("logMinerSelect executeQuery finish");
 			while (logMinerData.next()) {
 				if (LOG.isDebugEnabled()) {
 					logRawMinerData();
@@ -175,7 +173,7 @@ public class OracleSourceTask extends SourceTask {
 			LOG.info("Oracle Kafka Connector {} polled {} data from {} to {}", config.getName(), records.size(),
 					streamOffsetScn, streamEndScn);
 			streamOffsetScn = streamEndScn + 1;
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			LOG.error("during poll on connector {} : ", config.getName(), e.getMessage(), e);
 			stop();
 			LOG.info("try to restart connector {} by streamOffsetScn = {}", config.getName(), streamOffsetScn);
@@ -189,11 +187,17 @@ public class OracleSourceTask extends SourceTask {
 					LOG.warn("connector {} restarted error: {}", config.getName(), ex.getMessage());
 					tryTimes = tryTimes - 1;
 				} else {
-					LOG.error("cennector {} restarted error", config.getName(), ex);
+					LOG.error("connector {} restarted error", config.getName(), ex);
 					throw ex;
 				}
 			}
 			LOG.info("connector {} restarted", config.getName());
+		}
+		long endTime = System.currentTimeMillis();
+
+		long sleepTime = MIN_POLL_PERIOD - endTime + startTime ;
+		if(sleepTime > 100){
+			Thread.sleep(sleepTime);
 		}
 		LOG.info("poll end");
 		return records;
@@ -205,8 +209,8 @@ public class OracleSourceTask extends SourceTask {
 		LOG.info("Stop called for logminer");
 		this.closed = true;
 
-		if (this.isInit) {
-			LOG.info("init logminer stoped");
+		if (isNullDbName()) {
+			LOG.info("init logminer stopped");
 			return;
 		}
 

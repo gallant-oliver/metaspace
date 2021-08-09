@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.sourceinfo.derivetable.vo.CategoryGuidPath;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.ibatis.annotations.*;
@@ -362,7 +363,7 @@ public interface CategoryDAO {
     @Select("SELECT COUNT(1) FROM category WHERE parentcategoryguid = #{parentId} AND tenantid = #{tenantId} AND name = #{databaseAlias}")
     int getCategoryCountByParentIdAndName(@Param("tenantId") String tenantId,@Param("parentId") String parentId,@Param("databaseAlias") String databaseAlias);
 
-    @Select("SELECT COUNT(1) FROM category WHERE parentcategoryguid = (SELECT parentcategoryguid FROM source_info WHERE guid = #{categoryId}) AND tenantid = #{tenantId} AND name = #{databaseAlias}")
+    @Select("SELECT COUNT(1) FROM category WHERE parentcategoryguid = (SELECT parentcategoryguid FROM category WHERE guid = #{categoryId}) AND tenantid = #{tenantId} AND name = #{databaseAlias}")
     int getCategoryCountByIdAndName(@Param("tenantId") String tenantId,@Param("categoryId") String categoryId,@Param("databaseAlias") String databaseAlias);
     @Select("SELECT guid,name,parentcategoryguid as parentCategoryGuid FROM public.category where tenantid=#{tenantId} ")
     List<CategoryEntityV2> queryByTenantId(@Param("tenantId") String tenantId);
@@ -370,6 +371,16 @@ public interface CategoryDAO {
     @Select(" select distinct guid,name from category where categorytype = #{categorytype} order by guid ")
     List<CategoryEntityV2> queryNameByType(@Param("categorytype")int categorytype);
 
-    @Select(" select parentcategoryguid from category where guid = #{id} ")
-    String getParentIdByGuid(@Param("id") String guid);
+    @Select(" select parentcategoryguid from category where guid = #{id} AND tenantid = #{tenant} ")
+    String getParentIdByGuid(@Param("id") String guid,@Param("tenant") String tenant);
+
+    @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH)  AS" +
+            " (SELECT guid,name,parentCategoryGuid, name as  PATH" +
+            " FROM category WHERE parentCategoryGuid IS NULL and tenantid= #{tenantId} and categorytype = #{type}" +
+            " UNION ALL " +
+            " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH ||'/'|| D.name" +
+            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid='2f5eced9c1c64609bc2d8172562bf1da')" +
+            "SELECT  * FROM T ")
+    List<CategoryGuidPath> getGuidPathByTenantIdAndCategoryType(@Param("tenantId")String tenantId, @Param("type") int type);
+
 }

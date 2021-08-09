@@ -31,7 +31,7 @@ public class KafkaConnector {
     @Data
     public static class Config {
         @JsonProperty("connector.class")
-        private String connectorClass;
+        private String connectorClass = "io.zeta.metaspace.connector.oracle.OracleSourceConnector";
         @JsonProperty("db.user")
         private String dbUser;
         @JsonProperty("db.ip")
@@ -51,8 +51,6 @@ public class KafkaConnector {
         private int dbFetchSize = 10;
         @JsonProperty("start.scn")
         private long startScn = -1L;
-        @JsonProperty("rest.port")
-        private int restPort = 8083;
     }
 
     @JsonAutoDetect(getterVisibility = PUBLIC_ONLY, setterVisibility = PUBLIC_ONLY, fieldVisibility = NONE)
