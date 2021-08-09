@@ -738,7 +738,7 @@ public class SearchService {
         List<TechnologyInfo.Table> tableInfos = roleDAO.getTableInfosByDBIdByParameters(strings, databaseGuid, parameters.getOffset(), parameters.getLimit(), tenantId);
         List<String> relationTableGuids = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryId, tenantId);
         List<AddRelationTable> tables = getTables(tableInfos);
-//        supplyPath(tables, tenantId);
+        supplyPath(tables, tenantId);
         tables.forEach(e -> {
             String tableGuid = e.getTableId();
             if (relationTableGuids.contains(tableGuid)) {
@@ -858,7 +858,7 @@ public class SearchService {
 
         List<String> relationTableGuids = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryId, tenantId);
         List<AddRelationTable> tables = getTables(tableInfo);
-//        supplyPath(tables, tenantId);
+        supplyPath(tables, tenantId);
         tables.forEach(e -> {
             String tableGuid = e.getTableId();
             if (relationTableGuids.contains(tableGuid)) {
@@ -967,8 +967,8 @@ public class SearchService {
     public void supplyPath(List<AddRelationTable> list, String tenantId) {
         Map<String, String> category2Path = new HashMap();
         for (AddRelationTable table : list) {
-            List<String> categoryGuidByTableGuid = categoryDAO.getCategoryGuidByTableGuid(table.getTableId(), tenantId);
-            if (categoryGuidByTableGuid == null) {
+            List<String> categoryGuidByTableGuid = sourceInfoDAO.selectByTableGuidAndTenantId(table.getTableId(), tenantId);
+            if (CollectionUtils.isEmpty(categoryGuidByTableGuid)) {
                 table.setPath("");
             } else if (categoryGuidByTableGuid.size() != 1) {
                 table.setPath("");
