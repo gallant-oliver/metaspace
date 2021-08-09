@@ -66,6 +66,7 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.repository.Constants;
+import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
@@ -155,6 +156,8 @@ public class DataManageService {
     @Autowired
     private IndexDAO indexDAO;
 
+    @Autowired
+    private AtlasEntityStoreV2 atlasEntityStore;
     int technicalType = 0;
     int dataStandType = 3;
     int technicalCount = 5;
@@ -1602,6 +1605,7 @@ public class DataManageService {
         database.setStatus(entity.getStatus().name());
         database.setDatabaseDescription(getEntityAttribute(entity, "comment"));
         AtlasRelatedObjectId relatedDB = getRelatedInstance(entity);
+
         database.setInstanceId(relatedDB.getGuid());
         return database;
     }
@@ -1773,6 +1777,10 @@ public class DataManageService {
             if (obj instanceof AtlasRelatedObjectId) {
                 objectId = (AtlasRelatedObjectId) obj;
             }
+        }
+        if(null == objectId){
+            AtlasEntity dbEntity = atlasEntityStore.getById(entity.getGuid()).getEntity();
+            return getRelatedInstance(dbEntity);
         }
         return objectId;
     }
