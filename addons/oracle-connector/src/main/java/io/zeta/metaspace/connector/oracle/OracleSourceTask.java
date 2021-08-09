@@ -61,6 +61,7 @@ public class OracleSourceTask extends SourceTask {
 
 	@Override
 	public void start(Map<String, String> map) {
+		this.closed = false;
 		this.configMap = map;
 		config = new OracleSourceConnectorConfig(map);
 		if (isNullDbName()) {
@@ -180,11 +181,11 @@ public class OracleSourceTask extends SourceTask {
 			try {
 				Thread.sleep(3000);
 				start(configMap);
-				this.closed = false;
 				tryTimes = 3;
 			} catch (Exception ex) {
 				if (tryTimes > 0) {
 					LOG.warn("connector {} restarted error: {}", config.getName(), ex.getMessage());
+					start(configMap);
 					tryTimes = tryTimes - 1;
 				} else {
 					LOG.error("connector {} restarted error", config.getName(), ex);
