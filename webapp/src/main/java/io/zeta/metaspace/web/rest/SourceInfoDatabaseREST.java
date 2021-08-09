@@ -240,10 +240,14 @@ public class SourceInfoDatabaseREST {
         try{
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
+            boolean isValid = sourceInfoFileService.checkExcelField(excelDataList);
+            if(!isValid){
+                return ReturnUtil.success("没有要处理的数据.");
+            }
             // 跟source_info、db-info对比获取比对结果
             List<AnalyticResult> results = sourceInfoFileService.getFileParsedResult(excelDataList,tenantId);
             return ReturnUtil.success(results);
-        }catch (IOException e){
+        }catch (Exception e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件解析失败");
         }
     }
@@ -274,9 +278,13 @@ public class SourceInfoDatabaseREST {
         try{
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
+            boolean isValid = sourceInfoFileService.checkExcelField(excelDataList);
+            if(!isValid){
+                return ReturnUtil.success("没有要处理的数据.");
+            }
             // 跟source_info、db-info对比获取比对结果
             return sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
-        }catch (IOException e){
+        }catch (Exception e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件导入失败");
         }
 
@@ -389,7 +397,7 @@ public class SourceInfoDatabaseREST {
                 base64String = Base64Utils.fileToBase64(tmpFile.getAbsolutePath());
             }else if("docx".equalsIgnoreCase(fileType)){
                 DocxConvertToPdf.convertDocxToPdf(in,new FileOutputStream(tmpFile));
-                log.info("docx 转pdf成功");
+                log.info("docx 转pdf成功，文件大小：{}",tmpFile.length());
                 base64String = Base64Utils.fileToBase64(tmpFile.getAbsolutePath());
             }else{
                 log.info("不需要转换处理.");
