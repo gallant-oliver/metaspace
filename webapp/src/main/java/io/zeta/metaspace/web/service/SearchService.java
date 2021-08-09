@@ -22,6 +22,7 @@ import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
@@ -70,7 +71,7 @@ public class SearchService {
     @Autowired
     CategoryDAO categoryDAO;
     @Autowired
-    RelationDAO relationDAO;
+    SourceInfoDAO sourceInfoDAO;
     @Autowired
     DataSourceService dataSourceService;
     @Autowired
@@ -594,20 +595,28 @@ public class SearchService {
             return databasePageResult;
         }
 
-        List<DataSourceHeader> databaseHeaders = userGroupDAO.getSourceInfo(strings, query, parameters.getOffset(), parameters.getLimit(), tenantId);
-
+        List<DataSourceHeader> databaseHeaders = new ArrayList<>();
         List<String> databases = tenantService.getDatabase(tenantId);
+        if(CollectionUtils.isNotEmpty(databases)){
+            DataSourceHeader dataSourceHeader = new DataSourceHeader();
+            dataSourceHeader.setSourceId("hive");
+            dataSourceHeader.setSourceName("hive");
+            dataSourceHeader.setSourceStatus("ACTIVE");
+            databaseHeaders.add(dataSourceHeader);
+        }
+        databaseHeaders.addAll(userGroupDAO.getSourceInfo(strings, query, parameters.getOffset(), parameters.getLimit(), tenantId));
+
         //获取用户有权限的全部表和该目录已加关联的全部表
         List<TechnologyInfo.Table> tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1, databases, tenantId);
 
         if(CollectionUtils.isEmpty(tables)){
             return databasePageResult;
         }
-        List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryGuid);
+        List<String> relationTableGuids = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryGuid, tenantId);
         Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getSourceId));
         databaseHeaders.forEach(e -> {
             String sourceId = e.getSourceId();
-            List<String> table = collect.get(sourceId).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
+            List<String> table = collect.get(sourceId) == null? new ArrayList<>() : collect.get(sourceId).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
             if (collect != null && collect.size() > 0) {
                 if (relationTableGuids.containsAll(table)) {
                     //全被勾选
@@ -633,9 +642,7 @@ public class SearchService {
     //1.4获取关联表，获取有权限的目录下的库
     @Transactional(rollbackFor = Exception.class)
     public PageResult<DatabaseHeader> getTechnicalDatabasePageResultV2(Parameters parameters, String sourceId, String categoryId, String tenantId) throws AtlasBaseException {
-        User user = AdminUtils.getUserData();
         List<String> strings = new ArrayList<>();
-
         Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false);
         for (CategoryPrivilegeV2 categoryPrivilegeV2 : userPrivilegeCategory.values()) {
             if (categoryPrivilegeV2.getEditItem()) {
@@ -661,28 +668,13 @@ public class SearchService {
         User user = AdminUtils.getUserData();
         List<String> strings = new ArrayList<>();
         //判断多租户和独立部署
-        if (TenantService.defaultTenant.equals(tenantId)) {
-            List<Role> roles = roleDAO.getRoleByUsersId(user.getUserId());
-            if (roles.stream().allMatch(role -> role.getStatus() == 0)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, " 当前用户所属角色已被禁用");
-            }
-            if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))) {
-                List<String> topCategoryGuid = roleDAO.getAllCategorys(0, tenantId).stream().map(category -> category.getGuid()).collect(Collectors.toList());
-                List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(topCategoryGuid, 0, tenantId);
-                for (RoleModulesCategories.Category child : childs) {
-                    strings.add(child.getGuid());
-                }
-                return getTablesByDatabaseGuid(parameters, strings, databaseGuid, categoryId, tenantId);
-            }
-            strings = getChildAndOwnerCategorysByRoles(roles);
-        } else {
-            Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false);
-            for (CategoryPrivilegeV2 categoryPrivilegeV2 : userPrivilegeCategory.values()) {
-                if (categoryPrivilegeV2.getEditItem()) {
-                    strings.add(categoryPrivilegeV2.getGuid());
-                }
+        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false);
+        for (CategoryPrivilegeV2 categoryPrivilegeV2 : userPrivilegeCategory.values()) {
+            if (categoryPrivilegeV2.getEditItem()) {
+                strings.add(categoryPrivilegeV2.getGuid());
             }
         }
+
         if (strings != null && strings.size() != 0) {
             return getTablesByDatabaseGuid(parameters, strings, databaseGuid, categoryId, tenantId);
         }
@@ -695,7 +687,6 @@ public class SearchService {
     //备用，一组目录查子库加表
     @Transactional(rollbackFor = Exception.class)
     public PageResult<DatabaseHeader> getDatabaseResultV2(Parameters parameters, List<String> strings, String sourceId, String categoryGuid, String tenantId) throws AtlasBaseException {
-        List<DatabaseHeader> databaseHeaders = new ArrayList<>();
         String query = parameters.getQuery();
         if (Objects.nonNull(query))
             query = query.replaceAll("%", "/%").replaceAll("_", "/_");
@@ -706,20 +697,15 @@ public class SearchService {
             databasePageResult.setTotalSize(0);
             return databasePageResult;
         }
-        List<TechnologyInfo.Table> tables = new ArrayList<>();
-
-        User user = AdminUtils.getUserData();
         List<String> databases = tenantService.getDatabase(tenantId);
-        if (databases != null && databases.size() != 0) {
-            databaseHeaders = userGroupDAO.getDBInfo2(strings, query, parameters.getOffset(), parameters.getLimit(), databases, sourceId, tenantId);
-            //获取用户有权限的全部表和该目录已加关联的全部表
-            tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1, databases, tenantId);
-        }
-        List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryGuid);
+        List<DatabaseHeader> databaseHeaders = userGroupDAO.getDBInfo2(query, parameters.getOffset(), parameters.getLimit(), databases, sourceId, tenantId);
+        //获取用户有权限的全部表
+        List<TechnologyInfo.Table> tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1, databases, tenantId);
+        List<String> relationTableGuids = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryGuid, tenantId);
         Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getDatabaseGuid));
         databaseHeaders.forEach(e -> {
             String databaseGuid = e.getDatabaseGuid();
-            List<String> table = collect.get(databaseGuid).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
+            List<String> table = collect.get(databaseGuid) == null ? new ArrayList<>() : collect.get(databaseGuid).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
             if (relationTableGuids.containsAll(table)) {
                 //全被勾选
                 e.setCheck(1);
@@ -750,19 +736,21 @@ public class SearchService {
         }
 
         List<TechnologyInfo.Table> tableInfos = roleDAO.getTableInfosByDBIdByParameters(strings, databaseGuid, parameters.getOffset(), parameters.getLimit(), tenantId);
-        List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryId);
+        List<String> relationTableGuids = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryId, tenantId);
         List<AddRelationTable> tables = getTables(tableInfos);
         supplyPath(tables, tenantId);
         tables.forEach(e -> {
             String tableGuid = e.getTableId();
-            if (relationTableGuids.contains(tableGuid)) e.setCheck(1);
-            else e.setCheck(0);
+            if (relationTableGuids.contains(tableGuid)) {
+                e.setCheck(1);
+            } else {
+                e.setCheck(0);
+            }
         });
         tablePageResult.setLists(tables);
         tablePageResult.setCurrentSize(tableInfos.size());
         tablePageResult.setTotalSize(roleDAO.getTableInfosByDBIdCount(strings, databaseGuid));
         return tablePageResult;
-
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -835,8 +823,7 @@ public class SearchService {
         } else {
             //多租户
             List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
-            List<String> strings = new ArrayList<>();
-            strings = getChildAndOwnerCategorysByRoles(userGroups, tenantId);
+            List<String> strings = getChildAndOwnerCategorysByRoles(userGroups, tenantId);
             if (strings.size() > 0) {
                 return getTableResultV2(parameters, strings, tenantId);
             }
@@ -864,21 +851,23 @@ public class SearchService {
         if (TenantService.defaultTenant.equals(tenantId)) {
             tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
         } else {
-            User user = AdminUtils.getUserData();
             List<String> databases = tenantService.getDatabase(tenantId);
-            if (databases != null && databases.size() != 0)
+            if (CollectionUtils.isNotEmpty(databases))
                 tableInfo = userGroupDAO.getTableInfosV2(strings, query, offset, limit, databases, tenantId);
         }
 
-        List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryId);
+        List<String> relationTableGuids = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryId, tenantId);
         List<AddRelationTable> tables = getTables(tableInfo);
         supplyPath(tables, tenantId);
         tables.forEach(e -> {
             String tableGuid = e.getTableId();
-            if (relationTableGuids.contains(tableGuid)) e.setCheck(1);
-            else e.setCheck(0);
+            if (relationTableGuids.contains(tableGuid)) {
+                e.setCheck(1);
+            } else {
+                e.setCheck(0);
+            }
         });
-        if (tableInfo.size() != 0) {
+        if (CollectionUtils.isNotEmpty(tableInfo)) {
             tablePageResult.setTotalSize(tableInfo.get(0).getTotal());
         } else {
             tablePageResult.setTotalSize(0);
@@ -978,10 +967,8 @@ public class SearchService {
     public void supplyPath(List<AddRelationTable> list, String tenantId) {
         Map<String, String> category2Path = new HashMap();
         for (AddRelationTable table : list) {
-            List<String> categoryGuidByTableGuid = categoryDAO.getCategoryGuidByTableGuid(table.getTableId(), tenantId);
-            if (categoryGuidByTableGuid == null) {
-                table.setPath("");
-            } else if (categoryGuidByTableGuid.size() != 1) {
+            List<String> categoryGuidByTableGuid = sourceInfoDAO.selectByTableGuidAndTenantId(table.getTableId(), tenantId);
+            if (CollectionUtils.isEmpty(categoryGuidByTableGuid)) {
                 table.setPath("");
             } else {
                 String categoryGuid = categoryGuidByTableGuid.get(0);
