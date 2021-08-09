@@ -34,16 +34,29 @@ public interface DatabaseDAO {
             "</script>")
     void deleteDbCategoryRelationByList(@Param("categoryIds") List<String> categoryId);
 
-    @Select("SELECT " +
-            "info.database_guid as databaseId, " +
-            "info.database_name as databaseName " +
-            "FROM " +
-            "db_info AS info " +
-            "INNER JOIN source_db AS sd ON info.database_guid = sd.db_guid " +
-            "WHERE " +
-            "sd.source_id = #{sourceId} " +
-            "AND info.database_guid NOT IN ( SELECT DISTINCT database_id FROM source_info WHERE tenant_id = #{tenantId} AND version = 0)")
-    List<DataBaseInfo> getDataBaseCode(@Param("sourceId") String sourceId,  @Param("tenantId") String tenantId);
+    @Select("<script>" +
+            " SELECT " +
+            " info.database_guid as databaseId, " +
+            " info.database_name as databaseName " +
+            " FROM " +
+            " db_info AS info " +
+            " LEFT JOIN source_db AS sd ON info.database_guid = sd.db_guid " +
+            " WHERE " +
+            " <choose>" +
+            "   <when test=\"sourceId != 'hive'\">"+
+            "      sd.source_id = #{sourceId} "+
+            "   </when>" +
+            " <otherwise>" +
+            " info.database_name in " +
+            " <foreach collection='databases' item='item' separator=',' open='(' close=')'>"+
+            "    #{item}"+
+            "  </foreach>" +
+            " and info.db_type = 'HIVE' and sd.id is null" +
+            " </otherwise>" +
+            " </choose>" +
+            "AND info.database_guid NOT IN ( SELECT DISTINCT database_id FROM source_info WHERE tenant_id = #{tenantId} AND version = 0)" +
+            "</script>")
+    List<DataBaseInfo> getDataBaseCode(@Param("sourceId") String sourceId,  @Param("tenantId") String tenantId, @Param("databases") List<String> databases);
 
    /* @Select("<script>"+
             "select  tb.db_type AS dbType,tb.database_guid AS databaseId,tb.database_name AS databaseName," +
