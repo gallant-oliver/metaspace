@@ -581,7 +581,7 @@ public class PoiExcelUtils {
                     String[] datas = colInfo.split(";");
                      XSSFDataValidationConstraint dvConstraint = (XSSFDataValidationConstraint) dvHelper
                             .createExplicitListConstraint(datas);
-                    addressList = new CellRangeAddressList(0, 100, i, i);
+                    addressList = new CellRangeAddressList(1, 100, i, i);
                     validation = (XSSFDataValidation) dvHelper.createValidation(
                             dvConstraint, addressList);
                     sheet.addValidationData(validation);
