@@ -395,6 +395,7 @@ public interface DatabaseInfoDAO {
             "WHERE\n" +
             " tenant_id = #{tenantId}\n" +
             " AND database_alias = #{databaseAlias}" +
+            " AND version = 0" +
             "<if test = \"id !=null and id !=''\">" +
             " AND id != #{id}" +
             "</if>" +
