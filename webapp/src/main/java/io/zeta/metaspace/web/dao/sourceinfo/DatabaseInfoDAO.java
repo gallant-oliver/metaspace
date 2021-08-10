@@ -108,10 +108,10 @@ public interface DatabaseInfoDAO {
             "c.guid AS categoryId,\n" +
             "db.database_name AS databaseName,\n" +
             "db.database_guid  AS databaseId,\n" +
-            "ds.source_type AS databaseTypeName,\n" +
+            "db.db_type AS databaseTypeName,\n" +
             "ds.database AS databaseInstanceName,\n" +
             "ds.source_name AS dataSourceName,\n" +
-            "ds.source_id AS dataSourceId,\n" +
+            "s.data_source_id AS dataSourceId,\n" +
             "s.database_alias,\n" +
             "s.planning_package_name,\n" +
             "s.planning_package_code,\n" +
