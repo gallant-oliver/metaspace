@@ -24,7 +24,7 @@ public interface KafkaConnectorDAO {
             })
     KafkaConnector selectConnectorByName(@Param("name") String name);
 
-    @Select("select id, name from connector where db_ip = #{dbIp} and db_port = #{dbPort} and db_name = #{dbName} and is_deleted = false")
+    @Select("select id, name from connector where db_ip = #{dbIp} and db_port = #{dbPort} and upper(db_name) = upper(#{dbName}) and is_deleted = false")
     @ResultMap("connectorMap")
     KafkaConnector selectConnector(@Param("dbIp")String dbIp, @Param("dbPort")int dbPort, @Param("dbName")String dbName);
 

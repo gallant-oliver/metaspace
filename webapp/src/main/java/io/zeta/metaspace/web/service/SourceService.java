@@ -8,6 +8,7 @@ import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.CodeSourceInfoStatusDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,15 +27,25 @@ public class SourceService {
     @Autowired
     private CodeSourceInfoStatusDAO codeSourceInfoStatusDAO;
 
+    @Autowired
+    private TenantService tenantService;
+
     /**
      * 获取数据源下某种类型的数据库
      *
      * @param dataSourceId   数据源Id
-     * @param dataSourceType 数据库类型
+     * @param tenantId 租户ID
      * @return
      */
     public List<DataBaseInfo> getDatabaseByType(String dataSourceId, String tenantId) {
-        return databaseDAO.getDataBaseCode(dataSourceId, tenantId);
+        List<String> databases = new ArrayList<>();
+        if("hive".equalsIgnoreCase(dataSourceId)){
+            databases = tenantService.getDatabase(tenantId);
+            if(CollectionUtils.isEmpty(databases)){
+                return new ArrayList<>();
+            }
+        }
+        return databaseDAO.getDataBaseCode(dataSourceId, tenantId, databases);
     }
 
     public List<User> getUserList() {
