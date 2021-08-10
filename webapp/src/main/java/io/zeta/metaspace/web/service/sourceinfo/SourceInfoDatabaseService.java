@@ -468,7 +468,7 @@ public class SourceInfoDatabaseService implements Approvable {
             databaseInfoBO.setCategoryId(databaseInfoDAO.getParentCategoryIdById(databaseInfoBO.getId()));
         }
         if ("hive".equals(databaseInfoBO.getDataSourceId())){
-            databaseInfoBO.setDataSourceName("HIVE");
+            databaseInfoBO.setDataSourceName("hive");
         }
         databaseInfoBO.setCategoryName(databaseInfoBO.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
                 this.getActiveInfoAllPath(databaseInfoBO.getCategoryId(),tenantId):this.getAllPath(id,tenantId));
