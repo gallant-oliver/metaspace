@@ -128,7 +128,6 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(tableSchema.getInstance());
         tableSchema.getDefinition().setDataSourceType(dataSourceInfo.getSourceType());
         adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
-        adapterExecutor.getColumns("", "");
         metaDataInfo = adapterExecutor.getMeteDataInfo(tableSchema);
     }
 
