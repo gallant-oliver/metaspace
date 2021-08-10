@@ -27,6 +27,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.ss.util.CellRangeAddressList;
 import org.apache.poi.xssf.usermodel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -545,5 +546,52 @@ public class PoiExcelUtils {
         titleFont.setFontHeightInPoints((short) 10);
         style.setFont(titleFont);
         return style;
+    }
+
+    /**
+     * 创建带有下拉列表的 excel
+     * @param attributes
+     * @param data 值包含分号; 的则使用下拉框处理
+     * @return
+     */
+    public static Workbook createExcelFileWithDropDown(List<String> attributes, List<String> data,String sheetName) {
+        // 1. 创建workbook
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        XSSFSheet sheet = workbook.createSheet(CustomStringUtils.handleExcelName(sheetName));
+        //标题头
+        Row row0 = sheet.createRow(0);
+        for (int i = 0; i < attributes.size(); i++) {
+            String title = attributes.get(i).trim();
+            Cell cell = row0.createCell(i);
+            sheet.setColumnWidth(i,title.length()*520);
+            cell.setCellValue(title);
+            cell.setCellStyle(genTitleStyle(workbook));
+        }
+        //cell value
+
+        XSSFDataValidationHelper dvHelper = new XSSFDataValidationHelper(sheet);
+        CellRangeAddressList addressList = null;
+        XSSFDataValidation validation = null;
+        if (CollectionUtils.isNotEmpty(data)) {
+            Row row = sheet.createRow(1);
+            int colSize = data.size();
+            for (int i = 0; i < colSize; i++) {
+                String colInfo = data.get(i);
+                if(colInfo.contains(";")){
+                    String[] datas = colInfo.split(";");
+                     XSSFDataValidationConstraint dvConstraint = (XSSFDataValidationConstraint) dvHelper
+                            .createExplicitListConstraint(datas);
+                    addressList = new CellRangeAddressList(0, 100, i, i);
+                    validation = (XSSFDataValidation) dvHelper.createValidation(
+                            dvConstraint, addressList);
+                    sheet.addValidationData(validation);
+                }else{
+                    row.createCell(i).setCellValue(colInfo);
+                }
+
+            }
+        }
+
+        return workbook;
     }
 }
