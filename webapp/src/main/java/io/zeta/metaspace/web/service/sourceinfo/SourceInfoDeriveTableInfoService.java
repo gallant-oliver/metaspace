@@ -54,6 +54,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -655,7 +656,7 @@ public class SourceInfoDeriveTableInfoService {
         String dbId = sourceInfoDeriveTableColumnVO.getDbId();
         String sourceId = sourceInfoDeriveTableColumnVO.getSourceId();
         // 获取数据库、数据源的id.name对应
-        List<Map<String, String>> maps = dbDao.queryDbNameAndSourceNameByIds(dbId, sourceId);
+        List<Map<String, String>> maps = queryDbNameAndSourceNameByIds(dbId, sourceId);
         // id->name对应
         Map<String, String> collect = maps.stream().collect(Collectors.toMap(e -> e.get("id"), e -> e.get("name")));
 
@@ -785,27 +786,29 @@ public class SourceInfoDeriveTableInfoService {
             if (i < sourceInfoDeriveColumnInfos.size() - 1) {
                 columnBuilder.append(",");
             }
-            columnBuilder.append(" --  ");
+            StringBuilder remarkBuilder = new StringBuilder();
             if (primaryKey)
-                columnBuilder.append("主键;");
+                remarkBuilder.append("主键;");
             if (groupField)
-                columnBuilder.append("分组字段;");
+                remarkBuilder.append("分组字段;");
             if (important)
-                columnBuilder.append("重要;");
+                remarkBuilder.append("重要;");
             if (removeSensitive)
-                columnBuilder.append("脱敏;");
+                remarkBuilder.append("脱敏;");
             if (permissionField)
-                columnBuilder.append("权限字段;");
+                remarkBuilder.append("权限字段;");
             if (secret)
-                columnBuilder.append("保密;");
+                remarkBuilder.append("保密;");
             if (StringUtils.isNotBlank(secretPeriod))
-                columnBuilder.append("保密期限:").append(secretPeriod).append(";");
+                remarkBuilder.append("保密期限:").append(secretPeriod).append(";");
             if (StringUtils.isNotBlank(mappingRule))
-                columnBuilder.append("映射规则:").append(mappingRule).append(";");
+                remarkBuilder.append("映射规则:").append(mappingRule).append(";");
             if (StringUtils.isNotBlank(mappingDescribe))
-                columnBuilder.append("映射说明:").append(mappingDescribe).append(";");
+                remarkBuilder.append("映射说明:").append(mappingDescribe).append(";");
             if (StringUtils.isNotBlank(remark))
-                columnBuilder.append("备注:").append(remark).append(";");
+                remarkBuilder.append("备注:").append(remark).append(";");
+            if (StringUtils.isNotEmpty(remarkBuilder.toString()))
+                columnBuilder.append(" --  ").append(remarkBuilder);
             columnBuilder.append("\r\n");
             valueBuilder.append(stringObjectMap.get(dataType));
             if (i < sourceInfoDeriveColumnInfos.size() - 1) {
@@ -972,7 +975,7 @@ public class SourceInfoDeriveTableInfoService {
         if (StringUtils.isEmpty(dbId) || StringUtils.isEmpty(sourceId)) {
             return false;
         }
-        List<Map<String, String>> maps = dbDao.queryDbNameAndSourceNameByIds(dbId, sourceId);
+        List<Map<String, String>> maps = queryDbNameAndSourceNameByIds(dbId, sourceId);
         return maps.size() == 2;
     }
 
@@ -983,6 +986,17 @@ public class SourceInfoDeriveTableInfoService {
 
     public boolean checkColumnNameEn(String name) {
         return checkTableOrColumnNameEnPattern(name) && !Constant.HIVE_KEYWORD.contains(name.toUpperCase());
+    }
+
+    private List<Map<String, String>> queryDbNameAndSourceNameByIds(String dbId, String sourceId) {
+        List<Map<String, String>> maps = dbDao.queryDbNameAndSourceNameByIds(dbId, sourceId);
+        if ("HIVE".equalsIgnoreCase(sourceId)) {
+            Map<String, String> hiveHashMap = new HashMap<>();
+            hiveHashMap.put("id", "hive");
+            hiveHashMap.put("name", "hive");
+            maps.add(hiveHashMap);
+        }
+        return maps;
     }
 
 }
