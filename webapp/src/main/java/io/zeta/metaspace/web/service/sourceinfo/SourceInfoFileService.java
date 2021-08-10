@@ -16,9 +16,9 @@ import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.UserGroupService;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
-import org.apache.atlas.AtlasException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -54,12 +53,7 @@ public class SourceInfoFileService {
             "数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","手机号",
             "数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","技术Owner手机号","技术负责人","业务负责人"};
     private Map<String,String> categoryMap  = new HashMap<String,String>();
-    /*{{
-        put("贴源层","1");
-        put("基础层","2");
-        put("通用层","4");
-        put("应用层","5");
-    }};*/
+  
     private String[] tableTitleAttr = {"数据层名称","数据库中文名","数据库类型","数据库实例","数据库英文名称","抽取频率","抽取工具","规划包编号","规划包名称",
             "是否保密","保密期限","是否重要","数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","手机号","数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","技术Owner手机号",
             "技术负责人","业务负责人"};
@@ -74,9 +68,9 @@ public class SourceInfoFileService {
             List<String> tableAttributes = Arrays.asList(tableTitleAttr);
             List<String> tableData = new ArrayList<>();
             //模板处理
-            Map<String,String> map = getCategoryFromDb(tenantId);
-            if(map != null && !map.isEmpty()){
-                tableData.add(Joiner.on(";").join(map.keySet()));
+            categoryMap = getCategoryFromDb(tenantId);
+            if(categoryMap != null && !categoryMap.isEmpty()){
+                tableData.add(Joiner.on(";").join(categoryMap.keySet()));
             }else{
                 tableData.add("层级之间使用-分开");
             }
