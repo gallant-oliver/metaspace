@@ -185,7 +185,10 @@ public class CalciteParseSqlTools {
             if(CollectionUtils.isEmpty(list)){
                 continue;
             }
-            return list.stream().filter(p->qualifiedName.equals(p.getEntity().getAttribute("qualifiedName"))).findFirst().orElse(null);
+            Optional<AtlasEntity.AtlasEntityWithExtInfo> atlasEntityWithExtInfo = list.stream().filter(p->qualifiedName.equals(p.getEntity().getAttribute("qualifiedName"))).findFirst();
+            if(atlasEntityWithExtInfo.isPresent()){
+                return atlasEntityWithExtInfo.get();
+            }
         }
         return null;
     }

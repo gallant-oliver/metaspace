@@ -66,6 +66,7 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.repository.Constants;
+import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
@@ -154,6 +155,8 @@ public class DataManageService {
     @Autowired
     private TableDataSourceRelationDAO tableDataSourceRelationDAO;
 
+    @Autowired
+    private AtlasEntityStoreV2 atlasEntityStore;
     int technicalType = 0;
     int dataStandType = 3;
     int technicalCount = 5;
@@ -1615,9 +1618,28 @@ public class DataManageService {
         database.setDatabaseId(guid);
         database.setStatus(entity.getStatus().name());
         database.setDatabaseDescription(getEntityAttribute(entity, "comment"));
-        AtlasRelatedObjectId relatedDB = getRelatedInstance(entity);
-        database.setInstanceId(relatedDB.getGuid());
+
+        setInstance(entity, database);
+
         return database;
+    }
+
+    private void setInstance(AtlasEntity entity, Database database) {
+        try{
+            AtlasRelatedObjectId relatedDB = getRelatedInstance(entity);
+            if(null == relatedDB){
+                ArrayList<String> attributes = new ArrayList<>();
+                attributes.add("qualifiedName");
+                attributes.add("parameters");
+                AtlasEntity hiveEntity = atlasEntityStore.getByIdWithAttributes(entity.getGuid(), attributes, new ArrayList<>()).getEntity();
+                Map parameters = (Map)hiveEntity.getAttribute("parameters");
+                database.setInstanceId((String)parameters.get("source"));
+            }else{
+                database.setInstanceId(relatedDB.getGuid());
+            }
+        }catch (Exception e){
+            LOG.warn("查询实体失败：{}" , e.getMessage());
+        }
     }
 
     private String getDbType(SyncTaskDefinition definition, KafkaConnector.Config config) {
