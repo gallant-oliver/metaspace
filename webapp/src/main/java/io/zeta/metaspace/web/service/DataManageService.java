@@ -1618,10 +1618,28 @@ public class DataManageService {
         database.setDatabaseId(guid);
         database.setStatus(entity.getStatus().name());
         database.setDatabaseDescription(getEntityAttribute(entity, "comment"));
-        AtlasRelatedObjectId relatedDB = getRelatedInstance(entity);
 
-        database.setInstanceId(relatedDB.getGuid());
+        setInstance(entity, database);
+
         return database;
+    }
+
+    private void setInstance(AtlasEntity entity, Database database) {
+        try{
+            AtlasRelatedObjectId relatedDB = getRelatedInstance(entity);
+            if(null == relatedDB){
+                ArrayList<String> attributes = new ArrayList<>();
+                attributes.add("qualifiedName");
+                attributes.add("parameters");
+                AtlasEntity hiveEntity = atlasEntityStore.getByIdWithAttributes(entity.getGuid(), attributes, new ArrayList<>()).getEntity();
+                Map parameters = (Map)hiveEntity.getAttribute("parameters");
+                database.setInstanceId((String)parameters.get("source"));
+            }else{
+                database.setInstanceId(relatedDB.getGuid());
+            }
+        }catch (Exception e){
+            LOG.warn("查询实体失败：{}" , e.getMessage());
+        }
     }
 
     private String getDbType(SyncTaskDefinition definition, KafkaConnector.Config config) {
@@ -1791,10 +1809,6 @@ public class DataManageService {
             if (obj instanceof AtlasRelatedObjectId) {
                 objectId = (AtlasRelatedObjectId) obj;
             }
-        }
-        if(null == objectId){
-            AtlasEntity dbEntity = atlasEntityStore.getById(entity.getGuid()).getEntity();
-            return getRelatedInstance(dbEntity);
         }
         return objectId;
     }
