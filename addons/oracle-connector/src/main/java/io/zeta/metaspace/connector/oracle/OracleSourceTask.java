@@ -31,7 +31,7 @@ public class OracleSourceTask extends SourceTask {
 	private int tryTimes = 3;
 	private static final long MIN_POLL_PERIOD = 5000;
 	private static final Pattern SQL_DOC_PATTERN = Pattern.compile("(?ms)('(?:''|[^'])*')|--(?!(\\s*\\++\\s*\\S+))\\s.*?$|((/\\*)(?!(\\s*\\++\\s*\\S+)).*?(\\*/))");
-	private static final Pattern BLACK_LINE_PATTERN = Pattern.compile("(\n|鈫�)(?=([^\"]*\"[^\"]*\")*[^\"]*$)(?=([^']*'[^']*')*[^']*$)");
+	private static final Pattern BLACK_LINE_PATTERN = Pattern.compile("(\n|↵)(?=([^\"]*\"[^\"]*\")*[^\"]*$)(?=([^']*'[^']*')*[^']*$)");
 	@Override
 	public String version() {
 		return VersionUtil.getVersion();
