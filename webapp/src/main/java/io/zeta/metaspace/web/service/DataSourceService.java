@@ -390,8 +390,20 @@ public class DataSourceService {
      */
     public PageResult<DataSourceHead> searchDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId) throws AtlasBaseException {
         try {
-            DataSourceSearch dataSourceSearch = new DataSourceSearch(sourceName, sourceType, createTime, updateTime, updateUserName);
             PageResult<DataSourceHead> pageResult = new PageResult<>();
+            if("hive".equalsIgnoreCase(sourceType)){
+                DataSourceHead dataSourceHead = new DataSourceHead();
+                dataSourceHead.setSourceId("hive");
+                dataSourceHead.setSourceName("hive");
+                dataSourceHead.setSourceType("HIVE");
+                List<DataSourceHead> list = new ArrayList<>();
+                list.add(dataSourceHead);
+                pageResult.setTotalSize(list.size());
+                pageResult.setLists(list);
+                pageResult.setLists(list);
+                return pageResult;
+            }
+            DataSourceSearch dataSourceSearch = new DataSourceSearch(sourceName, sourceType, createTime, updateTime, updateUserName);
             Parameters parameters = new Parameters();
             parameters.setLimit(limit);
             parameters.setOffset(offset);

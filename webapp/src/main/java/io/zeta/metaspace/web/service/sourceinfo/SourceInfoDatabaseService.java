@@ -464,7 +464,7 @@ public class SourceInfoDatabaseService implements Approvable {
     private DatabaseInfoBO getDatabaseInfoBOById(String id,String tenantId,int version){
         DatabaseInfoBO databaseInfoBO=databaseInfoDAO.getDatabaseInfoById(id,tenantId,version);
 
-        if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfoBO))){
+        if (Boolean.FALSE.equals(ParamUtil.isNull(databaseInfoBO))){
             databaseInfoBO.setCategoryId(databaseInfoDAO.getParentCategoryIdById(databaseInfoBO.getId()));
         }
         databaseInfoBO.setCategoryName(databaseInfoBO.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
