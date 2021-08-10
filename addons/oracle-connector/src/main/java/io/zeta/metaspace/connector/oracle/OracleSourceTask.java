@@ -26,15 +26,12 @@ public class OracleSourceTask extends SourceTask {
 	private OracleSourceConnectorConfig config;
 	Map<String, String> configMap;
 	private static Connection dbConn;
-	private List<CallableStatement> callableStatements = new ArrayList<>();
-	private static PreparedStatement logMinerSelect;
-	private ResultSet logMinerData;
 	private boolean closed = false;
 	private List<String> logFiles;
 	private int tryTimes = 3;
 	private static final long MIN_POLL_PERIOD = 5000;
 	private static final Pattern SQL_DOC_PATTERN = Pattern.compile("(?ms)('(?:''|[^'])*')|--(?!(\\s*\\++\\s*\\S+))\\s.*?$|((/\\*)(?!(\\s*\\++\\s*\\S+)).*?(\\*/))");
-	private static final Pattern BLACK_LINE_PATTERN = Pattern.compile("(\n|↵)(?=([^\"]*\"[^\"]*\")*[^\"]*$)(?=([^']*'[^']*')*[^']*$)");
+	private static final Pattern BLACK_LINE_PATTERN = Pattern.compile("(\n|鈫�)(?=([^\"]*\"[^\"]*\")*[^\"]*$)(?=([^']*'[^']*')*[^']*$)");
 	@Override
 	public String version() {
 		return VersionUtil.getVersion();
@@ -45,7 +42,6 @@ public class OracleSourceTask extends SourceTask {
 	}
 
 	public static void closeDbConn() throws SQLException {
-		logMinerSelect.cancel();
 		dbConn.close();
 	}
 
@@ -61,36 +57,31 @@ public class OracleSourceTask extends SourceTask {
 
 	@Override
 	public void start(Map<String, String> map) {
+		
+		config = new OracleSourceConnectorConfig(map);
+		LOG.info("connector {} start", config.getName());
 		this.closed = false;
 		this.configMap = map;
-		config = new OracleSourceConnectorConfig(map);
 		if (isNullDbName()) {
+			LOG.warn("Connector was started, but not init connect to db cause of empity db.name");
 			return;
 		}
+		
 		try {
-			LOG.info("Oracle Kafka Connector {} is starting", config.getName());
+			
 			dbConn = new OracleConnection().connect(config);
+			LOG.info("connector {} get connection success", config.getName());
 			logFiles = getSingleRowMuiltColumnStringResult(OracleConnectorSQL.SELECT_LOG_FILES, "MEMBER");
+			if(null == logFiles || logFiles.isEmpty()){
+				throw new RuntimeException(
+						"connector " + config.getName() + " not find any log file by sql : " + OracleConnectorSQL.SELECT_LOG_FILES);
+			} 
+			LOG.info("connector {} find {} log files", config.getName(), logFiles.size());
 			if (0L == streamOffsetScn) {
 				streamOffsetScn = config.getStartScn() < 0L
 						? getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN")
 						: config.getStartScn();
 			}
-
-			String startLogminerSql = OracleConnectorSQL.NEW_DBMS_LOGMNR.replace("?", logFiles.get(0));
-			for (int i = 1; i < logFiles.size(); i++) {
-				startLogminerSql = startLogminerSql + OracleConnectorSQL.ADD_DBMS_LOGMNR.replace("?", logFiles.get(i));
-			}
-			CallableStatement startLogminer = dbConn.prepareCall(startLogminerSql + "END;");
-			startLogminer.execute();
-			callableStatements.add(startLogminer);
-			CallableStatement logMinerStartCall = dbConn.prepareCall(OracleConnectorSQL.START_LOGMINER);
-			logMinerStartCall.setLong(1, streamOffsetScn);
-			logMinerStartCall.execute();
-			callableStatements.add(logMinerStartCall);
-			logMinerSelect = dbConn.prepareCall(OracleConnectorSQL.LOGMINER_SELECT_WITHSCHEMA);
-			logMinerSelect.setFetchSize(config.getDbFetchSize());
-			LOG.info("Oracle Kafka Connector {} is started by streamOffsetScn = {}", config.getName(), streamOffsetScn);
 		} catch (Exception e) {
 			LOG.info("LogMiner Session Start error", e);
 			throw new ConnectException(
@@ -119,6 +110,21 @@ public class OracleSourceTask extends SourceTask {
 
 		return result;
 	}
+	
+	private void executeSql(String sql) throws SQLException {
+		try (CallableStatement callableStatement = dbConn.prepareCall(sql)){
+			callableStatement.execute();
+			
+		}
+	}
+	
+	private void executeSql(String sql, Long param) throws SQLException {
+		try (CallableStatement callableStatement = dbConn.prepareCall(sql)){
+			callableStatement.setLong(1, param);
+			callableStatement.execute();
+			callableStatement.close();
+		}
+	}
 
 	private List<String> getSingleRowMuiltColumnStringResult(String sql, String columnName) throws SQLException {
 		List<String> results = new ArrayList<>();
@@ -137,56 +143,27 @@ public class OracleSourceTask extends SourceTask {
 	public List<SourceRecord> poll() throws InterruptedException {
 		LOG.info("poll start");
 		long startTime = System.currentTimeMillis();
-		ArrayList<SourceRecord> records = new ArrayList<>();
-		if (closed) {
-			return records;
-		}
-		if (isNullDbName()) {
-			LOG.info("config is unavailable, db.name is empty");
-			Thread.sleep(10000);
-			return records;
-		}
-		String sqlRedo = "";
+		List<SourceRecord> records = new ArrayList<>();
+		
+		PreparedStatement logMinerSelect = null;
 		try {
-			long streamEndScn = getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN");
-			logMinerSelect.setLong(1, streamOffsetScn);
-			logMinerSelect.setLong(2, streamEndScn);
-			LOG.info("Oracle Kafka Connector {} is polling data from {} to {}", config.getName(), streamOffsetScn,
-					streamEndScn);
-			logMinerData = logMinerSelect.executeQuery();
-			LOG.info("logMinerSelect executeQuery finish");
-			while (logMinerData.next()) {
-				if (LOG.isDebugEnabled()) {
-					logRawMinerData();
-				}
-				sqlRedo = logMinerData.getString(SQL_REDO_FIELD);
-				sqlRedo = SQL_DOC_PATTERN.matcher(sqlRedo).replaceAll("$1");
-				sqlRedo = BLACK_LINE_PATTERN.matcher(sqlRedo).replaceAll(" ").trim();
-				String firstWord = sqlRedo.trim().substring(0, sqlRedo.indexOf(" ")).toLowerCase();
-				// info 用来筛选掉数据库内部生成的redo sql || userExecuteFlag :用户操作标记
-				if (sqlRedo.contains(TEMPORARY_TABLE) || firstWord.equals("truncate") || firstWord.equals("delete") || firstWord.equals("update")) {
-					continue;
-				}
-
-				SourceRecord sourceRecord = SourceRecordUtil.getSourceRecord(logMinerData, config);
-				records.add(sourceRecord);
+			if (closed) {
+				return records;
 			}
-			LOG.info("Oracle Kafka Connector {} polled {} data from {} to {}", config.getName(), records.size(),
-					streamOffsetScn, streamEndScn);
-			streamOffsetScn = streamEndScn + 1;
+			if (isNullDbName()) {
+				LOG.info("config is unavailable, db.name is empty");
+				Thread.sleep(10000);
+				return records;
+			}
+			logMinerSelect = execute(records);
 		} catch (Throwable e) {
 			LOG.error("during poll on connector {} : ", config.getName(), e.getMessage(), e);
-			stop();
-			int totalTimePlusOne = tryTimes + 1;
-			while(tryTimes > 0){
-				try{
-					Thread.sleep(5000);
-					LOG.info("{} : try to restart connector {} by streamOffsetScn = {}", (totalTimePlusOne-tryTimes), config.getName(), streamOffsetScn);
-					tryTimes = tryTimes-1;
-					start(configMap);
-					LOG.info("connector {} restarted", config.getName());
-				} catch (Exception ex) {
-					LOG.error("{} : connector {} restarted error: {}", (totalTimePlusOne-tryTimes), config.getName(), ex);
+			retry(records);
+		}finally{
+			if(null != logMinerSelect){
+				try {
+					logMinerSelect.close();
+				} catch (Exception e) {
 				}
 			}
 		}
@@ -201,60 +178,98 @@ public class OracleSourceTask extends SourceTask {
 
 	}
 
+	private List<SourceRecord> retry(List<SourceRecord> records) {
+		stop();
+		int times = 1;
+		while(times <= tryTimes){
+			LOG.info("try to execute connector task {} {} times by streamOffsetScn = {}", config.getName(), times, streamOffsetScn);
+			times = times+1;
+			PreparedStatement logMinerSelect = null;
+			try{
+				Thread.sleep(5000);
+				start(configMap);
+				logMinerSelect = execute(records);
+				LOG.info("connector {} execute success after trying {}  times", times -1, config.getName());
+			} catch (Exception ex) {
+				LOG.error("{} : connector {} execute error: {}", times, config.getName(), ex);
+			}finally {
+				if(null != logMinerSelect){
+					try {
+						logMinerSelect.close();
+					} catch (Exception e) {
+					}
+				}
+			}
+		}
+		return records;
+	}
+
+	private PreparedStatement execute(List<SourceRecord> records) throws SQLException {
+		PreparedStatement logMinerSelect;
+		String newAndAddLogFilesSql = OracleConnectorSQL.NEW_DBMS_LOGMNR.replace("?", logFiles.get(0));
+		for (int i = 1; i < logFiles.size(); i++) {
+			newAndAddLogFilesSql = newAndAddLogFilesSql + OracleConnectorSQL.ADD_DBMS_LOGMNR.replace("?", logFiles.get(i));
+		}
+		executeSql(newAndAddLogFilesSql + "END;");
+		LOG.info("connector {} add log files success", config.getName());
+		executeSql(OracleConnectorSQL.START_LOGMINER,streamOffsetScn);
+		LOG.info("connector {} logminer start success", config.getName());
+		
+		logMinerSelect = dbConn.prepareCall(OracleConnectorSQL.LOGMINER_SELECT_WITHSCHEMA);
+		logMinerSelect.setFetchSize(config.getDbFetchSize());
+
+		long streamEndScn = getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN");
+		logMinerSelect.setLong(1, streamOffsetScn);
+		logMinerSelect.setLong(2, streamEndScn);
+		
+		ResultSet logMinerData = logMinerSelect.executeQuery();
+		LOG.info("connector {} poll data from {} to {} success", config.getName(), streamOffsetScn,
+				streamEndScn);
+		explainData(records, logMinerData);
+		LOG.info("connector {} explain {} item(s) from {} to {} success", config.getName(), records.size(), streamOffsetScn,
+				streamEndScn);
+		streamOffsetScn = streamEndScn + 1;
+		return logMinerSelect;
+	}
+
+	private void explainData(List<SourceRecord> records, ResultSet logMinerData) throws SQLException {
+		String sqlRedo = "";
+		while (logMinerData.next()) {
+			sqlRedo = logMinerData.getString(SQL_REDO_FIELD);
+			sqlRedo = SQL_DOC_PATTERN.matcher(sqlRedo).replaceAll("$1");
+			sqlRedo = BLACK_LINE_PATTERN.matcher(sqlRedo).replaceAll(" ").trim();
+			String firstWord = sqlRedo.trim().substring(0, sqlRedo.indexOf(" ")).toLowerCase();
+			if (sqlRedo.contains(TEMPORARY_TABLE) || firstWord.equals("truncate") || firstWord.equals("delete") || firstWord.equals("update")) {
+				continue;
+			}
+
+			SourceRecord sourceRecord = SourceRecordUtil.getSourceRecord(logMinerData, config);
+			records.add(sourceRecord);
+		}
+	}
+
+	
 	@Override
 	public void stop() {
 		LOG.info("Stop called for logminer");
 		this.closed = true;
 
-		if (isNullDbName()) {
-			LOG.info("init logminer stopped");
-			return;
-		}
-
-		try {
-			if(null != dbConn){
+		if(null != dbConn){
+			try{
 				CallableStatement s = dbConn.prepareCall(OracleConnectorSQL.STOP_LOGMINER_CMD);
 				s.execute();
 				s.close();
+			}catch (Exception e) {
+				LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
 			}
-		} catch (Exception e) {
-			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
-		}
-		try {
-			if(null != logMinerSelect){
-				logMinerSelect.cancel();
-				logMinerSelect.close();
-			}
-		} catch (Exception e) {
-			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
-		}
-		try {
-			for (int i = callableStatements.size() - 1; i >= 0; i--) {
-				callableStatements.get(i).close();
-			}
-		} catch (Exception e) {
-			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
-		}
-		try {
-			if(null != dbConn){
+			try {
 				dbConn.close();
+			} catch (Exception e) {
+				LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
 			}
-		} catch (Exception e) {
-			LOG.error("Stop logminer {} error {}", config.getName(), e.getMessage());
+			
 		}
 		LOG.info("logminer stoped");
-
 	}
-
-	private void logRawMinerData() throws SQLException {
-		if (LOG.isDebugEnabled()) {
-			StringBuffer b = new StringBuffer();
-			for (int i = 1; i < logMinerData.getMetaData().getColumnCount(); i++) {
-				String columnName = logMinerData.getMetaData().getColumnName(i);
-				Object columnValue = logMinerData.getObject(i);
-				b.append("[" + columnName + "=" + (columnValue == null ? "NULL" : columnValue.toString()) + "]");
-			}
-			LOG.debug(b.toString());
-		}
-	}
+	
 }
