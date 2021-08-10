@@ -162,8 +162,8 @@ public class SourceInfoDatabaseREST {
     @Produces({MediaType.APPLICATION_JSON})
     public void downloadTemplate(@HeaderParam("tenantId")String tenantId) throws UnsupportedEncodingException {
         //根据模板路径获取 (id=1的为模板id)
-        Annex annex = annexService.findByAnnexId("1");
-        String filename = "";
+        String filename = "数据库登记模板.xlsx";
+        /*Annex annex = annexService.findByAnnexId("1");
         String path = templatePath;
         if(annex != null && StringUtils.isNotBlank(annex.getPath())){
             filename = annex.getFileName();
@@ -171,14 +171,20 @@ public class SourceInfoDatabaseREST {
             log.info("附件表设置了模板记录：{}",path);
         }else{
             filename = FilenameUtils.getName(templatePath);
-        }
-
+        }*/
+        File outFile = null;
         try{
             setDownloadResponseheader(filename);
-            InputStream inputStream = hdfsService.getFileInputStream(path);
+            //InputStream inputStream = hdfsService.getFileInputStream(path);
+            outFile = sourceInfoFileService.exportExcelTemplate(tenantId);
+            InputStream inputStream = FileUtils.openInputStream(outFile);
             IOUtils.copyBytes(inputStream, httpServletResponse.getOutputStream(), 4096, true);
         }catch(Exception e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "模板文件下载失败");
+        }finally {
+            if(outFile != null && outFile.exists()){
+                outFile.delete();
+            }
         }
     }
 
