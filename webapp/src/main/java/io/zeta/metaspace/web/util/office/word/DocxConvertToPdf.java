@@ -60,7 +60,7 @@ public class DocxConvertToPdf {
         try {
             tmpHtml = File.createTempFile("tmpHtml",".html");
             //转换doc到html成功
-            String content = docx2Html(in,new File(tmpHtml.getName()));
+            String content = docx2Html(in,tmpHtml);
 
             DocConvertToPdf.htmlTopdf(content,dest);
             if(in != null){
