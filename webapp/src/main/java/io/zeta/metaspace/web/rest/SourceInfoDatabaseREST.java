@@ -303,7 +303,7 @@ public class SourceInfoDatabaseREST {
             }
             List<AnalyticResult> validList = sourceInfoFileService.checkExcelField(excelDataList);
             if(!CollectionUtils.isEmpty(validList)){
-                return ReturnUtil.success("存在校验不通过的数据.");
+                return ReturnUtil.error("400","存在校验不通过的数据.");
             }
             // 跟source_info、db-info对比获取比对结果
             Result result = sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
