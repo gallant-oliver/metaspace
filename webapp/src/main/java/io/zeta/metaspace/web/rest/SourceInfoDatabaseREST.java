@@ -163,6 +163,9 @@ public class SourceInfoDatabaseREST {
     public void downloadTemplate(@QueryParam("tenantId")String tenantId){
         //根据模板路径获取 (id=1的为模板id)
         String filename = "数据库登记模板.xlsx";
+        if (StringUtils.isBlank(tenantId)) {
+            tenantId = httpServletRequest.getHeader("tenantId");
+        }
 
         File outFile = null;
         try{
