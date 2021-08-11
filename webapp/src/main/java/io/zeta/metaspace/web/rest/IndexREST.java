@@ -726,7 +726,7 @@ public class IndexREST {
             data.setOffset(pageQueryDTO.getOffset());
             return ReturnUtil.success(data);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }

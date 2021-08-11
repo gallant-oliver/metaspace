@@ -69,14 +69,15 @@ public interface ApproveDAO {
             " and a.business_type = #{paras.businessType} " +
             "</if>" +
             "<if test='paras.query!=null'>" +
-            " and a.object_name like '%${paras.query}%' ESCAPE '/' " +
+            " and a.object_name like concat('%',#{paras.query},'%') ESCAPE '/' " +
             "</if>" +
             "<if test=\"paras.sortBy!=null and paras.sortBy!=''\">"+
             "order by ${paras.sortBy} " +
+                "<if test=\"paras.order!=null and paras.order!=''\">"+
+                " ${paras.order} " +
+                "</if>" +
             "</if>" +
-            "<if test=\"paras.order!=null and paras.order!=''\">"+
-            " ${paras.order} " +
-            "</if>" +
+
             "<if test='paras.limit!=-1'>" +
             " limit ${paras.limit} " +
             "</if>" +

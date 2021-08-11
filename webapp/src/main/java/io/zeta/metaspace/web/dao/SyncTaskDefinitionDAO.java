@@ -79,7 +79,7 @@ public interface SyncTaskDefinitionDAO {
             "left join category on  (definition.category_guid = category.guid and category.categorytype = 0 and category.tenantid = #{tenantId}) " +
             "WHERE definition.tenant_id = #{tenantId} " +
             "<if test='null != parameters.query and 0 != parameters.query.length() '>" +
-            " and definition.name like '%${parameters.query}%' ESCAPE '/' " +
+            " and definition.name like concat('%',#{parameters.query},'%') ESCAPE '/' " +
             "</if> " +
             " order by update_time desc " +
             "<if test='parameters.limit!=-1'>" +

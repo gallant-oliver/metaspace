@@ -50,14 +50,15 @@ public interface ApproveGroupDAO {
             "left join users on u.updater = users.userid" +
             " where u.tenantid=#{tenantId} and u.valid=true" +
             "<if test='search!=null'>" +
-            " and u.name like '%${search}%' ESCAPE '/' " +
+            " and u.name like concat('%',#{search},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='sortBy!=null'>" +
             "order by ${sortBy} " +
+                "<if test='order!=null '>" +
+                " ${order} " +
+                "</if>" +
             "</if>" +
-            "<if test='order!=null '>" +
-            " ${order} " +
-            "</if>" +
+
             "<if test='limit!=-1'>" +
             " limit ${limit} " +
             "</if>" +
@@ -77,7 +78,7 @@ public interface ApproveGroupDAO {
             " on u.id=m.group_id " +
             " where u.tenantid=#{tenantId} and u.valid=true and m.module_id = #{params.moduleId}" +
             "<if test=\"params.query!='' and params.query!=null\">" +
-            " and u.name like '%${params.query}%' ESCAPE '/' " +
+            " and u.name like  concat('%',#{params.query},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='params.sortBy!=null'>" +
             " order by ${params.sortBy} " +
@@ -195,7 +196,7 @@ public interface ApproveGroupDAO {
             "#{userId}" +
             "</foreach>" +
             "<if test='search!=null'>" +
-            " and u.username like '%${search}%' ESCAPE '/' " +
+            " and u.username like concat('%',#{search},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='limit!=-1'>" +
             " limit ${limit} " +

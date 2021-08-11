@@ -625,7 +625,7 @@ public interface IndexDAO {
             " and T.central=#{pageQueryDTO.central}",
             " </if>",
             " <if test=\"pageQueryDTO.searchContent != null and pageQueryDTO.searchContent !=''\">",
-            " and (T.index_name like '%${pageQueryDTO.searchContent}%' or T.index_identification like '%${pageQueryDTO.searchContent}%' )",
+            " and (T.index_name like concat('%',#{pageQueryDTO.searchContent},'%')  or T.index_identification like concat('%',#{pageQueryDTO.searchContent},'%') )",
             " </if>",
             " <if test='pageQueryDTO.indexStates != null and pageQueryDTO.indexStates.size > 0'>",
             " and T.index_state in ",

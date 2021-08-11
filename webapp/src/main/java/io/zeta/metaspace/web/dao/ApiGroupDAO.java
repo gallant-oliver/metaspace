@@ -63,7 +63,7 @@ public interface ApiGroupDAO {
             " where " +
             " g.projectid=#{projectId} and g.tenantid=#{tenantId} " +
             "<if test=\"param.query != null and param.query!=''\">" +
-            " and g.name like '%${param.query}%' " +
+            " and g.name like concat('%',#{param.query},'%') " +
             "</if>" +
             "<if test=\"publish!=null\">" +
             " and g.publish=#{publish} " +
@@ -223,9 +223,9 @@ public interface ApiGroupDAO {
             " select count(1)over() total,api_group_log.time date,api_group_log.group_id,api_group_log.type,users.username creator from api_group_log join users on api_group_log.userid=users.userid " +
             " where api_group_log.group_id=#{groupId} " +
             "<if test=\"param.query!=null and param.query!=''\">" +
-            " and (users.username like '%${param.query}%' ESCAPE '/' " +
+            " and (users.username like concat('%',#{param.query},'%') ESCAPE '/' " +
             "<if test=\"type!=null and type!=''\">" +
-            " or  api_group_log.type like '%${type}%' ESCAPE '/'" +
+            " or  api_group_log.type like concat('%',#{type},'%') ESCAPE '/'" +
             "</if>" +
             ")" +
             "</if>" +

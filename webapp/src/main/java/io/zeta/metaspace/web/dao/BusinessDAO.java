@@ -98,7 +98,7 @@ public interface BusinessDAO {
              " join business_relation on",
              " business_relation.businessId=businessInfo.businessId",
              " where",
-             " businessInfo.name like '%${businessName}%' ESCAPE '/'",
+             " businessInfo.name like concat('%',#{businessName},'%') ESCAPE '/'",
              " and businessInfo.tenantid=#{tenantId} and ",
              " categoryGuid in",
              " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
@@ -109,8 +109,7 @@ public interface BusinessDAO {
              " limit #{limit}",
              " </if>",
              " offset #{offset}",
-             " </script>"})
-    //@Select("select businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber from businessInfo where businessId in (select businessId from business_relation where categoryGuid=#{categoryGuid}) and name like '%${businessName}%' limit #{limit} offset #{offset}")
+             " </script>"})    
     public List<BusinessInfoHeader> queryBusinessByName(@Param("businessName")String businessName, @Param("ids") List<String> categoryIds, @Param("limit")int limit, @Param("offset") int offset,@Param("tenantId")String tenantId) throws SQLException;
 
 
@@ -119,7 +118,7 @@ public interface BusinessDAO {
              " join business_relation on",
              " business_relation.businessId=businessInfo.businessId",
              " where",
-             " businessInfo.name like '%${businessName}%' ESCAPE '/' and businessInfo.tenantid=#{tenantId} ",
+             " businessInfo.name like concat('%',#{businessName},'%') ESCAPE '/' and businessInfo.tenantid=#{tenantId} ",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
@@ -132,7 +131,7 @@ public interface BusinessDAO {
     @Select({"<script>",
              " select count(*) from businessInfo",
              " where",
-             " businessInfo.name like '%${businessName}%' ESCAPE '/'",
+             " businessInfo.name like concat('%',#{businessName},'%') ESCAPE '/'",
              " </script>"})
     public long queryBusinessCountByNameWithoutPrivilege(@Param("businessName")String businessName);
 
@@ -154,8 +153,8 @@ public interface BusinessDAO {
              " <if test=\"level2CategoryId != null and level2CategoryId!=''\">",
              " and level2CategoryId=#{level2CategoryId}",
              " </if>",
-             " and technicalStatus=#{status} and name like '%${businessName}%' ESCAPE '/' and ticketNumber like '%${ticketNumber}%' ESCAPE '/' and " +
-             " users.username like '%${submitter}%' ESCAPE '/' " +
+             " and technicalStatus=#{status} and name like concat('%',#{businessName},'%') ESCAPE '/' and ticketNumber like concat('%',#{ticketNumber},'%') ESCAPE '/' and " +
+             " users.username like concat('%',#{submitter},'%') ESCAPE '/' " +
              " order by businessInfo.businessLastUpdate desc",
              " <if test='limit!= -1'>",
              " limit #{limit}",
@@ -229,7 +228,7 @@ public interface BusinessDAO {
              " from tableInfo,business2table ",
              " WHERE business2table.businessid=#{businessId}",
              " and tableInfo.tableGuid=business2table.tableGuid",
-             " and (tableInfo.tableName like '%${tableName}%' ESCAPE '/' or tableInfo.display_name like '%${tableName}%' ESCAPE '/')",
+             " and (tableInfo.tableName like concat('%',#{tableName},'%') ESCAPE '/' or tableInfo.display_name like concat('%',#{tableName},'%') ESCAPE '/')",
              " order by tableInfo.status",
              " <if test='limit != null and limit!=-1'>",
              " limit #{limit}",
@@ -245,7 +244,7 @@ public interface BusinessDAO {
              " from tableInfo,business2table ",
              " WHERE business2table.businessid=#{businessId}",
              " and tableInfo.tableGuid=business2table.tableGuid",
-             " and (tableInfo.tableName like '%${tableName}%' ESCAPE '/' or tableInfo.display_name like '%${tableName}%' ESCAPE '/')",
+             " and (tableInfo.tableName like concat('%',#{tableName},'%') ESCAPE '/' or tableInfo.display_name like concat('%',#{tableName},'%') ESCAPE '/')",
              " </script>"})
     public long getCountBusinessRelatedTable(@Param("businessId")String businessList, @Param("tableName")String tableName);
 

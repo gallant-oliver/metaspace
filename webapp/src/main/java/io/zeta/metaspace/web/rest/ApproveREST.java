@@ -34,7 +34,7 @@ public class ApproveREST {
             PageResult<ApproveItem> pageResult =  approveService.search(params, tenantId);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"审批项列表及搜索失败");
+            throw new AtlasBaseException("审批项列表及搜索失败", AtlasErrorCode.BAD_REQUEST, "审批项列表及搜索失败");
         }
     }
 

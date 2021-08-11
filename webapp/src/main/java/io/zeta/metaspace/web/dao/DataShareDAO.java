@@ -82,7 +82,7 @@ public interface DataShareDAO {
              " select count(1)over() total,apiInfo.guid,apiInfo.name,apiInfo.tableGuid,apiInfo.groupGuid,apiInfo.publish,apiInfo.keeper,apiInfo.version,apiInfo.updater,apiInfo.updateTime,",
              " apiGroup.name as groupName,apiInfo.used_count as usedCount,manager",
              " from apiInfo,apiGroup where apiInfo.tenantid=#{tenantId} and ",
-             " apiInfo.groupGuid=apiGroup.guid and apiInfo.name like '%${query}%' ESCAPE '/'",
+             " apiInfo.groupGuid=apiGroup.guid and apiInfo.name like concat('%',#{query},'%') ESCAPE '/'",
              " <if test=\"groupGuid!='1'.toString()\">",
              " and apiInfo.groupGuid=#{groupGuid}",
              " </if>",
@@ -306,7 +306,7 @@ public interface DataShareDAO {
             "(select count(distinct guid) count,projectid from api where tenantid=#{tenantId} and valid=true group by projectid) ac on ac.projectid=p.id" +
             " where p.tenantId=#{tenantId} and p.valid=true " +
             "<if test=\"parameters.query!=null and parameters.query!=''\">" +
-            " and p.name like '%${parameters.query}%' ESCAPE '/' " +
+            " and p.name like concat('%',#{parameters.query},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='parameters.sortby!=null'>" +
             " order by p.${parameters.sortby} " +
@@ -334,7 +334,7 @@ public interface DataShareDAO {
             "select count(*)over() totalSize,g.id,g.name,g.description from project_group_relation p join user_group g on p.group_id=g.id where " +
             "p.project_id=#{projectId} and g.tenant=#{tenantId} and g.valid=true " +
             "<if test=\"param.query!=null and param.query!=''\">" +
-            " and g.name like '%${param.query}%' ESCAPE '/' " +
+            " and g.name like concat('%',#{param.query},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='param.limit!=-1'>" +
             " limit ${param.limit} " +
@@ -350,7 +350,7 @@ public interface DataShareDAO {
             " select * from project_group_relation where project_id=#{projectId} ) p " +
             " on p.group_id=g.id where g.tenant=#{tenantId} and p.group_id is null and g.valid=true " +
             "<if test=\"param.query!=null and param.query!=''\">" +
-            " and g.name like '%${param.query}%' ESCAPE '/' " +
+            " and g.name like concat('%',#{param.query},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='param.limit!=-1'>" +
             " limit ${param.limit} " +
@@ -364,7 +364,7 @@ public interface DataShareDAO {
     @Select("<script>" +
             "select count(*)over() totalSize,id,name,description from user_group where tenant=#{tenantId} and valid=true " +
             "<if test=\"param.query!=null and param.query!=''\">" +
-            " and name like '%${param.query}%' ESCAPE '/' " +
+            " and name like concat('%',#{param.query},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='param.limit!=-1'>" +
             " limit ${param.limit} " +
@@ -572,7 +572,7 @@ public interface DataShareDAO {
              ") group by guid) v on v.guid=api.guid and v.max=api.version_num ",
              "where api.projectid=#{projectId} and  api.tenantid=#{tenantId} ",
              "<if test=\"param.query!=null and param.query!=''\">" +
-             " and api.name like '%${param.query}%' ESCAPE '/' " +
+             " and api.name like concat('%',#{param.query},'%') ESCAPE '/' " +
              "</if>" +
              " <if test=\"categoryId!=null and categoryId !='all'\">",
              " and api.categoryguid=#{categoryId}",
@@ -642,9 +642,9 @@ public interface DataShareDAO {
             " select count(1)over() total,api_log.time date,api_log.apiid,api_log.type,users.username creator from api_log join users on api_log.userid=users.userid " +
             " where api_log.apiid=#{apiId} " +
             "<if test=\"param.query!=null and param.query!=''\">" +
-            " and (users.username like '%${param.query}%' ESCAPE '/' " +
+            " and (users.username like concat('%',#{param.query},'%') ESCAPE '/' " +
             "<if test=\"type!=null and type!=''\">" +
-            " or  api_log.type like '%${type}%' ESCAPE '/'" +
+            " or  api_log.type like concat('%',#{type},'%') ESCAPE '/'" +
             "</if>" +
             ")" +
             "</if>" +

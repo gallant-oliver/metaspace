@@ -55,7 +55,7 @@ public interface IpRestrictionDAO {
             "and enable = #{enable} ",
             "</if>",
             "<if test='parameters.query!=null'>",
-            "and name like '%${parameters.query}%' ESCAPE '/' ",
+            "and name like concat('%',#{parameters.query},'%') ESCAPE '/' ",
             "</if>",
             "<if test='type!=null'>",
             "and type=#{type,typeHandler=org.apache.ibatis.type.EnumTypeHandler} ",

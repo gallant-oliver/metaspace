@@ -11,8 +11,10 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.ApproveDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.FilterUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,6 +65,14 @@ public class ApproveServiceImp implements ApproveService{
             return result;
         }   //用户不属于任何审批组，无匹配审批项目
 
+        if(StringUtils.isBlank(paras.getOrder()) || !Arrays.asList("ASC","DESC").contains(paras.getOrder().toUpperCase())){
+            paras.setOrder("ASC");
+        }
+        String sortByField = FilterUtils.filterSqlKeys(paras.getSortBy());
+        if(sortByField.split(" ").length > 1){
+            sortByField = sortByField.split(" ")[0];
+            paras.setSortBy(sortByField);
+        }
 
         List<ApproveItem> approveItems = approveDao.getApproveItems(tenantId, paras, groups);
        for(ApproveItem item:approveItems){

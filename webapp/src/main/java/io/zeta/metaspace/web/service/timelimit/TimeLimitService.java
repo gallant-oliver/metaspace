@@ -11,6 +11,7 @@ import io.zeta.metaspace.web.dao.ApiGroupDAO;
 import io.zeta.metaspace.web.dao.TimeLimitDAO;
 import io.zeta.metaspace.web.service.ApiGroupService;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.FilterUtils;
 import kafka.api.ApiUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -85,6 +86,12 @@ public class TimeLimitService implements TimeLimitServiceImp{
     public PageResult<TimelimitEntity> search(TimeLimitSearch search, String tenantId) {
         try{
             PageResult<TimelimitEntity> result = new PageResult<>();
+            String sortByField = FilterUtils.filterSqlKeys(search.getSortBy());
+            if(sortByField.split(" ").length > 1){
+                sortByField = sortByField.split(" ")[0];
+                search.setSortBy(sortByField);
+            }
+
             List<TimelimitEntity> timeLimitList = timeLimitDAO.getTimeLimitList(search, tenantId);
             if (timeLimitList==null||timeLimitList.size()==0){
                 return result;
