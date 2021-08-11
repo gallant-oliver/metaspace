@@ -1583,7 +1583,7 @@ public class DataManageService {
             }else{
                 dbDAO.insertDb(dbInfo);
             }
-            if(null != definition){
+            if(null != definition&&"ACTIVE".equalsIgnoreCase(dbInfo.getStatus())){
                 String dataSourceId = definition.getDataSourceId();
                 DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(dataSourceId);
                 String sourceDbRelationId = dbDAO.getSourceDbRelationId(dbInfo.getDatabaseId(), dataSourceInfo.getSourceId());
@@ -1596,10 +1596,12 @@ public class DataManageService {
     private void addOrUpdateTable(TableInfo tableInfo, SyncTaskDefinition definition){
         String tableGuid = tableInfo.getTableGuid();
         synchronized (tableGuid){
-            tableDAO.deleteIfExist(tableGuid, tableInfo.getDatabaseGuid(), tableInfo.getTableName());
+            if("ACTIVE".equalsIgnoreCase(tableInfo.getStatus())){
+                tableDAO.deleteIfExist(tableGuid, tableInfo.getDatabaseGuid(), tableInfo.getTableName());
+            }
             TableInfo table = tableDAO.getTableInfoByTableguid(tableGuid);
             if(null != table){
-                tableDAO.updateTable(table);
+                tableDAO.updateTable(tableInfo);
             }else{
                 tableDAO.addTable(tableInfo);
             }
