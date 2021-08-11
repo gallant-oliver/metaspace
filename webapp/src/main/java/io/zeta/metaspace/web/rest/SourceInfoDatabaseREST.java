@@ -160,18 +160,13 @@ public class SourceInfoDatabaseREST {
     @Path("/model/download")
     @Consumes({MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public void downloadTemplate(@HeaderParam("tenantId")String tenantId) throws UnsupportedEncodingException {
+    public void downloadTemplate(@QueryParam("tenantId")String tenantId){
         //根据模板路径获取 (id=1的为模板id)
         String filename = "数据库登记模板.xlsx";
-        /*Annex annex = annexService.findByAnnexId("1");
-        String path = templatePath;
-        if(annex != null && StringUtils.isNotBlank(annex.getPath())){
-            filename = annex.getFileName();
-            path = annex.getPath();
-            log.info("附件表设置了模板记录：{}",path);
-        }else{
-            filename = FilenameUtils.getName(templatePath);
-        }*/
+        if (StringUtils.isBlank(tenantId)) {
+            tenantId = httpServletRequest.getHeader("tenantId");
+        }
+
         File outFile = null;
         try{
             setDownloadResponseheader(filename);
