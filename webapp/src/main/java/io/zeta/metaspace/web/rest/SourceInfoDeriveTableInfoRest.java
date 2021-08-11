@@ -334,12 +334,8 @@ public class SourceInfoDeriveTableInfoRest {
     public Result getDataTypeByDbType(
             @ApiParam(value = "请求头-用户token", required = true) @HeaderParam(value = "X-SSO-FullticketId") String ticket,
             @ApiParam(value = "请求头-租户Id", required = true) @HeaderParam(value = "tenantId") String tenantId,
-            @ApiParam(value = "数据库类型,ORACLE或HIVE", required = true) @QueryParam(value = "dbType") String dbType) {
-        List<String> list = Constant.DATA_TYPE_MAP.get(dbType);
-        if (CollectionUtils.isEmpty(list)) {
-            return ReturnUtil.error("400", "数据库类型异常，只能是ORACLE或HIVE");
-        }
-        return ReturnUtil.success(list);
+            @ApiParam(value = "数据库类型", required = true) @QueryParam(value = "dbType") String dbType) {
+        return sourceInfoDeriveTableInfoService.getDataTypeByDbType(dbType);
     }
 
     @ApiOperation(value = "删除", tags = "源信息登记-衍生表登记")

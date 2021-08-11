@@ -999,4 +999,23 @@ public class SourceInfoDeriveTableInfoService {
         return maps;
     }
 
+    /**
+     * 根据数据库类型获取数据类型
+     * @param dbType
+     * @return
+     */
+    public Result getDataTypeByDbType(String dbType) {
+        // 源信息登记数据源类型的参数
+        String sourceInfoDbTypeKey = "dbr";
+        // 校验数据源类型，支持
+        List<DataSourceTypeInfo> dataSourceType = dataSourceService.getDataSourceType(sourceInfoDbTypeKey);
+        if (dataSourceType.stream().noneMatch(e -> e.getName().equalsIgnoreCase(dbType))) {
+            return ReturnUtil.error("400", "数据源类型不符合规范");
+        }
+        List<String> list = Constant.DATA_TYPE_MAP.get(dbType);
+        if (CollectionUtils.isEmpty(list)) {
+            return ReturnUtil.error("400", "数据源类型不符合规范");
+        }
+        return ReturnUtil.success(list);
+    }
 }
