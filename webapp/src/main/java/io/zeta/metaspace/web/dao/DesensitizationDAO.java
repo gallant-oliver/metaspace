@@ -52,7 +52,7 @@ public interface DesensitizationDAO {
             "and enable = #{enable} ",
             "</if>",
             "<if test='parameters.query!=null'>",
-            "and name like '%${parameters.query}%' ESCAPE '/' ",
+            "and name like concat('%',#{parameters.query},'%')  ESCAPE '/' ",
             "</if>",
             "order by update_time desc",
             "<if test='parameters.limit!=-1'>",

@@ -50,6 +50,22 @@ public interface RelationDAO {
                     " ti.tableGuid,\n" +
                     " COUNT ( * ) OVER () total,\n" +
                     " COALESCE(tdsr.data_source_id,(SELECT data_source_id FROM source_info WHERE \"version\" = 0 AND category_id = #{categoryGuid} AND tenant_id = #{tenantId} ),'ID') AS sourceId,\n" +
+                    "\n" +
+                    " COALESCE (\n" +
+                    "  ( SELECT source_name FROM data_source WHERE source_id = tdsr.data_source_id ),\n" +
+                    "  (\n" +
+                    "  SELECT\n" +
+                    "   ds.source_name \n" +
+                    "  FROM\n" +
+                    "   source_info si\n" +
+                    "   LEFT JOIN data_source ds ON si.data_source_id = ds.source_id \n" +
+                    "  WHERE\n" +
+                    "   VERSION = 0 \n" +
+                    "   AND category_id = '1' \n" +
+                    "   AND tenant_id = '2f5eced9c1c64609bc2d8172562bf1da' \n" +
+                    "  ),\n" +
+                    "  'hive' \n" +
+                    " ) AS sourceName," +
                     " (SELECT id FROM source_info WHERE \"version\" = 0 AND category_id = #{categoryGuid} AND tenant_id = #{tenantId} ) AS sourceInfoId, " +
                     " tdsr.category_id AS categoryGuid,\n" +
                     " ti.tableName,\n" +
@@ -198,11 +214,11 @@ public interface RelationDAO {
             " </foreach>",
             " <if test=\"tableName != null and tableName!=''\">",
             " and",
-            " tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
+            " tableInfo.tableName like concat('%',#{tableName},'%') ESCAPE '/'",
             " </if>",
             " <if test=\"tagName != null and tagName!=''\">",
             " and",
-            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%' ESCAPE '/') ",
+            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like concat('%',#{tagName},'%') ESCAPE '/') ",
             " </if>",
             " order by tableinfo.tablename ",
             " <if test='limit!= -1'>",
@@ -241,11 +257,11 @@ public interface RelationDAO {
             " </foreach> or tableinfo.source_id != 'hive') ",
             " <if test=\"tableName != null and tableName!=''\">",
             " and",
-            " tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
+            " tableInfo.tableName like concat('%',#{tableName},'%') ESCAPE '/'",
             " </if>",
             " <if test=\"tagName != null and tagName!=''\">",
             " and",
-            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%' ESCAPE '/') ",
+            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like concat('%',#{tagName},'%') ESCAPE '/') ",
             " </if>",
             " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive')",
             " order by tableinfo.tablename ",
@@ -279,11 +295,11 @@ public interface RelationDAO {
             " </foreach>",
             " <if test=\"tableName != null and tableName!=''\">",
             " and",
-            " tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
+            " tableInfo.tableName like concat('%',#{tableName},'%') ESCAPE '/'",
             " </if>",
             " <if test=\"tagName != null and tagName!=''\">",
             " and",
-            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%' ESCAPE '/') ",
+            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like concat('%',#{tagName},'%') ESCAPE '/') ",
             " </if>",
             " and status !='DELETED' ",
             " order by tableinfo.tablename ",
@@ -323,11 +339,11 @@ public interface RelationDAO {
             " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive') ",
             " <if test=\"tableName != null and tableName!=''\">",
             " and",
-            " tableInfo.tableName like '%${tableName}%' ESCAPE '/'",
+            " tableInfo.tableName like concat('%',#{tableName},'%') ESCAPE '/'",
             " </if>",
             " <if test=\"tagName != null and tagName!=''\">",
             " and",
-            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like '%${tagName}%' ESCAPE '/') ",
+            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like concat('%',#{tagName},'%') ESCAPE '/') ",
             " </if>",
             " and status !='DELETED' ",
             " order by tableinfo.tablename ",
