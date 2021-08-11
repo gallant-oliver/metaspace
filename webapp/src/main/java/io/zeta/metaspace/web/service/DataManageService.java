@@ -1596,10 +1596,12 @@ public class DataManageService {
     private void addOrUpdateTable(TableInfo tableInfo, SyncTaskDefinition definition){
         String tableGuid = tableInfo.getTableGuid();
         synchronized (tableGuid){
-            tableDAO.deleteIfExist(tableGuid, tableInfo.getDatabaseGuid(), tableInfo.getTableName());
+            if("ACTIVE".equalsIgnoreCase(tableInfo.getStatus())){
+                tableDAO.deleteIfExist(tableGuid, tableInfo.getDatabaseGuid(), tableInfo.getTableName());
+            }
             TableInfo table = tableDAO.getTableInfoByTableguid(tableGuid);
             if(null != table){
-                tableDAO.updateTable(table);
+                tableDAO.updateTable(tableInfo);
             }else{
                 tableDAO.addTable(tableInfo);
             }
