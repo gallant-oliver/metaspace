@@ -419,8 +419,13 @@ public class SourceInfoFileService {
             databaseInfo.setId(sourceId);
             //databaseInfo.setAnnexId(annexId);
             databaseInfo.setCategoryId(categoryId);
-            DatabaseInfoForDb databaseInfoForDb = dbEnIndex == -1 ? null : dbList.stream().filter(p->p.getDatabaseName().equalsIgnoreCase(array[dbEnIndex]))
-                    .findFirst().orElse(null);
+            DatabaseInfoForDb databaseInfoForDb = null;
+            if(dbEnIndex != -1){
+                Optional<DatabaseInfoForDb> itemOpt = dbList.stream().filter(p->p.getDatabaseName().equalsIgnoreCase(array[dbEnIndex])).findFirst();
+                if(itemOpt.isPresent()){
+                    databaseInfoForDb = itemOpt.get();
+                }
+            }
             String databaseId = databaseInfoForDb != null ? databaseInfoForDb.getDatabaseId() : "";
             databaseInfo.setDatabaseId(databaseId);
             databaseInfo.setDataSourceId(databaseInfoForDb != null ? databaseInfoForDb.getSourceId() : "");
