@@ -103,9 +103,6 @@ public class SyncTaskJob implements Job {
                 rdbmsMetaDataProvider.importDatabases(instance.getId(), schema);
                 indexCounter.plusOneSuccess(schema.getDefinition().getDataSourceType());
             }
-
-            List<String> schemas = definition.getSchemas();
-
         } catch (Exception e) {
             SyncTaskInstance syncTaskInstance = syncTaskInstanceDAO.getById(instanceId);
             if (syncTaskInstance != null) {

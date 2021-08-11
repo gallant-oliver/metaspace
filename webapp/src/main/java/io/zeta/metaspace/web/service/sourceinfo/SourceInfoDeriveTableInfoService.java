@@ -58,6 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -447,6 +448,7 @@ public class SourceInfoDeriveTableInfoService {
         // 和数据库关联的目录
         List<String> databaseCategoryIds = technicalCategories.stream().filter(TechnicalCategory::isDataBase).map(TechnicalCategory::getGuid).collect(Collectors.toList());
         getDatabaseCategoryAllPath(technicalCategories, databaseAndParentList, databaseCategoryIds);
+        databaseAndParentList = databaseAndParentList.stream().collect(Collectors.collectingAndThen(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(BusinessCategory::getGuid))), ArrayList::new));
         return databaseAndParentList;
     }
 

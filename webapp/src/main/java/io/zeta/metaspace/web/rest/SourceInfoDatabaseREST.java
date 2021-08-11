@@ -18,8 +18,10 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import com.itextpdf.text.DocumentException;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.enums.Status;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.source.Base64Info;
 import io.zeta.metaspace.model.source.CodeInfo;
 import io.zeta.metaspace.model.source.DataBaseInfo;
@@ -34,6 +36,7 @@ import io.zeta.metaspace.web.service.sourceinfo.AnnexService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoFileService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.util.Base64Utils;
+import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import io.zeta.metaspace.web.util.office.excel.Excel2Pdf;
 import io.zeta.metaspace.web.util.office.excel.ExcelObject;
@@ -50,6 +53,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -213,8 +217,10 @@ public class SourceInfoDatabaseREST {
 
             Annex annex = new Annex(annexId,fileName,fileType,uploadPath,fileSize);
             annexService.saveRecord(annex);
+            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(),"上传附件成功！");
             return ReturnUtil.success("success",annexId);
         }catch (Exception e){
+            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(),"上传附件失败！");
             throw new AtlasBaseException("文件上传失败", AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件上传失败");
         }
     }
@@ -235,21 +241,30 @@ public class SourceInfoDatabaseREST {
         log.info("解析文件的id:{}",annexId);
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
-            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
+            return ReturnUtil.error("404","没有找到对应的附件.");
         }
+        String fileType = annex.getFileType();
+        if(!PoiExcelUtils.XLS.equalsIgnoreCase(fileType) && !PoiExcelUtils.XLSX.equalsIgnoreCase(fileType)){
+            return ReturnUtil.error("400","文件不是excel格式.");
+        }
+
         String filePath = annex.getPath();
         try{
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
-            boolean isValid = sourceInfoFileService.checkExcelField(excelDataList);
-            if(!isValid){
-                return ReturnUtil.success("没有要处理的数据.");
+            if(CollectionUtils.isEmpty(excelDataList) || excelDataList.size() == 1){
+                return ReturnUtil.error("400","没有要处理的数据.");
+            }
+
+            List<AnalyticResult> validList = sourceInfoFileService.checkExcelField(excelDataList);
+            if(!CollectionUtils.isEmpty(validList)){
+                return ReturnUtil.success(validList);
             }
             // 跟source_info、db-info对比获取比对结果
             List<AnalyticResult> results = sourceInfoFileService.getFileParsedResult(excelDataList,tenantId);
             return ReturnUtil.success(results);
         }catch (Exception e){
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件解析失败");
+            return ReturnUtil.error("500","文件解析失败.",e.getMessage());
         }
     }
 
@@ -273,20 +288,30 @@ public class SourceInfoDatabaseREST {
         log.info("executeImportFile 文件的id:{}",annexId);
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
-            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
+            return ReturnUtil.error("404","没有找到对应的附件.");
+        }
+        String fileType = annex.getFileType();
+        if(!PoiExcelUtils.XLS.equalsIgnoreCase(fileType) && !PoiExcelUtils.XLSX.equalsIgnoreCase(fileType)){
+            return ReturnUtil.error("400","文件不是excel格式.");
         }
         String filePath = annex.getPath();
         try{
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
-            boolean isValid = sourceInfoFileService.checkExcelField(excelDataList);
-            if(!isValid){
-                return ReturnUtil.success("没有要处理的数据.");
+            if(CollectionUtils.isEmpty(excelDataList) || excelDataList.size() == 1){
+                return ReturnUtil.error("400","没有要处理的数据.");
+            }
+            List<AnalyticResult> validList = sourceInfoFileService.checkExcelField(excelDataList);
+            if(!CollectionUtils.isEmpty(validList)){
+                return ReturnUtil.error("400","存在校验不通过的数据.");
             }
             // 跟source_info、db-info对比获取比对结果
-            return sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
+            Result result = sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(),"文件导入成功！");
+            return result;
         }catch (Exception e){
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件导入失败");
+            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(),"文件导入失败！");
+            return ReturnUtil.error("500", "文件导入失败",e.getMessage());
         }
 
     }
