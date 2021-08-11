@@ -36,6 +36,7 @@ import io.zeta.metaspace.web.service.sourceinfo.AnnexService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoFileService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.util.Base64Utils;
+import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import io.zeta.metaspace.web.util.office.excel.Excel2Pdf;
 import io.zeta.metaspace.web.util.office.excel.ExcelObject;
@@ -240,16 +241,22 @@ public class SourceInfoDatabaseREST {
         log.info("解析文件的id:{}",annexId);
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
-            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
+            return ReturnUtil.error("404","没有找到对应的附件.");
         }
+        String fileType = annex.getFileType();
+        if(!PoiExcelUtils.XLS.equalsIgnoreCase(fileType) && !PoiExcelUtils.XLSX.equalsIgnoreCase(fileType)){
+            return ReturnUtil.error("400","文件不是excel格式.");
+        }
+
         String filePath = annex.getPath();
         try{
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
-            List<AnalyticResult> validList = sourceInfoFileService.checkExcelField(excelDataList);
-            if(validList == null){
-                return ReturnUtil.success("没有要处理的数据.");
+            if(CollectionUtils.isEmpty(excelDataList) || excelDataList.size() == 1){
+                return ReturnUtil.error("400","没有要处理的数据.");
             }
+
+            List<AnalyticResult> validList = sourceInfoFileService.checkExcelField(excelDataList);
             if(!CollectionUtils.isEmpty(validList)){
                 return ReturnUtil.success(validList);
             }
@@ -257,7 +264,7 @@ public class SourceInfoDatabaseREST {
             List<AnalyticResult> results = sourceInfoFileService.getFileParsedResult(excelDataList,tenantId);
             return ReturnUtil.success(results);
         }catch (Exception e){
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件解析失败");
+            return ReturnUtil.error("500","文件解析失败.",e.getMessage());
         }
     }
 
@@ -281,15 +288,22 @@ public class SourceInfoDatabaseREST {
         log.info("executeImportFile 文件的id:{}",annexId);
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
-            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
+            return ReturnUtil.error("404","没有找到对应的附件.");
+        }
+        String fileType = annex.getFileType();
+        if(!PoiExcelUtils.XLS.equalsIgnoreCase(fileType) && !PoiExcelUtils.XLSX.equalsIgnoreCase(fileType)){
+            return ReturnUtil.error("400","文件不是excel格式.");
         }
         String filePath = annex.getPath();
         try{
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
+            if(CollectionUtils.isEmpty(excelDataList) || excelDataList.size() == 1){
+                return ReturnUtil.error("400","没有要处理的数据.");
+            }
             List<AnalyticResult> validList = sourceInfoFileService.checkExcelField(excelDataList);
-            if(validList == null || !CollectionUtils.isEmpty(validList)){
-                return ReturnUtil.success("没有要导入的数据.");
+            if(!CollectionUtils.isEmpty(validList)){
+                return ReturnUtil.success("存在校验不通过的数据.");
             }
             // 跟source_info、db-info对比获取比对结果
             Result result = sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
@@ -297,7 +311,7 @@ public class SourceInfoDatabaseREST {
             return result;
         }catch (Exception e){
             HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(),"文件导入失败！");
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件导入失败");
+            return ReturnUtil.error("500", "文件导入失败",e.getMessage());
         }
 
     }

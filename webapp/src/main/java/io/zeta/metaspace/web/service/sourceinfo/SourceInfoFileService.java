@@ -122,10 +122,6 @@ public class SourceInfoFileService {
      * @param excelDataList
      */
     public List<AnalyticResult> checkExcelField(List<String[]> excelDataList){
-        if(CollectionUtils.isEmpty(excelDataList) || excelDataList.size() == 1){
-            logger.info("导入的excel没有要处理的数据");
-            return null;
-        }
         List<AnalyticResult> results = new ArrayList<>();
 
         String[] titleArray = excelDataList.get(0);
