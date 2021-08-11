@@ -122,25 +122,52 @@ public class SourceInfoFileService {
      * @param excelDataList
      */
     public boolean checkExcelField(List<String[]> excelDataList){
+        List<AnalyticResult> results = null;
         if(CollectionUtils.isEmpty(excelDataList) || excelDataList.size() == 1){
             logger.info("导入的excel没有要处理的数据");
             return false;
         }
+        results = new ArrayList<>();
+
         String[] titleArray = excelDataList.get(0);
         Map<String,Integer> map = propertyToColumnIndexMap(titleArray);
-        //循环遍历校验必填数据
+
+        //循环遍历校验必填数据 以及中文名称格式
         for (int i = 1,len = excelDataList.size(); i < len;i++ ){
             String[] array = excelDataList.get(i);
             for(String fieldName : validFields){
                 String v = getElementOrDefault(array,MapUtils.getIntValue(map,fieldName,-1));
                 if(StringUtils.isBlank(v)){
-                    throw new RuntimeException("第"+(i+1)+"行的列名["+fieldName+"]的值为空。");
+                    String errMsg = "列名["+fieldName+"]的值为空";
+                    results.add(setAnalyticResult(errMsg,array, map));
+                }
+                if("数据库中文名".equals(fieldName) && StringUtils.isNotBlank(v)){
+                    if (v.length() > 128){
+                        String errMsg = "数据库中文名超过128字符";
+                        results.add(setAnalyticResult(errMsg,array, map));
+                    }
+                    if(!v.matches("^[a-zA-Z0-9_\u4e00-\u9fa5]+$")){
+                        String errMsg = "数据库中文名只包含字母数据下划线和中文";
+                        results.add(setAnalyticResult(errMsg,array, map));
+                    }
                 }
             }
 
         }
 
         return true;
+    }
+
+    private AnalyticResult setAnalyticResult(String errMsg,String[] array,Map<String,Integer> map){
+        AnalyticResult analyticResult = new AnalyticResult();
+        analyticResult.setDatabaseTypeName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库类型",-1) ));
+        analyticResult.setDataSourceName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据源",-1)));
+        analyticResult.setDatabaseInstanceName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库实例", -1)));
+        analyticResult.setDatabaseName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库英文名称" ,-1)));
+        analyticResult.setDatabaseAlias(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库中文名",-1)));
+        analyticResult.setCategoryName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据层名称", -1 )));
+        analyticResult.setErrorMessage(errMsg);
+        return analyticResult;
     }
     /**
      * 获取存在重复名称或者不存在的库信息
@@ -277,19 +304,8 @@ public class SourceInfoFileService {
         if(CollectionUtils.isEmpty(list)){
             return result;
         }
-
-        AnalyticResult analyticResult = null;
         for(String[] array : list){
-            analyticResult = new AnalyticResult();
-            analyticResult.setDatabaseTypeName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库类型",-1) ));
-            analyticResult.setDataSourceName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据源",-1)));
-            analyticResult.setDatabaseInstanceName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库实例", -1)));
-            analyticResult.setDatabaseName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库英文名称" ,-1)));
-            analyticResult.setDatabaseAlias(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库中文名",-1)));
-            analyticResult.setCategoryName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据层名称", -1 )));
-            analyticResult.setErrorMessage(errorMsg);
-
-            result.add(analyticResult);
+            result.add(setAnalyticResult(errorMsg,array, map));
         }
         return result;
     }

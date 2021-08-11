@@ -18,8 +18,10 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import com.itextpdf.text.DocumentException;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.enums.Status;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.source.Base64Info;
 import io.zeta.metaspace.model.source.CodeInfo;
 import io.zeta.metaspace.model.source.DataBaseInfo;
@@ -213,8 +215,10 @@ public class SourceInfoDatabaseREST {
 
             Annex annex = new Annex(annexId,fileName,fileType,uploadPath,fileSize);
             annexService.saveRecord(annex);
+            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(),"上传附件成功！");
             return ReturnUtil.success("success",annexId);
         }catch (Exception e){
+            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(),"上传附件失败！");
             throw new AtlasBaseException("文件上传失败", AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件上传失败");
         }
     }
@@ -284,8 +288,11 @@ public class SourceInfoDatabaseREST {
                 return ReturnUtil.success("没有要处理的数据.");
             }
             // 跟source_info、db-info对比获取比对结果
-            return sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
+            Result result = sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(),"文件导入成功！");
+            return result;
         }catch (Exception e){
+            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(),"文件导入失败！");
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件导入失败");
         }
 
