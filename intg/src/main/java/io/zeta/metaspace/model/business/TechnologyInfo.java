@@ -46,6 +46,7 @@ public class TechnologyInfo {
         private String displayName;
         private String description;
         private String sourceId;
+        private String sourceName;
 
         @JsonIgnore
         private int total;

@@ -554,21 +554,18 @@ public interface UserGroupDAO {
 
     @Select("<script>" +
             " SELECT COUNT ( * ) OVER ( ) AS total, T.* " +
-            " FROM ( SELECT DISTINCT tableinfo.databaseGuid,tableinfo.dbname,tableinfo.databasestatus" +
-            " FROM tableinfo WHERE databasestatus = 'ACTIVE'" +
-            " and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/'"+
+            " FROM ( SELECT DISTINCT db.database_guid as databaseGuid,db.database_name as dbName,db.status as databasestatus,source.source_id as sourceId,source.source_name as sourceName" +
+            " FROM db_info as db INNER JOIN source_db as sd on db.database_guid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
+            " WHERE db.status = 'ACTIVE'" +
+            " AND db.database_name like '%'||#{query}||'%' ESCAPE '/'"+
             " <if test='sourceId != null'>"+
-            " and tableinfo.source_id = #{sourceId}"+
+            " and sd.source_id = #{sourceId}"+
             " </if>"+
-            " AND tableinfo.source_id IN ( SELECT source_id FROM data_source WHERE tenantid = #{tenantId}) "+
-            " <if test='databases != null and databases.size>0 '>"+
+            " <if test='databases != null and databases.size() > 0 '>"+
             " UNION" +
-            " SELECT DISTINCT tableinfo.databaseGuid,tableinfo.dbname,tableinfo.databasestatus FROM tableinfo" +
-            " WHERE databasestatus = 'ACTIVE' and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/'" +
-            " <if test='sourceId != null'>"+
-            "  and tableinfo.source_id = #{sourceId}"+
-            " </if>"+
-            " AND tableinfo.source_id = 'hive' AND tableinfo.dbname IN" +
+            " SELECT DISTINCT db.database_guid as databaseGuid,db.database_name as dbName,db.status as databasestatus,'hive' as sourceId,'hive' as sourceName FROM db_info as db" +
+            " WHERE db.status = 'ACTIVE' AND db.db_type = 'HIVE' and db.database_name like '%'||#{query}||'%' ESCAPE '/'" +
+            " AND db.database_name IN" +
             " <foreach item='item' index='index' collection='databases' open='(' separator=',' close=')'>" +
             "   #{item}" +
             " </foreach>" +
@@ -612,23 +609,30 @@ public interface UserGroupDAO {
 //            "</script>")
     @Select("<script>" +
             " SELECT count(*) over() as total,t.* FROM ("+
-            " SELECT tableinfo.source_id," +
+            " SELECT sd.source_id as sourceId," +
+            " source.source_name as sourceName,"+
             " tableinfo.databaseguid," +
             " tableinfo.dbname," +
             " tableinfo.tableguid," +
             " tableinfo.tablename," +
             " tableinfo.status," +
-            " tableinfo.createtime FROM tableinfo INNER JOIN data_source as source on tableinfo.source_id = source.source_id" +
+            " tableinfo.createtime" +
+            " FROM tableinfo INNER JOIN source_db as sd on tableinfo.databaseguid=sd.db_guid" +
+            " INNER JOIN data_source as source on source.source_id = sd.source_id "+
             " WHERE source.tenantid = #{tenantId} and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/'" +
             " <if test='databases != null and databases.size()>0'>" +
             " union" +
-            " SELECT tableinfo.source_id," +
+            " SELECT 'hive' as sourceId," +
+            " 'hive' as sourceName," +
             " tableinfo.databaseguid," +
             " tableinfo.dbname," +
             " tableinfo.tableguid," +
             " tableinfo.tablename," +
             " tableinfo.status," +
-            " tableinfo.createtime FROM tableinfo WHERE tableinfo.source_id = 'hive' AND tableinfo.dbname in " +
+            " tableinfo.createtime" +
+            " FROM tableinfo " +
+            " INNER JOIN db_info as db on tableinfo.databaseguid = db.database_guid" +
+            " WHERE db.db_type = 'HIVE' AND db.database_name in " +
             " <foreach item='item' index='index' collection='databases' open='(' separator=',' close=')'>" +
             "   #{item}" +
             " </foreach> " +
@@ -637,7 +641,7 @@ public interface UserGroupDAO {
             " ) as t order by t.tableguid " +
             " <if test='limit!= -1'>limit #{limit}</if> offset #{offset}" +
             "</script>")
-    public List<TechnologyInfo.Table> getTableInfosV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
+    List<TechnologyInfo.Table> getTableInfosV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
     @Select("<script>select distinct tableinfo.tableGuid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.tenantid=#{tenantId} and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
