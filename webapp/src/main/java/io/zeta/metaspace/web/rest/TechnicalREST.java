@@ -724,13 +724,14 @@ public class TechnicalREST {
     }
 
     /**
-     * 添加关联
-     * 此接口已废弃，如果前端有调用，需要排查一下，并且修改接口
+     * 添加关联-迁移数据
+     * 页面上已经隐藏了迁移数据的按钮，所以这个接口已废弃，不再维护
      * @param item
      * @param tenantId
      * @return
      * @throws AtlasBaseException
      */
+    @Deprecated
     @POST
     @Path("move")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
