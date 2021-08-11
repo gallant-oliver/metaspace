@@ -121,13 +121,12 @@ public class SourceInfoFileService {
      * 校验excel导入必填字段
      * @param excelDataList
      */
-    public boolean checkExcelField(List<String[]> excelDataList){
-        List<AnalyticResult> results = null;
+    public List<AnalyticResult> checkExcelField(List<String[]> excelDataList){
         if(CollectionUtils.isEmpty(excelDataList) || excelDataList.size() == 1){
             logger.info("导入的excel没有要处理的数据");
-            return false;
+            return null;
         }
-        results = new ArrayList<>();
+        List<AnalyticResult> results = new ArrayList<>();
 
         String[] titleArray = excelDataList.get(0);
         Map<String,Integer> map = propertyToColumnIndexMap(titleArray);
@@ -155,7 +154,7 @@ public class SourceInfoFileService {
 
         }
 
-        return true;
+        return results;
     }
 
     private AnalyticResult setAnalyticResult(String errMsg,String[] array,Map<String,Integer> map){

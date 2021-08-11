@@ -52,6 +52,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -245,9 +246,12 @@ public class SourceInfoDatabaseREST {
         try{
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
-            boolean isValid = sourceInfoFileService.checkExcelField(excelDataList);
-            if(!isValid){
+            List<AnalyticResult> validList = sourceInfoFileService.checkExcelField(excelDataList);
+            if(validList == null){
                 return ReturnUtil.success("没有要处理的数据.");
+            }
+            if(!CollectionUtils.isEmpty(validList)){
+                return ReturnUtil.success(validList);
             }
             // 跟source_info、db-info对比获取比对结果
             List<AnalyticResult> results = sourceInfoFileService.getFileParsedResult(excelDataList,tenantId);
@@ -283,9 +287,9 @@ public class SourceInfoDatabaseREST {
         try{
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
-            boolean isValid = sourceInfoFileService.checkExcelField(excelDataList);
-            if(!isValid){
-                return ReturnUtil.success("没有要处理的数据.");
+            List<AnalyticResult> validList = sourceInfoFileService.checkExcelField(excelDataList);
+            if(validList == null || !CollectionUtils.isEmpty(validList)){
+                return ReturnUtil.success("没有要导入的数据.");
             }
             // 跟source_info、db-info对比获取比对结果
             Result result = sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
