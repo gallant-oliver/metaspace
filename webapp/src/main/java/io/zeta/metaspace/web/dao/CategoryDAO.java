@@ -379,7 +379,7 @@ public interface CategoryDAO {
             " FROM category WHERE parentCategoryGuid IS NULL and tenantid= #{tenantId} and categorytype = #{type}" +
             " UNION ALL " +
             " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH ||'/'|| D.name" +
-            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid='2f5eced9c1c64609bc2d8172562bf1da')" +
+            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=#{tenantId})" +
             "SELECT  * FROM T ")
     List<CategoryGuidPath> getGuidPathByTenantIdAndCategoryType(@Param("tenantId")String tenantId, @Param("type") int type);
 
