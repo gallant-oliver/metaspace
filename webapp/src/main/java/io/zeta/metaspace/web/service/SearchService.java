@@ -727,6 +727,9 @@ DataSourceInfo dataSourceInfo = null;
                     e.setCheck(0);
                 }
             }
+            if (StringUtils.isNotBlank(parameters.getQuery())) {
+                e.setDbName(e.getDbName() + "(" + e.getSourceName() + ")");
+            }
         });
         databasePageResult.setLists(databaseHeaders);
         databasePageResult.setCurrentSize(databaseHeaders.size());
@@ -874,6 +877,9 @@ DataSourceInfo dataSourceInfo = null;
                 e.setCheck(1);
             } else {
                 e.setCheck(0);
+            }
+            if(StringUtils.isNotBlank(parameters.getQuery())){
+                e.setTableName(e.getTableName() + "(" + e.getSourceName() + ")");
             }
         });
         if (CollectionUtils.isNotEmpty(tableInfo)) {
