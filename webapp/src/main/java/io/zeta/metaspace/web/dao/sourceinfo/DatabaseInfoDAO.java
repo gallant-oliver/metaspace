@@ -196,7 +196,7 @@ public interface DatabaseInfoDAO {
             " c.name AS categoryName,\n" +
             " c.guid AS categoryId,\n" +
             " db.database_name AS databaseName,\n" +
-            " ds.source_type AS databaseTypeName,\n" +
+            " db.db_type AS databaseTypeName,\n" +
             " s.database_alias,\n" +
             " s.security,\n" +
             " s.status,\n" +
