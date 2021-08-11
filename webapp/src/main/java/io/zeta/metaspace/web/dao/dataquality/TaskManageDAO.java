@@ -70,7 +70,7 @@ public interface TaskManageDAO {
              " from data_quality_task join users on users.userid=data_quality_task.creator",
              " where ",
              " delete=false and data_quality_task.tenantId=#{tenantId}",
-             " and (data_quality_task.name like '%${params.query}%' ESCAPE '/' or 'TID-'||data_quality_task.number like '%${params.query}%' ESCAPE '/')",
+             " and (data_quality_task.name like concat('%',#{params.query},'%') ESCAPE '/' or 'TID-'||data_quality_task.number like concat('%',#{params.query},'%') ESCAPE '/')",
              " <if test='my==0'>",
              " and data_quality_task.creator=#{creator}",
              " </if>",
@@ -807,7 +807,7 @@ public interface TaskManageDAO {
              " select id as executionId,execute_status as executeStatus,rule_error_count as errorCount, users.userName as executor,execute_time as executeTime,cost_time as costTime from data_quality_task_execute",
              " join users on users.userId=data_quality_task_execute.executor",
              " where task_id=#{taskId}",
-             " and (users.userName like '%${params.query}%' ESCAPE '/')",
+             " and (users.userName like concat('%',#{params.query},'%') ESCAPE '/')",
              " order by executeTime desc",
              " <if test='params.limit!=null and params.limit!= -1'>",
              " limit #{params.limit}",
@@ -829,7 +829,7 @@ public interface TaskManageDAO {
              " (select * from data_quality_task_execute",
              " join users on users.userId=data_quality_task_execute.executor",
              " where task_id=#{taskId}",
-             " and (users.userName like '%${params.query}%' ESCAPE '/')) as info",
+             " and (users.userName like concat('%',#{params.query},'%') ESCAPE '/')) as info",
              " </script>"})
     public Long countExecutionLogList(@Param("taskId")String taskId, @Param("params")Parameters parameters);
 
@@ -906,7 +906,7 @@ public interface TaskManageDAO {
              " and scope=#{scope}",
              " </if>",
              " <if test='params.query!=null'>",
-             " and data_quality_rule_template.name like '%${params.query}%' ESCAPE '/'",
+             " and data_quality_rule_template.name like concat('%',#{params.query},'%') ESCAPE '/'",
              " </if>",
              " <if test='params.limit!=null and params.limit!= -1'>",
              " limit #{params.limit}",

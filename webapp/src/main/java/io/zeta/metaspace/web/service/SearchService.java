@@ -52,6 +52,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
+import static io.zeta.metaspace.utils.StringUtil.dbsToString;
+
 @AtlasService
 public class SearchService {
 
@@ -89,23 +91,21 @@ public class SearchService {
     private TableDAO tableDAO;
 
     public PageResult<Database> getDatabases(String sourceId, long offset, long limit, String query, boolean active, String tenantId, boolean queryCount) {
-        List<String> dbs = tenantService.getDatabase(tenantId);
-        String guids = "";
-        DataSourceInfo dataSourceInfo = null;
+        List<String> dbList = tenantService.getDatabase(tenantId);
+        List<String> guidList = null;
+DataSourceInfo dataSourceInfo = null;
         if (StringUtils.isEmpty(sourceId)) {
-            dbs = dbs.stream().filter(db->db.contains(query)).collect(Collectors.toList());
+            dbList = dbList.stream().filter(db -> db.contains(query)).collect(Collectors.toList());
             List<TableInfo> rdbmsTableInfoList = tableDAO.selectDatabaseByTenantId(tenantId);
-            List<String> collect = rdbmsTableInfoList.stream().filter(rdbmsTableInfo -> rdbmsTableInfo.getDbName().contains(query)).map(TableInfo::getDatabaseGuid).collect(Collectors.toList());
-            guids = dbsToString(collect);
+            Set<String> collect = rdbmsTableInfoList.stream().filter(rdbmsTableInfo -> rdbmsTableInfo.getDbName().contains(query)).map(TableInfo::getDatabaseGuid).collect(Collectors.toSet());
+            guidList = new ArrayList<>(collect);
         }else if ("hive".equalsIgnoreCase(sourceId)){
                 dataSourceInfo = new DataSourceInfo();
                 dataSourceInfo.setSourceId(sourceId);
         }else{
             dataSourceInfo = dataSourceService.getDataSourceInfo(sourceId);
         }
-        String dbsToString = dbsToString(dbs);
-
-        return metaspaceEntityService.getSchemaList(dataSourceInfo, guids, offset, limit, dbsToString, queryCount);
+        return metaspaceEntityService.getSchemaList(dataSourceInfo, guidList, dbList, offset, limit, queryCount);
 
     }
 
@@ -609,7 +609,7 @@ public class SearchService {
         //获取用户有权限的全部表和该目录已加关联的全部表
         List<TechnologyInfo.Table> tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1, databases, tenantId);
 
-        if(CollectionUtils.isEmpty(tables)){
+        if (CollectionUtils.isEmpty(tables)) {
             return databasePageResult;
         }
         List<String> relationTableGuids = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryGuid, tenantId);
@@ -1121,18 +1121,4 @@ public class SearchService {
         }
     }
 
-    public String dbsToString(List<String> dbs) {
-        if (dbs == null || dbs.size() == 0) {
-            return "";
-        }
-        StringBuffer str = new StringBuffer();
-        for (String db : dbs) {
-            str.append("'");
-            str.append(db.replaceAll("'", "\\\\'"));
-            str.append("'");
-            str.append(",");
-        }
-        str.deleteCharAt(str.length() - 1);
-        return str.toString();
-    }
 }
