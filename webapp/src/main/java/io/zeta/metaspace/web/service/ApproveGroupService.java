@@ -24,8 +24,10 @@ import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
 import io.zeta.metaspace.web.dao.ApproveGroupDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.FilterUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
@@ -65,8 +67,14 @@ public class ApproveGroupService {
         securitySearch.setTenantId(tenantId);
         PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
         List<String> userIds = userAndModules.getLists().stream().map(UserAndModule::getAccountGuid).collect(Collectors.toList());
-
-        List<ApproveGroupListAndSearchResult> lists = approveGroupDAO.getApproveGroup(tenantId, params.getOffset(), params.getLimit(), params.getSortby(),params.getOrder(), params.getQuery(),userIds);
+        if(StringUtils.isBlank(params.getOrder()) || !Arrays.asList("ASC","DESC").contains(params.getOrder().toUpperCase())){
+            params.setOrder("ASC");
+        }
+        String sortByField = FilterUtils.filterSqlKeys(params.getSortby());
+        if(sortByField.split(" ").length > 1){
+            sortByField = sortByField.split(" ")[0];
+        }
+        List<ApproveGroupListAndSearchResult> lists = approveGroupDAO.getApproveGroup(tenantId, params.getOffset(), params.getLimit(), sortByField,params.getOrder(), params.getQuery(),userIds);
 
         if (lists == null || lists.size() == 0) {
             return commonResult;

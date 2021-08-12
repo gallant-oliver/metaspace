@@ -37,7 +37,7 @@ public interface RuleTemplateDAO {
              " select count(*)over() total,id,name,scope,unit,description,delete,rule_type as ruleType,create_time as createTime,code from data_quality_rule_template" ,
              " where tenantid=#{tenantId} and delete=false " +
              "<if test=\"params.query != null and params.query!=''\">",
-             " and (name like '%${params.query}%' ESCAPE '/' or description like '%${params.query}%' ESCAPE '/' )  " +
+             " and (name like concat('%',#{params.query},'%')  ESCAPE '/' or description like concat('%',#{params.query},'%')  ESCAPE '/' )  " +
              " <if test='params.enable != null'>",
              " and enable=#{params.enable} ",
              " </if>",

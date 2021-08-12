@@ -57,13 +57,13 @@ public interface UserDAO {
              " select count(*)over() total,users.* from users ",
              " where users.valid=true",
              " <if test=\"query != null and query!=''\">",
-             " and  username like '%${query}%' ESCAPE '/' or account like '%${query}%' ESCAPE '/'",
+             " and  username like concat('%',#{query},'%') ESCAPE '/' or account like concat('%',#{query},'%') ESCAPE '/'",
              " order by",
              " (case ",
              " when username=#{query} or account=#{query} then 1",
-             " when username like '${query}%' ESCAPE '/' or account like '${query}%' ESCAPE '/' then 2",
-             " when username like '%${query}' ESCAPE '/' or account like '%${query}' ESCAPE '/' then 3",
-             " when username like '%${query}%' ESCAPE '/' or account like '%${query}%' ESCAPE '/' then 4",
+             " when username like concat('%',#{query},'%') ESCAPE '/' or account like concat('%',#{query},'%') ESCAPE '/' then 2",
+             " when username like concat('%',#{query},'%') ESCAPE '/' or account like concat('%',#{query},'%') ESCAPE '/' then 3",
+             " when username like concat('%',#{query},'%') ESCAPE '/' or account like concat('%',#{query},'%') ESCAPE '/' then 4",
              " else 0",
              " end)",
              " </if>",
@@ -81,7 +81,7 @@ public interface UserDAO {
     public List<UserInfo.Role> getRolesByUser(@Param("userId")String userId);
 
     @Select("<script> select userid,username,account,create_time createTime,update_time updateTime,valid from users " +
-            "where  username like '%${username}%' ESCAPE '/' and users.valid=true and userid not in (select user2role.userid from user2role where user2role.roleid='1') " +
+            "where  username like concat('%',#{username},'%') ESCAPE '/' and users.valid=true and userid not in (select user2role.userid from user2role where user2role.roleid='1') " +
             "<if test='limit!= -1'> limit #{limit} </if> offset #{offset} </script>")
     public List<User> getUserListFilterAdmin(@Param("username") String query, @Param("limit") int limit, @Param("offset") int offset);
 
@@ -90,7 +90,7 @@ public interface UserDAO {
              " select count(1) from users",
              " where valid=true",
              " <if test=\"query != null and query!=''\">",
-             " and username like '%${query}%' ESCAPE '/' or account like '%${query}%' ESCAPE '/'",
+             " and username like concat('%',#{query},'%') ESCAPE '/' or account like concat('%',#{query},'%') ESCAPE '/'",
              " </if>",
              " </script>"})
     public long getUsersCount(@Param("query") String query);

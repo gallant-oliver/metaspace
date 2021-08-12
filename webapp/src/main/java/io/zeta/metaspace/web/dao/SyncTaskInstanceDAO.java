@@ -44,7 +44,7 @@ public interface SyncTaskInstanceDAO {
             "SELECT count(*) over() as total , task.id,task.definition_id,task.name,task.executor,task.start_time,task.update_time,task.status FROM " + TABLE_NAME + " task " +
             "WHERE definition_id = #{definitionId} " +
             "<if test='null != parameters.query '>" +
-            " and name like '%${parameters.query}%' ESCAPE '/' " +
+            " and name like concat('%',#{parameters.query},'%') ESCAPE '/' " +
             "</if> " +
             "<if test='null != status '>" +
             " and status = #{status} " +

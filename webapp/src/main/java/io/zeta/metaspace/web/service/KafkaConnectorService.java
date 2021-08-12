@@ -89,9 +89,6 @@ public class KafkaConnectorService {
         if(null == kafkaConnector){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "kafka connector " + connectorName + "不存在");
         }
-        KafkaConnector.Config config = kafkaConnector.getConfig();
-        String passWord = AESUtils.aesDecode(config.getDbPassword());
-        config.setDbPassword(passWord);
         return kafkaConnector;
     }
 
@@ -127,6 +124,5 @@ public class KafkaConnectorService {
         String passWord = AESUtils.aesEncode(dbPassword);
         config.setDbPassword(passWord);
         kafkaConnectorDAO.insertConnector(connector);
-        config.setDbPassword(dbPassword);
     }
 }

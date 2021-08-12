@@ -26,42 +26,11 @@ import lombok.Data;
  */
 @Data
 public class DatabaseHeader {
-
     private String databaseGuid;
     private String dbName;
     private String databasestatus;
     private int check;
     private int total;
-
-    public int getCheck() {
-        return check;
-    }
-
-    public void setCheck(int check) {
-        this.check = check;
-    }
-
-    public String getDatabasestatus() {
-        return databasestatus;
-    }
-
-    public void setDatabasestatus(String databasestatus) {
-        this.databasestatus = databasestatus;
-    }
-
-    public String getDatabaseGuid() {
-        return databaseGuid;
-    }
-
-    public void setDatabaseGuid(String databaseGuid) {
-        this.databaseGuid = databaseGuid;
-    }
-
-    public String getDbName() {
-        return dbName;
-    }
-
-    public void setDbName(String dbName) {
-        this.dbName = dbName;
-    }
+    private String sourceId;
+    private String sourceName;
 }

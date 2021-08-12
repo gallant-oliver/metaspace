@@ -59,14 +59,15 @@ public interface UserGroupDAO {
             " on u.id=m.id " +
             " where u.tenant=#{tenantId} and valid=true" +
             "<if test='search!=null'>" +
-            " and u.name like '%${search}%' ESCAPE '/' " +
+            " and u.name like concat('%',#{search},'%') ESCAPE '/' " +
             "</if>" +
             "<if test=\"sortBy!=null and sortBy!=''\">" +
             "order by ${sortBy} " +
+                "<if test=\"order!=null and order!=''\">" +
+                " ${order} " +
+                "</if>" +
             "</if>" +
-            "<if test=\"order!=null and order!=''\">" +
-            " ${order} " +
-            "</if>" +
+
             "<if test='limit!=-1'>" +
             " limit ${limit} " +
             "</if>" +
@@ -150,7 +151,7 @@ public interface UserGroupDAO {
             "#{userId}" +
             "</foreach>" +
             "<if test='search!=null'>" +
-            " and u.username like '%${search}%' ESCAPE '/' " +
+            " and u.username like concat('%',#{search},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='limit!=-1'>" +
             " limit ${limit} " +
@@ -554,21 +555,18 @@ public interface UserGroupDAO {
 
     @Select("<script>" +
             " SELECT COUNT ( * ) OVER ( ) AS total, T.* " +
-            " FROM ( SELECT DISTINCT tableinfo.databaseGuid,tableinfo.dbname,tableinfo.databasestatus" +
-            " FROM tableinfo WHERE databasestatus = 'ACTIVE'" +
-            " and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/'"+
+            " FROM ( SELECT DISTINCT db.database_guid as databaseGuid,db.database_name as dbName,db.status as databasestatus,source.source_id as sourceId,source.source_name as sourceName" +
+            " FROM db_info as db INNER JOIN source_db as sd on db.database_guid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
+            " WHERE db.status = 'ACTIVE'" +
+            " AND db.database_name like '%'||#{query}||'%' ESCAPE '/'"+
             " <if test='sourceId != null'>"+
-            " and tableinfo.source_id = #{sourceId}"+
+            " and sd.source_id = #{sourceId}"+
             " </if>"+
-            " AND tableinfo.source_id IN ( SELECT source_id FROM data_source WHERE tenantid = #{tenantId}) "+
-            " <if test='databases != null and databases.size>0 '>"+
+            " <if test='databases != null and databases.size() > 0 '>"+
             " UNION" +
-            " SELECT DISTINCT tableinfo.databaseGuid,tableinfo.dbname,tableinfo.databasestatus FROM tableinfo" +
-            " WHERE databasestatus = 'ACTIVE' and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/'" +
-            " <if test='sourceId != null'>"+
-            "  and tableinfo.source_id = #{sourceId}"+
-            " </if>"+
-            " AND tableinfo.source_id = 'hive' AND tableinfo.dbname IN" +
+            " SELECT DISTINCT db.database_guid as databaseGuid,db.database_name as dbName,db.status as databasestatus,'hive' as sourceId,'hive' as sourceName FROM db_info as db" +
+            " WHERE db.status = 'ACTIVE' AND db.db_type = 'HIVE' and db.database_name like '%'||#{query}||'%' ESCAPE '/'" +
+            " AND db.database_name IN" +
             " <foreach item='item' index='index' collection='databases' open='(' separator=',' close=')'>" +
             "   #{item}" +
             " </foreach>" +
@@ -612,23 +610,30 @@ public interface UserGroupDAO {
 //            "</script>")
     @Select("<script>" +
             " SELECT count(*) over() as total,t.* FROM ("+
-            " SELECT tableinfo.source_id," +
+            " SELECT sd.source_id as sourceId," +
+            " source.source_name as sourceName,"+
             " tableinfo.databaseguid," +
             " tableinfo.dbname," +
             " tableinfo.tableguid," +
             " tableinfo.tablename," +
             " tableinfo.status," +
-            " tableinfo.createtime FROM tableinfo INNER JOIN data_source as source on tableinfo.source_id = source.source_id" +
+            " tableinfo.createtime" +
+            " FROM tableinfo INNER JOIN source_db as sd on tableinfo.databaseguid=sd.db_guid" +
+            " INNER JOIN data_source as source on source.source_id = sd.source_id "+
             " WHERE source.tenantid = #{tenantId} and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/'" +
             " <if test='databases != null and databases.size()>0'>" +
             " union" +
-            " SELECT tableinfo.source_id," +
+            " SELECT 'hive' as sourceId," +
+            " 'hive' as sourceName," +
             " tableinfo.databaseguid," +
             " tableinfo.dbname," +
             " tableinfo.tableguid," +
             " tableinfo.tablename," +
             " tableinfo.status," +
-            " tableinfo.createtime FROM tableinfo WHERE tableinfo.source_id = 'hive' AND tableinfo.dbname in " +
+            " tableinfo.createtime" +
+            " FROM tableinfo " +
+            " INNER JOIN db_info as db on tableinfo.databaseguid = db.database_guid" +
+            " WHERE db.db_type = 'HIVE' AND db.database_name in " +
             " <foreach item='item' index='index' collection='databases' open='(' separator=',' close=')'>" +
             "   #{item}" +
             " </foreach> " +
@@ -637,7 +642,7 @@ public interface UserGroupDAO {
             " ) as t order by t.tableguid " +
             " <if test='limit!= -1'>limit #{limit}</if> offset #{offset}" +
             "</script>")
-    public List<TechnologyInfo.Table> getTableInfosV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
+    List<TechnologyInfo.Table> getTableInfosV2(@Param("guids") List<String> guids, @Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
     @Select("<script>select distinct tableinfo.tableGuid from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.tenantid=#{tenantId} and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
@@ -655,7 +660,7 @@ public interface UserGroupDAO {
     @Select("<script> " +
             "select count(*)over() totalSize,u.id,u.name from user_group u where u.tenant=#{tenantId} and u.valid=true" +
             "<if test='parameters.query!=null'>" +
-            " and u.name like '%${parameters.query}%' ESCAPE '/'  " +
+            " and u.name like concat('%',#{parameters.query},'%') ESCAPE '/'  " +
             "</if>" +
             "<if test='parameters.limit!=-1'>" +
             " limit ${parameters.limit} " +
@@ -673,7 +678,7 @@ public interface UserGroupDAO {
             " on d.source_id=g.source_id " +
             " where g.group_id = #{groupId} " +
             "<if test='search!=null'>" +
-            " and d.source_name like '%${search}%' ESCAPE '/' " +
+            " and d.source_name like concat('%',#{search},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='limit!=-1'>" +
             " limit ${limit} " +
@@ -690,7 +695,7 @@ public interface UserGroupDAO {
             " select r.source_id from datasource_group_relation r  where r.group_id=#{groupId} ) " +
             " and d.tenantid= #{tenantId} " +
             "<if test='search!=null'>" +
-            " and d.source_name like '%${search}%' ESCAPE '/' " +
+            " and d.source_name like concat('%',#{search},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='limit!=-1'>" +
             " limit ${limit} " +
@@ -812,7 +817,7 @@ public interface UserGroupDAO {
             "select count(*)over() totalSize,p.id,p.name,p.description from project_group_relation r join project p on r.project_id=p.id where " +
             "r.group_id=#{groupId} and p.tenantid=#{tenantId} and p.valid=true " +
             "<if test=\"param.query!=null and param.query!=''\">" +
-            " and p.name like '%${param.query}%' ESCAPE '/' " +
+            " and p.name like concat('%',#{param.query},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='param.limit!=-1'>" +
             " limit ${param.limit} " +
@@ -828,7 +833,7 @@ public interface UserGroupDAO {
             " select * from project_group_relation where group_id=#{groupId} ) r " +
             " on r.project_id=p.id where p.tenantid=#{tenantId} and r.group_id is null and p.valid=true " +
             "<if test=\"param.query!=null and param.query!=''\">" +
-            " and p.name like '%${param.query}%' ESCAPE '/' " +
+            " and p.name like concat('%',#{param.query},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='param.limit!=-1'>" +
             " limit ${param.limit} " +
@@ -842,7 +847,7 @@ public interface UserGroupDAO {
     @Select("<script>" +
             "select count(*)over() totalSize,id,name,description from project where tenantid=#{tenantId} and valid=true " +
             "<if test=\"param.query!=null and param.query!=''\">" +
-            " and name like '%${param.query}%' ESCAPE '/' " +
+            " and name like concat('%',#{param.query},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='param.limit!=-1'>" +
             " limit ${param.limit} " +
@@ -1017,18 +1022,12 @@ public interface UserGroupDAO {
             " select count(*) count," +
             "<choose>" +
             "    <when test=\"categoryType==0\">" +
-            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and " +
-            "        tableinfo.status='ACTIVE' and "+
-            "        table_relation.tenant_id = #{tenantId} and " +
-            "        (dbname is null " +
-            "        <if test='dbNames!=null and dbNames.size()>0'>" +
-            "          or dbname in " +
-            "          <foreach item='item' index='index' collection='dbNames'" +
-            "          open='(' separator=',' close=')'>" +
-            "          #{item}" +
-            "          </foreach>" +
-            "        </if>" +
-            "        )" +
+            "       guid from ( SELECT t.table_id,t.data_source_id,t.category_id as guid FROM ( " +
+            "       SELECT table_id,data_source_id,category_id from table_data_source_relation as relation WHERE tenant_id = #{tenantId}" +
+            "       UNION ALL" +
+            "       SELECT tableinfo.tableguid,source.data_source_id,category_id FROM source_info as source INNER JOIN tableinfo on source.database_id=tableinfo.databaseguid  " +
+            "       WHERE source.tenant_id = #{tenantId} AND source.version = 0 AND source.category_id is not null and source.category_id != '' AND tableinfo.status = 'ACTIVE'" +
+            "       ) as t ) as d" +
             "    </when>" +
             "    <when test=\"categoryType==5\">" +
             "        guid from ( " +
@@ -1165,7 +1164,7 @@ public interface UserGroupDAO {
             " and c.edit_item=true " +
             "</if>" +
             "<if test='parameters.query!=null'>" +
-            " and u.name like '%${parameters.query}%' ESCAPE '/' " +
+            " and u.name like concat('%',#{parameters.query},'%') ESCAPE '/' " +
             "</if>" +
             "<if test='parameters.sortBy!=null'>" +
             " order by ${parameters.sortBy} " +
