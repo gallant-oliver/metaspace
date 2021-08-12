@@ -13,13 +13,18 @@
 
 package io.zeta.metaspace.web.rest;
 
+import com.google.gson.Gson;
 import com.gridsum.gdp.library.commons.utils.DateTimeUtils;
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import com.itextpdf.text.DocumentException;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.enums.Status;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.source.Base64Info;
 import io.zeta.metaspace.model.source.CodeInfo;
 import io.zeta.metaspace.model.source.DataBaseInfo;
@@ -41,6 +46,7 @@ import io.zeta.metaspace.web.util.office.word.DocConvertToPdf;
 import io.zeta.metaspace.web.util.office.word.DocxConvertToPdf;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -50,6 +56,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.CannotCreateTransactionException;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -90,31 +97,67 @@ public class SourceInfoDatabaseREST {
 
     //源信息登记-导入模板下载的hdfs路径
     private final String templatePath = "数据库登记模板.xlsx";
+    private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.SourceInfoDatabaseREST");
 
     @POST
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.INSERT)
     public Result addDatabaseInfo(@HeaderParam("tenantId")String tenantId, CreateRequest createRequest){
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.addDatabaseInfo()");
+            }
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), createRequest.getDatabaseInfo().getDatabaseAlias());
         return sourceInfoDatabaseService.addDatabaseInfo(tenantId,createRequest.getDatabaseInfo(),
                 createRequest.getApproveGroupId(),createRequest.getSubmitType());
+        } catch (CannotCreateTransactionException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
     }
 
     @PUT
     @Path("publish")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.INSERT)
     public Result publishDatabaseInfo(@HeaderParam("tenantId")String tenantId, PublishRequest request){
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.publishDatabaseInfo()");
+            }
         return sourceInfoDatabaseService.publish(request.getIdList(),request.getApproveGroupId(),tenantId);
+    } catch (CannotCreateTransactionException e) {
+        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+    } finally {
+        AtlasPerfTracer.log(perf);
+    }
     }
 
     @PUT
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.UPDATE)
     public Result updateDatabaseInfo(@HeaderParam("tenantId")String tenantId,CreateRequest createRequest){
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.updateDatabaseInfo()");
+            }
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), createRequest.getDatabaseInfo().getDatabaseAlias());
         return sourceInfoDatabaseService.updateSourceInfo(createRequest.getDatabaseInfo(),tenantId,createRequest.getApproveGroupId(),createRequest.getSubmitType());
-    }
+    } catch (CannotCreateTransactionException e) {
+        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } finally {
+        AtlasPerfTracer.log(perf);
+        }
+}
 
     @PUT
     @Path("revoke/{id}")
@@ -128,8 +171,19 @@ public class SourceInfoDatabaseREST {
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
     public Result deleteDatabaseInfo(@HeaderParam("tenantId")String tenantId, PublishRequest request){
-        return sourceInfoDatabaseService.delete(tenantId,request.getIdList());
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteDatabaseInfo()");
+            }
+            return sourceInfoDatabaseService.delete(tenantId,request.getIdList());
+        } catch (CannotCreateTransactionException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } finally {
+        AtlasPerfTracer.log(perf);
+        }
     }
 
     @GET

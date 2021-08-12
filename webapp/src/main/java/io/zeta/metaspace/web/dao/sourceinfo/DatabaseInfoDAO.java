@@ -332,8 +332,8 @@ public interface DatabaseInfoDAO {
             "</script>")
     void insertHistoryVersion(@Param("id") String id);
 
-    @Update("UPDATE source_info SET category_id = #{categoryId},update_time = NOW(), modify_time = NOW() WHERE id  = #{id} AND version = 0")
-    void updateRealCategoryRelation(@Param("id") String sourceInfoId, @Param("categoryId") String categoryId);
+    @Update("UPDATE source_info SET category_id = #{categoryId},update_time = NOW(), modify_time = NOW() WHERE id  = #{id} AND version = #{version}")
+    void updateRealCategoryRelation(@Param("id") String sourceInfoId, @Param("categoryId") String categoryId, @Param("version") int version);
 
     @Delete("<script>" +
             "DELETE FROM source_info_relation2parent_category " +
