@@ -255,9 +255,11 @@ public class SourceInfoDatabaseService implements Approvable {
             list=databaseInfoDAO.getDatabaseInfoList(tenantId,null,idList,null,0,Integer.MAX_VALUE);
         }
         HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),this.convertStringFromList(databaseInfoDAO.getDatabaseIdAndAliasByIds(idList).stream().map(DatabaseInfo::getDatabaseAlias).collect(Collectors.toList())));
-        list.stream().filter(dfl->Status.ACTIVE.name().equals(Status.getStatusByValue(dfl.getStatus()))|| Status.REJECT.name().equals(Status.getStatusByValue(dfl.getStatus()))).forEach(l->{
+        list.forEach(l->{
             try {
-                approveServiceImp.deal(this.buildApproveParas(l.getId(),tenantId,ApproveOperate.CANCEL),tenantId);
+                if (Status.ACTIVE.name().equals(Status.getStatusByValue(l.getStatus()))|| Status.REJECT.name().equals(Status.getStatusByValue(l.getStatus()))){
+                    approveServiceImp.deal(this.buildApproveParas(l.getId(),tenantId,ApproveOperate.CANCEL),tenantId);
+                }
                 if (Boolean.FALSE.equals(ParamUtil.isNull(l.getCategoryId()))) {
                     dataManageService.deleteCategory(l.getCategoryId(), tenantId, CATEGORY_TYPE);
                 }
