@@ -75,7 +75,7 @@ public class SourceInfoFileService {
             //模板处理
             categoryMap = getCategoryFromDb(tenantId);
             if(categoryMap != null && !categoryMap.isEmpty()){
-                tableData.add(Arrays.asList(categoryMap.keySet()));
+                tableData.add(new ArrayList<>(categoryMap.keySet()));
             }else{
                 tableData.add("层级之间使用-分开");
             }
