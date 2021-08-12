@@ -410,20 +410,29 @@ public class SourceInfoDatabaseREST {
     @Path("/fileStream")
     @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Result getFileStream(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
+    public void getFileStream(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
         //根据附件id 获取文件的路径
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
             throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
         }
         String filePath = annex.getPath();
-        try(InputStream inputStream = hdfsService.getFileInputStream(filePath);
-            ByteArrayOutputStream swapStream = new ByteArrayOutputStream();){
-            int ch;
-            while ((ch = inputStream.read()) != -1) {
-                swapStream.write(ch);
+        try{
+            String filename = annex.getFileName();
+            filename = URLEncoder.encode(filename, "UTF-8");
+            httpServletResponse.addHeader("Content-Disposition", "attachment;fileName=" + filename);
+            // 响应类型,编码
+            httpServletResponse.setContentType("application/octet-stream;charset=UTF-8");
+            // 形成输出流
+            OutputStream osOut = httpServletResponse.getOutputStream();
+            byte[] buf = new byte[1024];
+            int bytesRead;
+            InputStream inputStream = hdfsService.getFileInputStream(filePath);
+            while ((bytesRead = inputStream.read(buf)) > 0) {
+                osOut.write(buf, 0, bytesRead);
             }
-            return ReturnUtil.success(swapStream);
+            inputStream.close();
+            osOut.close();
         }catch (IOException e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "获取文件流失败");
         }
