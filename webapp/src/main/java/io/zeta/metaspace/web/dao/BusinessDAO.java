@@ -167,8 +167,11 @@ public interface BusinessDAO {
 
 
     //查询业务目录关系业务信息列表
+    @Results({
+            @Result(property = "tables",javaType = List.class,column = "{businessId = businessIdVal,tenantId = tenantId}",many = @Many(select = "queryTablesByBusinessIdAndTenantId"))
+    })
     @Select({"<script>",
-             " select count(*)over() total,businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber, business_relation.categoryGuid from businessInfo",
+             " select count(*)over() total,businessInfo.businessId,businessInfo.businessId as businessIdVal,businessInfo.name,tenantId,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber, business_relation.categoryGuid from businessInfo",
              " join business_relation",
              " on",
              " businessInfo.businessId = business_relation.businessId",
