@@ -417,8 +417,13 @@ public class SourceInfoDatabaseREST {
             throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
         }
         String filePath = annex.getPath();
-        try(InputStream inputStream = hdfsService.getFileInputStream(filePath);){
-            return ReturnUtil.success(inputStream);
+        try(InputStream inputStream = hdfsService.getFileInputStream(filePath);
+            ByteArrayOutputStream swapStream = new ByteArrayOutputStream();){
+            int ch;
+            while ((ch = inputStream.read()) != -1) {
+                swapStream.write(ch);
+            }
+            return ReturnUtil.success(swapStream);
         }catch (IOException e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "获取文件流失败");
         }
@@ -460,7 +465,9 @@ public class SourceInfoDatabaseREST {
         String filePath = annex.getPath();
         String fileType = annex.getFileType();
         File tmpFile = null;
-        try(InputStream in = hdfsService.getFileInputStream(filePath);){
+        InputStream in = null;
+        try{
+            in = hdfsService.getFileInputStream(filePath);
             tmpFile = File.createTempFile("tmp-"+System.currentTimeMillis(),".pdf");
             String base64String = "";
             log.info("文件类型：{},",fileType);
@@ -483,7 +490,7 @@ public class SourceInfoDatabaseREST {
                 log.info("不需要转换处理.");
                 base64String = Base64Utils.streamToBase64(in);
             }
-
+            in.close();
             log.info("base64 值为空：{}",StringUtils.isBlank(base64String));
             Base64Info info = new Base64Info();
             String finalType = StringUtils.containsAny(fileType,"xls","xlsx","doc","docx") ? "pdf" : fileType;
@@ -493,7 +500,8 @@ public class SourceInfoDatabaseREST {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "获取文件流失败");
         }finally {
             if(tmpFile != null && tmpFile.exists()){
-                tmpFile.delete();
+                boolean del = tmpFile.delete();
+                log.info("删除临时文件成功标记:{}",del);
             }
         }
     }
