@@ -11,8 +11,6 @@ import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
 import io.zeta.metaspace.model.pojo.TableInfo;
-import io.zeta.metaspace.model.privilege.Module;
-import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
@@ -609,13 +607,14 @@ DataSourceInfo dataSourceInfo = null;
 
         //获取用户有权限的全部表
         List<TechnologyInfo.Table> tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1, databases, tenantId);
-
         if (CollectionUtils.isEmpty(tables)) {
             return databasePageResult;
         }
-        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryGuid, tenantId);
-        Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDataSourceId));
         Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getSourceId));
+        //获取目录下该租户所有关联的表
+        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.selectListByCategoryId(categoryGuid, tenantId);
+        //关联表按照数据源ID分组
+        Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDataSourceId));
         databaseHeaders.forEach(e -> {
             String sourceId = e.getSourceId();
             List<String> table = collect.get(sourceId) == null ? new ArrayList<>() : collect.get(sourceId).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
@@ -704,16 +703,46 @@ DataSourceInfo dataSourceInfo = null;
         if ("hive".equalsIgnoreCase(sourceId)) {
             databases = tenantService.getDatabase(tenantId);
         }
-        List<DatabaseHeader> databaseHeaders = userGroupDAO.getDBInfo2(query, parameters.getOffset(), parameters.getLimit(), databases, sourceId, tenantId);
-        //获取用户有权限的全部表
-        List<TechnologyInfo.Table> tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1, databases, tenantId);
-        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryGuid, tenantId);
-        Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDataSourceId));
+
+        List<DatabaseHeader> databaseHeaders = new ArrayList<>();
+        if (StringUtils.isBlank(query)) {
+            databaseHeaders = this.updateDatabaseHeader(parameters, databases, sourceId, categoryGuid, tenantId);
+        } else {
+            databaseHeaders = this.updateDatabaseHeaderLike(parameters, databases, categoryGuid, tenantId, query);
+        }
+        databasePageResult.setLists(databaseHeaders);
+        databasePageResult.setCurrentSize(databaseHeaders.size());
+        databasePageResult.setTotalSize(databaseHeaders.size() > 0 ? databaseHeaders.get(0).getTotal() : 0);
+        return databasePageResult;
+    }
+
+    /**
+     * 模糊查询数据库
+     * @param parameters
+     * @param databases
+     * @param categoryGuid
+     * @param tenantId
+     * @param query
+     * @return
+     */
+    private List<DatabaseHeader> updateDatabaseHeaderLike(Parameters parameters, List<String> databases, String categoryGuid, String tenantId, String query) {
+        List<DatabaseHeader> databaseHeaders = userGroupDAO.selectDbByNameAndTenantId(parameters.getOffset(), parameters.getLimit(), databases, tenantId, query);
+        if (CollectionUtils.isEmpty(databaseHeaders)) {
+            return new ArrayList<>();
+        }
+        List<String> dbGuidList = databaseHeaders.stream().map(DatabaseHeader::getDatabaseGuid).collect(Collectors.toList());
+        //获取数据源下所有的表
+        List<TechnologyInfo.Table> tables = tableDAO.selectListByDatabase(databases, dbGuidList);
+        //所有的表按照数据库ID分组
         Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getDatabaseGuid));
+        //查询关联关系
+        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.selectListByCategoryIdAndTenantId(categoryGuid, tenantId, dbGuidList);
+        //关联关系按照数据库ID分组
+        Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDatabaseId));
         databaseHeaders.forEach(e -> {
             String databaseGuid = e.getDatabaseGuid();
             List<String> table = collect.get(databaseGuid) == null ? new ArrayList<>() : collect.get(databaseGuid).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
-            List<String> relationTableGuids = collectRelation.get(sourceId) == null ? new ArrayList<>() : collectRelation.get(sourceId).stream().map(TableDataSourceRelationPO::getTableId).collect(Collectors.toList());
+            Set<String> relationTableGuids = collectRelation.get(databaseGuid) == null ? new HashSet<>() : collectRelation.get(databaseGuid).stream().map(TableDataSourceRelationPO::getTableId).collect(Collectors.toSet());
             if (relationTableGuids.containsAll(table)) {
                 //全被勾选
                 e.setCheck(1);
@@ -727,14 +756,49 @@ DataSourceInfo dataSourceInfo = null;
                     e.setCheck(0);
                 }
             }
-            if (StringUtils.isNotBlank(parameters.getQuery())) {
-                e.setDbName(e.getDbName() + "(" + e.getSourceName() + ")");
+            e.setDbName(e.getDbName() + "(" + e.getSourceName() + ")");
+        });
+        return databaseHeaders;
+    }
+
+    /**
+     * 精准查询数据库
+     * @param parameters
+     * @param databases
+     * @param sourceId
+     * @param categoryGuid
+     * @param tenantId
+     * @return
+     */
+    private List<DatabaseHeader> updateDatabaseHeader(Parameters parameters, List<String> databases, String sourceId, String categoryGuid, String tenantId) {
+        List<DatabaseHeader> databaseHeaders = userGroupDAO.getDBInfo2(parameters.getOffset(), parameters.getLimit(), databases, sourceId);
+        if (CollectionUtils.isEmpty(databaseHeaders)) {
+            return new ArrayList<>();
+        }
+        //获取数据源下所有的表
+        List<TechnologyInfo.Table> tables = tableDAO.selectListBySourceId(databases, sourceId);
+        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.selectListByCategoryIdAndTenantIdAndSourceId(categoryGuid, tenantId, sourceId);
+        Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDatabaseId));
+        Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getDatabaseGuid));
+        databaseHeaders.forEach(e -> {
+            String databaseGuid = e.getDatabaseGuid();
+            List<String> table = collect.get(databaseGuid) == null ? new ArrayList<>() : collect.get(databaseGuid).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
+            Set<String> relationTableGuids = collectRelation.get(databaseGuid) == null ? new HashSet<>() : collectRelation.get(databaseGuid).stream().map(TableDataSourceRelationPO::getTableId).collect(Collectors.toSet());
+            if (relationTableGuids.containsAll(table)) {
+                //全被勾选
+                e.setCheck(1);
+            } else {
+                table.retainAll(relationTableGuids);
+                if (table.size() > 0) {
+                    //勾选了部分
+                    e.setCheck(2);
+                } else {
+                    //全部未勾选
+                    e.setCheck(0);
+                }
             }
         });
-        databasePageResult.setLists(databaseHeaders);
-        databasePageResult.setCurrentSize(databaseHeaders.size());
-        databasePageResult.setTotalSize(databaseHeaders.size() > 0 ? databaseHeaders.get(0).getTotal() : 0);
-        return databasePageResult;
+        return databaseHeaders;
     }
 
     private PageResult<AddRelationTable> getTablesByDatabaseGuid(Parameters parameters, List<String> strings, String databaseGuid, String categoryId, String tenantId, String sourceId) {
@@ -746,10 +810,12 @@ DataSourceInfo dataSourceInfo = null;
             return tablePageResult;
         }
 
-        List<TechnologyInfo.Table> tableInfos = roleDAO.getTableInfosByDBIdByParameters(strings, databaseGuid, parameters.getOffset(), parameters.getLimit(), tenantId);
-        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryId, tenantId);
-        List<String> relationTableGuids = tableDataSourceRelationPOList.stream().filter(tableDataSourceRelationPO -> tableDataSourceRelationPO.getDataSourceId().equalsIgnoreCase(sourceId)).map(TableDataSourceRelationPO::getTableId).collect(Collectors.toList());
-        List<AddRelationTable> tables = getTables(tableInfos);
+        //查询数据库下所有的表
+        List<TechnologyInfo.Table> tableInfos = roleDAO.getTableInfosByDBIdByParameters(databaseGuid, parameters.getOffset(), parameters.getLimit());
+        //获取表的关联关系
+        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.selectListByCategoryIdAndSourceIdAndDb(categoryId, tenantId, sourceId, databaseGuid);
+        List<String> relationTableGuids = tableDataSourceRelationPOList.stream().map(TableDataSourceRelationPO::getTableId).collect(Collectors.toList());
+        List<AddRelationTable> tables = getTablesSource(tableInfos, sourceId);
         supplyPath(tables, tenantId);
         tables.forEach(e -> {
             String tableGuid = e.getTableId();
@@ -767,38 +833,11 @@ DataSourceInfo dataSourceInfo = null;
 
     @Transactional(rollbackFor = Exception.class)
     public PageResult<AddRelationTable> getTechnicalTablePageResultV2(Parameters parameters, String categoryId, String tenantId) throws AtlasBaseException {
-        User user = AdminUtils.getUserData();
         List<String> strings = new ArrayList<>();
-        //判断多租户和独立部署
-        if (TenantService.defaultTenant.equals(tenantId)) {
-            List<Role> roles = roleDAO.getRoleByUsersId(user.getUserId());
-            if (roles.stream().allMatch(role -> role.getStatus() == 0)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-            }
-            if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))) {
-                List<String> topCategoryGuid = roleDAO.getAllCategorys(0, tenantId).stream().map(category -> category.getGuid()).collect(Collectors.toList());
-                List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(topCategoryGuid, 0, tenantId);
-                for (RoleModulesCategories.Category child : childs) {
-                    strings.add(child.getGuid());
-                }
-                return getTableResultV3(parameters, strings, categoryId, tenantId);
-            }
-
-            List<Module> moduleByRoleId = userDAO.getModuleByUserId(user.getUserId());
-            for (Module module : moduleByRoleId) {
-                //有管理技术目录权限
-                //如果因为校验过多影响性能，可以取消校验
-                if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
-                    strings = getChildAndOwnerCategorysByRoles(roles);
-                    break;
-                }
-            }
-        } else {
-            Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false);
-            for (CategoryPrivilegeV2 categoryPrivilegeV2 : userPrivilegeCategory.values()) {
-                if (categoryPrivilegeV2.getEditItem()) {
-                    strings.add(categoryPrivilegeV2.getGuid());
-                }
+        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false);
+        for (CategoryPrivilegeV2 categoryPrivilegeV2 : userPrivilegeCategory.values()) {
+            if (categoryPrivilegeV2.getEditItem()) {
+                strings.add(categoryPrivilegeV2.getGuid());
             }
         }
 
@@ -851,8 +890,8 @@ DataSourceInfo dataSourceInfo = null;
         String query = parameters.getQuery();
         int limit = parameters.getLimit();
         int offset = parameters.getOffset();
-        List<TechnologyInfo.Table> tableInfo = new ArrayList<>();
-        if (strings.size() == 0) {
+        List<TechnologyInfo.Table> tableInfo;
+        if (CollectionUtils.isEmpty(strings)) {
             tablePageResult.setTotalSize(0);
             tablePageResult.setCurrentSize(0);
             return tablePageResult;
@@ -864,9 +903,11 @@ DataSourceInfo dataSourceInfo = null;
             tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
         } else {
             List<String> databases = tenantService.getDatabase(tenantId);
+            //获取匹配到的所有表
             tableInfo = userGroupDAO.getTableInfosV2(strings, query, offset, limit, databases, tenantId);
         }
-        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryId, tenantId);
+        //获取目录下该租户所有关联的表
+        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.selectListByCategoryId(categoryId, tenantId);
         Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDataSourceId));
         List<AddRelationTable> tables = getTables(tableInfo);
         supplyPath(tables, tenantId);
@@ -879,7 +920,7 @@ DataSourceInfo dataSourceInfo = null;
                 e.setCheck(0);
             }
             if(StringUtils.isNotBlank(parameters.getQuery())){
-                e.setTableName(e.getTableName() + "(" + e.getSourceName() + ")");
+                e.setTableName(e.getTableName() + "(" + e.getSourceName() + "." + e.getDatabaseName() + ")");
             }
         });
         if (CollectionUtils.isNotEmpty(tableInfo)) {
@@ -940,6 +981,22 @@ DataSourceInfo dataSourceInfo = null;
             tb.setStatus(table.getStatus());
             tb.setSourceId(table.getSourceId());
             tb.setSourceName(table.getSourceName());
+            lists.add(tb);
+        }
+        return lists;
+    }
+
+    public List<AddRelationTable> getTablesSource(List<TechnologyInfo.Table> tableInfo, String sourceId) {
+        List<AddRelationTable> lists = new ArrayList<>();
+        for (TechnologyInfo.Table table : tableInfo) {
+            AddRelationTable tb = new AddRelationTable();
+            tb.setTableId(table.getTableGuid());
+            tb.setTableName(table.getTableName());
+            tb.setDatabaseName(table.getDbName());
+            tb.setCreateTime(table.getCreateTime());
+            tb.setDatabaseId(table.getDatabaseGuid());
+            tb.setStatus(table.getStatus());
+            tb.setSourceId(sourceId);
             lists.add(tb);
         }
         return lists;

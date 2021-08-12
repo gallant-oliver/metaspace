@@ -128,7 +128,7 @@ public class TechnicalREST {
     }
 
     /**
-     * 添加关联表时根据库搜表
+     * 添加关联表时根据库查表
      *
      * @return List<AddRelationTable>
      */
