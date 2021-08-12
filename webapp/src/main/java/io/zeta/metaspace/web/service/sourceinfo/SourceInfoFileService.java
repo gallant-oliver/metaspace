@@ -61,7 +61,8 @@ public class SourceInfoFileService {
     private String[] tableTitleAttr = {"数据层名称","数据库中文名","数据库类型","数据源","数据库实例","数据库英文名称","抽取频率","抽取工具","规划包编号","规划包名称",
             "是否保密","保密期限","是否重要","描述","数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","业务Owner手机号","数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","技术Owner手机号",
             "技术负责人","业务负责人"};
-
+    private static final int CHINA_LENGTH = 128;
+    private static final int EMAIL_LENGTH = 64;
     /**
      * 数据源文件导入模板生成下载
      * @return
@@ -150,14 +151,20 @@ public class SourceInfoFileService {
                     results.add(setAnalyticResult(errMsg,array, map));
                 }
                 if("数据库中文名".equals(fieldName) && StringUtils.isNotBlank(v)){
-                    if (v.length() > 128){
-                        String errMsg = "数据库中文名超过128字符";
+                    if (v.length() > CHINA_LENGTH){
+                        String errMsg = "数据库中文名超过"+CHINA_LENGTH+"字符";
                         results.add(setAnalyticResult(errMsg,array, map));
                     }
                     if(!v.matches("^[a-zA-Z0-9_\u4e00-\u9fa5]+$")){
                         String errMsg = "数据库中文名只包含字母数据下划线和中文";
                         results.add(setAnalyticResult(errMsg,array, map));
                     }
+                }
+
+                if( ("数据库业务Owner电子邮箱".equals(fieldName) || "数据库技术Owner电子邮箱".equals(fieldName) )
+                        && StringUtils.isNotBlank(v) && v.length() > EMAIL_LENGTH){
+                    String errMsg = fieldName+"超过"+EMAIL_LENGTH+"字符";
+                    results.add(setAnalyticResult(errMsg,array, map));
                 }
             }
 
