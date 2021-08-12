@@ -1,6 +1,8 @@
 package io.zeta.metaspace.model.sync;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
 import java.sql.Timestamp;
@@ -11,6 +13,7 @@ import java.util.List;
  * 数据采集任务定义
  */
 @Data
+@JsonIgnoreProperties(ignoreUnknown=true)
 public class SyncTaskDefinition {
 
     private String id;
@@ -60,4 +63,5 @@ public class SyncTaskDefinition {
     private String categoryGuid;
 
     private String categoryName;
-}
+
+ }

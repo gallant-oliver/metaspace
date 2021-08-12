@@ -2,6 +2,7 @@ package org.apache.atlas.notification.rdbms;
 
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
+import io.zeta.metaspace.utils.AESUtils;
 import io.zeta.metaspace.utils.AdapterUtils;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.debezium.RdbmsEntities;
@@ -79,7 +80,7 @@ public class CalciteParseSqlTools {
         dataSourceInfo.setIp(config.getDbIp());
         dataSourceInfo.setPort(config.getDbPort()+"");
         dataSourceInfo.setUserName(username);
-        dataSourceInfo.setPassword(config.getDbPassword());
+        dataSourceInfo.setPassword(AESUtils.aesDecode(config.getDbPassword()));
         dataSourceInfo.setDatabase( config.getDbName());
         dataSourceInfo.setSourceType(rdbmsType.toUpperCase());
         dataSourceInfo.setServiceType("service_name");

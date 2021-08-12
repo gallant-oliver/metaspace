@@ -1022,18 +1022,12 @@ public interface UserGroupDAO {
             " select count(*) count," +
             "<choose>" +
             "    <when test=\"categoryType==0\">" +
-            "        categoryguid as guid from table_relation join tableinfo on table_relation.tableguid=tableinfo.tableguid where tableinfo.tableguid=table_relation.tableguid and " +
-            "        tableinfo.status='ACTIVE' and "+
-            "        table_relation.tenant_id = #{tenantId} and " +
-            "        (dbname is null " +
-            "        <if test='dbNames!=null and dbNames.size()>0'>" +
-            "          or dbname in " +
-            "          <foreach item='item' index='index' collection='dbNames'" +
-            "          open='(' separator=',' close=')'>" +
-            "          #{item}" +
-            "          </foreach>" +
-            "        </if>" +
-            "        )" +
+            "       guid from ( SELECT t.table_id,t.data_source_id,t.category_id as guid FROM ( " +
+            "       SELECT table_id,data_source_id,category_id from table_data_source_relation as relation WHERE tenant_id = #{tenantId}" +
+            "       UNION ALL" +
+            "       SELECT tableinfo.tableguid,source.data_source_id,category_id FROM source_info as source INNER JOIN tableinfo on source.database_id=tableinfo.databaseguid  " +
+            "       WHERE source.tenant_id = #{tenantId} AND source.version = 0 AND source.category_id is not null and source.category_id != '' AND tableinfo.status = 'ACTIVE'" +
+            "       ) as t ) as d" +
             "    </when>" +
             "    <when test=\"categoryType==5\">" +
             "        guid from ( " +

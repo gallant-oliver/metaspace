@@ -18,8 +18,12 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import com.itextpdf.text.DocumentException;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.enums.Status;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.source.Base64Info;
 import io.zeta.metaspace.model.source.CodeInfo;
 import io.zeta.metaspace.model.source.DataBaseInfo;
@@ -31,9 +35,10 @@ import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.service.HdfsService;
 import io.zeta.metaspace.web.service.SourceService;
 import io.zeta.metaspace.web.service.sourceinfo.AnnexService;
-import io.zeta.metaspace.web.service.sourceinfo.SourceInfoFileService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
+import io.zeta.metaspace.web.service.sourceinfo.SourceInfoFileService;
 import io.zeta.metaspace.web.util.Base64Utils;
+import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import io.zeta.metaspace.web.util.office.excel.Excel2Pdf;
 import io.zeta.metaspace.web.util.office.excel.ExcelObject;
@@ -41,6 +46,7 @@ import io.zeta.metaspace.web.util.office.word.DocConvertToPdf;
 import io.zeta.metaspace.web.util.office.word.DocxConvertToPdf;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -50,6 +56,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.CannotCreateTransactionException;
+import org.springframework.util.CollectionUtils;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -87,34 +95,70 @@ public class SourceInfoDatabaseREST {
     private AnnexService annexService;
     @Autowired
     private SourceInfoFileService sourceInfoFileService;
-
-    //源信息登记-导入模板下载的hdfs路径
-    private final String templatePath = "数据库登记模板.xlsx";
+    private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.SourceInfoDatabaseREST");
 
     @POST
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.INSERT)
     public Result addDatabaseInfo(@HeaderParam("tenantId")String tenantId, CreateRequest createRequest){
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.addDatabaseInfo()");
+            }
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), createRequest.getDatabaseInfo().getDatabaseAlias());
         return sourceInfoDatabaseService.addDatabaseInfo(tenantId,createRequest.getDatabaseInfo(),
                 createRequest.getApproveGroupId(),createRequest.getSubmitType());
+        } catch (CannotCreateTransactionException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
     }
 
     @PUT
     @Path("publish")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.INSERT)
     public Result publishDatabaseInfo(@HeaderParam("tenantId")String tenantId, PublishRequest request){
-        return sourceInfoDatabaseService.publish(request.getIdList(),request.getApproveGroupId(),tenantId);
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.publishDatabaseInfo()");
+            }
+            Result result =  sourceInfoDatabaseService.publish(request.getIdList(),request.getApproveGroupId(),tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), "源信息发布成功");
+            return result;
+    } catch (CannotCreateTransactionException e) {
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), "源信息发布失败");
+        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+    } finally {
+        AtlasPerfTracer.log(perf);
+    }
     }
 
     @PUT
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.UPDATE)
     public Result updateDatabaseInfo(@HeaderParam("tenantId")String tenantId,CreateRequest createRequest){
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.updateDatabaseInfo()");
+            }
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), createRequest.getDatabaseInfo().getDatabaseAlias());
         return sourceInfoDatabaseService.updateSourceInfo(createRequest.getDatabaseInfo(),tenantId,createRequest.getApproveGroupId(),createRequest.getSubmitType());
-    }
+    } catch (CannotCreateTransactionException e) {
+        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } finally {
+        AtlasPerfTracer.log(perf);
+        }
+}
 
     @PUT
     @Path("revoke/{id}")
@@ -128,8 +172,22 @@ public class SourceInfoDatabaseREST {
     @Path("database")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
     public Result deleteDatabaseInfo(@HeaderParam("tenantId")String tenantId, PublishRequest request){
-        return sourceInfoDatabaseService.delete(tenantId,request.getIdList());
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteDatabaseInfo()");
+            }
+            Result result = sourceInfoDatabaseService.delete(tenantId,request.getIdList());
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), "删除源信息数据库成功");
+            return result;
+        } catch (CannotCreateTransactionException e) {
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), "删除源信息数据库失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } finally {
+        AtlasPerfTracer.log(perf);
+        }
     }
 
     @GET
@@ -213,8 +271,10 @@ public class SourceInfoDatabaseREST {
 
             Annex annex = new Annex(annexId,fileName,fileType,uploadPath,fileSize);
             annexService.saveRecord(annex);
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"上传附件成功！");
             return ReturnUtil.success("success",annexId);
         }catch (Exception e){
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"上传附件失败！");
             throw new AtlasBaseException("文件上传失败", AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件上传失败");
         }
     }
@@ -235,21 +295,30 @@ public class SourceInfoDatabaseREST {
         log.info("解析文件的id:{}",annexId);
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
-            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
+            return ReturnUtil.error("404","没有找到对应的附件.");
         }
+        String fileType = annex.getFileType();
+        if(!PoiExcelUtils.XLS.equalsIgnoreCase(fileType) && !PoiExcelUtils.XLSX.equalsIgnoreCase(fileType)){
+            return ReturnUtil.error("400","文件不是excel格式.");
+        }
+
         String filePath = annex.getPath();
         try{
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
-            boolean isValid = sourceInfoFileService.checkExcelField(excelDataList);
-            if(!isValid){
-                return ReturnUtil.success("没有要处理的数据.");
+            if(CollectionUtils.isEmpty(excelDataList) || excelDataList.size() == 1){
+                return ReturnUtil.error("400","没有要处理的数据.");
+            }
+
+            List<AnalyticResult> validList = sourceInfoFileService.checkExcelField(excelDataList);
+            if(!CollectionUtils.isEmpty(validList)){
+                return ReturnUtil.success(validList);
             }
             // 跟source_info、db-info对比获取比对结果
             List<AnalyticResult> results = sourceInfoFileService.getFileParsedResult(excelDataList,tenantId);
             return ReturnUtil.success(results);
         }catch (Exception e){
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件解析失败");
+            return ReturnUtil.error("500","文件解析失败.",e.getMessage());
         }
     }
 
@@ -273,20 +342,30 @@ public class SourceInfoDatabaseREST {
         log.info("executeImportFile 文件的id:{}",annexId);
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
-            throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
+            return ReturnUtil.error("404","没有找到对应的附件.");
+        }
+        String fileType = annex.getFileType();
+        if(!PoiExcelUtils.XLS.equalsIgnoreCase(fileType) && !PoiExcelUtils.XLSX.equalsIgnoreCase(fileType)){
+            return ReturnUtil.error("400","文件不是excel格式.");
         }
         String filePath = annex.getPath();
         try{
             //根据文件路径 解析excel文件
             List<String[]> excelDataList =  hdfsService.readExcelFile(filePath);
-            boolean isValid = sourceInfoFileService.checkExcelField(excelDataList);
-            if(!isValid){
-                return ReturnUtil.success("没有要处理的数据.");
+            if(CollectionUtils.isEmpty(excelDataList) || excelDataList.size() == 1){
+                return ReturnUtil.error("400","没有要处理的数据.");
+            }
+            List<AnalyticResult> validList = sourceInfoFileService.checkExcelField(excelDataList);
+            if(!CollectionUtils.isEmpty(validList)){
+                return ReturnUtil.error("400","存在校验不通过的数据.");
             }
             // 跟source_info、db-info对比获取比对结果
-            return sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
+            Result result = sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"文件导入成功！");
+            return result;
         }catch (Exception e){
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件导入失败");
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"文件导入失败！");
+            return ReturnUtil.error("500", "文件导入失败",e.getMessage());
         }
 
     }
@@ -338,8 +417,13 @@ public class SourceInfoDatabaseREST {
             throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
         }
         String filePath = annex.getPath();
-        try(InputStream inputStream = hdfsService.getFileInputStream(filePath);){
-            return ReturnUtil.success(inputStream);
+        try(InputStream inputStream = hdfsService.getFileInputStream(filePath);
+            ByteArrayOutputStream swapStream = new ByteArrayOutputStream();){
+            int ch;
+            while ((ch = inputStream.read()) != -1) {
+                swapStream.write(ch);
+            }
+            return ReturnUtil.success(swapStream);
         }catch (IOException e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "获取文件流失败");
         }
@@ -381,7 +465,9 @@ public class SourceInfoDatabaseREST {
         String filePath = annex.getPath();
         String fileType = annex.getFileType();
         File tmpFile = null;
-        try(InputStream in = hdfsService.getFileInputStream(filePath);){
+        InputStream in = null;
+        try{
+            in = hdfsService.getFileInputStream(filePath);
             tmpFile = File.createTempFile("tmp-"+System.currentTimeMillis(),".pdf");
             String base64String = "";
             log.info("文件类型：{},",fileType);
@@ -404,7 +490,7 @@ public class SourceInfoDatabaseREST {
                 log.info("不需要转换处理.");
                 base64String = Base64Utils.streamToBase64(in);
             }
-
+            in.close();
             log.info("base64 值为空：{}",StringUtils.isBlank(base64String));
             Base64Info info = new Base64Info();
             String finalType = StringUtils.containsAny(fileType,"xls","xlsx","doc","docx") ? "pdf" : fileType;
@@ -414,7 +500,8 @@ public class SourceInfoDatabaseREST {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "获取文件流失败");
         }finally {
             if(tmpFile != null && tmpFile.exists()){
-                tmpFile.delete();
+                boolean del = tmpFile.delete();
+                log.info("删除临时文件成功标记:{}",del);
             }
         }
     }

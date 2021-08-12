@@ -196,7 +196,7 @@ public interface DatabaseInfoDAO {
             " c.name AS categoryName,\n" +
             " c.guid AS categoryId,\n" +
             " db.database_name AS databaseName,\n" +
-            " ds.source_type AS databaseTypeName,\n" +
+            " db.db_type AS databaseTypeName,\n" +
             " s.database_alias,\n" +
             " s.security,\n" +
             " s.status,\n" +
@@ -289,7 +289,7 @@ public interface DatabaseInfoDAO {
             " (\n" +
             " SELECT\n" +
             "  \"id\",\n" +
-            "  category_id,\n" +
+            "  (select parent_category_id from source_info_relation2parent_category where source_info_id = #{id})category_id,\n" +
             "  database_id,\n" +
             "  database_alias,\n" +
             "  planning_package_code,\n" +
@@ -330,10 +330,10 @@ public interface DatabaseInfoDAO {
             " AND \"version\" = 0 \n" +
             " )" +
             "</script>")
-    void insertHistoryVersion(@Param("id") String idList);
+    void insertHistoryVersion(@Param("id") String id);
 
-    @Update("UPDATE source_info SET category_id = #{categoryId},update_time = NOW(), modify_time = NOW() WHERE id  = #{id} AND version = 0")
-    void updateRealCategoryRelation(@Param("id") String sourceInfoId, @Param("categoryId") String categoryId);
+    @Update("UPDATE source_info SET category_id = #{categoryId},update_time = NOW(), modify_time = NOW() WHERE id  = #{id} AND version = #{version}")
+    void updateRealCategoryRelation(@Param("id") String sourceInfoId, @Param("categoryId") String categoryId, @Param("version") int version);
 
     @Delete("<script>" +
             "DELETE FROM source_info_relation2parent_category " +

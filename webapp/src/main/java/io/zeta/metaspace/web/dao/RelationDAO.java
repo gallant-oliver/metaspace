@@ -61,8 +61,8 @@ public interface RelationDAO {
                     "   LEFT JOIN data_source ds ON si.data_source_id = ds.source_id \n" +
                     "  WHERE\n" +
                     "   VERSION = 0 \n" +
-                    "   AND category_id = '1' \n" +
-                    "   AND tenant_id = '2f5eced9c1c64609bc2d8172562bf1da' \n" +
+                    "   AND category_id = #{categoryGuid} \n" +
+                    "   AND tenant_id = #{tenantId} \n" +
                     "  ),\n" +
                     "  'hive' \n" +
                     " ) AS sourceName," +

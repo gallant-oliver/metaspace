@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.service.sourceinfo;
 
+import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.bo.DatabaseInfoBO;
 import io.zeta.metaspace.model.Result;
@@ -160,6 +161,15 @@ public class SourceInfoDatabaseService implements Approvable {
         return ReturnUtil.success();
     }
 
+    private String convertStringFromList(List<String> strList){
+        StringBuilder sb = new StringBuilder();
+        strList.forEach(str->{
+            sb.append(str);
+            sb.append("，");
+        });
+        return sb.substring(0,sb.length()-1);
+    }
+
     /**
      * 撤回发布
      * @param id 被撤回的信息id
@@ -244,7 +254,7 @@ public class SourceInfoDatabaseService implements Approvable {
         if (Boolean.FALSE.equals(ParamUtil.isNull(idList))){
             list=databaseInfoDAO.getDatabaseInfoList(tenantId,null,idList,null,0,Integer.MAX_VALUE);
         }
-
+        HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),this.convertStringFromList(databaseInfoDAO.getDatabaseIdAndAliasByIds(idList).stream().map(DatabaseInfo::getDatabaseAlias).collect(Collectors.toList())));
         list.stream().filter(dfl->Status.ACTIVE.name().equals(Status.getStatusByValue(dfl.getStatus()))|| Status.REJECT.name().equals(Status.getStatusByValue(dfl.getStatus()))).forEach(l->{
             try {
                 approveServiceImp.deal(this.buildApproveParas(l.getId(),tenantId,ApproveOperate.CANCEL),tenantId);
@@ -337,6 +347,8 @@ public class SourceInfoDatabaseService implements Approvable {
             databaseInfoDAO.insertHistoryVersion(approveItem.getObjectId());
             approveServiceImp.addApproveItem(approveItem);
         }
+        HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),this.convertStringFromList(databaseInfos.stream().map(DatabaseInfo::getDatabaseAlias).collect(Collectors.toList())));
+
     }
 
     /**
@@ -403,6 +415,9 @@ public class SourceInfoDatabaseService implements Approvable {
         return databaseInfoPO;
     }
 
+    public List<DatabaseInfo> getAliasByIdList(List<String> ids){
+        return databaseInfoDAO.getDatabaseIdAndAliasByIds(ids);
+    }
     /**
      * 批量构建PO对象
      * @param tenantId 租户id
@@ -440,7 +455,7 @@ public class SourceInfoDatabaseService implements Approvable {
         DatabaseInfoBO databaseInfoBO = this.getDatabaseInfoBOById(objectId,tenantId,version);
         DatabaseInfoDTO databaseInfoDTO = new DatabaseInfoDTO();
         BeansUtil.copyPropertiesIgnoreNull(databaseInfoBO,databaseInfoDTO);
-        databaseInfoDTO.setCategoryName(this.getAllPath(objectId,tenantId));
+        databaseInfoDTO.setCategoryName(this.getActiveInfoAllPath(databaseInfoBO.getCategoryId(),tenantId));
         databaseInfoDTO.setPublisherName(databaseInfoBO.getUpdaterName());
         databaseInfoDTO.setPublishTime(databaseInfoBO.getUpdateTime());
         List<User> users = approveDAO.getApproveUsers(databaseInfoBO.getApproveGroupId());
@@ -464,7 +479,7 @@ public class SourceInfoDatabaseService implements Approvable {
     private DatabaseInfoBO getDatabaseInfoBOById(String id,String tenantId,int version){
         DatabaseInfoBO databaseInfoBO=databaseInfoDAO.getDatabaseInfoById(id,tenantId,version);
 
-        if (Boolean.FALSE.equals(ParamUtil.isNull(databaseInfoBO))){
+        if (Boolean.FALSE.equals(ParamUtil.isNull(databaseInfoBO))&&Boolean.TRUE.equals(ParamUtil.isNull(databaseInfoBO.getCategoryId()))){
             databaseInfoBO.setCategoryId(databaseInfoDAO.getParentCategoryIdById(databaseInfoBO.getId()));
         }
         if ("hive".equals(databaseInfoBO.getDataSourceId())){
@@ -533,7 +548,7 @@ public class SourceInfoDatabaseService implements Approvable {
             }
             HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), databaseInfoForCategory.getName());
             CategoryPrivilege categoryPrivilege= dataManageService.createCategory(this.buildCategoryInfo(databaseInfoForCategory), CATEGORY_TYPE, tenantId);
-            databaseInfoDAO.updateRealCategoryRelation(databaseInfoForCategory.getId(),categoryPrivilege.getGuid());
+            databaseInfoDAO.updateRealCategoryRelation(databaseInfoForCategory.getId(),categoryPrivilege.getGuid(),0);
             databaseDAO.insertDbCategoryRelation(tenantId,UUID.randomUUID().toString(),databaseInfoForCategory.getDatabaseId(),categoryPrivilege.getGuid());
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
