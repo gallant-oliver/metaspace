@@ -143,19 +143,19 @@ public interface DataSourceDAO {
             ") da on da.source_id=ds.source_id " +
             "where (da.source_id is not null or ds.manager=#{userId}) and (isapi=false or isapi is null) and ds.tenantid=#{tenantId} " +
             "<if test='dataSourceSearch.sourceName!=null'>" +
-            "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
+            "and ds.source_name like concat('%',#{dataSourceSearch.sourceName},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.sourceType!=null'>" +
-            "and ds.source_type like '%${dataSourceSearch.sourceType}%' ESCAPE '/'" +
+            "and ds.source_type like concat('%',#{dataSourceSearch.sourceType},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.createTime!=null'>" +
-            "and to_char(ds.create_time,'yyyy-MM-dd') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
+            "and to_char(ds.create_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.createTime},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateTime!=null'>" +
-            "and to_char(ds.update_time,'yyyy-MM-dd') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
+            "and to_char(ds.update_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.updateTime},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateUserName!=null'>" +
-            "and us.username like '%${dataSourceSearch.updateUserName}%' ESCAPE '/'" +
+            "and us.username like concat('%',#{dataSourceSearch.updateUserName},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='parameters.sortby!=null'>" +
             "order by ds.${parameters.sortby} " +
@@ -181,19 +181,19 @@ public interface DataSourceDAO {
             ") da on da.source_id=ds.source_id " +
             "where (da.source_id is not null or ds.manager=#{userId}) and isapi=true and ds.tenantid=#{tenantId} " +
             "<if test='dataSourceSearch.sourceName!=null'>" +
-            "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
+            "and ds.source_name like concat('%',#{dataSourceSearch.sourceName},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.sourceType!=null'>" +
-            "and ds.source_type like '%${dataSourceSearch.sourceType}%' ESCAPE '/'" +
+            "and ds.source_type like concat('%',#{dataSourceSearch.sourceType},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.createTime!=null'>" +
-            "and to_char(ds.create_time,'yyyy-MM-dd') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
+            "and to_char(ds.create_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.createTime},'%')  ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateTime!=null'>" +
-            "and to_char(ds.update_time,'yyyy-MM-dd') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
+            "and to_char(ds.update_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.updateTime},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateUserName!=null'>" +
-            "and us.username like '%${dataSourceSearch.updateUserName}%' ESCAPE '/'" +
+            "and us.username like concat('%',#{dataSourceSearch.updateUserName},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='parameters.sortby!=null'>" +
             "order by ds.${parameters.sortby} " +
@@ -216,19 +216,19 @@ public interface DataSourceDAO {
             "from data_source ds, users us " +
             "where ds.update_user_id=us.userid and (isapi=false or isapi is null) and tenantid=#{tenantId} " +
             "<if test='dataSourceSearch.sourceName!=null'>" +
-            "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
+            "and ds.source_name like concat('%',#{dataSourceSearch.sourceName},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.sourceType!=null'>" +
-            "and ds.source_type like '%${dataSourceSearch.sourceType}%' ESCAPE '/'" +
+            "and ds.source_type like concat('%',#{dataSourceSearch.sourceType},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.createTime!=null'>" +
-            "and to_char(ds.create_time,'yyyy-MM-dd') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
+            "and to_char(ds.create_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.createTime},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateTime!=null'>" +
-            "and to_char(ds.update_time,'yyyy-MM-dd') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
+            "and to_char(ds.update_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.updateTime},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateUserName!=null'>" +
-            "and us.username like '%${dataSourceSearch.updateUserName}%' ESCAPE '/'" +
+            "and us.username like concat('%',#{dataSourceSearch.updateUserName},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='parameters.sortby!=null'>" +
             "order by ds.${parameters.sortby} " +
@@ -251,19 +251,19 @@ public interface DataSourceDAO {
             "from data_source ds, users us " +
             "where ds.update_user_id=us.userid and ds.isapi=true and tenantid=#{tenantId} " +
             "<if test='dataSourceSearch.sourceName!=null'>" +
-            "and ds.source_name like '%${dataSourceSearch.sourceName}%' ESCAPE '/'" +
+            "and ds.source_name like concat('%',#{dataSourceSearch.sourceName},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.sourceType!=null'>" +
-            "and ds.source_type like '%${dataSourceSearch.sourceType}%' ESCAPE '/'" +
+            "and ds.source_type like concat('%',#{dataSourceSearch.sourceType},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.createTime!=null'>" +
-            "and to_char(ds.create_time,'yyyy-MM-dd') like '%${dataSourceSearch.createTime}%' ESCAPE '/'" +
+            "and to_char(ds.create_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.createTime},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateTime!=null'>" +
-            "and to_char(ds.update_time,'yyyy-MM-dd') like '%${dataSourceSearch.updateTime}%' ESCAPE '/'" +
+            "and to_char(ds.update_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.updateTime},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateUserName!=null'>" +
-            "and us.username like '%${dataSourceSearch.updateUserName}%' ESCAPE '/'" +
+            "and us.username like concat('%',#{dataSourceSearch.updateUserName},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='parameters.sortby!=null'>" +
             "order by ds.${parameters.sortby} " +
@@ -337,7 +337,7 @@ public interface DataSourceDAO {
             " where u.valid=true " +
             "and u.userid not in (select authorize_user_id from data_source_authorize where source_id=#{sourceId} union select userid from user2role where roleid='1' or roleid='3') " +
             "<if test='query!=null'>" +
-            "and username like '%${query}%' ESCAPE '/'" +
+            "and username like concat('%',#{query},'%') ESCAPE '/'" +
             "</if>" +
             "</script>")
     public List<UserIdAndName> getNoAuthorizeUser(@Param("sourceId") String sourceId,@Param("query") String query);
@@ -370,7 +370,7 @@ public interface DataSourceDAO {
             "where u.valid=true " +
             "and u.userid not in (select authorize_user_id from data_source_api_authorize where source_id=#{sourceId} union select userid from user2role where roleid='1' or roleid='3') " +
             "<if test='query!=null'>" +
-            "and username like '%${query}%' ESCAPE '/'" +
+            "and username like concat('%',#{query},'%') ESCAPE '/'" +
             "</if>" +
             "</script>")
     public List<UserIdAndName> getApiNoAuthorizeUser(@Param("sourceId") String sourceId,@Param("query") String query);
@@ -482,7 +482,7 @@ public interface DataSourceDAO {
             "select count(*)over() totalSize,u.id,u.name from user_group u left join " +
             "( select group_id from datasource_group_relation where source_id=#{sourceId} ) p on u.id=p.group_id where p.group_id is null and u.tenant=#{tenantId} and u.valid=true " +
             "<if test='parameters.query!=null'>" +
-            " and u.name like '%${parameters.query}%' ESCAPE '/'  " +
+            " and u.name like concat('%',#{parameters.query},'%') ESCAPE '/'  " +
             "</if>" +
             "<if test='parameters.limit!=-1'>" +
             " limit ${parameters.limit} " +
@@ -497,7 +497,7 @@ public interface DataSourceDAO {
             "select count(*)over() totalSize,u.id,u.name,u.description,p.privilege_code privilegeCode from user_group u join " +
             " datasource_group_relation p on u.id=p.group_id where p.source_id=#{sourceId} and u.tenant=#{tenantId} " +
             "<if test='parameters.query!=null'>" +
-            " and u.name like '%${parameters.query}%' ESCAPE '/'  " +
+            " and u.name like concat('%',#{parameters.query},'%') ESCAPE '/'  " +
             "</if>" +
             "<if test='parameters.limit!=-1'>" +
             " limit ${parameters.limit} " +

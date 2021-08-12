@@ -80,7 +80,7 @@ public class TimeLimitREST {
         try {
             return ReturnUtil.success(timeLimitService.search(search,tenantId)); //无异常返回成功信息
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e.getMessage());
+            throw new AtlasBaseException("查询失败",AtlasErrorCode.BAD_REQUEST, "查询失败");
         }
     }
 

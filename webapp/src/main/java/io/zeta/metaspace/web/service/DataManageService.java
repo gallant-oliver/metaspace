@@ -739,23 +739,18 @@ public class DataManageService {
      * @throws AtlasBaseException
      */
     @Transactional(rollbackFor = Exception.class)
-    public void assignTablesToCategory(String categoryGuid, List<String> ids, String tenantId) throws AtlasBaseException {
+    public void assignTablesToCategory(String categoryGuid, List<RelationEntityV2> relations, String tenantId) throws AtlasBaseException {
         try {
-            if (ids == null || ids.size() == 0) {
+            if (CollectionUtils.isEmpty(relations)) {
                 return;
             }
-            List<TableInfo> tableInfoList = tableDAO.selectListByTableGuid(ids);
-            if(CollectionUtils.isEmpty(tableInfoList)){
-                return;
-            }
-            Map<String, String> map = tableInfoList.stream().collect(Collectors.toMap(TableInfo::getTableGuid, TableInfo::getSourceId));
             List<TableDataSourceRelationPO> tableDataSourceRelationPOList = new ArrayList<>();
-            for (String id : ids) {
+            for (RelationEntityV2 relationEntityV2 : relations) {
                 TableDataSourceRelationPO tableDataSourceRelationPO = new TableDataSourceRelationPO();
                 tableDataSourceRelationPO.setId(UUID.randomUUID().toString());
                 tableDataSourceRelationPO.setCategoryId(categoryGuid);
-                tableDataSourceRelationPO.setTableId(id);
-                tableDataSourceRelationPO.setDataSourceId(map.get(id));
+                tableDataSourceRelationPO.setTableId(relationEntityV2.getTableGuid());
+                tableDataSourceRelationPO.setDataSourceId(relationEntityV2.getSourceId());
                 tableDataSourceRelationPO.setTenantId(tenantId);
                 tableDataSourceRelationPOList.add(tableDataSourceRelationPO);
             }
@@ -1583,7 +1578,7 @@ public class DataManageService {
             }else{
                 dbDAO.insertDb(dbInfo);
             }
-            if(null != definition){
+            if(null != definition&&"ACTIVE".equalsIgnoreCase(dbInfo.getStatus())){
                 String dataSourceId = definition.getDataSourceId();
                 DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(dataSourceId);
                 String sourceDbRelationId = dbDAO.getSourceDbRelationId(dbInfo.getDatabaseId(), dataSourceInfo.getSourceId());
@@ -1596,10 +1591,12 @@ public class DataManageService {
     private void addOrUpdateTable(TableInfo tableInfo, SyncTaskDefinition definition){
         String tableGuid = tableInfo.getTableGuid();
         synchronized (tableGuid){
-            tableDAO.deleteIfExist(tableGuid, tableInfo.getDatabaseGuid(), tableInfo.getTableName());
+            if("ACTIVE".equalsIgnoreCase(tableInfo.getStatus())){
+                tableDAO.deleteIfExist(tableGuid, tableInfo.getDatabaseGuid(), tableInfo.getTableName());
+            }
             TableInfo table = tableDAO.getTableInfoByTableguid(tableGuid);
             if(null != table){
-                tableDAO.updateTable(table);
+                tableDAO.updateTable(tableInfo);
             }else{
                 tableDAO.addTable(tableInfo);
             }

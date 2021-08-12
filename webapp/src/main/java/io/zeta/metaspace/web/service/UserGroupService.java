@@ -15,20 +15,13 @@ package io.zeta.metaspace.web.service;
 
 
 import com.google.common.collect.Lists;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
-import io.zeta.metaspace.model.result.CategoryGroupAndUser;
-import io.zeta.metaspace.model.result.CategoryGroupPrivilege;
-import io.zeta.metaspace.model.result.CategoryPrivilege;
-import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
-import io.zeta.metaspace.model.result.CategoryUpdate;
-import io.zeta.metaspace.model.result.GroupPrivilege;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
-import io.zeta.metaspace.model.result.UpdateCategory;
+import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.share.ProjectHeader;
@@ -40,12 +33,10 @@ import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
 import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
 import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
+import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
-import io.zeta.metaspace.web.dao.CategoryDAO;
-import io.zeta.metaspace.web.service.dataquality.WarningGroupService;
 import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.CategoryUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -69,13 +60,6 @@ import java.util.stream.Collectors;
  */
 @Service
 public class UserGroupService {
-    public static List<String> systemCategory = new ArrayList<String>(){{
-        add("1");
-        add("2");
-        add("3");
-        add("4");
-        add("5");
-    }};
     @Autowired
     UserGroupDAO userGroupDAO;
     @Autowired
@@ -651,7 +635,7 @@ public class UserGroupService {
             CategoryPrivilege.Privilege privilegeinfo = new CategoryPrivilege.Privilege(privilege);
             CategoryPrivilege categoryPrivilege = new CategoryPrivilege(category);
             //系统系统目录不允许删除和编辑
-            if (systemCategory.contains(category.getGuid())) {
+            if (MetaspaceConfig.systemCategory.contains(category.getGuid())) {
                 privilegeinfo.setDelete(false);
                 if (privilegeinfo.isEdit()){
                     privilegeinfo.setEditSafe(true);
@@ -1480,7 +1464,7 @@ public class UserGroupService {
                 privilege.setDeleteRelation(false);
                 privilege.setAddOwner(false);
             }
-            if (systemCategory.contains(category.getGuid())) {
+            if (MetaspaceConfig.systemCategory.contains(category.getGuid())) {
                 privilege.setDelete(false);
                 if (privilege.isEdit()){
                     privilege.setEditSafe(true);

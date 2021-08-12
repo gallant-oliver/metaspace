@@ -182,12 +182,12 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
             LOG.info("No database found");
         }
         checkTaskEnable(taskInstanceId);
-        createKafkaConnector(tableSchema.getDefinition(), databases);
+        createKafkaConnector(databases);
         syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
         LOG.info("import metadata end at {}", new Date());
 
     }
-     public void createKafkaConnector(SyncTaskDefinition definition, final List<String> databases) throws AtlasException {
+     public void createKafkaConnector(final List<String> databases) throws AtlasException {
         //@TODO 如果配置允许，则检查定时任务中的每一个数据库，看是否存在运行的connector，如果不存在，则启动或生成一个对应的connector并启动
          boolean autoAddKafkaConnector = ApplicationProperties.get().getBoolean("auto.add.kafka.connector", true);
          if(!autoAddKafkaConnector){
@@ -202,10 +202,10 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
              String name = AdapterUtils.getInstanceQualifiedName(dataSourceInfo).toLowerCase();
              checkConnector(ip, port, databaseName, name);
          }else {
-             databases.forEach(databaseName -> {
-                 String name = AdapterUtils.getDBQualifiedName(dataSourceInfo, databaseName);
-                 checkConnector(ip, port, databaseName, name);
-             });
+//             databases.forEach(databaseName -> {
+//                 String name = AdapterUtils.getDBQualifiedName(dataSourceInfo, databaseName);
+//                 checkConnector(ip, port, databaseName, name);
+//             });
          }
      }
 

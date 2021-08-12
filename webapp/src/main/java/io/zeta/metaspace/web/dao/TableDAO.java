@@ -14,7 +14,7 @@ public interface TableDAO {
     @Select("select * from tableinfo where tableguid=#{guid}")
     TableInfo getTableInfoByTableguid(String guid);
 
-    @Delete("delete from tableinfo where tableguid != 'tableGuid' and databaseguid = #{dbGuid} and lower(tablename) = lower(#{tableName}) and status = 'ACTIVE'")
+    @Update("update tableinfo set status = 'DELETED' where tableguid != 'tableGuid' and databaseguid = #{dbGuid} and lower(tablename) = lower(#{tableName}) and status = 'ACTIVE'")
     void deleteIfExist(@Param("tableGuid")String tableGuid, @Param("dbGuid") String dbGuid, @Param("tableName") String tableName);
 
     @Select("select * from tableinfo where status = 'ACTIVE' and tableguid=#{guid}")
@@ -198,12 +198,4 @@ public interface TableDAO {
 
     @Select("select * from tableinfo where status = 'ACTIVE' and databaseguid = (select database_id from source_info where version = 0 and category_id = #{categoryId})")
     List<TableInfo> getTableInfoByCategoryId(@Param("categoryId") String categoryId);
-
-    @Select("<script>" +
-            " SELECT tableguid,source_id FROM tableinfo WHERE tableguid IN" +
-            " <foreach item='guid' index='index' collection='list' separator=',' open='(' close=')'>"+
-            "  #{guid}"+
-            " </foreach>"+
-            "</script>")
-    List<TableInfo> selectListByTableGuid(@Param("list") List<String> list);
 }
