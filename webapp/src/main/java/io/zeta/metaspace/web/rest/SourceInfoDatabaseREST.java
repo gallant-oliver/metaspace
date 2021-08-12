@@ -417,8 +417,13 @@ public class SourceInfoDatabaseREST {
             throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
         }
         String filePath = annex.getPath();
-        try(InputStream inputStream = hdfsService.getFileInputStream(filePath);){
-            return ReturnUtil.success(inputStream);
+        try(InputStream inputStream = hdfsService.getFileInputStream(filePath);
+            ByteArrayOutputStream swapStream = new ByteArrayOutputStream();){
+            int ch;
+            while ((ch = inputStream.read()) != -1) {
+                swapStream.write(ch);
+            }
+            return ReturnUtil.success(swapStream);
         }catch (IOException e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "获取文件流失败");
         }
@@ -495,7 +500,8 @@ public class SourceInfoDatabaseREST {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "获取文件流失败");
         }finally {
             if(tmpFile != null && tmpFile.exists()){
-                tmpFile.delete();
+                boolean del = tmpFile.delete();
+                log.info("删除临时文件成功标记:{}",del);
             }
         }
     }
