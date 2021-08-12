@@ -9,6 +9,7 @@ import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
@@ -606,17 +607,19 @@ DataSourceInfo dataSourceInfo = null;
         }
         databaseHeaders.addAll(userGroupDAO.getSourceInfo(strings, query, parameters.getOffset(), parameters.getLimit(), tenantId));
 
-        //获取用户有权限的全部表和该目录已加关联的全部表
+        //获取用户有权限的全部表
         List<TechnologyInfo.Table> tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1, databases, tenantId);
 
         if (CollectionUtils.isEmpty(tables)) {
             return databasePageResult;
         }
-        List<String> relationTableGuids = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryGuid, tenantId);
+        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryGuid, tenantId);
+        Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDataSourceId));
         Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getSourceId));
         databaseHeaders.forEach(e -> {
             String sourceId = e.getSourceId();
-            List<String> table = collect.get(sourceId) == null? new ArrayList<>() : collect.get(sourceId).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
+            List<String> table = collect.get(sourceId) == null ? new ArrayList<>() : collect.get(sourceId).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
+            List<String> relationTableGuids = collectRelation.get(sourceId) == null ? new ArrayList<>() : collectRelation.get(sourceId).stream().map(TableDataSourceRelationPO::getTableId).collect(Collectors.toList());
             if (collect != null && collect.size() > 0) {
                 if (relationTableGuids.containsAll(table)) {
                     //全被勾选
@@ -664,7 +667,7 @@ DataSourceInfo dataSourceInfo = null;
      * @throws AtlasBaseException
      */
     @Transactional(rollbackFor = Exception.class)
-    public PageResult<AddRelationTable> getTechnicalTablePageResultByDB(Parameters parameters, String databaseGuid, String categoryId, String tenantId) throws AtlasBaseException {
+    public PageResult<AddRelationTable> getTechnicalTablePageResultByDB(Parameters parameters, String databaseGuid, String categoryId, String tenantId, String sourceId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         List<String> strings = new ArrayList<>();
         //判断多租户和独立部署
@@ -676,7 +679,7 @@ DataSourceInfo dataSourceInfo = null;
         }
 
         if (strings != null && strings.size() != 0) {
-            return getTablesByDatabaseGuid(parameters, strings, databaseGuid, categoryId, tenantId);
+            return getTablesByDatabaseGuid(parameters, strings, databaseGuid, categoryId, tenantId, sourceId);
         }
 
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
@@ -697,15 +700,20 @@ DataSourceInfo dataSourceInfo = null;
             databasePageResult.setTotalSize(0);
             return databasePageResult;
         }
-        List<String> databases = tenantService.getDatabase(tenantId);
+        List<String> databases = new ArrayList<>();
+        if ("hive".equalsIgnoreCase(sourceId)) {
+            databases = tenantService.getDatabase(tenantId);
+        }
         List<DatabaseHeader> databaseHeaders = userGroupDAO.getDBInfo2(query, parameters.getOffset(), parameters.getLimit(), databases, sourceId, tenantId);
         //获取用户有权限的全部表
         List<TechnologyInfo.Table> tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1, databases, tenantId);
-        List<String> relationTableGuids = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryGuid, tenantId);
+        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryGuid, tenantId);
+        Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDataSourceId));
         Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getDatabaseGuid));
         databaseHeaders.forEach(e -> {
             String databaseGuid = e.getDatabaseGuid();
             List<String> table = collect.get(databaseGuid) == null ? new ArrayList<>() : collect.get(databaseGuid).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
+            List<String> relationTableGuids = collectRelation.get(sourceId) == null ? new ArrayList<>() : collectRelation.get(sourceId).stream().map(TableDataSourceRelationPO::getTableId).collect(Collectors.toList());
             if (relationTableGuids.containsAll(table)) {
                 //全被勾选
                 e.setCheck(1);
@@ -719,6 +727,9 @@ DataSourceInfo dataSourceInfo = null;
                     e.setCheck(0);
                 }
             }
+            if (StringUtils.isNotBlank(parameters.getQuery())) {
+                e.setDbName(e.getDbName() + "(" + e.getSourceName() + ")");
+            }
         });
         databasePageResult.setLists(databaseHeaders);
         databasePageResult.setCurrentSize(databaseHeaders.size());
@@ -726,7 +737,7 @@ DataSourceInfo dataSourceInfo = null;
         return databasePageResult;
     }
 
-    private PageResult<AddRelationTable> getTablesByDatabaseGuid(Parameters parameters, List<String> strings, String databaseGuid, String categoryId, String tenantId) {
+    private PageResult<AddRelationTable> getTablesByDatabaseGuid(Parameters parameters, List<String> strings, String databaseGuid, String categoryId, String tenantId, String sourceId) {
         PageResult<AddRelationTable> tablePageResult = new PageResult<>();
         //如果没目录
         if (strings.size() == 0) {
@@ -736,7 +747,8 @@ DataSourceInfo dataSourceInfo = null;
         }
 
         List<TechnologyInfo.Table> tableInfos = roleDAO.getTableInfosByDBIdByParameters(strings, databaseGuid, parameters.getOffset(), parameters.getLimit(), tenantId);
-        List<String> relationTableGuids = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryId, tenantId);
+        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryId, tenantId);
+        List<String> relationTableGuids = tableDataSourceRelationPOList.stream().filter(tableDataSourceRelationPO -> tableDataSourceRelationPO.getDataSourceId().equalsIgnoreCase(sourceId)).map(TableDataSourceRelationPO::getTableId).collect(Collectors.toList());
         List<AddRelationTable> tables = getTables(tableInfos);
         supplyPath(tables, tenantId);
         tables.forEach(e -> {
@@ -852,19 +864,22 @@ DataSourceInfo dataSourceInfo = null;
             tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
         } else {
             List<String> databases = tenantService.getDatabase(tenantId);
-            if (CollectionUtils.isNotEmpty(databases))
-                tableInfo = userGroupDAO.getTableInfosV2(strings, query, offset, limit, databases, tenantId);
+            tableInfo = userGroupDAO.getTableInfosV2(strings, query, offset, limit, databases, tenantId);
         }
-
-        List<String> relationTableGuids = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryId, tenantId);
+        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.getTableGuidByCategoryIdAndTenantId(categoryId, tenantId);
+        Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDataSourceId));
         List<AddRelationTable> tables = getTables(tableInfo);
         supplyPath(tables, tenantId);
         tables.forEach(e -> {
             String tableGuid = e.getTableId();
+            List<String> relationTableGuids = collectRelation.get(e.getSourceId()) == null ? new ArrayList<>() : collectRelation.get(e.getSourceId()).stream().map(TableDataSourceRelationPO::getTableId).collect(Collectors.toList());
             if (relationTableGuids.contains(tableGuid)) {
                 e.setCheck(1);
             } else {
                 e.setCheck(0);
+            }
+            if(StringUtils.isNotBlank(parameters.getQuery())){
+                e.setTableName(e.getTableName() + "(" + e.getSourceName() + ")");
             }
         });
         if (CollectionUtils.isNotEmpty(tableInfo)) {
@@ -923,6 +938,8 @@ DataSourceInfo dataSourceInfo = null;
             tb.setCreateTime(table.getCreateTime());
             tb.setDatabaseId(table.getDatabaseGuid());
             tb.setStatus(table.getStatus());
+            tb.setSourceId(table.getSourceId());
+            tb.setSourceName(table.getSourceName());
             lists.add(tb);
         }
         return lists;
