@@ -635,7 +635,7 @@ public class SearchService {
                 strings.add(categoryPrivilegeV2.getGuid());
             }
         }
-        if (strings != null && strings.contains(categoryId)) {
+        if (categoryId != null && !categoryId.isEmpty()) {
             return getDataSourceResultV2(parameters, strings, categoryId, tenantId);
         }
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
@@ -664,27 +664,7 @@ public class SearchService {
         if (CollectionUtils.isEmpty(tables)) {
             return databasePageResult;
         }
-        List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryGuid);
-        Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getSourceId));
-        databaseHeaders.forEach(e -> {
-            String sourceId = e.getSourceId();
-            List<String> table = collect.get(sourceId).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
-            if (collect != null && collect.size() > 0) {
-                if (relationTableGuids.containsAll(table)) {
-                    //全被勾选
-                    e.setCheck(1);
-                } else {
-                    table.retainAll(relationTableGuids);
-                    if (table.size() > 0) {
-                        //勾选了部分
-                        e.setCheck(2);
-                    } else {
-                        //全部未勾选
-                        e.setCheck(0);
-                    }
-                }
-            }
-        });
+
         databasePageResult.setLists(databaseHeaders);
         databasePageResult.setCurrentSize(databaseHeaders.size());
         databasePageResult.setTotalSize(databaseHeaders.size() > 0 ? databaseHeaders.get(0).getTotal() : 0);
@@ -776,25 +756,6 @@ public class SearchService {
             //获取用户有权限的全部表和该目录已加关联的全部表
             tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1, databases, tenantId);
         }
-        List<String> relationTableGuids = relationDAO.getAllTableGuidByCategoryGuid(categoryGuid);
-        Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getDatabaseGuid));
-        databaseHeaders.forEach(e -> {
-            String databaseGuid = e.getDatabaseGuid();
-            List<String> table = collect.get(databaseGuid).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
-            if (relationTableGuids.containsAll(table)) {
-                //全被勾选
-                e.setCheck(1);
-            } else {
-                table.retainAll(relationTableGuids);
-                if (table.size() > 0) {
-                    //勾选了部分
-                    e.setCheck(2);
-                } else {
-                    //全部未勾选
-                    e.setCheck(0);
-                }
-            }
-        });
         databasePageResult.setLists(databaseHeaders);
         databasePageResult.setCurrentSize(databaseHeaders.size());
         databasePageResult.setTotalSize(databaseHeaders.size() > 0 ? databaseHeaders.get(0).getTotal() : 0);
