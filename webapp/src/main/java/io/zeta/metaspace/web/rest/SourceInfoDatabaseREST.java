@@ -13,7 +13,6 @@
 
 package io.zeta.metaspace.web.rest;
 
-import com.google.gson.Gson;
 import com.gridsum.gdp.library.commons.utils.DateTimeUtils;
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import com.itextpdf.text.DocumentException;
@@ -22,7 +21,6 @@ import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.enums.Status;
-import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
@@ -37,8 +35,8 @@ import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.service.HdfsService;
 import io.zeta.metaspace.web.service.SourceService;
 import io.zeta.metaspace.web.service.sourceinfo.AnnexService;
-import io.zeta.metaspace.web.service.sourceinfo.SourceInfoFileService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
+import io.zeta.metaspace.web.service.sourceinfo.SourceInfoFileService;
 import io.zeta.metaspace.web.util.Base64Utils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
@@ -97,9 +95,6 @@ public class SourceInfoDatabaseREST {
     private AnnexService annexService;
     @Autowired
     private SourceInfoFileService sourceInfoFileService;
-
-    //源信息登记-导入模板下载的hdfs路径
-    private final String templatePath = "数据库登记模板.xlsx";
     private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.SourceInfoDatabaseREST");
 
     @POST
@@ -134,8 +129,11 @@ public class SourceInfoDatabaseREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.publishDatabaseInfo()");
             }
-        return sourceInfoDatabaseService.publish(request.getIdList(),request.getApproveGroupId(),tenantId);
+            Result result =  sourceInfoDatabaseService.publish(request.getIdList(),request.getApproveGroupId(),tenantId);
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), "源信息发布成功");
+            return result;
     } catch (CannotCreateTransactionException e) {
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), "源信息发布失败");
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
     } finally {
         AtlasPerfTracer.log(perf);
@@ -181,8 +179,11 @@ public class SourceInfoDatabaseREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteDatabaseInfo()");
             }
-            return sourceInfoDatabaseService.delete(tenantId,request.getIdList());
+            Result result = sourceInfoDatabaseService.delete(tenantId,request.getIdList());
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), "删除源信息数据库成功");
+            return result;
         } catch (CannotCreateTransactionException e) {
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), "删除源信息数据库失败");
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
         AtlasPerfTracer.log(perf);
@@ -270,10 +271,10 @@ public class SourceInfoDatabaseREST {
 
             Annex annex = new Annex(annexId,fileName,fileType,uploadPath,fileSize);
             annexService.saveRecord(annex);
-            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(),"上传附件成功！");
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"上传附件成功！");
             return ReturnUtil.success("success",annexId);
         }catch (Exception e){
-            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(),"上传附件失败！");
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"上传附件失败！");
             throw new AtlasBaseException("文件上传失败", AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件上传失败");
         }
     }
@@ -360,10 +361,10 @@ public class SourceInfoDatabaseREST {
             }
             // 跟source_info、db-info对比获取比对结果
             Result result = sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
-            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(),"文件导入成功！");
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"文件导入成功！");
             return result;
         }catch (Exception e){
-            HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(),"文件导入失败！");
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"文件导入失败！");
             return ReturnUtil.error("500", "文件导入失败",e.getMessage());
         }
 
