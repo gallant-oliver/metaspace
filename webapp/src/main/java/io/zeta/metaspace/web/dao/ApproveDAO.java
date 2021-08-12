@@ -71,8 +71,9 @@ public interface ApproveDAO {
             "<if test='paras.query!=null'>" +
             " and a.object_name like '%${paras.query}%' ESCAPE '/' " +
             "</if>" +
+            "order by a.commit_time DESC,a.object_name " +
             "<if test=\"paras.sortBy!=null and paras.sortBy!=''\">"+
-            "order by ${paras.sortBy} " +
+            ", ${paras.sortBy} " +
             "</if>" +
             "<if test=\"paras.order!=null and paras.order!=''\">"+
             " ${paras.order} " +
@@ -83,6 +84,7 @@ public interface ApproveDAO {
             "<if test='paras.offset!=0'>" +
             " offset ${paras.offset} " +
             "</if>" +
+
             "</script>")
     List<ApproveItem> getApproveItems(@Param("tenantId") String tenantId, @Param("paras") ApproveParas paras,
                                                    @Param("groups") List<String> groups);
