@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.service.sourceinfo;
 import com.google.common.base.Joiner;
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.sourceinfo.AnalyticResult;
@@ -10,6 +11,7 @@ import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForDb;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.DataSourceDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.service.DataSourceService;
@@ -43,21 +45,24 @@ public class SourceInfoFileService {
     @Autowired
     private CategoryDAO categoryDao;
     @Autowired
+    private DataSourceDAO dataSourceDAO;
+    @Autowired
     private SourceInfoDatabaseService sourceInfoDatabaseService;
     @Autowired
     private DataSourceService dataSourceService;
     @Autowired
     private UserGroupService userGroupService;
 
-    private final String[] validFields = new String[]{"数据层名称","数据库中文名","数据库类型","数据库英文名称",
-            "数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","手机号",
+    private final String[] validFields = new String[]{"数据层名称","数据库中文名","数据库类型","数据源","数据库英文名称",
+            "数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","业务Owner手机号",
             "数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","技术Owner手机号","技术负责人","业务负责人"};
     private Map<String,String> categoryMap  = new HashMap<String,String>();
   
-    private String[] tableTitleAttr = {"数据层名称","数据库中文名","数据库类型","数据库实例","数据库英文名称","抽取频率","抽取工具","规划包编号","规划包名称",
-            "是否保密","保密期限","是否重要","数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","手机号","数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","技术Owner手机号",
+    private String[] tableTitleAttr = {"数据层名称","数据库中文名","数据库类型","数据源","数据库实例","数据库英文名称","抽取频率","抽取工具","规划包编号","规划包名称",
+            "是否保密","保密期限","是否重要","描述","数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","业务Owner手机号","数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","技术Owner手机号",
             "技术负责人","业务负责人"};
-
+    private static final int CHINA_LENGTH = 128;
+    private static final int EMAIL_LENGTH = 64;
     /**
      * 数据源文件导入模板生成下载
      * @return
@@ -66,30 +71,38 @@ public class SourceInfoFileService {
         try {
             File templateFile = File.createTempFile("template", "."+PoiExcelUtils.XLSX);
             List<String> tableAttributes = Arrays.asList(tableTitleAttr);
-            List<String> tableData = new ArrayList<>();
+            List<Object> tableData = new ArrayList<>();
             //模板处理
             categoryMap = getCategoryFromDb(tenantId);
             if(categoryMap != null && !categoryMap.isEmpty()){
-                tableData.add(Joiner.on(";").join(categoryMap.keySet()));
+                tableData.add(Arrays.asList(categoryMap.keySet()));
             }else{
                 tableData.add("层级之间使用-分开");
             }
             tableData.add("数据库中文名");
             List<DataSourceTypeInfo> sourceTypeInfos = dataSourceService.getDataSourceType("dbr");
+            List<DataSourceInfo> dataSourceInfos = null;
             if(CollectionUtils.isEmpty(sourceTypeInfos)){
                 tableData.add("例如:ORACLE、MYSQL");
             }else{
-                tableData.add(sourceTypeInfos.stream().map(v->v.getName()).collect(Collectors.joining(";")) );
+                List<String> sourceTypeList = sourceTypeInfos.stream().map(v->v.getName()).collect(Collectors.toList());
+                tableData.add(sourceTypeList ); //Joiner.on(";").join(sourceTypeList)
+                dataSourceInfos = dataSourceDAO.queryDataSourceBySourceTypeIn(sourceTypeList,tenantId);
             }
+            Map<String, Set<String>> dataSourceMap = CollectionUtils.isEmpty(dataSourceInfos) ? null
+                    : dataSourceInfos.stream().collect(Collectors.groupingBy(DataSourceInfo::getSourceType,
+                    Collectors.mapping(DataSourceInfo::getSourceName,Collectors.toSet())));
+            tableData.add(dataSourceMap);//数据源
             tableData.add("ORACLE数据库类型需要实例");
             tableData.add("数据库的英文定义");
             tableData.add(""); //抽取频率
             tableData.add(""); //抽取工具
             tableData.add(""); //规划包编号
             tableData.add(""); //规划包name
-            tableData.add("是;否"); //是否保密
+            tableData.add(Arrays.asList("是","否")); //是否保密
             tableData.add("保密内容为是的话，则需要填写期限"); //保密期限
-            tableData.add("是;否"); //"是否重要"
+            tableData.add(Arrays.asList("是","否")); //"是否重要"
+            tableData.add("");//描述
             //数据库业务
             tableData.add(""); //数据库业务Owner姓名
             tableData.add(""); //数据库业务Owner部门名称
@@ -103,9 +116,10 @@ public class SourceInfoFileService {
 
             //"技术负责人","业务负责人"
             List<User> userList = userDAO.getAllUserByValid();
-            String users = CollectionUtils.isEmpty(userList) ? "请输入有效的负责人名称" : userList.stream().map(v->v.getUsername()).collect(Collectors.joining(";"));
+            List<String> users = CollectionUtils.isEmpty(userList) ? null : userList.stream().map(v->v.getUsername()).collect(Collectors.toList());
             tableData.add(users); //技术负责人
             tableData.add(users); //业务负责人
+
             Workbook wb = PoiExcelUtils.createExcelFileWithDropDown(tableAttributes,tableData,"sheet1");
             FileOutputStream output = new FileOutputStream(templateFile);
             wb.write(output);
@@ -137,14 +151,20 @@ public class SourceInfoFileService {
                     results.add(setAnalyticResult(errMsg,array, map));
                 }
                 if("数据库中文名".equals(fieldName) && StringUtils.isNotBlank(v)){
-                    if (v.length() > 128){
-                        String errMsg = "数据库中文名超过128字符";
+                    if (v.length() > CHINA_LENGTH){
+                        String errMsg = "数据库中文名超过"+CHINA_LENGTH+"字符";
                         results.add(setAnalyticResult(errMsg,array, map));
                     }
                     if(!v.matches("^[a-zA-Z0-9_\u4e00-\u9fa5]+$")){
                         String errMsg = "数据库中文名只包含字母数据下划线和中文";
                         results.add(setAnalyticResult(errMsg,array, map));
                     }
+                }
+
+                if( ("数据库业务Owner电子邮箱".equals(fieldName) || "数据库技术Owner电子邮箱".equals(fieldName) )
+                        && StringUtils.isNotBlank(v) && v.length() > EMAIL_LENGTH){
+                    String errMsg = fieldName+"超过"+EMAIL_LENGTH+"字符";
+                    results.add(setAnalyticResult(errMsg,array, map));
                 }
             }
 
@@ -317,9 +337,9 @@ public class SourceInfoFileService {
      * @return
      */
     private Map<String,String> getCategoryFromDb(String tenantId){
-        if(categoryMap != null && !categoryMap.isEmpty()){
+        /*if(categoryMap != null && !categoryMap.isEmpty()){
             return categoryMap;
-        }
+        }*/
         Map<String,String> result = new HashMap<>();
         List<CategoryPrivilege> adminCategory = userGroupService.getAdminCategoryView(0, tenantId);
         //List<CategoryEntityV2> list = categoryDao.queryNameByType(0);
@@ -423,12 +443,19 @@ public class SourceInfoFileService {
         List<DatabaseInfo> saveList = new ArrayList<>();
         DatabaseInfo databaseInfo = null;
         List<User> userList = userDAO.getAllUserByValid();
+        int dbTypeIndex = map.getOrDefault("数据库类型", -1);
+        List<DataSourceTypeInfo> sourceTypeInfos = dataSourceService.getDataSourceType("dbr");
+        List<DataSourceInfo> dataSourceInfos = null;
+        if(!CollectionUtils.isEmpty(sourceTypeInfos)){
+            List<String> sourceTypeList = sourceTypeInfos.stream().map(v->v.getName()).collect(Collectors.toList());
+            dataSourceInfos = dataSourceDAO.queryDataSourceBySourceTypeIn(sourceTypeList,tenantId);
+        }
+
         for(String[] array : saveDbList){
             String sourceId = UUIDUtils.alphaUUID();
             String categoryId = MapUtils.getString(categoryMap,getElementOrDefault(array,MapUtils.getIntValue(map,"数据层名称",-1)),"");
             databaseInfo = new DatabaseInfo();
             databaseInfo.setId(sourceId);
-            //databaseInfo.setAnnexId(annexId);
             databaseInfo.setCategoryId(categoryId);
             DatabaseInfoForDb databaseInfoForDb = null;
             if(dbEnIndex != -1){
@@ -439,7 +466,17 @@ public class SourceInfoFileService {
             }
             String databaseId = databaseInfoForDb != null ? databaseInfoForDb.getDatabaseId() : "";
             databaseInfo.setDatabaseId(databaseId);
-            databaseInfo.setDataSourceId(databaseInfoForDb != null ? databaseInfoForDb.getSourceId() : "");
+            String dbSourceId = "";
+            String dbType = getElementOrDefault(array,MapUtils.getIntValue(map,"数据库类型",-1));
+            String dbSourceName = getElementOrDefault(array,MapUtils.getIntValue(map,"数据源",-1));
+            if(!CollectionUtils.isEmpty(dataSourceInfos)) {
+                Optional<DataSourceInfo> itemOpt =  dataSourceInfos.stream().filter(p->p.getSourceType().equalsIgnoreCase(dbType)
+                        && p.getSourceName().equalsIgnoreCase(dbSourceName)).findFirst();
+                if(itemOpt.isPresent()){
+                    dbSourceId = itemOpt.get().getSourceId();
+                }
+            }
+            databaseInfo.setDataSourceId(dbSourceId);
             databaseInfo.setDatabaseAlias(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库中文名",-1)));
             databaseInfo.setPlanningPackageCode(getElementOrDefault(array,MapUtils.getIntValue(map,"规划包编号",-1)));
             databaseInfo.setPlanningPackageName(getElementOrDefault(array,MapUtils.getIntValue(map,"规划包名称",-1)));
@@ -448,10 +485,11 @@ public class SourceInfoFileService {
             databaseInfo.setSecurity("是".equals(getElementOrDefault(array,MapUtils.getIntValue(map,"是否保密",-1))));
             databaseInfo.setSecurityCycle(getElementOrDefault(array,MapUtils.getIntValue(map,"保密期限",-1)));
             databaseInfo.setImportance("是".equals(getElementOrDefault(array,MapUtils.getIntValue(map,"是否重要",-1))));
+            databaseInfo.setDescription(getElementOrDefault(array,MapUtils.getIntValue(map,"描述",-1)));
            // databaseInfo.setCreator(username);
             databaseInfo.setBoName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner姓名",-1)));
             databaseInfo.setBoDepartmentName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner部门名称",-1)));
-            databaseInfo.setBoTel(getElementOrDefault(array,MapUtils.getIntValue(map,"手机号",-1)));
+            databaseInfo.setBoTel(getElementOrDefault(array,MapUtils.getIntValue(map,"业务Owner手机号",-1)));
             databaseInfo.setBoEmail(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner电子邮箱",-1)));
             databaseInfo.setToName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner姓名",-1)));
             databaseInfo.setToDepartmentName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner部门名称",-1)));

@@ -71,8 +71,8 @@ public interface DatabaseDAO {
     List<DatabaseInfoForDb> findDbInfoByDbName(@Param("dbNameList")List<String> dbNameList,@Param("tenantId") String tenantId);*/
 
     @Select("<script>"+
-            "select tb.db_type AS dbType,tb.database_guid AS databaseId,tb.database_name AS databaseName ," +
-            "  (select source_id from source_db where db_guid=tb.database_guid limit 1 ) AS sourceId "+
+            "select tb.db_type AS dbType,tb.database_guid AS databaseId,tb.database_name AS databaseName " +
+           // "  (select source_id from source_db where db_guid=tb.database_guid limit 1 ) AS sourceId "+
             "from db_info tb where status='ACTIVE' and database_name in "+
             "<foreach collection='dbNameList' item='dbName' separator=',' open='(' close=')'>"+
             "#{dbName}"+
