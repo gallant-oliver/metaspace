@@ -95,13 +95,23 @@ public interface UserDAO {
              " </script>"})
     public long getUsersCount(@Param("query") String query);
 
-    @Select("<script>select count(1) from table_relation where categoryguid in" +
+    @Select("<script>" +
+            "     select count(*) from table_data_source_relation t1 where t1.tenant_id = #{tenantId} and t1.table_id = #{tableGuid} and t1.category_id in" +
             "    <foreach item='item' index='index' collection='categoryGuid'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
             "    </foreach>" +
-            " and tableguid=#{tableGuid}</script>")
-    public Integer ifPrivilege(@Param("categoryGuid") List<String> categoryGuid, @Param("tableGuid") String tableGuid);
+            " </script>")
+    Integer getPrivilegeFromTable(@Param("categoryGuid") List<String> categoryGuid, @Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
+
+
+    @Select("<script>" +
+            "     select count(*) from  source_info t1 join tableinfo t2 on t1.database_id = t2.databaseguid where t1.tenant_id = #{tenantId} and t2.tableguid = #{tableGuid} and t1.category_id in" +
+            "    <foreach item='item' index='index' collection='categoryGuid' open='(' separator=',' close=')'>" +
+            "    #{item}" +
+            "    </foreach>" +
+            " </script>")
+    Integer getPrivilegeFromDb(@Param("categoryGuid") List<String> categoryGuid, @Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
 
     @Select("select module.moduleid,modulename,type from users,user2role,role,privilege,privilege2module,module " +
             "where user2role.roleid=role.roleid and role.privilegeid=privilege.privilegeid and privilege.privilegeid=privilege2module.privilegeid " +
