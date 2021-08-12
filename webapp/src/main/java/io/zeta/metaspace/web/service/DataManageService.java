@@ -1615,28 +1615,18 @@ public class DataManageService {
         database.setDatabaseId(guid);
         database.setStatus(entity.getStatus().name());
         database.setDatabaseDescription(getEntityAttribute(entity, "comment"));
-
-        setInstance(entity, database);
-
         return database;
     }
 
-    private void setInstance(AtlasEntity entity, Database database) {
+    private String getInstanceGuid(AtlasEntity entity) {
+        String guid = "UNKOWN";
         try{
             AtlasRelatedObjectId relatedDB = getRelatedInstance(entity);
-            if(null == relatedDB){
-                ArrayList<String> attributes = new ArrayList<>();
-                attributes.add("qualifiedName");
-                attributes.add("parameters");
-                AtlasEntity hiveEntity = atlasEntityStore.getByIdWithAttributes(entity.getGuid(), attributes, new ArrayList<>()).getEntity();
-                Map parameters = (Map)hiveEntity.getAttribute("parameters");
-                database.setInstanceId((String)parameters.get("source"));
-            }else{
-                database.setInstanceId(relatedDB.getGuid());
-            }
+            guid = relatedDB.getGuid();
         }catch (Exception e){
             LOG.warn("查询实体失败：{}" , e.getMessage());
         }
+        return guid;
     }
 
     private String getDbType(SyncTaskDefinition definition, KafkaConnector.Config config) {
@@ -1742,15 +1732,22 @@ public class DataManageService {
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
             String dbType = null;
+            String instanceGuid = null;
             switch (typeName){
                 case "hive_db":
                     dbType = "HIVE";
+                    instanceGuid = "hive";
                 case "rdbms_db":
                     if(null == dbType){
                         dbType = getDbType(definition, config);
                     }
+                    if(null == instanceGuid){
+                        dbType = getDbType(definition, config);
+                        instanceGuid = getInstanceGuid(entity);
+                    }
                     Database dbInfo = getDbInfo(entity);
                     dbInfo.setDbType(dbType);
+                    dbInfo.setInstanceId(instanceGuid);
                     addOrUpdateDb(dbInfo, definition);
                     break;
                 case "hive_table":
