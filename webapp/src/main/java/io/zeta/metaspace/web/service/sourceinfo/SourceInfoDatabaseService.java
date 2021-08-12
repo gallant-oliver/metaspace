@@ -167,7 +167,7 @@ public class SourceInfoDatabaseService implements Approvable {
             sb.append(str);
             sb.append("，");
         });
-        return sb.substring(0,sb.length()-2);
+        return sb.substring(0,sb.length()-1);
     }
 
     /**
