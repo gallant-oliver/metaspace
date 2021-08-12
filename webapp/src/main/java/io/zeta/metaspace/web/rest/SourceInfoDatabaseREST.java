@@ -460,7 +460,9 @@ public class SourceInfoDatabaseREST {
         String filePath = annex.getPath();
         String fileType = annex.getFileType();
         File tmpFile = null;
-        try(InputStream in = hdfsService.getFileInputStream(filePath);){
+        InputStream in = null;
+        try{
+            in = hdfsService.getFileInputStream(filePath);
             tmpFile = File.createTempFile("tmp-"+System.currentTimeMillis(),".pdf");
             String base64String = "";
             log.info("文件类型：{},",fileType);
@@ -483,7 +485,7 @@ public class SourceInfoDatabaseREST {
                 log.info("不需要转换处理.");
                 base64String = Base64Utils.streamToBase64(in);
             }
-
+            in.close();
             log.info("base64 值为空：{}",StringUtils.isBlank(base64String));
             Base64Info info = new Base64Info();
             String finalType = StringUtils.containsAny(fileType,"xls","xlsx","doc","docx") ? "pdf" : fileType;
