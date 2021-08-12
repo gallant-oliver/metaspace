@@ -198,12 +198,4 @@ public interface TableDAO {
 
     @Select("select * from tableinfo where status = 'ACTIVE' and databaseguid = (select database_id from source_info where version = 0 and category_id = #{categoryId})")
     List<TableInfo> getTableInfoByCategoryId(@Param("categoryId") String categoryId);
-
-    @Select("<script>" +
-            " SELECT tableguid,source_id FROM tableinfo WHERE tableguid IN" +
-            " <foreach item='guid' index='index' collection='list' separator=',' open='(' close=')'>"+
-            "  #{guid}"+
-            " </foreach>"+
-            "</script>")
-    List<TableInfo> selectListByTableGuid(@Param("list") List<String> list);
 }

@@ -54,7 +54,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
@@ -96,7 +95,7 @@ public class TechnicalREST {
     }
 
     /**
-     * 添加关联-库搜库
+     * 添加关联-库搜索
      *
      * @return List<DatabaseHeader>
      */
@@ -134,11 +133,11 @@ public class TechnicalREST {
      * @return List<AddRelationTable>
      */
     @POST
-    @Path("/search/database/table/{databaseGuid}/{categoryId}")
+    @Path("/search/database/table/{databaseGuid}/{categoryId}/{sourceId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<AddRelationTable> getAllDatabaseByDB(Parameters parameters, @PathParam("databaseGuid") String databaseGuid, @PathParam("categoryId") String categotyId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultByDB(parameters, databaseGuid, categotyId, tenantId);
+    public PageResult<AddRelationTable> getAllDatabaseByDB(Parameters parameters, @PathParam("databaseGuid") String databaseGuid, @PathParam("categoryId") String categotyId, @HeaderParam("tenantId") String tenantId,@PathParam("sourceId") String sourceId) throws AtlasBaseException {
+        PageResult<AddRelationTable> pageResult = searchService.getTechnicalTablePageResultByDB(parameters, databaseGuid, categotyId, tenantId, sourceId);
         return pageResult;
     }
 
@@ -320,8 +319,7 @@ public class TechnicalREST {
             }
             String categoryName = dataManageService.getCategoryNameById(categoryGuid, tenantId);
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "目录添加关联:" + categoryName);
-            List<String> ids = relations.stream().map(relation -> relation.getTableGuid()).collect(Collectors.toList());
-            dataManageService.assignTablesToCategory(categoryGuid, ids, tenantId);
+            dataManageService.assignTablesToCategory(categoryGuid, relations, tenantId);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -726,13 +724,14 @@ public class TechnicalREST {
     }
 
     /**
-     * 添加关联
-     *
+     * 添加关联-迁移数据
+     * 页面上已经隐藏了迁移数据的按钮，所以这个接口已废弃，不再维护
      * @param item
      * @param tenantId
      * @return
      * @throws AtlasBaseException
      */
+    @Deprecated
     @POST
     @Path("move")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -749,7 +748,7 @@ public class TechnicalREST {
                 HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "迁移表关联:[" + Joiner.on("、").join(tableNames) + "]到" + path);
 
             }
-            dataManageService.assignTablesToCategory(item.getCategoryId(), item.getIds(), tenantId);
+//            dataManageService.assignTablesToCategory(item.getCategoryId(), item.getIds(), tenantId);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "迁移表关联失败");
