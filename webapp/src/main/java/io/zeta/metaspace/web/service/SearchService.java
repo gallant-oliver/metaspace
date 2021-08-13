@@ -179,8 +179,7 @@ public class SearchService {
             return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit);
         } else {
             List<String> dbs = tenantService.getDatabase(tenantId);
-            String dbsToString = dbsToString(dbs);
-            return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit, dbsToString);
+            return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit, dbs);
         }
 
     }
