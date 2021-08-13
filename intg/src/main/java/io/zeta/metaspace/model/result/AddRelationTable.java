@@ -14,4 +14,5 @@ public class AddRelationTable {
     private int check;
     private String sourceId;
     private String sourceName;
+    private String categoryId;
 }
