@@ -109,47 +109,48 @@ public class SearchService {
             Configuration conf = ApplicationProperties.get();
             boolean secure = conf.getBoolean("metaspace.secureplus.enable", true);
             String user = !secure ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
-            String dbsToString = "";
-            String guid = "";
+            List<String> dbs = null;
+            List<String> guidList = null;
             if (StringUtils.isNotBlank(query)) {
-                List<String> dbs = tenantService.getDatabase(tenantId);
-                dbsToString = dbsToString(dbs);
-                List<String> guidList = tableDAO.selectDatabaseGuidByTenantId(tenantId);
-                guid = dbsToString(guidList);
+                dbs = tenantService.getDatabase(tenantId);
+                guidList = tableDAO.selectDatabaseGuidByTenantId(tenantId);
             }
             List<AtlasVertex> vertices = new ArrayList<>();
-            PageResult<TableEntity> result = metaspaceEntityService.getTableList(vertices, dbsToString, guid, schemaId, active, offset, limit, query, isView);
+            PageResult<TableEntity> result = metaspaceEntityService.getTableList(vertices, dbs, guidList, schemaId, offset, limit, query, isView);
             List<CompletableFuture> completableFutures = new ArrayList<>();
             if (queryInfo && result.getCurrentSize() > 0) {
                 for (TableEntity tableEntity : result.getLists()) {
                     completableFutures.add(CompletableFuture.runAsync(() -> {
-                        AtlasVertex atlasVertex = vertices.stream().filter(vertex -> Objects.equals(tableEntity.getId(), vertex.getProperty("__guid", String.class))).findAny().get();
-                        Map<String, Object> tableInfo = metaDataService.getTableType(metaDataService.vertexToEntityInfo(atlasVertex, null, null).getEntity());
-                        String sourceId = String.valueOf(tableInfo.get("sourceId"));
-                        String databasesId = String.valueOf(tableInfo.get("schemaId"));
-                        String schema = String.valueOf(tableInfo.get("schemaName"));
-                        tableEntity.setSourceId(sourceId);
-                        tableEntity.setDatabaseId(databasesId);
-                        boolean view = tableEntity.getTableType().toLowerCase().contains("view");
-                        if (tableEntity.isHiveTable()) {
-                            if (view) {
-                                try {
-                                    tableEntity.setSql(this.getBuildTableSql(tableEntity.getId(), user).getSql());
-                                } catch (AtlasException e) {
-                                    throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取列表失败");
+                        Optional<AtlasVertex> optionalAtlasVertex = vertices.stream().filter(vertex -> Objects.equals(tableEntity.getId(), vertex.getProperty("__guid", String.class))).findAny();
+                        if (optionalAtlasVertex.isPresent()) {
+                            AtlasVertex atlasVertex = optionalAtlasVertex.get();
+                            Map<String, Object> tableInfo = metaDataService.getTableType(metaDataService.vertexToEntityInfo(atlasVertex, null, null).getEntity());
+                            String sourceId = String.valueOf(tableInfo.get("sourceId"));
+                            String databasesId = String.valueOf(tableInfo.get("schemaId"));
+                            String schema = String.valueOf(tableInfo.get("schemaName"));
+                            tableEntity.setSourceId(sourceId);
+                            tableEntity.setDatabaseId(databasesId);
+                            boolean view = tableEntity.getTableType().toLowerCase().contains("view");
+                            if (tableEntity.isHiveTable()) {
+                                if (view) {
+                                    try {
+                                        tableEntity.setSql(this.getBuildTableSql(tableEntity.getId(), user).getSql());
+                                    } catch (AtlasException e) {
+                                        throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取列表失败");
+                                    }
+                                } else {
+                                    // 查询返回单位是字节
+                                    float size = AdapterUtils.getHiveAdapterSource().getNewAdapterExecutor().getTableSize(schema, tableEntity.getName(), "metaspace");
+                                    tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
                                 }
                             } else {
-                                // 查询返回单位是字节
-                                float size = AdapterUtils.getHiveAdapterSource().getNewAdapterExecutor().getTableSize(schema, tableEntity.getName(), "metaspace");
-                                tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
-                            }
-                        } else {
-                            if (view) {
-                                tableEntity.setSql(this.getBuildRDBMSTableSql(tableEntity.getId()).getSql());
-                            } else {
-                                AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceService.getUnencryptedDataSourceInfo(sourceId));
-                                float size = adapterExecutor.getTableSize(schema, tableEntity.getName(), null);
-                                tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
+                                if (view) {
+                                    tableEntity.setSql(this.getBuildRDBMSTableSql(tableEntity.getId()).getSql());
+                                } else {
+                                    AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceService.getUnencryptedDataSourceInfo(sourceId));
+                                    float size = adapterExecutor.getTableSize(schema, tableEntity.getName(), null);
+                                    tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
+                                }
                             }
                         }
                     }, threadPoolExecutor));

@@ -961,7 +961,6 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                 int lastIndex = limit == -1 ? atlasVertexList.size() : (int) (atlasVertexList.size() <= offset + limit ? atlasVertexList.size() : offset + limit);
                 databases.addAll(atlasVertexList.subList((int) offset, lastIndex));
             }
-
         }
         List<Database> lists = new ArrayList<>();
         ArrayList<CompletableFuture> completableFutures = new ArrayList<>();
@@ -1080,7 +1079,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         }
     }
 
-    public PageResult<TableEntity> getTableList(List<AtlasVertex> list, String dbsToString, String guid, String schemaId, boolean active, long offset, long limit, String query, Boolean isView) throws AtlasBaseException {
+    public PageResult<TableEntity> getTableList(List<AtlasVertex> atlasVertexList, List<String> dbList, List<String> guidList, String schemaId, long offset, long limit, String query, Boolean isView) throws AtlasBaseException {
 
         ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
         PageResult<TableEntity> tablePageResult = new PageResult<>();
@@ -1088,54 +1087,95 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
 
         String schemaIdQuery = StringUtils.isEmpty(schemaId) ? "" : ".has('__guid','" + schemaId + "')";
         String activeQuery = ".has('__state','ACTIVE')";
-        String pageQuery = (offset == 0 && limit == -1) ? "" : ".range(" + offset + "," + (offset + limit) + ")";
+        String pageQuery = (offset == 0 && limit == -1) ? "" : ".range(" + 0 + "," + (offset + limit) + ")";
         String nameQuery = StringUtils.isEmpty(query) ? "" : ".has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*" + query + ".*'))";
         String viewQuery = isView == null ? "" : (isView ? ".or(has('hive_table.tableType',org.janusgraph.core.attribute.Text.textRegex('.*(?i)VIEW.*')),has('rdbms_table.type',org.janusgraph.core.attribute.Text.textRegex('.*(?i)VIEW.*')))"
                 : ".not(or(has('hive_table.tableType',org.janusgraph.core.attribute.Text.textRegex('.*(?i)VIEW.*')),has('rdbms_table.type',org.janusgraph.core.attribute.Text.textRegex('.*(?i)VIEW.*'))))");
 
-        String queryStr;
-        String queryCountStr;
+        List<String> queryStrings = new ArrayList<>();
+        ArrayList<CompletableFuture> completableFutures = new ArrayList<>();
         if (StringUtils.isNotBlank(query)) {
-            String format = "g.V().or(has('__typeName','rdbms_db').has('__guid', within(" + guid + ")),has('__typeName','hive_db').has('Asset.name', within(" + dbsToString + "))).inE().outV().or(has('__typeName', 'rdbms_table').has('__guid')%s,has('__typeName', 'hive_table').has('__guid')%s).order().by('__timestamp').dedup()%s.toList()";
-            String value = activeQuery + nameQuery + viewQuery;
-            queryStr = String.format(format, value, value, pageQuery);
-            queryCountStr = String.format(format, value, value, ".count()");
+            // 如果检索到的名字在hive和rdbms都有的话，用or合并到一起查询不走索引，全图检索。所以需要分开并行查询
+            // rdbms使用guid进行过滤
+            if (CollectionUtils.isNotEmpty(guidList)) {
+                for (int i = 0; i < (guidList.size() / GREMLIN_ARG_COUNT + 1); i++) {
+                    String guids = dbsToString(guidList.subList(i * GREMLIN_ARG_COUNT, guidList.size() <= (i + 1) * GREMLIN_ARG_COUNT ? guidList.size() : (i + 1) * GREMLIN_ARG_COUNT));
+                    String format = "g.V().has('__typeName','rdbms_db').has('__guid',within(" + guids + ")).inE().outV().has('__typeName', 'rdbms_table').has('__guid')%s" +
+                            ".order().by('__timestamp').dedup()%s.toList()";
+                    String value = activeQuery + nameQuery + viewQuery;
+                    String queryStr = String.format(format, value, pageQuery);
+                    queryStrings.add(queryStr);
+                    if (!(offset == 0 && limit == -1)) {
+                        String queryCountStr = String.format(format, value, ".count()");
+                        queryStrings.add(queryCountStr);
+                    }
+                }
+            }
+            // hive使用asset.name进行过滤
+            if (CollectionUtils.isNotEmpty(dbList)) {
+                for (int i = 0; i < (dbList.size() / GREMLIN_ARG_COUNT + 1); i++) {
+                    String dbs = dbsToString(dbList.subList(i * GREMLIN_ARG_COUNT, dbList.size() <= (i + 1) * GREMLIN_ARG_COUNT ? dbList.size() : (i + 1) * GREMLIN_ARG_COUNT));
+                    String format = "g.V().has('__typeName','hive_db').has('Asset.name', within(" + dbs + ")).inE().outV().has('__typeName', 'hive_table').has('__guid')%s" +
+                            ".order().by('__timestamp').dedup()%s.toList()";
+                    String value = activeQuery + nameQuery + viewQuery;
+                    String queryStr = String.format(format, value, pageQuery);
+                    queryStrings.add(queryStr);
+                    if (!(offset == 0 && limit == -1)) {
+                        String queryCountStr = String.format(format, value, ".count()");
+                        queryStrings.add(queryCountStr);
+                    }
+                }
+            }
         } else {
-            queryStr = String.format("g.V().has('__typeName',within('rdbms_db','hive_db'))%s.inE().outV().has('__typeName', within('rdbms_table','hive_table')).has('__guid')%s.order().by('__timestamp').dedup()%s.toList();",
+            String queryStr = String.format("g.V().has('__typeName',within('rdbms_db','hive_db'))%s.inE().outV().has('__typeName', within('rdbms_table','hive_table')).has('__guid')%s.order().by('__timestamp').dedup()%s.toList();",
                     schemaIdQuery,
                     activeQuery + nameQuery + viewQuery,
                     pageQuery
             );
+            queryStrings.add(queryStr);
 
-            queryCountStr = String.format("g.V().has('__typeName',within('rdbms_db','hive_db'))%s.inE().outV().has('__typeName', within('rdbms_table','hive_table')).has('__guid')%s.order().by('__timestamp').dedup()%s.toList()",
-                    schemaIdQuery,
-                    activeQuery + nameQuery + viewQuery,
-                    ".count()"
-            );
+            if (!(offset == 0 && limit == -1)) {
+                String queryCountStr = String.format("g.V().has('__typeName',within('rdbms_db','hive_db'))%s.inE().outV().has('__typeName', within('rdbms_table','hive_table')).has('__guid')%s.order().by('__timestamp').dedup()%s.toList()",
+                        schemaIdQuery,
+                        activeQuery + nameQuery + viewQuery,
+                        ".count()"
+                );
+                queryStrings.add(queryCountStr);
+            }
         }
-
-        CompletableFuture<List<AtlasVertex>> tablesFuture = CompletableFuture.supplyAsync(() -> {
-            List<AtlasVertex> vertices = (List<AtlasVertex>) graph.executeGremlinScript(queryStr, false);
-            graph.commit();
-            return vertices;
-        }, threadPoolExecutor);
-        CompletableFuture<List> numFuture = CompletableFuture.supplyAsync(() -> {
-            List numList = (List) graph.executeGremlinScript(queryCountStr, false);
-            graph.commit();
-            return numList;
-        }, threadPoolExecutor);
-        List<AtlasVertex> tables = null;
-        List num = null;
-        try {
-            tables = tablesFuture.get();
-            list.addAll(tables);
-            num = numFuture.get();
-        } catch (InterruptedException | ExecutionException e) {
-            LOG.error("获取表列表出错", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表列表出错");
+        List<Long> dbNum = new ArrayList<>();
+        for (String s : queryStrings) {
+            completableFutures.add(CompletableFuture.supplyAsync(() -> {
+                List vertices = (List) graph.executeGremlinScript(s, false);
+                graph.commit();
+                return vertices;
+            }, threadPoolExecutor));
         }
-        List<CompletableFuture> completableFutures = new ArrayList<>();
-        for (AtlasVertex table : tables) {
+        List<Object> collect = completableFutures.stream().map(CompletableFuture::join).collect(Collectors.toList());
+        long sum = 0L;
+        for (Object o : collect) {
+            List list = (List) o;
+            if (CollectionUtils.isNotEmpty(list)) {
+                if (list.get(0) instanceof AtlasVertex) {
+                    atlasVertexList.addAll((List<AtlasVertex>) o);
+                } else {
+                    sum += (Long) list.get(0);
+                }
+            }
+        }
+        if (!(offset == 0 && limit == -1)) {
+            dbNum.add(sum);
+        } else {
+            dbNum.add((long) atlasVertexList.size());
+        }
+        // 根据时间戳排序，然后进行手动分页
+        if (CollectionUtils.isNotEmpty(atlasVertexList) && atlasVertexList.size() > offset) {
+            atlasVertexList.sort(Comparator.comparing(o -> o.getProperty("__timestamp", Long.class)));
+            int lastIndex = limit == -1 ? atlasVertexList.size() : (int) (atlasVertexList.size() <= offset + limit ? atlasVertexList.size() : offset + limit);
+            atlasVertexList = atlasVertexList.subList((int) offset, lastIndex);
+        }
+        completableFutures.clear();
+        for (AtlasVertex table : atlasVertexList) {
             completableFutures.add(CompletableFuture.runAsync(() -> {
                 TableEntity tb = new TableEntity();
                 lists.add(tb);
@@ -1171,7 +1211,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         tablePageResult.setCurrentSize(lists.size());
         tablePageResult.setOffset(offset);
         tablePageResult.setLists(lists);
-        tablePageResult.setTotalSize(Integer.parseInt(num.get(0).toString()));
+        tablePageResult.setTotalSize(dbNum.get(0));
         return tablePageResult;
     }
 
