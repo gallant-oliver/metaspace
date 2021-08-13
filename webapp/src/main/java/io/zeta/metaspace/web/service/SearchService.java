@@ -657,13 +657,6 @@ public class SearchService {
 
         List<DataSourceHeader> databaseHeaders = userGroupDAO.getSourceInfo(strings, query, parameters.getOffset(), parameters.getLimit(), tenantId);
 
-        List<String> databases = tenantService.getDatabase(tenantId);
-        //获取用户有权限的全部表和该目录已加关联的全部表
-        List<TechnologyInfo.Table> tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1, databases, tenantId);
-
-        if (CollectionUtils.isEmpty(tables)) {
-            return databasePageResult;
-        }
 
         databasePageResult.setLists(databaseHeaders);
         databasePageResult.setCurrentSize(databaseHeaders.size());
@@ -754,7 +747,6 @@ public class SearchService {
         if (databases != null && databases.size() != 0) {
             databaseHeaders = userGroupDAO.getDBInfo2(strings, query, parameters.getOffset(), parameters.getLimit(), databases, sourceId, tenantId);
             //获取用户有权限的全部表和该目录已加关联的全部表
-            tables = userGroupDAO.getTableInfosV2(strings, "", 0, -1, databases, tenantId);
         }
         databasePageResult.setLists(databaseHeaders);
         databasePageResult.setCurrentSize(databaseHeaders.size());
