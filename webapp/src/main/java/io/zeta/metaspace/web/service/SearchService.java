@@ -31,6 +31,7 @@ import org.apache.atlas.discovery.EntityDiscoveryService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
+import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.web.rest.EntityREST;
@@ -92,16 +93,16 @@ public class SearchService {
     public PageResult<Database> getDatabases(String sourceId, long offset, long limit, String query, boolean active, String tenantId, boolean queryCount) {
         List<String> dbList = tenantService.getDatabase(tenantId);
         List<String> guidList = null;
-DataSourceInfo dataSourceInfo = null;
+        DataSourceInfo dataSourceInfo = null;
         if (StringUtils.isEmpty(sourceId)) {
             dbList = dbList.stream().filter(db -> db.contains(query)).collect(Collectors.toList());
             List<TableInfo> rdbmsTableInfoList = tableDAO.selectDatabaseByTenantId(tenantId);
             Set<String> collect = rdbmsTableInfoList.stream().filter(rdbmsTableInfo -> rdbmsTableInfo.getDbName().contains(query)).map(TableInfo::getDatabaseGuid).collect(Collectors.toSet());
             guidList = new ArrayList<>(collect);
-        }else if ("hive".equalsIgnoreCase(sourceId)){
-                dataSourceInfo = new DataSourceInfo();
-                dataSourceInfo.setSourceId(sourceId);
-        }else{
+        } else if ("hive".equalsIgnoreCase(sourceId)) {
+            dataSourceInfo = new DataSourceInfo();
+            dataSourceInfo.setSourceId(sourceId);
+        } else {
             dataSourceInfo = dataSourceService.getDataSourceInfo(sourceId);
         }
         return metaspaceEntityService.getSchemaList(dataSourceInfo, guidList, dbList, offset, limit, queryCount);
@@ -472,7 +473,7 @@ DataSourceInfo dataSourceInfo = null;
     public TableShow getRDBMSTableShow(GuidCount guidCount) throws AtlasBaseException {
         TableShow tableShow = new TableShow();
         String[] names = getDbTableNames(guidCount.getGuid());
-        DataSourceInfo dataSourceInfo = dataSourceService.getAnyDataSourceInfoByTableId(guidCount.getSourceId(),guidCount.getGuid());
+        DataSourceInfo dataSourceInfo = dataSourceService.getAnyDataSourceInfoByTableId(guidCount.getSourceId(), guidCount.getGuid());
         AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
         AdapterTransformer adapterTransformer = adapterExecutor.getAdapterSource().getAdapter().getAdapterTransformer();
         SelectQuery selectQuery = adapterTransformer.addLimit(
@@ -547,13 +548,13 @@ DataSourceInfo dataSourceInfo = null;
     private String[] getDbTableNames(String tableId) {
         String[] names = new String[2];
         TableInfo table = tableDAO.getTableInfoByTableguid(tableId);
-        if(null != table){
+        if (null != table) {
             names[1] = table.getTableName().toUpperCase();
             names[0] = table.getDbName().toUpperCase();
-        }else{
+        } else {
             AtlasEntity entity = entitiesStore.getById(tableId).getEntity();
-            names[1] = ((String)entity.getAttribute("name")).toUpperCase();
-            AtlasRelatedObjectId obj = (AtlasRelatedObjectId)entity.getRelationshipAttribute("db");
+            names[1] = ((String) entity.getAttribute("name")).toUpperCase();
+            AtlasRelatedObjectId obj = (AtlasRelatedObjectId) entity.getRelationshipAttribute("db");
             names[0] = obj.getDisplayText().toUpperCase();
         }
         return names;
@@ -596,7 +597,7 @@ DataSourceInfo dataSourceInfo = null;
 
         List<DataSourceHeader> databaseHeaders = new ArrayList<>();
         List<String> databases = tenantService.getDatabase(tenantId);
-        if(CollectionUtils.isNotEmpty(databases)){
+        if (CollectionUtils.isNotEmpty(databases)) {
             DataSourceHeader dataSourceHeader = new DataSourceHeader();
             dataSourceHeader.setSourceId("hive");
             dataSourceHeader.setSourceName("hive");
@@ -718,6 +719,7 @@ DataSourceInfo dataSourceInfo = null;
 
     /**
      * 模糊查询数据库
+     *
      * @param parameters
      * @param databases
      * @param categoryGuid
@@ -763,6 +765,7 @@ DataSourceInfo dataSourceInfo = null;
 
     /**
      * 精准查询数据库
+     *
      * @param parameters
      * @param databases
      * @param sourceId
@@ -809,22 +812,23 @@ DataSourceInfo dataSourceInfo = null;
             tablePageResult.setTotalSize(0);
             return tablePageResult;
         }
-
         //查询数据库下所有的表
         List<TechnologyInfo.Table> tableInfos = roleDAO.getTableInfosByDBIdByParameters(databaseGuid, parameters.getOffset(), parameters.getLimit());
         //获取表的关联关系
         List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.selectListByCategoryIdAndSourceIdAndDb(categoryId, tenantId, sourceId, databaseGuid);
         List<String> relationTableGuids = tableDataSourceRelationPOList.stream().map(TableDataSourceRelationPO::getTableId).collect(Collectors.toList());
         List<AddRelationTable> tables = getTablesSource(tableInfos, sourceId);
-        supplyPath(tables, tenantId);
         tables.forEach(e -> {
             String tableGuid = e.getTableId();
             if (relationTableGuids.contains(tableGuid)) {
                 e.setCheck(1);
+                List<TableDataSourceRelationPO> categoryList = tableDataSourceRelationPOList.stream().filter(f -> f.getDataSourceId().equals(e.getSourceId())).filter(f -> f.getTableId().equals(e.getTableId())).collect(Collectors.toList());
+                e.setCategoryId(categoryList.get(0).getCategoryId());
             } else {
                 e.setCheck(0);
             }
         });
+        supplyPath(tables, tenantId);
         tablePageResult.setLists(tables);
         tablePageResult.setCurrentSize(tableInfos.size());
         tablePageResult.setTotalSize(roleDAO.getTableInfosByDBIdCount(strings, databaseGuid));
@@ -890,39 +894,34 @@ DataSourceInfo dataSourceInfo = null;
         String query = parameters.getQuery();
         int limit = parameters.getLimit();
         int offset = parameters.getOffset();
-        List<TechnologyInfo.Table> tableInfo;
         if (CollectionUtils.isEmpty(strings)) {
             tablePageResult.setTotalSize(0);
             tablePageResult.setCurrentSize(0);
             return tablePageResult;
         }
-        if (Objects.nonNull(query))
+        if (Objects.nonNull(query)) {
             query = query.replaceAll("%", "/%").replaceAll("_", "/_");
-        //判断独立部署和多租户
-        if (TenantService.defaultTenant.equals(tenantId)) {
-            tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
-        } else {
-            List<String> databases = tenantService.getDatabase(tenantId);
-            //获取匹配到的所有表
-            tableInfo = userGroupDAO.getTableInfosV2(strings, query, offset, limit, databases, tenantId);
         }
+        List<String> databases = tenantService.getDatabase(tenantId);
+        //获取匹配到的所有表
+        List<TechnologyInfo.Table> tableInfo = userGroupDAO.getTableInfosV2(strings, query, offset, limit, databases, tenantId);
         //获取目录下该租户所有关联的表
         List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.selectListByCategoryId(categoryId, tenantId);
         Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDataSourceId));
         List<AddRelationTable> tables = getTables(tableInfo);
-        supplyPath(tables, tenantId);
         tables.forEach(e -> {
             String tableGuid = e.getTableId();
             List<String> relationTableGuids = collectRelation.get(e.getSourceId()) == null ? new ArrayList<>() : collectRelation.get(e.getSourceId()).stream().map(TableDataSourceRelationPO::getTableId).collect(Collectors.toList());
             if (relationTableGuids.contains(tableGuid)) {
                 e.setCheck(1);
+                List<TableDataSourceRelationPO> categoryList = tableDataSourceRelationPOList.stream().filter(f -> f.getDataSourceId().equals(e.getSourceId())).filter(f -> f.getTableId().equals(e.getTableId())).collect(Collectors.toList());
+                e.setCategoryId(categoryList.get(0).getCategoryId());
             } else {
                 e.setCheck(0);
             }
-            if(StringUtils.isNotBlank(parameters.getQuery())){
-                e.setTableName(e.getTableName() + "(" + e.getSourceName() + "." + e.getDatabaseName() + ")");
-            }
+            e.setTableName(e.getTableName() + "(" + e.getSourceName() + "." + e.getDatabaseName() + ")");
         });
+        supplyPath(tables, tenantId);
         if (CollectionUtils.isNotEmpty(tableInfo)) {
             tablePageResult.setTotalSize(tableInfo.get(0).getTotal());
         } else {
@@ -1038,25 +1037,43 @@ DataSourceInfo dataSourceInfo = null;
         return tablePageResult;
     }
 
+    /**
+     * 获取最近一次关联的目录
+     * @param list
+     * @param tenantId
+     */
     public void supplyPath(List<AddRelationTable> list, String tenantId) {
-        Map<String, String> category2Path = new HashMap();
+        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.selectByTableGuidAndTenantId(list, tenantId);
+        if (CollectionUtils.isEmpty(tableDataSourceRelationPOList)) {
+            return;
+        }
+        //最近一次关联的目录ID列表
+        List<String> categoryGuidList = new ArrayList<>();
+
         for (AddRelationTable table : list) {
-            List<String> categoryGuidByTableGuid = sourceInfoDAO.selectByTableGuidAndTenantId(table.getTableId(), tenantId);
-            if (CollectionUtils.isEmpty(categoryGuidByTableGuid)) {
+            List<TableDataSourceRelationPO> categoryList = tableDataSourceRelationPOList.stream().filter(f -> f.getDataSourceId().equals(table.getSourceId())).filter(f -> f.getTableId().equals(table.getTableId())).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(categoryList)) {
                 table.setPath("");
-            } else {
-                String categoryGuid = categoryGuidByTableGuid.get(0);
-                if (category2Path.containsKey(categoryGuid)) {
-                    table.setPath(category2Path.get(categoryGuid));
-                } else {
-                    String path = categoryDAO.queryPathByGuid(categoryGuid, tenantId).replace(",", "/").replace("\"", "").replace("{", "").replace("}", "");
-                    table.setPath(path);
-                    category2Path.put(categoryGuid, path);
-                }
+                continue;
+            }
+            Optional<TableDataSourceRelationPO> tableDataSourceRelationPO = categoryList.stream().max(Comparator.comparing(p -> p.getCreateTime()));
+            if (!tableDataSourceRelationPO.isPresent()) {
+                table.setPath("");
+                continue;
+            }
+            String categoryGuid = tableDataSourceRelationPO.get().getCategoryId();
+            table.setCategoryId(categoryGuid);
+            categoryGuidList.add(categoryGuid);
+        }
+        Set<CategoryEntityV2> categoryEntityV2s = categoryDAO.queryPathByGuidAndType(categoryGuidList, tenantId);
+        Map<String, String> map = categoryEntityV2s.stream().collect(Collectors.toMap(CategoryEntityV2::getGuid, CategoryEntityV2::getPath));
+        for (AddRelationTable addRelationTable : list) {
+            String path = map.get(addRelationTable.getCategoryId());
+            if(StringUtils.isNotBlank(path)){
+                addRelationTable.setPath(path.replace(",", "/").replace("\"", "").replace("{", "").replace("}", ""));
             }
         }
     }
-
 
     @Transactional(rollbackFor = Exception.class)
     public PageResult<Database> getDatabasePageResultV2(Parameters parameters, String tenantId) throws AtlasBaseException {

@@ -16,7 +16,6 @@
  */
 package io.zeta.metaspace.web.dao;
 
-import io.zeta.metaspace.model.dto.indices.IndexFieldDTO;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -25,7 +24,6 @@ import io.zeta.metaspace.model.sourceinfo.derivetable.vo.CategoryGuidPath;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.ibatis.annotations.*;
-import org.springframework.security.access.method.P;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -164,6 +162,21 @@ public interface CategoryDAO {
             "SELECT  PATH FROM T WHERE guid=#{guid} " +
             "ORDER BY PATH")
     public String queryPathByGuid(@Param("guid") String guid, @Param("tenantId") String tenantId);
+
+    @Select("<script>" +
+            " WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
+            " (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH" +
+            " FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId} AND categorytype = 0" +
+            " UNION ALL " +
+            " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH" +
+            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid= #{tenantId} AND categorytype = 0)" +
+            " SELECT  PATH,guid FROM T WHERE guid in " +
+            " <foreach item='guid' index='index' collection='list' separator=',' open='(' close=')'>" +
+            "   #{guid} " +
+            " </foreach>" +
+            " ORDER BY PATH" +
+            "</script>")
+    Set<CategoryEntityV2> queryPathByGuidAndType(@Param("list") List<String> guid, @Param("tenantId") String tenantId);
 
     @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
             "(SELECT guid,name,parentCategoryGuid, ARRAY[guid] AS PATH, 1 AS DEPTH " +
