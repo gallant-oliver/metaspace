@@ -5,7 +5,9 @@ import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.sourceinfo.AnalyticResult;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForDb;
@@ -16,6 +18,7 @@ import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.UserGroupService;
+import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -42,6 +45,8 @@ public class SourceInfoFileService {
     private DatabaseDAO databaseDAO;
     @Autowired
     private UserDAO userDAO;
+    @Autowired
+    private UsersService usersService;
     @Autowired
     private CategoryDAO categoryDao;
     @Autowired
@@ -115,8 +120,9 @@ public class SourceInfoFileService {
             tableData.add(""); //技术Owner手机号
 
             //"技术负责人","业务负责人"
-            List<User> userList = userDAO.getAllUserByValid();
-            List<String> users = CollectionUtils.isEmpty(userList) ? null : userList.stream().map(v->v.getUsername()).collect(Collectors.toList());
+           /* List<User> userList = userDAO.getAllUserByValid();
+            List<String> users = CollectionUtils.isEmpty(userList) ? null : userList.stream().map(v->v.getUsername()).collect(Collectors.toList());*/
+            List<String> users = getUsers(tenantId);
             tableData.add(users); //技术负责人
             tableData.add(users); //业务负责人
 
@@ -130,6 +136,19 @@ public class SourceInfoFileService {
             logger.error("生成模板文件异常,{}",e);
             throw new RuntimeException("生成模板文件异常");
         }
+    }
+    private List<String> getUsers(String tenantId){
+        Parameters parameters = new Parameters();
+        parameters.setQuery("");
+        parameters.setLimit(-1);
+        parameters.setOffset(0);
+        PageResult<User> pageResult = usersService.getUserListV2(tenantId,parameters);
+        List<User> userList = pageResult.getLists();
+        if(CollectionUtils.isEmpty(userList)){
+            return null;
+        }
+
+        return userList.stream().map(User::getUsername).collect(Collectors.toList());
     }
     /**
      * 校验excel导入必填字段
