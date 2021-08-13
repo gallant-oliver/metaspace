@@ -1,6 +1,8 @@
 package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.enums.Status;
+import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.source.CodeInfo;
 import io.zeta.metaspace.model.source.DataBaseInfo;
 import io.zeta.metaspace.model.source.DataSourceInfo;
@@ -29,6 +31,8 @@ public class SourceService {
 
     @Autowired
     private TenantService tenantService;
+    @Autowired
+    private UsersService usersService;
 
     /**
      * 获取数据源下某种类型的数据库
@@ -48,8 +52,14 @@ public class SourceService {
         return databaseDAO.getDataBaseCode(dataSourceId, tenantId, databases);
     }
 
-    public List<User> getUserList() {
-        return userDAO.getAllUserByValid();
+    public List<User> getUserList(String tenantId) {
+        Parameters parameters = new Parameters();
+        parameters.setQuery("");
+        parameters.setLimit(-1);
+        parameters.setOffset(0);
+        PageResult<User> pageResult = usersService.getUserListV2(tenantId,parameters);
+        List<User> userList = pageResult.getLists();
+        return userList; //userDAO.getAllUserByValid();
     }
 
     public List<CodeInfo> getStatusList() {
