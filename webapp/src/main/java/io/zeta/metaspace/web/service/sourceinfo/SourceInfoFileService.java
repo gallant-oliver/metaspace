@@ -216,8 +216,9 @@ public class SourceInfoFileService {
                 unExistList = dbEnList;
             }else{
                 logger.info("导入的源信息在 db-info 存在部分缺失，进行筛选");
+                List<String> existDbName = dbInfoExistList.stream().map(DatabaseInfoForDb::getDatabaseName).collect(Collectors.toList());
                 unExistList = dbEnList.stream()
-                        .filter(p->dbInfoExistList.stream().anyMatch(v->!p.equals(v.getDatabaseName())))
+                        .filter(p->!existDbName.contains(p))
                         .collect(Collectors.toList());
 
                 if(!CollectionUtils.isEmpty(sourceInfoExistList)){//source-info 表存在重复的数据
