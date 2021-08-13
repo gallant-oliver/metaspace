@@ -71,7 +71,8 @@ public interface BusinessDAO {
     public List<TechnologyInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
 
     //查询业务信息关联的数据库表-过滤数据源
-    @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid,display_name as displayName,description from tableInfo where tableGuid in(select tableGuid from business2table where status='ACTIVE' and businessId=#{businessId}) AND (tableInfo.source_id in (SELECT source_id FROM data_source WHERE tenantid = #{tenantId}) or tableInfo.source_id = 'hive')")
+    @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid," +
+            "COALESCE(display_name,tableName,'') as displayName,description from tableInfo where tableGuid in(select tableGuid from business2table where status='ACTIVE' and businessId=#{businessId}) AND (tableInfo.source_id in (SELECT source_id FROM data_source WHERE tenantid = #{tenantId}) or tableInfo.source_id = 'hive')")
     public List<TechnologyInfo.Table> queryTablesByBusinessIdAndTenantId(@Param("businessId") String businessId, @Param("tenantId") String tenantId);
 
     @Select({"<script>",
@@ -141,9 +142,12 @@ public interface BusinessDAO {
 
 
     //多条件查询业务信息列表
+    @Results({
+            @Result(property = "tables",javaType = List.class,column = "{businessId = businessIdVal,tenantId = tenantId}",many = @Many(select = "queryTablesByBusinessIdAndTenantId"))
+    })
     @Select({"<script>",
-             " select count(*)over() total,businessInfo.businessId,name,businessStatus,technicalStatus,submitter,submissionTime,ticketNumber,categoryGuid from businessInfo",
-             " join business_relation on businessInfo.businessId = business_relation.businessId join users on users.userid=businessInfo.submitter",
+             " select count(*)over() total,businessInfo.businessId,businessInfo.businessId as businessIdVal,tenantId,businessInfo.departmentId as departmentId,name,businessStatus,technicalStatus,submissionTime,u.username as submitter,ticketNumber,categoryGuid from businessInfo",
+             " join business_relation on businessInfo.businessId = business_relation.businessId join users u on u.userid=businessInfo.submitter",
              " where businessInfo.tenantid=#{tenantId} and categoryGuid in(",
              " select guid from category where guid in",
              " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" ,
@@ -154,7 +158,7 @@ public interface BusinessDAO {
              " and level2CategoryId=#{level2CategoryId}",
              " </if>",
              " and technicalStatus=#{status} and name like concat('%',#{businessName},'%') ESCAPE '/' and ticketNumber like concat('%',#{ticketNumber},'%') ESCAPE '/' and " +
-             " users.username like concat('%',#{submitter},'%') ESCAPE '/' " +
+             " u.username like concat('%',#{submitter},'%') ESCAPE '/' " +
              " order by businessInfo.businessLastUpdate desc",
              " <if test='limit!= -1'>",
              " limit #{limit}",
@@ -167,8 +171,11 @@ public interface BusinessDAO {
 
 
     //查询业务目录关系业务信息列表
+    @Results({
+            @Result(property = "tables",javaType = List.class,column = "{businessId = businessIdVal,tenantId = tenantId}",many = @Many(select = "queryTablesByBusinessIdAndTenantId"))
+    })
     @Select({"<script>",
-             " select count(*)over() total,businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber, business_relation.categoryGuid from businessInfo",
+             " select count(*)over() total,businessInfo.businessId,businessInfo.trustTable,businessInfo.businessId as businessIdVal,businessInfo.name,businessInfo.tenantId as tenantId,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber, business_relation.categoryGuid from businessInfo",
              " join business_relation",
              " on",
              " businessInfo.businessId = business_relation.businessId",
