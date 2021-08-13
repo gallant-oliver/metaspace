@@ -596,7 +596,7 @@ public class SourceInfoDatabaseREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getUserList(@HeaderParam("tenantId") String tenantId) {
-        List<User> userList = sourceService.getUserList();
+        List<User> userList = sourceService.getUserList(tenantId);
         return ReturnUtil.success(userList);
     }
 
