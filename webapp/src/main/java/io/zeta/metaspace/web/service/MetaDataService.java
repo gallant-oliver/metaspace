@@ -351,7 +351,7 @@ public class MetaDataService {
     }
 
 
-    public Table getTableInfoById(String guid, String tenantId) throws AtlasBaseException {
+    public Table getTableInfoById(String guid, String tenantId, String sourceId) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getTableInfoById({})", guid);
         }
@@ -381,10 +381,18 @@ public class MetaDataService {
                     column.setDisplayName(columnName);
                 }
             });
-
-            table.setSourceId("hive");
-            table.setSourceName("hive");
-
+            DataSourceInfo dataSourceInfo = null;
+            if(StringUtils.isNotBlank(sourceId)&& !"hive".equalsIgnoreCase(sourceId)){
+                dataSourceInfo = dataSourceDAO.getDataSourceInfo(sourceId);
+                if(null != dataSourceInfo){
+                    table.setSourceId(dataSourceInfo.getSourceId());
+                    table.setSourceName(dataSourceInfo.getSourceName());
+                }
+            }
+            if(null == dataSourceInfo){
+                table.setSourceId("hive");
+                table.setSourceName("hive");
+            }
             return table;
         } catch (AtlasBaseException e) {
             String message = "无效的实体ID";
@@ -395,6 +403,11 @@ public class MetaDataService {
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
         }
+    }
+
+
+    public Table getTableInfoById(String guid, String tenantId) throws AtlasBaseException {
+        return getTableInfoById(guid, tenantId, null);
     }
 
     public Table extractTableInfo(AtlasEntity.AtlasEntityWithExtInfo info, String guid, String tenantId) throws AtlasBaseException {
@@ -412,8 +425,8 @@ public class MetaDataService {
                 table.setDisplayName(table.getTableName());
             }
             //判断是否为虚拟表
-
-            if (Boolean.parseBoolean(entity.getAttribute(temporaryAttribute).toString()) == true) {
+            Object attribute = entity.getAttribute(temporaryAttribute);
+            if (attribute != null && Boolean.parseBoolean(attribute.toString()) == true) {
                 table.setVirtualTable(true);
             } else {
                 table.setVirtualTable(false);
@@ -1103,6 +1116,11 @@ public class MetaDataService {
 
     public void extractTypeInfo(AtlasEntity entity, Table table) {
         String tableType = getEntityAttribute(entity, "tableType");
+        if(null == tableType){
+            tableType = getEntityAttribute(entity, "type");
+            table.setType(tableType);
+            return;
+        }
         String external = "EXTERNAL";
         if (tableType.contains(external)) {
             table.setType("EXTERNAL_TABLE");
