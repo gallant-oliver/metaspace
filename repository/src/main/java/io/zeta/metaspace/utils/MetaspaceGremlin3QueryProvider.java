@@ -67,13 +67,17 @@ public class MetaspaceGremlin3QueryProvider extends AbstractMetaspaceGremlinQuer
             case TENANT_DB_TABLE_BY_QUERY:
                 /*return "g.V().has('__typeName','hive_db').as('a').inE().outV().has('__typeName','hive_table').group().by(outE('__hive_table.db').inV()).toList()";*/
                 /*select选择 coalesce关联一对多*/
+                // todo
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').has('Asset.name', within(%s)).order().by('__timestamp').range(%s,%s).as('db').coalesce(inE().outV().has('__typeName','hive_table').as('table').select('db','table'),select('db','db')).toList()";
             case TENANT_FULL_DB_TABLE:
+                // todo
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').has('Asset.name', within(%s)).order().by('__timestamp').as('db').coalesce(inE().outV().has('__typeName','hive_table').as('table').select('db','table'),select('db','db')).toList()";
 
             case TENANT_DB_TOTAL_NUM_BY_QUERY:
+                // todo
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').has('Asset.name', within(%s)).dedup().count().toList()";
             case TENANT_DB_ACTIVE_TOTAL_NUM_BY_QUERY:
+                // todo 已完成
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('__state','ACTIVE').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').has('Asset.name', within(%s)).dedup().count().toList()";
 
             case TABLE_GUID_QUERY:
@@ -107,29 +111,41 @@ public class MetaspaceGremlin3QueryProvider extends AbstractMetaspaceGremlinQuer
                 return "g.V().has('__typeName', 'hive_table').has('__guid').order().by('__timestamp').dedup().toList()";
 
             case TENANT_ACTIVE_TABLE_DB_BY_QUERY:
+                // todo
                 return "g.V().has('__typeName','hive_db').has('__state','ACTIVE').has('Asset.name', within(%s)).as('db').inE().outV().has('__typeName', 'hive_table').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('hive_table.temporary',false).has('__state','ACTIVE').has('__guid').dedup().order().by('__timestamp').as('table').range(%s, %s).select('table','db').toList()";
             case TENANT_TABLE_DB_BY_QUERY:
+                // todo
                 return "g.V().has('__typeName','hive_db').has('Asset.name', within(%s)).as('db').inE().outV().has('__typeName', 'hive_table').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('hive_table.temporary',false).has('__guid').dedup().order().by('__timestamp').as('table').range(%s, %s).select('table','db').toList()";
             case TENANT_FULL_TABLE_DB:
+                // todo
                 return "g.V().has('__typeName','hive_db').has('Asset.name', within(%s)).as('db').inE().outV().has('__typeName', 'hive_table').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('hive_table.temporary',false).has('__guid').dedup().order().by('__timestamp').as('table').select('table','db').toList()";
             case TENANT_FULL_ACTIVE_TABLE_DB:
+                // todo
                 return "g.V().has('__typeName','hive_db').has('__state','ACTIVE').has('Asset.name', within(%s)).as('db').inE().outV().has('__typeName', 'hive_table').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('hive_table.temporary',false).has('__state','ACTIVE').has('__guid').dedup().order().by('__timestamp').as('table').select('table','db').toList()";
 
             case TENANT_TABLE_COUNT_BY_QUEERY:
+                // todo
                 return "g.V().has('__typeName','hive_db').has('Asset.name', within(%s)).inE().outV().has('__typeName', 'hive_table').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('hive_table.temporary',false).has('__guid').dedup().count().toList();";
             case TENANT_ACTIVE_TABLE_COUNT_BY_QUEERY:
+                // todo
                 return "g.V().has('__typeName','hive_db').has('__state','ACTIVE').has('Asset.name', within(%s)).inE().outV().has('__typeName', 'hive_table').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('hive_table.temporary',false).has('__state','ACTIVE').has('__guid').dedup().count().toList();";
             case TENANT_COLUMN_TABLE_DB_BY_QUERY:
+                // todo
                 return "g.V().has('__typeName', 'hive_column').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').dedup().order().by('__timestamp').as('column').inE().outV().has('__typeName','hive_table').as('table').outE().inV().has('__typeName','hive_db').has('Asset.name', within(%s)).as('db').range(%s,%s).select('column','table','db').toList()";
             case TENANT_FULL_COLUMN_TABLE_DB:
+                // todo
                 return "g.V().has('__typeName', 'hive_column').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').dedup().order().by('__timestamp').as('column').inE().outV().has('__typeName','hive_table').as('table').outE().inV().has('__typeName','hive_db').has('Asset.name', within(%s)).as('db').select('column','table','db').toList()";
             case TENANT_ACTIVE_COLUMN_TABLE_DB_BY_QUERY:
+                // todo
                 return "g.V().has('__typeName', 'hive_column').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__state','ACTIVE').has('__guid').dedup().order().by('__timestamp').as('column').inE().outV().has('__typeName','hive_table').has('__state','ACTIVE').as('table').outE().inV().has('__typeName','hive_db').has('__state','ACTIVE').has('Asset.name', within(%s)).as('db').range(%s,%s).select('column','table','db').toList()";
             case TENANT_FULL_ACTIVE_COLUMN_TABLE_DB:
+                // todo
                 return "g.V().has('__typeName', 'hive_column').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__state','ACTIVE').has('__guid').dedup().order().by('__timestamp').as('column').inE().outV().has('__typeName','hive_table').has('__state','ACTIVE').as('table').outE().inV().has('__typeName','hive_db').has('__state','ACTIVE').has('Asset.name', within(%s)).as('db').select('column','table','db').toList()";
             case TENANT_COLUMN_COUNT_BY_QUERY:
+                // todo
                 return "g.V().has('__typeName', 'hive_column').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').dedup().inE().outV().has('__typeName','hive_table').outE().inV().has('__typeName','hive_db').has('Asset.name', within(%s)).count().toList()";
             case TENANT_ACTIVE_COLUMN_COUNT_BY_QUERY:
+                // todo
                 return "g.V().has('__typeName', 'hive_column').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__state','ACTIVE').has('__guid').dedup().inE().outV().has('__typeName','hive_table').has('__state','ACTIVE').outE().inV().has('__typeName','hive_db').has('__state','ACTIVE').has('Asset.name', within(%s)).count().toList()";
 
             case DATABASE_BY_QUERY:
@@ -142,12 +158,16 @@ public class MetaspaceGremlin3QueryProvider extends AbstractMetaspaceGremlinQuer
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('__state','ACTIVE').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').order().by('__timestamp').dedup().toList()";
 
             case TENANT_DATABASE_BY_QUERY:
+                // todo 已完成
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').has('Asset.name', within(%s)).order().by('__timestamp').dedup().range(%s,%s).toList()";
             case TENANT_ACTIVE_DATABASE_BY_QUERY:
+                // todo 已完成
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('__state','ACTIVE').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('Asset.name', within(%s)).order().by('__timestamp').dedup().range(%s,%s).toList()";
             case TENANT_FULL_DATABASE:
+                // todo 已完成
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').has('Asset.name', within(%s)).order().by('__timestamp').dedup().toList()";
             case TENANT_FULL_ACTIVE_DATABASE:
+                // todo 已完成
                 return "g.tx().commit();g.V().has('__typeName','hive_db').has('__state','ACTIVE').has('Asset.name', org.janusgraph.core.attribute.Text.textRegex('.*%s.*')).has('__guid').has('Asset.name', within(%s)).order().by('__timestamp').dedup().toList()";
 
             case TABLE_BY_DB:
