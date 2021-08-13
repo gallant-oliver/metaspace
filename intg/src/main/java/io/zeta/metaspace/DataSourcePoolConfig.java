@@ -14,7 +14,7 @@ public class DataSourcePoolConfig {
         try {
             conf = ApplicationProperties.get();
             DataSourcePool dataSourcePool = new DataSourcePool();
-            dataSourcePool.setMaximumPoolSize(conf.getInt("dataSourcePool.maximumPoolSize", 10));
+            dataSourcePool.setMaximumPoolSize(conf.getInt("dataSourcePool.maximumPoolSize", 60));
             dataSourcePool.setIdleTimeout(conf.getInt("dataSourcePool.idleTimeout", 60000));
             dataSourcePool.setConnectionTimeout(conf.getInt("dataSourcePool.connectionTimeout", 60000));
             dataSourcePool.setValidationTimeout(conf.getInt("dataSourcePool.validationTimeout", 3000));
