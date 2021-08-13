@@ -595,9 +595,18 @@ public class SearchService {
             return databasePageResult;
         }
 
-        List<DataSourceHeader> databaseHeaders = new ArrayList<>();
         List<String> databases = tenantService.getDatabase(tenantId);
-        if (CollectionUtils.isNotEmpty(databases)) {
+        List<DataSourceHeader> databaseHeaders = new ArrayList<>();
+        if (StringUtils.isNotBlank(query)) {
+            if ("hive".contains(query.toLowerCase()) && CollectionUtils.isNotEmpty(databases)) {
+                DataSourceHeader dataSourceHeader = new DataSourceHeader();
+                dataSourceHeader.setSourceId("hive");
+                dataSourceHeader.setSourceName("hive");
+                dataSourceHeader.setSourceStatus("ACTIVE");
+                databaseHeaders.add(dataSourceHeader);
+
+            }
+        } else if (CollectionUtils.isNotEmpty(databases)) {
             DataSourceHeader dataSourceHeader = new DataSourceHeader();
             dataSourceHeader.setSourceId("hive");
             dataSourceHeader.setSourceName("hive");
@@ -700,16 +709,12 @@ public class SearchService {
             databasePageResult.setTotalSize(0);
             return databasePageResult;
         }
-        List<String> databases = new ArrayList<>();
-        if ("hive".equalsIgnoreCase(sourceId)) {
-            databases = tenantService.getDatabase(tenantId);
-        }
 
-        List<DatabaseHeader> databaseHeaders = new ArrayList<>();
-        if (StringUtils.isBlank(query)) {
-            databaseHeaders = this.updateDatabaseHeader(parameters, databases, sourceId, categoryGuid, tenantId);
+        List<DatabaseHeader> databaseHeaders;
+        if (StringUtils.isNotBlank(sourceId)) {
+            databaseHeaders = this.updateDatabaseHeader(parameters, sourceId, categoryGuid, tenantId);
         } else {
-            databaseHeaders = this.updateDatabaseHeaderLike(parameters, databases, categoryGuid, tenantId, query);
+            databaseHeaders = this.updateDatabaseHeaderLike(parameters, categoryGuid, tenantId, query);
         }
         databasePageResult.setLists(databaseHeaders);
         databasePageResult.setCurrentSize(databaseHeaders.size());
@@ -727,7 +732,8 @@ public class SearchService {
      * @param query
      * @return
      */
-    private List<DatabaseHeader> updateDatabaseHeaderLike(Parameters parameters, List<String> databases, String categoryGuid, String tenantId, String query) {
+    private List<DatabaseHeader> updateDatabaseHeaderLike(Parameters parameters, String categoryGuid, String tenantId, String query) {
+        List<String> databases = tenantService.getDatabase(tenantId);
         List<DatabaseHeader> databaseHeaders = userGroupDAO.selectDbByNameAndTenantId(parameters.getOffset(), parameters.getLimit(), databases, tenantId, query);
         if (CollectionUtils.isEmpty(databaseHeaders)) {
             return new ArrayList<>();
@@ -741,10 +747,16 @@ public class SearchService {
         List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.selectListByCategoryIdAndTenantId(categoryGuid, tenantId, dbGuidList);
         //关联关系按照数据库ID分组
         Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDatabaseId));
-        databaseHeaders.forEach(e -> {
+        for (DatabaseHeader e : databaseHeaders) {
             String databaseGuid = e.getDatabaseGuid();
+            e.setDbName(e.getDbName() + "(" + e.getSourceName() + ")");
             List<String> table = collect.get(databaseGuid) == null ? new ArrayList<>() : collect.get(databaseGuid).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
             Set<String> relationTableGuids = collectRelation.get(databaseGuid) == null ? new HashSet<>() : collectRelation.get(databaseGuid).stream().map(TableDataSourceRelationPO::getTableId).collect(Collectors.toSet());
+            if(CollectionUtils.sizeIsEmpty(relationTableGuids) || CollectionUtils.isEmpty(table)){
+                //全部未勾选
+                e.setCheck(0);
+                continue;
+            }
             if (relationTableGuids.containsAll(table)) {
                 //全被勾选
                 e.setCheck(1);
@@ -758,8 +770,7 @@ public class SearchService {
                     e.setCheck(0);
                 }
             }
-            e.setDbName(e.getDbName() + "(" + e.getSourceName() + ")");
-        });
+        }
         return databaseHeaders;
     }
 
@@ -773,20 +784,30 @@ public class SearchService {
      * @param tenantId
      * @return
      */
-    private List<DatabaseHeader> updateDatabaseHeader(Parameters parameters, List<String> databases, String sourceId, String categoryGuid, String tenantId) {
+    private List<DatabaseHeader> updateDatabaseHeader(Parameters parameters, String sourceId, String categoryGuid, String tenantId) {
+        List<String> databases = new ArrayList<>();
+        if ("hive".equalsIgnoreCase(sourceId)) {
+            databases = tenantService.getDatabase(tenantId);
+        }
         List<DatabaseHeader> databaseHeaders = userGroupDAO.getDBInfo2(parameters.getOffset(), parameters.getLimit(), databases, sourceId);
         if (CollectionUtils.isEmpty(databaseHeaders)) {
             return new ArrayList<>();
         }
         //获取数据源下所有的表
         List<TechnologyInfo.Table> tables = tableDAO.selectListBySourceId(databases, sourceId);
+        //获取关联关系
         List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.selectListByCategoryIdAndTenantIdAndSourceId(categoryGuid, tenantId, sourceId);
         Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDatabaseId));
         Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getDatabaseGuid));
-        databaseHeaders.forEach(e -> {
+        for (DatabaseHeader e : databaseHeaders) {
             String databaseGuid = e.getDatabaseGuid();
             List<String> table = collect.get(databaseGuid) == null ? new ArrayList<>() : collect.get(databaseGuid).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
             Set<String> relationTableGuids = collectRelation.get(databaseGuid) == null ? new HashSet<>() : collectRelation.get(databaseGuid).stream().map(TableDataSourceRelationPO::getTableId).collect(Collectors.toSet());
+            if(CollectionUtils.isEmpty(relationTableGuids) || CollectionUtils.isEmpty(table)){
+                //全部未勾选
+                e.setCheck(0);
+                continue;
+            }
             if (relationTableGuids.containsAll(table)) {
                 //全被勾选
                 e.setCheck(1);
@@ -800,7 +821,7 @@ public class SearchService {
                     e.setCheck(0);
                 }
             }
-        });
+        }
         return databaseHeaders;
     }
 
@@ -1043,6 +1064,9 @@ public class SearchService {
      * @param tenantId
      */
     public void supplyPath(List<AddRelationTable> list, String tenantId) {
+        if(CollectionUtils.isEmpty(list)){
+            return;
+        }
         List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.selectByTableGuidAndTenantId(list, tenantId);
         if (CollectionUtils.isEmpty(tableDataSourceRelationPOList)) {
             return;
