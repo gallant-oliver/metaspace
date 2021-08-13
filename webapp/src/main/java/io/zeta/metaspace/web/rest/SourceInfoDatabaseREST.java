@@ -253,12 +253,13 @@ public class SourceInfoDatabaseREST {
     public Result uploadFile(@FormDataParam("file") InputStream fileInputStream,
                              @FormDataParam("file") FormDataContentDisposition contentDispositionHeader,
                              @HeaderParam("tenantId")String tenantId){
+        File file = null;
         try{
             //tenantId 使用租户id作为上传文件子目录
             String fileName = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
             String uploadDir = tenantId + "/" + DateTimeUtils.formatTime(System.currentTimeMillis(),"yyyyMMddHHmmss");
 
-            File file = new File(fileName);
+            file = new File(fileName);
             FileUtils.copyInputStreamToFile(fileInputStream, file);
             long fileSize = file.length();//contentDispositionHeader.getSize();
 
@@ -275,6 +276,9 @@ public class SourceInfoDatabaseREST {
             return ReturnUtil.success("success",annexId);
         }catch (Exception e){
             HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"上传附件失败！");
+            if(file != null && file.exists()){
+                file.delete();
+            }
             throw new AtlasBaseException("文件上传失败", AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件上传失败");
         }
     }
