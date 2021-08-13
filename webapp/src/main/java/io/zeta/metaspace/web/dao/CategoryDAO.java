@@ -253,7 +253,9 @@ public interface CategoryDAO {
             " </script>"})
     public int deleteDataOwner(@Param("tableList") List<String> tableList);
 
-    @Select("select category.guid from category,table_relation where table_relation.tableguid=#{guid} and table_relation.categoryguid=category.guid and tenantid=#{tenantId}")
+    @Select("select t1.category_id from table_data_source_relation t1 where t1.tenant_id = #{tenantId} and t1.table_id = #{guid} " +
+            "union " +
+            "select t2.category_id from  source_info t2 join tableinfo t3 on t2.database_id = t3.databaseguid where t2.tenant_id = #{tenantId} and t3.tableguid = #{guid}")
     public List<String> getCategoryGuidByTableGuid(@Param("guid") String guid, @Param("tenantId") String tenantId);
 
     @Select("select category.guid from category,business_relation where business_relation.businessid=#{guid} and business_relation.categoryguid=category.guid and tenantid=#{tenantId}")

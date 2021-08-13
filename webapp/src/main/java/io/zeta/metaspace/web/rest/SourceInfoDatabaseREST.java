@@ -253,12 +253,13 @@ public class SourceInfoDatabaseREST {
     public Result uploadFile(@FormDataParam("file") InputStream fileInputStream,
                              @FormDataParam("file") FormDataContentDisposition contentDispositionHeader,
                              @HeaderParam("tenantId")String tenantId){
+        File file = null;
         try{
             //tenantId 使用租户id作为上传文件子目录
             String fileName = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
             String uploadDir = tenantId + "/" + DateTimeUtils.formatTime(System.currentTimeMillis(),"yyyyMMddHHmmss");
 
-            File file = new File(fileName);
+            file = new File(fileName);
             FileUtils.copyInputStreamToFile(fileInputStream, file);
             long fileSize = file.length();//contentDispositionHeader.getSize();
 
@@ -275,6 +276,9 @@ public class SourceInfoDatabaseREST {
             return ReturnUtil.success("success",annexId);
         }catch (Exception e){
             HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"上传附件失败！");
+            if(file != null && file.exists()){
+                file.delete();
+            }
             throw new AtlasBaseException("文件上传失败", AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件上传失败");
         }
     }
@@ -410,23 +414,64 @@ public class SourceInfoDatabaseREST {
     @Path("/fileStream")
     @Consumes({MediaType.APPLICATION_FORM_URLENCODED,MediaType.APPLICATION_JSON})
     @Produces({MediaType.APPLICATION_JSON})
-    public Result getFileStream(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
+    public void getFileStream(@HeaderParam("tenantId")String tenantId,@QueryParam("annexId") String annexId){
         //根据附件id 获取文件的路径
         Annex annex = annexService.findByAnnexId(annexId);
         if(annex == null){
             throw new AtlasBaseException("没有找到对应的附件", AtlasErrorCode.EMPTY_RESULTS);
         }
+
         String filePath = annex.getPath();
-        try(InputStream inputStream = hdfsService.getFileInputStream(filePath);
-            ByteArrayOutputStream swapStream = new ByteArrayOutputStream();){
-            int ch;
-            while ((ch = inputStream.read()) != -1) {
-                swapStream.write(ch);
+        String fileType = annex.getFileType();
+        File tmpFile = null;
+        InputStream in = null;
+        try{
+            in = hdfsService.getFileInputStream(filePath);
+            tmpFile = File.createTempFile("tmp-"+System.currentTimeMillis(),".pdf");
+            log.info("文件类型：{},",fileType);
+            if("xls".equalsIgnoreCase(fileType) || "xlsx".equalsIgnoreCase(fileType)){
+                Excel2Pdf excel2Pdf = new Excel2Pdf(Arrays.asList(
+                        new ExcelObject(in)
+                ), new FileOutputStream(tmpFile));
+                excel2Pdf.convert();
+                log.info("excel 转pdf成功");
+            }else if("doc".equalsIgnoreCase(fileType)){
+                DocConvertToPdf.docToPdf(in,tmpFile);
+                log.info("doc 转pdf成功");
+            }else if("docx".equalsIgnoreCase(fileType)){
+                DocxConvertToPdf.docxToPdf(in,tmpFile);
+                log.info("docx 转pdf成功，文件大小：{}",tmpFile.length());
+            }else{
+                log.info("不需要转换处理.");
+                FileUtils.copyToFile(in,tmpFile);
             }
-            return ReturnUtil.success(swapStream);
-        }catch (IOException e){
+            in.close();
+            String finalType = StringUtils.containsAny(fileType,"xls","xlsx","doc","docx") ? "pdf" :fileType;
+
+            String filename = annex.getFileName().replace(".","")+"."+finalType;
+            filename = URLEncoder.encode(filename, "UTF-8");
+            httpServletResponse.addHeader("Content-Disposition", "attachment;fileName=" + filename);
+            // 响应类型,编码
+            httpServletResponse.setContentType("application/octet-stream;charset=UTF-8");
+            // 形成输出流
+            InputStream inputStream = FileUtils.openInputStream(tmpFile);
+            OutputStream osOut = httpServletResponse.getOutputStream();
+            byte[] buf = new byte[1024];
+            int bytesRead;
+            while ((bytesRead = inputStream.read(buf)) > 0) {
+                osOut.write(buf, 0, bytesRead);
+            }
+            inputStream.close();
+            osOut.close();
+        }catch (IOException | DocumentException e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "获取文件流失败");
+        }finally {
+            if(tmpFile != null && tmpFile.exists()){
+                boolean del = tmpFile.delete();
+                log.info("删除临时文件成功标记:{}",del);
+            }
         }
+
 
     }
 
