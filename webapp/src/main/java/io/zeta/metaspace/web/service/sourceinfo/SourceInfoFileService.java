@@ -546,7 +546,7 @@ public class SourceInfoFileService {
                 String instance = getElementOrDefault(array,MapUtils.getIntValue(map,"数据库实例",-1));
                 if(StringUtils.isBlank(instance)){
                     return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
-                            AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("数据库实例"));
+                            AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("oracel数据库类型下的数据库实例"));
                 }
             }
 
