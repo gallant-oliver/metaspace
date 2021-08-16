@@ -251,6 +251,32 @@ public class DataManageService {
         }
     }
 
+
+    /**
+     * 根据用户组获取目录-技术目录
+     *
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    public List<CategoryPrivilege> getAllByUserGroupTechnical(String tenantId) throws AtlasBaseException {
+        try {
+            List<Module> modules = tenantService.getModule(tenantId);
+            List<CategoryPrivilege> valueList = userGroupService.getUserCategoriesTechnical(tenantId);
+            if (modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId() == module.getModuleId())) {
+                for (CategoryPrivilege categoryPrivilege : valueList) {
+                    categoryPrivilege.getPrivilege().adminPrivilege(categoryPrivilege.getGuid());
+                }
+            }
+            return valueList;
+        } catch (MyBatisSystemException e) {
+            LOG.error("数据库服务异常", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
     public List<CategoryPrivilegeV2> getUserCategories(String tenantId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         List<CategoryPrivilegeV2> userCategories = userGroupDAO.getUserCategories(tenantId, user.getUserId());
@@ -733,9 +759,9 @@ public class DataManageService {
 
     /**
      * 添加关联
-     *
      * @param categoryGuid
-     * @param ids
+     * @param relations
+     * @param tenantId
      * @throws AtlasBaseException
      */
     @Transactional(rollbackFor = Exception.class)

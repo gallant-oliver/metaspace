@@ -24,6 +24,7 @@ import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.source.Base64Info;
 import io.zeta.metaspace.model.source.CodeInfo;
 import io.zeta.metaspace.model.source.DataBaseInfo;
@@ -32,6 +33,7 @@ import io.zeta.metaspace.model.sourceinfo.Annex;
 import io.zeta.metaspace.model.sourceinfo.CreateRequest;
 import io.zeta.metaspace.model.sourceinfo.PublishRequest;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.HdfsService;
 import io.zeta.metaspace.web.service.SourceService;
 import io.zeta.metaspace.web.service.sourceinfo.AnnexService;
@@ -88,7 +90,8 @@ public class SourceInfoDatabaseREST {
     private SourceInfoDatabaseService sourceInfoDatabaseService;
     @Autowired
     private SourceService sourceService;
-
+    @Autowired
+    private DataManageService dataManageService;
     @Autowired
     private HdfsService hdfsService;
     @Autowired
@@ -612,5 +615,19 @@ public class SourceInfoDatabaseREST {
     public Result getStatusList() {
         List<CodeInfo> codeInfoList = sourceService.getStatusList();
         return ReturnUtil.success(codeInfoList);
+    }
+
+    /**
+     * 获取有权限的技术目录
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("technical/category")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<CategoryPrivilege> getCategories(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return dataManageService.getAllByUserGroupTechnical(tenantId);
     }
 }
