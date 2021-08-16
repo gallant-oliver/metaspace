@@ -247,7 +247,8 @@ public class SourceInfoFileService {
     private List<DatabaseInfoForDb> obtainRepeatAndUnExistedData(List<String[]> excelDataList,String tenantId,Map<String,Integer>  map,
                                                                  Map<String,List<String>> resultMap){
         List<String> unExistList = null;
-        List<String> repeatNameList = null;
+        List<String> repeatInCategoryList = null;
+        List<String> repeatInSourceInfoList = null;
         int dbEnIndex = map.getOrDefault("数据库英文名称", -1);
         int dbZhIndex = map.getOrDefault("数据库中文名", -1);
         int categoryIndex = map.getOrDefault("数据层名称", -1);
@@ -278,17 +279,26 @@ public class SourceInfoFileService {
                         .filter(p->!existDbName.contains(p))
                         .collect(Collectors.toList());
 
-                if(!CollectionUtils.isEmpty(sourceInfoExistList)){//source-info 表存在重复的数据
-                    List<CategoryEntityV2> categoryEntityV2List = categoryDao.queryByTenantId(tenantId);
-                    List<String> finalUnexistList = new ArrayList<>(unExistList);
+                List<String> finalUnExistList = new ArrayList<>(unExistList);
+                List<CategoryEntityV2> categoryEntityV2List = categoryDao.queryByTenantId(tenantId);
+                if(!CollectionUtils.isEmpty(categoryEntityV2List)){
                     List<String> dbZhList =  excelDataList.stream()
-                            .filter(p->!finalUnexistList.contains(p[dbEnIndex])) //排除不存在的数据
+                            .filter(p->!finalUnExistList.contains(p[dbEnIndex])) //排除不存在的数据
                             .map(p->(categoryIndex == -1 ? "-1" : categoryMap.getOrDefault(p[categoryIndex],"-1"))+"@"+p[dbZhIndex])
                             .collect(Collectors.toList());
+                    repeatInCategoryList = dbZhList.stream()
+                            .filter(p->categoryEntityV2List.stream().anyMatch(v->p.equalsIgnoreCase(v.getGuid()+"@"+v.getName())))
+                            .collect(Collectors.toList());
+                }
 
-                    repeatNameList = dbZhList.stream()
-                            .filter(p->sourceInfoExistList.stream().anyMatch(v->p.equals(v.getCategoryId()+"@"+v.getDatabaseAlias()) && tenantId.equalsIgnoreCase(v.getTenantId()))
-                                    || categoryEntityV2List.stream().anyMatch(v->p.equalsIgnoreCase(v.getGuid()+"@"+v.getName())))
+                if(!CollectionUtils.isEmpty(sourceInfoExistList)){//source-info 表存在重复的数据
+                    List<String> dbZhList =  excelDataList.stream()
+                            .filter(p->!finalUnExistList.contains(p[dbEnIndex])) //排除不存在的数据
+                            .map(p->p[dbZhIndex])
+                            .collect(Collectors.toList());
+
+                    repeatInSourceInfoList = dbZhList.stream()
+                            .filter(p->sourceInfoExistList.stream().anyMatch(v->p.equals(v.getDatabaseAlias()) ) )
                             .collect(Collectors.toList());
                 }
 
@@ -298,8 +308,11 @@ public class SourceInfoFileService {
         if(!CollectionUtils.isEmpty(unExistList)){
             resultMap.put("unExistList",unExistList);
         }
-        if(!CollectionUtils.isEmpty(repeatNameList)){
-            resultMap.put("repeatNameList",repeatNameList);
+        if(!CollectionUtils.isEmpty(repeatInCategoryList)){
+            resultMap.put("repeatInCategoryList",repeatInCategoryList);
+        }
+        if(!CollectionUtils.isEmpty(repeatInSourceInfoList)){
+            resultMap.put("repeatInSourceInfoList",repeatInSourceInfoList);
         }
 
         return result;
@@ -330,7 +343,8 @@ public class SourceInfoFileService {
         Map<String,List<String>> resultMidMap = new HashMap<>();
         List<DatabaseInfoForDb> dbList = obtainRepeatAndUnExistedData(excelDataList,tenantId,map,resultMidMap);
         List<String> unExistList = resultMidMap.getOrDefault("unExistList",new ArrayList<>());
-        List<String> repeatNameList = resultMidMap.getOrDefault("repeatNameList",new ArrayList<>());
+        List<String> repeatInCategoryList = resultMidMap.getOrDefault("repeatInCategoryList",new ArrayList<>());
+        List<String> repeatInSourceInfoList = resultMidMap.getOrDefault("repeatInSourceInfoList",new ArrayList<>());
 
         // 2. 不存在的数据库名
         if(!CollectionUtils.isEmpty(excelDataList)){
@@ -341,7 +355,8 @@ public class SourceInfoFileService {
         // 3. 源信息表中已存在的记录
         if(!CollectionUtils.isEmpty(excelDataList)){
             List<String[]> repeatDbList = excelDataList.stream()
-                    .filter(p-> repeatNameList.contains((categoryIndex == -1 ? "-1" : categoryMap.getOrDefault(p[categoryIndex],"-1"))+"@"+p[dbZhIndex]))
+                    .filter(p-> repeatInCategoryList.contains((categoryIndex == -1 ? "-1" : categoryMap.getOrDefault(p[categoryIndex],"-1"))+"@"+p[dbZhIndex])
+                    || repeatInSourceInfoList.contains(p[dbZhIndex]) )
                     .collect(Collectors.toList());
             resultMap.put("repeatDbList",repeatDbList);
         }
@@ -490,6 +505,7 @@ public class SourceInfoFileService {
 
         List<String[]> saveDbList =  removeArrayList(excelDataList,excelRepeatDataList,dbZhIndex);
         saveDbList = removeArrayList(saveDbList,unExistDbList,dbEnIndex);
+        saveDbList = removeArrayList(saveDbList,repeatDbList,dbZhIndex);
         saveDbList = removeArrayList(saveDbList,repeatDbList,categoryIndex,dbZhIndex);
 
         //组装保存数据的参数
