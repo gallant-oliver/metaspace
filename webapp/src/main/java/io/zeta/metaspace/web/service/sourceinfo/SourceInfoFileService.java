@@ -21,6 +21,7 @@ import io.zeta.metaspace.web.service.UserGroupService;
 import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
+import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -36,6 +37,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -57,6 +59,16 @@ public class SourceInfoFileService {
     private DataSourceService dataSourceService;
     @Autowired
     private UserGroupService userGroupService;
+    /*
+     * 正则表达式：验证手机号
+     */
+    public static final String REGEX_MOBILE = "^(1[3-9])\\d{9}$";
+
+    /*
+     * 正则表达式：验证邮箱
+     */
+    public static final String REGEX_EMAIL = "^([a-z0-9A-Z]+[-|\\.]?)+[a-z0-9A-Z]@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)?\\.)+[a-zA-Z]{2,}$";
+
 
     private final String[] validFields = new String[]{"数据层名称","数据库中文名","数据库类型","数据源","数据库英文名称",
             "数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","业务Owner手机号",
@@ -68,6 +80,32 @@ public class SourceInfoFileService {
             "技术负责人","业务负责人"};
     private static final int CHINA_LENGTH = 128;
     private static final int EMAIL_LENGTH = 64;
+    /**
+     * 校验手机号
+     *
+     * @param mobile
+     * @return 校验通过返回true，否则返回false
+     */
+    public boolean isMobile(String mobile) {
+        if(StringUtils.isBlank(mobile)){
+            return false;
+        }
+        return Pattern.matches(REGEX_MOBILE, mobile);
+    }
+
+    /**
+     * 校验邮箱
+     *
+     * @param email
+     * @return 校验通过返回true，否则返回false
+     */
+    public  boolean isEmail(String email) {
+        if(StringUtils.isBlank(email)){
+            return false;
+        }
+        return Pattern.matches(REGEX_EMAIL, email);
+    }
+
     /**
      * 数据源文件导入模板生成下载
      * @return
@@ -463,7 +501,7 @@ public class SourceInfoFileService {
         List<DatabaseInfo> saveList = new ArrayList<>();
         DatabaseInfo databaseInfo = null;
         List<User> userList = userDAO.getAllUserByValid();
-        int dbTypeIndex = map.getOrDefault("数据库类型", -1);
+        //int dbTypeIndex = map.getOrDefault("数据库类型", -1);
         List<DataSourceTypeInfo> sourceTypeInfos = dataSourceService.getDataSourceType("dbr");
         List<DataSourceInfo> dataSourceInfos = null;
         if(!CollectionUtils.isEmpty(sourceTypeInfos)){
@@ -488,6 +526,14 @@ public class SourceInfoFileService {
             databaseInfo.setDatabaseId(databaseId);
             String dbSourceId = "";
             String dbType = getElementOrDefault(array,MapUtils.getIntValue(map,"数据库类型",-1));
+            if("oracle".equalsIgnoreCase(dbType) ){
+                String instance = getElementOrDefault(array,MapUtils.getIntValue(map,"数据库实例",-1));
+                if(StringUtils.isBlank(instance)){
+                    return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                            AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("数据库实例"));
+                }
+            }
+
             String dbSourceName = getElementOrDefault(array,MapUtils.getIntValue(map,"数据源",-1));
             if(!CollectionUtils.isEmpty(dataSourceInfos)) {
                 Optional<DataSourceInfo> itemOpt =  dataSourceInfos.stream().filter(p->p.getSourceType().equalsIgnoreCase(dbType)
@@ -495,6 +541,9 @@ public class SourceInfoFileService {
                 if(itemOpt.isPresent()){
                     dbSourceId = itemOpt.get().getSourceId();
                 }
+            }
+            if(StringUtils.isBlank(dbSourceId)){
+                return new Result("400","数据源内容输入不符合，请检查");
             }
             databaseInfo.setDataSourceId(dbSourceId);
             databaseInfo.setDatabaseAlias(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库中文名",-1)));
@@ -507,16 +556,41 @@ public class SourceInfoFileService {
             databaseInfo.setImportance("是".equals(getElementOrDefault(array,MapUtils.getIntValue(map,"是否重要",-1))));
             databaseInfo.setDescription(getElementOrDefault(array,MapUtils.getIntValue(map,"描述",-1)));
            // databaseInfo.setCreator(username);
+
             databaseInfo.setBoName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner姓名",-1)));
             databaseInfo.setBoDepartmentName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner部门名称",-1)));
-            databaseInfo.setBoTel(getElementOrDefault(array,MapUtils.getIntValue(map,"业务Owner手机号",-1)));
-            databaseInfo.setBoEmail(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner电子邮箱",-1)));
+            String bizMobile = getElementOrDefault(array,MapUtils.getIntValue(map,"业务Owner手机号",-1));
+            if(!isMobile(bizMobile)){
+                return new Result("400","业务Owner手机号输入格式错误");
+            }
+            databaseInfo.setBoTel(bizMobile);
+            String bizEmail = getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner电子邮箱",-1));
+            if(!isEmail(bizEmail)){
+                return new Result("400","数据库业务Owner电子邮箱输入格式错误");
+            }
+            databaseInfo.setBoEmail(bizEmail);
             databaseInfo.setToName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner姓名",-1)));
             databaseInfo.setToDepartmentName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner部门名称",-1)));
-            databaseInfo.setToTel(getElementOrDefault(array,MapUtils.getIntValue(map,"技术Owner手机号",-1)));
-            databaseInfo.setToEmail(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner电子邮箱",-1)));
-            databaseInfo.setTechnicalLeader(convertUsernameToUserId(getElementOrDefault(array,MapUtils.getIntValue(map,"技术负责人",-1)),userList));
-            databaseInfo.setBusinessLeader(convertUsernameToUserId(getElementOrDefault(array,MapUtils.getIntValue(map,"业务负责人",-1)),userList));
+            String techMobile = getElementOrDefault(array,MapUtils.getIntValue(map,"技术Owner手机号",-1));
+            if(!isMobile(techMobile)){
+                return new Result("400","技术Owner手机号输入格式错误");
+            }
+            databaseInfo.setToTel(techMobile);
+            String techEmail = getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner电子邮箱",-1));
+            if(!isEmail(techEmail)){
+                return new Result("400","数据库技术Owner电子邮箱输入格式错误");
+            }
+            databaseInfo.setToEmail(techEmail);
+            String techLeader = convertUsernameToUserId(getElementOrDefault(array,MapUtils.getIntValue(map,"技术负责人",-1)),userList);
+            if (StringUtils.isBlank(techLeader)){
+                return new Result("400","技术负责人输入错误");
+            }
+            databaseInfo.setTechnicalLeader(techLeader);
+            String bizLeader = convertUsernameToUserId(getElementOrDefault(array,MapUtils.getIntValue(map,"业务负责人",-1)),userList);
+            if (StringUtils.isBlank(bizLeader)){
+                return new Result("400","业务负责人输入错误");
+            }
+            databaseInfo.setBusinessLeader(bizLeader);
             //databaseInfo.setTenantId(tenantId);
             saveList.add(databaseInfo);
         }
@@ -542,7 +616,7 @@ public class SourceInfoFileService {
         Optional<User> user = userList.stream().filter(p-> StringUtils.equalsIgnoreCase(p.getUsername(),name))
                 .findFirst();
         if(user == null || !user.isPresent()){
-            return name;
+            return "";
         }
 
         return user.get().getUserId();
