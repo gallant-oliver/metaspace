@@ -236,8 +236,11 @@ public class SourceInfoFileService {
                     if(!isEmail(v)){
                         errMsg = fieldName+"输入格式不正常";
                     }
-                    results.add(setAnalyticResult(errMsg,array, map));
-                    break;
+                    if(StringUtils.isNotBlank(errMsg)){
+                        results.add(setAnalyticResult(errMsg,array, map));
+                        break;
+                    }
+
                 }
 
                 if( ("业务Owner手机号".equals(fieldName) || "技术Owner手机号".equals(fieldName) )
