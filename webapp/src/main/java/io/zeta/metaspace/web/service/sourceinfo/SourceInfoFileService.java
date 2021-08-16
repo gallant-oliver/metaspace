@@ -207,6 +207,11 @@ public class SourceInfoFileService {
                     String errMsg = "列名["+fieldName+"]的值为空";
                     results.add(setAnalyticResult(errMsg,array, map));
                 }
+                if("数据库类型".equals(fieldName) && StringUtils.isNotBlank(v)
+                        && "oracle".equalsIgnoreCase(v) && StringUtils.isBlank(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库实例",-1))) ){
+                    String errMsg = "数据库类型oracle的数据库实例不能为空";
+                    results.add(setAnalyticResult(errMsg,array, map));
+                }
                 if("数据库中文名".equals(fieldName) && StringUtils.isNotBlank(v)){
                     if (v.length() > CHINA_LENGTH){
                         String errMsg = "数据库中文名超过"+CHINA_LENGTH+"字符";
@@ -219,8 +224,20 @@ public class SourceInfoFileService {
                 }
 
                 if( ("数据库业务Owner电子邮箱".equals(fieldName) || "数据库技术Owner电子邮箱".equals(fieldName) )
-                        && StringUtils.isNotBlank(v) && v.length() > EMAIL_LENGTH){
-                    String errMsg = fieldName+"超过"+EMAIL_LENGTH+"字符";
+                        && StringUtils.isNotBlank(v) ){
+                    String errMsg = "";
+                    if(v.length() > EMAIL_LENGTH){
+                        errMsg = fieldName+"超过"+EMAIL_LENGTH+"字符";
+                    }
+                    if(!isEmail(v)){
+                        errMsg = fieldName+"输入格式不正常";
+                    }
+                    results.add(setAnalyticResult(errMsg,array, map));
+                }
+
+                if( ("业务Owner手机号".equals(fieldName) || "技术Owner手机号".equals(fieldName) )
+                        && StringUtils.isNotBlank(v) && !isMobile(v)){
+                    String errMsg = fieldName+"输入格式不正常";                   
                     results.add(setAnalyticResult(errMsg,array, map));
                 }
             }
