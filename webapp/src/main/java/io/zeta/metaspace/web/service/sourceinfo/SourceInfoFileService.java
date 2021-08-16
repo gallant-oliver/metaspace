@@ -110,70 +110,67 @@ public class SourceInfoFileService {
      * 数据源文件导入模板生成下载
      * @return
      */
-    public File exportExcelTemplate(String tenantId){
-        try {
-            File templateFile = File.createTempFile("template", "."+PoiExcelUtils.XLSX);
-            List<String> tableAttributes = Arrays.asList(tableTitleAttr);
-            List<Object> tableData = new ArrayList<>();
-            //模板处理
-            categoryMap = getCategoryFromDb(tenantId);
-            if(categoryMap != null && !categoryMap.isEmpty()){
-                tableData.add(new ArrayList<>(categoryMap.keySet()));
-            }else{
-                tableData.add("层级之间使用-分开");
-            }
-            tableData.add("数据库中文名");
-            List<DataSourceTypeInfo> sourceTypeInfos = dataSourceService.getDataSourceType("dbr");
-            List<DataSourceInfo> dataSourceInfos = null;
-            if(CollectionUtils.isEmpty(sourceTypeInfos)){
-                tableData.add("例如:ORACLE、MYSQL");
-            }else{
-                List<String> sourceTypeList = sourceTypeInfos.stream().map(v->v.getName()).collect(Collectors.toList());
-                tableData.add(sourceTypeList ); //Joiner.on(";").join(sourceTypeList)
-                dataSourceInfos = dataSourceDAO.queryDataSourceBySourceTypeIn(sourceTypeList,tenantId);
-            }
-            Map<String, Set<String>> dataSourceMap = CollectionUtils.isEmpty(dataSourceInfos) ? null
-                    : dataSourceInfos.stream().collect(Collectors.groupingBy(DataSourceInfo::getSourceType,
-                    Collectors.mapping(DataSourceInfo::getSourceName,Collectors.toSet())));
-            tableData.add(dataSourceMap);//数据源
-            tableData.add("ORACLE数据库类型需要实例");
-            tableData.add("数据库的英文定义");
-            tableData.add(""); //抽取频率
-            tableData.add(""); //抽取工具
-            tableData.add(""); //规划包编号
-            tableData.add(""); //规划包name
-            tableData.add(Arrays.asList("是","否")); //是否保密
-            tableData.add("保密内容为是的话，则需要填写期限"); //保密期限
-            tableData.add(Arrays.asList("是","否")); //"是否重要"
-            tableData.add("");//描述
-            //数据库业务
-            tableData.add(""); //数据库业务Owner姓名
-            tableData.add(""); //数据库业务Owner部门名称
-            tableData.add(""); //数据库业务Owner电子邮箱
-            tableData.add(""); //手机号
-            //数据库技术
-            tableData.add(""); //数据库技术Owner姓名
-            tableData.add(""); //数据库技术Owner部门名称
-            tableData.add(""); //数据库技术Owner电子邮箱
-            tableData.add(""); //技术Owner手机号
-
-            //"技术负责人","业务负责人"
-           /* List<User> userList = userDAO.getAllUserByValid();
-            List<String> users = CollectionUtils.isEmpty(userList) ? null : userList.stream().map(v->v.getUsername()).collect(Collectors.toList());*/
-            List<String> users = getUsers(tenantId);
-            tableData.add(users); //技术负责人
-            tableData.add(users); //业务负责人
-
-            Workbook wb = PoiExcelUtils.createExcelFileWithDropDown(tableAttributes,tableData,"sheet1");
-            FileOutputStream output = new FileOutputStream(templateFile);
-            wb.write(output);
-            output.flush();
-            output.close();
-            return templateFile;
-        } catch (IOException e) {
-            logger.error("生成模板文件异常,{}",e);
-            throw new RuntimeException("生成模板文件异常");
+    public Workbook exportExcelTemplate(String tenantId){
+       // File templateFile = File.createTempFile("template", "."+PoiExcelUtils.XLSX);
+        List<String> tableAttributes = Arrays.asList(tableTitleAttr);
+        List<Object> tableData = new ArrayList<>();
+        //模板处理
+        categoryMap = getCategoryFromDb(tenantId);
+        if(categoryMap != null && !categoryMap.isEmpty()){
+            tableData.add(new ArrayList<>(categoryMap.keySet()));
+        }else{
+            tableData.add("层级之间使用-分开");
         }
+        tableData.add("数据库中文名");
+        List<DataSourceTypeInfo> sourceTypeInfos = dataSourceService.getDataSourceType("dbr");
+        List<DataSourceInfo> dataSourceInfos = null;
+        if(CollectionUtils.isEmpty(sourceTypeInfos)){
+            tableData.add("例如:ORACLE、MYSQL");
+        }else{
+            List<String> sourceTypeList = sourceTypeInfos.stream().map(v->v.getName()).collect(Collectors.toList());
+            tableData.add(sourceTypeList ); //Joiner.on(";").join(sourceTypeList)
+            dataSourceInfos = dataSourceDAO.queryDataSourceBySourceTypeIn(sourceTypeList,tenantId);
+        }
+        Map<String, Set<String>> dataSourceMap = CollectionUtils.isEmpty(dataSourceInfos) ? null
+                : dataSourceInfos.stream().collect(Collectors.groupingBy(DataSourceInfo::getSourceType,
+                Collectors.mapping(DataSourceInfo::getSourceName,Collectors.toSet())));
+        tableData.add(dataSourceMap);//数据源
+        tableData.add("ORACLE数据库类型需要实例");
+        tableData.add("数据库的英文定义");
+        tableData.add(""); //抽取频率
+        tableData.add(""); //抽取工具
+        tableData.add(""); //规划包编号
+        tableData.add(""); //规划包name
+        tableData.add(Arrays.asList("是","否")); //是否保密
+        tableData.add("保密内容为是的话，则需要填写期限"); //保密期限
+        tableData.add(Arrays.asList("是","否")); //"是否重要"
+        tableData.add("");//描述
+        //数据库业务
+        tableData.add(""); //数据库业务Owner姓名
+        tableData.add(""); //数据库业务Owner部门名称
+        tableData.add(""); //数据库业务Owner电子邮箱
+        tableData.add(""); //手机号
+        //数据库技术
+        tableData.add(""); //数据库技术Owner姓名
+        tableData.add(""); //数据库技术Owner部门名称
+        tableData.add(""); //数据库技术Owner电子邮箱
+        tableData.add(""); //技术Owner手机号
+
+        //"技术负责人","业务负责人"
+       /* List<User> userList = userDAO.getAllUserByValid();
+        List<String> users = CollectionUtils.isEmpty(userList) ? null : userList.stream().map(v->v.getUsername()).collect(Collectors.toList());*/
+        List<String> users = getUsers(tenantId);
+        tableData.add(users); //技术负责人
+        tableData.add(users); //业务负责人
+        logger.info("开始生成模板文件...");
+        Workbook wb = PoiExcelUtils.createExcelFileWithDropDown(tableAttributes,tableData,"sheet1");
+        logger.info("生成模板文件ok...");
+        return wb;
+       /* FileOutputStream output = new FileOutputStream(templateFile);
+        wb.write(output);
+        output.flush();
+        output.close();
+        return templateFile;*/
     }
     private List<String> getUsers(String tenantId){
         Parameters parameters = new Parameters();
