@@ -183,7 +183,7 @@ public class SourceInfoDatabaseREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteDatabaseInfo()");
             }
-            Result result = sourceInfoDatabaseService.delete(tenantId,request.getIdList(),0);
+            Result result = sourceInfoDatabaseService.delete(tenantId,request.getIdList(), 0);
             HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), "删除源信息数据库成功");
             return result;
         } catch (CannotCreateTransactionException e) {
