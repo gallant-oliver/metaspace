@@ -653,12 +653,12 @@ public class UserGroupService {
     }
 
     @Transactional(rollbackFor=Exception.class)
-    public void addOtherCategory(int categorytype, List<CategoryPrivilege> resultList,String tenantId) {
-        List<RoleModulesCategories.Category> otherCategorys = userGroupDAO.getOtherCategorys2(resultList, categorytype,tenantId);
+    public void addOtherCategory(int categoryType, List<CategoryPrivilege> resultList, String tenantId) {
+        List<RoleModulesCategories.Category> otherCategoryList = userGroupDAO.getOtherCategorys2(resultList, categoryType, tenantId);
         ArrayList<CategoryPrivilege> others = new ArrayList<>();
-        for (RoleModulesCategories.Category otherCategory : otherCategorys) {
+        for (RoleModulesCategories.Category otherCategory : otherCategoryList) {
             CategoryPrivilege categoryPrivilege = new CategoryPrivilege(otherCategory);
-            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(true, true, false, false, false, false, false, false, false,false);
+            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(true, true, false, false, false, false, false, false, false, false);
             categoryPrivilege.setPrivilege(privilege);
             others.add(categoryPrivilege);
         }
@@ -1312,12 +1312,14 @@ public class UserGroupService {
             //获取用户组对应的权限目录
             List<String> dbNames;
             List<String> allDBNames = new ArrayList<>();
-            if (type==0) {
+            if (type == 0) {
                 dbNames = tenantService.getDatabase(tenantId);
-            }else{
-                dbNames=new ArrayList<>();
+                if (CollectionUtils.isNotEmpty(dbNames)) {
+                    allDBNames.addAll(dbNames);
+                }
+            } else {
+                dbNames = new ArrayList<>();
             }
-            allDBNames.addAll(dbNames);
             /*
              * 1.12版本改动。默认域自带所有权限，且不可被操作，这表示将没有用户组可以对默认域授权，
              * category_group_relation表中将不会存在默认域和用户组关系的记录
@@ -1586,6 +1588,7 @@ public class UserGroupService {
             categoryPrivilege.setPrivilege(privilege);
             userCategorys.add(categoryPrivilege);
         }
+        addOtherCategory(0, userCategorys, tenantId);
         return userCategorys;
     }
 
