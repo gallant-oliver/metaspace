@@ -139,6 +139,8 @@ public class SourceInfoDeriveTableInfoRest {
             sourceInfoDeriveTableColumnDto.setCreateTime(tableByIdAndGuid.getCreateTimeStr());
             sourceInfoDeriveTableColumnDto.setCreator(tableByIdAndGuid.getCreator());
             sourceInfoDeriveTableColumnDto.setState(tableByIdAndGuid.getState());
+            sourceInfoDeriveTableColumnDto.setDdl(tableByIdAndGuid.getDdl());
+            sourceInfoDeriveTableColumnDto.setDml(tableByIdAndGuid.getDml());
             sourceInfoDeriveTableInfoService.updateSaveAndSubmitDeriveTableInfo(sourceInfoDeriveTableColumnDto, tenantId);
             boolean submit = sourceInfoDeriveTableColumnDto.isSubmit();
             String operateContent = "编辑衍生表登记记录，操作:" + (submit ? "保存" : "保存并提交");

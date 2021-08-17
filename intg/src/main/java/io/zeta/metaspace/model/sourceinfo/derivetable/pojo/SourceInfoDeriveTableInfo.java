@@ -9,6 +9,7 @@ import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 /**
  * <p>
@@ -117,5 +118,30 @@ public class SourceInfoDeriveTableInfo implements Serializable {
     private String dml;
 
     private int total;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SourceInfoDeriveTableInfo that = (SourceInfoDeriveTableInfo) o;
+        return total == that.total &&
+                Objects.equals(tableGuid, that.tableGuid) &&
+                Objects.equals(tableNameEn, that.tableNameEn) &&
+                Objects.equals(tableNameZh, that.tableNameZh) &&
+                Objects.equals(procedure, that.procedure) &&
+                Objects.equals(categoryId, that.categoryId) &&
+                Objects.equals(dbType, that.dbType) &&
+                Objects.equals(dbId, that.dbId) &&
+                Objects.equals(sourceId, that.sourceId) &&
+                Objects.equals(businessId, that.businessId) &&
+                Objects.equals(updateFrequency, that.updateFrequency) &&
+                Objects.equals(etlPolicy, that.etlPolicy) &&
+                Objects.equals(increStandard, that.increStandard) &&
+                Objects.equals(cleanRule, that.cleanRule) &&
+                Objects.equals(filter, that.filter) &&
+                Objects.equals(tenantId, that.tenantId) &&
+                Objects.equals(remark, that.remark) &&
+                Objects.equals(sourceTableGuid, that.sourceTableGuid);
+    }
 
 }
