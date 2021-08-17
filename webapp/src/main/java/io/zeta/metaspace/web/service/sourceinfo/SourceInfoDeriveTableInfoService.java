@@ -716,10 +716,10 @@ public class SourceInfoDeriveTableInfoService {
             Column column = idColumnMap.get(e.getSourceColumnGuid());
             SourceInfoDeriveColumnVO sourceInfoDeriveColumnVO = new SourceInfoDeriveColumnVO();
             BeanUtils.copyProperties(e, sourceInfoDeriveColumnVO);
-            sourceInfoDeriveColumnVO.setDataBaseName(sourceTableInfo.getDbName());
-            sourceInfoDeriveColumnVO.setSourceTableGuid(sourceTableInfo.getTableGuid());
-            sourceInfoDeriveColumnVO.setSourceTableNameEn(sourceTableInfo.getTableName());
-            sourceInfoDeriveColumnVO.setSourceTableNameZh(sourceTableInfo.getDescription());
+            sourceInfoDeriveColumnVO.setDataBaseName(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getDbName());
+            sourceInfoDeriveColumnVO.setSourceTableGuid(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getTableGuid());
+            sourceInfoDeriveColumnVO.setSourceTableNameEn(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getTableName());
+            sourceInfoDeriveColumnVO.setSourceTableNameZh(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getDescription());
             sourceInfoDeriveColumnVO.setSourceColumnNameEn(null == column ? null : column.getColumnName());
             sourceInfoDeriveColumnVO.setSourceColumnNameZh(null == column ? null : column.getDescription());
             sourceInfoDeriveColumnVO.setSourceColumnType(null == column ? null : column.getType());
