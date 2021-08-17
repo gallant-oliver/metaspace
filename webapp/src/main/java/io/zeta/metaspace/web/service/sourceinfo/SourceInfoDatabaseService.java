@@ -230,7 +230,7 @@ public class SourceInfoDatabaseService implements Approvable {
        if (Boolean.FALSE.equals(ParamUtil.isNull(diLists))){
            for (DatabaseInfoForList di:diLists){
                String statusValue = Status.getStatusByValue(di.getStatus());
-               di.setCategoryName(di.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
+               di.setCategoryName(Boolean.FALSE.equals(ParamUtil.isNull(di.getCategoryId()))?
                        this.getActiveInfoAllPath(di.getCategoryId(),tenantId):this.getAllPath(di.getId(),tenantId));
                di.setStatus(statusValue);
            }
@@ -290,6 +290,9 @@ public class SourceInfoDatabaseService implements Approvable {
             return checkResult;
         }
         databaseInfoDAO.updateSourceInfo(databaseInfo,AdminUtils.getUserData().getUserId());
+        if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfoDAO.getParentCategoryIdById(databaseInfo.getId())))) {
+            databaseInfoDAO.insertParentRelation(databaseInfo);
+        }
         List<String> ids = new ArrayList<>();
         ids.add(databaseInfo.getId());
         List<DatabaseInfo> databaseInfoList = new ArrayList<>();
