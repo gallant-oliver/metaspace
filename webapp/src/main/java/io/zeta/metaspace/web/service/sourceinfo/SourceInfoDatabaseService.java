@@ -42,6 +42,7 @@ import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import javax.ws.rs.DefaultValue;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -54,6 +55,7 @@ public class SourceInfoDatabaseService implements Approvable {
 
     private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.TechnicalREST");
     private static final int CATEGORY_TYPE = 0;
+    private static final int DELETE_CATEGORY = 1;
     @Autowired
     DatabaseDAO databaseDAO;
 
@@ -228,7 +230,7 @@ public class SourceInfoDatabaseService implements Approvable {
        if (Boolean.FALSE.equals(ParamUtil.isNull(diLists))){
            for (DatabaseInfoForList di:diLists){
                String statusValue = Status.getStatusByValue(di.getStatus());
-               di.setCategoryName(di.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
+               di.setCategoryName(Boolean.FALSE.equals(ParamUtil.isNull(di.getCategoryId()))?
                        this.getActiveInfoAllPath(di.getCategoryId(),tenantId):this.getAllPath(di.getId(),tenantId));
                di.setStatus(statusValue);
            }
@@ -245,7 +247,7 @@ public class SourceInfoDatabaseService implements Approvable {
      * @return 删除结果
      */
     @Transactional(rollbackFor = Exception.class)
-    public Result delete(String tenantId, List<String> idList) {
+    public Result delete(String tenantId, List<String> idList, int deleteType) {
         Result checkResult = checkService.checkSourceInfoStatus(idList,SourceInfoOperation.DELETE);
         if (Boolean.FALSE.equals(ReturnUtil.isSuccess(checkResult))){
             return checkResult;
@@ -255,10 +257,12 @@ public class SourceInfoDatabaseService implements Approvable {
             list=databaseInfoDAO.getDatabaseInfoList(tenantId,null,idList,null,0,Integer.MAX_VALUE);
         }
         HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),this.convertStringFromList(databaseInfoDAO.getDatabaseIdAndAliasByIds(idList).stream().map(DatabaseInfo::getDatabaseAlias).collect(Collectors.toList())));
-        list.stream().filter(dfl->Status.ACTIVE.name().equals(Status.getStatusByValue(dfl.getStatus()))|| Status.REJECT.name().equals(Status.getStatusByValue(dfl.getStatus()))).forEach(l->{
+        list.forEach(l->{
             try {
-                approveServiceImp.deal(this.buildApproveParas(l.getId(),tenantId,ApproveOperate.CANCEL),tenantId);
-                if (Boolean.FALSE.equals(ParamUtil.isNull(l.getCategoryId()))) {
+                if (Status.ACTIVE.name().equals(Status.getStatusByValue(l.getStatus()))|| Status.REJECT.name().equals(Status.getStatusByValue(l.getStatus()))){
+                    approveServiceImp.deal(this.buildApproveParas(l.getId(),tenantId,ApproveOperate.CANCEL),tenantId);
+                }
+                if (DELETE_CATEGORY!=deleteType&&Boolean.FALSE.equals(ParamUtil.isNull(l.getCategoryId()))) {
                     dataManageService.deleteCategory(l.getCategoryId(), tenantId, CATEGORY_TYPE);
                 }
             } catch (Exception e) {
@@ -286,6 +290,9 @@ public class SourceInfoDatabaseService implements Approvable {
             return checkResult;
         }
         databaseInfoDAO.updateSourceInfo(databaseInfo,AdminUtils.getUserData().getUserId());
+        if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfoDAO.getParentCategoryIdById(databaseInfo.getId())))) {
+            databaseInfoDAO.insertParentRelation(databaseInfo);
+        }
         List<String> ids = new ArrayList<>();
         ids.add(databaseInfo.getId());
         List<DatabaseInfo> databaseInfoList = new ArrayList<>();

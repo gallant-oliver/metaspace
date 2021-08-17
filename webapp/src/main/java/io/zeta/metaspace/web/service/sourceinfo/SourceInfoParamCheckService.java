@@ -238,7 +238,7 @@ public class SourceInfoParamCheckService {
             checkResult = statusList.stream().anyMatch(status->(Status.AUDITING.getIntValue()+"").equals(status)||(Status.ACTIVE.getIntValue()+"").equals(status));
             if (checkResult){
                 return ReturnUtil.error(AtlasErrorCode.INVALID_PARAMS.getErrorCode(),
-                        AtlasErrorCode.INVALID_PARAMS.getFormattedErrorMessage("待审核状态和已审批状态不可发起审批"));
+                        AtlasErrorCode.INVALID_PARAMS.getFormattedErrorMessage("审批中状态和已发布状态不可发起审批"));
             }
         }
         if (SourceInfoOperation.DELETE.equals(operation)){
