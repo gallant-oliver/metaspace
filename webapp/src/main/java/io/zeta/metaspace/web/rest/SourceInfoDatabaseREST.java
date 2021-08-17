@@ -52,6 +52,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -229,9 +230,13 @@ public class SourceInfoDatabaseREST {
         try{
             setDownloadResponseheader(filename);
             //InputStream inputStream = hdfsService.getFileInputStream(path);
-            outFile = sourceInfoFileService.exportExcelTemplate(tenantId);
-            InputStream inputStream = FileUtils.openInputStream(outFile);
-            IOUtils.copyBytes(inputStream, httpServletResponse.getOutputStream(), 4096, true);
+            //outFile
+            Workbook wb = sourceInfoFileService.exportExcelTemplate(tenantId);
+            //InputStream inputStream = FileUtils.openInputStream(outFile);
+            httpServletResponse.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            wb.write(httpServletResponse.getOutputStream());
+            wb.close();
+            //IOUtils.copyBytes(inputStream, httpServletResponse.getOutputStream(), 4096, true);
         }catch(Exception e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "模板文件下载失败");
         }finally {
@@ -276,10 +281,11 @@ public class SourceInfoDatabaseREST {
             return ReturnUtil.success("success",annexId);
         }catch (Exception e){
             HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"上传附件失败！");
+            throw new AtlasBaseException("文件上传失败", AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件上传失败");
+        }finally {
             if(file != null && file.exists()){
                 file.delete();
             }
-            throw new AtlasBaseException("文件上传失败", AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件上传失败");
         }
     }
 
