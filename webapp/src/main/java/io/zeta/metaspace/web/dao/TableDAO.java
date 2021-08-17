@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.MetaDataRelatedAPI;
 import io.zeta.metaspace.model.metadata.Table;
@@ -198,4 +199,73 @@ public interface TableDAO {
 
     @Select("select * from tableinfo where status = 'ACTIVE' and databaseguid = (select database_id from source_info where version = 0 and category_id = #{categoryId})")
     List<TableInfo> getTableInfoByCategoryId(@Param("categoryId") String categoryId);
+
+    @Select("<script>" +
+            " SELECT count(*) over() as total,t.* FROM ("+
+            " SELECT sd.source_id as sourceId," +
+            " tableinfo.databaseguid," +
+            " tableinfo.dbname," +
+            " tableinfo.tableguid," +
+            " tableinfo.tablename," +
+            " tableinfo.status," +
+            " tableinfo.createtime" +
+            " FROM tableinfo INNER JOIN source_db as sd on tableinfo.databaseguid=sd.db_guid" +
+            " WHERE tableinfo.status = 'ACTIVE' AND tableinfo.databasestatus = 'ACTIVE' and sd.source_id = #{sourceId}" +
+            " <if test='databases != null and databases.size()>0'>" +
+            " union" +
+            " SELECT 'hive' as sourceId," +
+            " tableinfo.databaseguid," +
+            " tableinfo.dbname," +
+            " tableinfo.tableguid," +
+            " tableinfo.tablename," +
+            " tableinfo.status," +
+            " tableinfo.createtime" +
+            " FROM tableinfo " +
+            " INNER JOIN db_info as db on tableinfo.databaseguid = db.database_guid" +
+            " WHERE db.db_type = 'HIVE' AND tableinfo.status = 'ACTIVE' AND tableinfo.databasestatus = 'ACTIVE' AND db.database_name in " +
+            " <foreach item='item' index='index' collection='databases' open='(' separator=',' close=')'>" +
+            "   #{item}" +
+            " </foreach> " +
+            " </if>" +
+            " ) as t order by t.tableguid " +
+            "</script>")
+    List<TechnologyInfo.Table> selectListBySourceId(@Param("databases")List<String> databases, @Param("sourceId") String sourceId);
+
+    @Select("<script>" +
+            " SELECT count(*) over() as total,t.* FROM ("+
+            " SELECT sd.source_id as sourceId," +
+            " tableinfo.databaseguid," +
+            " tableinfo.dbname," +
+            " tableinfo.tableguid," +
+            " tableinfo.tablename," +
+            " tableinfo.status," +
+            " tableinfo.createtime" +
+            " FROM tableinfo INNER JOIN source_db as sd on tableinfo.databaseguid=sd.db_guid" +
+            " WHERE tableinfo.status = 'ACTIVE' AND tableinfo.databasestatus = 'ACTIVE' and tableinfo.dbname in " +
+            " <foreach item='item' index='index' collection='databaseLike' open='(' separator=',' close=')'>" +
+            "   #{item}" +
+            " </foreach> " +
+            " <if test='databases != null and databases.size()>0'>" +
+            " union" +
+            " SELECT 'hive' as sourceId," +
+            " tableinfo.databaseguid," +
+            " tableinfo.dbname," +
+            " tableinfo.tableguid," +
+            " tableinfo.tablename," +
+            " tableinfo.status," +
+            " tableinfo.createtime" +
+            " FROM tableinfo " +
+            " INNER JOIN db_info as db on tableinfo.databaseguid = db.database_guid" +
+            " WHERE db.db_type = 'HIVE' AND tableinfo.databasestatus = 'ACTIVE' AND tableinfo.status = 'ACTIVE' AND db.database_name in " +
+            " <foreach item='item' index='index' collection='databases' open='(' separator=',' close=')'>" +
+            "   #{item}" +
+            " </foreach> " +
+            " and db.database_name in" +
+            " <foreach item='item' index='index' collection='databaseLike' open='(' separator=',' close=')'>" +
+            "   #{item}" +
+            " </foreach> " +
+            " </if>" +
+            " ) as t order by t.tableguid " +
+            "</script>")
+    List<TechnologyInfo.Table> selectListByDatabase(@Param("databases") List<String> databases, @Param("databaseLike") List<String> databaseLike);
 }

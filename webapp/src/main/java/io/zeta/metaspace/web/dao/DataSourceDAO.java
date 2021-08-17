@@ -558,4 +558,12 @@ public interface DataSourceDAO {
             " order by d.source_name asc ",
             " </script>"})
     List<DataSourceBody> getDataSourcesByGroups(@Param("groupIds") List<String> groupIds,@Param("tenantId") String tenantId);
+
+    @Select({" <script> ",
+            "select source_id as sourceId,source_name as sourceName ,source_type as sourceType from data_source where tenantid=#{tenantId} and source_type in ",
+            " <foreach item='type' index='index' collection='types' separator=',' open='(' close=')'>",
+            " #{type} ",
+            " </foreach>",
+            " </script>"})
+    List<DataSourceInfo> queryDataSourceBySourceTypeIn(@Param("types")List<String> types,@Param("tenantId") String tenantId);
 }

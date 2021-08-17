@@ -134,8 +134,8 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                                 if (category.isShow())
                                     categoryGuids.add(category.getGuid());
                             }
-                            Integer count = usersService.ifPrivilege(categoryGuids, privilegeGuid);
-                            if (count > 0) {
+                            boolean havePrivilege = usersService.ifPrivilege(categoryGuids, privilegeGuid, tenantId);
+                            if (havePrivilege) {
                                 return invocation.proceed();
                             } else {
                                 throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户权限不足");

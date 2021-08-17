@@ -557,15 +557,11 @@ public interface UserGroupDAO {
             " SELECT COUNT ( * ) OVER ( ) AS total, T.* " +
             " FROM ( SELECT DISTINCT db.database_guid as databaseGuid,db.database_name as dbName,db.status as databasestatus,source.source_id as sourceId,source.source_name as sourceName" +
             " FROM db_info as db INNER JOIN source_db as sd on db.database_guid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
-            " WHERE db.status = 'ACTIVE'" +
-            " AND db.database_name like '%'||#{query}||'%' ESCAPE '/'"+
-            " <if test='sourceId != null'>"+
-            " and sd.source_id = #{sourceId}"+
-            " </if>"+
-            " <if test='databases != null and databases.size() > 0 '>"+
+            " WHERE db.status = 'ACTIVE' and sd.source_id = #{sourceId}" +
+            " <if test='databases != null and databases.size() > 0 '>" +
             " UNION" +
             " SELECT DISTINCT db.database_guid as databaseGuid,db.database_name as dbName,db.status as databasestatus,'hive' as sourceId,'hive' as sourceName FROM db_info as db" +
-            " WHERE db.status = 'ACTIVE' AND db.db_type = 'HIVE' and db.database_name like '%'||#{query}||'%' ESCAPE '/'" +
+            " WHERE db.status = 'ACTIVE' AND db.db_type = 'HIVE'" +
             " AND db.database_name IN" +
             " <foreach item='item' index='index' collection='databases' open='(' separator=',' close=')'>" +
             "   #{item}" +
@@ -574,7 +570,28 @@ public interface UserGroupDAO {
             " ) AS T ORDER BY t.dbname"+
             " <if test='limit != -1'>limit #{limit}</if> offset #{offset} "+
             "</script>")
-    public List<DatabaseHeader> getDBInfo2(@Param("query") String query, @Param("offset") long offset, @Param("limit") long limit,@Param("databases")List<String> databases, @Param("sourceId") String sourceId,@Param("tenantId") String tenantId);
+    List<DatabaseHeader> getDBInfo2(@Param("offset") long offset, @Param("limit") long limit, @Param("databases") List<String> databases, @Param("sourceId") String sourceId);
+
+
+
+    @Select("<script>" +
+            " SELECT COUNT ( * ) OVER ( ) AS total, T.* " +
+            " FROM ( SELECT DISTINCT db.database_guid as databaseGuid,db.database_name as dbName,db.status as databasestatus,source.source_id as sourceId,source.source_name as sourceName" +
+            " FROM db_info as db INNER JOIN source_db as sd on db.database_guid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
+            " WHERE db.status = 'ACTIVE' and source.tenantid = #{tenantId} AND db.database_name like '%'||#{dbName}||'%' ESCAPE '/'" +
+            " <if test='databases != null and databases.size() > 0 '>" +
+            " UNION" +
+            " SELECT DISTINCT db.database_guid as databaseGuid,db.database_name as dbName,db.status as databasestatus,'hive' as sourceId,'hive' as sourceName FROM db_info as db" +
+            " WHERE db.status = 'ACTIVE' AND db.db_type = 'HIVE' AND db.database_name IN " +
+            " <foreach item='item' index='index' collection='databases' open='(' separator=',' close=')'>" +
+            "   #{item}" +
+            " </foreach>" +
+            " AND db.database_name like '%'||#{dbName}||'%' ESCAPE '/'" +
+            " </if>"+
+            " ) AS T ORDER BY t.dbname" +
+            " <if test='limit != -1'>limit #{limit}</if> offset #{offset} "+
+            "</script>")
+    List<DatabaseHeader> selectDbByNameAndTenantId(@Param("offset") long offset, @Param("limit") long limit, @Param("databases") List<String> databases, @Param("tenantId") String tenantId, @Param("dbName") String dbName);
 
 
     @Select("<script>select COUNT(DISTINCT tableinfo.databaseGuid) from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and databasestatus='ACTIVE' and category.tenantid=#{tenantId} and category.guid in " +
@@ -591,23 +608,6 @@ public interface UserGroupDAO {
             "</script>")
     public long getDBCountV2(@Param("guids") List<String> guids, @Param("query") String query,@Param("databases")List<String> databases,@Param("tenantId") String tenantId);
 
-//    @Select("<script>select count(*) over() as total, t.* from (select distinct tableinfo.tableguid,tableinfo.tablename,tableinfo.dbname,tableinfo.status,tableinfo.createtime,tableinfo.databaseguid,tableinfo.source_id from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and category.tenantid=#{tenantId} and category.guid in " +
-//            "    <foreach item='item' index='index' collection='guids'" +
-//            "    open='(' separator=',' close=')'>" +
-//            "    #{item}" +
-//            "    </foreach>" +
-//            "     and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/' " +
-//            "    and (tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) " +
-//            "    <if test='databases != null and databases.size()>0'>" +
-//            "    or (tableinfo.source_id = 'hive'  AND tableinfo.dbname IN " +
-//            "    <foreach item='item' index='index' collection='databases'" +
-//            "    open='(' separator=',' close=')'>" +
-//            "    #{item}" +
-//            "    </foreach>) " +
-//            "    </if>" +
-//            "    )) t " +
-//            "    order by t.tableguid <if test='limit!= -1'>limit #{limit}</if> offset #{offset}" +
-//            "</script>")
     @Select("<script>" +
             " SELECT count(*) over() as total,t.* FROM ("+
             " SELECT sd.source_id as sourceId," +
@@ -620,7 +620,7 @@ public interface UserGroupDAO {
             " tableinfo.createtime" +
             " FROM tableinfo INNER JOIN source_db as sd on tableinfo.databaseguid=sd.db_guid" +
             " INNER JOIN data_source as source on source.source_id = sd.source_id "+
-            " WHERE source.tenantid = #{tenantId} and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/'" +
+            " WHERE source.tenantid = #{tenantId} and tableinfo.status = 'ACTIVE' AND tableinfo.databasestatus = 'ACTIVE' and tableinfo.tablename like '%'||#{query}||'%' ESCAPE '/'" +
             " <if test='databases != null and databases.size()>0'>" +
             " union" +
             " SELECT 'hive' as sourceId," +
@@ -633,7 +633,7 @@ public interface UserGroupDAO {
             " tableinfo.createtime" +
             " FROM tableinfo " +
             " INNER JOIN db_info as db on tableinfo.databaseguid = db.database_guid" +
-            " WHERE db.db_type = 'HIVE' AND db.database_name in " +
+            " WHERE db.db_type = 'HIVE' and tableinfo.status = 'ACTIVE' AND tableinfo.databasestatus = 'ACTIVE' AND db.database_name in " +
             " <foreach item='item' index='index' collection='databases' open='(' separator=',' close=')'>" +
             "   #{item}" +
             " </foreach> " +
@@ -1061,6 +1061,17 @@ public interface UserGroupDAO {
             "    </foreach>" +
             "</script>")
     List<CategoryPrivilegeV2> getUserGroupsCategory(@Param("userGroupIds")List<String> userGroupIds, @Param("tenantId")String tenantId, @Param("categoryType") int categoryType,@Param("dbNames") List<String> dbNames);
+
+    @Select("<script> " +
+            " select *,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem from category_group_relation g join category c on c.guid=g.category_id " +
+            " where c.tenantid=#{tenantId} and c.categorytype=#{categoryType}" +
+            " and g.group_id in " +
+            " <foreach item='id' index='index' collection='userGroupIds'" +
+            "    open='(' separator=',' close=')'>" +
+            "    #{id}" +
+            " </foreach>" +
+            "</script>")
+    List<CategoryPrivilegeV2> getUserGroupsCategoryTechnical(@Param("userGroupIds") List<String> userGroupIds, @Param("tenantId") String tenantId, @Param("categoryType") int categoryType);
 
     //递归找父节点
     @Select("<script>WITH RECURSIVE categoryTree AS" +

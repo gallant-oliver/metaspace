@@ -12,6 +12,8 @@ public class TableDataSourceRelationPO {
 
     private String dataSourceId;
 
+    private String databaseId;
+
     private String createTime;
 
     private String tenantId;
