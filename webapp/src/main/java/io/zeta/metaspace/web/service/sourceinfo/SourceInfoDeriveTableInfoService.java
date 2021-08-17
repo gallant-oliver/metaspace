@@ -134,6 +134,7 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableInfo.setUpdateTime(LocalDateTime.now());
         sourceInfoDeriveTableInfo.setTenantId(tenantId);
         sourceInfoDeriveTableInfo.setVersion(-1);
+
         // 操作是保存，状态是0
         if (!sourceInfoDeriveTableColumnDto.isSubmit()) {
             sourceInfoDeriveTableInfo.setState(DeriveTableStateEnum.UN_COMMIT.getState());
@@ -141,7 +142,7 @@ public class SourceInfoDeriveTableInfoService {
             // 保存并提交，设置状态是1
             // 生成DDL和DML语句
             sourceInfoDeriveTableInfo.setState(DeriveTableStateEnum.COMMIT.getState());
-            sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto));
+            sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto, getDbNameByDbId(sourceInfoDeriveTableInfo.getDbId(), sourceInfoDeriveTableInfo.getSourceId())));
             sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto));
         }
 
@@ -151,6 +152,7 @@ public class SourceInfoDeriveTableInfoService {
             deriveColumnInfo.setTableGuid(sourceInfoDeriveTableInfo.getTableGuid());
             deriveColumnInfo.setTenantId(tenantId);
         });
+
 
         // 表-字段关系
         List<SourceInfoDeriveTableColumnRelation> sourceInfoDeriveTableColumnRelationList = sourceInfoDeriveColumnInfos.stream().map(e -> {
@@ -166,6 +168,13 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveColumnInfoService.saveBatch(sourceInfoDeriveColumnInfos);
         sourceInfoDeriveTableColumnRelationService.saveBatch(sourceInfoDeriveTableColumnRelationList);
         return true;
+    }
+
+    private String getDbNameByDbId(String dbId, String sourceId) {
+        // 获取数据库的名称对应
+        List<Map<String, String>> listMaps = queryDbNameAndSourceNameByIds(dbId, sourceId);
+        Map<String, String> maps = listMaps.stream().collect(Collectors.toMap(e -> e.get("id"), e -> e.get("name")));
+        return maps.getOrDefault(dbId, "");
     }
 
     /**
@@ -209,19 +218,31 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveTableInfo.setState(DeriveTableStateEnum.UN_COMMIT.getState());
 
         } else {// 操作是保存并提交
+            boolean hasModify = checkUpdateHasModify(sourceInfoDeriveTableInfo, sourceInfoDeriveColumnInfos, tenantId);
             // 如果上次是已提交
             if (DeriveTableStateEnum.COMMIT.getState().equals(sourceInfoDeriveTableInfo.getState())) {
-                // 先修改该表的所有版本+1
-                this.updateVersionByTableGuid(tableGuid);
-                // 把当前数据的版本设置为1，设置新id
-                this.updateVersionByTableId(tableId, 1);
-                sourceInfoDeriveTableInfo.setId(UUID.randomUUID().toString());
+                if (hasModify) {
+                    // 先修改该表的所有版本+1
+                    this.updateVersionByTableGuid(tableGuid);
+                    // 把当前数据的版本设置为1，设置新id
+                    this.updateVersionByTableId(tableId, 1);
+                    sourceInfoDeriveTableInfo.setId(UUID.randomUUID().toString());
+                } else {
+                    return true;
+                }
             } else { // 上次是保存
-                // 先修改该表的所有版本+1，然后新增
-                this.updateVersionByTableGuid(tableGuid);
                 // 删除tableId对应的列和关系
                 sourceInfoDeriveColumnInfoService.deleteDeriveColumnInfoByTableId(tableId, tableGuid);
                 sourceInfoDeriveTableColumnRelationService.deleteDeriveTableColumnRelationByTableId(tableId);
+                if (hasModify) {
+                    // 先修改该表的所有版本+1，然后新增
+                    this.updateVersionByTableGuid(tableGuid);
+                } else {
+                    sourceInfoDeriveTableInfoDao.updateVersionToShowByTableGuid(tableGuid);
+                    // 删除tableId对应的列和关系
+                    sourceInfoDeriveTableInfoDao.deleteDeriveTableByTableId(tableId);
+                    return true;
+                }
             }
 
             // 设置状态是1
@@ -229,7 +250,7 @@ public class SourceInfoDeriveTableInfoService {
             // 版本是1
             sourceInfoDeriveTableInfo.setVersion(-1);
             sourceInfoDeriveTableInfo.setState(DeriveTableStateEnum.COMMIT.getState());
-            sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto));
+            sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto, getDbNameByDbId(sourceInfoDeriveTableInfo.getDbId(), sourceInfoDeriveTableInfo.getSourceId())));
             sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto));
 
         }
@@ -268,6 +289,30 @@ public class SourceInfoDeriveTableInfoService {
         }
         sourceInfoDeriveTableColumnRelationService.saveOrUpdateBatch(sourceInfoDeriveTableColumnRelationList);
         return true;
+    }
+
+    boolean checkUpdateHasModify(SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo, List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos, String tenantId) {
+        SourceInfoDeriveTableInfo sourceInfoDeriveTableInfoDB = null;
+        if (DeriveTableStateEnum.COMMIT.getState().equals(sourceInfoDeriveTableInfo.getState())) {
+            // todo 上次是保存并提交，和-1版本的进行比较
+            sourceInfoDeriveTableInfoDB = sourceInfoDeriveTableInfoDao.getByGuidAndTenantIdAndVersion(sourceInfoDeriveTableInfo.getTableGuid(), tenantId, -1);
+        } else {
+            // todo 上次是保存，和0版本的进行比较
+            sourceInfoDeriveTableInfoDB = sourceInfoDeriveTableInfoDao.getByGuidAndTenantIdAndVersion(sourceInfoDeriveTableInfo.getTableGuid(), tenantId, 0);
+        }
+        if (!sourceInfoDeriveTableInfo.equals(sourceInfoDeriveTableInfoDB)) {
+            return true;
+        }
+        List<SourceInfoDeriveColumnInfo> deriveColumnInfoListByTableId = sourceInfoDeriveColumnInfoService.getDeriveColumnInfoListByTableId(sourceInfoDeriveTableInfoDB.getId());
+        sourceInfoDeriveColumnInfos.forEach(deriveColumnInfo -> {
+            deriveColumnInfo.setTenantId(tenantId);
+            deriveColumnInfo.setTableGuid(sourceInfoDeriveTableInfo.getTableGuid());
+        });
+        if (!deriveColumnInfoListByTableId.containsAll(sourceInfoDeriveColumnInfos) ||
+                !sourceInfoDeriveColumnInfos.containsAll(deriveColumnInfoListByTableId)) {
+            return true;
+        }
+        return false;
     }
 
 
@@ -671,10 +716,10 @@ public class SourceInfoDeriveTableInfoService {
             Column column = idColumnMap.get(e.getSourceColumnGuid());
             SourceInfoDeriveColumnVO sourceInfoDeriveColumnVO = new SourceInfoDeriveColumnVO();
             BeanUtils.copyProperties(e, sourceInfoDeriveColumnVO);
-            sourceInfoDeriveColumnVO.setDataBaseName(sourceTableInfo.getDbName());
-            sourceInfoDeriveColumnVO.setSourceTableGuid(sourceTableInfo.getTableGuid());
-            sourceInfoDeriveColumnVO.setSourceTableNameEn(sourceTableInfo.getTableName());
-            sourceInfoDeriveColumnVO.setSourceTableNameZh(sourceTableInfo.getDescription());
+            sourceInfoDeriveColumnVO.setDataBaseName(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getDbName());
+            sourceInfoDeriveColumnVO.setSourceTableGuid(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getTableGuid());
+            sourceInfoDeriveColumnVO.setSourceTableNameEn(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getTableName());
+            sourceInfoDeriveColumnVO.setSourceTableNameZh(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getDescription());
             sourceInfoDeriveColumnVO.setSourceColumnNameEn(null == column ? null : column.getColumnName());
             sourceInfoDeriveColumnVO.setSourceColumnNameZh(null == column ? null : column.getDescription());
             sourceInfoDeriveColumnVO.setSourceColumnType(null == column ? null : column.getType());
@@ -700,12 +745,12 @@ public class SourceInfoDeriveTableInfoService {
     /**
      * 构造DDL
      */
-    private String createDDL(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto) {
+    private String createDDL(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String dbName) {
         // 必须有长度的拼接长度
         String lengthStr = "(255)";
         String tableNameEn = sourceInfoDeriveTableColumnDto.getTableNameEn();
         String dbType = sourceInfoDeriveTableColumnDto.getDbType();
-        StringBuilder tableDDL = new StringBuilder("CREATE TABLE ").append(tableNameEn).append("(\r\n");
+        StringBuilder tableDDL = new StringBuilder("CREATE TABLE ").append(dbName).append(".").append(tableNameEn).append("(\r\n");
 
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
         addTimeField(sourceInfoDeriveColumnInfos);
@@ -1003,6 +1048,7 @@ public class SourceInfoDeriveTableInfoService {
 
     /**
      * 根据数据库类型获取数据类型
+     *
      * @param dbType
      * @return
      */

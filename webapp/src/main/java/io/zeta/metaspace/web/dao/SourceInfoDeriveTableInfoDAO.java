@@ -153,4 +153,24 @@ public interface SourceInfoDeriveTableInfoDAO {
             " from source_info_derive_table_info where id = #{tableId} and table_guid = #{tableGuid} and tenant_id = #{tenantId}",
             "</script>"})
     SourceInfoDeriveTableInfo getByIdAndGuidAndTenantId(@Param("tableId") String tableId, @Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
+
+    @Select({"<script>",
+            " select id as id, ",
+            " table_guid as tableGuid, table_name_en as tableNameEn, table_name_zh as tableNameZh,",
+            " procedure as procedure, category_id as categoryId, db_type as dbType, ",
+            " business_id as businessId, db_id as dbId, source_id as sourceId,",
+            " update_frequency as updateFrequency, etl_policy as etlPolicy, ",
+            " incre_standard as increStandard, clean_rule as cleanRule, filter as filter,",
+            " tenant_id as tenantId, remark as remark, version as version,",
+            " source_table_guid as sourceTableGuid, creator as creator, cast(create_time as varchar) as createTimeStr,",
+            " updater as updater, cast(update_time as varchar) as updateTimeStr, ddl as ddl, dml as dml, state as state",
+            " from source_info_derive_table_info where table_guid = #{tableGuid} and tenant_id = #{tenantId} and version = #{version}",
+            "</script>"})
+    SourceInfoDeriveTableInfo getByGuidAndTenantIdAndVersion(@Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId, @Param("version") int version);
+
+    @Delete("delete from source_info_derive_table_info where id = #{tableId}")
+    int deleteDeriveTableByTableId(@Param("tableId") String tableId);
+
+    @Update("update source_info_derive_table_info set version = -1 where version = 0 and table_guid = #{tableGuid}")
+    int updateVersionToShowByTableGuid(@Param("tableGuid") String tableGuid);
 }
