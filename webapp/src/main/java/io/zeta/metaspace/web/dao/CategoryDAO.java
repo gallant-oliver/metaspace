@@ -16,7 +16,6 @@
  */
 package io.zeta.metaspace.web.dao;
 
-import io.zeta.metaspace.model.dto.indices.IndexFieldDTO;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -25,7 +24,6 @@ import io.zeta.metaspace.model.sourceinfo.derivetable.vo.CategoryGuidPath;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.ibatis.annotations.*;
-import org.springframework.security.access.method.P;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -165,6 +163,21 @@ public interface CategoryDAO {
             "ORDER BY PATH")
     public String queryPathByGuid(@Param("guid") String guid, @Param("tenantId") String tenantId);
 
+    @Select("<script>" +
+            " WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
+            " (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH" +
+            " FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId} AND categorytype = 0" +
+            " UNION ALL " +
+            " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH" +
+            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid= #{tenantId} AND categorytype = 0)" +
+            " SELECT  PATH,guid FROM T WHERE guid in " +
+            " <foreach item='guid' index='index' collection='list' separator=',' open='(' close=')'>" +
+            "   #{guid} " +
+            " </foreach>" +
+            " ORDER BY PATH" +
+            "</script>")
+    Set<CategoryEntityV2> queryPathByGuidAndType(@Param("list") List<String> guid, @Param("tenantId") String tenantId);
+
     @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
             "(SELECT guid,name,parentCategoryGuid, ARRAY[guid] AS PATH, 1 AS DEPTH " +
             "FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId} " +
@@ -240,7 +253,9 @@ public interface CategoryDAO {
             " </script>"})
     public int deleteDataOwner(@Param("tableList") List<String> tableList);
 
-    @Select("select category.guid from category,table_relation where table_relation.tableguid=#{guid} and table_relation.categoryguid=category.guid and tenantid=#{tenantId}")
+    @Select("select t1.category_id from table_data_source_relation t1 where t1.tenant_id = #{tenantId} and t1.table_id = #{guid} " +
+            "union " +
+            "select t2.category_id from  source_info t2 join tableinfo t3 on t2.database_id = t3.databaseguid where t2.tenant_id = #{tenantId} and t3.tableguid = #{guid}")
     public List<String> getCategoryGuidByTableGuid(@Param("guid") String guid, @Param("tenantId") String tenantId);
 
     @Select("select category.guid from category,business_relation where business_relation.businessid=#{guid} and business_relation.categoryguid=category.guid and tenantid=#{tenantId}")

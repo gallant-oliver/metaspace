@@ -27,6 +27,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -234,12 +235,19 @@ public class UsersService {
         }
     }
 
-    public Integer ifPrivilege(List<String> categoryGuid, String tableGuid) {
-        if (categoryGuid.size() > 0) {
-            return userDAO.ifPrivilege(categoryGuid, tableGuid);
-        } else {
-            return 0;
+    public boolean ifPrivilege(List<String> categoryGuid, String tableGuid, String tenantId) {
+        if (CollectionUtils.isEmpty(categoryGuid)) {
+           return false;
         }
+        Integer privilegeCount = userDAO.getPrivilegeFromTable(categoryGuid, tableGuid, tenantId);
+        if(null != privilegeCount && privilegeCount>0){
+            return true;
+        }
+        privilegeCount = userDAO.getPrivilegeFromDb(categoryGuid, tableGuid, tenantId);
+        if(null != privilegeCount && privilegeCount>0){
+            return true;
+        }
+        return false;
     }
 
     public Item getUserItems(String tenantId) throws AtlasBaseException {

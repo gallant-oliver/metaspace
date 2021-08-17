@@ -39,6 +39,7 @@ public class CategoryEntityV2 {
     private int level;
     private int status;
     private boolean show;
+    private String path;
     @JsonIgnore
     private String safe;
 
@@ -236,5 +237,13 @@ public class CategoryEntityV2 {
 
     public void setCode(String code) {
         this.code = code;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 }
