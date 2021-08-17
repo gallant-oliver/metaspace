@@ -181,7 +181,7 @@ public class SourceInfoDatabaseREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.deleteDatabaseInfo()");
             }
-            return sourceInfoDatabaseService.delete(tenantId,request.getIdList());
+            return sourceInfoDatabaseService.delete(tenantId,request.getIdList(),0);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {

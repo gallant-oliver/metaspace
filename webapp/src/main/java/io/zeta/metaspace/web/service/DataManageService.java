@@ -662,7 +662,7 @@ public class DataManageService {
         List<DatabaseInfoForCategory> dif = databaseInfoDAO.getDatabaseInfoByCategoryId(categoryIds,tenantId,guid);
         if (Boolean.FALSE.equals(ParamUtil.isNull(dif))){
             List<String> idList = dif.stream().map(DatabaseInfoForCategory::getId).collect(Collectors.toList());
-            sourceInfoDatabaseService.delete(tenantId,idList);
+            sourceInfoDatabaseService.delete(tenantId,idList,1);
 //            List<String> idList = new ArrayList<>();
 //            idList.add(dif.getId());
 //            databaseInfoDAO.updateStatusByIds(idList, Status.FOUNDED.getIntValue()+"");
