@@ -898,6 +898,10 @@ public class SourceInfoDeriveTableInfoService {
         if (dataSourceType.stream().noneMatch(e -> e.getName().equalsIgnoreCase(dbType))) {
             return ReturnUtil.error("400", "数据源类型不符合规范");
         }
+
+        if (!checkTableNameDump(sourceInfoDeriveTableColumnDto.getTableNameEn(), sourceInfoDeriveTableColumnDto.getDbId())) {
+            return ReturnUtil.error("400", "目标库下表英文名已存在");
+        }
         // 检验表英文名
         if (!checkTableOrColumnNameEnPattern(sourceInfoDeriveTableColumnDto.getTableNameEn())) {
             return ReturnUtil.error("400", "衍生表英文名不符合规范");
@@ -957,6 +961,18 @@ public class SourceInfoDeriveTableInfoService {
             return ReturnUtil.error("400", "部分源字段不存在");
         }
         return ReturnUtil.success();
+    }
+
+    /**
+     * 校验目标库下已登记的衍生表和目标库已存在的表
+     *
+     * @param tableName
+     * @param dbId
+     * @return
+     */
+    public boolean checkTableNameDump(String tableName, String dbId) {
+        int count = sourceInfoDeriveTableInfoDao.checkTableNameDump(tableName, dbId);
+        return count == 0;
     }
 
     /**
