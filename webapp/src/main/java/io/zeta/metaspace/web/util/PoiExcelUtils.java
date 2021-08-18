@@ -582,6 +582,7 @@ public class PoiExcelUtils {
         if (CollectionUtils.isNotEmpty(data)) {
             Row row = sheet.createRow(1);
             int colSize = data.size();
+            int sheetIndex = 1;
             for (int i = 0; i < colSize; i++) {
                 Object obj = data.get(i);
                 if(obj instanceof String){
@@ -589,13 +590,19 @@ public class PoiExcelUtils {
                 }
                 if(obj instanceof List){
                     List<String> list = (List<String>) obj;
-                    String[] datas = list.toArray(new String[list.size()]);
-                    XSSFDataValidationConstraint dvConstraint = (XSSFDataValidationConstraint) dvHelper
-                            .createExplicitListConstraint(datas);
-                    addressList = new CellRangeAddressList(1, 100, i, i);
-                    validation = (XSSFDataValidation) dvHelper.createValidation(
-                            dvConstraint, addressList);
-                    sheet.addValidationData(validation);
+                    int length = list.size();
+                    String[] datas = list.toArray(new String[length]);
+                    if(length < 10){
+                        XSSFDataValidationConstraint dvConstraint = (XSSFDataValidationConstraint) dvHelper
+                                .createExplicitListConstraint(datas);
+                        addressList = new CellRangeAddressList(1, 100, i, i);
+                        validation = (XSSFDataValidation) dvHelper.createValidation(
+                                dvConstraint, addressList);
+                        sheet.addValidationData(validation);
+                    }else{
+                        setLongXSSFValidation(workbook,datas,sheet,1,100,i,sheetIndex++);
+                    }
+
                 }
                 if(obj instanceof Map){
                     Map<String, Set<String>> dataSourceMap = (Map<String, Set<String>>) obj;
@@ -609,6 +616,46 @@ public class PoiExcelUtils {
         }
 
         return workbook;
+    }
+    /**
+     *  解决下拉框过长不显示问题
+     * @param workbook
+     * @param deptList 下拉数据数组
+     * @param sheet
+     * @param firstRow 开始行
+     * @param endRow 结束行
+     * @param cellNum 下拉框所在的列
+     * @param sheetIndex 隐藏sheet名称
+     */
+    public static void setLongXSSFValidation(XSSFWorkbook workbook,String[] deptList ,XSSFSheet sheet ,
+                                             int firstRow, int endRow, int cellNum,int sheetIndex) {
+        String hiddenName = "hidden"+cellNum;
+        //1.创建隐藏的sheet页。        起个名字吧！叫"hidden"！
+        XSSFSheet hidden = workbook.createSheet(hiddenName);
+        //2.循环赋值（为了防止下拉框的行数与隐藏域的行数相对应，将隐藏域加到结束行之后）
+        for (int i = 0, length = deptList.length; i < length; i++) {
+            hidden.createRow(endRow + i).createCell(cellNum).setCellValue(deptList[i]);
+        }
+        Name category1Name = workbook.createName();
+        category1Name.setNameName(hiddenName);
+        //3 A1:A代表隐藏域创建第N列createCell(N)时。以A1列开始A行数据获取下拉数组
+        category1Name.setRefersToFormula(hiddenName + "!A1:A" + (deptList.length + endRow));
+        //
+        DataValidationHelper helper = sheet.getDataValidationHelper();
+        DataValidationConstraint constraint = helper.createFormulaListConstraint(hiddenName);
+        CellRangeAddressList addressList = new CellRangeAddressList(firstRow, endRow, cellNum, cellNum);
+        DataValidation dataValidation = helper.createValidation(constraint, addressList);
+        if (dataValidation instanceof XSSFDataValidation) {
+            // 数据校验
+            dataValidation.setSuppressDropDownArrow(true);
+            dataValidation.setShowErrorBox(true);
+        } else {
+            dataValidation.setSuppressDropDownArrow(false);
+        }
+        // 作用在目标sheet上
+        sheet.addValidationData(dataValidation);
+        // 设置hiddenSheet隐藏
+        workbook.setSheetHidden(sheetIndex, true);
     }
 
     private static void addCascade(XSSFWorkbook book,XSSFSheet sheetPro,String[] fathers,Map<String,Set<String>> areaMap,int pIndex,int curIndex){

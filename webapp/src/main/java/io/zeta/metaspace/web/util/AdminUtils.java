@@ -45,13 +45,13 @@ public class AdminUtils {
         String userName=null;
 
         try {
-            HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
-            String cacheKey = request.getHeader(TICKET_KEY);
+            //HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
+            String cacheKey = getSSOTicket(); //request.getHeader(TICKET_KEY);
             User user = userCache.getIfPresent(cacheKey);
             if (user!=null){
                 return user.getAccount().split("@")[0];
             }
-            Map m = GuavaUtils.getUserInfo(request.getHeader(TICKET_KEY));
+            Map m = GuavaUtils.getUserInfo(cacheKey);
             user = new User();
             user.setUserId(m.get("AccountGuid").toString());
             user.setAccount(m.get("LoginEmail").toString());
