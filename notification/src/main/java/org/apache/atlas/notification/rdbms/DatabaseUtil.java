@@ -57,6 +57,23 @@ public class DatabaseUtil {
         return columnNames;
     }
 
+    /**
+     * 获取表的类型  视图 或者 table
+     * @param dataSourceInfo
+     * @param schemaName
+     * @param tableNameList
+     * @return
+     */
+    public static Map<String,String> getEntityTableType(DataSourceInfo dataSourceInfo,String schemaName, List<String> tableNameList){
+        AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
+        Map<String,String> map = new HashMap<>();
+        try{
+            map = adapterExecutor.getUserObject(schemaName,tableNameList);
+        }catch (Exception e){
+            logger.error("获取实体类型信息出错:",e);
+        }
+        return map;
+    }
     public static DatabaseUtil getInstance(String driver){
         try{
             Class.forName(driver); //"oracle.jdbc.driver.OracleDriver"

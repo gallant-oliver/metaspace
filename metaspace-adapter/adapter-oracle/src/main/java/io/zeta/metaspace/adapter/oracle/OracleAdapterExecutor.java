@@ -17,6 +17,7 @@ import io.zeta.metaspace.utils.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.util.CollectionUtils;
 import schemacrawler.schema.Catalog;
 import schemacrawler.schema.IndexType;
 import schemacrawler.schemacrawler.InfoLevel;
@@ -453,5 +454,44 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
                 throw new AtlasBaseException("查询建表语句失败", e);
             }
         });
+    }
+
+    @Override
+    public Map<String, String> getUserObject(String schemaName, List<String> tableNameList) {
+        Map<String, String> result = new HashMap<>();
+        if(CollectionUtils.isEmpty(tableNameList)){
+            return result;
+        }
+        List<String> tableList = tableNameList.stream()
+                .map(v->v.contains(".") ? v.substring(v.lastIndexOf(".")+1) : v).collect(Collectors.toList());
+        StringBuilder sql = new StringBuilder(" Select owner,object_name,object_type From all_objects Where object_name in ( ");
+        int length = tableNameList.size();
+        for(int i = 0;i < length;i++){
+            if(i == length-1){
+                sql.append("?");
+            }else{
+                sql.append("?,");
+            }
+        }
+        sql.append(")");
+
+        try (Connection connection = getAdapterSource().getConnection()) {
+            PreparedStatement statement = connection.prepareStatement(sql.toString());
+            int index = 1;
+            for (String tableName : tableList){
+                statement.setString(index++, tableName.toUpperCase());
+            }
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                String owner = resultSet.getString("owner");
+                String objectName = resultSet.getString("object_name");
+                String objectType = resultSet.getString("object_type"); //TABLE VIEW
+
+                result.put(objectName,objectType);
+            }
+        } catch (SQLException e) {
+            throw new AtlasBaseException(e);
+        }
+        return result;
     }
 }

@@ -5,12 +5,17 @@ import io.zeta.metaspace.adapter.AbstractAdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.utils.DateUtils;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.springframework.util.CollectionUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MysqlAdapterExecutor extends AbstractAdapterExecutor {
     public MysqlAdapterExecutor(AdapterSource adapterSource) {
@@ -84,5 +89,43 @@ public class MysqlAdapterExecutor extends AbstractAdapterExecutor {
                 throw new AtlasBaseException("查询建表语句失败", e);
             }
         });
+    }
+    @Override
+    public Map<String, String> getUserObject(String schemaName, List<String> tableNameList) {
+        Map<String, String> result = new HashMap<>();
+        if(CollectionUtils.isEmpty(tableNameList)){
+            return result;
+        }
+        List<String> tableList = tableNameList.stream()
+                .map(v->v.contains(".") ? v.substring(v.lastIndexOf(".")+1) : v).collect(Collectors.toList());
+        StringBuilder sql = new StringBuilder(" SELECT table_schema,table_name,table_type FROM information_schema.tables WHERE table_name IN ( ");
+        int length = tableNameList.size();
+        for(int i = 0;i < length;i++){
+            if(i == length-1){
+                sql.append("?");
+            }else{
+                sql.append("?,");
+            }
+        }
+        sql.append(")");
+
+        try (Connection connection = getAdapterSource().getConnection()) {
+            PreparedStatement statement = connection.prepareStatement(sql.toString());
+            int index = 1;
+            for (String tableName : tableList){
+                statement.setString(index++, tableName.toUpperCase());
+            }
+            ResultSet resultSet = statement.executeQuery();
+            if (resultSet.next()) {
+                String owner = resultSet.getString("table_schema");
+                String objectName = resultSet.getString("table_name");
+                String objectType = resultSet.getString("table_type"); //TABLE VIEW
+
+                result.put(objectName,objectType);
+            }
+        } catch (SQLException e) {
+            throw new AtlasBaseException(e);
+        }
+        return result;
     }
 }
