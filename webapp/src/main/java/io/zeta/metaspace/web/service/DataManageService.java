@@ -840,7 +840,7 @@ public class DataManageService {
                     List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
                     entity.setDataOwner(ownerHeaders);
                 }
-                getPath(relations, tenantId);
+                getPathByCategoryId(relations, tenantId, categoryGuid);
                 pageResult.setCurrentSize(relations.size());
                 pageResult.setLists(relations);
                 pageResult.setTotalSize(relations.get(0).getTotal());
@@ -1096,6 +1096,20 @@ public class DataManageService {
     public void getPath(List<RelationEntityV2> list, String tenantId) throws AtlasBaseException {
         for (RelationEntityV2 entity : list) {
             String path = CategoryRelationUtils.getPath(entity.getCategoryGuid(), tenantId);
+            entity.setPath(path);
+        }
+    }
+
+    /**
+     * 根据指定目录ID获取路径
+     * @param list
+     * @param tenantId
+     * @param categoryId
+     * @throws AtlasBaseException
+     */
+    public void getPathByCategoryId(List<RelationEntityV2> list, String tenantId, String categoryId) throws AtlasBaseException {
+        String path = CategoryRelationUtils.getPath(categoryId, tenantId);
+        for (RelationEntityV2 entity : list) {
             entity.setPath(path);
         }
     }
