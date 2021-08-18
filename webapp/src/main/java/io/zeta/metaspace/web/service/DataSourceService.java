@@ -995,7 +995,7 @@ public class DataSourceService {
                     UserIdAndName user = new UserIdAndName();
                     user.setUserName(userAndModule.getUserName());
                     user.setAccount(userAndModule.getEmail());
-                    user.setUserId(userDAO.getUserIdByName(userAndModule.getUserName()));
+                    user.setUserId(userDAO.getUserIdByAccount(userAndModule.getEmail()));
                     users.add(user);
                 }
                 return users;
