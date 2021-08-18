@@ -41,9 +41,6 @@ import io.zeta.metaspace.model.ip.restriction.ApiIpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
 import io.zeta.metaspace.model.metadata.*;
-import io.zeta.metaspace.model.moebius.MoebiusApi;
-import io.zeta.metaspace.model.moebius.MoebiusApiData;
-import io.zeta.metaspace.model.moebius.MoebiusApiParam;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -1700,7 +1697,7 @@ public class DataShareService {
                 UserIdAndName user = new UserIdAndName();
                 user.setUserName(userAndModule.getUserName());
                 user.setAccount(userAndModule.getEmail());
-                user.setUserId(userDAO.getUserIdByName(userAndModule.getUserName()));
+                user.setUserId(userDAO.getUserIdByAccount(userAndModule.getEmail()));
                 users.add(user);
             }
             return users;

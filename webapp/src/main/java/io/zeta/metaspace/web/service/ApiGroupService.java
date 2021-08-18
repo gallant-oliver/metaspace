@@ -25,13 +25,10 @@ import io.zeta.metaspace.model.apigroup.ApiGroupV2;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.moebius.MoebiusApiGroup;
-import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
-import io.zeta.metaspace.model.share.APIContent;
 import io.zeta.metaspace.model.share.ApiInfoV2;
-import io.zeta.metaspace.model.share.ApiLog;
 import io.zeta.metaspace.model.share.ApiLogEnum;
 import io.zeta.metaspace.model.share.ApiStatusEnum;
 import io.zeta.metaspace.model.user.User;
@@ -628,7 +625,7 @@ public class ApiGroupService {
             UserIdAndName user = new UserIdAndName();
             user.setUserName(userAndModule.getUserName());
             user.setAccount(userAndModule.getEmail());
-            user.setUserId(userDAO.getUserIdByName(userAndModule.getUserName()));
+            user.setUserId(userDAO.getUserIdByAccount(userAndModule.getEmail()));
             users.add(user);
         }
         return users;
