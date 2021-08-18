@@ -218,6 +218,12 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
         return createSql;
     }
 
+
+    @Override
+    public String getCreateTableOrViewSql(String schema, String table, String type) {
+        return getCreateTableSql(schema, table);
+    }
+
     public <T> T queryResult(String sql,String schema, Function<ResultSet, T> call) {
         return queryResult(getAdapterSource().getConnection(null,schema,null), sql, call);
     }
