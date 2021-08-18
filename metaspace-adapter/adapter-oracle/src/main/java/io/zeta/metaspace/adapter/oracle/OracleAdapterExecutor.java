@@ -446,7 +446,8 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
     public String getCreateTableOrViewSql(String schema, String table, String type) {
         String schemaName=schema.replaceAll("\"","");
         String tableName=table.replaceAll("\"","");
-        String querySql = "select dbms_metadata.get_ddl('" + type +"','" + tableName + "','" + schemaName + "') from dual";
+        String typeName=type.replaceAll("\"","");
+        String querySql = "select dbms_metadata.get_ddl('" + typeName +"','" + tableName + "','" + schemaName + "') from dual";
         return queryResult(querySql, resultSet -> {
             try {
                 String sql = null;
