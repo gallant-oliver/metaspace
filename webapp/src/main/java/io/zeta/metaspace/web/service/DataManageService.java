@@ -643,7 +643,7 @@ public class DataManageService {
         this.removeSourceInfo(categoryIds,tenantId,guid);
         int item = 0;
         if (type == 0) {
-            item = relationDao.updateRelationByCategoryGuid(categoryIds, "1");
+            item = tableDataSourceRelationDAO.deleteByCategoryIdList(tenantId, categoryIds);
         } else if (type == 1) {
             List<String> businessIds = relationDao.getBusinessIdsByCategoryGuid(categoryIds);
             if (businessIds == null || businessIds.size() == 0) {
@@ -684,23 +684,19 @@ public class DataManageService {
         return deleteReturn;
     }
 
-    private void removeSourceInfo(List<String> categoryIds, String tenantId,String guid){
-        List<DatabaseInfoForCategory> dif = databaseInfoDAO.getDatabaseInfoByCategoryId(categoryIds,tenantId,guid);
-        if (Boolean.FALSE.equals(ParamUtil.isNull(dif))){
+    /**
+     * 删除源信息登记的数据
+     * @param categoryIds
+     * @param tenantId
+     * @param guid
+     */
+    private void removeSourceInfo(List<String> categoryIds, String tenantId, String guid) {
+        List<DatabaseInfoForCategory> dif = databaseInfoDAO.getDatabaseInfoByCategoryId(categoryIds, tenantId, guid);
+        if (Boolean.FALSE.equals(ParamUtil.isNull(dif))) {
             List<String> idList = dif.stream().map(DatabaseInfoForCategory::getId).collect(Collectors.toList());
-            sourceInfoDatabaseService.delete(tenantId,idList,1);
-//            List<String> idList = new ArrayList<>();
-//            idList.add(dif.getId());
-//            databaseInfoDAO.updateStatusByIds(idList, Status.FOUNDED.getIntValue()+"");
-//            databaseInfoDAO.updateRealCategoryRelation(dif.getId(),null);
-//            String parentCategoryId = categoryDao.getParentIdByGuid(guid);
-//            List<DatabaseInfoForCategory> disList = new ArrayList<>();
-//            dif.setParentCategoryId(parentCategoryId);
-//            disList.add(dif);
-//            databaseInfoDAO.insertDatabaseInfoRelationParentCategory(disList);
-//            databaseDAO.deleteDbCategoryRelation(guid,tenantId);
+            sourceInfoDatabaseService.delete(tenantId, idList, 1);
         }
-        }
+    }
 
     /**
      * 更新目录
