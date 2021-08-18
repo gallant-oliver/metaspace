@@ -480,6 +480,7 @@ public class TenantService {
                 }else{
                     dbs = new ArrayList<>();
                 }
+                break;
             }
             if(retryCount == retries && null == dbs && msgDesc != null){
                 throw new RuntimeException(msgDesc);

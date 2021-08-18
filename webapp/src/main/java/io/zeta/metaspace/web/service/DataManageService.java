@@ -1529,7 +1529,7 @@ public class DataManageService {
     }
 
 
-    private void addOrUpdateColumn(Column column){
+    private synchronized void  addOrUpdateColumn(Column column){
         Column c = columnDAO.getColumnInfoByGuid(column.getColumnId());
         if(null == c){
             columnDAO.addColumn(column);
