@@ -72,7 +72,11 @@ public class MysqlAdapterExecutor extends AbstractAdapterExecutor {
 
     @Override
     public String getCreateTableSql(String schema, String table) {
-        String querySql = "SHOW CREATE TABLE " + schema + "." + table;
+        return getCreateTableOrViewSql(schema, table, "TABLE");
+    }
+    @Override
+    public String getCreateTableOrViewSql(String schema, String table, String type) {
+        String querySql = "SHOW CREATE " + type + " " + schema + "." + table;
         return queryResult(querySql, resultSet -> {
             try {
                 String sql = null;

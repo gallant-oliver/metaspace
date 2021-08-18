@@ -151,7 +151,7 @@ public class SearchService {
                             }
                         } else {
                             if (view) {
-                                tableEntity.setSql(this.getBuildRDBMSTableSql(tableEntity.getId(), sourceId).getSql());
+                                tableEntity.setSql(getBuildRDBMSTableSql(tableEntity.getId(), sourceId).getSql());
                             } else {
                                 AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceService.getAnyOneDataSourceByDbGuid(schemaId));
                                 float size = adapterExecutor.getTableSize(schema, tableEntity.getName(), null);
@@ -539,23 +539,25 @@ public class SearchService {
         DataSourceInfo dataSourceInfo = dataSourceService.getAnyDataSourceInfoByTableId(sourceId, tableId);
         AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
         AdapterTransformer adapterTransformer = adapterExecutor.getAdapterSource().getAdapter().getAdapterTransformer();
-        String createTableSql = adapterExecutor.getCreateTableSql(adapterTransformer.caseSensitive(names[0]), adapterTransformer.caseSensitive(names[1]));
+        String createTableSql = adapterExecutor.getCreateTableOrViewSql(adapterTransformer.caseSensitive(names[0]), adapterTransformer.caseSensitive(names[1]),adapterTransformer.caseSensitive(names[2]));
         buildTableSql.setSql(createTableSql);
         buildTableSql.setTableId(tableId);
         return buildTableSql;
     }
 
     private String[] getDbTableNames(String tableId) {
-        String[] names = new String[2];
+        String[] names = new String[3];
         TableInfo table = tableDAO.getTableInfoByTableguid(tableId);
         if (null != table) {
-            names[1] = table.getTableName().toUpperCase();
             names[0] = table.getDbName().toUpperCase();
+            names[1] = table.getTableName().toUpperCase();
+            names[2] = table.getType().toUpperCase();
         } else {
             AtlasEntity entity = entitiesStore.getById(tableId).getEntity();
-            names[1] = ((String) entity.getAttribute("name")).toUpperCase();
             AtlasRelatedObjectId obj = (AtlasRelatedObjectId) entity.getRelationshipAttribute("db");
             names[0] = obj.getDisplayText().toUpperCase();
+            names[1] = ((String) entity.getAttribute("name")).toUpperCase();
+            names[2] = ((String) entity.getAttribute("type")).toUpperCase();
         }
         return names;
     }
@@ -726,7 +728,6 @@ public class SearchService {
      * 模糊查询数据库
      *
      * @param parameters
-     * @param databases
      * @param categoryGuid
      * @param tenantId
      * @param query
@@ -778,7 +779,6 @@ public class SearchService {
      * 精准查询数据库
      *
      * @param parameters
-     * @param databases
      * @param sourceId
      * @param categoryGuid
      * @param tenantId

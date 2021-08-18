@@ -158,8 +158,8 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
                 "col.table_name::regclass = des.objoid " +
                 "and col.ordinal_position = des.objsubid " +
                 "where " +
-                "col.table_schema = '"+schemaName+"' "+
-                " and col.table_name = '"+tableName+"' "+
+                "upper(col.table_schema) = 'upper("+schemaName+")' "+
+                " and upper(col.table_name) = 'upper("+tableName+")' "+
                 " order by ordinal_position;";
 
         String createSql=queryResult(querySql,schemaName, resultSet -> {
@@ -217,6 +217,7 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
         });
         return createSql;
     }
+
     public <T> T queryResult(String sql,String schema, Function<ResultSet, T> call) {
         return queryResult(getAdapterSource().getConnection(null,schema,null), sql, call);
     }
