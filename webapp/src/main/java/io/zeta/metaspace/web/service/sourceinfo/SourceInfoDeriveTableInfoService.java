@@ -789,13 +789,25 @@ public class SourceInfoDeriveTableInfoService {
                 primaryKeyField.append(columnNameEn).append(",");
             }
         }
-        removeTimeField(sourceInfoDeriveColumnInfos);
-        tableDDL.append(columnDDL).append(");\r\n");
+        tableDDL.append(columnDDL).append(")");
+        StringBuilder tableComment = new StringBuilder();
+        String tableNameZh = sourceInfoDeriveTableColumnDto.getTableNameZh();
+        if (StringUtils.isNotBlank(tableNameZh)) {
+            if (Arrays.asList(Constant.HIVE, Constant.MYSQL).contains(dbType.toUpperCase())) {
+                tableComment.append("\r\nCOMMENT '").append(tableNameZh).append("'");
+                tableDDL.append(tableComment);
+            } else {
+                tableComment.append("COMMENT ON TABLE ").append(dbName).append(".").append(tableNameEn).append(" IS '").append(tableNameZh).append("'");
+                tableDDL.append(";\r\n").append(tableComment);
+            }
+        }
+        tableDDL.append(";\r\n");
         if (StringUtils.isNotBlank(primaryKeyField.toString())) {
             primaryKeyDDLHeader.append(primaryKeyField.substring(0, primaryKeyField.length() - 1)).append(");\r\n");
             tableDDL.append(primaryKeyDDLHeader);
         }
         tableDDL.append(commentDDL);
+        removeTimeField(sourceInfoDeriveColumnInfos);
         return tableDDL.toString();
     }
 
