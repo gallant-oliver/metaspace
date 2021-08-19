@@ -47,10 +47,10 @@ public class MetaDataTaskService {
     @Autowired
     UserDAO userDAO;
 
-    @PostConstruct
-    public void init() {
-        syncTaskInstanceDAO.updateStatusAndAppendLogAllFail(SyncTaskInstance.Status.FAIL, "服务异常自动停止任务实例");
-    }
+//    @PostConstruct
+//    public void init() {
+//        syncTaskInstanceDAO.updateStatusAndAppendLogAllFail(SyncTaskInstance.Status.FAIL, "服务异常自动停止任务实例");
+//    }
 
     private static final Logger LOG = LoggerFactory.getLogger(TaskManageService.class);
 

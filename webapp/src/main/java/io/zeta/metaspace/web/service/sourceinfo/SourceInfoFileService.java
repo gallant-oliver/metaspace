@@ -129,7 +129,7 @@ public class SourceInfoFileService {
         }else{
             List<String> sourceTypeList = sourceTypeInfos.stream().map(v->v.getName()).collect(Collectors.toList());
             tableData.add(sourceTypeList ); //Joiner.on(";").join(sourceTypeList)
-            dataSourceInfos = dataSourceDAO.queryDataSourceBySourceTypeIn(sourceTypeList,tenantId);
+            dataSourceInfos = getDataSource(sourceTypeList,tenantId);
         }
         Map<String, Set<String>> dataSourceMap = CollectionUtils.isEmpty(dataSourceInfos) ? null
                 : dataSourceInfos.stream().collect(Collectors.groupingBy(DataSourceInfo::getSourceType,
@@ -649,7 +649,7 @@ public class SourceInfoFileService {
         List<DataSourceInfo> dataSourceInfos = null;
         if(!CollectionUtils.isEmpty(sourceTypeInfos)){
             List<String> sourceTypeList = sourceTypeInfos.stream().map(v->v.getName()).collect(Collectors.toList());
-            dataSourceInfos = dataSourceDAO.queryDataSourceBySourceTypeIn(sourceTypeList,tenantId);
+            dataSourceInfos = getDataSource(sourceTypeList,tenantId);
         }
 
         for(String[] array : saveDbList){
@@ -763,5 +763,21 @@ public class SourceInfoFileService {
         }
 
         return user.get().getUserId();
+    }
+
+    private List<DataSourceInfo>  getDataSource(List<String> sourceTypeList,String tenantId){
+        List<DataSourceInfo> dataSourceInfoList = dataSourceDAO.queryDataSourceBySourceTypeIn(sourceTypeList,tenantId);
+        if(dataSourceInfoList == null){
+            dataSourceInfoList = new ArrayList<>();
+        }
+        if(sourceTypeList.contains("HIVE")){
+            DataSourceInfo info = new DataSourceInfo();
+            info.setSourceId("hive");
+            info.setSourceName("hive");
+            info.setSourceType("HIVE");
+            dataSourceInfoList.add(info);
+        }
+
+        return dataSourceInfoList;
     }
 }

@@ -643,7 +643,7 @@ public class DataManageService {
         this.removeSourceInfo(categoryIds,tenantId,guid);
         int item = 0;
         if (type == 0) {
-            item = relationDao.updateRelationByCategoryGuid(categoryIds, "1");
+            item = tableDataSourceRelationDAO.deleteByCategoryIdList(tenantId, categoryIds);
         } else if (type == 1) {
             List<String> businessIds = relationDao.getBusinessIdsByCategoryGuid(categoryIds);
             if (businessIds == null || businessIds.size() == 0) {
@@ -684,23 +684,19 @@ public class DataManageService {
         return deleteReturn;
     }
 
-    private void removeSourceInfo(List<String> categoryIds, String tenantId,String guid){
-        List<DatabaseInfoForCategory> dif = databaseInfoDAO.getDatabaseInfoByCategoryId(categoryIds,tenantId,guid);
-        if (Boolean.FALSE.equals(ParamUtil.isNull(dif))){
+    /**
+     * 删除源信息登记的数据
+     * @param categoryIds
+     * @param tenantId
+     * @param guid
+     */
+    private void removeSourceInfo(List<String> categoryIds, String tenantId, String guid) {
+        List<DatabaseInfoForCategory> dif = databaseInfoDAO.getDatabaseInfoByCategoryId(categoryIds, tenantId, guid);
+        if (Boolean.FALSE.equals(ParamUtil.isNull(dif))) {
             List<String> idList = dif.stream().map(DatabaseInfoForCategory::getId).collect(Collectors.toList());
-            sourceInfoDatabaseService.delete(tenantId,idList,1);
-//            List<String> idList = new ArrayList<>();
-//            idList.add(dif.getId());
-//            databaseInfoDAO.updateStatusByIds(idList, Status.FOUNDED.getIntValue()+"");
-//            databaseInfoDAO.updateRealCategoryRelation(dif.getId(),null);
-//            String parentCategoryId = categoryDao.getParentIdByGuid(guid);
-//            List<DatabaseInfoForCategory> disList = new ArrayList<>();
-//            dif.setParentCategoryId(parentCategoryId);
-//            disList.add(dif);
-//            databaseInfoDAO.insertDatabaseInfoRelationParentCategory(disList);
-//            databaseDAO.deleteDbCategoryRelation(guid,tenantId);
+            sourceInfoDatabaseService.delete(tenantId, idList, 1);
         }
-        }
+    }
 
     /**
      * 更新目录
@@ -844,7 +840,7 @@ public class DataManageService {
                     List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
                     entity.setDataOwner(ownerHeaders);
                 }
-                getPath(relations, tenantId);
+                getPathByCategoryId(relations, tenantId, categoryGuid);
                 pageResult.setCurrentSize(relations.size());
                 pageResult.setLists(relations);
                 pageResult.setTotalSize(relations.get(0).getTotal());
@@ -1100,6 +1096,20 @@ public class DataManageService {
     public void getPath(List<RelationEntityV2> list, String tenantId) throws AtlasBaseException {
         for (RelationEntityV2 entity : list) {
             String path = CategoryRelationUtils.getPath(entity.getCategoryGuid(), tenantId);
+            entity.setPath(path);
+        }
+    }
+
+    /**
+     * 根据指定目录ID获取路径
+     * @param list
+     * @param tenantId
+     * @param categoryId
+     * @throws AtlasBaseException
+     */
+    public void getPathByCategoryId(List<RelationEntityV2> list, String tenantId, String categoryId) throws AtlasBaseException {
+        String path = CategoryRelationUtils.getPath(categoryId, tenantId);
+        for (RelationEntityV2 entity : list) {
             entity.setPath(path);
         }
     }

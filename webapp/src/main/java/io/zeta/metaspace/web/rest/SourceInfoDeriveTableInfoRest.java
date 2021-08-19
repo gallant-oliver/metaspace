@@ -324,8 +324,22 @@ public class SourceInfoDeriveTableInfoRest {
             @ApiParam(value = "请求头-租户Id", required = true) @HeaderParam(value = "tenantId") String tenantId,
             @ApiParam(value = "数据库类型", required = true) @QueryParam(value = "dbType") String dbType,
             @ApiParam(value = "字段英文名", required = true) @QueryParam(value = "name") String name) {
-        return ReturnUtil.success(sourceInfoDeriveTableInfoService.checkColumnNameEn(name));
+        boolean result = sourceInfoDeriveTableInfoService.checkColumnNameEn(name);
+        return result ? ReturnUtil.success(true) : ReturnUtil.success("字段英文名不符合规范", false);
+    }
 
+    @ApiOperation(value = "根据数据库ID校验表英文名是否重复", tags = "源信息登记-衍生表登记")
+    @Path("/table/name")
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result checkTableNameDump(
+            @ApiParam(value = "请求头-用户token", required = true) @HeaderParam(value = "X-SSO-FullticketId") String ticket,
+            @ApiParam(value = "请求头-租户Id", required = true) @HeaderParam(value = "tenantId") String tenantId,
+            @ApiParam(value = "数据库Id", required = true) @QueryParam(value = "dbId") String dbId,
+            @ApiParam(value = "表英文名", required = true) @QueryParam(value = "name") String name) {
+        boolean result = sourceInfoDeriveTableInfoService.checkTableNameDump(name, dbId);
+        return result ? ReturnUtil.success(true) : ReturnUtil.success("目标库下表英文名已存在", false);
     }
 
     @ApiOperation(value = "根据数据库类型获取数据类型", tags = "源信息登记-衍生表登记")

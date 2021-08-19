@@ -73,6 +73,12 @@ public class CalciteParseSqlTools {
 
         String username =  StringUtils.isBlank(paramMap.get("owner"))? config.getDbUser() : paramMap.get("owner") ;
         username = username.toUpperCase();
+        String schemaName = "";
+        if("oracle".equalsIgnoreCase(rdbmsType)){
+            schemaName = username;
+        }else{
+            schemaName = config.getDbName();
+        }
         //String dbname = config.getDbName(); //orcl 实例名
 
         DataSourceInfo dataSourceInfo = new DataSourceInfo();
@@ -120,11 +126,14 @@ public class CalciteParseSqlTools {
         List<AtlasEntity.AtlasEntityWithExtInfo> toColumnEntityList = new ArrayList<>();
 
         //表.列 格式的list 结构进行组装
+        List<String> totalTable = new ArrayList<>();
+        totalTable.addAll(fromTableList);
+        totalTable.addAll(toTableList);
+        Map<String,String> tableTypeMap = DatabaseUtil.getEntityTableType(dataSourceInfo,schemaName,totalTable);
         List<String> allColumnInfo = new ArrayList<>();
-        paramMap.put("table.type",entityType);
         paramMap.put("isDropTable",operateType.name());
-        dealTableColumnEntity(dataSourceInfo,fromTableList, config,paramMap, fromTableEntityList, fromColumnEntityList,allColumnInfo);
-        dealTableColumnEntity(dataSourceInfo,toTableList, config,paramMap, toTableEntityList, toColumnEntityList,allColumnInfo);
+        dealTableColumnEntity(dataSourceInfo,fromTableList,tableTypeMap, config,paramMap, fromTableEntityList, fromColumnEntityList,allColumnInfo);
+        dealTableColumnEntity(dataSourceInfo,toTableList,tableTypeMap, config,paramMap, toTableEntityList, toColumnEntityList,allColumnInfo);
 
         //blood relation
         AtlasEntity.AtlasEntitiesWithExtInfo atlasBloodEntities = new AtlasEntity.AtlasEntitiesWithExtInfo();
@@ -207,7 +216,8 @@ public class CalciteParseSqlTools {
      * @param tableEntityList 返回的table对象
      * @param columnEntityList 返回的column对象
      */
-    private static void dealTableColumnEntity(DataSourceInfo dataSourceInfo,List<String> tableList,KafkaConnector.Config config,Map<String,String> paramMap,
+    private static void dealTableColumnEntity(DataSourceInfo dataSourceInfo,List<String> tableList,Map<String,String> tableTypeMap,
+                                              KafkaConnector.Config config, Map<String,String> paramMap,
                                               List<AtlasEntity.AtlasEntityWithExtInfo> tableEntityList,
                                               List<AtlasEntity.AtlasEntityWithExtInfo> columnEntityList,List<String> allColumnInfo){
         if(CollectionUtils.isEmpty(tableList)){
@@ -217,6 +227,14 @@ public class CalciteParseSqlTools {
         for (String table : tableList){
             //table entity
             paramMap.put("table",table);
+            paramMap.put("table.type","table");
+            if(tableTypeMap.containsKey(table)){
+                String objectType = tableTypeMap.get(table);
+                if(StringUtils.containsIgnoreCase(objectType,"view")){
+                    paramMap.put("table.type","view");
+                }
+            }
+
             tableEntityList.addAll(makeAtlasEntity(dataSourceInfo,RdbmsEntities.EntityType.RDBMS_TABLE,config,paramMap,null));
             //增加该表的列 entity
             String dropTable = paramMap.get("isDropTable");
