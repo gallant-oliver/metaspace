@@ -84,10 +84,23 @@ public interface DatabaseDAO {
             "select  ts.tenant_id AS tenantId, ts.database_alias AS databaseAlias,ts.category_id AS  categoryId, " +
             " db.database_name databaseName,db.db_type AS dbType "+
             " from source_info ts,db_info db " +
-            " where db.database_guid=ts.database_id and ts.tenant_id=#{tenantId} and ts.version = 0 and ts.database_alias in "+
+            " where db.database_guid=ts.database_id and ts.tenant_id=#{tenantId} and ts.version = 0  "+
+
+            " <if test='dbNameList!=null and dbNameList.size()>0'>" +
+            " and ( ts.database_alias in "+
             "<foreach collection='dbNameList' item='dbName' separator=',' open='(' close=')'>"+
             "#{dbName}"+
             "</foreach>" +
+
+            "    <if test='dbEnNameList!=null and dbEnNameList.size()>0'>" +
+            " OR  db.database_name in "+
+            "<foreach collection='dbEnNameList' item='enName' separator=',' open='(' close=')'>"+
+            "#{enName}"+
+            "</foreach>" +
+            "    </if>" +
+            ") "+
+            "    </if>" +
+
             "</script>")
-    List<DatabaseInfoForDb> findSourceInfoByDbZHName(@Param("dbNameList")List<String> dbZHNameList,@Param("tenantId") String tenantId);
+    List<DatabaseInfoForDb> findSourceInfoByDbZHName(@Param("dbNameList")List<String> dbZHNameList,@Param("dbEnNameList") List<String> searchDbEnList,@Param("tenantId") String tenantId);
 }

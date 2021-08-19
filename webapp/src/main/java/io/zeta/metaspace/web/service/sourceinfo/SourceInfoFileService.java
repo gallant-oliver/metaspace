@@ -301,7 +301,7 @@ public class SourceInfoFileService {
                     .collect(Collectors.toList());
             //根据租户id和中文查询sourceinfo表，再进一步根据目录筛选
             List<DatabaseInfoForDb> sourceInfoExistList = CollectionUtils.isEmpty(searchDbZHList) ? new ArrayList<>()
-                    : databaseDAO.findSourceInfoByDbZHName(searchDbZHList,tenantId); //findDbInfoByDbName
+                    : databaseDAO.findSourceInfoByDbZHName(searchDbZHList,null,tenantId); //findDbInfoByDbName
 
             // 查看db-info是否存在，得出库是否存在
             if(CollectionUtils.isEmpty(dbInfoExistList)){
@@ -396,7 +396,7 @@ public class SourceInfoFileService {
         }else{
             // 判断具体数据库类型下的英文名是否存在
             List<String[]> unExistExcelInfo = CollectionUtils.isEmpty(excelDataList) ? new ArrayList<>() : excelDataList.stream()
-                    .filter( p->dbInfoExistList.stream().anyMatch(v->!(v.getDbType().equalsIgnoreCase(p[dbTypeIndex]) && v.getDatabaseName().equalsIgnoreCase(p[dbEnIndex]))) )
+                    .filter( p->dbInfoExistList.stream().filter(v->!(v.getDbType().equalsIgnoreCase(p[dbTypeIndex]) && v.getDatabaseName().equalsIgnoreCase(p[dbEnIndex]))).count() ==0 )
                     .collect(Collectors.toList());
             resultMap.put("unExistDbList",unExistExcelInfo);
 
@@ -422,9 +422,12 @@ public class SourceInfoFileService {
             List<String> searchDbZHList =  excelDataList.stream()
                     .map(p->p[dbZhIndex])
                     .collect(Collectors.toList());
+            List<String> searchDbEnList =  excelDataList.stream()
+                    .map(p->p[dbEnIndex])
+                    .collect(Collectors.toList());
 
             List<DatabaseInfoForDb> sourceInfoExistList = CollectionUtils.isEmpty(searchDbZHList) ? new ArrayList<>()
-                    : databaseDAO.findSourceInfoByDbZHName(searchDbZHList,tenantId);
+                    : databaseDAO.findSourceInfoByDbZHName(searchDbZHList,searchDbEnList,tenantId);
             List<String[]> repeatInSourceInfoList =  CollectionUtils.isEmpty(excelDataList) ? new ArrayList<>() : excelDataList.stream().filter(p->sourceInfoExistList.stream()
                     .anyMatch( v-> v.getDbType().equals(p[dbTypeIndex])
                             && (v.getDatabaseName().equals(p[dbEnIndex]) || v.getDatabaseAlias().equals(p[dbZhIndex])) )
