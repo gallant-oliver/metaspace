@@ -899,7 +899,7 @@ public class SourceInfoDeriveTableInfoService {
             return ReturnUtil.error("400", "数据源类型不符合规范");
         }
 
-        if (!checkTableNameDump(sourceInfoDeriveTableColumnDto.getTableNameEn(), sourceInfoDeriveTableColumnDto.getDbId())) {
+        if (!checkTableNameDump(sourceInfoDeriveTableColumnDto.getTableNameEn(), sourceInfoDeriveTableColumnDto.getDbId(), sourceInfoDeriveTableColumnDto.getId())) {
             return ReturnUtil.error("400", "目标库下表英文名已存在");
         }
         // 检验表英文名
@@ -970,8 +970,8 @@ public class SourceInfoDeriveTableInfoService {
      * @param dbId
      * @return
      */
-    public boolean checkTableNameDump(String tableName, String dbId) {
-        int count = sourceInfoDeriveTableInfoDao.checkTableNameDump(tableName, dbId);
+    public boolean checkTableNameDump(String tableName, String dbId, String tableId) {
+        int count = sourceInfoDeriveTableInfoDao.checkTableNameDump(tableName, dbId, tableId);
         return count == 0;
     }
 
@@ -1043,7 +1043,7 @@ public class SourceInfoDeriveTableInfoService {
     }
 
 
-    private boolean checkTableOrColumnNameEnPattern(String name) {
+    public boolean checkTableOrColumnNameEnPattern(String name) {
         return name.matches(Constant.PATTERN);
     }
 

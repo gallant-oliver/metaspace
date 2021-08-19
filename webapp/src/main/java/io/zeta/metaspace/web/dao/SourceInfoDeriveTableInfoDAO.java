@@ -175,10 +175,14 @@ public interface SourceInfoDeriveTableInfoDAO {
     int updateVersionToShowByTableGuid(@Param("tableGuid") String tableGuid);
 
     @Select({"<script>",
-            " select count(1) from " ,
-            " (select tablename from tableinfo where databaseguid = #{dbId} and tablename = #{tableName}" ,
-            " union" ,
-            " select table_name_en from source_info_derive_table_info where db_id = #{dbId} and table_name_en = #{tableName} and version = -1)e ",
+            " select count(1) from ",
+            " (select tablename from tableinfo where databaseguid = #{dbId} and tablename = #{tableName}",
+            " union",
+            " select table_name_en from source_info_derive_table_info where db_id = #{dbId} and table_name_en = #{tableName} and version = -1 ",
+            " <if test='id != null'>",
+            " and id != #{id}",
+            " </if>",
+            ")e ",
             "</script>"})
-    int checkTableNameDump(@Param("tableName")String tableName, @Param("dbId")String dbId);
+    int checkTableNameDump(@Param("tableName") String tableName, @Param("dbId") String dbId, @Param("id") String id);
 }

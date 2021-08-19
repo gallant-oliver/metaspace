@@ -337,9 +337,13 @@ public class SourceInfoDeriveTableInfoRest {
             @ApiParam(value = "请求头-用户token", required = true) @HeaderParam(value = "X-SSO-FullticketId") String ticket,
             @ApiParam(value = "请求头-租户Id", required = true) @HeaderParam(value = "tenantId") String tenantId,
             @ApiParam(value = "数据库Id", required = true) @QueryParam(value = "dbId") String dbId,
+            @ApiParam(value = "表id", required = false) @QueryParam(value = "tableId") String tableId,
             @ApiParam(value = "表英文名", required = true) @QueryParam(value = "name") String name) {
-        boolean result = sourceInfoDeriveTableInfoService.checkTableNameDump(name, dbId);
-        return result ? ReturnUtil.success(true) : ReturnUtil.success("目标库下表英文名已存在", false);
+        boolean pattern = sourceInfoDeriveTableInfoService.checkTableOrColumnNameEnPattern(name);
+        tableId = StringUtils.isEmpty(tableId) ? null : tableId;
+        boolean dump = sourceInfoDeriveTableInfoService.checkTableNameDump(name, dbId, tableId);
+        String message = !pattern ? "衍生表英文名不符合规范" : (!dump ? "目标库下表英文名已存在" : null);
+        return dump && pattern ? ReturnUtil.success(true) : ReturnUtil.success(message, false);
     }
 
     @ApiOperation(value = "根据数据库类型获取数据类型", tags = "源信息登记-衍生表登记")
