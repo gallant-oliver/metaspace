@@ -169,7 +169,7 @@ public class DruidAnalyzerUtil {
         Token[] tokens = Token.values();
         for (Token item : tokens){
             if(item.name().equalsIgnoreCase(token)){
-                return item.name;
+                return item.name == null ? token : item.name;
             }
         }
 
@@ -200,6 +200,9 @@ public class DruidAnalyzerUtil {
                     String[] arr = errMsg.split(" ");
                     StringBuilder sb = new StringBuilder(sql);
                     String token = convertToken(arr[arr.length-1]);
+                    if(sql.lastIndexOf(token) == -1){
+                        break;
+                    }
                     sb.delete(sql.lastIndexOf(token),sql.lastIndexOf(token)+token.length());
 
                     sql = sb.toString(); //sql.substring(0, sql.indexOf(arr[arr.length-1]));
@@ -256,6 +259,8 @@ public class DruidAnalyzerUtil {
     public static void main(String[] args) {
         String originSql="rename oldtablename to newtablename;";
         originSql = "alter table tabelx rename column oldcolumn to newcolumn;";
+        originSql = "grant select,insert on sys.ora_temp_1_ds_660009 to \\\"SYS\\\";";
+        originSql = "create global temporary table sys.ora_temp_1_ds_660010 on commit preserve rows cache noparallel as select /*+  no_parallel(t) no_parallel_index(t) dbms_stats cursor_sharing_exact use_weak_name_resl dynamic_sampling(0) no_monitoring no_substrb_pad  */\"SNAP_ID\",\"DBID\",\"INSTANCE_NUMBER\",\"NAME\",\"BLOCK_SIZE\",\"ADVICE_STATUS\",\"SIZE_FACTOR\", rowid SYS_DS_ALIAS_0  from \"SYS\".\"WRH$_DB_CACHE_ADVICE\" sample ( 11.4148143536)  t  WHERE  1 = 2;";
         Map<String, TreeSet<String>> result = getFromTo(originSql,"oracle");
         System.out.println(result);
     }

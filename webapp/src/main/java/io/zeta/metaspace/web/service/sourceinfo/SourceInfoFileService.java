@@ -253,14 +253,26 @@ public class SourceInfoFileService {
         return results;
     }
 
-    private AnalyticResult setAnalyticResult(String errMsg,String[] array,Map<String,Integer> map){
+    private AnalyticResult setAnalyticResult(String msgType,String[] array,Map<String,Integer> map){
         AnalyticResult analyticResult = new AnalyticResult();
-        analyticResult.setDatabaseTypeName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库类型",-1) ));
+        String dbType = getElementOrDefault(array,MapUtils.getIntValue(map,"数据库类型",-1) );
+        analyticResult.setDatabaseTypeName(dbType);
         analyticResult.setDataSourceName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据源",-1)));
         analyticResult.setDatabaseInstanceName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库实例", -1)));
         analyticResult.setDatabaseName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库英文名称" ,-1)));
         analyticResult.setDatabaseAlias(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库中文名",-1)));
         analyticResult.setCategoryName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据层名称", -1 )));
+        String errMsg = "";
+
+        if("1".equals(msgType)){
+            errMsg = "excel文件的数据库中文名存在重复";
+        } else if("2".equals(msgType)){
+            errMsg = "数据库类型["+dbType+"]下的数据库英文名不存在";
+        }else  if("3".equals(msgType)){
+            errMsg = "数据库类型["+dbType+"]下的数据库名已登记";
+        }else{
+            errMsg = msgType;
+        }
         analyticResult.setErrorMessage(errMsg);
         return analyticResult;
     }
@@ -314,14 +326,20 @@ public class SourceInfoFileService {
                             .collect(Collectors.toList());
                 }
 
-                if(!CollectionUtils.isEmpty(sourceInfoExistList)){//source-info 表存在重复的数据
-                    List<String> dbZhList =  excelDataList.stream()
+                if(!CollectionUtils.isEmpty(sourceInfoExistList)){//source-info 表存在中文名或者英文名重复的数据
+                    /*List<String> dbZhList =  excelDataList.stream()
                             .filter(p->!finalUnExistList.contains(p[dbEnIndex])) //排除不存在的数据
                             .map(p->p[dbZhIndex])
                             .collect(Collectors.toList());
 
                     repeatInSourceInfoList = dbZhList.stream()
                             .filter(p->sourceInfoExistList.stream().anyMatch(v->p.equals(v.getDatabaseAlias()) ) )
+                            .collect(Collectors.toList());*/
+
+                    repeatInSourceInfoList = excelDataList.stream()
+                            .filter(p->!finalUnExistList.contains(p[dbEnIndex]) &&
+                                    sourceInfoExistList.stream().anyMatch(v->p[dbZhIndex].equals(v.getDatabaseAlias()) || p[dbEnIndex].equalsIgnoreCase(v.getDatabaseName()) ) )
+                            .map(p->p[dbZhIndex])
                             .collect(Collectors.toList());
                 }
 
@@ -341,7 +359,82 @@ public class SourceInfoFileService {
         return result;
     }
 
-    private List<DatabaseInfoForDb> getExcludeExcelData(Map<String,Integer> map,List<String[]> excelDataList,String tenantId,
+    /*
+     * 处理校验不符合的数据，主要包含以下：
+     *  内部文件中文重名、数据库英文名不存在（某个数据库下）、数据库中文或者英文名重复（某个数据库的数据源下）
+     *
+     */
+    private List<DatabaseInfoForDb> getExcludeExcelData(Map<String,Integer> excelHeadMap,List<String[]> excelDataList,String tenantId,
+                                                        List<String[]> excelRepeatDataList,Map<String,List<String[]>> resultMap){
+        //1. 文件内部比较重名 (根据数据库中文名)
+        int dbZhIndex = excelHeadMap.getOrDefault("数据库中文名", -1);
+        List<String> fileInnerNameRepeat = new ArrayList<>();
+        Map<String,List<String[]>> fileZhNameRepeatMap = dbZhIndex == -1 ? null
+                : excelDataList.stream().collect(Collectors.groupingBy(p->p[dbZhIndex]));
+        if(fileZhNameRepeatMap != null && !fileZhNameRepeatMap.isEmpty()){
+            for(Map.Entry<String,List<String[]>> entry : fileZhNameRepeatMap.entrySet()){
+                if(StringUtils.isNotBlank(entry.getKey()) && entry.getValue().size() > 1){
+                    fileInnerNameRepeat.add(entry.getKey());
+                    excelRepeatDataList.add(entry.getValue().get(0));
+                }
+            }
+        }
+
+        excelDataList = dbZhIndex == -1 ? excelDataList : excelDataList.stream()
+                .filter(p->!fileInnerNameRepeat.contains(p[dbZhIndex])).collect(Collectors.toList());
+        // 2. 不存在的数据库名
+        int dbEnIndex = excelHeadMap.getOrDefault("数据库英文名称", -1);
+        int dbTypeIndex = excelHeadMap.getOrDefault("数据库类型", -1);
+        //获数据库英文名称   用于查询db-info表中存在的数据
+        List<String> dbEnList = dbEnIndex == -1 ? new ArrayList<>()
+                : excelDataList.stream().map(p->p[dbEnIndex]).collect(Collectors.toList());
+        List<DatabaseInfoForDb> dbInfoExistList = CollectionUtils.isEmpty(dbEnList) ? new ArrayList<>()
+                : databaseDAO.findExistDbName(dbEnList);
+        if(CollectionUtils.isEmpty(dbInfoExistList)){
+            logger.info("导入的excel源信息在 db-info 中都不存在");
+            resultMap.put("unExistDbList",excelDataList);
+        }else{
+            // 判断具体数据库类型下的英文名是否存在
+            List<String[]> unExistExcelInfo = CollectionUtils.isEmpty(excelDataList) ? new ArrayList<>() : excelDataList.stream()
+                    .filter( p->dbInfoExistList.stream().anyMatch(v->!(v.getDbType().equalsIgnoreCase(p[dbTypeIndex]) && v.getDatabaseName().equalsIgnoreCase(p[dbEnIndex]))) )
+                    .collect(Collectors.toList());
+            resultMap.put("unExistDbList",unExistExcelInfo);
+
+            excelDataList = CollectionUtils.isEmpty(excelDataList) ? new ArrayList<>() : excelDataList.stream()
+                    .filter( p->dbInfoExistList.stream().anyMatch(v->v.getDbType().equalsIgnoreCase(p[dbTypeIndex]) && v.getDatabaseName().equalsIgnoreCase(p[dbEnIndex])) )
+                    .collect(Collectors.toList());
+
+            //3. 目录中重复
+            int categoryIndex = excelHeadMap.getOrDefault("数据层名称", -1);
+            List<CategoryEntityV2> categoryEntityV2List = categoryDao.queryByTenantId(tenantId);
+            if(categoryIndex != -1 && !CollectionUtils.isEmpty(categoryEntityV2List)){
+               List<String[]> repeatInCategoryList =  CollectionUtils.isEmpty(excelDataList) ? new ArrayList<>() : excelDataList.stream().filter(p->categoryEntityV2List.stream()
+                        .anyMatch(v->v.getGuid().equals(categoryMap.getOrDefault(p[categoryIndex],"-1")) && v.getName().equals(p[dbZhIndex]))
+                ).collect(Collectors.toList());
+                resultMap.put("repeatInCategoryList",repeatInCategoryList);
+            }
+
+            excelDataList =  CollectionUtils.isEmpty(excelDataList) ? new ArrayList<>() : excelDataList.stream().filter(p->categoryEntityV2List.stream()
+                    .anyMatch(v->!(v.getGuid().equals(categoryMap.getOrDefault(p[categoryIndex],"-1")) && v.getName().equals(p[dbZhIndex])))
+            ).collect(Collectors.toList());
+
+            //4. 数据库中文或者英文名重复 SOURCE_INFO 表
+            List<String> searchDbZHList =  excelDataList.stream()
+                    .map(p->p[dbZhIndex])
+                    .collect(Collectors.toList());
+
+            List<DatabaseInfoForDb> sourceInfoExistList = CollectionUtils.isEmpty(searchDbZHList) ? new ArrayList<>()
+                    : databaseDAO.findSourceInfoByDbZHName(searchDbZHList,tenantId);
+            List<String[]> repeatInSourceInfoList =  CollectionUtils.isEmpty(excelDataList) ? new ArrayList<>() : excelDataList.stream().filter(p->sourceInfoExistList.stream()
+                    .anyMatch( v-> v.getDbType().equals(p[dbTypeIndex])
+                            && (v.getDatabaseName().equals(p[dbEnIndex]) || v.getDatabaseAlias().equals(p[dbZhIndex])) )
+            ).collect(Collectors.toList());
+            resultMap.put("repeatInSourceInfoList",repeatInSourceInfoList);
+        }
+
+        return dbInfoExistList;
+    }
+    private List<DatabaseInfoForDb> getExcludeExcelData_old(Map<String,Integer> map,List<String[]> excelDataList,String tenantId,
                                      List<String[]> excelRepeatDataList,Map<String,List<String[]>> resultMap){
 
         int dbEnIndex = map.getOrDefault("数据库英文名称", -1);
@@ -399,24 +492,28 @@ public class SourceInfoFileService {
         getExcludeExcelData(map,excelDataList, tenantId,
                 excelRepeatDataList,resultMap);
         List<String[]> unExistDbList = resultMap.getOrDefault("unExistDbList",new ArrayList<>());
-        List<String[]> repeatDbList = resultMap.getOrDefault("repeatDbList",new ArrayList<>());
+        List<String[]> repeatInCategoryList = resultMap.getOrDefault("repeatInCategoryList",new ArrayList<>());
+        List<String[]> repeatInSourceInfoList = resultMap.getOrDefault("repeatInSourceInfoList",new ArrayList<>());
 
+        List<String[]> repeatDbList = new ArrayList<>();
+        repeatDbList.addAll(repeatInCategoryList);
+        repeatDbList.addAll(repeatInSourceInfoList);
         //返回比较结果
         List<AnalyticResult> results = new ArrayList<>();
 
-        results.addAll(procesExcelResult(excelRepeatDataList,"文件内部数据中文名重复",map));
-        results.addAll(procesExcelResult(unExistDbList,"数据库不存在",map));
-        results.addAll(procesExcelResult(repeatDbList,"数据重复",map));
+        results.addAll(procesExcelResult(excelRepeatDataList,"1",map));
+        results.addAll(procesExcelResult(unExistDbList,"2",map));
+        results.addAll(procesExcelResult(repeatDbList,"3",map));
         return results;
     }
 
-    private List<AnalyticResult> procesExcelResult(List<String[]> list,String errorMsg,Map<String,Integer> map){
+    private List<AnalyticResult> procesExcelResult(List<String[]> list,String msgType,Map<String,Integer> map){
         List<AnalyticResult> result = new ArrayList<>();
         if(CollectionUtils.isEmpty(list)){
             return result;
         }
         for(String[] array : list){
-            result.add(setAnalyticResult(errorMsg,array, map));
+            result.add(setAnalyticResult(msgType,array, map));
         }
         return result;
     }
@@ -516,20 +613,27 @@ public class SourceInfoFileService {
         int dbEnIndex = map.getOrDefault("数据库英文名称", -1);
         int dbZhIndex = map.getOrDefault("数据库中文名", -1);
         int categoryIndex = map.getOrDefault("数据层名称", -1);
+        int dbTypeIndex = map.getOrDefault("数据库类型", -1);
         categoryMap = getCategoryFromDb(tenantId);
         excelDataList.remove(0);
 
         Map<String,List<String[]>> resultMap = new HashMap<>();
         List<DatabaseInfoForDb> dbList = getExcludeExcelData(map,excelDataList, tenantId,
                 excelRepeatDataList,resultMap);
+        /*List<String[]> unExistDbList = resultMap.getOrDefault("unExistDbList",new ArrayList<>());
+        List<String[]> repeatDbList = resultMap.getOrDefault("repeatDbList",new ArrayList<>());*/
+
         List<String[]> unExistDbList = resultMap.getOrDefault("unExistDbList",new ArrayList<>());
-        List<String[]> repeatDbList = resultMap.getOrDefault("repeatDbList",new ArrayList<>());
+        List<String[]> repeatInCategoryList = resultMap.getOrDefault("repeatInCategoryList",new ArrayList<>());
+        List<String[]> repeatInSourceInfoList = resultMap.getOrDefault("repeatInSourceInfoList",new ArrayList<>());
+
 
 
         List<String[]> saveDbList =  removeArrayList(excelDataList,excelRepeatDataList,dbZhIndex);
-        saveDbList = removeArrayList(saveDbList,unExistDbList,dbEnIndex);
-        saveDbList = removeArrayList(saveDbList,repeatDbList,dbZhIndex);
-        saveDbList = removeArrayList(saveDbList,repeatDbList,categoryIndex,dbZhIndex);
+        saveDbList = removeArrayList(saveDbList,unExistDbList,dbTypeIndex,dbEnIndex);
+        saveDbList = removeArrayList(saveDbList,repeatInCategoryList,categoryIndex,dbZhIndex);
+        saveDbList = removeArrayList(saveDbList,repeatInSourceInfoList,dbZhIndex);
+        saveDbList = removeArrayList(saveDbList,repeatInSourceInfoList,dbEnIndex);
 
         //组装保存数据的参数
         if(CollectionUtils.isEmpty(saveDbList)){

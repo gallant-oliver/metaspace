@@ -81,9 +81,10 @@ public interface DatabaseDAO {
     List<DatabaseInfoForDb> findExistDbName(@Param("dbNameList")List<String> dbNameList);
 
     @Select("<script>"+
-            "select  ts.tenant_id AS tenantId, ts.database_alias AS databaseAlias,ts.category_id AS  categoryId " +
-            " from source_info ts " +
-            " where ts.tenant_id=#{tenantId} and ts.version = 0 and ts.database_alias in "+
+            "select  ts.tenant_id AS tenantId, ts.database_alias AS databaseAlias,ts.category_id AS  categoryId, " +
+            " db.database_name databaseName,db.db_type AS dbType "+
+            " from source_info ts,db_info db " +
+            " where db.database_guid=ts.database_id and ts.tenant_id=#{tenantId} and ts.version = 0 and ts.database_alias in "+
             "<foreach collection='dbNameList' item='dbName' separator=',' open='(' close=')'>"+
             "#{dbName}"+
             "</foreach>" +
