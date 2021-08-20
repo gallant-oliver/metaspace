@@ -5,16 +5,14 @@ import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.model.TableSchema;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
+import io.zeta.metaspace.model.metadata.TableEntity;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerColumn;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerForeignKey;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerIndex;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerTable;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.sync.SyncTaskInstance;
-import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
-import io.zeta.metaspace.utils.AdapterUtils;
-import io.zeta.metaspace.utils.CollectThreadPoolUtil;
-import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
+import io.zeta.metaspace.utils.*;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataSourceService;
@@ -134,26 +132,38 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         this.checkTaskEnable(taskInstanceId);
         syncTaskInstanceDAO.appendLog(taskInstanceId, "导入数据源和数据库成功，开始导入表");
         String instanceGuid = atlasEntityWithExtInfo.getEntity().getGuid();
-        Collection<Schema> schemas = metaDataInfo.getSchemas();
+        List<Schema> schemas = new ArrayList<>(metaDataInfo.getSchemas());
         if (!CollectionUtils.isEmpty(schemas) && !tableSchema.isAllDatabase()) {
             LOG.info("Found {} databases", schemas.size());
 
             ThreadPoolExecutor threadPoolExecutor = CollectThreadPoolUtil.getCollectThreadPoolExecutor();
             List<CompletableFuture<Void>> completableFutureList = new ArrayList<>(schemas.size());
             //导入table
-            for (Schema database : schemas) {
-                completableFutureList.add(CompletableFuture.runAsync(() -> {
-                    AtlasEntity.AtlasEntityWithExtInfo dbEntity;
-                    String dbQualifiedName = getDBQualifiedName(instanceId, database.getFullName());
-                    if (metaDataContext.isKownEntity(dbQualifiedName)) {
-                        dbEntity = metaDataContext.getEntity(dbQualifiedName);
-                    } else {
-                        dbEntity = findDatabase(instanceId, database.getFullName());
-                        clearRelationshipAttributes(dbEntity);
-                        metaDataContext.putEntity(dbQualifiedName, dbEntity);
-                    }
-                    importTables(dbEntity.getEntity(), instanceId, database.getFullName(), getTables(database), false, instanceGuid, taskInstanceId, null);
-                }, threadPoolExecutor));
+            List<List<Schema>> slicedList = new ArrayList<>();
+            int maxQueueSize = ThreadPoolUtil.getMaxQueueSize();
+            int perSize = (int) (maxQueueSize*0.75);
+            for (int i = 0;i < schemas.size()/perSize;i++){
+                slicedList.add(schemas.subList(i*perSize,(i+1)*perSize));
+            }
+            if (schemas.size()%perSize!=0){
+                slicedList.add(schemas.subList(schemas.size()-(schemas.size()%perSize),schemas.size())) ;
+            }
+            for (List<Schema> blockList:slicedList) {
+                for (Schema database : blockList) {
+                    completableFutureList.add(CompletableFuture.runAsync(() -> {
+                        AtlasEntity.AtlasEntityWithExtInfo dbEntity;
+                        String dbQualifiedName = getDBQualifiedName(instanceId, database.getFullName());
+                        if (metaDataContext.isKownEntity(dbQualifiedName)) {
+                            dbEntity = metaDataContext.getEntity(dbQualifiedName);
+                        } else {
+                            dbEntity = findDatabase(instanceId, database.getFullName());
+                            clearRelationshipAttributes(dbEntity);
+                            metaDataContext.putEntity(dbQualifiedName, dbEntity);
+                        }
+                        importTables(dbEntity.getEntity(), instanceId, database.getFullName(), getTables(database), false, instanceGuid, taskInstanceId, null);
+                    }, threadPoolExecutor));
+                }
+                Thread.sleep(100);
             }
             CompletableFuture.allOf(completableFutureList.toArray(new CompletableFuture[]{})).join();
             dataManageService.updateRelations(tableSchema.getDefinition());
@@ -702,20 +712,33 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 List<Integer> tablesImportedList = new ArrayList<>(tableNames.size());
                 ThreadPoolExecutor threadPoolExecutor = CollectThreadPoolUtil.getCollectThreadPoolExecutor();
                 List<CompletableFuture<Void>> completableFutureList = new ArrayList<>(tableNames.size());
-                for (Table tableName : tableNames) {
-                    completableFutureList.add(CompletableFuture.runAsync(() -> {
-                        this.checkTaskEnable(taskInstanceId);
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("导入{}表的元数据", tableName.getFullName());
-                        }
-                        int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError, instanceGuid, taskInstanceId, definition);
-                        if (imported == 1) {
+                List<List<Table>> slicedList = new ArrayList<>();
+                List<Table> tables = new ArrayList<>(tableNames);
+                int maxQueueSize = ThreadPoolUtil.getMaxQueueSize();
+                int perSize = (int) (maxQueueSize*0.75);
+                for (int i = 0;i < tables.size()/perSize;i++){
+                    slicedList.add(tables.subList(i*perSize,(i+1)*perSize));
+                }
+                if (tables.size()%perSize!=0){
+                    slicedList.add(tables.subList(tables.size()-(tables.size()%perSize),tables.size())) ;
+                }
+                for (List<Table> blockList:slicedList) {
+                    for (Table tableName : blockList) {
+                        completableFutureList.add(CompletableFuture.runAsync(() -> {
                             this.checkTaskEnable(taskInstanceId);
-                            LOG.info("成功导入表:{}", tableName.getFullName());
-                            syncTaskInstanceDAO.appendLog(taskInstanceId, "成功导入表: " + tableName.getFullName());
-                        }
-                        tablesImportedList.add(imported);
-                    }, threadPoolExecutor));
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("导入{}表的元数据", tableName.getFullName());
+                            }
+                            int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError, instanceGuid, taskInstanceId, definition);
+                            if (imported == 1) {
+                                this.checkTaskEnable(taskInstanceId);
+                                LOG.info("成功导入表:{}", tableName.getFullName());
+                                syncTaskInstanceDAO.appendLog(taskInstanceId, "成功导入表: " + tableName.getFullName());
+                            }
+                            tablesImportedList.add(imported);
+                        }, threadPoolExecutor));
+                    }
+                    Thread.sleep(100);
                 }
                 CompletableFuture.allOf(completableFutureList.toArray(new CompletableFuture[]{})).join();
                 tablesImported = tablesImportedList.stream().mapToInt(Integer::intValue).sum();
