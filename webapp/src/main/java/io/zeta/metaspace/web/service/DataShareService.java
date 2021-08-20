@@ -71,6 +71,7 @@ import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
+import org.apache.tinkerpop.shaded.minlog.Log;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -2589,9 +2590,8 @@ public class DataShareService {
                 try {
                     return adapterExecutor.queryResult(connection, sql, adapterExecutor::extractResultSetToPageResult);
                 } catch (Exception e) {
-                    LOG.error("查询失败", e);
+                    throw new AtlasBaseException(e.getMessage());
                 }
-                return null;
             });
             taskMap.put(randomName, future);
             PageResult<LinkedHashMap<String, Object>> pageResult = future.get();
