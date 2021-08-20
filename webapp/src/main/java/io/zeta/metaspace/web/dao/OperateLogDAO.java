@@ -41,7 +41,7 @@ public interface OperateLogDAO {
              " <if test=\"request.query.keyword != null and request.query.keyword!=''\"> ",
              " and ( b.username like concat('%',#{request.query.keyword},'%') ESCAPE '/' or a.number like concat('%',#{request.query.keyword},'%') ESCAPE '/' or a.ip like concat('%',#{request.query.keyword},'%') ESCAPE '/' )",
              " </if>",
-             " <if test=\"request.query.module != null and request.query.module!=''\"> ",
+             " <if test=\"request.query.module != null and request.query.module!='' and request.query.module != 'overview' \"> ",
              " and a.module=#{request.query.module}",
              " </if>",
              " order by a.createtime desc ",
