@@ -889,7 +889,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         return String.format("%s@%s", instanceId, clusterName);
     }
 
-    public PageResult<Database> getSchemaList(String sourceId, List<String> guidList, List<String> dbList, long offset, long limit, boolean queryTableCount) throws AtlasBaseException {
+    public PageResult<Database> getSchemaList(String sourceId, List<String> guidList, List<String> dbList, long offset, long limit, boolean queryTableCount) throws AtlasBaseException, InterruptedException {
         ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
         PageResult<Database> databasePageResult = new PageResult<>();
         String activeQuery = ".has('__state','ACTIVE')";
@@ -964,30 +964,42 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         }
         List<Database> lists = new ArrayList<>();
         ArrayList<CompletableFuture> completableFutures = new ArrayList<>();
-        for (AtlasVertex database : databases) {
-            completableFutures.add(CompletableFuture.runAsync(() -> {
-                Database db = new Database();
-                lists.add(db);
-                List<String> attributes = new ArrayList<>();
-                attributes.add("name");
-                attributes.add("comment");
-                if (Objects.nonNull(database)) {
-                    AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(database, attributes, null, true);
-                    AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
-                    db.setDatabaseName(dbEntity.getAttribute("name").toString());
-                    db.setDatabaseId(dbEntity.getGuid());
-                    db.setStatus(dbEntity.getStatus().name());
-                    db.setDatabaseDescription(dbEntity.getAttribute("comment") == null ? "-" : dbEntity.getAttribute("comment").toString());
+        List<List<AtlasVertex>> atlasVertexSlicedList = new ArrayList<>();
+        int maxQueueSize = ThreadPoolUtil.getMaxQueueSize();
+        int perSize = (int) (maxQueueSize*0.75);
+        for (int i = 0;i < databases.size()/perSize;i++){
+            atlasVertexSlicedList.add(databases.subList(i*perSize,(i+1)*perSize));
+        }
+        if (databases.size()%perSize!=0){
+            atlasVertexSlicedList.add(databases.subList(databases.size()-(databases.size()%perSize),databases.size())) ;
+        }
+        for (List<AtlasVertex> blockList:atlasVertexSlicedList) {
+            for (AtlasVertex database : blockList) {
+                completableFutures.add(CompletableFuture.runAsync(() -> {
+                    Database db = new Database();
+                    lists.add(db);
+                    List<String> attributes = new ArrayList<>();
+                    attributes.add("name");
+                    attributes.add("comment");
+                    if (Objects.nonNull(database)) {
+                        AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(database, attributes, null, true);
+                        AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
+                        db.setDatabaseName(dbEntity.getAttribute("name").toString());
+                        db.setDatabaseId(dbEntity.getGuid());
+                        db.setStatus(dbEntity.getStatus().name());
+                        db.setDatabaseDescription(dbEntity.getAttribute("comment") == null ? "-" : dbEntity.getAttribute("comment").toString());
 
-                    if (queryTableCount) {
-                        String queryTableCountStr = String.format("g.tx().commit();g.V().has('__typeName',within('rdbms_db','hive_db')).has('__guid','%s').inE().outV().has('__typeName', within('rdbms_table','hive_table'))%s.has('__guid').dedup().count().toList()",
-                                dbEntity.getGuid(), activeQuery);
-                        List<Long> num = (List<Long>) graph.executeGremlinScript(queryTableCountStr, false);
-                        graph.commit();
-                        db.setTableCount(num.get(0));
+                        if (queryTableCount) {
+                            String queryTableCountStr = String.format("g.tx().commit();g.V().has('__typeName',within('rdbms_db','hive_db')).has('__guid','%s').inE().outV().has('__typeName', within('rdbms_table','hive_table'))%s.has('__guid').dedup().count().toList()",
+                                    dbEntity.getGuid(), activeQuery);
+                            List<Long> num = (List<Long>) graph.executeGremlinScript(queryTableCountStr, false);
+                            graph.commit();
+                            db.setTableCount(num.get(0));
+                        }
                     }
-                }
-            }, threadPoolExecutor));
+                }, threadPoolExecutor));
+            }
+            Thread.sleep(100);
         }
         try {
             CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[]{})).get(30, TimeUnit.SECONDS);
@@ -1079,7 +1091,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         }
     }
 
-    public PageResult<TableEntity> getTableList(List<AtlasVertex> atlasVertexList, List<String> dbList, List<String> guidList, String schemaId, long offset, long limit, String query, Boolean isView) throws AtlasBaseException {
+    public PageResult<TableEntity> getTableList(List<AtlasVertex> atlasVertexList, List<String> dbList, List<String> guidList, String schemaId, long offset, long limit, String query, Boolean isView) throws AtlasBaseException, InterruptedException {
 
         ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
         PageResult<TableEntity> tablePageResult = new PageResult<>();
@@ -1175,32 +1187,45 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             atlasVertexList = atlasVertexList.subList((int) offset, lastIndex);
         }
         completableFutures.clear();
-        for (AtlasVertex table : atlasVertexList) {
-            completableFutures.add(CompletableFuture.runAsync(() -> {
-                TableEntity tb = new TableEntity();
-                lists.add(tb);
-                List<String> attributes = new ArrayList<>();
-                attributes.add("name");
-                attributes.add("comment");
-                attributes.add(temporary);
-                attributes.add("tableType");
-                attributes.add("type");
-                if (Objects.nonNull(table)) {
-                    AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(table, attributes, null, true);
-                    AtlasEntity entity = dbEntityWithExtInfo.getEntity();
-                    tb.setName(entity.getAttribute("name").toString());
-                    tb.setHiveTable(entity.getTypeName().toLowerCase().contains("hive"));
-                    tb.setTableType(String.valueOf(entity.getAttribute(tb.isHiveTable() ? "tableType" : "type")));
-                    if (Boolean.parseBoolean(String.valueOf(entity.getAttribute(temporary)))) {
-                        tb.setVirtualTable(true);
-                    } else {
-                        tb.setVirtualTable(false);
+
+        List<List<AtlasVertex>> atlasVertexSlicedList = new ArrayList<>();
+        int maxQueueSize = ThreadPoolUtil.getMaxQueueSize();
+        int perSize = (int) (maxQueueSize*0.75);
+        for (int i = 0;i < atlasVertexList.size()/perSize;i++){
+            atlasVertexSlicedList.add(atlasVertexList.subList(i*perSize,(i+1)*perSize));
+        }
+        if (atlasVertexList.size()%perSize!=0){
+            atlasVertexSlicedList.add(atlasVertexList.subList(atlasVertexList.size()-(atlasVertexList.size()%perSize),atlasVertexList.size())) ;
+        }
+        for (List<AtlasVertex> blockList:atlasVertexSlicedList) {
+            for (AtlasVertex table : blockList) {
+                completableFutures.add(CompletableFuture.runAsync(() -> {
+                    TableEntity tb = new TableEntity();
+                    lists.add(tb);
+                    List<String> attributes = new ArrayList<>();
+                    attributes.add("name");
+                    attributes.add("comment");
+                    attributes.add(temporary);
+                    attributes.add("tableType");
+                    attributes.add("type");
+                    if (Objects.nonNull(table)) {
+                        AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(table, attributes, null, true);
+                        AtlasEntity entity = dbEntityWithExtInfo.getEntity();
+                        tb.setName(entity.getAttribute("name").toString());
+                        tb.setHiveTable(entity.getTypeName().toLowerCase().contains("hive"));
+                        tb.setTableType(String.valueOf(entity.getAttribute(tb.isHiveTable() ? "tableType" : "type")));
+                        if (Boolean.parseBoolean(String.valueOf(entity.getAttribute(temporary)))) {
+                            tb.setVirtualTable(true);
+                        } else {
+                            tb.setVirtualTable(false);
+                        }
+                        tb.setId(entity.getGuid());
+                        tb.setStatus(entity.getStatus().name());
+                        tb.setDescription(entity.getAttribute("comment") == null ? "-" : entity.getAttribute("comment").toString());
                     }
-                    tb.setId(entity.getGuid());
-                    tb.setStatus(entity.getStatus().name());
-                    tb.setDescription(entity.getAttribute("comment") == null ? "-" : entity.getAttribute("comment").toString());
-                }
-            }, threadPoolExecutor));
+                }, threadPoolExecutor));
+            }
+            Thread.sleep(100);
         }
         try {
             CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[]{})).get(30, TimeUnit.SECONDS);
@@ -1277,28 +1302,29 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             int lastIndex = limit == -1 ? atlasVertexList.size() : (int) (atlasVertexList.size() <= offset + limit ? atlasVertexList.size() : offset + limit);
             atlasVertexList = atlasVertexList.subList((int) offset, lastIndex);
         }
-        for (AtlasVertex database : atlasVertexList) {
-            Database db = new Database();
-            List<String> attributes = new ArrayList<>();
-            attributes.add("name");
-            attributes.add("comment");
-            if (Objects.nonNull(database)) {
-                AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(database, attributes, null, true);
-                AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
-                db.setDatabaseName(dbEntity.getAttribute("name").toString());
-                db.setDatabaseId(dbEntity.getGuid());
-                db.setStatus(dbEntity.getStatus().name());
-                db.setDatabaseDescription(dbEntity.getAttribute("comment") == null ? "-" : dbEntity.getAttribute("comment").toString());
+            for (AtlasVertex database : atlasVertexList) {
+                Database db = new Database();
+                List<String> attributes = new ArrayList<>();
+                attributes.add("name");
+                attributes.add("comment");
+                if (Objects.nonNull(database)) {
+                    AtlasEntity.AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(database, attributes, null, true);
+                    AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
+                    db.setDatabaseName(dbEntity.getAttribute("name").toString());
+                    db.setDatabaseId(dbEntity.getGuid());
+                    db.setStatus(dbEntity.getStatus().name());
+                    db.setDatabaseDescription(dbEntity.getAttribute("comment") == null ? "-" : dbEntity.getAttribute("comment").toString());
 
-                if (queryCount) {
-                    String gremlinQuery = gremlinQueryProvider.getQuery(active ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_TABLE_TOTAL_BY_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_TOTAL_BY_DB);
-                    String numQuery = String.format(gremlinQuery, database.getId());
-                    List num = (List) graph.executeGremlinScript(numQuery, false);
-                    db.setTableCount(Integer.parseInt(num.get(0).toString()));
+                    if (queryCount) {
+                        String gremlinQuery = gremlinQueryProvider.getQuery(active ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.ACTIVE_TABLE_TOTAL_BY_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TABLE_TOTAL_BY_DB);
+                        String numQuery = String.format(gremlinQuery, database.getId());
+                        List num = (List) graph.executeGremlinScript(numQuery, false);
+                        db.setTableCount(Integer.parseInt(num.get(0).toString()));
+                    }
                 }
+                lists.add(db);
             }
-            lists.add(db);
-        }
+
         databasePageResult.setCurrentSize(lists.size());
         databasePageResult.setLists(lists);
         databasePageResult.setTotalSize(dbNum.get(0));

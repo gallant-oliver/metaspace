@@ -182,7 +182,7 @@ public class MetaDataREST {
                                                 @QueryParam("queryTableCount") @DefaultValue("false") boolean queryTableCount,
                                                 @QueryParam("sourceId") String sourceId,
                                                 @QueryParam("query") String query,
-                                                @QueryParam("offset") long offset, @QueryParam("limit") long limit, @HeaderParam("tenantId") String tenantId) {
+                                                @QueryParam("offset") long offset, @QueryParam("limit") long limit, @HeaderParam("tenantId") String tenantId) throws InterruptedException {
         AtlasPerfTracer perf = null;
         Long start = System.currentTimeMillis();
         try {
