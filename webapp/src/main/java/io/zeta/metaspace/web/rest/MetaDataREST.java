@@ -42,7 +42,6 @@ import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -194,8 +193,7 @@ public class MetaDataREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDatabaseList(" + sourceId + " )");
             }
-            PageResult<Database> result = searchService.getDatabases(sourceId, offset, limit, query, active, tenantId, queryTableCount);
-            result.getLists().forEach(database -> database.setSourceId(sourceId));
+            PageResult<Database> result = searchService.getDatabases(sourceId, offset, limit, query, tenantId, queryTableCount);
             return result;
         } finally {
             if(StringUtils.isNotBlank(query)){
@@ -225,12 +223,7 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableList(" + schemaId + "," + limit + "," + offset + " )");
             }
             Boolean isView = StringUtils.isEmpty(isViewStr) ? null : Boolean.parseBoolean(isViewStr);
-            PageResult<TableEntity> result = searchService.getTable(schemaId, active, offset, limit, query, isView, queryInfo, tenantId, sourceId);
-            List<TableEntity> tables = result.getLists();
-            if(CollectionUtils.isNotEmpty(tables)){
-                tables.forEach(t -> t.setSourceId(sourceId));
-            }
-            return result;
+            return searchService.getTable(schemaId, offset, limit, query, isView, queryInfo, tenantId, sourceId);
         } finally {
             if(StringUtils.isNotBlank(query)){
                 dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "metadata");

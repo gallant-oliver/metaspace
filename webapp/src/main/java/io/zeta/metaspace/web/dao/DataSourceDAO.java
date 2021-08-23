@@ -202,10 +202,10 @@ public interface DataSourceDAO {
             "${parameters.order} " +
             "</if>" +
             "<if test='parameters.limit!=-1'>" +
-            "limit ${parameters.limit} " +
+            "limit #{parameters.limit} " +
             "</if>" +
             "<if test='parameters.offset!=0'>" +
-            "offset ${parameters.offset}" +
+            "offset #{parameters.offset}" +
             "</if>" +
             "</script>")
     public List<DataSourceHead> searchApiDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId,@Param("tenantId")String tenantId);
