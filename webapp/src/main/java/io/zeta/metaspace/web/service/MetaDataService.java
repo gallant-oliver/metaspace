@@ -1181,15 +1181,27 @@ public class MetaDataService {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getColumnInfoById({})", query);
         }
-        String guid = query.getGuid();
-        List<Column> columns = null;
-        //获取entity
         try {
-            AtlasEntity.AtlasEntityWithExtInfo info = getEntityInfoByGuid(guid, false);
-            //columns
-            columns = extractColumnInfo(info, guid);
-            //filter
-            columns = filterColumn(query, columns);
+            if (query.getColumnFilter() == null) {
+                query.setColumnFilter(new ColumnQuery.ColumnFilter());
+            } else {
+                String columnName = query.getColumnFilter().getColumnName();
+                if (StringUtils.isNotBlank(columnName)) {
+                    query.getColumnFilter().setColumnName(columnName.replaceAll("%", "/%").replaceAll("_", "/_"));
+                }
+                String description = query.getColumnFilter().getDescription();
+                if(StringUtils.isNotBlank(description)){
+                    query.getColumnFilter().setDescription(description.replaceAll("%", "/%").replaceAll("_", "/_"));
+                }
+            }
+            List<Column> columns = columnDAO.selectListByGuidOrLike(query.getGuid(), query.getColumnFilter().getColumnName(), query.getColumnFilter().getType(), query.getColumnFilter().getDescription());
+//          TODO: 2021/8/24 缺少分区查询功能
+
+//            AtlasEntity.AtlasEntityWithExtInfo info = getEntityInfoByGuid(guid, false);
+//            //columns
+//            columns = extractColumnInfo(info, guid);
+//            //filter
+//            columns = filterColumn(query, columns);
             return columns;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到表字段信息");
