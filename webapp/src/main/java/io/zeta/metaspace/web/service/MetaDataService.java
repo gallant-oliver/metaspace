@@ -45,7 +45,6 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.glossary.enums.AtlasTermRelationshipStatus;
 import org.apache.atlas.model.instance.*;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
-import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.graph.GraphHelper;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
@@ -64,7 +63,6 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.RegionUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,11 +79,7 @@ import java.sql.Connection;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -641,8 +635,10 @@ public class MetaDataService {
             table.setDatabaseStatus(relatedObject.getEntityStatus().name());
 
 //            table.setSourceId(sourceId);
-            table.setSourceName(relatedInstance.getDisplayText());
-            table.setSourceStatus(relatedInstance.getEntityStatus().name());
+            if(relatedInstance != null){
+                table.setSourceName(relatedInstance.getDisplayText());
+                table.setSourceStatus(relatedInstance.getEntityStatus().name());
+            }
             ColumnQuery columnQuery = new ColumnQuery();
             columnQuery.setGuid(guid);
 
@@ -819,9 +815,10 @@ public class MetaDataService {
                     column.setDatabaseStatus(relatedDB.getEntityStatus().name());
 
 //                    column.setSourceId(relatedInstance.getGuid());
-                    column.setSourceName(relatedInstance.getDisplayText());
-                    column.setSourceStatus(relatedInstance.getEntityStatus().name());
-
+                    if(relatedInstance != null){
+                        column.setSourceName(relatedInstance.getDisplayText());
+                        column.setSourceStatus(relatedInstance.getEntityStatus().name());
+                    }
                     column.setColumnId(referredEntity.getGuid());
                     //attribute
                     extractAttributeInfo(referredEntity, column);
