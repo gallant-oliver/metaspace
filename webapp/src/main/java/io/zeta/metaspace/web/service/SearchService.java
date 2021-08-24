@@ -100,6 +100,9 @@ public class SearchService {
                 if (CollectionUtils.isEmpty(dbList)) {
                     return databasePageResult;
                 }
+                if(StringUtils.isNotBlank(query)){
+                    query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+                }
                 databaseList = databaseInfoDAO.selectByDbNameAndTenantId(tenantId, query, dbList, limit, offset);
             } else if ("hive".equalsIgnoreCase(sourceId)) {
                 dbList = tenantService.getDatabase(tenantId);
@@ -135,6 +138,9 @@ public class SearchService {
         try {
             if (StringUtils.isEmpty(sourceId)) {
                 dbList = tenantService.getDatabase(tenantId);
+                if(StringUtils.isNotBlank(query)){
+                    query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+                }
                 tableEntityList = tableDAO.selectListByTenantIdAndTableName(query, tenantId, dbList, limit, offset);
             } else if ("hive".equalsIgnoreCase(sourceId)) {
                 tableEntityList = tableDAO.selectListByHiveDb(schemaId, isView, limit, offset);
