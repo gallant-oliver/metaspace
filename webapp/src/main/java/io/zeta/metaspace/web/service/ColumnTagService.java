@@ -10,6 +10,7 @@ import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.logging.log4j.core.util.UuidUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,11 +27,8 @@ public class ColumnTagService {
 
     private static final Logger LOG = LoggerFactory.getLogger(ColumnTagService.class);
 
-    private final ColumnTagDAO columnTagDAO;
-
-    public ColumnTagService(ColumnTagDAO columnTagDAO) {
-        this.columnTagDAO = columnTagDAO;
-    }
+    @Autowired
+    private ColumnTagDAO columnTagDAO;
 
     public Result getColumnTag(String tenantId, String columnId) {
 
