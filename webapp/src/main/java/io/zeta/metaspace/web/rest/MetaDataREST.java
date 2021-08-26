@@ -29,6 +29,7 @@ import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.table.Tag;
+import io.zeta.metaspace.model.table.column.tag.ColumnTag;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.service.*;
@@ -65,6 +66,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
@@ -81,6 +83,9 @@ public class MetaDataREST {
     private static final String DEFAULT_DEPTH = "-1";
     private AtomicBoolean importing = new AtomicBoolean(false);
 
+
+    @Autowired
+    private ColumnTagService columnTagService;
     @Autowired
     private DataManageService dataManageService;
     @Autowired
@@ -413,14 +418,22 @@ public class MetaDataREST {
     @Path("/table/column/")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Column> getColumnInfoById(ColumnQuery query, @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
+    public List<Column> getColumnInfoById(@HeaderParam("tenantId")String tenantId, ColumnQuery query, @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
         Servlets.validateQueryParamLength("guid", query.getGuid());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getColumnInfoById");
             }
-            return metadataService.getColumnInfoById(query, refreshCache);
+            List<Column> columns = metadataService.getColumnInfoById(query, refreshCache);
+            List<Column> columnsWithTags=columnTagService.buildTagsInfoColumn(columns,tenantId);
+            Map<String,List<ColumnTag>> map = columnsWithTags.stream().collect(Collectors.toMap(Column::getColumnId,Column::getTags,(key1,key2)->key1));
+            columns.forEach(column -> {
+                if (map.get(column.getColumnId())!=null){
+                    column.setTags(map.get(column.getColumnId()));
+                }
+            });
+            return columns;
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -918,14 +931,22 @@ public class MetaDataREST {
     @Path("/rdbms/table/column/")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public RDBMSColumnAndIndexAndForeignKey getRDBMSColumnInfoById(ColumnQuery query, @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
+    public RDBMSColumnAndIndexAndForeignKey getRDBMSColumnInfoById(@HeaderParam("tenantId")String tenantId, ColumnQuery query, @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
         Servlets.validateQueryParamLength("guid", query.getGuid());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getColumnInfoById");
             }
-            return metadataService.getRDBMSColumnInfoById(query, refreshCache);
+            RDBMSColumnAndIndexAndForeignKey key= metadataService.getRDBMSColumnInfoById(query, refreshCache);
+            List<RDBMSColumn> columnsWithTags=columnTagService.buildTagsInfoRDBMSColumn(key.getColumns(),tenantId);
+            Map<String,List<ColumnTag>> map = columnsWithTags.stream().collect(Collectors.toMap(RDBMSColumn::getColumnId,RDBMSColumn::getTags,(key1,key2)->key1));
+            key.getColumns().forEach(column -> {
+                if (map.get(column.getColumnId())!=null){
+                    column.setTags(map.get(column.getColumnId()));
+                }
+            });
+            return key;
         } finally {
             AtlasPerfTracer.log(perf);
         }

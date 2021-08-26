@@ -9,5 +9,5 @@ public class UpdateRelationRequest {
 
     private String columnId;
 
-    private List<String> taqIdList;
+    private List<String> tagIdList;
 }

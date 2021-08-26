@@ -2,6 +2,8 @@ package io.zeta.metaspace.web.service;
 
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.metadata.RDBMSColumn;
 import io.zeta.metaspace.model.table.column.tag.ColumnTag;
 import io.zeta.metaspace.model.table.column.tag.ColumnTagRelation;
 import io.zeta.metaspace.utils.StringUtil;
@@ -64,7 +66,9 @@ public class ColumnTagService {
                 addRelationList.add(columnTagRelation);
             }
         });
-        columnTagDAO.addTagRelationsToColumn(addRelationList);
+        if(!addRelationList.isEmpty()){
+            columnTagDAO.addTagRelationsToColumn(addRelationList);
+        }
         return ReturnUtil.success();
     }
 
@@ -75,6 +79,14 @@ public class ColumnTagService {
 
     public Result checkDuplicateNameTag(String tenantId,String tagName){
         return ReturnUtil.success(columnTagDAO.getTagByTagName(tenantId,tagName)>0);
+    }
+    public List<Column> buildTagsInfoColumn(List<Column> columns,String tenantId){
+        List<String> ids = columns.stream().map(Column::getColumnId).collect(Collectors.toList());
+        return columnTagDAO.getColumnWithTags(ids,tenantId);
+    }
+    public List<RDBMSColumn> buildTagsInfoRDBMSColumn(List<RDBMSColumn> columns, String tenantId){
+        List<String> ids = columns.stream().map(RDBMSColumn::getColumnId).collect(Collectors.toList());
+        return columnTagDAO.getRDBMSColumnWithTags(ids,tenantId);
     }
 
 }
