@@ -313,35 +313,33 @@ public class MetaDataService {
         if (Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
+        Database database = new Database();
         try {
             //获取对象
             // 转换成AtlasEntity
             // tables属性需要遍历所有的表，极其耗费性能，此接口没有用到，排除掉tables属性
             AtlasEntity entity = getEntityInfoByGuid(guid, Collections.singletonList(ATT_TABLES), Collections.singletonList(ATT_TABLES)).getEntity();
-
-            Database database = new Database();
             database.setDatabaseId(guid);
             database.setDatabaseName(getEntityAttribute(entity, "name"));
             database.setDatabaseDescription(entity.getAttribute("comment") == null ? "-" : entity.getAttribute("comment").toString());
             database.setStatus(entity.getStatus().name());
             database.setOwner(getEntityAttribute(entity, "owner"));
-
-            if(StringUtils.isNotBlank(sourceId)){
-                if("hive".equalsIgnoreCase(sourceId)){
+            if (StringUtils.isNotBlank(sourceId)) {
+                if ("hive".equalsIgnoreCase(sourceId)) {
                     database.setSourceId("hive");
                     database.setSourceName("hive");
-                }else{
+                } else {
                     DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(sourceId);
-                    if(null != dataSourceInfo){
+                    if (null != dataSourceInfo) {
                         database.setSourceId(dataSourceInfo.getSourceId());
                         database.setSourceName(dataSourceInfo.getSourceName());
                     }
                 }
             }
-            return database;
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "查询数据库信息异常");
+            LOG.error("getDatabase exception is {}", e);
         }
+        return database;
     }
 
 

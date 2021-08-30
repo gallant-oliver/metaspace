@@ -106,6 +106,9 @@ public class SearchService {
                 databaseList = databaseInfoDAO.selectByDbNameAndTenantId(tenantId, query, dbList, limit, offset);
             } else if ("hive".equalsIgnoreCase(sourceId)) {
                 dbList = tenantService.getDatabase(tenantId);
+                if (CollectionUtils.isEmpty(dbList)) {
+                    return databasePageResult;
+                }
                 databaseList = databaseInfoDAO.selectByHive(dbList, limit, offset);
             } else {
                 databaseList = databaseInfoDAO.selectBySourceId(sourceId, limit, offset);
