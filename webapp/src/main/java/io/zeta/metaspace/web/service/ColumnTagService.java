@@ -54,18 +54,27 @@ public class ColumnTagService {
         return columnTag;
     }
 
-    public Result createTagRelationToColumn(String tenantId, String columnId, List<String> tagList) {
-        Map<String,ColumnTag> columnTagMap = columnTagDAO.getTagListByColumnId(tenantId,columnId).stream().collect(Collectors.toMap(ColumnTag::getId, Function.identity(),(key1,key2)->key2));
+    public Result createTagRelationToColumn(String tenantId, List<String> columnIds, List<String> tagList) {
+        Map<String,List<String>> columnTagRelations = columnTagDAO.getTagListByColumnIds(tenantId,columnIds).stream().
+                collect(Collectors.toMap(ColumnTagRelation::getColumnId,p->{
+                List<String> tagIds = new ArrayList<>();
+                tagIds.add(p.getTagId());
+                return tagIds;
+            },(List<String>tagIds1,List<String>tagIds2)->{
+                    tagIds1.addAll(tagIds2);
+                    return tagIds1;
+                }));
         List<ColumnTagRelation> addRelationList = new ArrayList<>();
-        tagList.forEach(tagId->{
-            if (!columnTagMap.containsKey(tagId)){
+
+        tagList.forEach(tagId-> columnTagRelations.forEach((columnId, tagIds)->{
+            if (!tagIds.contains(tagId)){
                 ColumnTagRelation columnTagRelation = new ColumnTagRelation();
                 columnTagRelation.setColumnId(columnId);
                 columnTagRelation.setTagId(tagId);
                 columnTagRelation.setId(UUID.randomUUID().toString());
                 addRelationList.add(columnTagRelation);
             }
-        });
+        }));
         if(!addRelationList.isEmpty()){
             columnTagDAO.addTagRelationsToColumn(addRelationList);
         }

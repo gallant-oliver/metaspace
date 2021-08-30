@@ -48,7 +48,23 @@ public interface ColumnTagDAO {
             "GROUP BY ct.id,ct.name,ct.tenant_id,ct.modify_time,ctrtc.column_id"+
             " ORDER BY ct.modify_time DESC,ct.name")
     List<ColumnTag> getTagListByColumnId(@Param("tenantId") String tenantId,@Param("columnId") String columnId);
-
+    @Select("<script>" +
+            "SELECT\n" +
+            "  ct.ID as tagId,\n" +
+            "  ctrtc.column_id \n" +
+            "FROM\n" +
+            "  column_tag ct\n" +
+            "  LEFT JOIN column_tag_relation_to_column ctrtc ON ct.ID = ctrtc.tag_id " +
+            "WHERE\n" +
+            " ct.tenant_id = #{tenantId} " +
+            "<if test = 'columnIds != null and columnIds.size() &gt; 0'>\n" +
+            " AND ctrtc.column_id IN " +
+            "<foreach collection = 'columnIds' item='columnId' index='index' separator = ',' open = '(' close = ')' >" +
+            "#{columnId}" +
+            "</foreach>" +
+            "</if>\n" +
+            "</script>")
+    List<ColumnTagRelation> getTagListByColumnIds(@Param("tenantId") String tenantId,@Param("columnIds") List<String> columnIds);
     @Select("SELECT\n" +
             " ct.id,ct.name,ct.tenant_id,ct.modify_time " +
             "FROM\n" +

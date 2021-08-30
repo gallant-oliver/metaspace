@@ -7,7 +7,7 @@ import java.util.List;
 @Data
 public class UpdateRelationRequest {
 
-    private String columnId;
+    private List<String> columnId;
 
     private List<String> tagIdList;
 }
