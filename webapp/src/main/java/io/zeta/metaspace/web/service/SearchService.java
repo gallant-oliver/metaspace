@@ -48,7 +48,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.utils.StringUtil.dbsToString;
@@ -173,36 +175,40 @@ public class SearchService {
      * @param tablePageResult
      * @throws AtlasBaseException
      */
-    private void setTableEntity(PageResult<TableEntity> tablePageResult, String schemaId, Boolean view) throws Exception {
-        ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
-        // 在主线程获取用户信息，下面任务子线程获取不到，共享的话session混乱
-        Configuration conf = ApplicationProperties.get();
-        boolean secure = conf.getBoolean("metaspace.secureplus.enable", true);
-        String user = !secure ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
-        List<CompletableFuture> completableFutures = new ArrayList<>();
-        for (TableEntity tableEntity : tablePageResult.getLists()) {
-            completableFutures.add(CompletableFuture.runAsync(() -> {
-                tableEntity.setHiveTable("hive".equalsIgnoreCase(tableEntity.getSourceId()));
-                if (tableEntity.isHiveTable()) {
-                    if (view) {
-                        tableEntity.setSql(this.getBuildTableSql(tableEntity.getId(), user).getSql());
+    private void setTableEntity(PageResult<TableEntity> tablePageResult, String schemaId, Boolean view) {
+        try {
+            ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
+            // 在主线程获取用户信息，下面任务子线程获取不到，共享的话session混乱
+            Configuration conf = ApplicationProperties.get();
+            boolean secure = conf.getBoolean("metaspace.secureplus.enable", true);
+            String user = !secure ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
+            List<CompletableFuture> completableFutures = new ArrayList<>();
+            for (TableEntity tableEntity : tablePageResult.getLists()) {
+                completableFutures.add(CompletableFuture.runAsync(() -> {
+                    tableEntity.setHiveTable("hive".equalsIgnoreCase(tableEntity.getSourceId()));
+                    if (tableEntity.isHiveTable()) {
+                        if (view) {
+                            tableEntity.setSql(this.getBuildTableSql(tableEntity.getId(), user).getSql());
+                        } else {
+                            // 查询返回单位是字节
+                            float size = AdapterUtils.getHiveAdapterSource().getNewAdapterExecutor().getTableSize(tableEntity.getDbName(), tableEntity.getName(), "metaspace");
+                            tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
+                        }
                     } else {
-                        // 查询返回单位是字节
-                        float size = AdapterUtils.getHiveAdapterSource().getNewAdapterExecutor().getTableSize(tableEntity.getDbName(), tableEntity.getName(), "metaspace");
-                        tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
+                        if (view) {
+                            tableEntity.setSql(getBuildRDBMSTableSql(tableEntity.getId(), tableEntity.getSourceId()).getSql());
+                        } else {
+                            AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceService.getAnyOneDataSourceByDbGuid(schemaId));
+                            float size = adapterExecutor.getTableSize(tableEntity.getDbName(), tableEntity.getName(), null);
+                            tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
+                        }
                     }
-                } else {
-                    if (view) {
-                        tableEntity.setSql(getBuildRDBMSTableSql(tableEntity.getId(), tableEntity.getSourceId()).getSql());
-                    } else {
-                        AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceService.getAnyOneDataSourceByDbGuid(schemaId));
-                        float size = adapterExecutor.getTableSize(tableEntity.getDbName(), tableEntity.getName(), null);
-                        tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
-                    }
-                }
-            }, threadPoolExecutor));
+                }, threadPoolExecutor));
+            }
+            CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[]{})).get(30, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            LOG.error("setTableEntity exception is {}", e);
         }
-        CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[]{})).get(30, TimeUnit.SECONDS);
     }
 
 
