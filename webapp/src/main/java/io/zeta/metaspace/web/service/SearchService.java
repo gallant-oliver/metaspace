@@ -155,6 +155,15 @@ public class SearchService {
             if (CollectionUtils.isEmpty(tableEntityList)) {
                 return tablePageResult;
             }
+            tableEntityList.stream().forEach(tableEntity -> {
+                if("hive".equalsIgnoreCase(tableEntity.getSourceId())){
+                    tableEntity.setTableType("MANAGED_TABLE");
+                    tableEntity.setHiveTable(true);
+                }else{
+                    tableEntity.setTableType("TABLE");
+                    tableEntity.setHiveTable(false);
+                }
+            });
             tablePageResult.setCurrentSize(tableEntityList.size());
             tablePageResult.setOffset(offset);
             tablePageResult.setLists(tableEntityList);
