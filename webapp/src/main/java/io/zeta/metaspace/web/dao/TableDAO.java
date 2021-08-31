@@ -1,10 +1,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.business.TechnologyInfo;
-import io.zeta.metaspace.model.metadata.DataOwnerHeader;
-import io.zeta.metaspace.model.metadata.MetaDataRelatedAPI;
-import io.zeta.metaspace.model.metadata.Table;
-import io.zeta.metaspace.model.metadata.TableInfoId;
+import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import org.apache.ibatis.annotations.*;
 
@@ -268,4 +265,60 @@ public interface TableDAO {
             " ) as t order by t.tableguid " +
             "</script>")
     List<TechnologyInfo.Table> selectListByDatabase(@Param("databases") List<String> databases, @Param("databaseLike") List<String> databaseLike);
+
+    @Select("<script>" +
+            " SELECT count(*) over() as total, t.* FROM (" +
+            " select tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description, source.source_id,source.source_name" +
+            " from tableinfo as tb INNER JOIN source_db as sd on  tb.databaseguid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
+            " WHERE tb.status = 'ACTIVE' AND tb.tablename like concat('%',#{tableName},'%')  AND source.tenantid = #{tenantId} AND tb.TYPE = 'table'" +
+            " UNION" +
+            " select tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description,'hive' as source_id,'hive' AS source_name" +
+            " from tableinfo as tb" +
+            " WHERE  tb.status = 'ACTIVE' AND tb.tablename like concat('%',#{tableName},'%') AND tb.TYPE = 'table' AND tb.dbname in " +
+            " <foreach item='item' index='index' collection='dbNameList' open='(' separator=',' close=')'>" +
+            "   #{item}" +
+            " </foreach>" +
+            " ) as t ORDER BY t.name" +
+            " <if test='limit!= -1'>"+
+            " limit #{limit}"+
+            " </if>"+
+            " offset #{offset}"+
+            "</script>")
+    List<TableEntity> selectListByTenantIdAndTableName(@Param("tableName") String tableName, @Param("tenantId") String tenantId, @Param("dbNameList") List<String> dbNameList, @Param("limit") Long limit, @Param("offset") Long offset);
+
+    @Select("<script>" +
+            " SELECT count(*) over() as total, tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description, source.source_id,source.source_name" +
+            " FROM tableinfo as tb INNER JOIN source_db as sd on tb.databaseguid = sd.db_guid INNER JOIN data_source as source on sd.source_id = source.source_id" +
+            " WHERE source.source_id = #{sourceId} AND sd.db_guid = #{dbGuid} AND tb.status = 'ACTIVE' " +
+            " <if test='isView == false'>"+
+            " AND tb.TYPE in ('table','TABLE')" +
+            " </if>"+
+            " <if test='isView == true'>"+
+            " AND tb.TYPE in ('view','VIEW')" +
+            " </if>"+
+            " ORDER BY name"+
+            " <if test='limit!= -1'>"+
+            " limit #{limit}"+
+            " </if>"+
+            " offset #{offset}"+
+            "</script>")
+    List<TableEntity> selectListBySourceIdAndDb(@Param("sourceId") String sourceId, @Param("dbGuid") String dbGuid, @Param("isView") Boolean isView, @Param("limit") Long limit, @Param("offset") Long offset);
+
+    @Select("<script>" +
+            " SELECT count(*) over() as total, tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description, 'hive' as source_id,'hive' as source_name" +
+            " FROM tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid" +
+            " WHERE tb.status = 'ACTIVE' AND db.database_guid = #{dbGuid} AND db.db_type = 'HIVE'" +
+            " <if test='isView == false'>"+
+            " AND tb.TYPE in ('table','TABLE')" +
+            " </if>"+
+            " <if test='isView == true'>"+
+            " AND tb.TYPE in ('view','VIEW')" +
+            " </if>"+
+            " ORDER BY name" +
+            " <if test='limit!= -1'>"+
+            " limit #{limit}"+
+            " </if>"+
+            " offset #{offset}"+
+            "</script>")
+    List<TableEntity> selectListByHiveDb(@Param("dbGuid") String dbGuid, @Param("isView") Boolean isView, @Param("limit") Long limit, @Param("offset") Long offset);
 }

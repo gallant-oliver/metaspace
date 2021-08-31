@@ -1,12 +1,12 @@
 package io.zeta.metaspace.web.dao.sourceinfo;
 
 import io.zeta.metaspace.bo.DatabaseInfoBO;
+import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.po.sourceinfo.DatabaseInfoPO;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForCategory;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForList;
 import org.apache.ibatis.annotations.*;
-import org.springframework.security.access.method.P;
 
 import java.util.List;
 
@@ -474,4 +474,64 @@ public interface DatabaseInfoDAO {
     @Update("INSERT INTO source_info_relation2parent_category " +
             " VALUES (#{di.id},(select parentcategoryguid FROM category WHERE guid = #{di.categoryId}),NOW(),NOW()) ")
     void insertParentRelation(@Param("di") DatabaseInfo databaseInfo);
+
+    @Select("<script>" +
+            " SELECT count(*)over() total,db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,sd.source_id,db.database_description,db.owner FROM db_info as db INNER JOIN source_db as sd on db.database_guid = sd.db_guid" +
+            " WHERE db.status = 'ACTIVE' AND sd.source_id = #{sourceId}" +
+            " <if test='limit != -1'>" +
+            "  limit #{limit} " +
+            " </if>" +
+            " <if test='offset!= 0'>" +
+            "  offset #{offset}" +
+            " </if>" +
+            "</script>")
+    List<Database> selectBySourceId(@Param("sourceId") String sourceId, @Param("limit") Long limit, @Param("offset") Long offset);
+
+    @Select("<script>" +
+            " SELECT count(*)over() total,db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,'hive' as source_id,db.database_description,db.owner FROM db_info as db" +
+            " WHERE db.status = 'ACTIVE' AND db.db_type = 'HIVE' AND db.database_name in " +
+            " <foreach collection='hiveList' item='item' separator=',' open='(' close=')'>" +
+            "  #{item}" +
+            " </foreach>" +
+            " <if test='limit != -1'>" +
+            "  limit #{limit} " +
+            " </if>" +
+            " <if test='offset!= 0'>" +
+            "  offset #{offset}" +
+            " </if>" +
+            "</script>")
+    List<Database> selectByHive(@Param("hiveList") List<String> hiveList, @Param("limit") Long limit, @Param("offset") Long offset);
+
+    @Select("<script>" +
+            " SELECT count(t.*)over() total, t.* from (" +
+            " SELECT db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,sd.source_id,db.database_description,db.owner FROM db_info as db" +
+            " INNER JOIN source_db as sd on db.database_guid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
+            " WHERE db.status = 'ACTIVE' AND source.tenantid = #{tenantId} AND database_name like concat('%',#{dbName},'%')" +
+            " <if test='hiveList != null and hiveList.size() > 0'>" +
+            " union" +
+            " SELECT db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,'hive' as source_id,db.database_description,db.owner FROM db_info as db" +
+            " WHERE db.status = 'ACTIVE' AND db.db_type = 'HIVE' AND db.database_name like concat('%',#{dbName},'%') AND db.database_name in " +
+            " <foreach collection='hiveList' item='item' separator=',' open='(' close=')'>" +
+            "  #{item}" +
+            " </foreach>" +
+            " </if>" +
+            " ) as t" +
+            " <if test='limit != -1'>" +
+            "  limit #{limit} " +
+            " </if>" +
+            " <if test='offset!= 0'>" +
+            "  offset #{offset}" +
+            " </if>" +
+            "</script>")
+    List<Database> selectByDbNameAndTenantId(@Param("tenantId") String tenantId, @Param("dbName") String dbName, @Param("hiveList") List<String> hiveList, @Param("limit") Long limit, @Param("offset") Long offset);
+
+    @Select("<script>" +
+            " SELECT databaseguid as databaseId, COUNT(tableguid) as tableCount FROM tableinfo" +
+            " WHERE status = 'ACTIVE' AND databaseguid IN" +
+            " <foreach collection='dbGuidList' item='item' separator=',' open='(' close=')'>" +
+            "  #{item.databaseId}" +
+            " </foreach>" +
+            " GROUP BY databaseguid" +
+            "</script>")
+    List<Database> selectTableCountByDB(@Param("dbGuidList") List<Database> dbGuidList);
 }

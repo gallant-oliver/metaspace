@@ -13,9 +13,8 @@
 
 package io.zeta.metaspace.model.metadata;
 
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.List;
@@ -33,5 +32,6 @@ public class Database implements Serializable {
     private String dbType;
     private long tableCount;
     private String owner;
-
+    @JsonIgnore
+    private int total;
 }

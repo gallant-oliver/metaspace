@@ -17,18 +17,13 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.metadata.Column;
-import io.zeta.metaspace.model.metadata.DataOwnerHeader;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableHeader;
-import io.zeta.metaspace.model.pojo.TableInfo;
-import io.zeta.metaspace.model.pojo.TableRelation;
-import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
-import java.sql.SQLException;
 import java.util.List;
 
 /*
@@ -148,4 +143,22 @@ public interface ColumnDAO {
             " </foreach>" +
             "</script>")
     public List<String> queryColumnidBycolumnIds(@Param("columnIds")List<String> columnIds);
+
+    @Select("<script>" +
+            " SELECT co.column_guid AS columnId,co.COLUMN_NAME AS columnName,tb.databaseguid AS databaseId,tb.dbname AS databaseName,co.description,co.display_name," +
+            " co.display_updatetime AS displayNameUpdateTime, co.status,tb.tableguid AS tableId,tb.tablename AS tableName,co.TYPE,'false' as isPartitionKey" +
+            " FROM column_info AS co INNER JOIN tableinfo AS tb ON co.table_guid = tb.tableguid " +
+            " WHERE co.status = 'ACTIVE' AND tb.tableguid = #{tableGuid}" +
+            " <if test=\"columnName != null and columnName != '' \">" +
+            "   AND co.column_name like concat('%',#{columnName},'%')" +
+            " </if>" +
+            " <if test=\"type != null and type != '' \">" +
+            "    AND co.type = #{type}" +
+            " </if>" +
+            " <if test=\"description != null and description != '' \">" +
+            "    AND co.description like concat('%',#{description},'%')" +
+            " </if>" +
+            " ORDER BY columnName" +
+            "</script>")
+    List<Column> selectListByGuidOrLike(@Param("tableGuid") String tableGuid, @Param("columnName") String columnName, @Param("type") String type, @Param("description") String description);
 }

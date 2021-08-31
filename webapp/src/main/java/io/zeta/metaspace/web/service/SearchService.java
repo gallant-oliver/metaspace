@@ -21,18 +21,17 @@ import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.AtlasException;
 import org.apache.atlas.annotation.AtlasService;
 import org.apache.atlas.discovery.EntityDiscoveryService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
-import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.atlas.web.rest.EntityREST;
 import org.apache.commons.collections4.CollectionUtils;
@@ -49,7 +48,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.utils.StringUtil.dbsToString;
@@ -86,90 +87,136 @@ public class SearchService {
     private UserGroupService userGroupService;
     @Autowired
     private MetaDataService metaDataService;
-
+    @Autowired
+    private DatabaseInfoDAO databaseInfoDAO;
     @Autowired
     private TableDAO tableDAO;
 
-    public PageResult<Database> getDatabases(String sourceId, long offset, long limit, String query, boolean active, String tenantId, boolean queryCount) {
-        List<String> dbList = tenantService.getDatabase(tenantId);
-        List<String> guidList = null;
-        DataSourceInfo dataSourceInfo = null;
-        if (StringUtils.isEmpty(sourceId)) {
-            dbList = dbList.stream().filter(db -> db.contains(query)).collect(Collectors.toList());
-            List<TableInfo> rdbmsTableInfoList = tableDAO.selectDatabaseByTenantId(tenantId);
-            Set<String> collect = rdbmsTableInfoList.stream().filter(rdbmsTableInfo -> rdbmsTableInfo.getDbName().contains(query)).map(TableInfo::getDatabaseGuid).collect(Collectors.toSet());
-            guidList = new ArrayList<>(collect);
-        } else if ("hive".equalsIgnoreCase(sourceId)) {
-            dataSourceInfo = new DataSourceInfo();
-            dataSourceInfo.setSourceId(sourceId);
-        } else {
-            dataSourceInfo = dataSourceService.getDataSourceInfo(sourceId);
+    public PageResult<Database> getDatabases(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount) {
+        try {
+            List<String> dbList;
+            PageResult<Database> databasePageResult = new PageResult<>();
+            List<Database> databaseList;
+            if (StringUtils.isEmpty(sourceId)) {
+                dbList = tenantService.getDatabase(tenantId);
+                if (CollectionUtils.isEmpty(dbList)) {
+                    return databasePageResult;
+                }
+                if(StringUtils.isNotBlank(query)){
+                    query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+                }
+                databaseList = databaseInfoDAO.selectByDbNameAndTenantId(tenantId, query, dbList, limit, offset);
+            } else if ("hive".equalsIgnoreCase(sourceId)) {
+                dbList = tenantService.getDatabase(tenantId);
+                if (CollectionUtils.isEmpty(dbList)) {
+                    return databasePageResult;
+                }
+                databaseList = databaseInfoDAO.selectByHive(dbList, limit, offset);
+            } else {
+                databaseList = databaseInfoDAO.selectBySourceId(sourceId, limit, offset);
+            }
+            if (CollectionUtils.isEmpty(databaseList)) {
+                return databasePageResult;
+            }
+            if (queryCount) {
+                Map<String, Long> map = databaseInfoDAO.selectTableCountByDB(databaseList).stream().collect(Collectors.toMap(Database::getDatabaseId, Database::getTableCount));
+                databaseList.forEach(database -> database.setTableCount(map.get(database.getDatabaseId()) == null ? 0 : map.get(database.getDatabaseId())));
+            }
+            databaseList.forEach(database -> {
+                if(StringUtils.isBlank(database.getDatabaseDescription())){
+                    database.setDatabaseDescription("-");
+                }
+            });
+            databasePageResult.setCurrentSize(databaseList.size());
+            databasePageResult.setLists(databaseList);
+            databasePageResult.setTotalSize(databaseList.get(0).getTotal());
+            return databasePageResult;
+        } catch (AtlasBaseException e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取数据库列表失败");
         }
-        return metaspaceEntityService.getSchemaList(dataSourceInfo, guidList, dbList, offset, limit, queryCount);
-
     }
 
-    public PageResult<TableEntity> getTable(String schemaId, boolean active, long offset, long limit, String query,
-                                            Boolean isView, boolean queryInfo, String tenantId, String sourceId) {
-        ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
+    public PageResult<TableEntity> getTable(String schemaId, long offset, long limit, String query, Boolean isView, Boolean queryInfo, String tenantId, String sourceId) {
+        List<String> dbList;
+        PageResult<TableEntity> tablePageResult = new PageResult<>();
+        List<TableEntity> tableEntityList;
         try {
+            if (StringUtils.isEmpty(sourceId)) {
+                dbList = tenantService.getDatabase(tenantId);
+                if(StringUtils.isNotBlank(query)){
+                    query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+                }
+                tableEntityList = tableDAO.selectListByTenantIdAndTableName(query, tenantId, dbList, limit, offset);
+            } else if ("hive".equalsIgnoreCase(sourceId)) {
+                tableEntityList = tableDAO.selectListByHiveDb(schemaId, isView, limit, offset);
+            } else {
+                tableEntityList = tableDAO.selectListBySourceIdAndDb(sourceId, schemaId, isView, limit, offset);
+            }
+            if (CollectionUtils.isEmpty(tableEntityList)) {
+                return tablePageResult;
+            }
+            tableEntityList.stream().forEach(tableEntity -> {
+                if("hive".equalsIgnoreCase(tableEntity.getSourceId())){
+                    tableEntity.setTableType("MANAGED_TABLE");
+                    tableEntity.setHiveTable(true);
+                }else{
+                    tableEntity.setTableType("TABLE");
+                    tableEntity.setHiveTable(false);
+                }
+            });
+            tablePageResult.setCurrentSize(tableEntityList.size());
+            tablePageResult.setOffset(offset);
+            tablePageResult.setLists(tableEntityList);
+            tablePageResult.setTotalSize(tableEntityList.get(0).getTotal());
+            if (!queryInfo) {
+                return tablePageResult;
+            }
+            setTableEntity(tablePageResult, schemaId, isView);
+            return tablePageResult;
+        } catch (Exception e) {
+            LOG.error("获取表列表失败，{}", e);
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "获取数据表列表失败");
+        }
+    }
+
+    /**
+     * atlas数据采集获取tablesize和tabletype
+     * @param tablePageResult
+     * @throws AtlasBaseException
+     */
+    private void setTableEntity(PageResult<TableEntity> tablePageResult, String schemaId, Boolean view) {
+        try {
+            ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
             // 在主线程获取用户信息，下面任务子线程获取不到，共享的话session混乱
             Configuration conf = ApplicationProperties.get();
             boolean secure = conf.getBoolean("metaspace.secureplus.enable", true);
             String user = !secure ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
-            String dbsToString = "";
-            String guid = "";
-            if (StringUtils.isNotBlank(query)) {
-                List<String> dbs = tenantService.getDatabase(tenantId);
-                dbsToString = dbsToString(dbs);
-                List<String> guidList = tableDAO.selectDatabaseGuidByTenantId(tenantId);
-                guid = dbsToString(guidList);
-            }
-            List<AtlasVertex> vertices = new ArrayList<>();
-            PageResult<TableEntity> result = metaspaceEntityService.getTableList(vertices, dbsToString, guid, schemaId, active, offset, limit, query, isView);
             List<CompletableFuture> completableFutures = new ArrayList<>();
-            if (queryInfo && result.getCurrentSize() > 0) {
-                for (TableEntity tableEntity : result.getLists()) {
-                    completableFutures.add(CompletableFuture.runAsync(() -> {
-                        AtlasVertex atlasVertex = vertices.stream().filter(vertex -> Objects.equals(tableEntity.getId(), vertex.getProperty("__guid", String.class))).findAny().get();
-                        Map<String, Object> tableInfo = metaDataService.getTableType(metaDataService.vertexToEntityInfo(atlasVertex, null, null).getEntity());
-                        String databasesId = String.valueOf(tableInfo.get("schemaId"));
-                        String schema = String.valueOf(tableInfo.get("schemaName"));
-                        tableEntity.setDatabaseId(databasesId);
-                        boolean view = tableEntity.getTableType().toLowerCase().contains("view");
-                        if (tableEntity.isHiveTable()) {
-                            if (view) {
-                                try {
-                                    tableEntity.setSql(this.getBuildTableSql(tableEntity.getId(), user).getSql());
-                                } catch (AtlasException e) {
-                                    throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取列表失败");
-                                }
-                            } else {
-                                // 查询返回单位是字节
-                                float size = AdapterUtils.getHiveAdapterSource().getNewAdapterExecutor().getTableSize(schema, tableEntity.getName(), "metaspace");
-                                tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
-                            }
+            for (TableEntity tableEntity : tablePageResult.getLists()) {
+                completableFutures.add(CompletableFuture.runAsync(() -> {
+                    tableEntity.setHiveTable("hive".equalsIgnoreCase(tableEntity.getSourceId()));
+                    if (tableEntity.isHiveTable()) {
+                        if (view) {
+                            tableEntity.setSql(this.getBuildTableSql(tableEntity.getId(), user).getSql());
                         } else {
-                            if (view) {
-                                tableEntity.setSql(getBuildRDBMSTableSql(tableEntity.getId(), sourceId).getSql());
-                            } else {
-                                AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceService.getAnyOneDataSourceByDbGuid(schemaId));
-                                float size = adapterExecutor.getTableSize(schema, tableEntity.getName(), null);
-                                tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
-                            }
+                            // 查询返回单位是字节
+                            float size = AdapterUtils.getHiveAdapterSource().getNewAdapterExecutor().getTableSize(tableEntity.getDbName(), tableEntity.getName(), "metaspace");
+                            tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
                         }
-                    }, threadPoolExecutor));
-                }
-                try {
-                    CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[]{})).get(30, TimeUnit.SECONDS);
-                } catch (InterruptedException | ExecutionException | TimeoutException e) {
-                    LOG.error("获取表列表出错", e);
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表列表出错");
-                }
+                    } else {
+                        if (view) {
+                            tableEntity.setSql(getBuildRDBMSTableSql(tableEntity.getId(), tableEntity.getSourceId()).getSql());
+                        } else {
+                            AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceService.getAnyOneDataSourceByDbGuid(schemaId));
+                            float size = adapterExecutor.getTableSize(tableEntity.getDbName(), tableEntity.getName(), null);
+                            tableEntity.setTableSize(String.format("%.3f", size / 1024 / 1024));
+                        }
+                    }
+                }, threadPoolExecutor));
             }
-            return result;
+            CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[]{})).get(30, TimeUnit.SECONDS);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取表列表失败");
+            LOG.error("setTableEntity exception is {}", e);
         }
     }
 
@@ -433,7 +480,7 @@ public class SearchService {
     }
 
 
-    public BuildTableSql getBuildTableSql(String tableId, String user) throws AtlasBaseException, AtlasException {
+    public BuildTableSql getBuildTableSql(String tableId, String user) throws AtlasBaseException {
         BuildTableSql buildTableSql = new BuildTableSql();
         List<String> attributes = new ArrayList<>();
         attributes.add("name");
@@ -446,7 +493,7 @@ public class SearchService {
 
         String name = entity.getAttribute("name") == null ? "" : entity.getAttribute("name").toString();
         if (name.equals("")) {
-            System.out.println("该id不存在");
+            LOG.error("该id不存在");
         }
         AtlasEntity.AtlasEntityWithExtInfo tableInfo = entityREST.getById(tableId, true);
         AtlasEntity tableEntity = tableInfo.getEntity();

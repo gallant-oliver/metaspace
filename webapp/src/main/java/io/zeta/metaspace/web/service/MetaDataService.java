@@ -45,7 +45,6 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.glossary.enums.AtlasTermRelationshipStatus;
 import org.apache.atlas.model.instance.*;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
-import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.model.typedef.AtlasEntityDef;
 import org.apache.atlas.repository.graph.GraphHelper;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
@@ -64,7 +63,6 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.RegionUtil;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,11 +79,7 @@ import java.sql.Connection;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -319,35 +313,33 @@ public class MetaDataService {
         if (Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
+        Database database = new Database();
         try {
             //获取对象
             // 转换成AtlasEntity
             // tables属性需要遍历所有的表，极其耗费性能，此接口没有用到，排除掉tables属性
             AtlasEntity entity = getEntityInfoByGuid(guid, Collections.singletonList(ATT_TABLES), Collections.singletonList(ATT_TABLES)).getEntity();
-
-            Database database = new Database();
             database.setDatabaseId(guid);
             database.setDatabaseName(getEntityAttribute(entity, "name"));
             database.setDatabaseDescription(entity.getAttribute("comment") == null ? "-" : entity.getAttribute("comment").toString());
             database.setStatus(entity.getStatus().name());
             database.setOwner(getEntityAttribute(entity, "owner"));
-
-            if(StringUtils.isNotBlank(sourceId)){
-                if("hive".equalsIgnoreCase(sourceId)){
+            if (StringUtils.isNotBlank(sourceId)) {
+                if ("hive".equalsIgnoreCase(sourceId)) {
                     database.setSourceId("hive");
                     database.setSourceName("hive");
-                }else{
+                } else {
                     DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(sourceId);
-                    if(null != dataSourceInfo){
+                    if (null != dataSourceInfo) {
                         database.setSourceId(dataSourceInfo.getSourceId());
                         database.setSourceName(dataSourceInfo.getSourceName());
                     }
                 }
             }
-            return database;
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "查询数据库信息异常");
+            LOG.error("getDatabase exception is {}", e);
         }
+        return database;
     }
 
 
@@ -641,8 +633,10 @@ public class MetaDataService {
             table.setDatabaseStatus(relatedObject.getEntityStatus().name());
 
 //            table.setSourceId(sourceId);
-            table.setSourceName(relatedInstance.getDisplayText());
-            table.setSourceStatus(relatedInstance.getEntityStatus().name());
+            if(relatedInstance != null){
+                table.setSourceName(relatedInstance.getDisplayText());
+                table.setSourceStatus(relatedInstance.getEntityStatus().name());
+            }
             ColumnQuery columnQuery = new ColumnQuery();
             columnQuery.setGuid(guid);
 
@@ -819,9 +813,10 @@ public class MetaDataService {
                     column.setDatabaseStatus(relatedDB.getEntityStatus().name());
 
 //                    column.setSourceId(relatedInstance.getGuid());
-                    column.setSourceName(relatedInstance.getDisplayText());
-                    column.setSourceStatus(relatedInstance.getEntityStatus().name());
-
+                    if(relatedInstance != null){
+                        column.setSourceName(relatedInstance.getDisplayText());
+                        column.setSourceStatus(relatedInstance.getEntityStatus().name());
+                    }
                     column.setColumnId(referredEntity.getGuid());
                     //attribute
                     extractAttributeInfo(referredEntity, column);
@@ -1184,15 +1179,27 @@ public class MetaDataService {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getColumnInfoById({})", query);
         }
-        String guid = query.getGuid();
-        List<Column> columns = null;
-        //获取entity
         try {
-            AtlasEntity.AtlasEntityWithExtInfo info = getEntityInfoByGuid(guid, false);
-            //columns
-            columns = extractColumnInfo(info, guid);
-            //filter
-            columns = filterColumn(query, columns);
+            if (query.getColumnFilter() == null) {
+                query.setColumnFilter(new ColumnQuery.ColumnFilter());
+            } else {
+                String columnName = query.getColumnFilter().getColumnName();
+                if (StringUtils.isNotBlank(columnName)) {
+                    query.getColumnFilter().setColumnName(columnName.replaceAll("%", "/%").replaceAll("_", "/_"));
+                }
+                String description = query.getColumnFilter().getDescription();
+                if(StringUtils.isNotBlank(description)){
+                    query.getColumnFilter().setDescription(description.replaceAll("%", "/%").replaceAll("_", "/_"));
+                }
+            }
+            List<Column> columns = columnDAO.selectListByGuidOrLike(query.getGuid(), query.getColumnFilter().getColumnName(), query.getColumnFilter().getType(), query.getColumnFilter().getDescription());
+//          TODO: 2021/8/24 缺少分区查询功能
+
+//            AtlasEntity.AtlasEntityWithExtInfo info = getEntityInfoByGuid(guid, false);
+//            //columns
+//            columns = extractColumnInfo(info, guid);
+//            //filter
+//            columns = filterColumn(query, columns);
             return columns;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到表字段信息");

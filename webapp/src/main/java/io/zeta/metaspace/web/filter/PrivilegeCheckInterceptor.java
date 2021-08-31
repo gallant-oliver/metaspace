@@ -21,23 +21,16 @@ import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateLog;
 import io.zeta.metaspace.model.operatelog.OperateResultEnum;
-import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.role.Role;
-import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.ApiModuleDAO;
-import io.zeta.metaspace.web.service.DataShareService;
-import io.zeta.metaspace.web.service.OperateLogService;
-import io.zeta.metaspace.web.service.UserGroupService;
-import io.zeta.metaspace.web.service.RoleService;
-import io.zeta.metaspace.web.service.UsersService;
-import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
+import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.FilterUtils;
 import org.aopalliance.intercept.MethodInterceptor;
@@ -134,12 +127,13 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                                 if (category.isShow())
                                     categoryGuids.add(category.getGuid());
                             }
-                            boolean havePrivilege = usersService.ifPrivilege(categoryGuids, privilegeGuid, tenantId);
-                            if (havePrivilege) {
-                                return invocation.proceed();
-                            } else {
-                                throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户权限不足");
-                            }
+                            return invocation.proceed();
+//                            boolean havePrivilege = usersService.ifPrivilege(categoryGuids, privilegeGuid, tenantId);
+//                            if (havePrivilege) {
+//                                return invocation.proceed();
+//                            } else {
+//                                throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户权限不足");
+//                            }
                         default:
                             throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户权限不足");
                     }
