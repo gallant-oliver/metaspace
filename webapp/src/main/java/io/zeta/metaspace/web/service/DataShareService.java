@@ -42,9 +42,6 @@ import io.zeta.metaspace.model.ip.restriction.ApiIpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
 import io.zeta.metaspace.model.metadata.*;
-import io.zeta.metaspace.model.moebius.MoebiusApi;
-import io.zeta.metaspace.model.moebius.MoebiusApiData;
-import io.zeta.metaspace.model.moebius.MoebiusApiParam;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -2594,6 +2591,78 @@ public class DataShareService {
 
             AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
 
+            String pool = apiInfo.getPool();
+            Connection connection = adapterSource.getConnection(MetaspaceConfig.getHiveAdmin(), dbName, pool);
+            CompletableFuture<PageResult<LinkedHashMap<String, Object>>> future = CompletableFuture.supplyAsync(() -> {
+                try {
+                    return adapterExecutor.queryResult(connection, sql, adapterExecutor::extractResultSetToPageResult);
+                } catch (Exception e) {
+                    LOG.error("查询失败", e);
+                }
+                return null;
+            });
+            taskMap.put(randomName, future);
+            PageResult<LinkedHashMap<String, Object>> pageResult = future.get();
+            taskMap.remove(randomName);
+
+            ApiPolyEntity apiPolyEntity = apiInfo.getApiPolyEntity();
+
+            List<LinkedHashMap<String, Object>> result = pageResult.getLists();
+            if (apiPolyEntity != null && CollectionUtils.isNotEmpty(apiPolyEntity.getDesensitization())) {
+                result = processSensitiveDataV2(apiInfo, apiPolyEntity.getDesensitization(), result);
+            }
+
+            Map resultMap = new HashMap();
+            resultMap.put("queryResult", result);
+            resultMap.put("queryCount", pageResult.getTotalSize());
+            return resultMap;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("API接口查询失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API接口查询失败");
+        }
+    }
+
+    public Map testAPI(String randomName, ApiInfoV2 apiInfo, long limit, long offset) throws AtlasBaseException {
+        String tableName = null;
+        String dbName = null;
+        DataSourceType sourceType = DataSourceType.getType(apiInfo.getSourceType());
+        if (!sourceType.isBuildIn()) {
+            DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(apiInfo.getSourceId());
+            sourceType = DataSourceType.getType(dataSourceInfo.getSourceType());
+        }
+        AdapterSource adapterSource = null;
+        AdapterTransformer transformer = AdapterUtils.getAdapter(sourceType.getName()).getAdapterTransformer();
+        try {
+            if (sourceType.isBuildIn()) {
+                String tableGuid = apiInfo.getTableGuid();
+                String tableStatus = shareDAO.getTableStatusByGuid(tableGuid);
+                dbName = shareDAO.querydbNameByGuid(tableGuid);
+                tableName = shareDAO.queryTableNameByGuid(tableGuid);
+                String deletedStatus = "DELETED";
+                if (deletedStatus.equals(tableStatus)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API关联表已被删除");
+                }
+                if (DataSourceType.IMPALA.equals(sourceType)) {
+                    adapterSource = AdapterUtils.getImpalaAdapterSource();
+                } else {
+                    adapterSource = AdapterUtils.getHiveAdapterSource();
+                }
+            } else {
+                dbName = apiInfo.getSchemaName();
+                tableName = apiInfo.getTableName();
+                adapterSource = dataSourceService.getAdapterSource(apiInfo.getSourceId());
+            }
+            checkLimitAndOffsetV2(limit, offset);
+            List<ApiInfoV2.FieldV2> filterColumns = apiInfo.getParam();
+            List<ApiInfoV2.FieldV2> returnParam = apiInfo.getReturnParam();
+            List<ApiInfoV2.FieldV2> sortParam = apiInfo.getSortParam();
+            String querySql = returnParam.stream().filter(column -> column.getColumnName() != null).map(column -> transformer.caseSensitive(column.getColumnName()) + " as " + transformer.caseSensitive(column.getName())).collect(Collectors.joining(","));
+            String filterSql = getFilterSqlV2(filterColumns, transformer);
+            String sortSql = getSortSqlV2(sortParam, returnParam, sourceType);
+            String sql = SqlBuilderUtils.buildQuerySqlTest(transformer, dbName, tableName, querySql, filterSql, sortSql, limit, offset);
+            AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
             String pool = apiInfo.getPool();
             Connection connection = adapterSource.getConnection(MetaspaceConfig.getHiveAdmin(), dbName, pool);
             CompletableFuture<PageResult<LinkedHashMap<String, Object>>> future = CompletableFuture.supplyAsync(() -> {

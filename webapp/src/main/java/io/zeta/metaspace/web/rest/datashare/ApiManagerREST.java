@@ -13,15 +13,10 @@
 
 package io.zeta.metaspace.web.rest.datashare;
 
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
-
 import com.google.common.base.Joiner;
 import io.zeta.metaspace.HttpRequestContext;
-import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
-import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.desensitization.DesensitizationRule;
 import io.zeta.metaspace.model.ip.restriction.IpRestriction;
@@ -53,25 +48,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.inject.Singleton;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 /**
  * @author lixiang03
@@ -806,7 +793,7 @@ public class ApiManagerREST {
             if (pageNum != null && Long.valueOf(pageNum) > 0) {
                 offset = (Long.valueOf(pageNum) - 1) * limit;
             }
-            Map resultMap = shareService.testAPIV2(randomName, apiInfoV2, limit, offset);
+            Map resultMap = shareService.testAPI(randomName, apiInfoV2, limit, offset);
             List<LinkedHashMap<String, Object>> result = (List<LinkedHashMap<String, Object>>) resultMap.get("queryResult");
             return ReturnUtil.success(result);
         } catch (Exception e) {
