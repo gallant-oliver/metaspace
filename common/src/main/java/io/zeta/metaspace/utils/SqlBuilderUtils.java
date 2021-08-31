@@ -65,4 +65,14 @@ public class SqlBuilderUtils {
 
         return transformer.addLimit(query, limit, offset).toString();
     }
+
+    public static String buildQuerySqlTest(AdapterTransformer transformer, String schemaName, String tableName, String queryColumn, String filterCondition, String sortSql, long limit, long offset) {
+        SelectQuery query = new SelectQuery()
+                .addCustomColumns(new CustomSql(queryColumn))
+                .addCustomFromTable(new CustomSql(transformer.caseSensitive(schemaName) + "." + transformer.caseSensitive(tableName)));
+        if (StringUtils.isNotEmpty(filterCondition)) {
+            query.addCondition(new CustomCondition(filterCondition));
+        }
+        return transformer.addLimit(query, limit, offset).toString();
+    }
 }
