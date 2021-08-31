@@ -21,7 +21,6 @@ public class FilterUtils {
         add("/api/metaspace/tenant");
         add("/api/metaspace/admin/version");
         add("/api/metaspace/cache");
-        add("/column/tag");
         add("api/metaspace/metadata/update/supplementTable");
     }};
 

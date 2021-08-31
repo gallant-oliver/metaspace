@@ -66,15 +66,28 @@ public class ColumnTagService {
                 }));
         List<ColumnTagRelation> addRelationList = new ArrayList<>();
 
-        tagList.forEach(tagId-> columnTagRelations.forEach((columnId, tagIds)->{
-            if (!tagIds.contains(tagId)){
-                ColumnTagRelation columnTagRelation = new ColumnTagRelation();
-                columnTagRelation.setColumnId(columnId);
-                columnTagRelation.setTagId(tagId);
-                columnTagRelation.setId(UUID.randomUUID().toString());
-                addRelationList.add(columnTagRelation);
+        tagList.forEach(tagId->{
+            if (columnTagRelations!=null && !columnTagRelations.isEmpty()) {
+                columnTagRelations.forEach((columnId, tagIds) -> {
+                    if (!tagIds.contains(tagId)) {
+                        ColumnTagRelation columnTagRelation = new ColumnTagRelation();
+                        columnTagRelation.setColumnId(columnId);
+                        columnTagRelation.setTagId(tagId);
+                        columnTagRelation.setId(UUID.randomUUID().toString());
+                        addRelationList.add(columnTagRelation);
+                    }
+                });
+            }else{
+                columnIds.forEach(c->{
+                    ColumnTagRelation columnTagRelation = new ColumnTagRelation();
+                    columnTagRelation.setColumnId(c);
+                    columnTagRelation.setTagId(tagId);
+                    columnTagRelation.setId(UUID.randomUUID().toString());
+                    addRelationList.add(columnTagRelation);
+                });
+
             }
-        }));
+        });
         if(!addRelationList.isEmpty()){
             columnTagDAO.addTagRelationsToColumn(addRelationList);
         }
