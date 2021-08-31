@@ -43,7 +43,7 @@ public class OracleAdapterTransformer extends AbstractAdapterTransformer {
 
     @Override
     public String caseSensitive(String originElement) {
-        return String.format("\"%s\"", originElement);
+        return String.format("\"%s\"", originElement.toUpperCase());
     }
 
     /**

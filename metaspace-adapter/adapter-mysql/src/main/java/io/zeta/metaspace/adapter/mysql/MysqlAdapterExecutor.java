@@ -1,6 +1,5 @@
 package io.zeta.metaspace.adapter.mysql;
 
-import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AbstractAdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.utils.DateUtils;
@@ -81,6 +80,9 @@ public class MysqlAdapterExecutor extends AbstractAdapterExecutor {
     }
     @Override
     public String getCreateTableOrViewSql(String schema, String table, String type) {
+        if(null != type){
+            type = type.replaceAll("`", "");
+        }
         String querySql = "SHOW CREATE " + type + " " + schema + "." + table;
         return queryResult(querySql, resultSet -> {
             try {
