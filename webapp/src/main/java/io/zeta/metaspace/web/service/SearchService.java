@@ -596,15 +596,15 @@ public class SearchService {
         String[] names = new String[3];
         TableInfo table = tableDAO.getTableInfoByTableguid(tableId);
         if (null != table) {
-            names[0] = table.getDbName().toUpperCase();
-            names[1] = table.getTableName().toUpperCase();
-            names[2] = table.getType().toUpperCase();
+            names[0] = table.getDbName();
+            names[1] = table.getTableName();
+            names[2] = table.getType();
         } else {
             AtlasEntity entity = entitiesStore.getById(tableId).getEntity();
             AtlasRelatedObjectId obj = (AtlasRelatedObjectId) entity.getRelationshipAttribute("db");
-            names[0] = obj.getDisplayText().toUpperCase();
-            names[1] = ((String) entity.getAttribute("name")).toUpperCase();
-            names[2] = ((String) entity.getAttribute("type")).toUpperCase();
+            names[0] = obj.getDisplayText();
+            names[1] = ((String) entity.getAttribute("name"));
+            names[2] = ((String) entity.getAttribute("type"));
         }
         return names;
     }
