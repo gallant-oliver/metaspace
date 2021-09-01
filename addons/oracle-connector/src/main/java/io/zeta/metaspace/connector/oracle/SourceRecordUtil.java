@@ -19,9 +19,12 @@ public class SourceRecordUtil {
 
 	public static final String LOG_MINER_OFFSET_FIELD="logminer";
 	private static final Logger LOG = LoggerFactory.getLogger(OracleSourceTask.class);
-	public static SourceRecord getSourceRecord(ResultSet logMinerData, OracleSourceConnectorConfig config) throws SQLException{
+	public static SourceRecord getSourceRecord(ResultSet logMinerData,String sqlRedo, OracleSourceConnectorConfig config) throws SQLException{
 		String dbName = config.getDbName();
-		String sqlRedo = logMinerData.getString(SQL_REDO_FIELD);
+		if(sqlRedo == null || sqlRedo.trim().length() == 0){
+			sqlRedo = logMinerData.getString(SQL_REDO_FIELD);
+		}
+
 		int operationCode = logMinerData.getInt(OracleConnectorConstant.OPERATION_CODE_FIELD);
 
 		String op = "";
