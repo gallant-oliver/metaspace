@@ -3,8 +3,6 @@ package io.zeta.metaspace.model.result;
 import io.zeta.metaspace.MetaspaceConfig;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 
-import java.security.PublicKey;
-
 /*
 {
     "guid": "sit consequat ullamco deserunt",
@@ -38,6 +36,7 @@ public class CategoryPrivilege {
     private Integer objectCount;
     private String safe;
     private String code;
+    private int sort;
 
 
     public CategoryPrivilege(CategoryPrivilegeV2 category){
@@ -50,6 +49,7 @@ public class CategoryPrivilege {
         this.level=category.getLevel();
         this.count=category.getCount();
         this.code=category.getCode();
+        this.sort=category.getSort();
     };
     public CategoryPrivilege(CategoryEntityV2 categoryEntityV2){
         this.guid = categoryEntityV2.getGuid();
@@ -93,6 +93,14 @@ public class CategoryPrivilege {
 
     public void setLevel(int level) {
         this.level = level;
+    }
+
+    public int getSort() {
+        return sort;
+    }
+
+    public void setSort(int sort) {
+        this.sort = sort;
     }
 
     public CategoryPrivilege(RoleModulesCategories.Category category) {

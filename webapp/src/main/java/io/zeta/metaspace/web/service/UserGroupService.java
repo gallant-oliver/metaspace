@@ -36,6 +36,7 @@ import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
+import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -51,6 +52,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -69,6 +71,8 @@ public class UserGroupService {
     CategoryDAO categoryDAO;
     @Autowired
     RelationDAO relationDAO;
+    @Autowired
+    private SourceInfoDAO sourceInfoDAO;
     private static final Logger LOG = LoggerFactory.getLogger(UserGroupService.class);
     public PageResult<UserGroupListAndSearchResult> getUserGroupListAndSearch(String tenantId, int offset, int limit, String sortBy, String order, String query) throws AtlasBaseException {
         PageResult<UserGroupListAndSearchResult> commonResult = new PageResult<>();
@@ -1392,33 +1396,7 @@ public class UserGroupService {
         if (CollectionUtils.isEmpty(categoryIds)) {
             return userMap;
         }
-
-        //获取父目录并配置权限
-        List<CategoryPrivilegeV2> parentCategory = userGroupDAO.getParentCategory(categoryIds, 0, tenantId);
-        parentCategory.forEach(categoryPrivilegeV2 -> {
-            categoryPrivilegeV2.setRead(false);
-            categoryPrivilegeV2.setEditItem(false);
-            categoryPrivilegeV2.setEditCategory(false);
-        });
-        userCategories.addAll(parentCategory);
-        //遍历并合并目录权限
-        for (CategoryPrivilegeV2 userCategory : userCategories) {
-            if (userMap.containsKey(userCategory.getGuid())) {
-                CategoryPrivilegeV2 categoryPrivilegeV2 = userMap.get(userCategory.getGuid());
-                if (userCategory.getRead() != null && userCategory.getRead()) {
-                    categoryPrivilegeV2.setRead(true);
-                }
-                if (userCategory.getEditCategory() != null && userCategory.getEditCategory()) {
-                    categoryPrivilegeV2.setEditCategory(true);
-                }
-                if (userCategory.getEditItem() != null && userCategory.getEditItem()) {
-                    categoryPrivilegeV2.setEditItem(true);
-                }
-            } else {
-                userMap.put(userCategory.getGuid(), userCategory);
-            }
-        }
-        return userMap;
+        return userCategories.stream().collect(Collectors.toMap(CategoryPrivilegeV2::getGuid, Function.identity()));
     }
 
     /**
@@ -1538,57 +1516,22 @@ public class UserGroupService {
     public List<CategoryPrivilege> getUserCategoriesTechnical(String tenantId) throws AtlasBaseException {
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
         Map<String, CategoryPrivilegeV2> userCategoryMap = getUserPrivilegeCategoryTechnical(tenantId);
+        List<String> strings = sourceInfoDAO.selectCategoryListByTenantId(tenantId);
         for (CategoryPrivilegeV2 category : userCategoryMap.values()) {
             CategoryPrivilege categoryPrivilege = new CategoryPrivilege(category);
             CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
-            if (category.getRead()){
-                privilege.setHide(false);
-                privilege.setAsh(false);
-            }else{
-                privilege.setHide(false);
+            privilege.setHide(false);
+            privilege.setAsh(false);
+            privilege.setAddSibling(false);
+            privilege.setDelete(false);
+            privilege.setMove(false);
+            //源信息登记的目录置灰
+            if(strings.contains(category.getGuid())){
                 privilege.setAsh(true);
-            }
-            CategoryPrivilegeV2 parentCategory = userCategoryMap.get(category.getParentCategoryGuid());
-            if (parentCategory!=null&&parentCategory.getEditCategory()){
-                privilege.setAddSibling(true);
-                privilege.setDelete(true);
-                privilege.setMove(true);
-            }else{
-                privilege.setAddSibling(false);
-                privilege.setDelete(false);
-                privilege.setMove(false);
-            }
-            if (category.getEditCategory()){
-                privilege.setAddChildren(true);
-                privilege.setEdit(true);
-            }else{
-                privilege.setAddChildren(false);
-                privilege.setEdit(false);
-            }
-            if (category.getEditItem()){
-                privilege.setCreateRelation(true);
-                privilege.setDeleteRelation(true);
-                privilege.setAddOwner(true);
-            }else{
-                privilege.setCreateRelation(false);
-                privilege.setDeleteRelation(false);
-                privilege.setAddOwner(false);
-            }
-            if (MetaspaceConfig.systemCategory.contains(category.getGuid())) {
-                privilege.setDelete(false);
-                if (privilege.isEdit()){
-                    privilege.setEditSafe(true);
-                }
-                privilege.setEdit(false);
-            }
-            //技术目录一级目录不允许删关联
-            if (category.getLevel() == 1) {
-                privilege.setDeleteRelation(false);
             }
             categoryPrivilege.setPrivilege(privilege);
             userCategorys.add(categoryPrivilege);
         }
-        addOtherCategory(0, userCategorys, tenantId);
         return userCategorys;
     }
 
