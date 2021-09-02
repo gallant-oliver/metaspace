@@ -1,18 +1,10 @@
 package io.zeta.metaspace.adapter.postgresql;
 
-import com.healthmarketscience.sqlbuilder.AliasedObject;
-import com.healthmarketscience.sqlbuilder.BinaryCondition;
-import com.healthmarketscience.sqlbuilder.ComboCondition;
-import com.healthmarketscience.sqlbuilder.CustomSql;
-import com.healthmarketscience.sqlbuilder.InCondition;
-import com.healthmarketscience.sqlbuilder.SelectQuery;
-import com.healthmarketscience.sqlbuilder.Subquery;
-import io.zeta.metaspace.adapter.*;
-import io.zeta.metaspace.model.dataquality2.HiveNumericType;
-import io.zeta.metaspace.model.metadata.Parameters;
-import com.healthmarketscience.sqlbuilder.ValueObject;
+import com.healthmarketscience.sqlbuilder.*;
 import io.zeta.metaspace.adapter.AbstractAdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
+import io.zeta.metaspace.adapter.AdapterTransformer;
+import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
@@ -21,7 +13,6 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -158,8 +149,8 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
                 "col.table_name::regclass = des.objoid " +
                 "and col.ordinal_position = des.objsubid " +
                 "where " +
-                "upper(col.table_schema) = 'upper("+schemaName+")' "+
-                " and upper(col.table_name) = 'upper("+tableName+")' "+
+                "upper(col.table_schema) = upper('"+schemaName+"') "+
+                " and upper(col.table_name) = upper('"+tableName+"') "+
                 " order by ordinal_position;";
 
         String createSql=queryResult(querySql,schemaName, resultSet -> {
@@ -209,7 +200,9 @@ public class PostgresqlAdapterExecutor extends AbstractAdapterExecutor {
                     }
                     sql.append(sb.toString());
                 }
-                sql.deleteCharAt(sql.lastIndexOf("#")).append("\n);");
+                if(sql.lastIndexOf("#") >= 0){
+                    sql.deleteCharAt(sql.lastIndexOf("#")).append("\n);");
+                }
                 return sql.toString().replaceAll("#",",\n");
             } catch (SQLException e) {
                 throw new AtlasBaseException("查询建表语句失败", e);

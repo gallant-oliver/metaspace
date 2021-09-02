@@ -285,11 +285,14 @@ public interface RoleDAO {
             "    and tableinfo.dbname like '%'||#{query}||'%' ESCAPE '/'</script>")
     public long getDBCountV2(@Param("guids") List<String> guids, @Param("query") String query);
 
-    @Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid,tableinfo.display_name as displayName from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and tableinfo.status='ACTIVE' and category.guid in " +
+   /* @Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid,tableinfo.display_name as displayName from category,table_relation,tableinfo where category.guid=table_relation.categoryguid and table_relation.tableguid=tableinfo.tableguid and tableinfo.status='ACTIVE' and category.guid in " +
             "    <foreach item='item' index='index' collection='guids'" +
             "    open='(' separator=',' close=')'>" +
             "    #{item}" +
             "    </foreach>" +
+            "     and tableinfo.databaseGuid=#{db} order by tableinfo.tablename</script>")*/
+    @Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid,tableinfo.display_name as displayName " +
+            " from tableinfo where  tableinfo.status='ACTIVE' " +
             "     and tableinfo.databaseGuid=#{db} order by tableinfo.tablename</script>")
     public List<TableInfo> getTableInfosByDBId(@Param("guids") List<String> guids, @Param("db") String db);
 
