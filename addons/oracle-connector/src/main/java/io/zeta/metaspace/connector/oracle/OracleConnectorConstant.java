@@ -46,6 +46,8 @@ public class OracleConnectorConstant{
     public static final String THREAD_FIELD = "THREAD#";
     public static final String ROLLBACK_FIELD = "ROLLBACK";
 
+    public static final String SQL_TEXT_FIELD = "SQL_TEXT";
+
     public static final String NUMBER_TYPE = "NUMBER";
     public static final String LONG_TYPE = "LONG";
     public static final String STRING_TYPE = "STRING";
