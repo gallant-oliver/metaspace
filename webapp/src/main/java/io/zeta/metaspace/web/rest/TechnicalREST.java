@@ -172,7 +172,7 @@ public class TechnicalREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getCategories()");
             }
-            return TenantService.defaultTenant.equals(tenantId) ? dataManageService.getAll(CATEGORY_TYPE) : dataManageService.getAllByUserGroup(CATEGORY_TYPE, tenantId);
+            return dataManageService.getTechnicalCategory(tenantId);
         } finally {
             AtlasPerfTracer.log(perf);
         }

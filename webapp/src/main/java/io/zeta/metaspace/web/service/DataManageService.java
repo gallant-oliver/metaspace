@@ -36,6 +36,7 @@ import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.po.sourceinfo.SourceInfo;
 import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
@@ -55,6 +56,7 @@ import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
+import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.TableDataSourceRelationDAO;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.util.*;
@@ -66,7 +68,6 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.repository.Constants;
-import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
@@ -154,9 +155,10 @@ public class DataManageService {
     TenantDAO tenantDAO;
     @Autowired
     private TableDataSourceRelationDAO tableDataSourceRelationDAO;
-
     @Autowired
-    private AtlasEntityStoreV2 atlasEntityStore;
+    private CategoryDAO categoryDAO;
+    @Autowired
+    private SourceInfoDAO sourceInfoDAO;
     int technicalType = 0;
     int dataStandType = 3;
     int technicalCount = 5;
@@ -209,6 +211,75 @@ public class DataManageService {
         }
     }
 
+    public List<CategoryPrivilege> getTechnicalCategory(String tenantId) {
+        List<CategoryPrivilege> categoryPrivilegeList = new ArrayList<>();
+        try {
+            User user = AdminUtils.getUserData();
+            List<String> userGroupIds = new ArrayList<>();
+            //获取用户组
+            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+            if (!CollectionUtils.isEmpty(userGroups)) {
+                userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            }
+            categoryPrivilegeList = categoryDAO.selectListByTenantIdAndStatus(tenantId, user.getUserId(), userGroupIds);
+            List<SourceInfo> sourceInfoList = sourceInfoDAO.selectCategoryListAndCount(tenantId);
+            Map<String, Integer> map = new HashMap<>();
+            if (!CollectionUtils.isEmpty(sourceInfoList)) {
+                map = sourceInfoList.stream().collect(Collectors.toMap(SourceInfo::getCategoryId, SourceInfo::getCount));
+            }
+            for (CategoryPrivilege categoryPrivilege : categoryPrivilegeList) {
+                categoryPrivilege.setCount(0);
+                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
+                privilege.setHide(false);
+                privilege.setAsh(false);
+                privilege.setEdit(true);
+                privilege.setAddSibling(true);
+                privilege.setAddChildren(true);
+                privilege.setDelete(true);
+                //源信息登记的，不能编辑，不能添加子目录，不能删除
+                if (map.keySet().contains(categoryPrivilege.getGuid())) {
+                    privilege.setEdit(false);
+                    privilege.setAddChildren(false);
+                    privilege.setDelete(false);
+                    categoryPrivilege.setCount(map.get(categoryPrivilege.getGuid()));
+                }
+                categoryPrivilege.setPrivilege(privilege);
+            }
+            //源信息登记的父级目录不能删除
+            updateParentCategory(categoryPrivilegeList);
+        } catch (AtlasBaseException e) {
+            LOG.error("getTechnicalCategory exception is {}", e);
+        }
+        return categoryPrivilegeList;
+    }
+
+    private void updateParentCategory(List<CategoryPrivilege> categoryPrivilegeList) {
+        for (CategoryPrivilege categoryPrivilege : categoryPrivilegeList) {
+            if (!categoryPrivilege.getPrivilege().isDelete()) {
+                if (StringUtils.isNotBlank(categoryPrivilege.getParentCategoryGuid())) {
+                    updateParentCategoryAttribute(categoryPrivilege.getParentCategoryGuid(), categoryPrivilegeList);
+                }
+            }
+        }
+    }
+
+    /**
+     * 递归设置父目录的删除属性
+     * @param parentGuid
+     * @param categoryPrivilegeList
+     */
+    private void updateParentCategoryAttribute(String parentGuid, List<CategoryPrivilege> categoryPrivilegeList) {
+        for (CategoryPrivilege privilege : categoryPrivilegeList) {
+            if (parentGuid.equals(privilege.getGuid())) {
+                privilege.getPrivilege().setDelete(false);
+                if (StringUtils.isNotBlank(privilege.getParentCategoryGuid())) {
+                    updateParentCategoryAttribute(privilege.getParentCategoryGuid(), categoryPrivilegeList);
+                }
+                break;
+            }
+        }
+    }
+
     //多租户
     public List<CategoryPrivilege> getAllByUserGroup(int type, String tenantId) throws AtlasBaseException {
         try {
@@ -223,6 +294,7 @@ public class DataManageService {
                 boolean isUserGroup = userGroups == null || userGroups.size() == 0;
                 //目录管理权限
                 boolean isAdmin = modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId() == module.getModuleId());
+                //无用户组并且有目录管理权限
                 if (isUserGroup && isAdmin) {
                     valueList = userGroupService.getAdminCategory(type, tenantId);
                 } else {
@@ -251,23 +323,47 @@ public class DataManageService {
         }
     }
 
-
     /**
-     * 根据用户组获取目录-技术目录
-     *
+     * 获取源信息登记时的技术目录
      * @param tenantId
      * @return
-     * @throws AtlasBaseException
      */
-    public List<CategoryPrivilege> getAllByUserGroupTechnical(String tenantId) throws AtlasBaseException {
+    public List<CategoryPrivilege> getSourceInfoTechnicalCategory(String tenantId) {
+        List<CategoryPrivilege> categoryPrivilegeList = new ArrayList<>();
         try {
-            return userGroupService.getUserCategoriesTechnical(tenantId);
-        } catch (MyBatisSystemException e) {
-            LOG.error("数据库服务异常", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+            User user = AdminUtils.getUserData();
+            List<String> userGroupIds = new ArrayList<>();
+            //获取用户组
+            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+            if (!CollectionUtils.isEmpty(userGroups)) {
+                userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            }
+            categoryPrivilegeList = categoryDAO.selectListByTenantIdAndStatus(tenantId, user.getUserId(), userGroupIds);
+            for (CategoryPrivilege categoryPrivilege : categoryPrivilegeList) {
+                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
+                privilege.setHide(false);
+                privilege.setAsh(false);
+                privilege.setEdit(false);
+                privilege.setAddSibling(false);
+                privilege.setAddChildren(false);
+                privilege.setDelete(false);
+                categoryPrivilege.setPrivilege(privilege);
+            }
+            List<String> strings = sourceInfoDAO.selectCategoryListByTenantId(tenantId);
+            if(CollectionUtils.isEmpty(strings)){
+                return categoryPrivilegeList;
+            }
+            Iterator<CategoryPrivilege> iter = categoryPrivilegeList.iterator();
+            while (iter.hasNext()){
+                CategoryPrivilege categoryPrivilege = iter.next();
+                if(strings.contains(categoryPrivilege.getGuid())){
+                    iter.remove();
+                }
+            }
         } catch (AtlasBaseException e) {
-            throw e;
+            LOG.error("getTechnicalCategory exception is {}", e);
         }
+        return categoryPrivilegeList;
     }
 
     public List<CategoryPrivilegeV2> getUserCategories(String tenantId) throws AtlasBaseException {
@@ -635,9 +731,7 @@ public class DataManageService {
         categoryIds.add(guid);
         this.removeSourceInfo(categoryIds,tenantId,guid);
         int item = 0;
-        if (type == 0) {
-            item = tableDataSourceRelationDAO.deleteByCategoryIdList(tenantId, categoryIds);
-        } else if (type == 1) {
+        if (type == 1) {
             List<String> businessIds = relationDao.getBusinessIdsByCategoryGuid(categoryIds);
             if (businessIds == null || businessIds.size() == 0) {
                 item = 0;
@@ -2231,11 +2325,9 @@ public class DataManageService {
         if (editCategory) {
             privilege.setAddSibling(true);
             privilege.setDelete(true);
-            privilege.setMove(true);
         } else {
             privilege.setAddSibling(false);
             privilege.setDelete(false);
-            privilege.setMove(false);
         }
         if (editCategory) {
             privilege.setAddChildren(true);

@@ -52,7 +52,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -1374,31 +1373,6 @@ public class UserGroupService {
         return userMap;
     }
 
-
-    /**
-     * 获取用户权限目录列表-技术目录
-     *
-     * @param tenantId
-     * @return
-     * @throws AtlasBaseException
-     */
-    public Map<String, CategoryPrivilegeV2> getUserPrivilegeCategoryTechnical(String tenantId) throws AtlasBaseException {
-        Map<String, CategoryPrivilegeV2> userMap = new HashMap<>();
-        User user = AdminUtils.getUserData();
-        //获取用户组
-        List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(userGroupIds)) {
-            return userMap;
-        }
-        //获取用户组对应的权限目录
-        List<CategoryPrivilegeV2> userCategories = userGroupDAO.getUserGroupsCategoryTechnical(userGroupIds, tenantId, 0);
-        List<String> categoryIds = userCategories.stream().map(category -> category.getGuid()).collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(categoryIds)) {
-            return userMap;
-        }
-        return userCategories.stream().collect(Collectors.toMap(CategoryPrivilegeV2::getGuid, Function.identity()));
-    }
-
     /**
      * 移除用户组
      * @param categoryIds
@@ -1466,11 +1440,9 @@ public class UserGroupService {
             if (parentCategory!=null&&parentCategory.getEditCategory()){
                 privilege.setAddSibling(true);
                 privilege.setDelete(true);
-                privilege.setMove(true);
             }else{
                 privilege.setAddSibling(false);
                 privilege.setDelete(false);
-                privilege.setMove(false);
             }
             if (category.getEditCategory()){
                 privilege.setAddChildren(true);
@@ -1503,35 +1475,6 @@ public class UserGroupService {
             userCategorys.add(categoryPrivilege);
         }
         addOtherCategory(categoryType, userCategorys,tenantId);
-        return userCategorys;
-    }
-
-
-    /**
-     * 获取用户目录权限-技术目录
-     * @param tenantId
-     * @return
-     * @throws AtlasBaseException
-     */
-    public List<CategoryPrivilege> getUserCategoriesTechnical(String tenantId) throws AtlasBaseException {
-        List<CategoryPrivilege> userCategorys = new ArrayList<>();
-        Map<String, CategoryPrivilegeV2> userCategoryMap = getUserPrivilegeCategoryTechnical(tenantId);
-        List<String> strings = sourceInfoDAO.selectCategoryListByTenantId(tenantId);
-        for (CategoryPrivilegeV2 category : userCategoryMap.values()) {
-            CategoryPrivilege categoryPrivilege = new CategoryPrivilege(category);
-            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
-            privilege.setHide(false);
-            privilege.setAsh(false);
-            privilege.setAddSibling(false);
-            privilege.setDelete(false);
-            privilege.setMove(false);
-            //源信息登记的目录置灰
-            if(strings.contains(category.getGuid())){
-                privilege.setAsh(true);
-            }
-            categoryPrivilege.setPrivilege(privilege);
-            userCategorys.add(categoryPrivilege);
-        }
         return userCategorys;
     }
 

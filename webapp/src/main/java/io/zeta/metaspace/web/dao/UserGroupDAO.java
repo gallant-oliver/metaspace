@@ -1061,18 +1061,6 @@ public interface UserGroupDAO {
             "    </foreach>" +
             "</script>")
     List<CategoryPrivilegeV2> getUserGroupsCategory(@Param("userGroupIds")List<String> userGroupIds, @Param("tenantId")String tenantId, @Param("categoryType") int categoryType,@Param("dbNames") List<String> dbNames);
-
-    @Select("<script> " +
-            " select *,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem from category_group_relation g join category c on c.guid=g.category_id " +
-            " where c.tenantid=#{tenantId} and c.categorytype=#{categoryType}" +
-            " and g.group_id in " +
-            " <foreach item='id' index='index' collection='userGroupIds'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{id}" +
-            " </foreach>" +
-            "</script>")
-    List<CategoryPrivilegeV2> getUserGroupsCategoryTechnical(@Param("userGroupIds") List<String> userGroupIds, @Param("tenantId") String tenantId, @Param("categoryType") int categoryType);
-
     //递归找父节点
     @Select("<script>WITH RECURSIVE categoryTree AS" +
             "(" +

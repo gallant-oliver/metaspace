@@ -55,6 +55,7 @@ public class RoleModulesCategories {
         private String description;
         private int level;
         private String safe;
+        private String creator;
         @JsonIgnore
         private Timestamp createTime;
         private String qualifiedName;
@@ -107,6 +108,14 @@ public class RoleModulesCategories {
 
         public void setLevel(int level) {
             this.level = level;
+        }
+
+        public String getCreator() {
+            return creator;
+        }
+
+        public void setCreator(String creator) {
+            this.creator = creator;
         }
 
         public Category() {
