@@ -78,9 +78,6 @@ public interface TableDAO {
     @Update("update table2owner set tableGuid = #{tableGuid} where tableGuid=#{OldTableGuid}")
     int updateTableRelatedOwner(@Param("tableGuid") String tableGuid, @Param("OldTableGuid") String OldTableGuid);
 
-    @Update("update table_relation set tableguid = #{tableGuid} where tableguid=#{OldTableGuid}")
-    int updateTableRelations(@Param("tableGuid") String tableGuid, @Param("OldTableGuid") String OldTableGuid);
-
     @Update("update table2tag set tableguid = #{tableGuid} where tableguid=#{OldTableGuid}")
     int updateTableTags(@Param("tableGuid") String tableGuid, @Param("OldTableGuid") String OldTableGuid);
 

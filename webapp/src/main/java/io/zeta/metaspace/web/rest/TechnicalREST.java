@@ -298,37 +298,6 @@ public class TechnicalREST {
     }
 
     /**
-     * 添加关联
-     *
-     * @param categoryGuid
-     * @param relations
-     * @return
-     * @throws AtlasBaseException
-     */
-    @POST
-    @Path("/category/{categoryGuid}/assignedEntities")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(INSERT)
-    public Response assignTableToCategory(@PathParam("categoryGuid") String categoryGuid, List<RelationEntityV2> relations, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetadataREST.assignTableToCategory(" + categoryGuid + ")");
-            }
-            String categoryName = dataManageService.getCategoryNameById(categoryGuid, tenantId);
-            HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "目录添加关联:" + categoryName);
-            dataManageService.assignTablesToCategory(categoryGuid, relations, tenantId);
-        } catch (CannotCreateTransactionException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-        return Response.status(200).entity("success").build();
-    }
-
-    /**
      * 获取关联关系
      *
      * @param categoryGuid

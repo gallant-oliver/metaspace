@@ -37,7 +37,6 @@ import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.po.sourceinfo.SourceInfo;
-import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.privilege.Module;
@@ -57,7 +56,6 @@ import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
-import io.zeta.metaspace.web.dao.sourceinfo.TableDataSourceRelationDAO;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
@@ -153,8 +151,6 @@ public class DataManageService {
     DbDAO dbDAO;
     @Autowired
     TenantDAO tenantDAO;
-    @Autowired
-    private TableDataSourceRelationDAO tableDataSourceRelationDAO;
     @Autowired
     private CategoryDAO categoryDAO;
     @Autowired
@@ -837,36 +833,6 @@ public class DataManageService {
         } catch (Exception e) {
             LOG.error("更新目录失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
-        }
-    }
-
-    /**
-     * 添加关联
-     * @param categoryGuid
-     * @param relations
-     * @param tenantId
-     * @throws AtlasBaseException
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public void assignTablesToCategory(String categoryGuid, List<RelationEntityV2> relations, String tenantId) throws AtlasBaseException {
-        try {
-            if (CollectionUtils.isEmpty(relations)) {
-                return;
-            }
-            List<TableDataSourceRelationPO> tableDataSourceRelationPOList = new ArrayList<>();
-            for (RelationEntityV2 relationEntityV2 : relations) {
-                TableDataSourceRelationPO tableDataSourceRelationPO = new TableDataSourceRelationPO();
-                tableDataSourceRelationPO.setId(UUID.randomUUID().toString());
-                tableDataSourceRelationPO.setCategoryId(categoryGuid);
-                tableDataSourceRelationPO.setTableId(relationEntityV2.getTableGuid());
-                tableDataSourceRelationPO.setDataSourceId(relationEntityV2.getSourceId());
-                tableDataSourceRelationPO.setTenantId(tenantId);
-                tableDataSourceRelationPOList.add(tableDataSourceRelationPO);
-            }
-            tableDataSourceRelationDAO.insertBatch(tableDataSourceRelationPOList);
-        } catch (Exception e) {
-            LOG.error("添加关联失败{}", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加关联失败");
         }
     }
 
