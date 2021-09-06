@@ -26,7 +26,7 @@ public class OracleConnection{
 
         String dbPassword = PassWordUtils.aesDecode(config.getDbPassword());
         return DriverManager.getConnection(
-            "jdbc:oracle:thin:@"+config.getDbIp()+":"+config.getDbPort()+"/"+config.getDbName(),
+            "jdbc:oracle:thin:@"+config.getDbIp()+":"+config.getDbPort()+":"+config.getDbName(),
             config.getDbUser(),
                 dbPassword);
     }

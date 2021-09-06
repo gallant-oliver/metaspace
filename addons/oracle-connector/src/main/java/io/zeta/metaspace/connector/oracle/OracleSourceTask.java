@@ -1,5 +1,6 @@
 package io.zeta.metaspace.connector.oracle;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
@@ -8,12 +9,12 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.SQL_REDO_FIELD;
-import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.TEMPORARY_TABLE;
+import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.*;
 
 /**
  *
@@ -139,6 +140,26 @@ public class OracleSourceTask extends SourceTask {
 		return results;
 	}
 
+	private String getSingleRowStringResult(String sql,List<String> args, String columnName) throws SQLException {
+		String result = "";
+		PreparedStatement preparedStatement = dbConn.prepareStatement(sql);
+		int i = 1;
+		for(String arg : args){
+			preparedStatement.setString(i++,arg);
+		}
+
+
+		try (ResultSet resultSet = preparedStatement.executeQuery()) {
+			if (resultSet.next()) {
+				result = resultSet.getString(columnName);
+			}
+			if(preparedStatement != null){
+				preparedStatement.close();
+			}
+		}
+		return result;
+	}
+
 	@Override
 	public List<SourceRecord> poll() throws InterruptedException {
 		LOG.info("poll start");
@@ -225,16 +246,30 @@ public class OracleSourceTask extends SourceTask {
 		ResultSet logMinerData = logMinerSelect.executeQuery();
 		LOG.info("connector {} poll data from {} to {} success", config.getName(), streamOffsetScn,
 				streamEndScn);
-		explainData(records, logMinerData);
+		boolean hasData = explainData(records, logMinerData);
 		LOG.info("connector {} explain {} item(s) from {} to {} success", config.getName(), records.size(), streamOffsetScn,
 				streamEndScn);
-		streamOffsetScn = streamEndScn + 1;
+
+		if(hasData){
+			streamOffsetScn = streamEndScn + 1;
+		}
 		return logMinerSelect;
 	}
 
-	private void explainData(List<SourceRecord> records, ResultSet logMinerData) throws SQLException {
+	private boolean explainData(List<SourceRecord> records, ResultSet logMinerData) throws SQLException {
 		String sqlRedo = "";
+		boolean hasData = false;
+		/* scnList 用来解决一条sql执行生成的多个语句 （防止重复的垃圾脚本）
+		 eg：insert Into tableA select * from tableB =>会生成tableB表记录个数的insert语句
+		 */
+		List<Long> scnList = new ArrayList<>();
 		while (logMinerData.next()) {
+			hasData = true;
+			Long scn = logMinerData.getLong(SCN_FIELD);
+			if(scnList.contains(scn)){
+				continue;
+			}
+			scnList.add(scn);
 			sqlRedo = logMinerData.getString(SQL_REDO_FIELD);
 			sqlRedo = SQL_DOC_PATTERN.matcher(sqlRedo).replaceAll("$1");
 			sqlRedo = BLACK_LINE_PATTERN.matcher(sqlRedo).replaceAll(" ").trim();
@@ -242,10 +277,19 @@ public class OracleSourceTask extends SourceTask {
 			if (sqlRedo.contains(TEMPORARY_TABLE) || firstWord.equals("truncate") || firstWord.equals("delete") || firstWord.equals("update")) {
 				continue;
 			}
+			//获取sql执行的原始脚本
+			String timestamp = logMinerData.getString(TIMESTAMP_FIELD);
+			String newSql = "";
+			if("insert".equals(firstWord)){
+				LOG.info("insert SQL convert before : {}",sqlRedo);
+				newSql = getSingleRowStringResult(OracleConnectorSQL.LOGMINER_ORIGIN_SQL, Arrays.asList(timestamp,timestamp),OracleConnectorConstant.SQL_TEXT_FIELD);
+				LOG.info("insert SQL convert after : {}",newSql);
+			}
 
-			SourceRecord sourceRecord = SourceRecordUtil.getSourceRecord(logMinerData, config);
+			SourceRecord sourceRecord = SourceRecordUtil.getSourceRecord(logMinerData,newSql, config);
 			records.add(sourceRecord);
 		}
+		return hasData;
 	}
 
 	
