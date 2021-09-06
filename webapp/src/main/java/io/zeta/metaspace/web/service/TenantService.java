@@ -429,6 +429,53 @@ public class TenantService {
         throw getAtlasBaseException(status,msgDesc,"从安全中心获取当前用户的hive库权限错误");
     }
 
+    /**
+     * 获取对应租户的所有库
+     * @param tenantId
+     * @return
+     */
+    public List<String> getCurrentTenantDatabase(String tenantId) throws AtlasBaseException {
+        Object status=null;
+        Object msgDesc=null;
+        String cacheKey = tenantId;
+        List<String> dbs = databaseCache.getIfPresent(cacheKey);
+        if (dbs!=null) {
+            return dbs;
+        }
+        Gson gson = new Gson();
+        HashMap<String,String> hashMap = new HashMap<>();
+        hashMap.put("User-Agent","Chrome");
+        HashMap<String,String> query = new HashMap<>();
+        query.put("tenantId",tenantId);
+        try {
+            int retryCount = 0;
+            int retries = 3;
+            while(retryCount < retries) {
+                SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
+                String string = OKHttpClient.doGet(SECURITY_HOST + TENANT_DATABASE, query, hashMap);
+                Map map = gson.fromJson(string, HashMap.class);
+                status = map.get("statusCode");
+                if (status==null||!status.toString().startsWith(successStatusCode)){
+                    msgDesc=map.get("msgDesc");
+                    retryCount++;
+                    continue;
+                }
+                Object data = map.get("data");
+                List<Map<String,String>> databaseList = gson.fromJson(gson.toJson(data), new TypeToken<List<Map<String, String>>>() {
+                }.getType());
+                dbs = databaseList.stream().map(database->database.get("resourceContent")).collect(Collectors.toList());
+                databaseCache.put(cacheKey, dbs);
+                return dbs;
+            }
+        }catch (AtlasBaseException e){
+            LOG.error("租户ID："+tenantId);
+            throw new AtlasBaseException(e.getAtlasErrorCode(),e,"从安全中心获取当前用户的hive库权限错误:"+e.getMessage());
+        }catch (Exception e){
+            LOG.error("租户ID："+tenantId);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的hive库权限错误:"+e.getMessage());
+        }
+        return null;
+    }
 
     /**
      * 获取住户下有权限的所有数据库
