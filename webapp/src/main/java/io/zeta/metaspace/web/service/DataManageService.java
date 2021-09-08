@@ -31,6 +31,7 @@ import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.dto.indices.IndexFieldExport;
 import io.zeta.metaspace.model.dto.indices.IndexFieldNode;
+import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
@@ -461,6 +462,7 @@ public class DataManageService {
             entity.setGuid(newCategoryGuid);
             //name
             entity.setName(name);
+            entity.setPrivateStatus(info.getPrivateStatus()==null?CategoryPrivateStatus.PRIVATE:info.getPrivateStatus());
             //创建人
             entity.setCreator(creatorId);
             //createtime
@@ -508,6 +510,12 @@ public class DataManageService {
                 if (!Objects.isNull(oneLevelCategory)) {
                     oneLevelCategory.setCode(entity.getCode());
                 }
+                if (CategoryPrivateStatus.PRIVATE.equals(entity.getPrivateStatus())){
+                    List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(entity.getCreator(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+                    if (userGroupIds!=null && !userGroupIds.isEmpty()) {
+                        userGroupDAO.insertGroupRelations(userGroupIds, entity.getGuid(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
+                    }
+                }
                 return oneLevelCategory;
             }
             if (Objects.isNull(categoryDao.queryByGuidV2(currentCategoryGuid, tenantId))) {
@@ -536,6 +544,12 @@ public class DataManageService {
                 }
                 if (typeBoolean && isAdmin && isPrivilege) {
                     privilege.setAsh(true);
+                }
+            }
+            if (CategoryPrivateStatus.PRIVATE.equals(entity.getPrivateStatus())){
+                List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(entity.getCreator(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+                if (userGroupIds!=null && !userGroupIds.isEmpty()) {
+                    userGroupDAO.insertGroupRelations(userGroupIds, entity.getGuid(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
                 }
             }
             if (type == 5) {

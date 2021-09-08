@@ -10,10 +10,7 @@ import io.zeta.metaspace.model.approve.ApproveParas;
 import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.dto.indices.ApprovalGroupMember;
 import io.zeta.metaspace.model.dto.sourceinfo.DatabaseInfoDTO;
-import io.zeta.metaspace.model.enums.BusinessType;
-import io.zeta.metaspace.model.enums.SourceInfoOperation;
-import io.zeta.metaspace.model.enums.Status;
-import io.zeta.metaspace.model.enums.SubmitType;
+import io.zeta.metaspace.model.enums.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.po.sourceinfo.DatabaseInfoPO;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -522,7 +519,7 @@ public class SourceInfoDatabaseService implements Approvable {
             List<DatabaseInfoForCategory> databaseInfoList = databaseInfoDAO.getDatabaseInfoByIds(idList);
             for (DatabaseInfoForCategory databaseInfo:databaseInfoList){
                 if (Boolean.FALSE.equals(ParamUtil.isNull(databaseInfo.getCategoryId()))){
-                    categoryDAO.updateCategoryName(databaseInfo.getName(),databaseInfo.getCategoryId());
+                    categoryDAO.updateCategoryName(databaseInfo.getName(),databaseInfo.getCategoryId(),databaseInfo.isImportance()? CategoryPrivateStatus.PRIVATE:CategoryPrivateStatus.PUBLIC);
                 }else{
                     this.createCategoryInfo(databaseInfo,tenantId);
                 }
@@ -603,6 +600,7 @@ public class SourceInfoDatabaseService implements Approvable {
 
         categoryInfoV2.setAuthorized(Boolean.FALSE);
         categoryInfoV2.setCreator(databaseInfoBO.getCreator());
+        categoryInfoV2.setPrivateStatus(databaseInfoBO.isImportance()?CategoryPrivateStatus.PRIVATE:CategoryPrivateStatus.PUBLIC);
         categoryInfoV2.setName(databaseInfoBO.getName());
         categoryInfoV2.setGuid(databaseInfoBO.getParentCategoryId());
         categoryInfoV2.setParentCategoryGuid(databaseInfoBO.getParentCategoryId());
