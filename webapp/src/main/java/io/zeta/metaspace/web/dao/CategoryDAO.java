@@ -206,20 +206,6 @@ public interface CategoryDAO {
             "SELECT guid FROM categoryTree")
     public List<String> queryChildrenCategoryId(@Param("parentCategoryGuid") String parentCategoryGuid, @Param("tenantId") String tenantId);
 
-    /*@Delete({"<script>",
-             "delete from table_relation where tableGuid=#{tableGuid} and categoryGuid in ",
-             "<foreach item='guid' index='index' collection='categoryList' separator=',' open='(' close=')'>" ,
-             "#{guid}",
-             "</foreach>",
-             "</script>"})
-    public int deleteChildrenRelation(@Param("tableGuid")String tableGuid, @Param("categoryList")List<String> categoryList);*/
-
-    /*@Select("select * from table_relation where relationShipGuid=#{relationShipGuid}")
-    public RelationEntityV2 getRelationByGuid(@Param("relationShipGuid")String relationShipGuid);*/
-
-//    @Select("select guid from category where categoryType=#{categoryType}")
-//    public List<String> getAllCategory(@Param("categoryType")int categoryType);
-
     @Select("select guid from category where categoryType=#{categoryType} and tenantid=#{tenantId}")
     public List<String> getAllCategory(@Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
 
@@ -263,10 +249,6 @@ public interface CategoryDAO {
 
     @Select("select name from category where guid=#{guid} and tenantid=#{tenantId}")
     public String getCategoryNameById(@Param("guid") String guid, @Param("tenantId") String tenantId);
-
-    @Select("select category.name from category join table_relation on table_relation.categoryguid=category.guid where relationshipguid=#{guid} and tenantid=#{tenantId}")
-    public String getCategoryNameByRelationId(@Param("guid") String guid, @Param("tenantId") String tenantId);
-
     @Insert(" <script>" +
             "INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,qualifiedname,categorytype,level,safe,createtime,tenantid,creator,code,sort,private_status) VALUES " +
             "<foreach item='category' index='index' collection='categorys' separator='),(' open='(' close=')'>" +

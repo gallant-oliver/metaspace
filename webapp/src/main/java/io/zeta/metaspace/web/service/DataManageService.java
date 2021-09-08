@@ -38,7 +38,6 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.po.sourceinfo.SourceInfo;
 import io.zeta.metaspace.model.pojo.TableInfo;
-import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.role.Role;
@@ -836,36 +835,6 @@ public class DataManageService {
         }
     }
 
-
-
-    //1.4删除表关联，取消子目录表关联关系时数据表自动回到一级目录
-    @Transactional(rollbackFor = Exception.class)
-    public void removeRelationAssignmentFromTablesV2(List<RelationEntityV2> relationshipList, String tenantId) throws AtlasBaseException {
-        try {
-            if (Objects.nonNull(relationshipList)) {
-                for (RelationEntityV2 relationship : relationshipList) {
-                    String relationshipGuid = relationship.getRelationshipGuid();
-                    RelationEntityV2 relationInfo = relationDao.getRelationInfoByGuid(relationshipGuid);
-                    relationDao.delete(relationInfo.getRelationshipGuid());
-                    String topGuid = relationDao.getTopGuidByGuid(relationInfo.getCategoryGuid(), tenantId);
-                    //当贴源层没有关联该表时
-                    if (relationDao.ifRelationExists(topGuid, relationInfo.getTableGuid()) == 0) {
-                        TableRelation tableRelation = new TableRelation();
-                        tableRelation.setRelationshipGuid(UUID.randomUUID().toString());
-                        tableRelation.setCategoryGuid(topGuid);
-                        tableRelation.setTableGuid(relationInfo.getTableGuid());
-                        tableRelation.setGenerateTime(DateUtils.getNow());
-                        tableRelation.setTenantId(tenantId);
-                        relationDao.addRelation(tableRelation);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            LOG.error("取消关联失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "取消关联失败");
-        }
-    }
-
     /**
      * @param categoryGuid
      * @param query
@@ -878,12 +847,7 @@ public class DataManageService {
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
             List<RelationEntityV2> relations = new ArrayList<>();
-            //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                relations = relationDao.queryRelationByCategoryGuid(categoryGuid, limit, offset);
-            } else {
-                relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset, tenantId);
-            }
+            relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset, tenantId);
             if(!CollectionUtils.isEmpty(relations)){
                 for (RelationEntityV2 entity : relations) {
                     String tableGuid = entity.getTableGuid();
@@ -925,14 +889,10 @@ public class DataManageService {
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
             List<RelationEntityV2> relations = new ArrayList<>();
             int totalNum = 0;
-            //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                relations = relationDao.queryRelationByCategoryGuidFilter(categoryGuid, limit, offset);
-            } else {
-                User user = AdminUtils.getUserData();
-                List<String> databases = tenantService.getDatabase(tenantId);
-                if (databases != null && databases.size() != 0)
-                    relations = relationDao.queryRelationByCategoryGuidFilterV2(categoryGuid, tenantId, limit, offset, databases);
+            User user = AdminUtils.getUserData();
+            List<String> databases = tenantService.getDatabase(tenantId);
+            if (databases != null && databases.size() != 0) {
+                relations = relationDao.queryRelationByCategoryGuidFilterV2(categoryGuid, tenantId, limit, offset, databases);
             }
             if (relations.size() != 0) {
                 totalNum = relations.get(0).getTotal();
@@ -1796,8 +1756,6 @@ public class DataManageService {
         tableDAO.deleteTableInfo(tableGuid);
         //owner
         tableDAO.deleteTableRelatedOwner(tableGuid);
-        //关联关系
-        relationDAO.deleteByTableGuid(tableGuid);
         //business2table
         businessDAO.deleteBusinessRelationByTableGuid(tableGuid);
         //表标签
@@ -1906,10 +1864,6 @@ public class DataManageService {
 
     public String getCategoryNameById(String guid, String tenantId) {
         return categoryDao.getCategoryNameById(guid, tenantId);
-    }
-
-    public String getCategoryNameByRelationId(String guid, String tenantId) {
-        return categoryDao.getCategoryNameByRelationId(guid, tenantId);
     }
 
     public void sendMetadataChangedMail(String tableGuid) throws AtlasBaseException {
