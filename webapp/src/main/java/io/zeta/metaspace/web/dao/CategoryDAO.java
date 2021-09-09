@@ -87,6 +87,9 @@ public interface CategoryDAO {
     @Select("select * from category where tenantid=#{tenantId} and guid = (select category_id from source_info where version = 0 and database_id  = #{databaseId} and tenant_id = #{tenantId} and category_id is not null)")
     public CategoryPrivilege queryByGuidByDBId(@Param("databaseId") String databaseId, @Param("tenantId") String tenantId);
 
+    @Select("select category_id from source_info where version = 0 and database_id  = #{databaseId} and tenant_id = #{tenantId} and category_id is not null")
+    public String queryCategoryIdByGuidByDBId(@Param("databaseId") String databaseId, @Param("tenantId") String tenantId);
+
     @Select("select name from category where guid=#{guid} and tenantid=#{tenantId}")
     public String queryNameByGuid(@Param("guid") String categoryGuid, @Param("tenantId") String tenantId) throws SQLException;
 
@@ -362,7 +365,7 @@ public interface CategoryDAO {
     public List<CategoryPath> getPathByIds(@Param("ids") List<String> ids, @Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
 
     @Select("SELECT COUNT(1) FROM category WHERE guid = #{id} AND tenantid = #{tenantId}")
-    int getCategoryCountById(@Param("id")String id,@Param("tenantId") String tenantId);
+    int getCategoryCountById(@Param("id") String id, @Param("tenantId") String tenantId);
 
     @Select({" <script> ",
             " select distinct c.guid from category c join category_group_relation cgr on c.guid=cgr.category_id where c.categorytype=#{categoryType} and c.tenantid=#{tenantId} and cgr.group_id in  ",
@@ -373,21 +376,22 @@ public interface CategoryDAO {
     List<String> getCategorysByGroup(@Param("groupIds") List<String> groupIds, @Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
 
     @Update("UPDATE category SET name=#{name}, qualifiedname = #{name} WHERE guid = #{id}")
-    void updateCategoryName(@Param("name") String databaseAlias,@Param("id")String id);
+    void updateCategoryName(@Param("name") String databaseAlias, @Param("id") String id);
 
     @Select("SELECT COUNT(1) FROM category WHERE parentcategoryguid = #{parentId} AND tenantid = #{tenantId} AND name = #{databaseAlias}")
-    int getCategoryCountByParentIdAndName(@Param("tenantId") String tenantId,@Param("parentId") String parentId,@Param("databaseAlias") String databaseAlias);
+    int getCategoryCountByParentIdAndName(@Param("tenantId") String tenantId, @Param("parentId") String parentId, @Param("databaseAlias") String databaseAlias);
 
     @Select("SELECT COUNT(1) FROM category WHERE parentcategoryguid = (SELECT parentcategoryguid FROM category WHERE guid = #{categoryId}) AND tenantid = #{tenantId} AND name = #{databaseAlias}")
-    int getCategoryCountByIdAndName(@Param("tenantId") String tenantId,@Param("categoryId") String categoryId,@Param("databaseAlias") String databaseAlias);
+    int getCategoryCountByIdAndName(@Param("tenantId") String tenantId, @Param("categoryId") String categoryId, @Param("databaseAlias") String databaseAlias);
+
     @Select("SELECT guid,name,parentcategoryguid as parentCategoryGuid FROM public.category where tenantid=#{tenantId} ")
     List<CategoryEntityV2> queryByTenantId(@Param("tenantId") String tenantId);
 
     @Select(" select distinct guid,name from category where categorytype = #{categorytype} order by guid ")
-    List<CategoryEntityV2> queryNameByType(@Param("categorytype")int categorytype);
+    List<CategoryEntityV2> queryNameByType(@Param("categorytype") int categorytype);
 
     @Select(" select parentcategoryguid from category where guid = #{id} AND tenantid = #{tenant} ")
-    String getParentIdByGuid(@Param("id") String guid,@Param("tenant") String tenant);
+    String getParentIdByGuid(@Param("id") String guid, @Param("tenant") String tenant);
 
     @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH)  AS" +
             " (SELECT guid,name,parentCategoryGuid, name as  PATH" +
@@ -396,6 +400,15 @@ public interface CategoryDAO {
             " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH ||'/'|| D.name" +
             " FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=#{tenantId})" +
             "SELECT  * FROM T ")
-    List<CategoryGuidPath> getGuidPathByTenantIdAndCategoryType(@Param("tenantId")String tenantId, @Param("type") int type);
+    List<CategoryGuidPath> getGuidPathByTenantIdAndCategoryType(@Param("tenantId") String tenantId, @Param("type") int type);
+
+    @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH)  AS" +
+            " (SELECT guid,name,parentCategoryGuid, name as  PATH" +
+            " FROM category WHERE parentCategoryGuid IS NULL and tenantid= #{tenantId} and categorytype = #{type}" +
+            " UNION ALL " +
+            " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH ||'/'|| D.name" +
+            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=#{tenantId})" +
+            "SELECT  * FROM T where guid = #{guid}")
+    List<CategoryGuidPath> getGuidPathByTenantIdAndCategoryTypeAndId(@Param("tenantId") String tenantId, @Param("type") int type, @Param("guid") String guid);
 
 }
