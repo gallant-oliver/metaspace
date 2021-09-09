@@ -29,9 +29,19 @@ public class CategoryPrivilege {
     private String name;
     private String parentCategoryGuid;
     private String upBrotherCategoryGuid;
+    private String privateStatus;
     private String downBrotherCategoryGuid;
     private String description;
     private Privilege privilege;
+
+    public String getPrivateStatus() {
+        return privateStatus;
+    }
+
+    public void setPrivateStatus(String privateStatus) {
+        this.privateStatus = privateStatus;
+    }
+
     private int level;
     private Integer objectCount;
     private String safe;

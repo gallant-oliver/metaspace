@@ -1205,6 +1205,7 @@ public interface UserGroupDAO {
             "    open='(' separator='),(' close=')'>" +
             "    #{categoryId},#{groupId},#{read},#{editCategory},#{editItem}" +
             "    </foreach>" +
+            " ON conflict (group_id,category_id) DO NOTHING" +
             "</script>")
     void insertGroupRelations(@Param("userGroupIds") List<String> userGroupIds,@Param("categoryId")  String guid,@Param("read")  Boolean read, @Param("editCategory") Boolean editCategory, @Param("editItem") Boolean editItem);
 }

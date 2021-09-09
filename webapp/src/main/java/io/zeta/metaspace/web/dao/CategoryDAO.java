@@ -373,8 +373,8 @@ public interface CategoryDAO {
             " </script>"})
     List<String> getCategorysByGroup(@Param("groupIds") List<String> groupIds, @Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
 
-    @Update("UPDATE category SET name=#{name}, qualifiedname = #{name},private_status = #{privateStatus.name()} WHERE guid = #{id}")
-    void updateCategoryName(@Param("name") String databaseAlias,@Param("id")String id,@Param("privateStatus") CategoryPrivateStatus privateStatus);
+    @Update("UPDATE category SET name=#{name}, qualifiedname = #{name},private_status = #{privateStatus} WHERE guid = #{id}")
+    void updateCategoryName(@Param("name") String databaseAlias,@Param("id")String id,@Param("privateStatus") String privateStatus);
 
     @Select("SELECT COUNT(1) FROM category WHERE parentcategoryguid = #{parentId} AND tenantid = #{tenantId} AND name = #{databaseAlias}")
     int getCategoryCountByParentIdAndName(@Param("tenantId") String tenantId,@Param("parentId") String parentId,@Param("databaseAlias") String databaseAlias);
@@ -413,4 +413,19 @@ public interface CategoryDAO {
             " </if>"+
             "</script>")
     List<CategoryPrivilege> selectListByTenantIdAndStatus(@Param("tenantId") String tenantId, @Param("creator") String creator, @Param("groupIdList") List<String> groupIdList);
+
+    @Select("<script>" +
+            "SELECT COALESCE( MAX(sort),0) + 1  "+
+            "FROM\n" +
+            " category \n" +
+            "WHERE\n" +
+            " tenantid = #{ tenantId } \n" +
+            "<if test='guid == null'>" +
+            " AND parentcategoryguid IS NULL" +
+            "</if>" +
+            "<if test='guid != null'>" +
+            " AND parentcategoryguid =#{guid}" +
+            "</if>" +
+            "</script>")
+    int getMaxSortByParentGuid(@Param("guid") String guid,@Param("tenantId") String tenantId);
 }

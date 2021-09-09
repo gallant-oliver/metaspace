@@ -20,8 +20,10 @@ import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForCategory;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForList;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.ApproveDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.service.Approve.Approvable;
@@ -70,6 +72,9 @@ public class SourceInfoDatabaseService implements Approvable {
 
     @Autowired
     ApproveDAO approveDAO;
+
+    @Autowired
+    UserGroupDAO userGroupDAO;
 
     @Autowired
     DataManageService dataManageService;
@@ -518,8 +523,10 @@ public class SourceInfoDatabaseService implements Approvable {
             databaseInfoDAO.updateStatusByIds(idList,Status.ACTIVE.getIntValue()+"");
             List<DatabaseInfoForCategory> databaseInfoList = databaseInfoDAO.getDatabaseInfoByIds(idList);
             for (DatabaseInfoForCategory databaseInfo:databaseInfoList){
+                List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(databaseInfo.getCreator(), tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
                 if (Boolean.FALSE.equals(ParamUtil.isNull(databaseInfo.getCategoryId()))){
-                    categoryDAO.updateCategoryName(databaseInfo.getName(),databaseInfo.getCategoryId(),databaseInfo.isImportance()? CategoryPrivateStatus.PRIVATE:CategoryPrivateStatus.PUBLIC);
+                    categoryDAO.updateCategoryName(databaseInfo.getName(),databaseInfo.getCategoryId(),databaseInfo.isImportance()? CategoryPrivateStatus.PRIVATE.name():CategoryPrivateStatus.PUBLIC.name());
+                    userGroupDAO.insertGroupRelations(userGroupIds,databaseInfo.getCategoryId(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
                 }else{
                     this.createCategoryInfo(databaseInfo,tenantId);
                 }
