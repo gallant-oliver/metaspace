@@ -8,6 +8,7 @@ import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.Constant;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.DeriveTableStateEnum;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.MetadataDeriveTableInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.BusinessCategory;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.CategoryGuidPath;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceBusinessInfo;
@@ -51,15 +52,7 @@ import org.springframework.util.CollectionUtils;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TreeSet;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -656,6 +649,36 @@ public class SourceInfoDeriveTableInfoService {
             BeanUtils.copyProperties(e, sourceBusinessInfo);
             return sourceBusinessInfo;
         }).collect(Collectors.toList());
+    }
+
+
+    public MetadataDeriveTableInfo queryDeriveTableInfo(String tenantId, String sourceId, String schemaId, String tableGuid) {
+        List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,schemaId,tableGuid);
+        if(org.apache.commons.collections.CollectionUtils.isEmpty(deriveTableInfoList)){
+            return null;
+        }
+        Optional<SourceInfoDeriveTableInfo> deriveTableInfoOpt = deriveTableInfoList.stream().sorted(Comparator.comparing(SourceInfoDeriveTableInfo::getVersion).reversed()).findFirst();
+        if(deriveTableInfoOpt.isPresent()){
+            SourceInfoDeriveTableInfo tableInfo = deriveTableInfoOpt.get();
+            MetadataDeriveTableInfo info = new MetadataDeriveTableInfo();
+            BeanUtils.copyProperties(tableInfo,info);
+            int TECHNIACL_CATEGORY_TYPE = 0;
+            Map<String, String> technicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE, info.getCategoryId());
+            info.setCategory(technicalCategoryGuidPathMap.getOrDefault(info.getCategoryId(), ""));
+
+            BusinessInfo businessInfo = businessDAO.queryBusinessByBusinessId(info.getBusinessId());
+            if (null != businessInfo) {
+                info.setBusiness(businessInfo.getName());
+                info.setBusinessHeaderId(businessInfo.getDepartmentId());
+                // 获取该租户下所有的业务目录guid - path
+                int BUSINESS_CATEGORY_TYPE = 1;
+                Map<String, String> businessCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, BUSINESS_CATEGORY_TYPE, businessInfo.getDepartmentId());
+                info.setBusinessHeader(businessCategoryGuidPathMap.getOrDefault(businessInfo.getDepartmentId(), ""));
+            }
+
+            return info;
+        }
+        return null;
     }
 
     /**
