@@ -1149,6 +1149,9 @@ public class MetaDataREST {
     public Result getSourceInfo(@HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") String sourceId,
                                 @QueryParam("schemaId") String schemaId){
         DatabaseInfoBO resultBO = metadataService.querySourceInfo(tenantId,sourceId,schemaId);
+        if(resultBO == null){
+            return new Result("-1","没有找到对应的数据库登记信息");
+        }
         return ReturnUtil.success(resultBO);
     }
     /**
@@ -1165,6 +1168,9 @@ public class MetaDataREST {
     public Result getDeriveTableInfo(@HeaderParam("tenantId") String tenantId,@PathParam("tableGuid") String tableGuid,
                                      @QueryParam("sourceId") String sourceId,@QueryParam("schemaId") String schemaId){
         MetadataDeriveTableInfo metadataDeriveTableInfo = sourceInfoDeriveTableInfoService.queryDeriveTableInfo(tenantId,sourceId,schemaId,tableGuid);
+        if(metadataDeriveTableInfo == null){
+            return new Result("-1","没有找到对应的衍生表登记信息");
+        }
         return ReturnUtil.success(metadataDeriveTableInfo);
     }
 }
