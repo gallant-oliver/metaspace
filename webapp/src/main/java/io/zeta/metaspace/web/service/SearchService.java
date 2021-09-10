@@ -107,7 +107,7 @@ public class SearchService {
                 }
                 databaseList = databaseInfoDAO.selectByDbNameAndTenantId(tenantId, query, dbList, limit, offset);
             } else if ("hive".equalsIgnoreCase(sourceId)) {
-                dbList = tenantService.getDatabase(tenantId);
+                dbList = tenantService.getCurrentTenantDatabase(tenantId);
                 if (CollectionUtils.isEmpty(dbList)) {
                     return databasePageResult;
                 }
@@ -1218,7 +1218,7 @@ public class SearchService {
     @Transactional(rollbackFor = Exception.class)
     public PageResult<Database> getDatabaseV2(Parameters parameters, List<String> strings, String tenantId) throws AtlasBaseException {
         List<DatabaseHeader> dbName = null;
-        long totalSize;
+        long totalSize = 0;
         PageResult<Database> databasePageResult = new PageResult<>();
         //如果没目录
         if (strings.size() == 0) {
@@ -1226,30 +1226,34 @@ public class SearchService {
             databasePageResult.setTotalSize(0);
             return databasePageResult;
         }
+        List<Database> databaseList = null;
         //判断独立部署和多租户
         if (TenantService.defaultTenant.equals(tenantId)) {
             dbName = roleDAO.getDBInfo(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
             totalSize = roleDAO.getDBCountV2(strings, parameters.getQuery());
         } else {
             User user = AdminUtils.getUserData();
-            List<String> databases = tenantService.getDatabase(tenantId);
-            if (databases != null && databases.size() != 0)
-                dbName = userGroupDAO.getDBInfo(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit(), databases, tenantId);
-            totalSize = databases != null && databases.size() != 0 ? userGroupDAO.getDBCountV2(strings, parameters.getQuery(), databases, tenantId) : 0;
+            List<String> databases = tenantService.getCurrentTenantDatabase(tenantId);
+            if (databases != null && databases.size() != 0){
+                databaseList = databaseInfoDAO.selectByHive(databases, (long)parameters.getLimit(),  (long)parameters.getOffset());
+               // dbName = userGroupDAO.getDBInfo(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit(), databases, tenantId);
+               //  totalSize = userGroupDAO.getDBCountV2(strings, parameters.getQuery(), databases, tenantId);
+            }
+
         }
         List<Database> lists = new ArrayList<>();
-        if (dbName == null) {
+        if (databaseList == null) {
             return databasePageResult;
         }
-        for (DatabaseHeader db : dbName) {
+        for (Database db : databaseList) {
             Database database = new Database();
-            database.setDatabaseId(db.getDatabaseGuid());
-            database.setDatabaseName(db.getDbName());
+            database.setDatabaseId(db.getDatabaseId());
+            database.setDatabaseName(db.getDatabaseName());
             lists.add(database);
         }
         databasePageResult.setLists(lists);
-        databasePageResult.setCurrentSize(dbName.size());
-        databasePageResult.setTotalSize(totalSize);
+        databasePageResult.setCurrentSize(databaseList.size());
+        databasePageResult.setTotalSize(databaseList.get(0).getTotal());
         return databasePageResult;
     }
 

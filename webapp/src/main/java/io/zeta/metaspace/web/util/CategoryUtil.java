@@ -168,6 +168,21 @@ public class CategoryUtil {
         }
     }
 
+    public static void initTechnicalCategory(List<String> tenants) {
+        utils.categoryDAO.deleteTechnicalCategory();
+        User user = AdminUtils.getUserData();
+        List<CategoryEntityV2> categoryEntityV2List = new ArrayList<>();
+        for (CategoryEntityV2 category : initCategory) {
+            if (category.getCategoryType() == 0) {
+                category.setCreator(user.getUserId());
+                categoryEntityV2List.add(category);
+            }
+        }
+        for (String id : tenants) {
+            utils.categoryDAO.addAll(categoryEntityV2List, id);
+        }
+    }
+
     public static void initApiCategory(String tenantId,String projectId){
         Timestamp createTime = DateUtils.currentTimestamp();
         String uuid = UUID.randomUUID().toString();

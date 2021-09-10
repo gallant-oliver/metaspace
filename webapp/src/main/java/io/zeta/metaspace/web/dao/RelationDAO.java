@@ -31,20 +31,6 @@ import java.util.List;
  * @date 2018/11/21 10:59
  */
 public interface RelationDAO {
-
-    @Delete("delete from table_relation where relationshipGuid=#{relationshipGuid}")
-    public int delete(@Param("relationshipGuid") String guid);
-
-    @Select({"<script>",
-            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid,tableInfo.source_id as sourceId, tableInfo.status,table_relation.generateTime,tableInfo.description,data_source.source_name sourceName",
-            " from table_relation,tableInfo,data_source where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and tableinfo.source_id = data_source.source_id order by tableInfo.status,table_relation.generateTime desc, tableinfo.tablename",
-            " <if test='limit!= -1'>",
-            " limit #{limit}",
-            " </if>",
-            " offset #{offset}",
-            " </script>"})
-    public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
-
     @Select({"<script>",
             "SELECT DISTINCT\n" +
                     " ti.tableGuid,\n" +
@@ -404,17 +390,6 @@ public interface RelationDAO {
             " </script>"})
     public List<RelationEntityV2> queryByTableNameFilterV2(@Param("tenantId") String tenantId, @Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset, @Param("databases") List<String> databases);
 
-    @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
-    public int queryRelationNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);
-
-    @Update("<script>" +
-            "update table_relation set categoryGuid=#{newCategoryId} where categoryGuid in " +
-            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
-            " #{id}" +
-            " </foreach>" +
-            "</script>")
-    public int updateRelationByCategoryGuid(@Param("ids") List<String> categoryGuids, @Param("newCategoryId") String newCategoryId);
-
     @Select("select count(*) from business_relation where categoryGuid=#{categoryGuid}")
     public int queryBusinessRelationNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);
 
@@ -426,7 +401,6 @@ public interface RelationDAO {
             "</script>")
     public List<String> getBusinessIdsByCategoryGuid(@Param("ids") List<String> categoryGuids);
 
-    //@Update("update table_relation set status=#{status} where tableGuid=#{tableGuid}")
     @Update("update tableInfo set status=#{status} where tableGuid=#{tableGuid}")
     public int updateTableStatus(@Param("tableGuid") String tableGuid, @Param("status") String status);
 
@@ -471,20 +445,6 @@ public interface RelationDAO {
             " </script>"})
     public int countDbTables(@Param("databaseGuid") String databaseId, @Param("query") String query);
 
-    @Delete("delete from table_relation where tableguid=#{tableGuid}")
-    public int deleteByTableGuid(@Param("tableGuid") String tableGuid);
-
-    @Update(" <script>" +
-            " update table_relation set categoryGuid=#{categoryGuid},generateTime=#{time} where tableguid in " +
-            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
-            " #{id}" +
-            " </foreach>" +
-            " </script>")
-    public int updateByTableGuids(@Param("ids") List<String> ids, @Param("categoryGuid") String categoryGuid, @Param("time") String time);
-
-    @Insert("insert into table_relation values (#{item.relationshipGuid},#{item.categoryGuid},#{item.tableGuid},#{item.generateTime}) ")
-    public int addRelation(@Param("item") TableRelation tableRelation);
-
     @Select("<script>WITH RECURSIVE categoryTree AS" +
             "(" +
             "    SELECT * from category where " +
@@ -495,15 +455,4 @@ public interface RelationDAO {
             ")" +
             "SELECT guid from categoryTree where parentcategoryguid is null or parentcategoryguid =''</script>")
     public String getTopGuidByGuid(@Param("guid") String guid, @Param("tenantId") String tenantId);
-
-    @Select("select * from table_relation where relationshipguid=#{guid}")
-    public RelationEntityV2 getRelationInfoByGuid(String guid);
-
-    //判断关联是否已存在
-    @Select("select count(1) from table_relation where categoryguid=#{categoryGuid} and tableguid=#{tableGuid}")
-    public int ifRelationExists(@Param("categoryGuid") String categoryGuid, @Param("tableGuid") String tableGuid);
-
-    @Select({" select tableGuid from table_relation where categoryGuid=#{categoryGuid}"})
-    public List<String> getAllTableGuidByCategoryGuid(@Param("categoryGuid") String categoryGuid);
-
 }

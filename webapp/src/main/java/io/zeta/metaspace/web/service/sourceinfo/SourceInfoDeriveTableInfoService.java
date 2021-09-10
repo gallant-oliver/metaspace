@@ -343,10 +343,10 @@ public class SourceInfoDeriveTableInfoService {
 
         // 获取租户下所有的技术目录guid - path
         int TECHNIACL_CATEGORY_TYPE = 0;
-        Map<String, String> technicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE);
+        Map<String, String> technicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE, null);
         // 获取该租户下所有的业务目录guid - path
         int BUSINESS_CATEGORY_TYPE = 1;
-        Map<String, String> businessCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, BUSINESS_CATEGORY_TYPE);
+        Map<String, String> businessCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, BUSINESS_CATEGORY_TYPE, null);
 
         List<SourceInfoDeriveTableVO> sourceInfoDeriveTableVOS = sourceInfoDeriveTableInfos.stream().map(sourceInfoDeriveTableInfo -> {
             SourceInfoDeriveTableVO sourceInfoDeriveTableVO = new SourceInfoDeriveTableVO();
@@ -630,8 +630,10 @@ public class SourceInfoDeriveTableInfoService {
      * @param categoryType 目录类型，0：技术目录 1：业务目录
      * @return
      */
-    private Map<String, String> getCategoryGuidPathMap(String tenantId, int categoryType) {
-        List<CategoryGuidPath> guidPathByTenantIdAndCategoryType = categoryDAO.getGuidPathByTenantIdAndCategoryType(tenantId, categoryType);
+    private Map<String, String> getCategoryGuidPathMap(String tenantId, int categoryType, String guid) {
+        List<CategoryGuidPath> guidPathByTenantIdAndCategoryType = StringUtils.isBlank(guid) ?
+                categoryDAO.getGuidPathByTenantIdAndCategoryType(tenantId, categoryType) :
+                categoryDAO.getGuidPathByTenantIdAndCategoryTypeAndId(tenantId, categoryType, guid);
         return guidPathByTenantIdAndCategoryType.stream().collect(Collectors.toMap(CategoryGuidPath::getGuid, CategoryGuidPath::getPath));
     }
 
@@ -682,22 +684,28 @@ public class SourceInfoDeriveTableInfoService {
         }
         List<Column> sourceColumnInfoList = columnDAO.getColumnInfoListByTableGuid(byId.getSourceTableGuid());
         Map<String, Column> idColumnMap = sourceColumnInfoList.stream().collect(Collectors.toMap(Column::getColumnId, e -> e));
-        // 设置表的技术目录和业务目录
-        CategoryPrivilege categoryPrivilege = categoryDAO.queryByGuidV2(sourceInfoDeriveTableColumnVO.getCategoryId(), tenantId);
-        CategoryPrivilege categoryPrivilegeSource = categoryDAO.queryByGuidByDBId(sourceTableInfo.getDatabaseGuid(), tenantId);
+
+        String sourceCategoryId = categoryDAO.queryCategoryIdByGuidByDBId(sourceTableInfo.getDatabaseGuid(), tenantId);
         BusinessInfo businessInfo = businessDAO.queryBusinessByBusinessId(sourceInfoDeriveTableColumnVO.getBusinessId());
+        // 设置表的技术目录和业务目录
+        // 获取租户下所有的技术目录guid - path
+        int TECHNIACL_CATEGORY_TYPE = 0;
+        Map<String, String> technicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE, sourceInfoDeriveTableColumnVO.getCategoryId());
+        Map<String, String> sourceTechnicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE, sourceCategoryId);
+        // 获取该租户下所有的业务目录guid - path
+        int BUSINESS_CATEGORY_TYPE = 1;
+        Map<String, String> businessCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, BUSINESS_CATEGORY_TYPE, businessInfo.getDepartmentId());
         if (null != businessInfo) {
             sourceInfoDeriveTableColumnVO.setBusiness(businessInfo.getName());
-            CategoryPrivilege businessHeaderInfo = categoryDAO.queryByGuidV2(businessInfo.getDepartmentId(), tenantId);
-            sourceInfoDeriveTableColumnVO.setBusinessHeaderId(null == businessHeaderInfo ? null : businessHeaderInfo.getGuid());
-            sourceInfoDeriveTableColumnVO.setBusinessHeader(null == businessHeaderInfo ? null : businessHeaderInfo.getName());
+            sourceInfoDeriveTableColumnVO.setBusinessHeaderId(businessInfo.getDepartmentId());
+            sourceInfoDeriveTableColumnVO.setBusinessHeader(businessCategoryGuidPathMap.getOrDefault(businessInfo.getDepartmentId(), ""));
         }
 
-        sourceInfoDeriveTableColumnVO.setCategory(null == categoryPrivilege ? null : categoryPrivilege.getName());
+        sourceInfoDeriveTableColumnVO.setCategory(technicalCategoryGuidPathMap.getOrDefault(sourceInfoDeriveTableColumnVO.getCategoryId(), ""));
         sourceInfoDeriveTableColumnVO.setSourceTable(sourceTableInfo.getTableName());
         // 获取源数据层、库
-        sourceInfoDeriveTableColumnVO.setSourceDbGuid(null == categoryPrivilegeSource ? null : categoryPrivilegeSource.getGuid());
-        sourceInfoDeriveTableColumnVO.setSourceDb(null == categoryPrivilegeSource ? null : categoryPrivilegeSource.getName());
+        sourceInfoDeriveTableColumnVO.setSourceDbGuid(sourceCategoryId);
+        sourceInfoDeriveTableColumnVO.setSourceDb(sourceTechnicalCategoryGuidPathMap.getOrDefault(sourceCategoryId, ""));
 
         // 开始设置数据库和数据源名称
         String dbId = sourceInfoDeriveTableColumnVO.getDbId();

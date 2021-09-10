@@ -1919,8 +1919,6 @@ public class MetaDataService {
                 tableDAO.deleteTableInfo(tableGuid);
                 //owner
                 tableDAO.deleteTableRelatedOwner(tableGuid);
-                //关联关系
-                relationDAO.deleteByTableGuid(tableGuid);
                 //business2table
                 businessDAO.deleteBusinessRelationByTableGuid(tableGuid);
                 //表标签

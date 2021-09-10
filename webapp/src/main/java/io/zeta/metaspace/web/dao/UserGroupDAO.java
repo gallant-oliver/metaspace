@@ -285,7 +285,14 @@ public interface UserGroupDAO {
             ") item on category.guid=item.guid " +
             " where categoryType=#{categoryType} and tenantid=#{tenantId}" +
             "</script>")
-    public List<RoleModulesCategories.Category> getAllCategorysAndCount(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId,@Param("dbNames") List<String> dbNames);
+    List<RoleModulesCategories.Category> getAllCategorysAndCount(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId,@Param("dbNames") List<String> dbNames);
+
+    @Select("<script>" +
+            "select guid,description,name,parentcategoryguid,categorytype,level,safe,tenantid,createtime,creator,sort from category " +
+            " where categoryType=#{categoryType} and tenantid=#{tenantId}" +
+            "</script>")
+    List<RoleModulesCategories.Category> getAllCategorysByType(@Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
+
 
     @Select("select DISTINCT t2.guid, t2.name, t2.level, t2.qualifiedname, t2.parentcategoryguid, t2.upbrothercategoryguid, t2.downbrothercategoryguid,t2.description, t2.safe " +
             "FROM category_group_relation t1 JOIN category t2 ON t1.category_id = t2.guid\n" +

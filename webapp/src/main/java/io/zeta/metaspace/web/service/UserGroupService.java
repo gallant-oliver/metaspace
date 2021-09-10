@@ -609,6 +609,22 @@ public class UserGroupService {
         return userCategorys;
     }
 
+    public List<CategoryPrivilege> getAdminCategoryByType(Integer categoryType, String tenantId) throws AtlasBaseException {
+        List<CategoryPrivilege> userCategorys = new ArrayList<>();
+        List<RoleModulesCategories.Category> allCategorys = userGroupDAO.getAllCategorysByType(categoryType, tenantId);
+        CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, true, true, true, false, true, false, false, true, false);
+        addPrivilege(userCategorys, allCategorys, privilege, categoryType);
+        List<CategoryPrivilege> categoryPrivilegeList = new ArrayList<>();
+        for (CategoryPrivilege category : userCategorys) {
+            category.getPrivilege().setAsh(false);
+            if (category.getGuid().equals("index_field_default")) {
+                categoryPrivilegeList.add(category);
+            }
+        }
+        userCategorys.removeAll(categoryPrivilegeList);
+        return userCategorys;
+    }
+
     public List<CategoryPrivilege> getAdminCategory(int categorytype,String tenantId) throws AtlasBaseException {
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
 

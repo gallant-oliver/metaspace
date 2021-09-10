@@ -46,7 +46,7 @@ public class CategoryPrivilege {
     private Integer objectCount;
     private String safe;
     private String code;
-    private int sort;
+    private Integer sort;
 
 
     public CategoryPrivilege(CategoryPrivilegeV2 category){
@@ -105,11 +105,11 @@ public class CategoryPrivilege {
         this.level = level;
     }
 
-    public int getSort() {
+    public Integer getSort() {
         return sort;
     }
 
-    public void setSort(int sort) {
+    public void setSort(Integer sort) {
         this.sort = sort;
     }
 
@@ -124,9 +124,8 @@ public class CategoryPrivilege {
         this.safe=category.getSafe();
         this.count=category.getCount();
         this.code=category.getCode();
+        this.sort=category.getSort();
     }
-
-
 
     public CategoryPrivilege() {
 

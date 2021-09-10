@@ -18,7 +18,10 @@ import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.DataSourceHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.web.model.TemplateEnum;
-import io.zeta.metaspace.web.service.*;
+import io.zeta.metaspace.web.service.CategoryRelationUtils;
+import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.service.MetaDataService;
+import io.zeta.metaspace.web.service.SearchService;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
@@ -49,7 +52,6 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -321,41 +323,6 @@ public class TechnicalREST {
         } finally {
             AtlasPerfTracer.log(perf);   
         }
-    }
-
-    /**
-     * 删除关联关系
-     *
-     * @param relationshipList
-     * @return
-     * @throws AtlasBaseException
-     */
-    @DELETE
-    @Path("/category/relation")
-    @OperateType(DELETE)
-    public Response removeRelationAssignmentFromTables(List<RelationEntityV2> relationshipList, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "TechnicalREST.removeRelationAssignmentFromTables(" + relationshipList + ")");
-            }
-            List<String> categoryNameList = new ArrayList<>();
-            for (RelationEntityV2 relationEntity : relationshipList) {
-                String guid = relationEntity.getRelationshipGuid();
-                String categoryName = dataManageService.getCategoryNameByRelationId(guid, tenantId);
-                if (categoryName != null)
-                    categoryNameList.add(categoryName);
-            }
-            if (categoryNameList != null && categoryNameList.size() > 0) {
-                HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), "批量删除:[" + Joiner.on("、").join(categoryNameList) + "]中的表关联");
-            }
-            dataManageService.removeRelationAssignmentFromTablesV2(relationshipList, tenantId);
-        } catch (CannotCreateTransactionException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-        return Response.status(200).entity("success").build();
     }
 
     /**
