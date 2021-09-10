@@ -16,6 +16,7 @@ package io.zeta.metaspace.web.service;
 
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -38,11 +39,13 @@ import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.hadoop.hbase.client.Admin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1586,5 +1589,13 @@ public class UserGroupService {
         pageResult.setCurrentSize(userGroupByCategory.size());
         pageResult.setTotalSize(userGroupByCategory.get(0).getTotalSize());
         return pageResult;
+    }
+
+    public Result getUserGroupsByUserId(String tenantId,String userId) {
+        if (userId==null ||userId.length() ==0){
+            userId=AdminUtils.getUserData().getUserId();
+        }
+        List<UserGroup> userGroupIds = userGroupDAO.getuserGroupByUsersId(userId,tenantId);
+        return ReturnUtil.success(userGroupIds.stream().map(UserGroup::getId).collect(Collectors.toList()));
     }
 }

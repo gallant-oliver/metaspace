@@ -115,18 +115,68 @@ public interface RelationDAO {
             " </script>"})
     public List<RelationEntityV2> queryRelationByCategoryGuidFilter(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
 
+//    @Select({"<script>",
+//            " select COUNT( * ) OVER ( ) total,A.relationshipGuid,A.categoryGuid,A.tableName,A.dbName,A.tableGuid,A.status,A.description,A.source_name AS sourceName ",
+//            " from ( SELECT table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid,tableInfo.status, tableInfo.description,data_source.source_name ",
+//            " FROM table_relation,tableInfo,data_source WHERE table_relation.categoryGuid = #{categoryGuid} AND tableinfo.source_id = data_source.source_id AND tableInfo.tableGuid = table_relation.tableGuid ",
+//            " AND status != 'DELETED' AND data_source.tenantid = #{tenantId} UNION SELECT table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid,tableInfo.status,",
+//            " tableInfo.description, 'hive' as source_name  FROM table_relation,tableInfo WHERE table_relation.categoryGuid = #{categoryGuid} AND tableInfo.tableGuid = table_relation.tableGuid ",
+//            " AND status != 'DELETED' AND tableinfo.dbname in",
+//            " <foreach item='item' index='index' collection='databases' separator=',' open='(' close=')'>",
+//            " #{item}",
+//            " </foreach>",
+//            " AND tableinfo.source_id = 'hive'",
+//            " ) AS A ORDER BY A.tablename",
+//            " <if test='limit!= -1'>",
+//            " limit #{limit}",
+//            " </if>",
+//            " offset #{offset}",
+//            " </script>"})
     @Select({"<script>",
-            " select COUNT( * ) OVER ( ) total,A.relationshipGuid,A.categoryGuid,A.tableName,A.dbName,A.tableGuid,A.status,A.description,A.source_name AS sourceName ",
-            " from ( SELECT table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid,tableInfo.status, tableInfo.description,data_source.source_name ",
-            " FROM table_relation,tableInfo,data_source WHERE table_relation.categoryGuid = #{categoryGuid} AND tableinfo.source_id = data_source.source_id AND tableInfo.tableGuid = table_relation.tableGuid ",
-            " AND status != 'DELETED' AND data_source.tenantid = #{tenantId} UNION SELECT table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid,tableInfo.status,",
-            " tableInfo.description, 'hive' as source_name  FROM table_relation,tableInfo WHERE table_relation.categoryGuid = #{categoryGuid} AND tableInfo.tableGuid = table_relation.tableGuid ",
-            " AND status != 'DELETED' AND tableinfo.dbname in",
-            " <foreach item='item' index='index' collection='databases' separator=',' open='(' close=')'>",
-            " #{item}",
-            " </foreach>",
-            " AND tableinfo.source_id = 'hive'",
-            " ) AS A ORDER BY A.tablename",
+            "SELECT DISTINCT\n" +
+                    " ti.tableGuid,\n" +
+                    " COUNT ( * ) OVER () total,\n" +
+                    " COALESCE(tdsr.data_source_id,(SELECT data_source_id FROM source_info WHERE \"version\" = 0 AND category_id = #{categoryGuid} AND tenant_id = #{tenantId} ),'ID') AS sourceId,\n" +
+                    "\n" +
+                    " COALESCE (\n" +
+                    "  ( SELECT source_name FROM data_source WHERE source_id = tdsr.data_source_id ),\n" +
+                    "  (\n" +
+                    "  SELECT\n" +
+                    "   ds.source_name \n" +
+                    "  FROM\n" +
+                    "   source_info si\n" +
+                    "   LEFT JOIN data_source ds ON si.data_source_id = ds.source_id \n" +
+                    "  WHERE\n" +
+                    "   VERSION = 0 \n" +
+                    "   AND category_id = #{categoryGuid} \n" +
+                    "   AND tenant_id = #{tenantId} \n" +
+                    "  ),\n" +
+                    "  'hive' \n" +
+                    " ) AS sourceName," +
+                    " (SELECT id FROM source_info WHERE \"version\" = 0 AND category_id = #{categoryGuid} AND tenant_id = #{tenantId} ) AS sourceInfoId, " +
+                    " tdsr.category_id AS categoryGuid,\n" +
+                    " ti.tableName,\n" +
+                    " ti.dbName,\n" +
+                    " ti.databaseguid AS dbId,\n" +
+                    " ti.tableGuid,\n" +
+                    " ti.status,\n" +
+                    " tdsr.update_time AS generateTime,\n" +
+                    " ti.description \n" +
+                    "FROM\n" +
+                    " tableinfo ti\n" +
+                    " LEFT JOIN table_data_source_relation tdsr ON tdsr.table_id = ti.tableGuid \n" +
+                    "WHERE\n" +
+                    " ((\n" +
+                    "   tdsr.category_id = #{categoryGuid} \n" +
+                    "   AND tdsr.tenant_id = #{tenantId} \n" +
+                    "   ) \n" +
+                    "  OR ti.databaseguid = ( SELECT db_guid FROM db_category_relation dcr WHERE dcr.category_id = #{categoryGuid} AND dcr.tenant_id = #{tenantId} ) \n" +
+                    " ) \n" +
+                    " AND ti.status = 'ACTIVE' \n" +
+                    "ORDER BY\n" +
+                    " ti.status,\n" +
+                    " tdsr.update_time DESC,\n" +
+                    " ti.tablename",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",
