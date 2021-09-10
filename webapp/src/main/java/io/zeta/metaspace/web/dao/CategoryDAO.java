@@ -145,6 +145,9 @@ public interface CategoryDAO {
     @Delete("delete from category where guid=#{guid} and tenantid=#{tenantId}")
     public int delete(@Param("guid") String guid, @Param("tenantId") String tenantId) throws SQLException;
 
+    @Delete("delete FROM category WHERE categorytype = 0")
+    int deleteTechnicalCategory();
+
     @Delete("<script>" +
             "delete from category where tenantid=#{tenantId} and guid in " +
             " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
@@ -395,8 +398,6 @@ public interface CategoryDAO {
 
     @Select("<script>" +
             " SELECT * FROM category WHERE tenantid = #{tenantId} AND private_status = 'PUBLIC' AND categorytype = 0" +
-            " UNION" +
-            " SELECT * FROM category WHERE tenantid = #{tenantId} AND private_status = 'PRIVATE' AND categorytype = 0 AND creator = #{creator}" +
             " <if test='groupIdList != null and groupIdList.size() > 0'>"+
             " UNION" +
             " SELECT DISTINCT category.* FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +

@@ -252,6 +252,11 @@ public class TenantService {
         throw getAtlasBaseException(status,msgDesc,"从安全中心获取租户列表失败");
     }
 
+    public Boolean initTechnicalCategory() throws AtlasBaseException {
+        CategoryUtil.initTechnicalCategory(tenantDAO.getAllTenantId());
+        return true;
+    }
+
 
     /**
      * 获取当前用户在当前租户下的metaspace的功能权限
