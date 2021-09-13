@@ -502,7 +502,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             params.put("dbs", dbs);
             List<Map<String, AtlasVertex>> tableDBs;
             try {
-                tableDBs = (List) graph.executeGremlinScript(gremlinScriptEngine, params , tableQuery, false);
+                tableDBs = (List) graph.executeGremlinScript(gremlinScriptEngine, params, tableQuery, false);
             }
             catch (ScriptException e) {
                 throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_ERROR, "从图数据库获取表列表失败");
