@@ -505,7 +505,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                 tableDBs = (List) graph.executeGremlinScript(gremlinScriptEngine, params , tableQuery, false);
             }
             catch (ScriptException e) {
-                throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_ERROR, "从图数据库获取hive数据库列表失败");
+                throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_ERROR, "从图数据库获取表列表失败");
             }
             for (Map<String, AtlasVertex> tableDB : tableDBs) {
                 AtlasVertex tableVertex = tableDB.get("table");
@@ -822,7 +822,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             columnTableDBs = (List) graph.executeGremlinScript(gremlinScriptEngine, params , columnQuery, false);
         }
         catch (ScriptException e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_ERROR, "从图数据库获取hive数据库列表失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_ERROR, "从图数据库获取字段列表失败");
         }
         for (Map<String, AtlasVertex> columnTableDB : columnTableDBs) {
             AtlasVertex columnVertex = columnTableDB.get("column");
@@ -1223,7 +1223,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             databases = (List) graph.executeGremlinScript(gremlinScriptEngine, params , format, false);
         }
         catch (ScriptException e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_ERROR, "从图数据库获取hive数据库列表失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_ERROR, "从图数据库获取数据库列表失败");
         }
         for (AtlasVertex database : databases) {
             Database db = new Database();
@@ -1258,7 +1258,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             total = Integer.parseInt(num.get(0).toString());
         }
         catch (ScriptException e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_ERROR, "从图数据库获取hive数据库行数失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_ERROR, "从图数据库获取数据库行数失败");
         }
         databasePageResult.setTotalSize(total);
         return databasePageResult;
