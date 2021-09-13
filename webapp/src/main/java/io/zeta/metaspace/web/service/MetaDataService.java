@@ -19,6 +19,7 @@ package io.zeta.metaspace.web.service;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
+import io.zeta.metaspace.bo.DatabaseInfoBO;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.metadata.Table;
@@ -30,10 +31,13 @@ import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.MetadataDeriveTableInfo;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.CustomStringUtils;
@@ -126,6 +130,10 @@ public class MetaDataService {
     DataManageService dataManageService;
     @Autowired
     DataSourceDAO dataSourceDAO;
+    @Autowired
+    DatabaseInfoDAO databaseInfoDAO;
+    @Autowired
+    private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao;
 
 
     private String errorMessage = "";
@@ -2694,4 +2702,23 @@ public class MetaDataService {
             }
         });
     }
+
+    public DatabaseInfoBO querySourceInfo(String tenantId, String sourceId, String schemaId) {
+        if(StringUtils.isBlank(tenantId) || StringUtils.isBlank(sourceId) || StringUtils.isBlank(schemaId)){
+            LOG.info("查询源信息登记的请求参数存在空");
+            return null;
+        }
+        List<DatabaseInfoBO> currentSourceInfoList = databaseInfoDAO.getLastDatabaseInfoByDatabaseId(schemaId,tenantId,sourceId);
+        if(CollectionUtils.isEmpty(currentSourceInfoList)){
+            return null;
+        }
+        DatabaseInfoBO bo = new DatabaseInfoBO();
+        //筛选获取最新的记录
+        Optional<DatabaseInfoBO> databaseInfoOpt =  currentSourceInfoList.stream().sorted(Comparator.comparing(DatabaseInfoBO::getVersion).reversed()).findFirst();
+        if(databaseInfoOpt.isPresent()){
+            return databaseInfoOpt.get();
+        }
+        return null;
+    }
+
 }
