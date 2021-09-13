@@ -19,6 +19,7 @@ package io.zeta.metaspace.web.service;
 import io.zeta.metaspace.model.metadata.ColumnMetadata;
 import io.zeta.metaspace.model.metadata.TableMetadata;
 import io.zeta.metaspace.web.dao.MetadataHistoryDAO;
+import io.zeta.metaspace.web.util.EntityUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -81,12 +82,11 @@ public class MetadataHistoryService {
     public void storeHistoryMetadata(List<AtlasEntity> entities) throws AtlasBaseException {
         try {
             Set<String> tableSet = getTableGuid(entities);
-
             for(String tableGuid : tableSet) {
                 AtlasEntity.AtlasEntityWithExtInfo info = entityStore.getById(tableGuid);
                 if (null != info) {
                     AtlasEntity entity = info.getEntity();
-                    List<String> partitionKeyList = extractPartitionKeyInfo(entity);
+                    List<String> partitionKeyList = EntityUtil.extractPartitionKeyInfo(entity);
                     TableMetadata tableMetadata = generateTableMetadata(entity);
                     log.info("storeHistoryMetadata AtlasEntity is {},name is {}", entity, tableMetadata.getName());
                     int sameCount = metadataDAO.getSameUpdateEntityCount(tableMetadata);
@@ -218,21 +218,6 @@ public class MetadataHistoryService {
         } else {
             return null;
         }
-    }
-
-    public List<String> extractPartitionKeyInfo(AtlasEntity entity) {
-        List<AtlasObjectId> partitionKeys = null;
-        if (Objects.nonNull(entity.getAttribute(partitionAttribute))) {
-            Object partitionObjects = entity.getAttribute(partitionAttribute);
-            if (partitionObjects instanceof ArrayList<?>) {
-                partitionKeys = (ArrayList<AtlasObjectId>) partitionObjects;
-            }
-        }
-        List<String> guidList = new ArrayList<>();
-        for (AtlasObjectId partitionKey : partitionKeys) {
-            guidList.add(partitionKey.getGuid());
-        }
-        return guidList;
     }
 
     public boolean extractPartitionInfo(AtlasEntity entity) {
