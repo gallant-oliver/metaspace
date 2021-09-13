@@ -31,6 +31,7 @@ import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.dto.indices.IndexFieldExport;
 import io.zeta.metaspace.model.dto.indices.IndexFieldNode;
+import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
@@ -92,6 +93,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -460,6 +462,7 @@ public class DataManageService {
             entity.setGuid(newCategoryGuid);
             //name
             entity.setName(name);
+            entity.setPrivateStatus(info.getPrivateStatus()==null?CategoryPrivateStatus.PRIVATE:info.getPrivateStatus());
             //创建人
             entity.setCreator(creatorId);
             //createtime
@@ -467,6 +470,8 @@ public class DataManageService {
             //description
             entity.setDescription(info.getDescription());
             entity.setCategoryType(type);
+            int maxSort = categoryDao.getMaxSortByParentGuid(info.getParentCategoryGuid(), tenantId);
+            entity.setSort(maxSort);
             entity.setSafe(info.getSafe());
             if (StringUtils.isEmpty(entity.getSafe())) {
                 entity.setSafe("1");
@@ -507,6 +512,12 @@ public class DataManageService {
                 if (!Objects.isNull(oneLevelCategory)) {
                     oneLevelCategory.setCode(entity.getCode());
                 }
+                if (CategoryPrivateStatus.PRIVATE.equals(entity.getPrivateStatus())){
+                    List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(entity.getCreator(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+                    if (userGroupIds!=null && !userGroupIds.isEmpty()) {
+                        userGroupDAO.insertGroupRelations(userGroupIds, entity.getGuid(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
+                    }
+                }
                 return oneLevelCategory;
             }
             if (Objects.isNull(categoryDao.queryByGuidV2(currentCategoryGuid, tenantId))) {
@@ -529,12 +540,21 @@ public class DataManageService {
                 boolean isAdmin = modules.contains(ModuleEnum.AUTHORIZATION.getId());
                 //无当前目录权限
                 boolean isPrivilege = !userGroupService.isPrivilegeCategory(creatorId, newCategoryGuid, tenantId, type);
-                boolean typeBoolean = type == 1 || type == 0;
+                boolean typeBoolean = type == 1 ;
                 if (isAdmin) {
                     privilege.adminPrivilege(returnEntity.getGuid());
                 }
                 if (typeBoolean && isAdmin && isPrivilege) {
                     privilege.setAsh(true);
+                }
+                if (type == 0){
+                    privilege.setAsh(false);
+                }
+            }
+            if (CategoryPrivateStatus.PRIVATE.equals(entity.getPrivateStatus())){
+                List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(entity.getCreator(), tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
+                if (userGroupIds!=null && !userGroupIds.isEmpty()) {
+                    userGroupDAO.insertGroupRelations(userGroupIds, entity.getGuid(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
                 }
             }
             if (type == 5) {
@@ -2201,6 +2221,14 @@ public class DataManageService {
         if (parentPrivilege.size() != 0 && categoryEntityV2s != null) {
             userGroupDAO.addUserGroupCategoryPrivileges(parentPrivilege, categoryEntityV2s);
         }
+        Map<String,List<CategoryEntityV2>> map=categoryEntityV2s.stream().collect(Collectors.groupingBy(CategoryEntityV2::getParentCategoryGuid));
+        map.forEach((guid,categoryList)->{
+            AtomicInteger maxSort = new AtomicInteger(categoryDao.getMaxSortByParentGuid(guid, tenantId));
+            categoryList.forEach(category->{
+                category.setSort(maxSort.get());
+                maxSort.getAndIncrement();
+            });
+        });
         categoryDao.addAll(categoryEntityV2s, tenantId);
         if (type == 3 || type == 4) {
             privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
@@ -2863,6 +2891,14 @@ public class DataManageService {
         List<CategoryEntityV2> systemCategory = new ArrayList<>();
         try {
             categories = file2AllData(fileInputStream, type, systemCategory);
+            Map<String,List<CategoryEntityV2>> map=categories.stream().collect(Collectors.groupingBy(CategoryEntityV2::getParentCategoryGuid));
+            map.forEach((guid,categoryList)->{
+                AtomicInteger maxSort = new AtomicInteger(categoryDao.getMaxSortByParentGuid(guid, tenantId));
+                categoryList.forEach(category->{
+                    category.setSort(maxSort.get());
+                    maxSort.getAndIncrement();
+                });
+            });
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {

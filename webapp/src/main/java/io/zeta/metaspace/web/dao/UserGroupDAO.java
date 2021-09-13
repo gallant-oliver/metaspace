@@ -1205,4 +1205,14 @@ public interface UserGroupDAO {
                 "</foreach>" +
             "</script>"})
     public int useCategoryPrivilege(@Param("userId") String userId,@Param("categoryIds") List<String> categoryIds,@Param("tenantId") String tenantId);
+
+    @Insert("<script>" +
+            "INSERT INTO category_group_relation(category_id,group_id,read,edit_category,edit_item) values " +
+            "    <foreach item='groupId' index='index' collection='userGroupIds' " +
+            "    open='(' separator='),(' close=')'>" +
+            "    #{categoryId},#{groupId},#{read},#{editCategory},#{editItem}" +
+            "    </foreach>" +
+            " ON conflict (group_id,category_id) DO NOTHING" +
+            "</script>")
+    void insertGroupRelations(@Param("userGroupIds") List<String> userGroupIds,@Param("categoryId")  String guid,@Param("read")  Boolean read, @Param("editCategory") Boolean editCategory, @Param("editItem") Boolean editItem);
 }

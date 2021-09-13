@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -38,8 +39,8 @@ import java.util.Set;
 public interface CategoryDAO {
 
 
-    @Insert("insert into category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType,level,safe,tenantid,createtime,creator,code)" +
-            "values(#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{tenantId},#{category.createTime},#{category.creator},#{category.code})")
+    @Insert("insert into category(private_status,guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType,level,safe,tenantid,createtime,creator,code,sort)" +
+            "values(#{category.privateStatus},#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{tenantId},#{category.createTime},#{category.creator},#{category.code},#{category.sort})")
     public int add(@Param("category") CategoryEntityV2 category, @Param("tenantId") String tenantId);
 
     @Select("select count(*) from category where categoryType=#{categoryType} and (tenantid=#{tenantId})")
@@ -360,9 +361,8 @@ public interface CategoryDAO {
             " </script>"})
     List<String> getCategorysByGroup(@Param("groupIds") List<String> groupIds, @Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
 
-    @Update("UPDATE category SET name=#{name}, qualifiedname = #{name} WHERE guid = #{id}")
-    void updateCategoryName(@Param("name") String databaseAlias, @Param("id") String id);
-
+    @Update("UPDATE category SET name=#{name}, qualifiedname = #{name},private_status = #{privateStatus} WHERE guid = #{id}")
+    void updateCategoryName(@Param("name") String databaseAlias, @Param("id") String id,@Param("privateStatus") String privateStatus);
     @Select("SELECT COUNT(1) FROM category WHERE parentcategoryguid = #{parentId} AND tenantid = #{tenantId} AND name = #{databaseAlias}")
     int getCategoryCountByParentIdAndName(@Param("tenantId") String tenantId, @Param("parentId") String parentId, @Param("databaseAlias") String databaseAlias);
 
@@ -408,4 +408,19 @@ public interface CategoryDAO {
             " </if>"+
             "</script>")
     List<CategoryPrivilege> selectListByTenantIdAndStatus(@Param("tenantId") String tenantId, @Param("creator") String creator, @Param("groupIdList") List<String> groupIdList);
+
+    @Select("<script>" +
+            "SELECT COALESCE( MAX(sort),0) + 1  "+
+            "FROM\n" +
+            " category \n" +
+            "WHERE\n" +
+            " tenantid = #{ tenantId } \n" +
+            "<if test='guid == null'>" +
+            " AND parentcategoryguid IS NULL" +
+            "</if>" +
+            "<if test='guid != null'>" +
+            " AND parentcategoryguid =#{guid}" +
+            "</if>" +
+            "</script>")
+    int getMaxSortByParentGuid(@Param("guid") String guid,@Param("tenantId") String tenantId);
 }
