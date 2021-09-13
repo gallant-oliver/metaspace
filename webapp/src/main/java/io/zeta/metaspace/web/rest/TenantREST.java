@@ -16,6 +16,7 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.service.UsersService;
+import io.zeta.metaspace.web.util.HiveMetaStoreBridgeUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -38,6 +39,8 @@ public class TenantREST {
     TenantService tenantService;
     @Autowired
     UsersService usersService;
+    @Autowired
+    private HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
 
     /**
      * 获取租户列表
@@ -58,7 +61,7 @@ public class TenantREST {
     }
 
     /**
-     * 初始化技术目录
+     * 初始化技术目录（会清空技术目录，请慎重操作，该接口作为初始化技术目录使用）
      * @return
      */
     @GET
@@ -70,6 +73,23 @@ public class TenantREST {
             return ReturnUtil.success(tenantService.initTechnicalCategory());
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "初始化技术目录失败");
+        }
+    }
+
+    /**
+     * 全量加载HIVE数据源
+     * @return
+     */
+    @GET
+    @Path("init/hive")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Result initHiveGraph(){
+        try {
+            hiveMetaStoreBridgeUtils.importDatabasesHive();
+            return ReturnUtil.success(true);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "初始化HIVE图数据库失败");
         }
     }
 

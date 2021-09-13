@@ -2,7 +2,6 @@ package io.zeta.metaspace.web.task.sync;
 
 import io.zeta.metaspace.model.TableSchema;
 import io.zeta.metaspace.model.metadata.Database;
-import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.sync.SyncTaskInstance;
 import io.zeta.metaspace.web.dao.DbDAO;
@@ -10,11 +9,7 @@ import io.zeta.metaspace.web.dao.SyncTaskDefinitionDAO;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.metadata.RDBMSMetaDataProvider;
-import io.zeta.metaspace.web.service.DataManageService;
-import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
-import io.zeta.metaspace.web.util.CategoryUtil;
-import io.zeta.metaspace.web.util.DateUtils;
 import io.zeta.metaspace.web.util.HiveMetaStoreBridgeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -44,8 +39,6 @@ public class SyncTaskJob implements Job {
     @Autowired
     private SyncTaskDefinitionDAO syncTaskDefinitionDAO;
     @Autowired
-    private DataSourceService dataSourceService;
-    @Autowired
     TableDAO tableDAO;
     @Autowired
     private IndexCounter indexCounter;
@@ -61,25 +54,25 @@ public class SyncTaskJob implements Job {
             String group = jobExecutionContext.getJobDetail().getKey().getGroup();
             String definitionId = group.replace("job_group_", "");
             JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
-            String executor =  (String)jobDataMap.getOrDefault("executor", null);
+            String executor = (String) jobDataMap.getOrDefault("executor", null);
             definition = syncTaskDefinitionDAO.getById(definitionId);
             if (definition == null) {
                 throw new AtlasBaseException("采集任务找不到任务定义");
             }
-            if(null == definition.getCategoryGuid()){
+            if (null == definition.getCategoryGuid()) {
                 definition.setCategoryGuid("1");
             }
             List<Database> sourceDbs = dbDAO.getSourceDbs(definition.getDataSourceId(), definition.getSchemas());
-            if(!CollectionUtils.isEmpty(sourceDbs)){
+            if (!CollectionUtils.isEmpty(sourceDbs)) {
                 List<String> schemas = definition.getSchemas();
-                if(!CollectionUtils.isEmpty(schemas)){
-                    sourceDbs = sourceDbs.stream().filter(sdb->schemas.contains(sdb.getDatabaseName())).
+                if (!CollectionUtils.isEmpty(schemas)) {
+                    sourceDbs = sourceDbs.stream().filter(sdb -> schemas.contains(sdb.getDatabaseName())).
                             collect(Collectors.toList());
                 }
-                for(Database sdb : sourceDbs){
+                for (Database sdb : sourceDbs) {
                     String sourceDbRelationId = dbDAO.getSourceDbRelationId(sdb.getDatabaseId(), definition.getDataSourceId());
-                    if(null == sourceDbRelationId){
-                        dbDAO.insertSourceDbRelation(UUID.randomUUID().toString(),sdb.getDatabaseId(),definition.getDataSourceId());
+                    if (null == sourceDbRelationId) {
+                        dbDAO.insertSourceDbRelation(UUID.randomUUID().toString(), sdb.getDatabaseId(), definition.getDataSourceId());
                     }
                 }
             }
@@ -108,11 +101,12 @@ public class SyncTaskJob implements Job {
             if (syncTaskInstance != null) {
                 syncTaskInstanceDAO.updateStatusAndAppendLog(instanceId, SyncTaskInstance.Status.FAIL, "执行异常：" + e.getMessage());
             }
-            if(null != definition){
+            {
                 indexCounter.plusOneFail(definition.getDataSourceType());
             }
+            if (null != definition)
 
-            log.error("任务实例异常 " + instanceId, e);
+                log.error("任务实例异常 " + instanceId, e);
             throw new AtlasBaseException(e);
         }
     }

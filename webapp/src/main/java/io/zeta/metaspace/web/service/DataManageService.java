@@ -1630,6 +1630,9 @@ public class DataManageService {
             if(null != definition&&"ACTIVE".equalsIgnoreCase(dbInfo.getStatus())){
                 String dataSourceId = definition.getDataSourceId();
                 DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(dataSourceId);
+                if(dataSourceInfo == null || dbInfo == null){
+                    return;
+                }
                 String sourceDbRelationId = dbDAO.getSourceDbRelationId(dbInfo.getDatabaseId(), dataSourceInfo.getSourceId());
                 if(null == sourceDbRelationId){
                     dbDAO.insertSourceDbRelation(UUID.randomUUID().toString(), dbInfo.getDatabaseId(), dataSourceInfo.getSourceId());
