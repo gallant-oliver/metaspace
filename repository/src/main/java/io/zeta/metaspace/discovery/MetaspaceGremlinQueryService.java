@@ -50,6 +50,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
+import javax.script.ScriptEngine;
+import javax.script.ScriptException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -487,15 +489,24 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     }
 
 
-    public PageResult<Table> getTableNameAndDbNameByQuery(String queryTable, Boolean active, int offset, int limit, String dbs) throws AtlasBaseException {
+    public PageResult<Table> getTableNameAndDbNameByQuery(String queryTable, Boolean active, int offset, int limit, List<String> dbs) throws AtlasBaseException {
         PageResult<Table> tablePageResult = new PageResult<>();
         ArrayList<Table> tables = new ArrayList<>();
         try {
             AbstractMetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = active ? ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_FULL_ACTIVE_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_ACTIVE_TABLE_DB_BY_QUERY))
                     : ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_FULL_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_TABLE_DB_BY_QUERY));
             String query = gremlinQueryProvider.getQuery(gremlinQuery);
-            String tableQuery = String.format(query, dbs, queryTable, offset, offset + limit);
-            List<Map<String, AtlasVertex>> tableDBs = (List) graph.executeGremlinScript(tableQuery, false);
+            String tableQuery = String.format(query, queryTable, offset, offset + limit);
+            ScriptEngine gremlinScriptEngine = graph.getGremlinScriptEngine();
+            Map<String, List<String>> params = new HashMap<>();
+            params.put("dbs", dbs);
+            List<Map<String, AtlasVertex>> tableDBs;
+            try {
+                tableDBs = (List) graph.executeGremlinScript(gremlinScriptEngine, params , tableQuery, false);
+            }
+            catch (ScriptException e) {
+                throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_ERROR, "从图数据库获取hive数据库列表失败");
+            }
             for (Map<String, AtlasVertex> tableDB : tableDBs) {
                 AtlasVertex tableVertex = tableDB.get("table");
                 AtlasVertex dbVertex = tableDB.get("db");
@@ -796,14 +807,23 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     }
 
     @Override
-    public PageResult<Column> getColumnNameAndTableNameAndDbNameByQuery(String queryColumn, Boolean active, int offset, int limit, String dbs) throws AtlasBaseException {
+    public PageResult<Column> getColumnNameAndTableNameAndDbNameByQuery(String queryColumn, Boolean active, int offset, int limit, List<String> dbs) throws AtlasBaseException {
         PageResult<Column> columnPageResult = new PageResult<>();
         ArrayList<Column> columns = new ArrayList<>();
         AbstractMetaspaceGremlinQueryProvider.MetaspaceGremlinQuery gremlinQuery = active ? ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_FULL_ACTIVE_COLUMN_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_ACTIVE_COLUMN_TABLE_DB_BY_QUERY))
                 : ((limit == -1 ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_FULL_COLUMN_TABLE_DB : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_COLUMN_TABLE_DB_BY_QUERY));
         String query = gremlinQueryProvider.getQuery(gremlinQuery);
-        String columnQuery = String.format(query, queryColumn, dbs, offset, offset + limit);
-        List<Map<String, AtlasVertex>> columnTableDBs = (List) graph.executeGremlinScript(columnQuery, false);
+        String columnQuery = String.format(query, queryColumn, offset, offset + limit);
+        ScriptEngine gremlinScriptEngine = graph.getGremlinScriptEngine();
+        Map<String, List<String>> params = new HashMap<>();
+        params.put("dbs", dbs);
+        List<Map<String, AtlasVertex>> columnTableDBs;
+        try {
+            columnTableDBs = (List) graph.executeGremlinScript(gremlinScriptEngine, params , columnQuery, false);
+        }
+        catch (ScriptException e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_ERROR, "从图数据库获取hive数据库列表失败");
+        }
         for (Map<String, AtlasVertex> columnTableDB : columnTableDBs) {
             AtlasVertex columnVertex = columnTableDB.get("column");
             AtlasVertex tableVertex = columnTableDB.get("table");
@@ -1175,12 +1195,15 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
     }
 
 
-    public PageResult<Database> getDatabaseByQuery(String queryDb, boolean active, long offset, long limit, String dbs) throws AtlasBaseException {
+    public PageResult<Database> getDatabaseByQuery(String queryDb, boolean active, long offset, long limit, List<String> dbs) throws AtlasBaseException {
         return getDatabaseByQuery(queryDb, active, offset, limit, dbs, false);
     }
 
-    public PageResult<Database> getDatabaseByQuery(String queryDb, boolean active, long offset, long limit, String dbs, boolean queryCount) throws AtlasBaseException {
+    public PageResult<Database> getDatabaseByQuery(String queryDb, boolean active, long offset, long limit, List<String> dbs, boolean queryCount) throws AtlasBaseException {
         PageResult<Database> databasePageResult = new PageResult<>();
+        if (CollectionUtils.isEmpty(dbs)) {
+            return databasePageResult;
+        }
         List<Database> lists = new ArrayList<>();
         String queryStr = "";
         if ((offset == 0 && limit == -1)) {
@@ -1191,8 +1214,17 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
                     : gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_DATABASE_BY_QUERY);
 
         }
-        String format = (offset == 0 && limit == -1) ? String.format(queryStr, queryDb, dbs) : String.format(queryStr, queryDb, dbs, offset, offset + limit);
-        List<AtlasVertex> databases = (List) graph.executeGremlinScript(format, false);
+        String format = (offset == 0 && limit == -1) ? String.format(queryStr, queryDb) : String.format(queryStr, queryDb, offset, offset + limit);
+        ScriptEngine gremlinScriptEngine = graph.getGremlinScriptEngine();
+        Map<String, List<String>> params = new HashMap<>();
+        params.put("dbs", dbs);
+        List<AtlasVertex> databases;
+        try {
+            databases = (List) graph.executeGremlinScript(gremlinScriptEngine, params , format, false);
+        }
+        catch (ScriptException e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_ERROR, "从图数据库获取hive数据库列表失败");
+        }
         for (AtlasVertex database : databases) {
             Database db = new Database();
             List<String> attributes = new ArrayList<>();
@@ -1218,9 +1250,17 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         databasePageResult.setCurrentSize(lists.size());
         databasePageResult.setLists(lists);
         String gremlinQuery = gremlinQueryProvider.getQuery(active ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_DB_ACTIVE_TOTAL_NUM_BY_QUERY : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_DB_TOTAL_NUM_BY_QUERY);
-        String numQuery = String.format(gremlinQuery, queryDb, dbs);
-        List num = (List) graph.executeGremlinScript(numQuery, false);
-        databasePageResult.setTotalSize(Integer.parseInt(num.get(0).toString()));
+        gremlinScriptEngine = graph.getGremlinScriptEngine();
+        String numQuery = String.format(gremlinQuery, queryDb);
+        int total = 0;
+        try{
+            List num = (List) graph.executeGremlinScript(gremlinScriptEngine, params, numQuery, false);
+            total = Integer.parseInt(num.get(0).toString());
+        }
+        catch (ScriptException e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_ERROR, "从图数据库获取hive数据库行数失败");
+        }
+        databasePageResult.setTotalSize(total);
         return databasePageResult;
     }
 

@@ -53,8 +53,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static io.zeta.metaspace.utils.StringUtil.dbsToString;
-
 @AtlasService
 public class SearchService {
 
@@ -220,7 +218,7 @@ public class SearchService {
         }
     }
 
-
+    //TODO 这里使用缓存会存在bug，逻辑上当租户添加hive库权限无法立即更新缓存中的数据
     @Cacheable(value = "databaseSearchCache", key = "#parameters.query + #active + #parameters.limit + #parameters.offset+#tenantId+#account")
     public PageResult<Database> getDatabasePageResult(Boolean active, Parameters parameters, String tenantId, String account) throws AtlasBaseException {
         long limit = parameters.getLimit();
@@ -231,8 +229,7 @@ public class SearchService {
             return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit);
         } else {
             List<String> dbs = tenantService.getDatabase(tenantId);
-            String dbsToString = dbsToString(dbs);
-            return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit, dbsToString);
+            return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit, dbs);
         }
 
     }
@@ -377,8 +374,7 @@ public class SearchService {
             return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit());
         } else {
             List<String> dbs = tenantService.getDatabase(tenantId);
-            String dbsToString = dbsToString(dbs);
-            return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit(), dbsToString);
+            return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit(), dbs);
         }
     }
 
@@ -405,8 +401,7 @@ public class SearchService {
             return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit());
         } else {
             List<String> dbs = tenantService.getDatabase(tenantId);
-            String dbsToString = dbsToString(dbs);
-            return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit(), dbsToString);
+            return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit(), dbs);
         }
     }
 
