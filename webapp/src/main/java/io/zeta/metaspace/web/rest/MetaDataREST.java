@@ -15,6 +15,7 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterSource;
+import io.zeta.metaspace.bo.DatabaseInfoBO;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datasource.DataSourceHead;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
@@ -28,10 +29,12 @@ import io.zeta.metaspace.model.result.BuildTableSql;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.MetadataDeriveTableInfo;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.service.*;
+import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDeriveTableInfoService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
@@ -95,6 +98,8 @@ public class MetaDataREST {
     private HttpServletResponse httpServletResponse;
     @Autowired
     private DataSourceService dataSourceService;
+    @Autowired
+    SourceInfoDeriveTableInfoService sourceInfoDeriveTableInfoService;
 
     @Inject
     public MetaDataREST(final MetaDataService metadataService) {
@@ -1130,4 +1135,42 @@ public class MetaDataREST {
         }
     }
 
+    /**
+     * 获取源信息登记信息
+     * @param tenantId
+     * @param sourceId
+     * @param schemaId
+     * @return
+     */
+    @Path("info/sourceInfo")
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getSourceInfo(@HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") String sourceId,
+                                @QueryParam("schemaId") String schemaId){
+        DatabaseInfoBO resultBO = metadataService.querySourceInfo(tenantId,sourceId,schemaId);
+        if(resultBO == null){
+            return new Result("-1","没有找到对应的数据库登记信息");
+        }
+        return ReturnUtil.success(resultBO);
+    }
+    /**
+     * 获取衍生表登记信息
+     * @param tenantId
+     * @param sourceId
+     * @param schemaId
+     * @return
+     */
+    @Path("info/deriveTable/{tableGuid}")
+    @GET
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDeriveTableInfo(@HeaderParam("tenantId") String tenantId,@PathParam("tableGuid") String tableGuid,
+                                     @QueryParam("sourceId") String sourceId,@QueryParam("schemaId") String schemaId){
+        MetadataDeriveTableInfo metadataDeriveTableInfo = sourceInfoDeriveTableInfoService.queryDeriveTableInfo(tenantId,sourceId,schemaId,tableGuid);
+        if(metadataDeriveTableInfo == null){
+            return new Result("-1","没有找到对应的衍生表登记信息");
+        }
+        return ReturnUtil.success(metadataDeriveTableInfo);
+    }
 }

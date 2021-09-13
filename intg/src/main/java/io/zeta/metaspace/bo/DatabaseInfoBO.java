@@ -90,6 +90,7 @@ public class DatabaseInfoBO {
      * 记录人id
      * **/
     private String recorderGuid;
+    private String recorderName;
     /**
      * 附件id
      * **/
