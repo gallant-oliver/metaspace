@@ -353,7 +353,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
             String query = gremlinQueryProvider.getQuery(gremlinQeury);
 
             String dbQuery = limit == -1 ? String.format(query, queryDb) : String.format(query, queryDb, offset, offset + limit);
-            List vertexMap = (List) executeWithDbs(dbQuery, dbs,false);
+            List vertexMap = (List) executeWithDbs(dbQuery, dbs, false);
             Iterator<Map<String, AtlasVertex>> results = vertexMap.iterator();
 
             PageResult<Database> pageResult = new PageResult<>();
@@ -817,7 +817,7 @@ public class MetaspaceGremlinQueryService implements MetaspaceGremlinService {
         columnPageResult.setLists(columns);
         columnPageResult.setCurrentSize(columns.size());
         String countQuery = gremlinQueryProvider.getQuery(active ? MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_ACTIVE_COLUMN_COUNT_BY_QUERY : MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.TENANT_COLUMN_COUNT_BY_QUERY);
-        List<Long> counts = (List) executeWithDbs(String.format(countQuery, queryColumn) , dbs, false);
+        List<Long> counts = (List) executeWithDbs(String.format(countQuery, queryColumn), dbs, false);
         columnPageResult.setTotalSize(counts.get(0));
         return columnPageResult;
     }
