@@ -42,9 +42,9 @@ public interface ColumnDAO {
             "</script>"})
     public int addColumnDisplayInfo(@Param("columnList")List<Column> columnList);
 
-    @Insert("insert into column_info(column_guid,column_name,table_guid,type,display_name,display_operator,display_updatetime,status,description)values" +
+    @Insert("insert into column_info(column_guid,column_name,table_guid,type,display_name,display_operator,display_updatetime,status,description,partition_field)values" +
             "(#{column.columnId},#{column.columnName},#{column.tableId},#{column.type},#{column.displayName},#{column.displayNameOperator}," +
-            "#{column.displayNameUpdateTime},#{column.status},#{column.description})")
+            "#{column.displayNameUpdateTime},#{column.status},#{column.description},#{column.isPartitionKey})")
     void addColumn(@Param("column")Column column);
 
     @Select("select count(*) from column_info where table_guid=#{tableGuid} and status='ACTIVE'")
@@ -146,7 +146,7 @@ public interface ColumnDAO {
 
     @Select("<script>" +
             " SELECT co.column_guid AS columnId,co.COLUMN_NAME AS columnName,tb.databaseguid AS databaseId,tb.dbname AS databaseName,co.description,co.display_name," +
-            " co.display_updatetime AS displayNameUpdateTime, co.status,tb.tableguid AS tableId,tb.tablename AS tableName,co.TYPE,'false' as isPartitionKey" +
+            " co.display_updatetime AS displayNameUpdateTime, co.status,tb.tableguid AS tableId,tb.tablename AS tableName,co.TYPE,partition_field as isPartitionKey" +
             " FROM column_info AS co INNER JOIN tableinfo AS tb ON co.table_guid = tb.tableguid " +
             " WHERE co.status = 'ACTIVE' AND tb.tableguid = #{tableGuid}" +
             " <if test=\"columnName != null and columnName != '' \">" +

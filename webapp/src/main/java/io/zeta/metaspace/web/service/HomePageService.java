@@ -168,10 +168,9 @@ public class HomePageService {
                 });
             }else{
                 List<String> dbs = tenantService.getDatabase(tenantId);
-                String dbsToString = dbsToString(dbs);
                 dbTotalFuture = CompletableFuture.supplyAsync(() -> {
                     try {
-                        return metaspaceGremlinService.getDBTotal(dbsToString);
+                        return metaspaceGremlinService.getDBTotal(dbs);
                     } catch (Exception e) {
                         LOG.error("查询库总量失败", e);
                     }
@@ -180,7 +179,7 @@ public class HomePageService {
 
                 tbTotalFuture = CompletableFuture.supplyAsync(() -> {
                     try {
-                        return metaspaceGremlinService.getTBTotal(dbsToString);
+                        return metaspaceGremlinService.getTBTotal(dbs);
                     } catch (Exception e) {
                         LOG.error("查询表总量失败", e);
                     }

@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
@@ -66,6 +67,7 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.repository.Constants;
+import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
@@ -156,6 +158,8 @@ public class DataManageService {
     private CategoryDAO categoryDAO;
     @Autowired
     private SourceInfoDAO sourceInfoDAO;
+    @Autowired
+    private AtlasEntityStore atlasEntityStore;
     int technicalType = 0;
     int dataStandType = 3;
     int technicalCount = 5;
@@ -239,6 +243,12 @@ public class DataManageService {
                     privilege.setAddChildren(false);
                     privilege.setDelete(false);
                     categoryPrivilege.setCount(map.get(categoryPrivilege.getGuid()));
+                } else if (MetaspaceConfig.systemCategory.contains(categoryPrivilege.getGuid())) {
+                    privilege.setDelete(false);
+                    if (privilege.isEdit()){
+                        privilege.setEditSafe(true);
+                    }
+                    privilege.setEdit(false);
                 }
                 categoryPrivilege.setPrivilege(privilege);
             }
@@ -1558,7 +1568,7 @@ public class DataManageService {
     }
 
 
-    private synchronized void  addOrUpdateColumn(Column column){
+    private synchronized void addOrUpdateColumn(Column column){
         Column c = columnDAO.getColumnInfoByGuid(column.getColumnId());
         if(null == c){
             columnDAO.addColumn(column);
@@ -1571,6 +1581,7 @@ public class DataManageService {
     private Column getAndRemoveColumn(AtlasEntity entity, String typeKey) {
         AtlasRelatedObjectId table = (AtlasRelatedObjectId) entity.getRelationshipAttribute("table");
         String tableGuid = table.getGuid();
+        AtlasEntity.AtlasEntityWithExtInfo info = atlasEntityStore.getById(table.getGuid());
         String guid = entity.getGuid();
         String name = entity.getAttribute("name").toString();
         String columnGuid = columnDAO.getColumnGuid(tableGuid, name);
@@ -1591,6 +1602,11 @@ public class DataManageService {
         if (comment != null) {
             column.setDescription(column.toString());
         }
+        List<String> partitionKeys = EntityUtil.extractPartitionKeyInfo(info.getEntity());
+        if (!CollectionUtils.isEmpty(partitionKeys) && partitionKeys.contains(guid)) {
+            column.setPartitionKey(true);
+        }
+
         return column;
     }
 
