@@ -423,4 +423,30 @@ public interface CategoryDAO {
             "</if>" +
             "</script>")
     int getMaxSortByParentGuid(@Param("guid") String guid,@Param("tenantId") String tenantId);
+
+    @Select("<script>" +
+            "SELECT\n" +
+            "  sort \n" +
+            "FROM\n" +
+            "  category \n" +
+            "WHERE\n" +
+            "  tenantid = #{tenantId}\n" +
+            "  AND guid = #{guid}" +
+            "</script>")
+    int getCategorySortById(@Param("guid") String guid,@Param("tenantId") String tenantId);
+
+    @Update("<script>" +
+            "UPDATE category \n" +
+            "SET sort = sort + 1 \n" +
+            "WHERE"+
+            "  tenantid = #{tenantId}\n" +
+            " AND sort &gt;= #{sort}\n"+
+            "<if test = 'parentGuid != null'>" +
+            "  AND parentcategoryguid = #{parentGuid}" +
+            "</if>"+
+            "<if test = 'parentGuid == null'>" +
+            "  AND parentcategoryguid is null" +
+            "</if>"+
+            "</script>")
+    void updateSort(@Param("sort") int sort,@Param("parentGuid") String parentGuid,@Param("tenantId") String tenantId);
 }

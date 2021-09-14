@@ -265,41 +265,55 @@ public interface RelationDAO {
     public List<RelationEntityV2> queryByTableName(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select({"<script>",
-            " select tableInfo.tablename,",
-            " tableInfo.dbname,",
-            " tableInfo.tableguid,",
-            " tableInfo.status,",
-            " tableInfo.createtime,",
-            " tableInfo.dataowner,",
-            " tableinfo.description,",
-            " table_relation.relationshipguid,",
-            " table_relation.categoryguid,",
-            " case tableInfo.source_id when 'hive' then 'hive' else data_source.source_name end as source_name,",
-            " count(*)over() total from table_relation",
-            " join tableInfo on",
-            " table_relation.tableGuid=tableInfo.tableGuid",
-            " left join data_source ",
-            " on tableInfo.source_id = data_source.source_id",
-            " where",
-            " tableInfo.status = 'ACTIVE' ",
-            " and categoryGuid in",
-            " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>",
-            " #{categoryGuid}",
-            " </foreach>",
-            " and ( tableinfo.dbname in ",
-            " <foreach item='item' index='index' collection='databases'",
-            " open='(' separator=',' close=')'>",
-            " #{item}",
-            " </foreach> or tableinfo.source_id != 'hive') ",
+            " SELECT\n" +
+                    "   tableInfo.tablename,\n" +
+                    "   tableInfo.dbname,\n" +
+                    "   tableInfo.tableguid,\n" +
+                    "   tableInfo.status,\n" +
+                    "   tableInfo.createtime,\n" +
+                    "   tableInfo.dataowner,\n" +
+                    "   tableInfo.description,\n" +
+                    "   data_source.source_type AS dataSourceType,\n" +
+                    "   source_info.category_id AS categoryGuid,\n" +
+                    "CASE\n" +
+                    "      data_source.source_type\n" +
+                    "      WHEN 'ORACLE' THEN\n" +
+                    "      data_source.database ELSE '' \n" +
+                    "   END AS databaseInstance,\n" +
+                    "CASE\n" +
+                    "      tableInfo.source_id \n" +
+                    "      WHEN 'hive' THEN\n" +
+                    "      'hive' ELSE data_source.source_name \n" +
+                    "   END AS source_name,\n" +
+                    "   COUNT ( * ) OVER () total \n" +
+                    "FROM\n" +
+                    "   tableInfo " +
+                    "   INNER JOIN source_info ON tableinfo.databaseguid = source_info.database_id\n" +
+                    "   INNER JOIN data_source ON source_info.data_source_id = data_source.source_id \n" +
+                    "WHERE\n" +
+                    "   tableInfo.status = 'ACTIVE' \n" +
+                    "   AND (\n" +
+                    "       ( tableinfo.dbname IN" +
+                    "         <foreach item='item' index='index' collection='databases' open='(' separator=',' close=')'>",
+                    "           #{item}",
+                    "        </foreach>"+
+                            " OR tableinfo.source_id != 'hive' ) \n" +
+                    "      OR (\n" +
+                    "      tableinfo.databaseguid = ( SELECT db_guid FROM db_category_relation dcr WHERE dcr.category_id IN" +
+                            " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>",
+                            " #{categoryGuid}",
+                            " </foreach>",
+                            " AND dcr.tenant_id = #{tenantId} )) \n" +
+                    "   ) " +
+                                    "   AND source_info.version = 0",
             " <if test=\"tableName != null and tableName!=''\">",
             " and",
             " tableInfo.tableName like concat('%',#{tableName},'%') ESCAPE '/'",
             " </if>",
             " <if test=\"tagName != null and tagName!=''\">",
             " and",
-            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like concat('%',#{tagName},'%') ESCAPE '/') ",
+            " tableInfo.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like concat('%',#{tagName},'%') ESCAPE '/') ",
             " </if>",
-            " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive')",
             " order by tableinfo.tablename ",
             " <if test='limit!= -1'>",
             " limit #{limit}",
