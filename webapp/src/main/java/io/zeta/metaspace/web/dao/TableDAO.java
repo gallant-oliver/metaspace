@@ -318,4 +318,7 @@ public interface TableDAO {
             " offset #{offset}"+
             "</script>")
     List<TableEntity> selectListByHiveDb(@Param("dbGuid") String dbGuid, @Param("isView") Boolean isView, @Param("limit") Long limit, @Param("offset") Long offset);
+
+    @Select("SELECT DISTINCT db_type FROM tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid WHERE tb.tableguid = #{guid}")
+    String selectTypeByGuid(@Param("guid") String guid);
 }

@@ -279,9 +279,8 @@ public class BusinessService {
     private List<TechnologyInfo.Table> getTablesByBusinessId(String businessId, String tenantId) {
         List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessIdAndTenantId(businessId, tenantId);
         tables.forEach(table -> {
-            String displayName = columnDAO.getTableDisplayInfoByGuid(table.getTableGuid());
-            if (Objects.nonNull(displayName)) {
-                table.setDisplayName(displayName);
+            if (Objects.nonNull(table.getDisplayName())) {
+                table.setDisplayName(table.getDisplayName());
             } else {
                 table.setDisplayName(table.getTableName());
             }

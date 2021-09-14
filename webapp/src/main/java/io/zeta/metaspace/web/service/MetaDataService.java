@@ -31,8 +31,6 @@ import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
-import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.MetadataDeriveTableInfo;
-import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
@@ -215,12 +213,8 @@ public class MetaDataService {
     }
 
     public boolean isHiveTable(String guid) {
-        AtlasEntity entity = getEntityById(guid);
-        if (Objects.isNull(entity)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到表");
-        }
-        String type = entity.getTypeName();
-        if ("hive_table".equalsIgnoreCase(type)) {
+        String type = tableDAO.selectTypeByGuid(guid);
+        if("hive".equalsIgnoreCase(type)){
             return true;
         }
         return false;
