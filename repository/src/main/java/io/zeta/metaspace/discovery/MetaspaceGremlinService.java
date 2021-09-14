@@ -43,7 +43,7 @@ public interface MetaspaceGremlinService {
 
     PageResult<Database> getAllDBAndTable(String queryDb, int limit, int offset) throws AtlasBaseException;
 
-    PageResult<Database> getAllDBAndTable(String queryDb, int limit, int offset,String dbs) throws AtlasBaseException;
+    PageResult<Database> getAllDBAndTable(String queryDb, int limit, int offset, List<String> dbs) throws AtlasBaseException;
 
     String getGuidByDBAndTableName(String dbName, String tableName) throws AtlasBaseException, InterruptedException;
 
@@ -55,12 +55,12 @@ public interface MetaspaceGremlinService {
 
     public List<Long> getTBTotal() throws AtlasBaseException;
 
-    PageResult<Table> getTableNameAndDbNameByQuery(String query, Boolean active, int offset, int limit,String dbs) throws AtlasBaseException;
+    PageResult<Table> getTableNameAndDbNameByQuery(String query, Boolean active, int offset, int limit, List<String> dbs) throws AtlasBaseException;
 
-    PageResult<Column> getColumnNameAndTableNameAndDbNameByQuery(String query, Boolean active, int offset, int limit,String dbs) throws AtlasBaseException;
+    PageResult<Column> getColumnNameAndTableNameAndDbNameByQuery(String query, Boolean active, int offset, int limit, List<String> dbs) throws AtlasBaseException;
 
-    public List<Long> getDBTotal(String dbs) throws AtlasBaseException;
+    public List<Long> getDBTotal(List<String> dbs) throws AtlasBaseException;
 
-    public List<Long> getTBTotal(String dbs) throws AtlasBaseException;
+    public List<Long> getTBTotal(List<String> dbs) throws AtlasBaseException;
 
 }

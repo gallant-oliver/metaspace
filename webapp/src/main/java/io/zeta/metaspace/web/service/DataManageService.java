@@ -1579,7 +1579,7 @@ public class DataManageService {
     }
 
 
-    private synchronized void  addOrUpdateColumn(Column column){
+    private synchronized void addOrUpdateColumn(Column column){
         Column c = columnDAO.getColumnInfoByGuid(column.getColumnId());
         if(null == c){
             columnDAO.addColumn(column);
@@ -1592,6 +1592,7 @@ public class DataManageService {
     private Column getAndRemoveColumn(AtlasEntity entity, String typeKey) {
         AtlasRelatedObjectId table = (AtlasRelatedObjectId) entity.getRelationshipAttribute("table");
         String tableGuid = table.getGuid();
+        AtlasEntity.AtlasEntityWithExtInfo info = atlasEntityStore.getById(table.getGuid());
         String guid = entity.getGuid();
         String name = entity.getAttribute("name").toString();
         String columnGuid = columnDAO.getColumnGuid(tableGuid, name);
@@ -1612,6 +1613,11 @@ public class DataManageService {
         if (comment != null) {
             column.setDescription(column.toString());
         }
+        List<String> partitionKeys = EntityUtil.extractPartitionKeyInfo(info.getEntity());
+        if (!CollectionUtils.isEmpty(partitionKeys) && partitionKeys.contains(guid)) {
+            column.setPartitionKey(true);
+        }
+
         return column;
     }
 

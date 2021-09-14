@@ -1258,7 +1258,6 @@ public class MetaDataService {
                     column.setDatabaseName(relatedDB.getDisplayText());
 
                     column.setColumnId(referredEntity.getGuid());
-                    column.setPartitionKey(false);
                     if (partitionKeys != null) {
                         for (int i = 0; i < partitionKeys.size(); i++) {
                             if (partitionKeys.get(i).getGuid().equals(column.getColumnId())) {
@@ -2375,8 +2374,8 @@ public class MetaDataService {
         Sheet sheet = workbook.createSheet(CustomStringUtils.handleExcelName(sheetName));
 
         List<Column> columnList = table.getColumns();
-        List<Column> normalColumnList = columnList.stream().filter(column -> column.getPartitionKey() == false).collect(Collectors.toList());
-        List<Column> partitionColumnList = columnList.stream().filter(column -> column.getPartitionKey() == true).collect(Collectors.toList());
+        List<Column> normalColumnList = columnList.stream().filter(column -> !column.getPartitionKey()).collect(Collectors.toList());
+        List<Column> partitionColumnList = columnList.stream().filter(column -> column.getPartitionKey()).collect(Collectors.toList());
 
 
         CellRangeAddress tableAndDbNameRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 2);
