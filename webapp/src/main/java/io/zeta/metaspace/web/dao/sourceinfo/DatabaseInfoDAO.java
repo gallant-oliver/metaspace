@@ -535,9 +535,10 @@ public interface DatabaseInfoDAO {
             "</script>")
     List<Database> selectTableCountByDB(@Param("dbGuidList") List<Database> dbGuidList);
 
-    @Select("SELECT\n" +
-            "(SELECT db.db_type FROM db_info db WHERE db.database_guid=s.database_id LIMIT 1 )  AS databaseTypeName,\n" +
-            "(SELECT ds.database FROM data_source ds WHERE ds.source_id=s.data_source_id LIMIT 1 )  AS databaseInstanceName,\n" +
+    @Select("SELECT s.id , s.category_id AS categoryId, \n" +
+            "db.db_type  AS databaseTypeName,db.database_name AS databaseName, \n" +
+            "ds.database AS databaseInstanceName,\n" +
+            "ds.source_name AS dataSourceName,\n" +
             "s.database_alias AS databaseAlias,\n" +
             "s.planning_package_name,\n" +
             "s.planning_package_code,\n" +
@@ -558,14 +559,15 @@ public interface DatabaseInfoDAO {
             "s.to_email,\n" +
             "s.technical_leader AS technicalLeaderId,\n" +
             "s.business_leader AS businessLeaderId,\n" +
-            "s.version ," +
+            "s.version , s.annex_id, " +
             "(SELECT u.username FROM users u WHERE u.userid = s.technical_leader ) AS technicalLeaderName,\n" +
             "(SELECT u.username FROM users u WHERE u.userid = s.business_leader ) AS businessLeaderName,\n" +
             "s.creator AS recorderGuid, \n" +
             "(SELECT u.username FROM users u WHERE u.userid = s.creator )AS recorderName "+
             "FROM\n" +
-            "source_info s \n" +
-            "WHERE\n" +
+            "source_info s LEFT JOIN db_info db ON s.database_id = db.database_guid  \n" +
+            " LEFT JOIN data_source ds ON s.data_source_id = ds.source_id "+
+            "WHERE \n" +
             "s.tenant_id=#{tenantId} AND s.data_source_id=#{sourceId} and s.database_id=#{schemaId} \n")
     List<DatabaseInfoBO> getLastDatabaseInfoByDatabaseId(@Param("schemaId") String schemaId,
                                                    @Param("tenantId") String tenantId, @Param("sourceId") String sourceId);
