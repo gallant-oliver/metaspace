@@ -67,6 +67,7 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.repository.Constants;
+import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
@@ -157,6 +158,8 @@ public class DataManageService {
     private CategoryDAO categoryDAO;
     @Autowired
     private SourceInfoDAO sourceInfoDAO;
+    @Autowired
+    private AtlasEntityStore atlasEntityStore;
     int technicalType = 0;
     int dataStandType = 3;
     int technicalCount = 5;
