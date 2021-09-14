@@ -331,6 +331,7 @@ public class TechnicalREST {
      * @param relationQuery
      * @return
      * @throws AtlasBaseException
+     *
      */
     @POST
     @Path("/table/relations")
