@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
@@ -239,6 +240,12 @@ public class DataManageService {
                     privilege.setAddChildren(false);
                     privilege.setDelete(false);
                     categoryPrivilege.setCount(map.get(categoryPrivilege.getGuid()));
+                } else if (MetaspaceConfig.systemCategory.contains(categoryPrivilege.getGuid())) {
+                    privilege.setDelete(false);
+                    if (privilege.isEdit()){
+                        privilege.setEditSafe(true);
+                    }
+                    privilege.setEdit(false);
                 }
                 categoryPrivilege.setPrivilege(privilege);
             }

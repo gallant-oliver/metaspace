@@ -142,16 +142,17 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
     public void importDatabases(String taskInstanceId, TableSchema tableSchema) throws Exception {
         LOG.info("import metadata start at {}", simpleDateFormat.format(new Date()));
         syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.RUN, "开始导入");
-
+        if (CollectionUtils.isEmpty(tableSchema.getDatabases())) {
+            importDatabasesHive();
+        }
         List<String> databaseNames = null;
         List<String> databaseToImport = new ArrayList<>();
         String tableToImport = "";
         boolean allDatabase = false;
-        if (null != tableSchema) {
-            databaseToImport = tableSchema.getDatabases();
-            tableToImport = tableSchema.getTable();
-            allDatabase = tableSchema.isAllDatabase();
-        }
+        databaseToImport = tableSchema.getDatabases();
+        tableToImport = tableSchema.getTable();
+        allDatabase = tableSchema.isAllDatabase();
+
         initHiveMetaStoreClient();
         List<String> allDatabaseName = hiveMetaStoreClient.getAllDatabases();
         if (allDatabase || databaseToImport == null || databaseToImport.size() == 0) {
