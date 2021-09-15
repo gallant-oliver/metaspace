@@ -367,6 +367,9 @@ public class MetaDataService {
             }
             //table
             Table table = extractTableInfo(entityInfo, guid, tenantId);
+            if(StringUtils.isBlank(sourceId)){
+                sourceId="hive";
+            }
             List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,guid);
             table.setHasDerivetable(CollectionUtils.isNotEmpty(deriveTableInfoList));
 
