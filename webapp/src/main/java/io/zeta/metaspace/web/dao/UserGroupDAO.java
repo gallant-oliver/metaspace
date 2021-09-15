@@ -293,6 +293,26 @@ public interface UserGroupDAO {
             "</script>")
     List<RoleModulesCategories.Category> getAllCategorysByType(@Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
 
+    // 获取租户数据库登记所创建的目录
+    @Select("select category_id " +
+            "from source_info " +
+            "where tenant_id=#{tenantId} " +
+            "and version = 0 " +
+            "and category_id is not null " +
+            "and category_id != ''")
+    List<String> getRegisteredCategorysByType(String tenantId);
+
+    // 获取手动创建的目录（即非数据库登记创建）和 租户数据库登记（“是否重要”属性选择为“是”）所创建的目录
+    @Select("select c.guid, c.description, c.name, c.parentcategoryguid, c.categorytype, c.level, c.safe, c.tenantid, c.createtime, c.creator, c.sort " +
+            "from category c " +
+            "where categoryType=#{categoryType} and tenantid=#{tenantId} " +
+            "and c.guid not in (select si.category_id from source_info si where tenant_id=#{tenantId} and si.version = 0 and category_id is not null and category_id != '') " +
+            "union all " +
+            "select c.guid, c.description, c.name, c.parentcategoryguid, c.categorytype, c.level, c.safe, c.tenantid, c.createtime, c.creator, c.sort " +
+            "from category c " +
+            "inner join source_info si on si.category_id=c.guid and si.version = 0 and si.importance=true " +
+            "where categoryType=#{categoryType} and tenantid=#{tenantId}")
+    List<RoleModulesCategories.Category> getAllowAuthedCategorysByType(@Param("categoryType")Integer categoryType, @Param("tenantId")String tenantId);
 
     @Select("select DISTINCT t2.guid, t2.name, t2.level, t2.qualifiedname, t2.parentcategoryguid, t2.upbrothercategoryguid, t2.downbrothercategoryguid,t2.description, t2.safe " +
             "FROM category_group_relation t1 JOIN category t2 ON t1.category_id = t2.guid\n" +

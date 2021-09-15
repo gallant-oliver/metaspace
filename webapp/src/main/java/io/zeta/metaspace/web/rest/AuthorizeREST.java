@@ -273,9 +273,9 @@ public class AuthorizeREST {
     @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getCategory(@HeaderParam("tenantId")String tenantId,@QueryParam("type") Integer type) throws AtlasBaseException {
+    public Result getCategory(@HeaderParam("tenantId")String tenantId,@QueryParam("type") Integer type, @DefaultValue("false")@QueryParam("isAllowAuth")boolean isAllowAuth) throws AtlasBaseException {
         try{
-            List<CategoryPrivilege> adminCategory = userGroupService.getAdminCategoryByType(type, tenantId);
+            List<CategoryPrivilege> adminCategory = userGroupService.getAdminCategoryByType(type, tenantId, isAllowAuth);
             return ReturnUtil.success(adminCategory);
         }catch (Exception e){
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取用户组目录权限列表失败");
