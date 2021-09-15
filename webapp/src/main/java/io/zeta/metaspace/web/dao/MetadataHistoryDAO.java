@@ -107,4 +107,8 @@ public interface MetadataHistoryDAO {
             " table_guid=#{guid} and version=#{version}",
             " </script>"})
     public List<ColumnMetadata> getColumnMetadata(@Param("guid")String tableGuid, @Param("version")Integer version);
+
+    @Select({"select guid,name,creator,updater,create_time as createTime, update_time as updateTime,database_name as databaseName,table_type as tableType,partition_table as partitionTable,table_format as tableFormat,store_location as storeLocation,description,version,status",
+            " from table_metadata_history where guid=#{guid} order by version desc "})
+    List<TableMetadata> getTableMetadataByGuid(@Param("guid")String tableGuid);
 }

@@ -91,7 +91,7 @@ public class MetadataHistoryService {
                     log.info("storeHistoryMetadata AtlasEntity is {},name is {}", entity, tableMetadata.getName());
                     int sameCount = metadataDAO.getSameUpdateEntityCount(tableMetadata);
                     if(sameCount > 0) {
-                        return;
+                        continue;
                     }
                     List<ColumnMetadata> columnMetadataList = new ArrayList<>();
                     Map<String, AtlasEntity> referrencedEntities = info.getReferredEntities();
@@ -113,7 +113,7 @@ public class MetadataHistoryService {
                         }
                     }
                     if (this.getTableCompareResult(tableGuid, tableMetadata) && this.getColumnCompareResult(tableGuid, columnMetadataList)) {
-                        return;
+                        continue;
                     }
                     metadataDAO.addTableMetadata(tableMetadata);
                     int version = metadataDAO.getTableVersion(tableGuid);
@@ -121,12 +121,33 @@ public class MetadataHistoryService {
                     if (columnMetadataList.size() > 0) {
                         metadataDAO.addColumnMetadata(columnMetadataList);
                     }
+
+                    //查询表的元数据历史，若只有一条则代表第一次添加不需要发送邮件处理，否则需要发送邮件以及对应的字段对比信息（最新的两次数据对比结果）
+                    List<TableMetadata> tableMetadataList = metadataDAO.getTableMetadataByGuid(tableGuid);
+                    if( CollectionUtils.isEmpty(tableMetadataList) || tableMetadataList.size() == 1 ){
+                        log.info("storeHistoryMetadata AtlasEntity name is {},首次添加，不需要邮件通知。", tableMetadata.getName());
+                        continue;
+                    }
+                    sendNoticeByEmail(tableMetadataList);
                 }
             }
         } catch (Exception e) {
             log.error("storeHistoryMetadata exception is {}", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
+    }
+
+    //元数据有变化，需要邮件通知 （开启一个线程处理）  TODO
+    private void sendNoticeByEmail(List<TableMetadata> tableMetadataList) {
+        log.info("元数据有变化，查找邮件发送地址.");
+        String tableGuid = tableMetadataList.get(0).getGuid();
+        /*
+        查询衍生表的设计人
+        衍生表不存在 -> 则查询业务负责人
+        都没有或者邮件地址不符合邮件格式 则不发送对比清单邮件
+         */
+
+
     }
 
     /**
