@@ -10,6 +10,8 @@ import java.util.List;
 /**
  * @author zhuxuetong
  * @date 2019-08-07 18:07
+ *
+ * 2021-09-15
  */
 public enum ModuleEnum {
     //概览
@@ -17,6 +19,7 @@ public enum ModuleEnum {
 
     //数据资产
     TECHNICAL(2,"数据资产","技术目录",2,"技术目录", "technical", "technical",1, 2),
+    INDEX(2,"数据资产","指标目录",47,"指标目录", "index", "index",1, 2),
     BUSINESS(2,"数据资产","业务目录",3,"业务对象", "business", "business",1, 3),
     BUSINESSMANAGE(2,"数据资产","业务目录",4,"业务对象挂载", "businessmanage", "businessmanage",1, 4),
     COLUMNDOWN(2,"数据资产","业务目录",5,"字段下载", "columndown", "columndown",0, 5),
@@ -24,10 +27,9 @@ public enum ModuleEnum {
     METADATA(2,"数据资产","元数据管理",7,"元数据管理", "metadata", "metadata",1, 7),
     DATABASEREGISTER(2,"数据资产","源信息登记",38,"数据库登记", "databaseregister", "databaseregister",1, 38),
     DERIVEDTABLESREGISTER(2,"数据资产","源信息登记",39,"衍生表登记", "derivedtablesregister", "derivedtablesregister",1, 39),
-    APPROVERMANAGE(2,"数据资产","资产审批管理",17,"审批人管理", "approvermanage", "approvermanage",1, 17),
-    MYAPPLICATION(2,"数据资产","资产审批管理",18,"我的申请", "myapplication", "myapplication",1, 18),
-    APPROVALPENDING(2,"数据资产","资产审批管理",40,"待审批", "approvalpending", "approvalpending",1, 40),
-    ALREADYAPPROVE(2,"数据资产","资产审批管理",41,"已审批", "alreadyapprove", "alreadyapprove",1, 41),
+//    MYAPPLICATION(2,"数据资产","资产审批管理",18,"我的申请", "myapplication", "myapplication",1, 18),
+//    APPROVALPENDING(2,"数据资产","资产审批管理",40,"待审批", "approvalpending", "approvalpending",1, 40),
+//    ALREADYAPPROVE(2,"数据资产","资产审批管理",41,"已审批", "alreadyapprove", "alreadyapprove",1, 41),
 
     //以下数据资产在安全中心不存在
     TECHNICALEDIT(2,"数据资产","技术数据关联",8,"技术数据关联", "technicaledit", "technicaledit",0, 8),
@@ -36,18 +38,26 @@ public enum ModuleEnum {
     BUSINESSADMIN(2,"数据资产","业务目录编辑",11,"业务目录编辑", "businessadmin", "businessadmin",0, 11),
     DATASHARE(2,"数据资产","数据分享",12,"数据分享", "datashare", "datashare",0, 12),
 
-    //规范定义
-    NORMDESIGN(3,"规范定义","指标管理",13,"指标设计", "normdesign", "normdesign",1, 13),
-    MODIFIER (3,"规范定义","指标管理",14,"修饰词", "modifier", "modifier",1, 14),
-    TIMELIMIT(3,"规范定义","指标管理",15,"时间限定", "timelimit", "timelimit",1, 15),
-    DATASTANDARD(3,"规范定义","标准管理",16,"数据标准", "datastandard", "datastandard",1,16),
-    APPROVALMANAGE(3,"规范定义","审批中心",19,"审批管理", "approvalmanage", "approvalmanage",1, 19),
+    //指标设计
+    BUSINESSINDEX(3,"指标设计","业务指标",42,"业务指标", "businessindex", "businessindex",1, 13),
+    TECHNICALINDEX (3,"指标设计","技术指标",43,"技术指标", "technicalindex", "technicalindex",1, 14),
+    INDEXDIMENSION (3,"指标设计","指标维度",44,"指标维度", "indexdimension", "indexdimension",1, 14),
+    NORMDESIGN(3,"指标设计","指标管理",13,"指标设计", "normdesign", "normdesign",1, 13),
+    MODIFIER (3,"指标设计","指标管理",14,"修饰词", "modifier", "modifier",1, 14),
+    TIMELIMIT(3,"指标设计","指标管理",15,"时间限定", "timelimit", "timelimit",1, 15),
+//    APPROVALMANAGE(3,"规范定义","审批中心",19,"审批管理", "approvalmanage", "approvalmanage",1, 19),
+
+    //审批管理
+    APPROVERMANAGE(9,"审批管理","审批人管理",17,"审批人管理", "approvermanage", "approvermanage",1, 17),
+    STATUS(9,"审批管理","审批状况",45,"审批状况", "status", "status",1, 17),
+    APPLICATIONS(9,"审批管理","我的申请",46,"我的申请", "applications", "applications",1, 17),
 
     //数据质量
     RULEMANAGE(4,"数据质量","规则管理",20,"规则管理", "rulemanage", "rulemanage",1, 20),
     TASKMANAGE(4,"数据质量","任务管理",21,"任务管理", "taskmanage", "taskmanage",1, 21),
     WARNINGGROUP(4,"数据质量","告警处理",22,"告警处理", "warninggroup", "warninggroup",1, 22),
     RULETEMPLATE(4,"数据质量","报告归档",23,"报告归档", "ruletemplate", "ruletemplate",1, 23),
+    DATASTANDARD(4,"数据质量","数据标准",16,"数据标准", "datastandard", "datastandard",1,16),
     //以下数据质量在安全中心不存在
     DATAQUALITY(4,"数据质量","查看",24,"数据质量", "dataquality", "dataquality",1, 24),
 

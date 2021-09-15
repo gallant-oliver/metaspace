@@ -324,19 +324,19 @@ public class TenantService {
                 continue;
             }
             //规范定义中的菜单groupId=3
-            if(moduleEnum.getGroupId() == 3){
-                //是否为“规范定义”的子菜单“我的申请”
-                if(moduleEnum == ModuleEnum.MYAPPLICATION){
-                    flag = 1;
-                } else if (flag == -1 && moduleEnum != ModuleEnum.DATASTANDARD) {
-                    flag = 0;
-                }
-            }
+//            if(moduleEnum.getGroupId() == 3){
+//                //是否为“规范定义”的子菜单“我的申请”
+//                if(moduleEnum == ModuleEnum.MYAPPLICATION){
+//                    flag = 1;
+//                } else if (flag == -1 && moduleEnum != ModuleEnum.DATASTANDARD) {
+//                    flag = 0;
+//                }
+//            }
             modules.add(moduleEnum.getModule());
         }
-        if(flag == 0){
-            modules.add(ModuleEnum.MYAPPLICATION.getModule());
-        }
+//        if(flag == 0){
+//            modules.add(ModuleEnum.MYAPPLICATION.getModule());
+//        }
         Collections.sort(modules);
         return modules;
     }

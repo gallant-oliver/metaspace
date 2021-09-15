@@ -316,6 +316,8 @@ public class MetaDataREST {
     /**
      * 根据搜索条件返回表
      *
+     * 疑似废弃 2021-09-15
+     *
      * @return List<Table>
      */
     @POST
@@ -337,6 +339,8 @@ public class MetaDataREST {
 
     /**
      * 根据搜索条件返回列
+     *
+     * 疑似废弃 2021-09-15
      *
      * @return List<Column>
      */
