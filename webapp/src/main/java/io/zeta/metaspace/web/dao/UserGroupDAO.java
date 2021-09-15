@@ -285,7 +285,14 @@ public interface UserGroupDAO {
             ") item on category.guid=item.guid " +
             " where categoryType=#{categoryType} and tenantid=#{tenantId}" +
             "</script>")
-    public List<RoleModulesCategories.Category> getAllCategorysAndCount(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId,@Param("dbNames") List<String> dbNames);
+    List<RoleModulesCategories.Category> getAllCategorysAndCount(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId,@Param("dbNames") List<String> dbNames);
+
+    @Select("<script>" +
+            "select guid,description,name,parentcategoryguid,categorytype,level,safe,tenantid,createtime,creator,sort from category " +
+            " where categoryType=#{categoryType} and tenantid=#{tenantId}" +
+            "</script>")
+    List<RoleModulesCategories.Category> getAllCategorysByType(@Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
+
 
     @Select("select DISTINCT t2.guid, t2.name, t2.level, t2.qualifiedname, t2.parentcategoryguid, t2.upbrothercategoryguid, t2.downbrothercategoryguid,t2.description, t2.safe " +
             "FROM category_group_relation t1 JOIN category t2 ON t1.category_id = t2.guid\n" +
@@ -1061,18 +1068,6 @@ public interface UserGroupDAO {
             "    </foreach>" +
             "</script>")
     List<CategoryPrivilegeV2> getUserGroupsCategory(@Param("userGroupIds")List<String> userGroupIds, @Param("tenantId")String tenantId, @Param("categoryType") int categoryType,@Param("dbNames") List<String> dbNames);
-
-    @Select("<script> " +
-            " select *,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem from category_group_relation g join category c on c.guid=g.category_id " +
-            " where c.tenantid=#{tenantId} and c.categorytype=#{categoryType}" +
-            " and g.group_id in " +
-            " <foreach item='id' index='index' collection='userGroupIds'" +
-            "    open='(' separator=',' close=')'>" +
-            "    #{id}" +
-            " </foreach>" +
-            "</script>")
-    List<CategoryPrivilegeV2> getUserGroupsCategoryTechnical(@Param("userGroupIds") List<String> userGroupIds, @Param("tenantId") String tenantId, @Param("categoryType") int categoryType);
-
     //递归找父节点
     @Select("<script>WITH RECURSIVE categoryTree AS" +
             "(" +
@@ -1210,4 +1205,14 @@ public interface UserGroupDAO {
                 "</foreach>" +
             "</script>"})
     public int useCategoryPrivilege(@Param("userId") String userId,@Param("categoryIds") List<String> categoryIds,@Param("tenantId") String tenantId);
+
+    @Insert("<script>" +
+            "INSERT INTO category_group_relation(category_id,group_id,read,edit_category,edit_item) values " +
+            "    <foreach item='groupId' index='index' collection='userGroupIds' " +
+            "    open='(' separator='),(' close=')'>" +
+            "    #{categoryId},#{groupId},#{read},#{editCategory},#{editItem}" +
+            "    </foreach>" +
+            " ON conflict (group_id,category_id) DO NOTHING" +
+            "</script>")
+    void insertGroupRelations(@Param("userGroupIds") List<String> userGroupIds,@Param("categoryId")  String guid,@Param("read")  Boolean read, @Param("editCategory") Boolean editCategory, @Param("editItem") Boolean editItem);
 }

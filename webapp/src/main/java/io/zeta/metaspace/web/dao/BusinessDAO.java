@@ -71,7 +71,7 @@ public interface BusinessDAO {
     public List<TechnologyInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
 
     //查询业务信息关联的数据库表-过滤数据源
-    @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid,display_name as displayName,description,source_id AS sourceId from tableInfo where tableGuid in(select tableGuid from business2table where status='ACTIVE' and businessId=#{businessId}) AND (tableInfo.source_id in (SELECT source_id FROM data_source WHERE tenantid = #{tenantId}) or tableInfo.source_id = 'hive')")
+    @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid,display_name as displayName,description,source_id AS sourceId from tableInfo where tableGuid in(select tableGuid from business2table where status='ACTIVE' and businessId=#{businessId})")
     public List<TechnologyInfo.Table> queryTablesByBusinessIdAndTenantId(@Param("businessId") String businessId, @Param("tenantId") String tenantId);
 
     @Select({"<script>",

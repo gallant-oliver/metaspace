@@ -18,6 +18,7 @@ package org.apache.atlas.model.metadata;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 
 import java.sql.Timestamp;
 
@@ -34,10 +35,20 @@ public class CategoryEntityV2 {
     private String description;
     private String upBrotherCategoryGuid;
     private String downBrotherCategoryGuid;
+
+    public CategoryPrivateStatus getPrivateStatus() {
+        return privateStatus;
+    }
+
+    public void setPrivateStatus(CategoryPrivateStatus privateStatus) {
+        this.privateStatus = privateStatus;
+    }
+
     private String parentCategoryGuid;
     private Integer categoryType;
     private int level;
     private int status;
+    private CategoryPrivateStatus privateStatus;
     private boolean show;
     private String path;
     @JsonIgnore
@@ -56,6 +67,8 @@ public class CategoryEntityV2 {
     //编码
     private String code;
 
+    private Integer sort;
+
     public Timestamp getCreateTime() {
         return createTime;
     }
@@ -70,6 +83,14 @@ public class CategoryEntityV2 {
 
     public void setSafe(String safe) {
         this.safe = safe;
+    }
+
+    public Integer getSort() {
+        return sort;
+    }
+
+    public void setSort(Integer sort) {
+        this.sort = sort;
     }
 
     public CategoryEntityV2() { }
@@ -96,6 +117,23 @@ public class CategoryEntityV2 {
         this.safe=safe;
         this.createTime=createTime;
         this.code=code;
+    }
+
+    public CategoryEntityV2(String guid, String name, String description, String parentCategoryGuid, String upBrotherCategoryGuid, String downBrotherCategoryGuid, Integer categoryType, Integer level,String safe,Timestamp createTime,
+                            String code, Integer sort, CategoryPrivateStatus privateStatus) {
+        this.guid = guid;
+        this.name = name;
+        this.description = description;
+        this.upBrotherCategoryGuid = upBrotherCategoryGuid;
+        this.downBrotherCategoryGuid = downBrotherCategoryGuid;
+        this.parentCategoryGuid = parentCategoryGuid;
+        this.categoryType = categoryType;
+        this.level=level;
+        this.safe=safe;
+        this.createTime=createTime;
+        this.code=code;
+        this.sort=sort;
+        this.privateStatus=privateStatus;
     }
 
     public CategoryEntityV2(String guid, String name, String description, String parentCategoryGuid, String upBrotherCategoryGuid, String downBrotherCategoryGuid, Integer categoryType,

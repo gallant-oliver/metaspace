@@ -26,19 +26,20 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.SSOConfig;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.dto.indices.IndexFieldExport;
 import io.zeta.metaspace.model.dto.indices.IndexFieldNode;
+import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
-import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
+import io.zeta.metaspace.model.po.sourceinfo.SourceInfo;
 import io.zeta.metaspace.model.pojo.TableInfo;
-import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.role.Role;
@@ -55,7 +56,7 @@ import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
-import io.zeta.metaspace.web.dao.sourceinfo.TableDataSourceRelationDAO;
+import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
@@ -66,7 +67,7 @@ import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.repository.Constants;
-import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
+import org.apache.atlas.repository.store.graph.AtlasEntityStore;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
@@ -94,6 +95,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -153,10 +155,11 @@ public class DataManageService {
     @Autowired
     TenantDAO tenantDAO;
     @Autowired
-    private TableDataSourceRelationDAO tableDataSourceRelationDAO;
-
+    private CategoryDAO categoryDAO;
     @Autowired
-    private AtlasEntityStoreV2 atlasEntityStore;
+    private SourceInfoDAO sourceInfoDAO;
+    @Autowired
+    private AtlasEntityStore atlasEntityStore;
     int technicalType = 0;
     int dataStandType = 3;
     int technicalCount = 5;
@@ -209,6 +212,93 @@ public class DataManageService {
         }
     }
 
+    public List<CategoryPrivilege> getTechnicalCategory(String tenantId) {
+        List<CategoryPrivilege> categoryPrivilegeList = new ArrayList<>();
+        try {
+            User user = AdminUtils.getUserData();
+            List<String> userGroupIds = new ArrayList<>();
+            //获取用户组
+            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+            if (!CollectionUtils.isEmpty(userGroups)) {
+                userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            }
+            categoryPrivilegeList = categoryDAO.selectListByTenantIdAndStatus(tenantId, user.getUserId(), userGroupIds);
+            List<SourceInfo> sourceInfoList = sourceInfoDAO.selectCategoryListAndCount(tenantId);
+            Map<String, Integer> map = new HashMap<>();
+            if (!CollectionUtils.isEmpty(sourceInfoList)) {
+                map = sourceInfoList.stream().collect(Collectors.toMap(SourceInfo::getCategoryId, SourceInfo::getCount));
+            }
+            for (CategoryPrivilege categoryPrivilege : categoryPrivilegeList) {
+                categoryPrivilege.setCount(0);
+                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
+                privilege.setHide(false);
+                privilege.setAsh(false);
+                privilege.setEdit(true);
+                privilege.setAddSibling(true);
+                privilege.setAddChildren(true);
+                privilege.setDelete(true);
+                //源信息登记的，不能编辑，不能添加子目录，不能删除
+                if (map.keySet().contains(categoryPrivilege.getGuid())) {
+                    privilege.setEdit(false);
+                    privilege.setAddChildren(false);
+                    privilege.setDelete(false);
+                    categoryPrivilege.setCount(map.get(categoryPrivilege.getGuid()));
+                } else if (MetaspaceConfig.systemCategory.contains(categoryPrivilege.getGuid())) {
+                    privilege.setDelete(false);
+                    if (privilege.isEdit()){
+                        privilege.setEditSafe(true);
+                    }
+                    privilege.setEdit(false);
+                }
+                categoryPrivilege.setPrivilege(privilege);
+            }
+            //源信息登记的父级目录不能删除
+            updateParentCategory(categoryPrivilegeList);
+            removeNoParentCategory(categoryPrivilegeList);
+        } catch (AtlasBaseException e) {
+            LOG.error("getTechnicalCategory exception is {}", e);
+        }
+        return categoryPrivilegeList;
+    }
+
+    private void removeNoParentCategory(List<CategoryPrivilege> categoryPrivilegeList){
+        Map<String,String> map = categoryPrivilegeList.stream().collect(Collectors.toMap(CategoryPrivilege::getGuid, CategoryPrivilege::getName));
+        Iterator<CategoryPrivilege> iter = categoryPrivilegeList.iterator();
+        while (iter.hasNext()){
+            CategoryPrivilege categoryPrivilege = iter.next();
+            if(StringUtils.isNotBlank(categoryPrivilege.getParentCategoryGuid()) && !map.keySet().contains(categoryPrivilege.getGuid())){
+                iter.remove();
+            }
+        }
+    }
+
+    private void updateParentCategory(List<CategoryPrivilege> categoryPrivilegeList) {
+        for (CategoryPrivilege categoryPrivilege : categoryPrivilegeList) {
+            if (!categoryPrivilege.getPrivilege().isDelete()) {
+                if (StringUtils.isNotBlank(categoryPrivilege.getParentCategoryGuid())) {
+                    updateParentCategoryAttribute(categoryPrivilege.getParentCategoryGuid(), categoryPrivilegeList);
+                }
+            }
+        }
+    }
+
+    /**
+     * 递归设置父目录的删除属性
+     * @param parentGuid
+     * @param categoryPrivilegeList
+     */
+    private void updateParentCategoryAttribute(String parentGuid, List<CategoryPrivilege> categoryPrivilegeList) {
+        for (CategoryPrivilege privilege : categoryPrivilegeList) {
+            if (parentGuid.equals(privilege.getGuid())) {
+                privilege.getPrivilege().setDelete(false);
+                if (StringUtils.isNotBlank(privilege.getParentCategoryGuid())) {
+                    updateParentCategoryAttribute(privilege.getParentCategoryGuid(), categoryPrivilegeList);
+                }
+                break;
+            }
+        }
+    }
+
     //多租户
     public List<CategoryPrivilege> getAllByUserGroup(int type, String tenantId) throws AtlasBaseException {
         try {
@@ -223,6 +313,7 @@ public class DataManageService {
                 boolean isUserGroup = userGroups == null || userGroups.size() == 0;
                 //目录管理权限
                 boolean isAdmin = modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId() == module.getModuleId());
+                //无用户组并且有目录管理权限
                 if (isUserGroup && isAdmin) {
                     valueList = userGroupService.getAdminCategory(type, tenantId);
                 } else {
@@ -251,30 +342,48 @@ public class DataManageService {
         }
     }
 
-
     /**
-     * 根据用户组获取目录-技术目录
-     *
+     * 获取源信息登记时的技术目录
      * @param tenantId
      * @return
-     * @throws AtlasBaseException
      */
-    public List<CategoryPrivilege> getAllByUserGroupTechnical(String tenantId) throws AtlasBaseException {
+    public List<CategoryPrivilege> getSourceInfoTechnicalCategory(String tenantId) {
+        List<CategoryPrivilege> categoryPrivilegeList = new ArrayList<>();
         try {
-            List<Module> modules = tenantService.getModule(tenantId);
-            List<CategoryPrivilege> valueList = userGroupService.getUserCategoriesTechnical(tenantId);
-            if (modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId() == module.getModuleId())) {
-                for (CategoryPrivilege categoryPrivilege : valueList) {
-                    categoryPrivilege.getPrivilege().adminPrivilege(categoryPrivilege.getGuid());
+            User user = AdminUtils.getUserData();
+            List<String> userGroupIds = new ArrayList<>();
+            //获取用户组
+            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+            if (!CollectionUtils.isEmpty(userGroups)) {
+                userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            }
+            categoryPrivilegeList = categoryDAO.selectListByTenantIdAndStatus(tenantId, user.getUserId(), userGroupIds);
+            for (CategoryPrivilege categoryPrivilege : categoryPrivilegeList) {
+                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
+                privilege.setHide(false);
+                privilege.setAsh(false);
+                privilege.setEdit(false);
+                privilege.setAddSibling(false);
+                privilege.setAddChildren(false);
+                privilege.setDelete(false);
+                categoryPrivilege.setPrivilege(privilege);
+            }
+            List<String> strings = sourceInfoDAO.selectCategoryListByTenantId(tenantId);
+            if(CollectionUtils.isEmpty(strings)){
+                return categoryPrivilegeList;
+            }
+            Iterator<CategoryPrivilege> iter = categoryPrivilegeList.iterator();
+            while (iter.hasNext()){
+                CategoryPrivilege categoryPrivilege = iter.next();
+                if(strings.contains(categoryPrivilege.getGuid())){
+                    iter.remove();
                 }
             }
-            return valueList;
-        } catch (MyBatisSystemException e) {
-            LOG.error("数据库服务异常", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+            removeNoParentCategory(categoryPrivilegeList);
         } catch (AtlasBaseException e) {
-            throw e;
+            LOG.error("getTechnicalCategory exception is {}", e);
         }
+        return categoryPrivilegeList;
     }
 
     public List<CategoryPrivilegeV2> getUserCategories(String tenantId) throws AtlasBaseException {
@@ -376,6 +485,7 @@ public class DataManageService {
             entity.setGuid(newCategoryGuid);
             //name
             entity.setName(name);
+            entity.setPrivateStatus(info.getPrivateStatus()==null?CategoryPrivateStatus.PRIVATE:info.getPrivateStatus());
             //创建人
             entity.setCreator(creatorId);
             //createtime
@@ -423,6 +533,12 @@ public class DataManageService {
                 if (!Objects.isNull(oneLevelCategory)) {
                     oneLevelCategory.setCode(entity.getCode());
                 }
+                if (CategoryPrivateStatus.PRIVATE.equals(entity.getPrivateStatus())){
+                    List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(entity.getCreator(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+                    if (userGroupIds!=null && !userGroupIds.isEmpty()) {
+                        userGroupDAO.insertGroupRelations(userGroupIds, entity.getGuid(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
+                    }
+                }
                 return oneLevelCategory;
             }
             if (Objects.isNull(categoryDao.queryByGuidV2(currentCategoryGuid, tenantId))) {
@@ -436,6 +552,18 @@ public class DataManageService {
                 }
             }
             CategoryPrivilege.Privilege privilege = createOtherCategory(entity, type, info, tenantId);
+            String parentCategoryGuid = categoryDAO.getParentIdByGuid(currentCategoryGuid,tenantId);
+            int currentCategorySort = categoryDAO.getCategorySortById(currentCategoryGuid,tenantId);
+            if ("up".equals(info.getDirection())){
+                categoryDao.updateSort(currentCategorySort,parentCategoryGuid,tenantId);
+                entity.setSort(currentCategorySort);
+            }else if ("down".equals(info.getDirection())){
+                categoryDao.updateSort(currentCategorySort+1,parentCategoryGuid,tenantId);
+                entity.setSort(currentCategorySort+1);
+            }else{
+                int maxSort = categoryDao.getMaxSortByParentGuid(info.getParentCategoryGuid(), tenantId);
+                entity.setSort(maxSort);
+            }
             categoryDao.add(entity, tenantId);
             CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid, tenantId);
             //有目录权限管理模块权限，可以随意建目录
@@ -445,12 +573,21 @@ public class DataManageService {
                 boolean isAdmin = modules.contains(ModuleEnum.AUTHORIZATION.getId());
                 //无当前目录权限
                 boolean isPrivilege = !userGroupService.isPrivilegeCategory(creatorId, newCategoryGuid, tenantId, type);
-                boolean typeBoolean = type == 1 || type == 0;
+                boolean typeBoolean = type == 1 ;
                 if (isAdmin) {
                     privilege.adminPrivilege(returnEntity.getGuid());
                 }
                 if (typeBoolean && isAdmin && isPrivilege) {
                     privilege.setAsh(true);
+                }
+                if (type == 0){
+                    privilege.setAsh(false);
+                }
+            }
+            if (CategoryPrivateStatus.PRIVATE.equals(entity.getPrivateStatus())){
+                List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(entity.getCreator(), tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
+                if (userGroupIds!=null && !userGroupIds.isEmpty()) {
+                    userGroupDAO.insertGroupRelations(userGroupIds, entity.getGuid(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
                 }
             }
             if (type == 5) {
@@ -642,9 +779,7 @@ public class DataManageService {
         categoryIds.add(guid);
         this.removeSourceInfo(categoryIds,tenantId,guid);
         int item = 0;
-        if (type == 0) {
-            item = tableDataSourceRelationDAO.deleteByCategoryIdList(tenantId, categoryIds);
-        } else if (type == 1) {
+        if (type == 1) {
             List<String> businessIds = relationDao.getBusinessIdsByCategoryGuid(categoryIds);
             if (businessIds == null || businessIds.size() == 0) {
                 item = 0;
@@ -754,66 +889,6 @@ public class DataManageService {
     }
 
     /**
-     * 添加关联
-     * @param categoryGuid
-     * @param relations
-     * @param tenantId
-     * @throws AtlasBaseException
-     */
-    @Transactional(rollbackFor = Exception.class)
-    public void assignTablesToCategory(String categoryGuid, List<RelationEntityV2> relations, String tenantId) throws AtlasBaseException {
-        try {
-            if (CollectionUtils.isEmpty(relations)) {
-                return;
-            }
-            List<TableDataSourceRelationPO> tableDataSourceRelationPOList = new ArrayList<>();
-            for (RelationEntityV2 relationEntityV2 : relations) {
-                TableDataSourceRelationPO tableDataSourceRelationPO = new TableDataSourceRelationPO();
-                tableDataSourceRelationPO.setId(UUID.randomUUID().toString());
-                tableDataSourceRelationPO.setCategoryId(categoryGuid);
-                tableDataSourceRelationPO.setTableId(relationEntityV2.getTableGuid());
-                tableDataSourceRelationPO.setDataSourceId(relationEntityV2.getSourceId());
-                tableDataSourceRelationPO.setTenantId(tenantId);
-                tableDataSourceRelationPOList.add(tableDataSourceRelationPO);
-            }
-            tableDataSourceRelationDAO.insertBatch(tableDataSourceRelationPOList);
-        } catch (Exception e) {
-            LOG.error("添加关联失败{}", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "添加关联失败");
-        }
-    }
-
-
-
-    //1.4删除表关联，取消子目录表关联关系时数据表自动回到一级目录
-    @Transactional(rollbackFor = Exception.class)
-    public void removeRelationAssignmentFromTablesV2(List<RelationEntityV2> relationshipList, String tenantId) throws AtlasBaseException {
-        try {
-            if (Objects.nonNull(relationshipList)) {
-                for (RelationEntityV2 relationship : relationshipList) {
-                    String relationshipGuid = relationship.getRelationshipGuid();
-                    RelationEntityV2 relationInfo = relationDao.getRelationInfoByGuid(relationshipGuid);
-                    relationDao.delete(relationInfo.getRelationshipGuid());
-                    String topGuid = relationDao.getTopGuidByGuid(relationInfo.getCategoryGuid(), tenantId);
-                    //当贴源层没有关联该表时
-                    if (relationDao.ifRelationExists(topGuid, relationInfo.getTableGuid()) == 0) {
-                        TableRelation tableRelation = new TableRelation();
-                        tableRelation.setRelationshipGuid(UUID.randomUUID().toString());
-                        tableRelation.setCategoryGuid(topGuid);
-                        tableRelation.setTableGuid(relationInfo.getTableGuid());
-                        tableRelation.setGenerateTime(DateUtils.getNow());
-                        tableRelation.setTenantId(tenantId);
-                        relationDao.addRelation(tableRelation);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            LOG.error("取消关联失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "取消关联失败");
-        }
-    }
-
-    /**
      * @param categoryGuid
      * @param query
      * @return
@@ -825,12 +900,7 @@ public class DataManageService {
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
             List<RelationEntityV2> relations = new ArrayList<>();
-            //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                relations = relationDao.queryRelationByCategoryGuid(categoryGuid, limit, offset);
-            } else {
-                relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset, tenantId);
-            }
+            relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset, tenantId);
             if(!CollectionUtils.isEmpty(relations)){
                 for (RelationEntityV2 entity : relations) {
                     String tableGuid = entity.getTableGuid();
@@ -872,14 +942,10 @@ public class DataManageService {
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
             List<RelationEntityV2> relations = new ArrayList<>();
             int totalNum = 0;
-            //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                relations = relationDao.queryRelationByCategoryGuidFilter(categoryGuid, limit, offset);
-            } else {
-                User user = AdminUtils.getUserData();
-                List<String> databases = tenantService.getDatabase(tenantId);
-                if (databases != null && databases.size() != 0)
-                    relations = relationDao.queryRelationByCategoryGuidFilterV2(categoryGuid, tenantId, limit, offset, databases);
+            User user = AdminUtils.getUserData();
+            List<String> databases = tenantService.getDatabase(tenantId);
+            if (databases != null && databases.size() != 0) {
+                relations = relationDao.queryRelationByCategoryGuidFilterV2(categoryGuid, tenantId, limit, offset, databases);
             }
             if (relations.size() != 0) {
                 totalNum = relations.get(0).getTotal();
@@ -952,30 +1018,7 @@ public class DataManageService {
                 tableName = tableName.replaceAll("%", "/%").replaceAll("_", "/_");
             if (StringUtils.isNotEmpty(tag))
                 tag = tag.replaceAll("%", "/%").replaceAll("_", "/_");
-            //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
-                if (roles.stream().allMatch(role -> role.getStatus() == 0)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-                }
-                if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))) {
-                    categoryIds = CategoryRelationUtils.getPermissionCategoryList(SystemRole.ADMIN.getCode(), type);
-                } else {
-                    for (Role role : roles) {
-                        if (role.getStatus() == 0) {
-                            continue;
-                        }
-                        String roleId = role.getRoleId();
-                        List<String> category = CategoryRelationUtils.getPermissionCategoryList(roleId, type);
-                        for (String categoryId : category) {
-                            if (!categoryIds.contains(categoryId)) {
-                                categoryIds.add(categoryId);
-                            }
-                        }
-                    }
-                }
-                list = categoryIds.size() != 0 ? new ArrayList<>() : relationDao.queryByTableName(tableName, tag, categoryIds, limit, offset);
-            } else {
+
                 List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
                 for (UserGroup userGroup : userGroups) {
                     String userGroupId = userGroup.getId();
@@ -990,7 +1033,6 @@ public class DataManageService {
 
                 if (databases != null && databases.size() != 0 && categoryIds.size() != 0)
                     list = relationDao.queryByTableNameV2(tableName, tag, categoryIds, limit, offset, databases, tenantId);
-            }
             //tag
             list.forEach(entity -> {
                 List<Tag> tableTageList = tableTagDAO.getTable2Tag(entity.getTableGuid(), tenantId);
@@ -1623,6 +1665,9 @@ public class DataManageService {
             if(null != definition&&"ACTIVE".equalsIgnoreCase(dbInfo.getStatus())){
                 String dataSourceId = definition.getDataSourceId();
                 DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(dataSourceId);
+                if(dataSourceInfo == null || dbInfo == null){
+                    return;
+                }
                 String sourceDbRelationId = dbDAO.getSourceDbRelationId(dbInfo.getDatabaseId(), dataSourceInfo.getSourceId());
                 if(null == sourceDbRelationId){
                     dbDAO.insertSourceDbRelation(UUID.randomUUID().toString(), dbInfo.getDatabaseId(), dataSourceInfo.getSourceId());
@@ -1749,8 +1794,6 @@ public class DataManageService {
         tableDAO.deleteTableInfo(tableGuid);
         //owner
         tableDAO.deleteTableRelatedOwner(tableGuid);
-        //关联关系
-        relationDAO.deleteByTableGuid(tableGuid);
         //business2table
         businessDAO.deleteBusinessRelationByTableGuid(tableGuid);
         //表标签
@@ -1859,10 +1902,6 @@ public class DataManageService {
 
     public String getCategoryNameById(String guid, String tenantId) {
         return categoryDao.getCategoryNameById(guid, tenantId);
-    }
-
-    public String getCategoryNameByRelationId(String guid, String tenantId) {
-        return categoryDao.getCategoryNameByRelationId(guid, tenantId);
     }
 
     public void sendMetadataChangedMail(String tableGuid) throws AtlasBaseException {
@@ -2197,6 +2236,14 @@ public class DataManageService {
         if (parentPrivilege.size() != 0 && categoryEntityV2s != null) {
             userGroupDAO.addUserGroupCategoryPrivileges(parentPrivilege, categoryEntityV2s);
         }
+        Map<String,List<CategoryEntityV2>> map=categoryEntityV2s.stream().collect(Collectors.groupingBy(CategoryEntityV2::getParentCategoryGuid));
+        map.forEach((guid,categoryList)->{
+            AtomicInteger maxSort = new AtomicInteger(categoryDao.getMaxSortByParentGuid(guid, tenantId));
+            categoryList.forEach(category->{
+                category.setSort(maxSort.get());
+                maxSort.getAndIncrement();
+            });
+        });
         categoryDao.addAll(categoryEntityV2s, tenantId);
         if (type == 3 || type == 4) {
             privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
@@ -2244,11 +2291,9 @@ public class DataManageService {
         if (editCategory) {
             privilege.setAddSibling(true);
             privilege.setDelete(true);
-            privilege.setMove(true);
         } else {
             privilege.setAddSibling(false);
             privilege.setDelete(false);
-            privilege.setMove(false);
         }
         if (editCategory) {
             privilege.setAddChildren(true);
@@ -2861,6 +2906,14 @@ public class DataManageService {
         List<CategoryEntityV2> systemCategory = new ArrayList<>();
         try {
             categories = file2AllData(fileInputStream, type, systemCategory);
+            Map<String,List<CategoryEntityV2>> map=categories.stream().collect(Collectors.groupingBy(CategoryEntityV2::getParentCategoryGuid));
+            map.forEach((guid,categoryList)->{
+                AtomicInteger maxSort = new AtomicInteger(categoryDao.getMaxSortByParentGuid(guid, tenantId));
+                categoryList.forEach(category->{
+                    category.setSort(maxSort.get());
+                    maxSort.getAndIncrement();
+                });
+            });
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {

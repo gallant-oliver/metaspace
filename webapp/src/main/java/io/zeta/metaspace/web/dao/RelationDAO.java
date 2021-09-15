@@ -31,20 +31,6 @@ import java.util.List;
  * @date 2018/11/21 10:59
  */
 public interface RelationDAO {
-
-    @Delete("delete from table_relation where relationshipGuid=#{relationshipGuid}")
-    public int delete(@Param("relationshipGuid") String guid);
-
-    @Select({"<script>",
-            " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid,tableInfo.source_id as sourceId, tableInfo.status,table_relation.generateTime,tableInfo.description,data_source.source_name sourceName",
-            " from table_relation,tableInfo,data_source where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and tableinfo.source_id = data_source.source_id order by tableInfo.status,table_relation.generateTime desc, tableinfo.tablename",
-            " <if test='limit!= -1'>",
-            " limit #{limit}",
-            " </if>",
-            " offset #{offset}",
-            " </script>"})
-    public List<RelationEntityV2> queryRelationByCategoryGuid(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
-
     @Select({"<script>",
             "SELECT DISTINCT\n" +
                     " ti.tableGuid,\n" +
@@ -115,18 +101,68 @@ public interface RelationDAO {
             " </script>"})
     public List<RelationEntityV2> queryRelationByCategoryGuidFilter(@Param("categoryGuid") String categoryGuid, @Param("limit") int limit, @Param("offset") int offset);
 
+//    @Select({"<script>",
+//            " select COUNT( * ) OVER ( ) total,A.relationshipGuid,A.categoryGuid,A.tableName,A.dbName,A.tableGuid,A.status,A.description,A.source_name AS sourceName ",
+//            " from ( SELECT table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid,tableInfo.status, tableInfo.description,data_source.source_name ",
+//            " FROM table_relation,tableInfo,data_source WHERE table_relation.categoryGuid = #{categoryGuid} AND tableinfo.source_id = data_source.source_id AND tableInfo.tableGuid = table_relation.tableGuid ",
+//            " AND status != 'DELETED' AND data_source.tenantid = #{tenantId} UNION SELECT table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid,tableInfo.status,",
+//            " tableInfo.description, 'hive' as source_name  FROM table_relation,tableInfo WHERE table_relation.categoryGuid = #{categoryGuid} AND tableInfo.tableGuid = table_relation.tableGuid ",
+//            " AND status != 'DELETED' AND tableinfo.dbname in",
+//            " <foreach item='item' index='index' collection='databases' separator=',' open='(' close=')'>",
+//            " #{item}",
+//            " </foreach>",
+//            " AND tableinfo.source_id = 'hive'",
+//            " ) AS A ORDER BY A.tablename",
+//            " <if test='limit!= -1'>",
+//            " limit #{limit}",
+//            " </if>",
+//            " offset #{offset}",
+//            " </script>"})
     @Select({"<script>",
-            " select COUNT( * ) OVER ( ) total,A.relationshipGuid,A.categoryGuid,A.tableName,A.dbName,A.tableGuid,A.status,A.description,A.source_name AS sourceName ",
-            " from ( SELECT table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid,tableInfo.status, tableInfo.description,data_source.source_name ",
-            " FROM table_relation,tableInfo,data_source WHERE table_relation.categoryGuid = #{categoryGuid} AND tableinfo.source_id = data_source.source_id AND tableInfo.tableGuid = table_relation.tableGuid ",
-            " AND status != 'DELETED' AND data_source.tenantid = #{tenantId} UNION SELECT table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid,tableInfo.status,",
-            " tableInfo.description, 'hive' as source_name  FROM table_relation,tableInfo WHERE table_relation.categoryGuid = #{categoryGuid} AND tableInfo.tableGuid = table_relation.tableGuid ",
-            " AND status != 'DELETED' AND tableinfo.dbname in",
-            " <foreach item='item' index='index' collection='databases' separator=',' open='(' close=')'>",
-            " #{item}",
-            " </foreach>",
-            " AND tableinfo.source_id = 'hive'",
-            " ) AS A ORDER BY A.tablename",
+            "SELECT DISTINCT\n" +
+                    " ti.tableGuid,\n" +
+                    " COUNT ( * ) OVER () total,\n" +
+                    " COALESCE(tdsr.data_source_id,(SELECT data_source_id FROM source_info WHERE \"version\" = 0 AND category_id = #{categoryGuid} AND tenant_id = #{tenantId} ),'ID') AS sourceId,\n" +
+                    "\n" +
+                    " COALESCE (\n" +
+                    "  ( SELECT source_name FROM data_source WHERE source_id = tdsr.data_source_id ),\n" +
+                    "  (\n" +
+                    "  SELECT\n" +
+                    "   ds.source_name \n" +
+                    "  FROM\n" +
+                    "   source_info si\n" +
+                    "   LEFT JOIN data_source ds ON si.data_source_id = ds.source_id \n" +
+                    "  WHERE\n" +
+                    "   VERSION = 0 \n" +
+                    "   AND category_id = #{categoryGuid} \n" +
+                    "   AND tenant_id = #{tenantId} \n" +
+                    "  ),\n" +
+                    "  'hive' \n" +
+                    " ) AS sourceName," +
+                    " (SELECT id FROM source_info WHERE \"version\" = 0 AND category_id = #{categoryGuid} AND tenant_id = #{tenantId} ) AS sourceInfoId, " +
+                    " tdsr.category_id AS categoryGuid,\n" +
+                    " ti.tableName,\n" +
+                    " ti.dbName,\n" +
+                    " ti.databaseguid AS dbId,\n" +
+                    " ti.tableGuid,\n" +
+                    " ti.status,\n" +
+                    " tdsr.update_time AS generateTime,\n" +
+                    " ti.description \n" +
+                    "FROM\n" +
+                    " tableinfo ti\n" +
+                    " LEFT JOIN table_data_source_relation tdsr ON tdsr.table_id = ti.tableGuid \n" +
+                    "WHERE\n" +
+                    " ((\n" +
+                    "   tdsr.category_id = #{categoryGuid} \n" +
+                    "   AND tdsr.tenant_id = #{tenantId} \n" +
+                    "   ) \n" +
+                    "  OR ti.databaseguid = ( SELECT db_guid FROM db_category_relation dcr WHERE dcr.category_id = #{categoryGuid} AND dcr.tenant_id = #{tenantId} ) \n" +
+                    " ) \n" +
+                    " AND ti.status = 'ACTIVE' \n" +
+                    "ORDER BY\n" +
+                    " ti.status,\n" +
+                    " tdsr.update_time DESC,\n" +
+                    " ti.tablename",
             " <if test='limit!= -1'>",
             " limit #{limit}",
             " </if>",
@@ -229,41 +265,55 @@ public interface RelationDAO {
     public List<RelationEntityV2> queryByTableName(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset);
 
     @Select({"<script>",
-            " select tableInfo.tablename,",
-            " tableInfo.dbname,",
-            " tableInfo.tableguid,",
-            " tableInfo.status,",
-            " tableInfo.createtime,",
-            " tableInfo.dataowner,",
-            " tableinfo.description,",
-            " table_relation.relationshipguid,",
-            " table_relation.categoryguid,",
-            " case tableInfo.source_id when 'hive' then 'hive' else data_source.source_name end as source_name,",
-            " count(*)over() total from table_relation",
-            " join tableInfo on",
-            " table_relation.tableGuid=tableInfo.tableGuid",
-            " left join data_source ",
-            " on tableInfo.source_id = data_source.source_id",
-            " where",
-            " tableInfo.status = 'ACTIVE' ",
-            " and categoryGuid in",
-            " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>",
-            " #{categoryGuid}",
-            " </foreach>",
-            " and ( tableinfo.dbname in ",
-            " <foreach item='item' index='index' collection='databases'",
-            " open='(' separator=',' close=')'>",
-            " #{item}",
-            " </foreach> or tableinfo.source_id != 'hive') ",
+            " SELECT\n" +
+                    "   tableInfo.tablename,\n" +
+                    "   tableInfo.dbname,\n" +
+                    "   tableInfo.tableguid,\n" +
+                    "   tableInfo.status,\n" +
+                    "   tableInfo.createtime,\n" +
+                    "   tableInfo.dataowner,\n" +
+                    "   tableInfo.description,\n" +
+                    "   data_source.source_type AS dataSourceType,\n" +
+                    "   source_info.category_id AS categoryGuid,\n" +
+                    "CASE\n" +
+                    "      data_source.source_type\n" +
+                    "      WHEN 'ORACLE' THEN\n" +
+                    "      data_source.database ELSE '' \n" +
+                    "   END AS databaseInstance,\n" +
+                    "CASE\n" +
+                    "      tableInfo.source_id \n" +
+                    "      WHEN 'hive' THEN\n" +
+                    "      'hive' ELSE data_source.source_name \n" +
+                    "   END AS source_name,\n" +
+                    "   COUNT ( * ) OVER () total \n" +
+                    "FROM\n" +
+                    "   tableInfo " +
+                    "   INNER JOIN source_info ON tableinfo.databaseguid = source_info.database_id\n" +
+                    "   INNER JOIN data_source ON source_info.data_source_id = data_source.source_id \n" +
+                    "WHERE\n" +
+                    "   tableInfo.status = 'ACTIVE' \n" +
+                    "   AND (\n" +
+                    "       ( tableinfo.dbname IN" +
+                    "         <foreach item='item' index='index' collection='databases' open='(' separator=',' close=')'>",
+                    "           #{item}",
+                    "        </foreach>"+
+                            " OR tableinfo.source_id != 'hive' ) \n" +
+                    "      OR (\n" +
+                    "      tableinfo.databaseguid = ( SELECT db_guid FROM db_category_relation dcr WHERE dcr.category_id IN" +
+                            " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>",
+                            " #{categoryGuid}",
+                            " </foreach>",
+                            " AND dcr.tenant_id = #{tenantId} )) \n" +
+                    "   ) " +
+                                    "   AND source_info.version = 0",
             " <if test=\"tableName != null and tableName!=''\">",
             " and",
             " tableInfo.tableName like concat('%',#{tableName},'%') ESCAPE '/'",
             " </if>",
             " <if test=\"tagName != null and tagName!=''\">",
             " and",
-            " table_relation.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like concat('%',#{tagName},'%') ESCAPE '/') ",
+            " tableInfo.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like concat('%',#{tagName},'%') ESCAPE '/') ",
             " </if>",
-            " and ( tableinfo.source_id in (select source_id from data_source where tenantid = #{tenantId}) or tableinfo.source_id = 'hive')",
             " order by tableinfo.tablename ",
             " <if test='limit!= -1'>",
             " limit #{limit}",
@@ -354,17 +404,6 @@ public interface RelationDAO {
             " </script>"})
     public List<RelationEntityV2> queryByTableNameFilterV2(@Param("tenantId") String tenantId, @Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset, @Param("databases") List<String> databases);
 
-    @Select("select count(*) from table_relation where categoryGuid=#{categoryGuid}")
-    public int queryRelationNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);
-
-    @Update("<script>" +
-            "update table_relation set categoryGuid=#{newCategoryId} where categoryGuid in " +
-            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
-            " #{id}" +
-            " </foreach>" +
-            "</script>")
-    public int updateRelationByCategoryGuid(@Param("ids") List<String> categoryGuids, @Param("newCategoryId") String newCategoryId);
-
     @Select("select count(*) from business_relation where categoryGuid=#{categoryGuid}")
     public int queryBusinessRelationNumByCategoryGuid(@Param("categoryGuid") String categoryGuid);
 
@@ -376,7 +415,6 @@ public interface RelationDAO {
             "</script>")
     public List<String> getBusinessIdsByCategoryGuid(@Param("ids") List<String> categoryGuids);
 
-    //@Update("update table_relation set status=#{status} where tableGuid=#{tableGuid}")
     @Update("update tableInfo set status=#{status} where tableGuid=#{tableGuid}")
     public int updateTableStatus(@Param("tableGuid") String tableGuid, @Param("status") String status);
 
@@ -421,20 +459,6 @@ public interface RelationDAO {
             " </script>"})
     public int countDbTables(@Param("databaseGuid") String databaseId, @Param("query") String query);
 
-    @Delete("delete from table_relation where tableguid=#{tableGuid}")
-    public int deleteByTableGuid(@Param("tableGuid") String tableGuid);
-
-    @Update(" <script>" +
-            " update table_relation set categoryGuid=#{categoryGuid},generateTime=#{time} where tableguid in " +
-            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
-            " #{id}" +
-            " </foreach>" +
-            " </script>")
-    public int updateByTableGuids(@Param("ids") List<String> ids, @Param("categoryGuid") String categoryGuid, @Param("time") String time);
-
-    @Insert("insert into table_relation values (#{item.relationshipGuid},#{item.categoryGuid},#{item.tableGuid},#{item.generateTime}) ")
-    public int addRelation(@Param("item") TableRelation tableRelation);
-
     @Select("<script>WITH RECURSIVE categoryTree AS" +
             "(" +
             "    SELECT * from category where " +
@@ -445,15 +469,4 @@ public interface RelationDAO {
             ")" +
             "SELECT guid from categoryTree where parentcategoryguid is null or parentcategoryguid =''</script>")
     public String getTopGuidByGuid(@Param("guid") String guid, @Param("tenantId") String tenantId);
-
-    @Select("select * from table_relation where relationshipguid=#{guid}")
-    public RelationEntityV2 getRelationInfoByGuid(String guid);
-
-    //判断关联是否已存在
-    @Select("select count(1) from table_relation where categoryguid=#{categoryGuid} and tableguid=#{tableGuid}")
-    public int ifRelationExists(@Param("categoryGuid") String categoryGuid, @Param("tableGuid") String tableGuid);
-
-    @Select({" select tableGuid from table_relation where categoryGuid=#{categoryGuid}"})
-    public List<String> getAllTableGuidByCategoryGuid(@Param("categoryGuid") String categoryGuid);
-
 }

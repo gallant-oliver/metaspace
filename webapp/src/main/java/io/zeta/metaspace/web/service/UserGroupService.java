@@ -16,6 +16,7 @@ package io.zeta.metaspace.web.service;
 
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -36,12 +37,15 @@ import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
+import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.hadoop.hbase.client.Admin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,6 +73,8 @@ public class UserGroupService {
     CategoryDAO categoryDAO;
     @Autowired
     RelationDAO relationDAO;
+    @Autowired
+    private SourceInfoDAO sourceInfoDAO;
     private static final Logger LOG = LoggerFactory.getLogger(UserGroupService.class);
     public PageResult<UserGroupListAndSearchResult> getUserGroupListAndSearch(String tenantId, int offset, int limit, String sortBy, String order, String query) throws AtlasBaseException {
         PageResult<UserGroupListAndSearchResult> commonResult = new PageResult<>();
@@ -600,6 +606,22 @@ public class UserGroupService {
             }
         }
         addOtherCategory(categorytype, userCategorys,tenantId);
+        return userCategorys;
+    }
+
+    public List<CategoryPrivilege> getAdminCategoryByType(Integer categoryType, String tenantId) throws AtlasBaseException {
+        List<CategoryPrivilege> userCategorys = new ArrayList<>();
+        List<RoleModulesCategories.Category> allCategorys = userGroupDAO.getAllCategorysByType(categoryType, tenantId);
+        CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, true, true, true, false, true, false, false, true, false);
+        addPrivilege(userCategorys, allCategorys, privilege, categoryType);
+        List<CategoryPrivilege> categoryPrivilegeList = new ArrayList<>();
+        for (CategoryPrivilege category : userCategorys) {
+            category.getPrivilege().setAsh(false);
+            if (category.getGuid().equals("index_field_default")) {
+                categoryPrivilegeList.add(category);
+            }
+        }
+        userCategorys.removeAll(categoryPrivilegeList);
         return userCategorys;
     }
 
@@ -1370,57 +1392,6 @@ public class UserGroupService {
         return userMap;
     }
 
-
-    /**
-     * 获取用户权限目录列表-技术目录
-     *
-     * @param tenantId
-     * @return
-     * @throws AtlasBaseException
-     */
-    public Map<String, CategoryPrivilegeV2> getUserPrivilegeCategoryTechnical(String tenantId) throws AtlasBaseException {
-        Map<String, CategoryPrivilegeV2> userMap = new HashMap<>();
-        User user = AdminUtils.getUserData();
-        //获取用户组
-        List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(userGroupIds)) {
-            return userMap;
-        }
-        //获取用户组对应的权限目录
-        List<CategoryPrivilegeV2> userCategories = userGroupDAO.getUserGroupsCategoryTechnical(userGroupIds, tenantId, 0);
-        List<String> categoryIds = userCategories.stream().map(category -> category.getGuid()).collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(categoryIds)) {
-            return userMap;
-        }
-
-        //获取父目录并配置权限
-        List<CategoryPrivilegeV2> parentCategory = userGroupDAO.getParentCategory(categoryIds, 0, tenantId);
-        parentCategory.forEach(categoryPrivilegeV2 -> {
-            categoryPrivilegeV2.setRead(false);
-            categoryPrivilegeV2.setEditItem(false);
-            categoryPrivilegeV2.setEditCategory(false);
-        });
-        userCategories.addAll(parentCategory);
-        //遍历并合并目录权限
-        for (CategoryPrivilegeV2 userCategory : userCategories) {
-            if (userMap.containsKey(userCategory.getGuid())) {
-                CategoryPrivilegeV2 categoryPrivilegeV2 = userMap.get(userCategory.getGuid());
-                if (userCategory.getRead() != null && userCategory.getRead()) {
-                    categoryPrivilegeV2.setRead(true);
-                }
-                if (userCategory.getEditCategory() != null && userCategory.getEditCategory()) {
-                    categoryPrivilegeV2.setEditCategory(true);
-                }
-                if (userCategory.getEditItem() != null && userCategory.getEditItem()) {
-                    categoryPrivilegeV2.setEditItem(true);
-                }
-            } else {
-                userMap.put(userCategory.getGuid(), userCategory);
-            }
-        }
-        return userMap;
-    }
-
     /**
      * 移除用户组
      * @param categoryIds
@@ -1488,11 +1459,9 @@ public class UserGroupService {
             if (parentCategory!=null&&parentCategory.getEditCategory()){
                 privilege.setAddSibling(true);
                 privilege.setDelete(true);
-                privilege.setMove(true);
             }else{
                 privilege.setAddSibling(false);
                 privilege.setDelete(false);
-                privilege.setMove(false);
             }
             if (category.getEditCategory()){
                 privilege.setAddChildren(true);
@@ -1525,70 +1494,6 @@ public class UserGroupService {
             userCategorys.add(categoryPrivilege);
         }
         addOtherCategory(categoryType, userCategorys,tenantId);
-        return userCategorys;
-    }
-
-
-    /**
-     * 获取用户目录权限-技术目录
-     * @param tenantId
-     * @return
-     * @throws AtlasBaseException
-     */
-    public List<CategoryPrivilege> getUserCategoriesTechnical(String tenantId) throws AtlasBaseException {
-        List<CategoryPrivilege> userCategorys = new ArrayList<>();
-        Map<String, CategoryPrivilegeV2> userCategoryMap = getUserPrivilegeCategoryTechnical(tenantId);
-        for (CategoryPrivilegeV2 category : userCategoryMap.values()) {
-            CategoryPrivilege categoryPrivilege = new CategoryPrivilege(category);
-            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
-            if (category.getRead()){
-                privilege.setHide(false);
-                privilege.setAsh(false);
-            }else{
-                privilege.setHide(false);
-                privilege.setAsh(true);
-            }
-            CategoryPrivilegeV2 parentCategory = userCategoryMap.get(category.getParentCategoryGuid());
-            if (parentCategory!=null&&parentCategory.getEditCategory()){
-                privilege.setAddSibling(true);
-                privilege.setDelete(true);
-                privilege.setMove(true);
-            }else{
-                privilege.setAddSibling(false);
-                privilege.setDelete(false);
-                privilege.setMove(false);
-            }
-            if (category.getEditCategory()){
-                privilege.setAddChildren(true);
-                privilege.setEdit(true);
-            }else{
-                privilege.setAddChildren(false);
-                privilege.setEdit(false);
-            }
-            if (category.getEditItem()){
-                privilege.setCreateRelation(true);
-                privilege.setDeleteRelation(true);
-                privilege.setAddOwner(true);
-            }else{
-                privilege.setCreateRelation(false);
-                privilege.setDeleteRelation(false);
-                privilege.setAddOwner(false);
-            }
-            if (MetaspaceConfig.systemCategory.contains(category.getGuid())) {
-                privilege.setDelete(false);
-                if (privilege.isEdit()){
-                    privilege.setEditSafe(true);
-                }
-                privilege.setEdit(false);
-            }
-            //技术目录一级目录不允许删关联
-            if (category.getLevel() == 1) {
-                privilege.setDeleteRelation(false);
-            }
-            categoryPrivilege.setPrivilege(privilege);
-            userCategorys.add(categoryPrivilege);
-        }
-        addOtherCategory(0, userCategorys, tenantId);
         return userCategorys;
     }
 
@@ -1700,5 +1605,13 @@ public class UserGroupService {
         pageResult.setCurrentSize(userGroupByCategory.size());
         pageResult.setTotalSize(userGroupByCategory.get(0).getTotalSize());
         return pageResult;
+    }
+
+    public Result getUserGroupsByUserId(String tenantId,String userId) {
+        if (userId==null ||userId.length() ==0){
+            userId=AdminUtils.getUserData().getUserId();
+        }
+        List<UserGroup> userGroupIds = userGroupDAO.getuserGroupByUsersId(userId,tenantId);
+        return ReturnUtil.success(userGroupIds.stream().map(UserGroup::getId).collect(Collectors.toList()));
     }
 }

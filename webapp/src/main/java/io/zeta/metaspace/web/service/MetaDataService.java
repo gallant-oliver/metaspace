@@ -212,12 +212,8 @@ public class MetaDataService {
     }
 
     public boolean isHiveTable(String guid) {
-        AtlasEntity entity = getEntityById(guid);
-        if (Objects.isNull(entity)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到表");
-        }
-        String type = entity.getTypeName();
-        if ("hive_table".equalsIgnoreCase(type)) {
+        String type = tableDAO.selectTypeByGuid(guid);
+        if("hive".equalsIgnoreCase(type)){
             return true;
         }
         return false;
@@ -1923,8 +1919,6 @@ public class MetaDataService {
                 tableDAO.deleteTableInfo(tableGuid);
                 //owner
                 tableDAO.deleteTableRelatedOwner(tableGuid);
-                //关联关系
-                relationDAO.deleteByTableGuid(tableGuid);
                 //business2table
                 businessDAO.deleteBusinessRelationByTableGuid(tableGuid);
                 //表标签

@@ -55,11 +55,21 @@ public class RoleModulesCategories {
         private String description;
         private int level;
         private String safe;
+        private String creator;
         @JsonIgnore
         private Timestamp createTime;
         private String qualifiedName;
         private int count;
         private String code;
+        private Integer sort;
+
+        public Integer getSort() {
+            return sort;
+        }
+
+        public void setSort(Integer sort) {
+            this.sort = sort;
+        }
 
         public String getCode() {
             return code;
@@ -107,6 +117,14 @@ public class RoleModulesCategories {
 
         public void setLevel(int level) {
             this.level = level;
+        }
+
+        public String getCreator() {
+            return creator;
+        }
+
+        public void setCreator(String creator) {
+            this.creator = creator;
         }
 
         public Category() {

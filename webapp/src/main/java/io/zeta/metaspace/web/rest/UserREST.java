@@ -132,5 +132,12 @@ public class UserREST {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "用户组列表及搜索失败");
         }
     }
-
+    @GET
+    @Path("currentUserGroup")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getUserGroupListAndSearch(
+            @HeaderParam("tenantId") String tenantId,@QueryParam("userId")String userId) throws AtlasBaseException {
+            return userGroupService.getUserGroupsByUserId(tenantId,userId);
+    }
 }

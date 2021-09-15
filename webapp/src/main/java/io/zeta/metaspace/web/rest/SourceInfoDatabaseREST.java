@@ -634,6 +634,6 @@ public class SourceInfoDatabaseREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<CategoryPrivilege> getCategories(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        return dataManageService.getAllByUserGroupTechnical(tenantId);
+        return dataManageService.getSourceInfoTechnicalCategory(tenantId);
     }
 }
