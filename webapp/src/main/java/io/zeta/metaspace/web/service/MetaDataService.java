@@ -22,6 +22,7 @@ import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.bo.DatabaseInfoBO;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
+import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
@@ -31,18 +32,14 @@ import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
-import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.MetadataDeriveTableInfo;
-import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
-import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.CustomStringUtils;
-import io.zeta.metaspace.web.util.DateUtils;
-import io.zeta.metaspace.web.util.HivePermissionUtil;
+import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -133,7 +130,7 @@ public class MetaDataService {
     @Autowired
     DatabaseInfoDAO databaseInfoDAO;
     @Autowired
-    private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao;
+    private SourceInfoDatabaseService sourceInfoDatabaseService;
 
 
     private String errorMessage = "";
@@ -2717,6 +2714,15 @@ public class MetaDataService {
         //筛选获取最新的记录
         Optional<DatabaseInfoBO> databaseInfoOpt =  currentSourceInfoList.stream().sorted(Comparator.comparing(DatabaseInfoBO::getVersion).reversed()).findFirst();
         if(databaseInfoOpt.isPresent()){
+            DatabaseInfoBO databaseInfoBO = databaseInfoOpt.get();
+            if (Boolean.FALSE.equals(ParamUtil.isNull(databaseInfoBO))&&Boolean.TRUE.equals(ParamUtil.isNull(databaseInfoBO.getCategoryId()))){
+                databaseInfoBO.setCategoryId(databaseInfoDAO.getParentCategoryIdById(databaseInfoBO.getId()));
+            }
+            if ("hive".equals(databaseInfoBO.getDataSourceId())){
+                databaseInfoBO.setDataSourceName("hive");
+            }
+            databaseInfoBO.setCategoryName(databaseInfoBO.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
+                    sourceInfoDatabaseService.getActiveInfoAllPath(databaseInfoBO.getCategoryId(),tenantId):sourceInfoDatabaseService.getAllPath(databaseInfoBO.getId(),tenantId));
             return databaseInfoOpt.get();
         }
         return null;

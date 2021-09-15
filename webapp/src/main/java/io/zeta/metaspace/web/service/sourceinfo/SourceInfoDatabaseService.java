@@ -564,7 +564,7 @@ public class SourceInfoDatabaseService implements Approvable {
         }
     }
 
-    private String getActiveInfoAllPath(String categoryId,String tenantId){
+    public String getActiveInfoAllPath(String categoryId,String tenantId){
         String parentCategoryId = categoryId;
         StringBuilder sb = new StringBuilder("/");
         while (Boolean.FALSE.equals(ParamUtil.isNull(parentCategoryId))){
@@ -577,7 +577,7 @@ public class SourceInfoDatabaseService implements Approvable {
         }
         return sb.toString();
     }
-    private String getAllPath(String sourceInfoId,String tenantId){
+    public String getAllPath(String sourceInfoId,String tenantId){
         String parentCategoryId = databaseInfoDAO.getParentCategoryIdById(sourceInfoId);
         StringBuilder sb = new StringBuilder("/");
         while (Boolean.FALSE.equals(ParamUtil.isNull(parentCategoryId))){
