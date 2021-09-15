@@ -3,8 +3,6 @@ package io.zeta.metaspace.model.result;
 import io.zeta.metaspace.MetaspaceConfig;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 
-import java.security.PublicKey;
-
 /*
 {
     "guid": "sit consequat ullamco deserunt",
@@ -31,13 +29,24 @@ public class CategoryPrivilege {
     private String name;
     private String parentCategoryGuid;
     private String upBrotherCategoryGuid;
+    private String privateStatus;
     private String downBrotherCategoryGuid;
     private String description;
     private Privilege privilege;
+
+    public String getPrivateStatus() {
+        return privateStatus;
+    }
+
+    public void setPrivateStatus(String privateStatus) {
+        this.privateStatus = privateStatus;
+    }
+
     private int level;
     private Integer objectCount;
     private String safe;
     private String code;
+    private Integer sort;
 
 
     public CategoryPrivilege(CategoryPrivilegeV2 category){
@@ -50,6 +59,7 @@ public class CategoryPrivilege {
         this.level=category.getLevel();
         this.count=category.getCount();
         this.code=category.getCode();
+        this.sort=category.getSort();
     };
     public CategoryPrivilege(CategoryEntityV2 categoryEntityV2){
         this.guid = categoryEntityV2.getGuid();
@@ -95,6 +105,14 @@ public class CategoryPrivilege {
         this.level = level;
     }
 
+    public Integer getSort() {
+        return sort;
+    }
+
+    public void setSort(Integer sort) {
+        this.sort = sort;
+    }
+
     public CategoryPrivilege(RoleModulesCategories.Category category) {
         this.guid = category.getGuid();
         this.name = category.getName();
@@ -106,9 +124,8 @@ public class CategoryPrivilege {
         this.safe=category.getSafe();
         this.count=category.getCount();
         this.code=category.getCode();
+        this.sort=category.getSort();
     }
-
-
 
     public CategoryPrivilege() {
 

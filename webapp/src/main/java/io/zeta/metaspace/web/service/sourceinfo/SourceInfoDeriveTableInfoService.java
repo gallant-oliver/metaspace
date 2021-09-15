@@ -623,7 +623,7 @@ public class SourceInfoDeriveTableInfoService {
      * @param categoryType 目录类型，0：技术目录 1：业务目录
      * @return
      */
-    private Map<String, String> getCategoryGuidPathMap(String tenantId, int categoryType, String guid) {
+    public Map<String, String> getCategoryGuidPathMap(String tenantId, int categoryType, String guid) {
         List<CategoryGuidPath> guidPathByTenantIdAndCategoryType = StringUtils.isBlank(guid) ?
                 categoryDAO.getGuidPathByTenantIdAndCategoryType(tenantId, categoryType) :
                 categoryDAO.getGuidPathByTenantIdAndCategoryTypeAndId(tenantId, categoryType, guid);
@@ -652,15 +652,15 @@ public class SourceInfoDeriveTableInfoService {
     }
 
 
-    public MetadataDeriveTableInfo queryDeriveTableInfo(String tenantId, String sourceId, String schemaId, String tableGuid) {
-        List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,schemaId,tableGuid);
+    public SourceInfoDeriveTableColumnVO queryDeriveTableInfo(String tenantId, String sourceId, String schemaId, String tableGuid) {
+        List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,tableGuid);
         if(org.apache.commons.collections.CollectionUtils.isEmpty(deriveTableInfoList)){
             return null;
         }
         Optional<SourceInfoDeriveTableInfo> deriveTableInfoOpt = deriveTableInfoList.stream().sorted(Comparator.comparing(SourceInfoDeriveTableInfo::getVersion).reversed()).findFirst();
         if(deriveTableInfoOpt.isPresent()){
             SourceInfoDeriveTableInfo tableInfo = deriveTableInfoOpt.get();
-            MetadataDeriveTableInfo info = new MetadataDeriveTableInfo();
+            SourceInfoDeriveTableColumnVO info = new SourceInfoDeriveTableColumnVO();
             BeanUtils.copyProperties(tableInfo,info);
             int TECHNIACL_CATEGORY_TYPE = 0;
             Map<String, String> technicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE, info.getCategoryId());
@@ -675,6 +675,14 @@ public class SourceInfoDeriveTableInfoService {
                 Map<String, String> businessCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, BUSINESS_CATEGORY_TYPE, businessInfo.getDepartmentId());
                 info.setBusinessHeader(businessCategoryGuidPathMap.getOrDefault(businessInfo.getDepartmentId(), ""));
             }
+
+            // 获取数据库、数据源的id.name对应
+            List<Map<String, String>> maps = queryDbNameAndSourceNameByIds(schemaId, sourceId);
+            // id->name对应
+            Map<String, String> collect = maps.stream().collect(Collectors.toMap(e -> e.get("id"), e -> e.get("name")));
+
+            info.setDbName(collect.get(schemaId));
+            info.setSourceName(collect.get(sourceId));
 
             return info;
         }

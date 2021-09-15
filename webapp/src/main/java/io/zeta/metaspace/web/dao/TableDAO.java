@@ -78,9 +78,6 @@ public interface TableDAO {
     @Update("update table2owner set tableGuid = #{tableGuid} where tableGuid=#{OldTableGuid}")
     int updateTableRelatedOwner(@Param("tableGuid") String tableGuid, @Param("OldTableGuid") String OldTableGuid);
 
-    @Update("update table_relation set tableguid = #{tableGuid} where tableguid=#{OldTableGuid}")
-    int updateTableRelations(@Param("tableGuid") String tableGuid, @Param("OldTableGuid") String OldTableGuid);
-
     @Update("update table2tag set tableguid = #{tableGuid} where tableguid=#{OldTableGuid}")
     int updateTableTags(@Param("tableGuid") String tableGuid, @Param("OldTableGuid") String OldTableGuid);
 
@@ -321,4 +318,7 @@ public interface TableDAO {
             " offset #{offset}"+
             "</script>")
     List<TableEntity> selectListByHiveDb(@Param("dbGuid") String dbGuid, @Param("isView") Boolean isView, @Param("limit") Long limit, @Param("offset") Long offset);
+
+    @Select("SELECT DISTINCT db_type FROM tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid WHERE tb.tableguid = #{guid}")
+    String selectTypeByGuid(@Param("guid") String guid);
 }

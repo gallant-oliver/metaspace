@@ -279,9 +279,8 @@ public class BusinessService {
     private List<TechnologyInfo.Table> getTablesByBusinessId(String businessId, String tenantId) {
         List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessIdAndTenantId(businessId, tenantId);
         tables.forEach(table -> {
-            String displayName = columnDAO.getTableDisplayInfoByGuid(table.getTableGuid());
-            if (Objects.nonNull(displayName)) {
-                table.setDisplayName(displayName);
+            if (Objects.nonNull(table.getDisplayName())) {
+                table.setDisplayName(table.getDisplayName());
             } else {
                 table.setDisplayName(table.getTableName());
             }
@@ -1255,7 +1254,7 @@ public class BusinessService {
                 });
                 return table;
             } else {
-                RDBMSTable table = metaDataService.getRDBMSTableInfoById(guid, tenantId);
+                RDBMSTable table = metaDataService.getRDBMSTableInfoById(guid, tenantId,null);
                 String tableName = table.getTableName();
                 String tableDisplayName = table.getDisplayName();
                 if (Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {

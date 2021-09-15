@@ -30,6 +30,7 @@ import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.MetadataDeriveTableInfo;
+import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceInfoDeriveTableColumnVO;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.TableDAO;
@@ -127,7 +128,7 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Database getDatabase(@PathParam("schemaId") String schemaId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId")@DefaultValue("") String sourceId) throws AtlasBaseException {
-        return metadataService.getDatabase(schemaId, sourceId);
+        return metadataService.getDatabase(schemaId, tenantId,sourceId);
     }
 
 
@@ -913,7 +914,7 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public RDBMSTable getTableInfoById(@PathParam("tableId") String tableId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
-        RDBMSTable table = metadataService.getRDBMSTableInfoById(tableId, tenantId);
+        RDBMSTable table = metadataService.getRDBMSTableInfoById(tableId, tenantId,sourceId);
         if(StringUtils.isNotBlank(sourceId)){
             if("hive".equalsIgnoreCase(sourceId)){
                 table.setSourceType("HIVE");
@@ -1167,7 +1168,7 @@ public class MetaDataREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getDeriveTableInfo(@HeaderParam("tenantId") String tenantId,@PathParam("tableGuid") String tableGuid,
                                      @QueryParam("sourceId") String sourceId,@QueryParam("schemaId") String schemaId){
-        MetadataDeriveTableInfo metadataDeriveTableInfo = sourceInfoDeriveTableInfoService.queryDeriveTableInfo(tenantId,sourceId,schemaId,tableGuid);
+        SourceInfoDeriveTableColumnVO metadataDeriveTableInfo = sourceInfoDeriveTableInfoService.queryDeriveTableInfo(tenantId,sourceId,schemaId,tableGuid);
         if(metadataDeriveTableInfo == null){
             return new Result("-1","没有找到对应的衍生表登记信息");
         }

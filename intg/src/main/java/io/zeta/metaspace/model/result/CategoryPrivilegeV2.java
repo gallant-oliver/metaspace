@@ -33,7 +33,7 @@ public class CategoryPrivilegeV2 {
     private Boolean editItem;
     private String code;
     private int count;
-
+    private int sort;
     @JsonIgnore
     private int total;
 
@@ -174,4 +174,11 @@ public class CategoryPrivilegeV2 {
         this.editItem = editItem;
     }
 
+    public int getSort() {
+        return sort;
+    }
+
+    public void setSort(int sort) {
+        this.sort = sort;
+    }
 }

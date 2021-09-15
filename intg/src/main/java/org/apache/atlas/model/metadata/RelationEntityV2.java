@@ -33,6 +33,25 @@ public class RelationEntityV2 {
     private String tableName;
     private String dbName;
     private String dbId;
+    private String dataSourceType;
+    private String databaseInstance;
+
+    public String getDataSourceType() {
+        return dataSourceType;
+    }
+
+    public void setDataSourceType(String dataSourceType) {
+        this.dataSourceType = dataSourceType;
+    }
+
+    public String getDatabaseInstance() {
+        return databaseInstance;
+    }
+
+    public void setDatabaseInstance(String databaseInstance) {
+        this.databaseInstance = databaseInstance;
+    }
+
     private String sourceId;
     private String sourceInfoId;
     private String tableGuid;
@@ -44,6 +63,15 @@ public class RelationEntityV2 {
     private List<String> tableTagList;
     private String description;
     private String sourceName;
+    private Boolean jump;
+
+    public Boolean getJump() {
+        return jump;
+    }
+
+    public void setJump(Boolean jump) {
+        this.jump = jump;
+    }
 
     @JsonIgnore
     private int total;

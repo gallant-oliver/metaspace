@@ -15,22 +15,16 @@ package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.web.service.TenantService;
-import io.zeta.metaspace.web.service.UserGroupService;
 import io.zeta.metaspace.web.service.UsersService;
+import io.zeta.metaspace.web.util.HiveMetaStoreBridgeUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Singleton;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 
 /**
@@ -45,6 +39,8 @@ public class TenantREST {
     TenantService tenantService;
     @Autowired
     UsersService usersService;
+    @Autowired
+    private HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
 
     /**
      * 获取租户列表
@@ -61,6 +57,39 @@ public class TenantREST {
             return ReturnUtil.success(tenantService.getTenants());
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取租户列表失败");
+        }
+    }
+
+    /**
+     * 初始化技术目录（会清空技术目录，请慎重操作，该接口作为初始化技术目录使用）
+     * @return
+     */
+    @GET
+    @Path("init/technical/category")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Result initTechnicalCategory(){
+        try {
+            return ReturnUtil.success(tenantService.initTechnicalCategory());
+        } catch (AtlasBaseException e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "初始化技术目录失败");
+        }
+    }
+
+    /**
+     * 全量加载HIVE数据源
+     * @return
+     */
+    @GET
+    @Path("init/hive")
+    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    public Result initHiveGraph(){
+        try {
+            hiveMetaStoreBridgeUtils.importDatabasesHive();
+            return ReturnUtil.success(true);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "初始化HIVE图数据库失败");
         }
     }
 

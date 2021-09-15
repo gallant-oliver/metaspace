@@ -53,6 +53,7 @@ public class Table implements Serializable {
 
     private String sourceId;
     private String sourceName;
+    private boolean hasDerivetable;
 
     public int getTotal() {
         return total;

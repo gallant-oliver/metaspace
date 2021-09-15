@@ -11,28 +11,33 @@
 //
 // ======================================================================
 
-package io.zeta.metaspace.model.metadata;
+package io.zeta.metaspace.model.usergroup;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Data;
-
-import java.io.Serializable;
 import java.util.List;
 
-@Data
-public class Database implements Serializable {
+/**
+ * @author fanjiajia
+ * @Data 2021/9/9 15:25
+ */
+public class SouceDatabasePrivileges {
     private String sourceId;
-    private String sourceName;
-    private String instanceId;
-    private String databaseId;
-    private String databaseName;
-    private String databaseDescription;
-    private String status;
-    private List tableList;
-    private String dbType;
-    private long tableCount;
-    private String owner;
-    @JsonIgnore
-    private int total;
-    private boolean hasDatabase;
+    private List<String> databaseIds;
+
+    public List<String> getDatabaseIds() {
+        return databaseIds;
+    }
+
+    public void setDatabaseIds(List<String> databaseIds) {
+        this.databaseIds = databaseIds;
+    }
+
+    public String getSourceId() {
+        return sourceId;
+    }
+
+    public void setSourceId(String sourceId) {
+        this.sourceId = sourceId;
+    }
+
+
 }
