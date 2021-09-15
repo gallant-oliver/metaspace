@@ -53,8 +53,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static io.zeta.metaspace.utils.StringUtil.dbsToString;
-
 @AtlasService
 public class SearchService {
 
@@ -220,7 +218,7 @@ public class SearchService {
         }
     }
 
-
+    //TODO 这里使用缓存会存在bug，逻辑上当租户添加hive库权限无法立即更新缓存中的数据
     @Cacheable(value = "databaseSearchCache", key = "#parameters.query + #active + #parameters.limit + #parameters.offset+#tenantId+#account")
     public PageResult<Database> getDatabasePageResult(Boolean active, Parameters parameters, String tenantId, String account) throws AtlasBaseException {
         long limit = parameters.getLimit();
@@ -231,8 +229,7 @@ public class SearchService {
             return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit);
         } else {
             List<String> dbs = tenantService.getDatabase(tenantId);
-            String dbsToString = dbsToString(dbs);
-            return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit, dbsToString);
+            return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit, dbs);
         }
 
     }
@@ -377,8 +374,7 @@ public class SearchService {
             return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit());
         } else {
             List<String> dbs = tenantService.getDatabase(tenantId);
-            String dbsToString = dbsToString(dbs);
-            return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit(), dbsToString);
+            return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit(), dbs);
         }
     }
 
@@ -405,8 +401,7 @@ public class SearchService {
             return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit());
         } else {
             List<String> dbs = tenantService.getDatabase(tenantId);
-            String dbsToString = dbsToString(dbs);
-            return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit(), dbsToString);
+            return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit(), dbs);
         }
     }
 
@@ -1218,7 +1213,7 @@ public class SearchService {
     @Transactional(rollbackFor = Exception.class)
     public PageResult<Database> getDatabaseV2(Parameters parameters, List<String> strings, String tenantId) throws AtlasBaseException {
         List<DatabaseHeader> dbName = null;
-        long totalSize;
+        long totalSize = 0;
         PageResult<Database> databasePageResult = new PageResult<>();
         //如果没目录
         if (strings.size() == 0) {
@@ -1226,30 +1221,34 @@ public class SearchService {
             databasePageResult.setTotalSize(0);
             return databasePageResult;
         }
+        List<Database> databaseList = null;
         //判断独立部署和多租户
         if (TenantService.defaultTenant.equals(tenantId)) {
             dbName = roleDAO.getDBInfo(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
             totalSize = roleDAO.getDBCountV2(strings, parameters.getQuery());
         } else {
             User user = AdminUtils.getUserData();
-            List<String> databases = tenantService.getDatabase(tenantId);
-            if (databases != null && databases.size() != 0)
-                dbName = userGroupDAO.getDBInfo(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit(), databases, tenantId);
-            totalSize = databases != null && databases.size() != 0 ? userGroupDAO.getDBCountV2(strings, parameters.getQuery(), databases, tenantId) : 0;
+            List<String> databases = tenantService.getCurrentTenantDatabase(tenantId);
+            if (databases != null && databases.size() != 0){
+                databaseList = databaseInfoDAO.selectByHive(databases, (long)parameters.getLimit(),  (long)parameters.getOffset());
+               // dbName = userGroupDAO.getDBInfo(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit(), databases, tenantId);
+               //  totalSize = userGroupDAO.getDBCountV2(strings, parameters.getQuery(), databases, tenantId);
+            }
+
         }
         List<Database> lists = new ArrayList<>();
-        if (dbName == null) {
+        if (databaseList == null) {
             return databasePageResult;
         }
-        for (DatabaseHeader db : dbName) {
+        for (Database db : databaseList) {
             Database database = new Database();
-            database.setDatabaseId(db.getDatabaseGuid());
-            database.setDatabaseName(db.getDbName());
+            database.setDatabaseId(db.getDatabaseId());
+            database.setDatabaseName(db.getDatabaseName());
             lists.add(database);
         }
         databasePageResult.setLists(lists);
-        databasePageResult.setCurrentSize(dbName.size());
-        databasePageResult.setTotalSize(totalSize);
+        databasePageResult.setCurrentSize(databaseList.size());
+        databasePageResult.setTotalSize(databaseList.get(0).getTotal());
         return databasePageResult;
     }
 

@@ -185,4 +185,23 @@ public interface SourceInfoDeriveTableInfoDAO {
             ")e ",
             "</script>"})
     int checkTableNameDump(@Param("tableName") String tableName, @Param("dbId") String dbId, @Param("id") String id);
+
+    @Select({"<script>",
+            " select t1.id as id, ",
+            " t1.table_guid as tableGuid, t1.table_name_en as tableNameEn, t1.table_name_zh as tableNameZh,",
+            " t1.procedure as procedure, t1.category_id as categoryId, t1.db_type as dbType, ",
+            " t1.business_id as businessId, t1.db_id as dbId, t1.source_id as sourceId,",
+            " t1.update_frequency as updateFrequency, t1.etl_policy as etlPolicy, ",
+            " t1.incre_standard as increStandard, t1.clean_rule as cleanRule, t1.filter as filter,",
+            " t1.tenant_id as tenantId, t1.remark as remark, t1.version as version,",
+            " t1.source_table_guid as sourceTableGuid, t1.creator as creator, cast(t1.create_time as varchar) as createTimeStr,",
+            " t1.updater as updater, cast(t1.update_time as varchar) as updateTimeStr, t1.ddl as ddl, t1.dml as dml, t1.state as state,",
+            " t2.username as creatorName, t3.username as updaterName ",
+            " from source_info_derive_table_info t1",
+            " left join users t2 on t1.creator = t2.userid",
+            " left join users t3 on t1.updater = t3.userid",
+            " where t1.tenant_id = #{tenantId} and t1.source_id=#{sourceId} and t1.db_id=#{schemaId} and t1.source_table_guid=#{tableGuid}",
+            "</script>"})
+    List<SourceInfoDeriveTableInfo> getDeriveTableByIdAndTenantId( @Param("tenantId")String tenantId, @Param("sourceId")String sourceId,
+                                                             @Param("schemaId") String schemaId,@Param("tableGuid") String tableGuid );
 }

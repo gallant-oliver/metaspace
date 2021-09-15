@@ -534,4 +534,42 @@ public interface DatabaseInfoDAO {
             " GROUP BY databaseguid" +
             "</script>")
     List<Database> selectTableCountByDB(@Param("dbGuidList") List<Database> dbGuidList);
+
+    @Select("SELECT s.id , s.category_id AS categoryId, \n" +
+            "db.db_type  AS databaseTypeName,db.database_name AS databaseName, \n" +
+            "ds.database AS databaseInstanceName,\n" +
+            "ds.source_name AS dataSourceName,\n" +
+            "s.database_alias AS databaseAlias,\n" +
+            "s.planning_package_name,\n" +
+            "s.planning_package_code,\n" +
+            "s.extract_tool,\n" +
+            "s.extract_cycle,\n" +
+            "s.security,\n" +
+            "s.security_cycle,\n" +
+            "s.status,\n" +
+            "s.importance,\n" +
+            "s.description,\n" +
+            "s.bo_name,\n" +
+            "s.bo_tel,\n" +
+            "s.bo_department_name,\n" +
+            "s.bo_email,\n" +
+            "s.to_name,\n" +
+            "s.to_tel,\n" +
+            "s.to_department_name,\n" +
+            "s.to_email,\n" +
+            "s.technical_leader AS technicalLeaderId,\n" +
+            "s.business_leader AS businessLeaderId,\n" +
+            "s.version , s.annex_id, " +
+            "(SELECT u.username FROM users u WHERE u.userid = s.technical_leader ) AS technicalLeaderName,\n" +
+            "(SELECT u.username FROM users u WHERE u.userid = s.business_leader ) AS businessLeaderName,\n" +
+            "s.creator AS recorderGuid, \n" +
+            "(SELECT u.username FROM users u WHERE u.userid = s.creator )AS recorderName "+
+            "FROM\n" +
+            "source_info s LEFT JOIN db_info db ON s.database_id = db.database_guid  \n" +
+            " LEFT JOIN data_source ds ON s.data_source_id = ds.source_id "+
+            "WHERE \n" +
+            "s.tenant_id=#{tenantId} AND s.data_source_id=#{sourceId} and s.database_id=#{schemaId} \n")
+    List<DatabaseInfoBO> getLastDatabaseInfoByDatabaseId(@Param("schemaId") String schemaId,
+                                                   @Param("tenantId") String tenantId, @Param("sourceId") String sourceId);
+
 }

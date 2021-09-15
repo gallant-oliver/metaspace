@@ -19,8 +19,10 @@ package io.zeta.metaspace.web.service;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
+import io.zeta.metaspace.bo.DatabaseInfoBO;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
+import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
@@ -34,11 +36,10 @@ import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
-import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.CustomStringUtils;
-import io.zeta.metaspace.web.util.DateUtils;
-import io.zeta.metaspace.web.util.HivePermissionUtil;
+import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -126,6 +127,10 @@ public class MetaDataService {
     DataManageService dataManageService;
     @Autowired
     DataSourceDAO dataSourceDAO;
+    @Autowired
+    DatabaseInfoDAO databaseInfoDAO;
+    @Autowired
+    private SourceInfoDatabaseService sourceInfoDatabaseService;
 
 
     private String errorMessage = "";
@@ -1250,7 +1255,6 @@ public class MetaDataService {
                     column.setDatabaseName(relatedDB.getDisplayText());
 
                     column.setColumnId(referredEntity.getGuid());
-                    column.setPartitionKey(false);
                     if (partitionKeys != null) {
                         for (int i = 0; i < partitionKeys.size(); i++) {
                             if (partitionKeys.get(i).getGuid().equals(column.getColumnId())) {
@@ -2367,8 +2371,8 @@ public class MetaDataService {
         Sheet sheet = workbook.createSheet(CustomStringUtils.handleExcelName(sheetName));
 
         List<Column> columnList = table.getColumns();
-        List<Column> normalColumnList = columnList.stream().filter(column -> column.getPartitionKey() == false).collect(Collectors.toList());
-        List<Column> partitionColumnList = columnList.stream().filter(column -> column.getPartitionKey() == true).collect(Collectors.toList());
+        List<Column> normalColumnList = columnList.stream().filter(column -> !column.getPartitionKey()).collect(Collectors.toList());
+        List<Column> partitionColumnList = columnList.stream().filter(column -> column.getPartitionKey()).collect(Collectors.toList());
 
 
         CellRangeAddress tableAndDbNameRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 2);
@@ -2694,4 +2698,32 @@ public class MetaDataService {
             }
         });
     }
+
+    public DatabaseInfoBO querySourceInfo(String tenantId, String sourceId, String schemaId) {
+        if(StringUtils.isBlank(tenantId) || StringUtils.isBlank(sourceId) || StringUtils.isBlank(schemaId)){
+            LOG.info("查询源信息登记的请求参数存在空");
+            return null;
+        }
+        List<DatabaseInfoBO> currentSourceInfoList = databaseInfoDAO.getLastDatabaseInfoByDatabaseId(schemaId,tenantId,sourceId);
+        if(CollectionUtils.isEmpty(currentSourceInfoList)){
+            return null;
+        }
+        DatabaseInfoBO bo = new DatabaseInfoBO();
+        //筛选获取最新的记录
+        Optional<DatabaseInfoBO> databaseInfoOpt =  currentSourceInfoList.stream().sorted(Comparator.comparing(DatabaseInfoBO::getVersion).reversed()).findFirst();
+        if(databaseInfoOpt.isPresent()){
+            DatabaseInfoBO databaseInfoBO = databaseInfoOpt.get();
+            if (Boolean.FALSE.equals(ParamUtil.isNull(databaseInfoBO))&&Boolean.TRUE.equals(ParamUtil.isNull(databaseInfoBO.getCategoryId()))){
+                databaseInfoBO.setCategoryId(databaseInfoDAO.getParentCategoryIdById(databaseInfoBO.getId()));
+            }
+            if ("hive".equals(databaseInfoBO.getDataSourceId())){
+                databaseInfoBO.setDataSourceName("hive");
+            }
+            databaseInfoBO.setCategoryName(databaseInfoBO.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
+                    sourceInfoDatabaseService.getActiveInfoAllPath(databaseInfoBO.getCategoryId(),tenantId):sourceInfoDatabaseService.getAllPath(databaseInfoBO.getId(),tenantId));
+            return databaseInfoOpt.get();
+        }
+        return null;
+    }
+
 }
