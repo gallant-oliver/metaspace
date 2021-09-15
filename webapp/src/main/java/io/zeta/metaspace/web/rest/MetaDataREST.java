@@ -30,6 +30,7 @@ import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.MetadataDeriveTableInfo;
+import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceInfoDeriveTableColumnVO;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.TableDAO;
@@ -1167,7 +1168,7 @@ public class MetaDataREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getDeriveTableInfo(@HeaderParam("tenantId") String tenantId,@PathParam("tableGuid") String tableGuid,
                                      @QueryParam("sourceId") String sourceId,@QueryParam("schemaId") String schemaId){
-        MetadataDeriveTableInfo metadataDeriveTableInfo = sourceInfoDeriveTableInfoService.queryDeriveTableInfo(tenantId,sourceId,schemaId,tableGuid);
+        SourceInfoDeriveTableColumnVO metadataDeriveTableInfo = sourceInfoDeriveTableInfoService.queryDeriveTableInfo(tenantId,sourceId,schemaId,tableGuid);
         if(metadataDeriveTableInfo == null){
             return new Result("-1","没有找到对应的衍生表登记信息");
         }

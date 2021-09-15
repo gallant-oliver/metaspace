@@ -2706,7 +2706,7 @@ public class MetaDataService {
         }
         DatabaseInfoBO bo = new DatabaseInfoBO();
         //筛选获取最新的记录
-        Optional<DatabaseInfoBO> databaseInfoOpt =  currentSourceInfoList.stream().sorted(Comparator.comparing(DatabaseInfoBO::getVersion).reversed()).findFirst();
+        Optional<DatabaseInfoBO> databaseInfoOpt =  currentSourceInfoList.stream().sorted(Comparator.comparing(DatabaseInfoBO::getVersion)).findFirst();
         if(databaseInfoOpt.isPresent()){
             DatabaseInfoBO databaseInfoBO = databaseInfoOpt.get();
             if (Boolean.FALSE.equals(ParamUtil.isNull(databaseInfoBO))&&Boolean.TRUE.equals(ParamUtil.isNull(databaseInfoBO.getCategoryId()))){

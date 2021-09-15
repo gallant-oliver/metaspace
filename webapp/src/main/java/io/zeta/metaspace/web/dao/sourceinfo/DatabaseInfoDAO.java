@@ -541,6 +541,7 @@ public interface DatabaseInfoDAO {
             "ds.database AS databaseInstanceName,\n" +
             "ds.source_name AS dataSourceName,\n" +
             "s.database_alias AS databaseAlias,\n" +
+            "s.data_source_id AS dataSourceId,"+
             "s.planning_package_name,\n" +
             "s.planning_package_code,\n" +
             "s.extract_tool,\n" +
