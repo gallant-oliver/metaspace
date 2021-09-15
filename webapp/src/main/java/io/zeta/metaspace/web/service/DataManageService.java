@@ -254,10 +254,22 @@ public class DataManageService {
             }
             //源信息登记的父级目录不能删除
             updateParentCategory(categoryPrivilegeList);
+            removeNoParentCategory(categoryPrivilegeList);
         } catch (AtlasBaseException e) {
             LOG.error("getTechnicalCategory exception is {}", e);
         }
         return categoryPrivilegeList;
+    }
+
+    private void removeNoParentCategory(List<CategoryPrivilege> categoryPrivilegeList){
+        Map<String,String> map = categoryPrivilegeList.stream().collect(Collectors.toMap(CategoryPrivilege::getGuid, CategoryPrivilege::getName));
+        Iterator<CategoryPrivilege> iter = categoryPrivilegeList.iterator();
+        while (iter.hasNext()){
+            CategoryPrivilege categoryPrivilege = iter.next();
+            if(StringUtils.isNotBlank(categoryPrivilege.getParentCategoryGuid()) && !map.keySet().contains(categoryPrivilege.getGuid())){
+                iter.remove();
+            }
+        }
     }
 
     private void updateParentCategory(List<CategoryPrivilege> categoryPrivilegeList) {
@@ -367,6 +379,7 @@ public class DataManageService {
                     iter.remove();
                 }
             }
+            removeNoParentCategory(categoryPrivilegeList);
         } catch (AtlasBaseException e) {
             LOG.error("getTechnicalCategory exception is {}", e);
         }
