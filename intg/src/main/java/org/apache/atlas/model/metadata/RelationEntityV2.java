@@ -63,6 +63,15 @@ public class RelationEntityV2 {
     private List<String> tableTagList;
     private String description;
     private String sourceName;
+    private Boolean jump;
+
+    public Boolean getJump() {
+        return jump;
+    }
+
+    public void setJump(Boolean jump) {
+        this.jump = jump;
+    }
 
     @JsonIgnore
     private int total;

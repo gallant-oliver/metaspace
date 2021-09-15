@@ -18,22 +18,36 @@ import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datasource.*;
+import io.zeta.metaspace.model.dto.indices.*;
+import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.TableEntity;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIIdAndName;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserIdAndName;
+import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AESUtils;
+import io.zeta.metaspace.web.dao.TableDAO;
+import io.zeta.metaspace.web.dao.UserGroupDAO;
+import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.MetaDataService;
+import io.zeta.metaspace.web.service.TenantService;
+import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -52,6 +66,7 @@ import java.net.URLDecoder;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
@@ -600,5 +615,91 @@ public class DataSourceREST {
     public Result getDataSourceType(@QueryParam("type") String type){
         List<DataSourceTypeInfo> dataSourceType = dataSourceService.getDataSourceType(type);
         return ReturnUtil.success(dataSourceType);
+    }
+
+    /**
+     * 根据用户组权限，获取数据源
+     * @param tenantId
+     * @return
+     */
+    @GET
+    @Path("/dataSource")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getOptionalDataSource(@HeaderParam("tenantId") String tenantId) throws Exception {
+        try {
+            List<OptionalDataSourceDTO> optionalDataSourceDTOs = dataSourceService.getOptionalDataSource(tenantId);
+            return ReturnUtil.success(optionalDataSourceDTOs);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    /**
+     * 根据用户组权限，获取数据库
+     * @param tenantId
+     * @return
+     */
+    @GET
+    @Path("/dataSource/db")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getOptionalDb(@QueryParam("sourceId") String sourceId, @HeaderParam("tenantId") String tenantId) throws Exception {
+        if (Objects.isNull(sourceId)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源id不能为空");
+        }
+        List<DataBaseDTO> databaseList;
+        try {
+            databaseList=dataSourceService.getOptionalDb(sourceId,tenantId);
+            return ReturnUtil.success(databaseList);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    /**
+     * 获取数据库下数据表
+     * @param tenantId
+     * @return
+     */
+    @GET
+    @Path("/dataSource/db/table")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getOptionalTable(@QueryParam("sourceId") String sourceId,@QueryParam("databaseId") String databaseId, @HeaderParam("tenantId") String tenantId) throws Exception {
+        if (StringUtils.isBlank(sourceId)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源id不能为空");
+        }
+        if (StringUtils.isBlank(databaseId)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库id不能为空");
+        }
+        List<TableDTO> table;
+        try {
+            table=dataSourceService.getOptionalTable(sourceId,databaseId);
+            return ReturnUtil.success(table);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    /**
+     * 获取数据表字段
+     * @param tableId
+     * @return
+     */
+    @GET
+    @Path("/dataSource/db/table/column")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getOptionalColumn(@QueryParam("tableId") String tableId) throws Exception {
+        if (StringUtils.isBlank(tableId)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据表id不能为空");
+        }
+        try {
+            List<OptionalColumnDTO> optionalColumnDTOs = dataSourceService.getOptionalColumn(tableId);
+            return ReturnUtil.success(optionalColumnDTOs);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
     }
 }
