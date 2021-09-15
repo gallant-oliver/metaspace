@@ -26,7 +26,7 @@ import java.util.List;
  */
 public interface TenantDAO {
     @Select("select id from tenant ")
-    public List<String> getAllTenantId();
+    List<String> getAllTenantId();
 
     @Insert("<script>"+
             " insert into tenant(id,name) values " +
@@ -34,5 +34,5 @@ public interface TenantDAO {
             " #{tenant.tenantId},#{tenant.projectName}"+
             " </foreach> " +
             " </script>")
-    public int addTenants(@Param("tenants") List<Tenant> tenants);
+    int addTenants(@Param("tenants") List<Tenant> tenants);
 }

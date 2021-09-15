@@ -268,6 +268,7 @@ public interface DatabaseInfoDAO {
             " s.category_id AS categoryId,\n" +
             " s.database_id AS databaseId,\n" +
             " s.database_alias AS name,\n" +
+            " s.importance ,\n" +
             " s.creator AS creator,\n" +
             " sirc.parent_category_id AS parentCategoryId \n" +
             "FROM\n" +

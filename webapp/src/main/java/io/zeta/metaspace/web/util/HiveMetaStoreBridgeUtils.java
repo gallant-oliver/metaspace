@@ -142,16 +142,17 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
     public void importDatabases(String taskInstanceId, TableSchema tableSchema) throws Exception {
         LOG.info("import metadata start at {}", simpleDateFormat.format(new Date()));
         syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.RUN, "开始导入");
-
+        if (CollectionUtils.isEmpty(tableSchema.getDatabases())) {
+            importDatabasesHive();
+        }
         List<String> databaseNames = null;
         List<String> databaseToImport = new ArrayList<>();
         String tableToImport = "";
         boolean allDatabase = false;
-        if (null != tableSchema) {
-            databaseToImport = tableSchema.getDatabases();
-            tableToImport = tableSchema.getTable();
-            allDatabase = tableSchema.isAllDatabase();
-        }
+        databaseToImport = tableSchema.getDatabases();
+        tableToImport = tableSchema.getTable();
+        allDatabase = tableSchema.isAllDatabase();
+
         initHiveMetaStoreClient();
         List<String> allDatabaseName = hiveMetaStoreClient.getAllDatabases();
         if (allDatabase || databaseToImport == null || databaseToImport.size() == 0) {
@@ -225,6 +226,52 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         } else {
             LOG.info("No database found");
         }
+        syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
+        LOG.info("import metadata end at {}", simpleDateFormat.format(new Date()));
+    }
+
+
+    /**
+     * 重新同步所有的HIVE数据
+     *
+     * @throws Exception
+     */
+    public void importDatabasesHive() throws Exception {
+        String taskInstanceId = UUID.randomUUID().toString();
+        syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.RUN, "开始导入");
+        TableSchema tableSchema = new TableSchema();
+        tableSchema.setInstance("hive");
+        tableSchema.setAll(true);
+        SyncTaskDefinition definition = new SyncTaskDefinition();
+        definition.setDataSourceType("HIVE");
+        definition.setCategoryGuid("1");
+        tableSchema.setDefinition(definition);
+        initHiveMetaStoreClient();
+        List<String> allDatabaseName = hiveMetaStoreClient.getAllDatabases();
+        List<String> databaseNames = allDatabaseName;
+        tableSchema.setDatabases(allDatabaseName);
+        //总同步元素数量
+        int totalSize = 0;
+        Map<String, List<String>> database2Table = Maps.newHashMap();
+        for (String databaseName : databaseNames) {
+            List<String> tablesInDB = database2Table.get(databaseName);
+            if (null == tablesInDB) {
+                tablesInDB = Lists.newArrayList();
+            }
+            tablesInDB.addAll(hiveMetaStoreClient.getAllTables(databaseName));
+            database2Table.put(databaseName, tablesInDB);
+            totalSize += tablesInDB.size();
+        }
+
+        totalTables.set(totalSize);
+        LOG.info("Found {} databases", databaseNames.size());
+        for (String databaseName : databaseNames) {
+            AtlasEntityWithExtInfo dbEntity = registerDatabase(databaseName, tableSchema.getDefinition());
+            if (dbEntity != null) {
+                importTables(dbEntity.getEntity(), databaseName, database2Table.get(databaseName), false, tableSchema.getDefinition());
+            }
+        }
+
         syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
         LOG.info("import metadata end at {}", simpleDateFormat.format(new Date()));
     }

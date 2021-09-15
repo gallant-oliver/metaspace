@@ -212,12 +212,8 @@ public class MetaDataService {
     }
 
     public boolean isHiveTable(String guid) {
-        AtlasEntity entity = getEntityById(guid);
-        if (Objects.isNull(entity)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到表");
-        }
-        String type = entity.getTypeName();
-        if ("hive_table".equalsIgnoreCase(type)) {
+        String type = tableDAO.selectTypeByGuid(guid);
+        if("hive".equalsIgnoreCase(type)){
             return true;
         }
         return false;
