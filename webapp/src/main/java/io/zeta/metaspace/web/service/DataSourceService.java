@@ -19,28 +19,28 @@ import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.model.datasource.*;
-import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.dto.indices.*;
+import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.share.APIIdAndName;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserIdAndName;
+import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupAndPrivilege;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
 import io.zeta.metaspace.utils.AESUtils;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.AdapterUtils;
-import io.zeta.metaspace.web.dao.DataSourceDAO;
-import io.zeta.metaspace.web.dao.SyncTaskDefinitionDAO;
-import io.zeta.metaspace.web.dao.UserDAO;
-import io.zeta.metaspace.web.dao.UserGroupDAO;
+import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.metadata.BaseFields;
 import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
-import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.IndexCounterUtils;
-import io.zeta.metaspace.web.util.PoiExcelUtils;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -95,6 +96,12 @@ public class DataSourceService {
     private IndexCounter indexCounter;
     @Autowired
     private SyncTaskDefinitionDAO syncTaskDefinitionDAO;
+    @Autowired
+    private TableDAO tableDAO;
+    @Autowired
+    private ColumnDAO columnDAO;
+    @Autowired
+    private DatabaseInfoDAO databaseInfoDAO;
 
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
@@ -1318,5 +1325,84 @@ public class DataSourceService {
             return Lists.newArrayList(dataSourceTypeInfo);
         }
         return Arrays.stream(DataSourceType.values()).filter(e -> confList.contains(e.getName())).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(), dataSourceType.getDefaultPort())).collect(Collectors.toList());
+    }
+
+    /**
+     * 获取可选数据源列表
+     *
+     * @param tenantId
+     * @return
+     */
+    public List<OptionalDataSourceDTO> getOptionalDataSource(String tenantId) {
+        //1.获取当前租户下用户所属用户组
+        User user = AdminUtils.getUserData();
+        List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+        List<OptionalDataSourceDTO> odsds = new ArrayList<>();
+        OptionalDataSourceDTO ods = new OptionalDataSourceDTO();
+        ods.setSourceId("hive");
+        ods.setSourceName(DataSourceType.HIVE.getName());
+        ods.setSourceType(DataSourceType.HIVE.getName());
+        odsds.add(ods);
+        if (!CollectionUtils.isEmpty(groups)) {
+            //2. 获取被授权给用户组的数据源
+            List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
+            List<DataSourceBody> dataSourceBodies = dataSourceDAO.getDataSourcesByGroups(groupIds, tenantId);
+            if (!CollectionUtils.isEmpty(dataSourceBodies)) {
+                //根据id去重
+                List<DataSourceBody> unique = dataSourceBodies.stream().collect(
+                        Collectors.collectingAndThen(
+                                Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(DataSourceBody::getSourceId))), ArrayList::new));
+                List<OptionalDataSourceDTO> rdbms = unique.stream().map(x -> BeanMapper.map(x, OptionalDataSourceDTO.class)).collect(Collectors.toList());
+                odsds.addAll(rdbms);
+            }
+        }
+        return odsds;
+    }
+
+    public List<DataBaseDTO> getOptionalDb(String sourceId, String tenantId) {
+        List<String> dbList;
+        List<Database> databaseList=new ArrayList<>();
+        List<DataBaseDTO> dataBaseDTOS = new ArrayList<>();
+        //获取当前租户下用户所属用户组
+        User user = AdminUtils.getUserData();
+        List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+        List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
+        if ("hive".equalsIgnoreCase(sourceId)) {
+            dbList = tenantService.getDatabase(tenantId);
+            if (org.apache.commons.collections4.CollectionUtils.isEmpty(dbList)) {
+                return dataBaseDTOS;
+            }
+            databaseList = databaseInfoDAO.selectByHive(dbList, -1l, 0l);
+        } else {
+            databaseList = databaseInfoDAO.selectDataBaseBySourceId(sourceId,groupIds, -1l, 0l);
+        }
+        if (!CollectionUtils.isEmpty(databaseList)) {
+            dataBaseDTOS = databaseList.stream().map(x -> BeanMapper.map(x, DataBaseDTO.class)).collect(Collectors.toList());
+        }
+
+        return dataBaseDTOS;
+    }
+
+    public List<TableDTO> getOptionalTable(String sourceId, String databaseId) {
+        List<TableEntity> tableEntityList;
+        if ("hive".equalsIgnoreCase(sourceId)) {
+            tableEntityList = tableDAO.selectListByHiveDb(databaseId, false, -1l, 0l);
+        } else {
+            tableEntityList = tableDAO.selectListBySourceIdAndDb(sourceId, databaseId, false, -1l, 0l);
+        }
+        List<TableDTO> tableDTOS = new ArrayList<>();
+        if (!CollectionUtils.isEmpty(tableEntityList)) {
+            tableDTOS = tableEntityList.stream().map(x -> BeanMapper.map(x, TableDTO.class)).collect(Collectors.toList());
+        }
+        return tableDTOS;
+    }
+
+    public List<OptionalColumnDTO> getOptionalColumn(String tableId) {
+        List<Column> columnInfoList = columnDAO.getColumnInfoList(tableId);
+        List<OptionalColumnDTO> optionalColumnDTOS = null;
+        if (!CollectionUtils.isEmpty(columnInfoList)) {
+            optionalColumnDTOS = columnInfoList.stream().map(x -> BeanMapper.map(x, OptionalColumnDTO.class)).collect(Collectors.toList());
+        }
+        return optionalColumnDTOS;
     }
 }

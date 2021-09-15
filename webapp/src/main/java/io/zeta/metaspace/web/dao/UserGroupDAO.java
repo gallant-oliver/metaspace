@@ -22,12 +22,11 @@ import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.share.ProjectHeader;
 import io.zeta.metaspace.model.table.DataSourceHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
+import io.zeta.metaspace.model.usergroup.DBInfo;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.model.usergroup.UserGroupPrivileges;
-import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
-import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
-import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
+import io.zeta.metaspace.model.usergroup.result.*;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.ibatis.annotations.*;
 
@@ -1235,4 +1234,73 @@ public interface UserGroupDAO {
             " ON conflict (group_id,category_id) DO NOTHING" +
             "</script>")
     void insertGroupRelations(@Param("userGroupIds") List<String> userGroupIds,@Param("categoryId")  String guid,@Param("read")  Boolean read, @Param("editCategory") Boolean editCategory, @Param("editItem") Boolean editItem);
+	
+	
+    @Select("<script>" +
+            "select count(*)over() totalSize,dgr.id, di.database_name databaseName,d.source_name sourceName,d.source_type sourceType " +
+            " from database_group_relation dgr " +
+            " join data_source d  " +
+            " on d.source_id=dgr.source_id " +
+            " join db_info di  " +
+            " on di.database_guid=dgr.database_guid " +
+            " where dgr.group_id = #{groupId} " +
+            "<if test='sourceId!=null'>" +
+            " and dgr.source_id =#{sourceId}" +
+            "</if>"+
+            "<if test='search!=null'>" +
+            " and di.database_name like concat('%',#{search},'%') ESCAPE '/' " +
+            "</if>" +
+            "<if test='limit!=-1'>" +
+            " limit ${limit} " +
+            "</if>" +
+            "<if test='offset!=0'>" +
+            " offset ${offset} " +
+            "</if>" +
+            "</script>")
+    public List<UserGroupDatabaseResult> getDatabaseBySearch(@Param("groupId") String groupId, @Param("offset") int offset, @Param("limit") int limit, @Param("sourceId") String sourceId,@Param("search") String search);
+
+    @Insert("insert into database_group_relation (id,group_id,source_id,database_guid) values (#{id},#{groupId},#{sourceId},#{databaseGuid})")
+    public Integer addDataBaseByGroupId(@Param("id") String id, @Param("groupId") String groupId,@Param("sourceId") String sourceId,@Param("databaseGuid") String databaseGuid);
+
+    @Delete({"<script>",
+            "delete from database_group_relation where id in ",
+            "<foreach collection='idsList' item='id' index='index' separator=',' open='(' close=')'>",
+            "#{id}",
+            "</foreach>",
+            "</script>"})
+    public void deleteDataBaseByGroupId(@Param("idsList") List<String> idsList);
+
+
+    @Select({"<script>" ,
+            "select dgr.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.ip,ds.description from datasource_group_relation dgr" +
+            " inner join data_source ds on dgr.source_id=ds.source_id" +
+            " where dgr.group_id=#{groupId} " +
+            "<if test='search != null'>" +
+            " and ds.source_name like concat('%',#{search},'%') ESCAPE '/' " +
+            "</if>" +
+            "</script>"})
+    public List<NotAllotDatabaseSearchResult> getSourceIdByGroupId(@Param("groupId") String groupId, @Param("search") String search);
+
+    @Select({"<script>" ,
+            "select sd.db_guid databaseGuid,di.database_name databaseName  from source_db sd" +
+            " inner join db_info di on di.database_guid=sd.db_guid and di.status='ACTIVE'" +
+            " where sd.source_id=#{sourceId}" +
+            " and sd.db_guid not in (select database_guid from database_group_relation where group_id=#{groupId} and source_id=#{sourceId})"+
+            "</script>"})
+    public List<DBInfo> getDataBasesBysourceId(@Param("groupId") String groupId, @Param("sourceId") String sourceId);
+
+
+    @Select({"<script>",
+            "select count(*) from database_group_relation where source_id =#{sourceId} and database_guid=#{databaseGuid}"+
+            "<if test='groupIds != null and groupIds.size()>0'>" +
+            " and group_id in"+
+            "<foreach collection='groupIds' item='id' index='index' separator=',' open='(' close=')'>",
+            "#{id}",
+            "</foreach>"+
+            "</if>" +
+            "<if test='groupIds.size()==0'>" +
+            " and group_id is null"+
+             "</if>" +
+            "</script>"})
+    public int getDatabaseIdNum(@Param("groupIds") List<String> groupIds,@Param("sourceId") String sourceId,@Param("databaseGuid") String databaseGuid);
 }

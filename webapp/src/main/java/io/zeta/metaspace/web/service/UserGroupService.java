@@ -27,13 +27,8 @@ import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.share.ProjectHeader;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.model.usergroup.UserGroup;
-import io.zeta.metaspace.model.usergroup.UserGroupCategories;
-import io.zeta.metaspace.model.usergroup.UserGroupPrivileges;
-import io.zeta.metaspace.model.usergroup.UserPrivilegeDataSource;
-import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
-import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
-import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
+import io.zeta.metaspace.model.usergroup.*;
+import io.zeta.metaspace.model.usergroup.result.*;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
@@ -1702,5 +1697,91 @@ public class UserGroupService {
         }
         List<UserGroup> userGroupIds = userGroupDAO.getuserGroupByUsersId(userId,tenantId);
         return ReturnUtil.success(userGroupIds.stream().map(UserGroup::getId).collect(Collectors.toList()));
+    }
+	
+	    /**
+     * 获取权限数据库
+     * @param groupId
+     * @param offset
+     * @param limit
+     * @param search
+     * @return
+     * @throws AtlasBaseException
+     */
+    public PageResult<UserGroupDatabaseResult> getDatabaseBySearch(String groupId, int offset, int limit,String sourceId, String search) {
+        PageResult<UserGroupDatabaseResult> commonResult = new PageResult<>();
+
+        if (search != null) {
+            search = search.replaceAll("%", "/%").replaceAll("_", "/_");
+        }
+        List<UserGroupDatabaseResult> lists = userGroupDAO.getDatabaseBySearch(groupId, offset, limit,sourceId, search);
+        if (lists == null || lists.size() == 0) {
+            return commonResult;
+        }
+        commonResult.setLists(lists);
+        commonResult.setCurrentSize(lists.size());
+        commonResult.setTotalSize(lists.get(0).getTotalSize());
+        return commonResult;
+    }
+
+
+    /**
+     * 添加数据库权限
+     * @param groupId
+     * @param privilegesList
+     * @return
+     * @throws AtlasBaseException
+     */
+    public void addDataBaseByGroupId(String groupId, List<SouceDatabasePrivileges> privilegesList) {
+        if (privilegesList.size()==0){
+            return;
+        }
+        for(SouceDatabasePrivileges database:privilegesList) {
+            String sourceId = database.getSourceId();
+            List<String> idsList = database.getDatabaseIds();
+            if (idsList.size() == 0) {
+                continue;
+            }
+            for (String id : idsList) {
+                String uuID = UUID.randomUUID().toString();
+                userGroupDAO.addDataBaseByGroupId(uuID,groupId,sourceId,id);
+            }
+        }
+    }
+
+    /**删除数据库权限
+     * @param idsList
+     * @return
+     * @throws AtlasBaseException
+     */
+    public void deleteDataBaseByGroupId(List<String> idsList) {
+        if (idsList.size()==0) {
+            return;
+        }
+        userGroupDAO.deleteDataBaseByGroupId(idsList);
+    }
+
+    /**
+     * 获取未分配给当前用户组的数据源（已分配给用户组）的数据库
+     * @param groupId
+     * @param search
+     * @return
+     * @throws AtlasBaseException
+     */
+    public List<NotAllotDatabaseSearchResult> getDataBaseListNotAllot(String groupId, String search) {
+        if (search != null) {
+            search = search.replaceAll("%", "/%").replaceAll("_", "/_");
+        }
+        List<NotAllotDatabaseSearchResult> sourceIdList=userGroupDAO.getSourceIdByGroupId(groupId,search);
+        if(sourceIdList.size()==0){
+           sourceIdList=new ArrayList<>();
+           return sourceIdList;
+        }
+        for(NotAllotDatabaseSearchResult result:sourceIdList){
+            String sourceId=result.getSourceId();
+            List<DBInfo>  dbInfos = userGroupDAO.getDataBasesBysourceId(groupId,sourceId);
+            result.setDbInfoList(dbInfos);
+        }
+        return sourceIdList;
     }
 }
