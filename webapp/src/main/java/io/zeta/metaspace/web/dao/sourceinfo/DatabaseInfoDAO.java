@@ -488,6 +488,26 @@ public interface DatabaseInfoDAO {
             "</script>")
     List<Database> selectBySourceId(@Param("sourceId") String sourceId, @Param("limit") Long limit, @Param("offset") Long offset);
 
+ @Select("<script>" +
+            " SELECT count(*)over() total,db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,sd.source_id,db.database_description,db.owner FROM db_info as db INNER JOIN source_db as sd on db.database_guid = sd.db_guid" +
+            " WHERE db.status = 'ACTIVE' AND sd.source_id = #{sourceId}" +
+            " and db.database_guid in (select database_guid from database_group_relation where source_id=#{sourceId}"+
+            " <if test='groupIds!=null and groupIds.size() > 0'>" +
+            " and group_id in " +
+            "<foreach collection='groupIds' item='id' separator=',' open='(' close=')'>"+
+            "#{id}"+
+            "</foreach>" +
+            " </if>" +
+            ")"+
+            " <if test='limit != -1'>" +
+            "  limit #{limit} " +
+            " </if>" +
+            " <if test='offset!= 0'>" +
+            "  offset #{offset}" +
+            " </if>" +
+            "</script>")
+    List<Database> selectDataBaseBySourceId(@Param("sourceId") String sourceId,@Param("groupIds") List<String> groupIds, @Param("limit") Long limit, @Param("offset") Long offset);
+
     @Select("<script>" +
             " SELECT count(*)over() total,db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,'hive' as source_id,db.database_description,db.owner FROM db_info as db" +
             " WHERE db.status = 'ACTIVE' AND db.db_type = 'HIVE' AND db.database_name in " +
@@ -508,6 +528,13 @@ public interface DatabaseInfoDAO {
             " SELECT db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,sd.source_id,db.database_description,db.owner FROM db_info as db" +
             " INNER JOIN source_db as sd on db.database_guid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
             " WHERE db.status = 'ACTIVE' AND source.tenantid = #{tenantId} AND database_name like concat('%',#{dbName},'%')" +
+            " <if test='groupIds != null and groupIds.size() > 0'>" +
+            " and db.database_guid in (select database_guid from database_group_relation where "+
+            " group_id in "+
+            " <foreach collection='groupIds' item='id' separator=',' open='(' close=')'>" +
+            "  #{id}" +
+            " </foreach> )" +
+            " </if>" +
             " <if test='hiveList != null and hiveList.size() > 0'>" +
             " union" +
             " SELECT db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,'hive' as source_id,db.database_description,db.owner FROM db_info as db" +
@@ -524,7 +551,7 @@ public interface DatabaseInfoDAO {
             "  offset #{offset}" +
             " </if>" +
             "</script>")
-    List<Database> selectByDbNameAndTenantId(@Param("tenantId") String tenantId, @Param("dbName") String dbName, @Param("hiveList") List<String> hiveList, @Param("limit") Long limit, @Param("offset") Long offset);
+    List<Database> selectByDbNameAndTenantId(@Param("tenantId") String tenantId,@Param("groupIds") List<String> groupIds, @Param("dbName") String dbName, @Param("hiveList") List<String> hiveList, @Param("limit") Long limit, @Param("offset") Long offset);
 
     @Select("<script>" +
             " SELECT databaseguid as databaseId, COUNT(tableguid) as tableCount FROM tableinfo" +
@@ -536,9 +563,10 @@ public interface DatabaseInfoDAO {
             "</script>")
     List<Database> selectTableCountByDB(@Param("dbGuidList") List<Database> dbGuidList);
 
-    @Select("SELECT\n" +
-            "(SELECT db.db_type FROM db_info db WHERE db.database_guid=s.database_id LIMIT 1 )  AS databaseTypeName,\n" +
-            "(SELECT ds.database FROM data_source ds WHERE ds.source_id=s.data_source_id LIMIT 1 )  AS databaseInstanceName,\n" +
+    @Select("SELECT s.id , s.category_id AS categoryId, \n" +
+            "db.db_type  AS databaseTypeName,db.database_name AS databaseName, \n" +
+            "ds.database AS databaseInstanceName,\n" +
+            "ds.source_name AS dataSourceName,\n" +
             "s.database_alias AS databaseAlias,\n" +
             "s.planning_package_name,\n" +
             "s.planning_package_code,\n" +
@@ -559,14 +587,15 @@ public interface DatabaseInfoDAO {
             "s.to_email,\n" +
             "s.technical_leader AS technicalLeaderId,\n" +
             "s.business_leader AS businessLeaderId,\n" +
-            "s.version ," +
+            "s.version , s.annex_id, " +
             "(SELECT u.username FROM users u WHERE u.userid = s.technical_leader ) AS technicalLeaderName,\n" +
             "(SELECT u.username FROM users u WHERE u.userid = s.business_leader ) AS businessLeaderName,\n" +
             "s.creator AS recorderGuid, \n" +
             "(SELECT u.username FROM users u WHERE u.userid = s.creator )AS recorderName "+
             "FROM\n" +
-            "source_info s \n" +
-            "WHERE\n" +
+            "source_info s LEFT JOIN db_info db ON s.database_id = db.database_guid  \n" +
+            " LEFT JOIN data_source ds ON s.data_source_id = ds.source_id "+
+            "WHERE \n" +
             "s.tenant_id=#{tenantId} AND s.data_source_id=#{sourceId} and s.database_id=#{schemaId} \n")
     List<DatabaseInfoBO> getLastDatabaseInfoByDatabaseId(@Param("schemaId") String schemaId,
                                                    @Param("tenantId") String tenantId, @Param("sourceId") String sourceId);

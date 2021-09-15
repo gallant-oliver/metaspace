@@ -200,7 +200,7 @@ public interface SourceInfoDeriveTableInfoDAO {
             " from source_info_derive_table_info t1",
             " left join users t2 on t1.creator = t2.userid",
             " left join users t3 on t1.updater = t3.userid",
-            " where t1.tenant_id = #{tenantId} and t1.source_id=#{sourceId} and t1.db_id=#{schemaId} and t1.table_guid=#{tableGuid}",
+            " where t1.tenant_id = #{tenantId} and t1.source_id=#{sourceId} and t1.db_id=#{schemaId} and t1.source_table_guid=#{tableGuid}",
             "</script>"})
     List<SourceInfoDeriveTableInfo> getDeriveTableByIdAndTenantId( @Param("tenantId")String tenantId, @Param("sourceId")String sourceId,
                                                              @Param("schemaId") String schemaId,@Param("tableGuid") String tableGuid );
