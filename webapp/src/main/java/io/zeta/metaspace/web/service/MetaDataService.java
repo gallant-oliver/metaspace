@@ -585,7 +585,7 @@ public class MetaDataService {
             //table
             RDBMSTable table = extractRDBMSTableInfo(entity, guid, info, tenantId);
 
-            List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,guid);
+            List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceId == null ? null : sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,guid);
             table.setHasDerivetable(CollectionUtils.isNotEmpty(deriveTableInfoList));
 
             String tableName = table.getTableName();

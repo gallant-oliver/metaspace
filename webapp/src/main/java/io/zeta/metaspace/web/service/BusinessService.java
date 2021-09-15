@@ -1254,7 +1254,7 @@ public class BusinessService {
                 });
                 return table;
             } else {
-                RDBMSTable table = metaDataService.getRDBMSTableInfoById(guid, tenantId);
+                RDBMSTable table = metaDataService.getRDBMSTableInfoById(guid, tenantId,null);
                 String tableName = table.getTableName();
                 String tableDisplayName = table.getDisplayName();
                 if (Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
