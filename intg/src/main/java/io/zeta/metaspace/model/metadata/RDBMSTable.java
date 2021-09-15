@@ -60,4 +60,5 @@ public class RDBMSTable implements Serializable {
     private boolean edit;
     private List<DataOwnerHeader> dataOwner;
     private List<Tag> tags;
+    private boolean hasDerivetable;
 }

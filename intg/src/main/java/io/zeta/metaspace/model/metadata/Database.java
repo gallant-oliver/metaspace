@@ -34,4 +34,5 @@ public class Database implements Serializable {
     private String owner;
     @JsonIgnore
     private int total;
+    private boolean hasDatabase;
 }

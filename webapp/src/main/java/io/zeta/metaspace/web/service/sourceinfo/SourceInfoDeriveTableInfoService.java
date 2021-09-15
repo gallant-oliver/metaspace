@@ -653,7 +653,7 @@ public class SourceInfoDeriveTableInfoService {
 
 
     public SourceInfoDeriveTableColumnVO queryDeriveTableInfo(String tenantId, String sourceId, String schemaId, String tableGuid) {
-        List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,schemaId,tableGuid);
+        List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,tableGuid);
         if(org.apache.commons.collections.CollectionUtils.isEmpty(deriveTableInfoList)){
             return null;
         }

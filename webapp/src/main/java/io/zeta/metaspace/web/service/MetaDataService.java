@@ -32,6 +32,7 @@ import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
@@ -131,6 +132,9 @@ public class MetaDataService {
     DatabaseInfoDAO databaseInfoDAO;
     @Autowired
     private SourceInfoDatabaseService sourceInfoDatabaseService;
+
+    @Autowired
+    private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao;
 
 
     private String errorMessage = "";
@@ -310,11 +314,13 @@ public class MetaDataService {
         return entityRetriever.toAtlasEntityWithAttribute(atlasVertex, attributes, relationshipAttributes, isMinExtInfo);
     }
 
-    public Database getDatabase(String guid, String sourceId) throws AtlasBaseException {
+    public Database getDatabase(String guid,String tenantId, String sourceId) throws AtlasBaseException {
         if (Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
         Database database = new Database();
+        List<DatabaseInfoBO> currentSourceInfoList = databaseInfoDAO.getLastDatabaseInfoByDatabaseId(guid,tenantId,sourceId);
+        database.setHasDatabase(CollectionUtils.isNotEmpty(currentSourceInfoList));
         try {
             //获取对象
             // 转换成AtlasEntity
@@ -351,6 +357,7 @@ public class MetaDataService {
         if (Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
+
         try {
             //获取entity
             AtlasEntity.AtlasEntityWithExtInfo entityInfo = getEntityInfoByGuid(guid, false);
@@ -360,6 +367,8 @@ public class MetaDataService {
             }
             //table
             Table table = extractTableInfo(entityInfo, guid, tenantId);
+            List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,guid);
+            table.setHasDerivetable(CollectionUtils.isNotEmpty(deriveTableInfoList));
 
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
@@ -557,7 +566,7 @@ public class MetaDataService {
         return table;
     }
 
-    public RDBMSTable getRDBMSTableInfoById(String guid, String tenantId) throws AtlasBaseException {
+    public RDBMSTable getRDBMSTableInfoById(String guid, String tenantId,String sourceId) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getRDBMSTableInfoById({})", guid);
         }
@@ -575,6 +584,9 @@ public class MetaDataService {
             }
             //table
             RDBMSTable table = extractRDBMSTableInfo(entity, guid, info, tenantId);
+
+            List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,guid);
+            table.setHasDerivetable(CollectionUtils.isNotEmpty(deriveTableInfoList));
 
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();

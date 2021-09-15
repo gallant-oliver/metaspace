@@ -128,7 +128,7 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Database getDatabase(@PathParam("schemaId") String schemaId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId")@DefaultValue("") String sourceId) throws AtlasBaseException {
-        return metadataService.getDatabase(schemaId, sourceId);
+        return metadataService.getDatabase(schemaId, tenantId,sourceId);
     }
 
 
@@ -914,7 +914,7 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public RDBMSTable getTableInfoById(@PathParam("tableId") String tableId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
-        RDBMSTable table = metadataService.getRDBMSTableInfoById(tableId, tenantId);
+        RDBMSTable table = metadataService.getRDBMSTableInfoById(tableId, tenantId,sourceId);
         if(StringUtils.isNotBlank(sourceId)){
             if("hive".equalsIgnoreCase(sourceId)){
                 table.setSourceType("HIVE");
