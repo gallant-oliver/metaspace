@@ -25,6 +25,7 @@ import io.zeta.metaspace.web.service.SearchService;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.*;
@@ -52,6 +53,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -63,6 +65,7 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 @Path("technical")
 @Singleton
 @Service
+@Slf4j
 public class TechnicalREST {
 
     private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.TechnicalREST");
@@ -568,6 +571,8 @@ public class TechnicalREST {
             }
             return ReturnUtil.success(categoryPrivileges);
         } catch (Exception e) {
+            log.error(e.getMessage());
+            log.error(Arrays.toString(e.getStackTrace()));
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
         } finally {
             if (Objects.nonNull(file) && file.exists()) {
