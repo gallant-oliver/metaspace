@@ -2514,14 +2514,13 @@ public class MetaDataService {
             List<ColumnMetadata> currentMetadata = metadataHistoryDAO.getLastColumnMetadata(tableGuid);
             List<ColumnMetadata> oldMetadata = metadataHistoryDAO.getColumnMetadata(tableGuid, version);
 
-            List<ColumnMetadata> orderMetadata = new ArrayList<>(); //记录有顺序的旧版字段
-            comparisonMetadata.setCurrentMetadata(currentMetadata);
-            comparisonMetadata.setOldMetadata(orderMetadata);
-
             if(CollectionUtils.isNotEmpty(currentMetadata)){
                 if(version.compareTo(currentMetadata.get(0).getVersion())==0){
                     LOG.info("历史版本对比，版本一样，不需继续执行");
+                    comparisonMetadata.setOldMetadata(oldMetadata);
                 }else{
+                    List<ColumnMetadata> orderMetadata = new ArrayList<>(); //记录有顺序的旧版字段
+                    comparisonMetadata.setOldMetadata(orderMetadata);
                     for (ColumnMetadata item : currentMetadata){
                         Optional<ColumnMetadata> filterOpt = oldMetadata.stream().filter(p->StringUtils.equalsIgnoreCase(item.getName(),p.getName())).findFirst();
                         if(filterOpt.isPresent()){//名称一样比较类型
@@ -2554,6 +2553,7 @@ public class MetaDataService {
                 }
             }
 
+            comparisonMetadata.setCurrentMetadata(currentMetadata);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
