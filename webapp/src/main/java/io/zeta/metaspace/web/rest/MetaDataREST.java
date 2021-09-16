@@ -29,7 +29,6 @@ import io.zeta.metaspace.model.result.BuildTableSql;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
-import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.MetadataDeriveTableInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceInfoDeriveTableColumnVO;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.utils.AdapterUtils;
@@ -1173,5 +1172,17 @@ public class MetaDataREST {
             return new Result("-1","没有找到对应的衍生表登记信息");
         }
         return ReturnUtil.success(metadataDeriveTableInfo);
+    }
+
+    /**
+     * 删除图数据库所有数据
+     * @throws Exception
+     */
+    @Path("delete/janusgraph/all")
+    @DELETE
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public void deleteAllEntity() throws Exception {
+        searchService.deleteAllEntity();
     }
 }

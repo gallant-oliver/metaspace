@@ -24,6 +24,7 @@ import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.HiveMetaStoreBridgeUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
@@ -89,6 +90,10 @@ public class SearchService {
     private DatabaseInfoDAO databaseInfoDAO;
     @Autowired
     private TableDAO tableDAO;
+    @Autowired
+    private HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
+    @Autowired
+    private DataSourceDAO dataSourceDAO;
 
     public PageResult<Database> getDatabases(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount) {
         try {
@@ -1288,4 +1293,16 @@ public class SearchService {
         }
     }
 
+    public void deleteAllEntity() throws Exception {
+        hiveMetaStoreBridgeUtils.deleteJanusGraphHive();
+
+        List<DataSourceInfo> dataSourceInfos = dataSourceDAO.selectListAll();
+        for (DataSourceInfo dataSourceInfo : dataSourceInfos) {
+            PageResult<Database> databasePageResult = metaspaceEntityService.getSchemaList(dataSourceInfo, new ArrayList<>(), new ArrayList<>(), 0, -1, false);
+            List<Database> databaseList = databasePageResult.getLists();
+            for (Database database : databaseList) {
+                hiveMetaStoreBridgeUtils.deleteJanusGraphRdbms(database.getSourceId(), database.getDatabaseName());
+            }
+        }
+    }
 }

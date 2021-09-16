@@ -566,4 +566,7 @@ public interface DataSourceDAO {
             " </foreach>",
             " </script>"})
     List<DataSourceInfo> queryDataSourceBySourceTypeIn(@Param("types")List<String> types,@Param("tenantId") String tenantId);
+
+    @Select("select * from data_source")
+    List<DataSourceInfo> selectListAll();
 }
