@@ -1629,7 +1629,7 @@ public class DataManageService {
         column.setStatus(status);
         column.setDisplayNameUpdateTime(updateTime);
         if (comment != null) {
-            column.setDescription(column.toString());
+            column.setDescription(comment.toString());
         }
         List<String> partitionKeys = EntityUtil.extractPartitionKeyInfo(info.getEntity());
         if (!CollectionUtils.isEmpty(partitionKeys) && partitionKeys.contains(guid)) {
