@@ -14,8 +14,10 @@
 package io.zeta.metaspace.model.metadata;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.zeta.metaspace.model.table.column.tag.ColumnTag;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class Column implements Serializable {
     private String columnId;
@@ -31,9 +33,18 @@ public class Column implements Serializable {
     private Integer columnPrivilegeGuid;
     private String columnPrivilege;
     private String displayName;
+    private List<ColumnTag> tags;
     private String displayNameUpdateTime;
     @JsonIgnore
     private int total;
+
+    public List<ColumnTag> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<ColumnTag> tags) {
+        this.tags = tags;
+    }
 
     public int getTotal() {
         return total;
