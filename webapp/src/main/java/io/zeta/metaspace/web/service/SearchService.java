@@ -54,6 +54,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import static io.zeta.metaspace.utils.StringUtil.dbsToString;
+
 @AtlasService
 public class SearchService {
 
@@ -631,7 +633,7 @@ public class SearchService {
                 strings.add(categoryPrivilegeV2.getGuid());
             }
         }
-        if (strings != null && strings.contains(categoryId)) {
+        if (categoryId != null && !categoryId.isEmpty()) {
             return getDataSourceResultV2(parameters, strings, categoryId, tenantId);
         }
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
@@ -650,6 +652,8 @@ public class SearchService {
             databasePageResult.setTotalSize(0);
             return databasePageResult;
         }
+
+
 
         List<String> databases = tenantService.getDatabase(tenantId);
         List<DataSourceHeader> databaseHeaders = new ArrayList<>();
@@ -676,31 +680,7 @@ public class SearchService {
         if (CollectionUtils.isEmpty(tables)) {
             return databasePageResult;
         }
-        Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getSourceId));
-        //获取目录下该租户所有关联的表
-        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.selectListByCategoryId(categoryGuid, tenantId);
         //关联表按照数据源ID分组
-        Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDataSourceId));
-        databaseHeaders.forEach(e -> {
-            String sourceId = e.getSourceId();
-            List<String> table = collect.get(sourceId) == null ? new ArrayList<>() : collect.get(sourceId).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
-            List<String> relationTableGuids = collectRelation.get(sourceId) == null ? new ArrayList<>() : collectRelation.get(sourceId).stream().map(TableDataSourceRelationPO::getTableId).collect(Collectors.toList());
-            if (collect != null && collect.size() > 0) {
-                if (relationTableGuids.containsAll(table)) {
-                    //全被勾选
-                    e.setCheck(1);
-                } else {
-                    table.retainAll(relationTableGuids);
-                    if (table.size() > 0) {
-                        //勾选了部分
-                        e.setCheck(2);
-                    } else {
-                        //全部未勾选
-                        e.setCheck(0);
-                    }
-                }
-            }
-        });
         databasePageResult.setLists(databaseHeaders);
         databasePageResult.setCurrentSize(databaseHeaders.size());
         databasePageResult.setTotalSize(databaseHeaders.size() > 0 ? databaseHeaders.get(0).getTotal() : 0);
@@ -792,40 +772,11 @@ public class SearchService {
         List<DatabaseHeader> databaseHeaders = userGroupDAO.selectDbByNameAndTenantId(parameters.getOffset(), parameters.getLimit(), databases, tenantId, query);
         if (CollectionUtils.isEmpty(databaseHeaders)) {
             return new ArrayList<>();
-        }
+
         List<String> dbGuidList = databaseHeaders.stream().map(DatabaseHeader::getDatabaseGuid).collect(Collectors.toList());
         //获取数据源下所有的表
         List<TechnologyInfo.Table> tables = tableDAO.selectListByDatabase(databases, dbGuidList);
-        //所有的表按照数据库ID分组
-        Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getDatabaseGuid));
         //查询关联关系
-        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.selectListByCategoryIdAndTenantId(categoryGuid, tenantId, dbGuidList);
-        //关联关系按照数据库ID分组
-        Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDatabaseId));
-        for (DatabaseHeader e : databaseHeaders) {
-            String databaseGuid = e.getDatabaseGuid();
-            e.setDbName(e.getDbName() + "(" + e.getSourceName() + ")");
-            List<String> table = collect.get(databaseGuid) == null ? new ArrayList<>() : collect.get(databaseGuid).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
-            Set<String> relationTableGuids = collectRelation.get(databaseGuid) == null ? new HashSet<>() : collectRelation.get(databaseGuid).stream().map(TableDataSourceRelationPO::getTableId).collect(Collectors.toSet());
-            if(CollectionUtils.sizeIsEmpty(relationTableGuids) || CollectionUtils.isEmpty(table)){
-                //全部未勾选
-                e.setCheck(0);
-                continue;
-            }
-            if (relationTableGuids.containsAll(table)) {
-                //全被勾选
-                e.setCheck(1);
-            } else {
-                table.retainAll(relationTableGuids);
-                if (table.size() > 0) {
-                    //勾选了部分
-                    e.setCheck(2);
-                } else {
-                    //全部未勾选
-                    e.setCheck(0);
-                }
-            }
-        }
         return databaseHeaders;
     }
 

@@ -148,8 +148,8 @@ public interface UserDAO {
              "</script>"})
     public void addGroupByUser(@Param("userId") String userId, @Param("groupIds") List<String> groupIds);
 
-    @Select("select userid from users where username=#{name}")
-    public String getUserIdByName(@Param("name")String name);
+    @Select("select userid from users where account=#{account}")
+    public String getUserIdByAccount(@Param("account")String account);
 
     @Select("select * from users")
     public List<User> getAllUser();
