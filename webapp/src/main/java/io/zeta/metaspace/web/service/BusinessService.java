@@ -263,7 +263,7 @@ public class BusinessService {
                 info.setEditTechnical(true);
             }
             //tables
-            List<TechnologyInfo.Table> tables = getTablesByBusinessId(businessId, tenantId);
+            List<TechnologyInfo.Table> tables = buildTablesByBusinessId(businessId, tenantId,null,null);
             info.setTables(tables);
             //businessId
             info.setBusinessId(businessId);
@@ -276,8 +276,10 @@ public class BusinessService {
         }
     }
 
-    private List<TechnologyInfo.Table> getTablesByBusinessId(String businessId, String tenantId) {
-        List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessIdAndTenantId(businessId, tenantId);
+    private List<TechnologyInfo.Table> buildTablesByBusinessId(String businessId, String tenantId, String trustTableGuid, List<TechnologyInfo.Table> tables) {
+        if(tables ==null ){
+            tables = businessDao.queryTablesByBusinessIdAndTenantId(businessId, tenantId);
+        }
         tables.forEach(table -> {
             if (Objects.nonNull(table.getDisplayName())) {
                 table.setDisplayName(table.getDisplayName());
@@ -285,21 +287,14 @@ public class BusinessService {
                 table.setDisplayName(table.getTableName());
             }
         });
-
-        String trustTableGuid = businessDao.getTrustTableGuid(businessId);
-        if (Objects.nonNull(trustTableGuid)) {
-            Optional<TechnologyInfo.Table> trustTableOP = tables.stream().filter(table -> table.getTableGuid().equals(trustTableGuid)).findFirst();
-            if (trustTableOP.isPresent()) {
-                TechnologyInfo.Table trustTable = trustTableOP.get();
-                tables.remove(trustTable);
-                trustTable.setTrust(true);
-                tables.add(0, trustTable);
-            } else {
-                tables.stream().findFirst().ifPresent(table -> {
-                    table.setTrust(true);
-                });
-            }
+        if(trustTableGuid ==null || trustTableGuid.isEmpty()){
+            trustTableGuid = businessDao.getTrustTableGuid(businessId);
         }
+        if (Objects.nonNull(trustTableGuid)) {
+            String finalTrustTableGuid = trustTableGuid;
+            tables.stream().filter(t->finalTrustTableGuid.equals(t.getTableGuid())).forEach(table -> table.setTrust(Boolean.TRUE));
+        }
+        tables.sort(Comparator.comparing(TechnologyInfo.Table::isTrust).reversed());
         return tables;
     }
 
@@ -323,9 +318,8 @@ public class BusinessService {
                 infoHeader.setPath(joiner.toString());
                 //level2Category
                 infoHeader.setLevel2Category(level2Category);
-                List<TechnologyInfo.Table> tables = getTablesByBusinessId(infoHeader.getBusinessId(), tenantId);
-                infoHeader.setTables(tables);
-                if (CollectionUtils.isEmpty(tables)) {
+                buildTablesByBusinessId(infoHeader.getBusinessId(), tenantId,infoHeader.getTrustTable(),infoHeader.getTables()==null?new ArrayList<>():infoHeader.getTables());
+                if (CollectionUtils.isEmpty(infoHeader.getTables())) {
                     infoHeader.setTechnicalStatus("0");
                 } else {
                     infoHeader.setTechnicalStatus("1");
@@ -480,19 +474,13 @@ public class BusinessService {
                 submitter = submitter.replaceAll("%", "/%").replaceAll("_", "/_");
             List<BusinessInfoHeader> businessInfoList = businessDao.queryBusinessByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter, limit, offset, tenantId);
             for (BusinessInfoHeader infoHeader : businessInfoList) {
-                String categoryId = businessDao.queryCategoryIdByBusinessId(infoHeader.getBusinessId());
-                String userName = userGroupDAO.getUserNameById(infoHeader.getSubmitter());
-                if (userName != null) {
-                    infoHeader.setSubmitter(userName);
-                }
-                String path = CategoryRelationUtils.getPath(categoryId, tenantId);
+                String path = CategoryRelationUtils.getPath(infoHeader.getDepartmentId(), tenantId);
                 infoHeader.setPath(path + "." + infoHeader.getName());
                 String[] pathArr = path.split("/");
                 int length = 2;
                 if (pathArr.length >= length)
                     infoHeader.setLevel2Category(pathArr[1]);
-                List<TechnologyInfo.Table> tables = getTablesByBusinessId(infoHeader.getBusinessId(), tenantId);
-                infoHeader.setTables(tables);
+                buildTablesByBusinessId(infoHeader.getBusinessId(), tenantId,infoHeader.getTrustTable(),infoHeader.getTables()==null?new ArrayList<>():infoHeader.getTables());
             }
             pageResult.setLists(businessInfoList);
             long totalsize = 0;

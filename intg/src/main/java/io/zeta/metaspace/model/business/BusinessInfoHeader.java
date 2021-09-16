@@ -33,6 +33,10 @@ public class BusinessInfoHeader {
     private String businessStatus;
     private String technicalStatus;
     private String submitter;
+    private String submitterName;
+
+
+    private String departmentId;
     private String submissionTime;
     private String ticketNumber;
     private String categoryGuid;
@@ -56,7 +60,21 @@ public class BusinessInfoHeader {
     public void setTotal(int total) {
         this.total = total;
     }
+    public String getSubmitterName() {
+        return submitterName;
+    }
 
+    public void setSubmitterName(String submitterName) {
+        this.submitterName = submitterName;
+    }
+
+    public String getDepartmentId() {
+        return departmentId;
+    }
+
+    public void setDepartmentId(String departmentId) {
+        this.departmentId = departmentId;
+    }
     public String getBusinessId() {
         return businessId;
     }

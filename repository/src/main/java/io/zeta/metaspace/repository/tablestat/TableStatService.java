@@ -15,6 +15,7 @@ package io.zeta.metaspace.repository.tablestat;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
 import io.zeta.metaspace.model.DateType;
@@ -44,6 +45,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 
 @AtlasService
+@Slf4j
 public class TableStatService {
 
     private static final Logger LOG = LoggerFactory.getLogger(TableStatService.class);
@@ -163,6 +165,7 @@ public class TableStatService {
 
             return Pair.of(tableStatList.size(), pageList);
         } catch (Exception e) {
+            log.error(e.getMessage());
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "HBase 异常");
         }
     }

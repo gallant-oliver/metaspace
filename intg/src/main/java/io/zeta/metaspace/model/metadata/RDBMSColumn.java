@@ -13,7 +13,10 @@
 
 package io.zeta.metaspace.model.metadata;
 
+import io.zeta.metaspace.model.table.column.tag.ColumnTag;
+
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * @author lixiang03
@@ -42,6 +45,16 @@ public class RDBMSColumn implements Serializable {
     private String defaultValue;
     private boolean isNullable;
     private boolean isPrimaryKey;
+
+    public List<ColumnTag> getTags() {
+        return tags;
+    }
+
+    public void setTags(List<ColumnTag> tags) {
+        this.tags = tags;
+    }
+
+    private List<ColumnTag> tags;
 
     public String getDescription() {
         return description;
