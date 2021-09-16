@@ -8,12 +8,14 @@ import io.zeta.metaspace.model.datasource.DataSourceInfo;
 
 import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
+import io.zeta.metaspace.model.metadata.TableEntity;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerColumn;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerForeignKey;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerIndex;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerTable;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.sync.SyncTaskInstance;
+import io.zeta.metaspace.utils.*;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.CollectThreadPoolUtil;
@@ -148,7 +150,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         syncTaskInstanceDAO.appendLog(taskInstanceId, "导入数据源和数据库成功，开始导入表");
 
         String instanceGuid = atlasEntityWithExtInfo.getEntity().getGuid();
-        Collection<Schema> schemas = metaDataInfo.getSchemas();
+        List<Schema> schemas = new ArrayList<>(metaDataInfo.getSchemas());
         final List<String> databases = new ArrayList<>();
         if (!CollectionUtils.isEmpty(schemas) && !tableSchema.isAllDatabase()) {
             LOG.info("Found {} databases", schemas.size());
@@ -157,25 +159,35 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
             List<CompletableFuture<Void>> completableFutureList = new ArrayList<>(schemas.size());
 
             //导入table
-            for (Schema database : schemas) {
-                completableFutureList.add(CompletableFuture.runAsync(() -> {
-                    AtlasEntity.AtlasEntityWithExtInfo dbEntity;
-
-                    String dbQualifiedName =  AdapterUtils.getDBQualifiedName(dataSourceInfo, database.getFullName());
-                    if (metaDataContext.isKownEntity(dbQualifiedName)) {
-                        dbEntity = metaDataContext.getEntity(dbQualifiedName);
-                    } else {
-                        try{
-                            dbEntity = findDatabase(database.getFullName());
+            List<List<Schema>> slicedList = new ArrayList<>();
+            int maxQueueSize = ThreadPoolUtil.getMaxQueueSize();
+            int perSize = (int) (maxQueueSize*0.75);
+            for (int i = 0;i < schemas.size()/perSize;i++){
+                slicedList.add(schemas.subList(i*perSize,(i+1)*perSize));
+            }
+            if (schemas.size()%perSize!=0){
+                slicedList.add(schemas.subList(schemas.size()-(schemas.size()%perSize),schemas.size())) ;
+            }
+            for (List<Schema> blockList:slicedList) {
+                for (Schema database : blockList) {
+                    completableFutureList.add(CompletableFuture.runAsync(() -> {
+                        AtlasEntity.AtlasEntityWithExtInfo dbEntity = null;
+                        String dbQualifiedName = getDBQualifiedName(sourceId, database.getFullName());
+                        if (metaDataContext.isKownEntity(dbQualifiedName)) {
+                            dbEntity = metaDataContext.getEntity(dbQualifiedName);
+                        } else {
+                            try {
+                                dbEntity = findDatabase(database.getFullName());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                             clearRelationshipAttributes(dbEntity);
-                        }catch (Exception e){
-                            throw new RuntimeException(e);
+                            metaDataContext.putEntity(dbQualifiedName, dbEntity);
                         }
-                        metaDataContext.putEntity(dbQualifiedName, dbEntity);
-                    }
-                    importTables(dbEntity.getEntity(), sourceId, database.getFullName(), getTables(database), false, instanceGuid, taskInstanceId, tableSchema.getDefinition());
-                    databases.add(database.getFullName());
-                }, threadPoolExecutor));
+                        importTables(dbEntity.getEntity(), taskInstanceId, database.getFullName(), getTables(database), false, instanceGuid, taskInstanceId, null);
+                    }, threadPoolExecutor));
+                }
+                Thread.sleep(100);
             }
             CompletableFuture.allOf(completableFutureList.toArray(new CompletableFuture[]{})).join();
         } else {
@@ -186,6 +198,9 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
         LOG.info("import metadata end at {}", new Date());
 
+    }
+    protected String getDBQualifiedName(String instanceId, String dbName) {
+        return String.format("%s.%s@%s", instanceId, dbName, clusterName);
     }
      public void createKafkaConnector(final List<String> databases) throws AtlasException {
         //@TODO 如果配置允许，则检查定时任务中的每一个数据库，看是否存在运行的connector，如果不存在，则启动或生成一个对应的connector并启动
@@ -762,19 +777,15 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 List<CompletableFuture<Void>> completableFutureList = new ArrayList<>(tableNames.size());
                 for (Table tableName : tableNames) {
                     completableFutureList.add(CompletableFuture.runAsync(() -> {
-                        checkTaskEnable(taskInstanceId);
+                        this.checkTaskEnable(taskInstanceId);
                         if (LOG.isDebugEnabled()) {
                             LOG.debug("导入{}表的元数据", tableName.getFullName());
                         }
                         int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError, instanceGuid, taskInstanceId, definition);
                         if (imported == 1) {
-                            this.checkTaskEnable(definition.getId());
-                            syncTaskInstanceDAO.appendLog(definition.getId(), "成功导入表: " + tableName.getFullName());
-
-                           /* this.checkTaskEnable(taskInstanceId);
+                            this.checkTaskEnable(taskInstanceId);
                             LOG.info("成功导入表:{}", tableName.getFullName());
                             syncTaskInstanceDAO.appendLog(taskInstanceId, "成功导入表: " + tableName.getFullName());
-*/
                         }
                         tablesImportedList.add(imported);
                     }, threadPoolExecutor));
