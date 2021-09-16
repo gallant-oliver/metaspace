@@ -171,16 +171,20 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
             for (List<Schema> blockList:slicedList) {
                 for (Schema database : blockList) {
                     completableFutureList.add(CompletableFuture.runAsync(() -> {
-                        AtlasEntity.AtlasEntityWithExtInfo dbEntity;
-                        String dbQualifiedName = getDBQualifiedName(instanceId, database.getFullName());
+                        AtlasEntity.AtlasEntityWithExtInfo dbEntity = null;
+                        String dbQualifiedName = getDBQualifiedName(sourceId, database.getFullName());
                         if (metaDataContext.isKownEntity(dbQualifiedName)) {
                             dbEntity = metaDataContext.getEntity(dbQualifiedName);
                         } else {
-                            dbEntity = findDatabase(instanceId, database.getFullName());
+                            try {
+                                dbEntity = findDatabase(database.getFullName());
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                             clearRelationshipAttributes(dbEntity);
                             metaDataContext.putEntity(dbQualifiedName, dbEntity);
                         }
-                        importTables(dbEntity.getEntity(), instanceId, database.getFullName(), getTables(database), false, instanceGuid, taskInstanceId, null);
+                        importTables(dbEntity.getEntity(), taskInstanceId, database.getFullName(), getTables(database), false, instanceGuid, taskInstanceId, null);
                     }, threadPoolExecutor));
                 }
                 Thread.sleep(100);
@@ -194,6 +198,9 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
         LOG.info("import metadata end at {}", new Date());
 
+    }
+    protected String getDBQualifiedName(String instanceId, String dbName) {
+        return String.format("%s.%s@%s", instanceId, dbName, clusterName);
     }
      public void createKafkaConnector(final List<String> databases) throws AtlasException {
         //@TODO 如果配置允许，则检查定时任务中的每一个数据库，看是否存在运行的connector，如果不存在，则启动或生成一个对应的connector并启动

@@ -772,12 +772,12 @@ public class SearchService {
         List<DatabaseHeader> databaseHeaders = userGroupDAO.selectDbByNameAndTenantId(parameters.getOffset(), parameters.getLimit(), databases, tenantId, query);
         if (CollectionUtils.isEmpty(databaseHeaders)) {
             return new ArrayList<>();
-
-        List<String> dbGuidList = databaseHeaders.stream().map(DatabaseHeader::getDatabaseGuid).collect(Collectors.toList());
-        //获取数据源下所有的表
-        List<TechnologyInfo.Table> tables = tableDAO.selectListByDatabase(databases, dbGuidList);
-        //查询关联关系
-        return databaseHeaders;
+        }
+            List<String> dbGuidList = databaseHeaders.stream().map(DatabaseHeader::getDatabaseGuid).collect(Collectors.toList());
+            //获取数据源下所有的表
+            List<TechnologyInfo.Table> tables = tableDAO.selectListByDatabase(databases, dbGuidList);
+            //查询关联关系
+            return databaseHeaders;
     }
 
     /**
