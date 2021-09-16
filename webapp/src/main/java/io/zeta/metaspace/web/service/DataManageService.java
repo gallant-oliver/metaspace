@@ -255,12 +255,24 @@ public class DataManageService {
             //源信息登记的父级目录不能删除
             updateParentCategory(categoryPrivilegeList);
             removeNoParentCategory(categoryPrivilegeList);
+            if(CollectionUtils.isEmpty(userGroups)){
+                for (CategoryPrivilege categoryPrivilege : categoryPrivilegeList) {
+                    categoryPrivilege.getPrivilege().setEdit(false);
+                    categoryPrivilege.getPrivilege().setAddSibling(false);
+                    categoryPrivilege.getPrivilege().setAddChildren(false);
+                    categoryPrivilege.getPrivilege().setDelete(false);
+                }
+            }
         } catch (AtlasBaseException e) {
             LOG.error("getTechnicalCategory exception is {}", e);
         }
         return categoryPrivilegeList;
     }
 
+    /**
+     * 删除有父目录，但是父目录不存在的目录
+     * @param categoryPrivilegeList
+     */
     private void removeNoParentCategory(List<CategoryPrivilege> categoryPrivilegeList){
         Map<String,String> map = categoryPrivilegeList.stream().collect(Collectors.toMap(CategoryPrivilege::getGuid, CategoryPrivilege::getName));
         Iterator<CategoryPrivilege> iter = categoryPrivilegeList.iterator();
