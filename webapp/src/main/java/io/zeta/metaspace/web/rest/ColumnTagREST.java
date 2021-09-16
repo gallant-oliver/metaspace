@@ -60,12 +60,4 @@ public class ColumnTagREST {
     public Result checkDuplicateNameTag(@HeaderParam("tenantId")String tenantId,@QueryParam("tagName")String tagName){
         return columnTagService.checkDuplicateNameTag(tenantId,tagName);
     }
-
-    @GET
-    @Path("/test")
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public Result test(){
-        return null;
-    }
 }

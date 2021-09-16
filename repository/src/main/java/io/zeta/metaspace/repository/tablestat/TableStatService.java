@@ -37,12 +37,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
+import java.util.*;
 
 @AtlasService
 @Slf4j
@@ -166,6 +161,7 @@ public class TableStatService {
             return Pair.of(tableStatList.size(), pageList);
         } catch (Exception e) {
             log.error(e.getMessage());
+            log.error(Arrays.toString(e.getStackTrace()));
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "HBase 异常");
         }
     }
