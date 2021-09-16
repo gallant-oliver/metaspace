@@ -2508,13 +2508,15 @@ public class MetaDataService {
 
     public ComparisonColumnMetadata getComparisionColumnMetadata(String tableGuid, Integer version) throws AtlasBaseException {
         ComparisonColumnMetadata comparisonMetadata = new ComparisonColumnMetadata();
-       // Set<String> changedFiledSet = new HashSet<>();
+        Set<String> changedFiledSet = new HashSet<>();
+        comparisonMetadata.setChangedSet(changedFiledSet);
         try {
             List<ColumnMetadata> currentMetadata = metadataHistoryDAO.getLastColumnMetadata(tableGuid);
             List<ColumnMetadata> oldMetadata = metadataHistoryDAO.getColumnMetadata(tableGuid, version);
 
+            List<ColumnMetadata> orderMetadata = new ArrayList<>(); //记录有顺序的旧版字段
             comparisonMetadata.setCurrentMetadata(currentMetadata);
-            comparisonMetadata.setOldMetadata(oldMetadata);
+            comparisonMetadata.setOldMetadata(orderMetadata);
 
             if(CollectionUtils.isNotEmpty(currentMetadata)){
                 if(version.compareTo(currentMetadata.get(0).getVersion())==0){
@@ -2524,11 +2526,14 @@ public class MetaDataService {
                         Optional<ColumnMetadata> filterOpt = oldMetadata.stream().filter(p->StringUtils.equalsIgnoreCase(item.getName(),p.getName())).findFirst();
                         if(filterOpt.isPresent()){//名称一样比较类型
                             ColumnMetadata filter = filterOpt.get();
+                            orderMetadata.add(filter);
+
                             if(!StringUtils.equalsIgnoreCase(filter.getType(),item.getType()) ) {
                                 item.setHasChange(true);
                                 item.setChangeCause(ComparisonMetadata.ComparisonResult.CHANGE_CAUSE_TYPE_CHANGE);
                             }
                         }else{//旧版本找不到字段，则为新增
+                            orderMetadata.add(new ColumnMetadata());
                             item.setHasChange(true);
                             item.setChangeCause(ComparisonMetadata.ComparisonResult.CHANGE_CAUSE_ADD);
                         }
@@ -2538,8 +2543,9 @@ public class MetaDataService {
                     List<ColumnMetadata> deleteColumnList = oldMetadata.stream().filter(p->!currentColNames.contains(p.getName())).collect(Collectors.toList());
                     if(CollectionUtils.isNotEmpty(deleteColumnList)){
                         for(ColumnMetadata vo : deleteColumnList){
+                            orderMetadata.add(vo);
+
                             ColumnMetadata e = new ColumnMetadata();
-                            BeanUtils.copyProperties(e,vo);
                             e.setHasChange(true);
                             e.setChangeCause(ComparisonMetadata.ComparisonResult.CHANGE_CAUSE_DELETE);
                             currentMetadata.add(e);
@@ -2547,21 +2553,7 @@ public class MetaDataService {
                     }
                 }
             }
-            /*Map<String, Map> currentColumnMedataMap = new HashMap<>();
-            for (ColumnMetadata metadata : currentMetadata) {
-                String name = metadata.getName();
-                Map<String, String> columnMetadataMap = BeanUtils.describe(metadata);
-                currentColumnMedataMap.put(name, columnMetadataMap);
-            }
-            Map<String, Map> oldColumnMedataMap = new HashMap<>();
-            for (ColumnMetadata metadata : oldMetadata) {
-                String name = metadata.getName();
-                Map<String, String> columnMetadataMap = BeanUtils.describe(metadata);
-                oldColumnMedataMap.put(name, columnMetadataMap);
-            }*/
-            //String add = ComparisonMetadata.ComparisonResult.CHANGE_CAUSE_ADD;
 
-           // comparisonMetadata.setChangedSet(changedFiledSet);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
