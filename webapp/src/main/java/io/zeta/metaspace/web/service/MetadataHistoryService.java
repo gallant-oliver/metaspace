@@ -23,6 +23,7 @@ import io.zeta.metaspace.model.metadata.ColumnMetadata;
 import io.zeta.metaspace.model.metadata.TableMetadata;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.MetadataHistoryDAO;
 import io.zeta.metaspace.web.dao.SourceInfoDeriveTableInfoDAO;
@@ -54,6 +55,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 /*
@@ -164,7 +166,11 @@ public class MetadataHistoryService {
                         log.info("storeHistoryMetadata AtlasEntity name is {},首次添加，不需要邮件通知。", tableMetadata.getName());
                         continue;
                     }
-                    sendNoticeByEmail(tableMetadataList);
+                    ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
+                    threadPoolExecutor.execute(()->{
+                        sendNoticeByEmail(tableMetadataList);
+                    });
+
                 }
             }
         } catch (Exception e) {
@@ -274,6 +280,10 @@ public class MetadataHistoryService {
             }
         }
 
+        if(CollectionUtils.isEmpty(excelMapList)){
+            log.info("元数据的字段信息没有发生变化，不予邮件通知.");
+            return;
+        }
         File file =  null;
         try {
             file = File.createTempFile("tmp_"+System.currentTimeMillis(),".docx");
