@@ -299,7 +299,7 @@ public interface RelationDAO {
                     "        </foreach>"+
                             " OR tableinfo.source_id != 'hive' ) \n" +
                     "      OR (\n" +
-                    "      tableinfo.databaseguid = ( SELECT db_guid FROM db_category_relation dcr WHERE dcr.category_id IN" +
+                    "      tableinfo.databaseguid IN ( SELECT db_guid FROM db_category_relation dcr WHERE dcr.category_id IN" +
                             " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>",
                             " #{categoryGuid}",
                             " </foreach>",
