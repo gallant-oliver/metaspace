@@ -27,6 +27,7 @@ import io.zeta.metaspace.model.sync.SyncTaskInstance;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
+import io.zeta.metaspace.web.metadata.BaseFields;
 import io.zeta.metaspace.web.metadata.MetaStoreBridgeUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
@@ -228,6 +229,52 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         }
         syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
         LOG.info("import metadata end at {}", simpleDateFormat.format(new Date()));
+    }
+
+    /**
+     * 删除所有的hive数据
+     */
+    public void deleteJanusGraphHive() {
+        try {
+            String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_BY_STATE), AtlasEntity.Status.ACTIVE);
+            List<AtlasVertex> dbVertices = (List) graph.executeGremlinScript(databaseQuery, false);
+            for (AtlasVertex vertex : dbVertices) {
+                if (Objects.nonNull(vertex)) {
+                    List<String> attributes = Lists.newArrayList(ATTRIBUTE_NAME, ATTRIBUTE_QUALIFIED_NAME);
+                    AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
+                    AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
+                    String databaseInGraph = dbEntity.getAttribute(ATTRIBUTE_NAME).toString();
+                    deleteTableEntity(databaseInGraph, new ArrayList<>());
+                    deleteEntity(dbEntity);
+                }
+            }
+        } catch (AtlasBaseException e) {
+            LOG.error("deleteJanusGraphHive exception is {}", e);
+        }
+    }
+
+    /**
+     * 删除所有的rdbms数据
+     * @param instanceId
+     * @param databaseName
+     * @throws AtlasBaseException
+     */
+    public void deleteJanusGraphRdbms(String instanceId, String databaseName) throws AtlasBaseException {
+        try {
+            String tableQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_DB_TABLE_BY_STATE), instanceId, databaseName, AtlasEntity.Status.ACTIVE);
+            List<AtlasVertex> vertices = (List) graph.executeGremlinScript(tableQuery, false);
+            for (AtlasVertex vertex : vertices) {
+                if (Objects.nonNull(vertex)) {
+                    List<String> attributes = Lists.newArrayList(ATTRIBUTE_NAME, BaseFields.ATTRIBUTE_QUALIFIED_NAME);
+                    AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
+                    AtlasEntity tableEntity = dbEntityWithExtInfo.getEntity();
+                    String tableNameInGraph = tableEntity.getAttribute(ATTRIBUTE_NAME).toString();
+                    deleteEntity(tableEntity);
+                }
+            }
+        } catch (AtlasBaseException e) {
+            LOG.error("deleteJanusGraphRdbms exception is {}", e);
+        }
     }
 
 
