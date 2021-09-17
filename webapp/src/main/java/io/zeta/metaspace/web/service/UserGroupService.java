@@ -947,7 +947,7 @@ public class UserGroupService {
         // 租户下的数据库登记生成的目录（技术目录）
         List<String> allRegisteredGuids = new ArrayList<>();
         if (categoryType == 0) {
-            allRegisteredGuids = userGroupDAO.getRegisteredCategorysByType(tenantId);
+            allRegisteredGuids = userGroupDAO.getRegisteredCategorys(tenantId, true);
         }
 
         // 用户组所要添加权限的数据库登记生成的目录
@@ -1119,7 +1119,10 @@ public class UserGroupService {
         }
         Timestamp currentTime = new Timestamp(System.currentTimeMillis());
         userGroupDAO.updateCategory(userGroupId, currentTime,AdminUtils.getUserData().getUserId());
-        userGroupDAO.updateCategoryPrivileges(categorList,userGroupId,categoryPrivilege);
+
+        if (categorList.size() != 0) {
+            userGroupDAO.updateCategoryPrivileges(categorList, userGroupId, categoryPrivilege);
+        }
     }
 
     /**
@@ -1341,6 +1344,15 @@ public class UserGroupService {
             }
             groupAndUser.setGroupPrivilege(userGroupCategory);
             categories.add(groupAndUser);
+        }
+
+        // 技术目录-授权数据范围 ：租户下数据库登记（“是否重要”属性选择为“是”）所创建的目录和技术目录下手动创建的目录。
+        if (type == 0 && !categories.isEmpty()) {
+            // 租户下数据库登记（“是否重要”属性选择为“否”）所创建的目录
+            List<String> notImportanceRegisteredGuids = userGroupDAO.getRegisteredCategorys(tenantId, false);
+            if (!notImportanceRegisteredGuids.isEmpty()) {
+                categories.removeIf(c -> notImportanceRegisteredGuids.contains(c.getGuid()));
+            }
         }
 
         return categories;
