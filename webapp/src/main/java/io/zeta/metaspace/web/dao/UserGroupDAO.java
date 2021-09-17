@@ -300,7 +300,7 @@ public interface UserGroupDAO {
             "and importance=#{importance} " +
             "and category_id is not null " +
             "and category_id != ''")
-    List<String> getRegisteredCategorys(String tenantId, boolean importance);
+    List<String> getRegisteredCategorys(@Param("tenantId")String tenantId, @Param("importance")boolean importance);
 
     // 获取手动创建的目录（即非数据库登记创建）和 租户数据库登记（“是否重要”属性选择为“是”）所创建的目录
     @Select("select c.guid, c.description, c.name, c.parentcategoryguid, c.categorytype, c.level, c.safe, c.tenantid, c.createtime, c.creator, c.sort " +
