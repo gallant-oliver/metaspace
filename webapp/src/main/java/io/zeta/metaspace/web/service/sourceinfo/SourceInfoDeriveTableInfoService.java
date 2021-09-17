@@ -6,6 +6,7 @@ import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.Constant;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.DeriveTableStateEnum;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.MetadataDeriveTableInfo;
@@ -653,7 +654,12 @@ public class SourceInfoDeriveTableInfoService {
 
 
     public SourceInfoDeriveTableColumnVO queryDeriveTableInfo(String tenantId, String sourceId, String schemaId, String tableGuid) {
-        List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,tableGuid);
+        Table table = tableDAO.getDbAndTableName(tableGuid);
+        if(table == null){
+            LOG.info("该表 {} 不存在",tableGuid);
+            return null;
+        }
+        List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,schemaId,table.getTableName());
         if(org.apache.commons.collections.CollectionUtils.isEmpty(deriveTableInfoList)){
             return null;
         }
