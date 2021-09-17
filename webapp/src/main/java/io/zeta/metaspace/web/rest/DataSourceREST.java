@@ -691,13 +691,16 @@ public class DataSourceREST {
     @Path("/dataSource/db/table/column")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getOptionalColumn(@QueryParam("tableId") String tableId) throws Exception {
+    public Result getOptionalColumn(@QueryParam("sourceId") String sourceId,@QueryParam("tableId") String tableId) throws Exception {
+        if (StringUtils.isBlank(sourceId)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源id不能为空");
+        }
         if (StringUtils.isBlank(tableId)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据表id不能为空");
         }
         try {
-            List<OptionalColumnDTO> optionalColumnDTOs = dataSourceService.getOptionalColumn(tableId);
-            return ReturnUtil.success(optionalColumnDTOs);
+            List<ColumnDTO> columnDTOs = dataSourceService.getOptionalColumn(sourceId,tableId);
+            return ReturnUtil.success(columnDTOs);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
