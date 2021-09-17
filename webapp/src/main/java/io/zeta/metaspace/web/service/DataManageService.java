@@ -915,12 +915,12 @@ public class DataManageService {
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
             List<RelationEntityV2> relations = new ArrayList<>();
-//            User user = AdminUtils.getUserData();
-//            List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
-//            List<String> groupIds = new ArrayList<>();
-//            if(groups.size()>0) {
-//                groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
-//            }
+            User user = AdminUtils.getUserData();
+            List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+            List<String> groupIds = new ArrayList<>();
+            if(groups.size()>0) {
+                groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
+            }
             relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset, tenantId);
             if(!CollectionUtils.isEmpty(relations)){
                 for (RelationEntityV2 entity : relations) {
@@ -930,16 +930,16 @@ public class DataManageService {
                     entity.setTableTagList(tableTagNameList);
                     List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
                     entity.setDataOwner(ownerHeaders);
-//                    String sourceId=entity.getSourceId();
-//                    entity.setJump(true);
-//                    //用户组新增数据库权限，技术目录跳转到元数据管理，判断如果当前表所在数据库未被赋权给用户组，不允许跳转
-//                    if(!"hive".equals(sourceId)){
-//                        String dbId=entity.getDbId();
-//                        int cnt= userGroupDAO.getDatabaseIdNum(groupIds,sourceId,dbId);
-//                        if(cnt==0){
-//                            entity.setJump(false);
-//                        }
-//                    }
+                    String sourceId=entity.getSourceId();
+                    entity.setJump(true);
+                    //用户组新增数据库权限，技术目录跳转到元数据管理，判断如果当前表所在数据库未被赋权给用户组，不允许跳转
+                    if(!"hive".equals(sourceId)){
+                        String dbId=entity.getDbId();
+                        int cnt= userGroupDAO.getDatabaseIdNum(groupIds,sourceId,dbId);
+                        if(cnt==0){
+                            entity.setJump(false);
+                        }
+                    }
                 }
                 getPathByCategoryId(relations, tenantId, categoryGuid);
                 pageResult.setCurrentSize(relations.size());
