@@ -5,6 +5,7 @@ import java.util.List;
 public class ColumnDTO {
     private String columnId;
     private String columnName;
+    private String type;
     private List<String> columnValues;
 
     public String getColumnId() {
@@ -21,6 +22,14 @@ public class ColumnDTO {
 
     public void setColumnName(String columnName) {
         this.columnName = columnName;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     public List<String> getColumnValues() {
