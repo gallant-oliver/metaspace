@@ -1342,7 +1342,7 @@ public class DataSourceService {
     }
 
     /**
-     * 获取可选数据源列表
+     * 获取可选数据源列表,只查询oracle数据源
      *
      * @param tenantId
      * @return
@@ -1352,15 +1352,10 @@ public class DataSourceService {
         User user = AdminUtils.getUserData();
         List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
         List<OptionalDataSourceDTO> odsds = new ArrayList<>();
-        OptionalDataSourceDTO ods = new OptionalDataSourceDTO();
-        ods.setSourceId("hive");
-        ods.setSourceName(DataSourceType.HIVE.getName());
-        ods.setSourceType(DataSourceType.HIVE.getName());
-        odsds.add(ods);
         if (!CollectionUtils.isEmpty(groups)) {
             //2. 获取被授权给用户组的数据源
             List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
-            List<DataSourceBody> dataSourceBodies = dataSourceDAO.getDataSourcesByGroups(groupIds, tenantId);
+            List<DataSourceBody> dataSourceBodies = dataSourceDAO.getOracleDataSourcesByGroups(groupIds, tenantId);
             if (!CollectionUtils.isEmpty(dataSourceBodies)) {
                 //根据id去重
                 List<DataSourceBody> unique = dataSourceBodies.stream().collect(
