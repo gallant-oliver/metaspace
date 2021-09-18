@@ -122,7 +122,7 @@ public class DataSourceREST {
         if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId(),tenantId)!=0){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源名称存在");
         }
-        
+
         HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
 
         dataSourceBody.setPassword(AESUtils.aesEncode(dataSourceBody.getPassword()));
