@@ -82,11 +82,6 @@ public class DataSourceREST {
     private DataSourceService dataSourceService;
     private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
     private Map<String,AtomicBoolean> importings = new HashMap<>();
-    private Map<String,Thread> threadMap = new HashMap<>();
-    @Autowired
-    private MetaDataService metadataService;
-
-
 
     /**
      * 添加数据源
@@ -97,8 +92,8 @@ public class DataSourceREST {
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.INSERT)
     public boolean setNewDataSource(DataSourceBody dataSourceBody,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-
         dataSourceBody.setSourceId(UUID.randomUUID().toString());
         if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId(),tenantId)!=0){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源名称存在");
@@ -121,13 +116,14 @@ public class DataSourceREST {
     @Path("/api")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.INSERT)
     public boolean setNewApiDataSource(DataSourceBody dataSourceBody,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         dataSourceBody.setSourceId(UUID.randomUUID().toString());
         if (dataSourceService.isSourceName(dataSourceBody.getSourceName(),dataSourceBody.getSourceId(),tenantId)!=0){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源名称存在");
         }
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
 
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), dataSourceBody.getSourceName());
 
         dataSourceBody.setPassword(AESUtils.aesEncode(dataSourceBody.getPassword()));
         dataSourceService.setNewDataSource(dataSourceBody,true,tenantId);
@@ -172,13 +168,17 @@ public class DataSourceREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(OperateTypeEnum.DELETE)
     public boolean deleteDataSource(List<String> sourceIds) throws AtlasBaseException {
-        for (String sourceId:sourceIds
-             ) {
+        if(CollectionUtils.isEmpty(sourceIds)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"要删除的数据源id为空");
+        }
+        List<String> sourceNameList= dataSourceService.getSourceNameForSourceIds(sourceIds);
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), String.join(",",sourceNameList));
+       /* for (String sourceId:sourceIds) {
             String sourceName = dataSourceService.getSourceNameForSourceId(sourceId);
             if (sourceName!=null){
                 HttpRequestContext.get().auditLog(ModuleEnum.DATASOURCE.getAlias(), sourceName);
             }
-        }
+        }*/
         dataSourceService.deleteDataSource(sourceIds);
         return true;
     }
@@ -691,13 +691,16 @@ public class DataSourceREST {
     @Path("/dataSource/db/table/column")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getOptionalColumn(@QueryParam("tableId") String tableId) throws Exception {
+    public Result getOptionalColumn(@QueryParam("sourceId") String sourceId,@QueryParam("tableId") String tableId) throws Exception {
+        if (StringUtils.isBlank(sourceId)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源id不能为空");
+        }
         if (StringUtils.isBlank(tableId)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据表id不能为空");
         }
         try {
-            List<OptionalColumnDTO> optionalColumnDTOs = dataSourceService.getOptionalColumn(tableId);
-            return ReturnUtil.success(optionalColumnDTOs);
+            List<ColumnDTO> columnDTOs = dataSourceService.getOptionalColumn(sourceId,tableId);
+            return ReturnUtil.success(columnDTOs);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }

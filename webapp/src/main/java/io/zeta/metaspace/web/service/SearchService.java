@@ -101,9 +101,9 @@ public class SearchService {
             PageResult<Database> databasePageResult = new PageResult<>();
             List<Database> databaseList;
             //获取当前租户下用户所属用户组
-//            User user = AdminUtils.getUserData();
-//            List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
-//            List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
+            User user = AdminUtils.getUserData();
+            List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+            List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
             if (StringUtils.isEmpty(sourceId)) {
                 dbList = tenantService.getDatabase(tenantId);
                 if (CollectionUtils.isEmpty(dbList)) {
@@ -112,8 +112,7 @@ public class SearchService {
                 if(StringUtils.isNotBlank(query)){
                     query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
                 }
-                databaseList = databaseInfoDAO.selectByDbNameAndTenantId(tenantId, query, dbList, limit, offset);
-//                databaseList = databaseInfoDAO.selectByDbNameAndTenantId(tenantId, groupIds,query, dbList, limit, offset);
+                databaseList = databaseInfoDAO.selectByDbNameAndTenantId(tenantId, groupIds,query, dbList, limit, offset);
             } else if ("hive".equalsIgnoreCase(sourceId)) {
                 dbList = tenantService.getCurrentTenantDatabase(tenantId);
                 if (CollectionUtils.isEmpty(dbList)) {
@@ -121,9 +120,9 @@ public class SearchService {
                 }
                 databaseList = databaseInfoDAO.selectByHive(dbList, limit, offset);
             } else {
-                databaseList = databaseInfoDAO.selectBySourceId(sourceId, limit, offset);
+//                databaseList = databaseInfoDAO.selectBySourceId(sourceId, limit, offset);
                 //用户组新增数据库权限，需要根据租户查询用户组，然后显示该用户组下该数据源可显示的数据库
-//                databaseList = databaseInfoDAO.selectDataBaseBySourceId(sourceId,groupIds, limit, offset);
+                databaseList = databaseInfoDAO.selectDataBaseBySourceId(sourceId,groupIds, limit, offset);
             }
             if (CollectionUtils.isEmpty(databaseList)) {
                 return databasePageResult;

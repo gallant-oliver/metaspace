@@ -90,7 +90,7 @@ public interface TableDAO {
     @Select("select tablename from tableInfo where tableguid=#{guid} and status='ACTIVE'")
     public String getTableNameByTableGuid(String guid);
 
-    @Select("select tableName,dbName as databaseName from tableInfo where tableGuid=#{guid}")
+    @Select("select tableName,dbName as databaseName, databaseguid as databaseId from tableInfo where tableGuid=#{guid}")
     public Table getDbAndTableName(@Param("guid") String guid);
 
     @Select({"<script>",

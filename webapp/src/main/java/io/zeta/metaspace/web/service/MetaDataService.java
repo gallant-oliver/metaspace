@@ -370,8 +370,12 @@ public class MetaDataService {
             if(StringUtils.isBlank(sourceId)){
                 sourceId="hive";
             }
-            List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,guid);
-            table.setHasDerivetable(CollectionUtils.isNotEmpty(deriveTableInfoList));
+            Table tableAttr = tableDAO.getDbAndTableName(guid);
+            if(tableAttr != null){
+                List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,tableAttr.getDatabaseId(),tableAttr.getTableName());
+                table.setHasDerivetable(CollectionUtils.isNotEmpty(deriveTableInfoList));
+            }
+
 
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
@@ -588,8 +592,11 @@ public class MetaDataService {
             //table
             RDBMSTable table = extractRDBMSTableInfo(entity, guid, info, tenantId);
 
-            List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceId == null ? null : sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,guid);
-            table.setHasDerivetable(CollectionUtils.isNotEmpty(deriveTableInfoList));
+            Table tableAttr = tableDAO.getDbAndTableName(guid);
+            if(tableAttr != null){
+                List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceId == null ? null : sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,tableAttr.getDatabaseId(),tableAttr.getTableName());
+                table.setHasDerivetable(CollectionUtils.isNotEmpty(deriveTableInfoList));
+            }
 
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();

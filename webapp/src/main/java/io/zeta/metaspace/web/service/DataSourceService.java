@@ -24,6 +24,7 @@ import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.share.APIIdAndName;
@@ -41,6 +42,7 @@ import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.metadata.BaseFields;
 import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
 import io.zeta.metaspace.web.util.*;
+import jnr.ffi.Struct;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -59,10 +61,8 @@ import org.springframework.util.CollectionUtils;
 import javax.inject.Inject;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.Timestamp;
+import java.io.IOException;
+import java.sql.*;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -102,6 +102,8 @@ public class DataSourceService {
     private ColumnDAO columnDAO;
     @Autowired
     private DatabaseInfoDAO databaseInfoDAO;
+    @Autowired
+    private SearchService searchService;
 
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
@@ -241,6 +243,15 @@ public class DataSourceService {
         }
     }
 
+    public List<String> getSourceNameForSourceIds(List<String> sourceIds) throws AtlasBaseException{
+        try {
+            return dataSourceDAO.getSourceNameForSourceIds(sourceIds);
+        } catch (Exception e) {
+            LOG.error("获取数据源名字出错", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据源名字失败\n" + e.getMessage());
+        }
+    }
+
     /**
      * 删除数据源
      *
@@ -258,8 +269,11 @@ public class DataSourceService {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在无权限删除的数据源");
                 }
             }
+            LOG.info("删除数据源操作处理...");
             dataSourceDAO.deleteRelationBySourceId(sourceIds);
+            LOG.info("删除数据源和用户组关系成功...");
             dataSourceDAO.deleteDataSource(sourceIds);
+            LOG.info("删除数据源主表操作成功..");
             return syncTaskDefinitionDAO.deleteByDataSourceId(sourceIds);
         } catch (Exception e) {
             LOG.error("删除数据源失败", e);
@@ -1397,12 +1411,43 @@ public class DataSourceService {
         return tableDTOS;
     }
 
-    public List<OptionalColumnDTO> getOptionalColumn(String tableId) {
+    public List<ColumnDTO> getOptionalColumn(String sourceId,String tableId) throws IOException, SQLException {
+        GuidCount guidCount=new GuidCount();
+        guidCount.setCount(5);
+        guidCount.setGuid(tableId);
+        guidCount.setSourceId(sourceId);
+        TableShow tableShow = searchService.getTableShow(guidCount, false);
+        List<Map<String,String>> lines = tableShow.getLines();
+        TableInfo tableInfo=tableDAO.getTableInfoByTableguid(tableId);
+        String tableName=tableInfo.getTableName();
         List<Column> columnInfoList = columnDAO.getColumnInfoList(tableId);
-        List<OptionalColumnDTO> optionalColumnDTOS = null;
+        List<ColumnDTO> columnDTOS = new ArrayList<>();
         if (!CollectionUtils.isEmpty(columnInfoList)) {
-            optionalColumnDTOS = columnInfoList.stream().map(x -> BeanMapper.map(x, OptionalColumnDTO.class)).collect(Collectors.toList());
+            columnDTOS = columnInfoList.stream().map(x -> BeanMapper.map(x, ColumnDTO.class)).collect(Collectors.toList());
         }
-        return optionalColumnDTOS;
+        if(columnDTOS.size()>0){
+           for(ColumnDTO columnDTO:columnDTOS) {
+               List<String> values=new ArrayList<>();
+               if(lines.size()>0)
+               {
+                  for(Map<String,String> map:lines){
+                      String param=columnDTO.getColumnName();
+                      if("hive".equals(sourceId)){
+                          param=tableName+"."+columnDTO.getColumnName();
+                      }
+                      String value=map.get(param);
+                      if(!"NULL".equals(value)){
+                        if(StringUtils.isNotBlank(value)) {
+                            values.add(value);
+                        }
+                      }
+                  }
+                   columnDTO.setColumnValues(values);
+               }else{
+                   columnDTO.setColumnValues(values);
+               }
+           }
+        }
+        return columnDTOS;
     }
 }
