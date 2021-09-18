@@ -1668,10 +1668,7 @@ public class DataManageService {
         tableInfo.setOwner(owner);
         tableInfo.setTableGuid(guid);
         tableInfo.setTableName(name);
-        Object createTime = entity.getAttribute("createTime");
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String formatDateStr = sdf.format(createTime);
-        tableInfo.setCreateTime(formatDateStr);
+        tableInfo.setCreateTime(formatDate(entity.getAttribute("createTime")));
         tableInfo.setStatus(entity.getStatus().name());
         AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
         tableInfo.setDatabaseGuid(relatedDB.getGuid());
@@ -1683,7 +1680,20 @@ public class DataManageService {
         return tableInfo;
     }
 
+    private String formatDate(Object createTime){
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            return sdf.format(createTime);
+        } catch (Exception e) {
+            LOG.error("createTime is {},exception is {}", createTime, e);
+        }
+        return "";
+    }
+
     public void addOrUpdateDb(Database dbInfo, SyncTaskDefinition definition){
+        if(StringUtils.isBlank(dbInfo.getInstanceId()) || "UNKOWN".equalsIgnoreCase(dbInfo.getInstanceId())){
+            return;
+        }
         String var = dbInfo.getInstanceId().intern();
         synchronized (var){
             dbDAO.deleteIfExitDbByName(dbInfo.getDatabaseId(), dbInfo.getInstanceId(), dbInfo.getDatabaseName());
@@ -1849,10 +1859,23 @@ public class DataManageService {
             String typeName = entity.getTypeName();
             String dbType = null;
             String instanceGuid = null;
+            Database dbInfo;
+
             switch (typeName){
                 case "hive_db":
                     dbType = "HIVE";
                     instanceGuid = "hive";
+                    break;
+                case "rdbms_instance":
+                    if(null == dbType){
+                        dbType = getDbType(definition, config);
+                    }
+                    if(null == instanceGuid){
+                        dbType = getDbType(definition, config);
+                        instanceGuid = getInstanceGuid(entity);
+                    }
+                    insertOrUpdateDb(entity, dbType, instanceGuid, definition);
+                    break;
                 case "rdbms_db":
                     if(null == dbType){
                         dbType = getDbType(definition, config);
@@ -1861,18 +1884,11 @@ public class DataManageService {
                         dbType = getDbType(definition, config);
                         instanceGuid = getInstanceGuid(entity);
                     }
-                    Database dbInfo = getDbInfo(entity);
+                    dbInfo = getDbInfo(entity);
                     dbInfo.setDbType(dbType);
                     dbInfo.setInstanceId(instanceGuid);
                     addOrUpdateDb(dbInfo, definition);
                     break;
-                case "hive_table":
-                    if(getOutputFromProcesses(entity) && hiveAtlasEntityAll){
-                        continue;
-                    }
-                    if (entity.getAttribute("temporary") != null && entity.getAttribute("temporary").toString().equals("true")) {
-                        continue;
-                    }
                 case "rdbms_table":
                     TableInfo tableInfo = getTableInfo(entity);
                     addOrUpdateTable(tableInfo,definition);
@@ -1892,6 +1908,37 @@ public class DataManageService {
                     addOrUpdateColumn(column);
                     break;
             }
+        }
+    }
+
+    /**
+     * rdbms元数据采集，添加或更新数据库
+     * @param entity
+     * @param dbType
+     * @param instanceGuid
+     * @param definition
+     */
+    public void insertOrUpdateDb(AtlasEntity entity, String dbType, String instanceGuid, SyncTaskDefinition definition) {
+        List<AtlasRelatedObjectId> atlasRelatedObjectIdList = (List<AtlasRelatedObjectId>)  entity.getRelationshipAttributes().get("databases");
+        if (CollectionUtils.isEmpty(atlasRelatedObjectIdList)) {
+            LOG.warn("数据源下获取不到数据库信息");
+            return;
+        }
+        for (AtlasRelatedObjectId atlasRelatedObjectId : atlasRelatedObjectIdList) {
+            String typeName = atlasRelatedObjectId.getTypeName();
+            if (!"rdbms_db".equals(typeName)) {
+                continue;
+            }
+            String dbName = atlasRelatedObjectId.getDisplayText();
+            String status = atlasRelatedObjectId.getEntityStatus().name();
+            String guid = atlasRelatedObjectId.getGuid();
+            Database database = new Database();
+            database.setDatabaseName(dbName);
+            database.setDatabaseId(guid);
+            database.setStatus(status);
+            database.setDbType(dbType);
+            database.setInstanceId(instanceGuid);
+            addOrUpdateDb(database, definition);
         }
     }
 
