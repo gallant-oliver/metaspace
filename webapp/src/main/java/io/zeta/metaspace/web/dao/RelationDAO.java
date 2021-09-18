@@ -275,37 +275,42 @@ public interface RelationDAO {
                     "   tableInfo.description,\n" +
                     "   data_source.source_type AS dataSourceType,\n" +
                     "   source_info.category_id AS categoryGuid,\n" +
+                    "   source_info.id AS sourceInfoId,\n" +
                     "CASE\n" +
                     "      data_source.source_type\n" +
                     "      WHEN 'ORACLE' THEN\n" +
                     "      data_source.database ELSE '' \n" +
                     "   END AS databaseInstance,\n" +
                     "CASE\n" +
-                    "      tableInfo.source_id \n" +
-                    "      WHEN 'hive' THEN\n" +
-                    "      'hive' ELSE data_source.source_name \n" +
+                    "     WHEN  data_source.source_id = \n" +
+                    "      'hive' THEN\n" +
+                    "      'hive' " +
+                    "     WHEN  data_source.source_id is \n" +
+                    "     null THEN\n" +
+                    "      'hive' "+
+                    "ELSE data_source.source_name \n" +
                     "   END AS source_name,\n" +
                     "   COUNT ( * ) OVER () total \n" +
                     "FROM\n" +
                     "   tableInfo " +
-                    "   INNER JOIN source_info ON tableinfo.databaseguid = source_info.database_id\n" +
-                    "   INNER JOIN data_source ON source_info.data_source_id = data_source.source_id \n" +
+                    "   LEFT JOIN source_info ON tableinfo.databaseguid = source_info.database_id\n" +
+                    "   LEFT JOIN data_source ON source_info.data_source_id = data_source.source_id \n" +
                     "WHERE\n" +
                     "   tableInfo.status = 'ACTIVE' \n" +
                     "   AND (\n" +
                     "       ( tableinfo.dbname IN" +
                     "         <foreach item='item' index='index' collection='databases' open='(' separator=',' close=')'>",
-                    "           #{item}",
-                    "        </foreach>"+
-                            " OR tableinfo.source_id != 'hive' ) \n" +
+            "           #{item}",
+            "        </foreach>"+
+                    " OR tableinfo.source_id != 'hive' ) \n" +
                     "      OR (\n" +
                     "      tableinfo.databaseguid IN ( SELECT db_guid FROM db_category_relation dcr WHERE dcr.category_id IN" +
-                            " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>",
-                            " #{categoryGuid}",
-                            " </foreach>",
-                            " AND dcr.tenant_id = #{tenantId} )) \n" +
+                    " <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>",
+            " #{categoryGuid}",
+            " </foreach>",
+            " AND dcr.tenant_id = #{tenantId} )) \n" +
                     "   ) " +
-                                    "   AND source_info.version = 0",
+                    "   AND source_info.version = 0",
             " <if test=\"tableName != null and tableName!=''\">",
             " and",
             " tableInfo.tableName like concat('%',#{tableName},'%') ESCAPE '/'",
