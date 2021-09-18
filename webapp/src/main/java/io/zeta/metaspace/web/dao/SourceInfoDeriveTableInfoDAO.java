@@ -217,7 +217,7 @@ public interface SourceInfoDeriveTableInfoDAO {
             " t1.updater as updater, cast(t1.update_time as varchar) as updateTimeStr, t1.ddl as ddl, t1.dml as dml, t1.state as state,",
             " (select t2.username from users t2 where t2.userid= t1.creator limit 1)  as creatorName ",
             " from source_info_derive_table_info t1",
-            " where  t1.source_id=#{sourceId} and t1.source_table_guid=#{tableGuid}",
+            " where  t1.source_id=#{sourceId} and t1.table_guid=#{tableGuid}",
             "</script>"})
     List<SourceInfoDeriveTableInfo> getDeriveTableByGuid(@Param("sourceId")String sourceId,
                                                                    @Param("tableGuid") String tableGuid );
