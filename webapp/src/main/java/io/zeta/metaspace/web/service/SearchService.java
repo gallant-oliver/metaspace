@@ -24,6 +24,7 @@ import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.HiveMetaStoreBridgeUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.annotation.AtlasService;
@@ -52,8 +53,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static io.zeta.metaspace.utils.StringUtil.dbsToString;
 
 @AtlasService
 public class SearchService {
@@ -91,21 +90,29 @@ public class SearchService {
     private DatabaseInfoDAO databaseInfoDAO;
     @Autowired
     private TableDAO tableDAO;
+    @Autowired
+    private HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
+    @Autowired
+    private DataSourceDAO dataSourceDAO;
 
     public PageResult<Database> getDatabases(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount) {
         try {
             List<String> dbList;
             PageResult<Database> databasePageResult = new PageResult<>();
             List<Database> databaseList;
+            //获取当前租户下用户所属用户组
+            User user = AdminUtils.getUserData();
+            List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+            List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
             if (StringUtils.isEmpty(sourceId)) {
                 dbList = tenantService.getDatabase(tenantId);
                 if (CollectionUtils.isEmpty(dbList)) {
                     return databasePageResult;
                 }
                 if(StringUtils.isNotBlank(query)){
-                    query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+                    query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
                 }
-                databaseList = databaseInfoDAO.selectByDbNameAndTenantId(tenantId, query, dbList, limit, offset);
+                databaseList = databaseInfoDAO.selectByDbNameAndTenantId(tenantId, groupIds,query, dbList, limit, offset);
             } else if ("hive".equalsIgnoreCase(sourceId)) {
                 dbList = tenantService.getCurrentTenantDatabase(tenantId);
                 if (CollectionUtils.isEmpty(dbList)) {
@@ -113,7 +120,9 @@ public class SearchService {
                 }
                 databaseList = databaseInfoDAO.selectByHive(dbList, limit, offset);
             } else {
-                databaseList = databaseInfoDAO.selectBySourceId(sourceId, limit, offset);
+//                databaseList = databaseInfoDAO.selectBySourceId(sourceId, limit, offset);
+                //用户组新增数据库权限，需要根据租户查询用户组，然后显示该用户组下该数据源可显示的数据库
+                databaseList = databaseInfoDAO.selectDataBaseBySourceId(sourceId,groupIds, limit, offset);
             }
             if (CollectionUtils.isEmpty(databaseList)) {
                 return databasePageResult;
@@ -144,7 +153,7 @@ public class SearchService {
             if (StringUtils.isEmpty(sourceId)) {
                 dbList = tenantService.getDatabase(tenantId);
                 if(StringUtils.isNotBlank(query)){
-                    query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+                    query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
                 }
                 tableEntityList = tableDAO.selectListByTenantIdAndTableName(query, tenantId, dbList, limit, offset);
             } else if ("hive".equalsIgnoreCase(sourceId)) {
@@ -220,7 +229,7 @@ public class SearchService {
         }
     }
 
-
+    //TODO 这里使用缓存会存在bug，逻辑上当租户添加hive库权限无法立即更新缓存中的数据
     @Cacheable(value = "databaseSearchCache", key = "#parameters.query + #active + #parameters.limit + #parameters.offset+#tenantId+#account")
     public PageResult<Database> getDatabasePageResult(Boolean active, Parameters parameters, String tenantId, String account) throws AtlasBaseException {
         long limit = parameters.getLimit();
@@ -231,8 +240,7 @@ public class SearchService {
             return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit);
         } else {
             List<String> dbs = tenantService.getDatabase(tenantId);
-            String dbsToString = dbsToString(dbs);
-            return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit, dbsToString);
+            return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit, dbs);
         }
 
     }
@@ -377,8 +385,7 @@ public class SearchService {
             return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit());
         } else {
             List<String> dbs = tenantService.getDatabase(tenantId);
-            String dbsToString = dbsToString(dbs);
-            return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit(), dbsToString);
+            return metaspaceEntityService.getTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit(), dbs);
         }
     }
 
@@ -405,8 +412,7 @@ public class SearchService {
             return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit());
         } else {
             List<String> dbs = tenantService.getDatabase(tenantId);
-            String dbsToString = dbsToString(dbs);
-            return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit(), dbsToString);
+            return metaspaceEntityService.getColumnNameAndTableNameAndDbNameByQuery(parameters.getQuery(), active, parameters.getOffset(), parameters.getLimit(), dbs);
         }
     }
 
@@ -624,7 +630,7 @@ public class SearchService {
                 strings.add(categoryPrivilegeV2.getGuid());
             }
         }
-        if (strings != null && strings.contains(categoryId)) {
+        if (categoryId != null && !categoryId.isEmpty()) {
             return getDataSourceResultV2(parameters, strings, categoryId, tenantId);
         }
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "用户对该目录没有添加关联表的权限");
@@ -635,7 +641,7 @@ public class SearchService {
     public PageResult<DataSourceHeader> getDataSourceResultV2(Parameters parameters, List<String> strings, String categoryGuid, String tenantId) throws AtlasBaseException {
         String query = parameters.getQuery();
         if (Objects.nonNull(query))
-            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+            query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
         PageResult<DataSourceHeader> databasePageResult = new PageResult<>();
         //如果没目录
         if (strings.size() == 0) {
@@ -643,6 +649,8 @@ public class SearchService {
             databasePageResult.setTotalSize(0);
             return databasePageResult;
         }
+
+
 
         List<String> databases = tenantService.getDatabase(tenantId);
         List<DataSourceHeader> databaseHeaders = new ArrayList<>();
@@ -669,31 +677,7 @@ public class SearchService {
         if (CollectionUtils.isEmpty(tables)) {
             return databasePageResult;
         }
-        Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getSourceId));
-        //获取目录下该租户所有关联的表
-        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.selectListByCategoryId(categoryGuid, tenantId);
         //关联表按照数据源ID分组
-        Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDataSourceId));
-        databaseHeaders.forEach(e -> {
-            String sourceId = e.getSourceId();
-            List<String> table = collect.get(sourceId) == null ? new ArrayList<>() : collect.get(sourceId).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
-            List<String> relationTableGuids = collectRelation.get(sourceId) == null ? new ArrayList<>() : collectRelation.get(sourceId).stream().map(TableDataSourceRelationPO::getTableId).collect(Collectors.toList());
-            if (collect != null && collect.size() > 0) {
-                if (relationTableGuids.containsAll(table)) {
-                    //全被勾选
-                    e.setCheck(1);
-                } else {
-                    table.retainAll(relationTableGuids);
-                    if (table.size() > 0) {
-                        //勾选了部分
-                        e.setCheck(2);
-                    } else {
-                        //全部未勾选
-                        e.setCheck(0);
-                    }
-                }
-            }
-        });
         databasePageResult.setLists(databaseHeaders);
         databasePageResult.setCurrentSize(databaseHeaders.size());
         databasePageResult.setTotalSize(databaseHeaders.size() > 0 ? databaseHeaders.get(0).getTotal() : 0);
@@ -750,7 +734,7 @@ public class SearchService {
     public PageResult<DatabaseHeader> getDatabaseResultV2(Parameters parameters, List<String> strings, String sourceId, String categoryGuid, String tenantId) throws AtlasBaseException {
         String query = parameters.getQuery();
         if (Objects.nonNull(query))
-            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+            query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
         PageResult<DatabaseHeader> databasePageResult = new PageResult<>();
         //如果没目录
         if (strings.size() == 0) {
@@ -786,40 +770,11 @@ public class SearchService {
         if (CollectionUtils.isEmpty(databaseHeaders)) {
             return new ArrayList<>();
         }
-        List<String> dbGuidList = databaseHeaders.stream().map(DatabaseHeader::getDatabaseGuid).collect(Collectors.toList());
-        //获取数据源下所有的表
-        List<TechnologyInfo.Table> tables = tableDAO.selectListByDatabase(databases, dbGuidList);
-        //所有的表按照数据库ID分组
-        Map<String, List<TechnologyInfo.Table>> collect = tables.stream().collect(Collectors.groupingBy(TechnologyInfo.Table::getDatabaseGuid));
-        //查询关联关系
-        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = sourceInfoDAO.selectListByCategoryIdAndTenantId(categoryGuid, tenantId, dbGuidList);
-        //关联关系按照数据库ID分组
-        Map<String, List<TableDataSourceRelationPO>> collectRelation = tableDataSourceRelationPOList.stream().collect(Collectors.groupingBy(TableDataSourceRelationPO::getDatabaseId));
-        for (DatabaseHeader e : databaseHeaders) {
-            String databaseGuid = e.getDatabaseGuid();
-            e.setDbName(e.getDbName() + "(" + e.getSourceName() + ")");
-            List<String> table = collect.get(databaseGuid) == null ? new ArrayList<>() : collect.get(databaseGuid).stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
-            Set<String> relationTableGuids = collectRelation.get(databaseGuid) == null ? new HashSet<>() : collectRelation.get(databaseGuid).stream().map(TableDataSourceRelationPO::getTableId).collect(Collectors.toSet());
-            if(CollectionUtils.sizeIsEmpty(relationTableGuids) || CollectionUtils.isEmpty(table)){
-                //全部未勾选
-                e.setCheck(0);
-                continue;
-            }
-            if (relationTableGuids.containsAll(table)) {
-                //全被勾选
-                e.setCheck(1);
-            } else {
-                table.retainAll(relationTableGuids);
-                if (table.size() > 0) {
-                    //勾选了部分
-                    e.setCheck(2);
-                } else {
-                    //全部未勾选
-                    e.setCheck(0);
-                }
-            }
-        }
-        return databaseHeaders;
+            List<String> dbGuidList = databaseHeaders.stream().map(DatabaseHeader::getDatabaseGuid).collect(Collectors.toList());
+            //获取数据源下所有的表
+            List<TechnologyInfo.Table> tables = tableDAO.selectListByDatabase(databases, dbGuidList);
+            //查询关联关系
+            return databaseHeaders;
     }
 
     /**
@@ -968,7 +923,7 @@ public class SearchService {
             return tablePageResult;
         }
         if (Objects.nonNull(query)) {
-            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+            query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
         }
         List<String> databases = tenantService.getDatabase(tenantId);
         //获取匹配到的所有表
@@ -1022,7 +977,7 @@ public class SearchService {
                 return tablePageResult;
             }
             if (Objects.nonNull(query))
-                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+                query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
             tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
             List<AddRelationTable> tables = getTables(tableInfo);
             tablePageResult.setTotalSize(0);
@@ -1091,7 +1046,7 @@ public class SearchService {
             }
             List<String> databases = tenantService.getDatabase(tenantId);
             if (Objects.nonNull(query))
-                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+                query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
             if (databases != null && databases.size() != 0)
                 tableInfo = userGroupDAO.getTableInfosV2(strings, query, offset, limit, databases, tenantId);
             List<AddRelationTable> tables = getTables(tableInfo);
@@ -1287,4 +1242,16 @@ public class SearchService {
         }
     }
 
+    public void deleteAllEntity() throws Exception {
+        hiveMetaStoreBridgeUtils.deleteJanusGraphHive();
+
+        List<DataSourceInfo> dataSourceInfos = dataSourceDAO.selectListAll();
+        for (DataSourceInfo dataSourceInfo : dataSourceInfos) {
+            PageResult<Database> databasePageResult = metaspaceEntityService.getSchemaList(dataSourceInfo, new ArrayList<>(), new ArrayList<>(), 0, -1, false);
+            List<Database> databaseList = databasePageResult.getLists();
+            for (Database database : databaseList) {
+                hiveMetaStoreBridgeUtils.deleteJanusGraphRdbms(database.getSourceId(), database.getDatabaseName());
+            }
+        }
+    }
 }

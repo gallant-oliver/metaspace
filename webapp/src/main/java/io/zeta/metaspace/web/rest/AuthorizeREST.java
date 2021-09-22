@@ -13,8 +13,6 @@
 
 package io.zeta.metaspace.web.rest;
 
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
-
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.HttpRequestContext;
@@ -23,14 +21,7 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
-import io.zeta.metaspace.model.result.CategoryGroupAndUser;
-import io.zeta.metaspace.model.result.CategoryGroupPrivilege;
-import io.zeta.metaspace.model.result.CategoryPrivilege;
-import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
-import io.zeta.metaspace.model.result.CategoryUpdate;
-import io.zeta.metaspace.model.result.GroupPrivilege;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.UpdateCategory;
+import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupCategories;
 import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
@@ -41,25 +32,14 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.web.util.Servlets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Singleton;
+import javax.ws.rs.*;
 import java.util.List;
 
-import javax.inject.Singleton;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 /**
  * @author lixiang03
@@ -293,9 +273,9 @@ public class AuthorizeREST {
     @Path("/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getCategory(@HeaderParam("tenantId")String tenantId,@QueryParam("type") int type) throws AtlasBaseException {
+    public Result getCategory(@HeaderParam("tenantId")String tenantId,@QueryParam("type") Integer type, @DefaultValue("false")@QueryParam("isAllowAuth")boolean isAllowAuth) throws AtlasBaseException {
         try{
-            List<CategoryPrivilege> adminCategory = userGroupService.getAdminCategoryView(type, tenantId);
+            List<CategoryPrivilege> adminCategory = userGroupService.getAdminCategoryByType(type, tenantId, isAllowAuth);
             return ReturnUtil.success(adminCategory);
         }catch (Exception e){
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取用户组目录权限列表失败");

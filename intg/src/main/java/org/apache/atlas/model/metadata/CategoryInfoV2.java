@@ -16,6 +16,8 @@
  */
 package org.apache.atlas.model.metadata;
 
+import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
+
 /*
  * @description
  * @author sunhaoning
@@ -29,6 +31,7 @@ public class CategoryInfoV2 {
     private String direction;
     private String parentCategoryGuid;
     private Integer categoryType;
+    private CategoryPrivateStatus privateStatus;
     private String creator;
     private String safe;
     private boolean authorized;
@@ -94,6 +97,14 @@ public class CategoryInfoV2 {
 
     public void setParentCategoryGuid(String parentCategoryGuid) {
         this.parentCategoryGuid = parentCategoryGuid;
+    }
+
+    public CategoryPrivateStatus getPrivateStatus() {
+        return privateStatus;
+    }
+
+    public void setPrivateStatus(CategoryPrivateStatus privateStatus) {
+        this.privateStatus = privateStatus;
     }
 
     public Integer getCategoryType() {

@@ -29,6 +29,8 @@ public class ColumnMetadata extends BasicMetadata {
     private String type;
     private String tableGuid;
     private Boolean partitionField;
+    private Boolean hasChange = false; // 字段是否变更
+    private String changeCause; // 字段变更原因 ADD(字段新增)  DELETE (字段删除) TYPECHANGE (字段类型变更)
 
     public ColumnMetadata() { }
 
@@ -63,6 +65,21 @@ public class ColumnMetadata extends BasicMetadata {
         this.tableGuid = tableGuid;
     }
 
+    public Boolean getHasChange() {
+        return hasChange;
+    }
+
+    public void setHasChange(Boolean hasChange) {
+        this.hasChange = hasChange;
+    }
+
+    public String getChangeCause() {
+        return changeCause;
+    }
+
+    public void setChangeCause(String changeCause) {
+        this.changeCause = changeCause;
+    }
 
     public Boolean getPartitionField() {
         return partitionField;

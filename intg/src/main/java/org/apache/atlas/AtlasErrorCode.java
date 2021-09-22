@@ -165,6 +165,7 @@ public enum AtlasErrorCode {
     UNAUTHORIZED_ACCESS(403, "METASPACE-403-00-001", " {0}未被授权执行{1}"),
 
     // All Not found enums go here
+    RELATED_CATEGORY(500,"METASPACE-500-00-009","已关联源信息登记，无法删除"),
     TYPE_NAME_NOT_FOUND(404, "METASPACE-404-00-001", " 无效的类型名:{0}"),
     TYPE_GUID_NOT_FOUND(404, "METASPACE-404-00-002", " 无效的类型ID:{0}"),
     NO_CLASSIFICATIONS_FOUND_FOR_ENTITY(404, "METASPACE-404-00-003", " 没有与实体关联的分类:{0}"),

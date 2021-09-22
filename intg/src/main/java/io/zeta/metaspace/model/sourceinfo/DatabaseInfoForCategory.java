@@ -9,6 +9,8 @@ public class DatabaseInfoForCategory {
 
     private String parentCategoryId;
 
+    private boolean importance;
+
     private String creator;
 
     private String databaseId;

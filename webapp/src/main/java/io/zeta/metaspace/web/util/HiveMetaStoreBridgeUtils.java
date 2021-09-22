@@ -27,6 +27,7 @@ import io.zeta.metaspace.model.sync.SyncTaskInstance;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
+import io.zeta.metaspace.web.metadata.BaseFields;
 import io.zeta.metaspace.web.metadata.MetaStoreBridgeUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
@@ -142,16 +143,17 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
     public void importDatabases(String taskInstanceId, TableSchema tableSchema) throws Exception {
         LOG.info("import metadata start at {}", simpleDateFormat.format(new Date()));
         syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.RUN, "开始导入");
-
+        if (CollectionUtils.isEmpty(tableSchema.getDatabases())) {
+            importDatabasesHive();
+        }
         List<String> databaseNames = null;
         List<String> databaseToImport = new ArrayList<>();
         String tableToImport = "";
         boolean allDatabase = false;
-        if (null != tableSchema) {
-            databaseToImport = tableSchema.getDatabases();
-            tableToImport = tableSchema.getTable();
-            allDatabase = tableSchema.isAllDatabase();
-        }
+        databaseToImport = tableSchema.getDatabases();
+        tableToImport = tableSchema.getTable();
+        allDatabase = tableSchema.isAllDatabase();
+
         initHiveMetaStoreClient();
         List<String> allDatabaseName = hiveMetaStoreClient.getAllDatabases();
         if (allDatabase || databaseToImport == null || databaseToImport.size() == 0) {
@@ -225,6 +227,98 @@ public class HiveMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         } else {
             LOG.info("No database found");
         }
+        syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
+        LOG.info("import metadata end at {}", simpleDateFormat.format(new Date()));
+    }
+
+    /**
+     * 删除所有的hive数据
+     */
+    public void deleteJanusGraphHive() {
+        try {
+            String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_DB_BY_STATE), AtlasEntity.Status.ACTIVE);
+            List<AtlasVertex> dbVertices = (List) graph.executeGremlinScript(databaseQuery, false);
+            for (AtlasVertex vertex : dbVertices) {
+                if (Objects.nonNull(vertex)) {
+                    List<String> attributes = Lists.newArrayList(ATTRIBUTE_NAME, ATTRIBUTE_QUALIFIED_NAME);
+                    AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
+                    AtlasEntity dbEntity = dbEntityWithExtInfo.getEntity();
+                    String databaseInGraph = dbEntity.getAttribute(ATTRIBUTE_NAME).toString();
+                    deleteTableEntity(databaseInGraph, new ArrayList<>());
+                    deleteEntity(dbEntity);
+                }
+            }
+        } catch (AtlasBaseException e) {
+            LOG.error("deleteJanusGraphHive exception is {}", e);
+        }
+    }
+
+    /**
+     * 删除所有的rdbms数据
+     * @param instanceId
+     * @param databaseName
+     * @throws AtlasBaseException
+     */
+    public void deleteJanusGraphRdbms(String instanceId, String databaseName) throws AtlasBaseException {
+        try {
+            String tableQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.RDBMS_DB_TABLE_BY_STATE), instanceId, databaseName, AtlasEntity.Status.ACTIVE);
+            List<AtlasVertex> vertices = (List) graph.executeGremlinScript(tableQuery, false);
+            for (AtlasVertex vertex : vertices) {
+                if (Objects.nonNull(vertex)) {
+                    List<String> attributes = Lists.newArrayList(ATTRIBUTE_NAME, BaseFields.ATTRIBUTE_QUALIFIED_NAME);
+                    AtlasEntityWithExtInfo dbEntityWithExtInfo = entityRetriever.toAtlasEntityWithAttribute(vertex, attributes, null, true);
+                    AtlasEntity tableEntity = dbEntityWithExtInfo.getEntity();
+                    String tableNameInGraph = tableEntity.getAttribute(ATTRIBUTE_NAME).toString();
+                    deleteEntity(tableEntity);
+                }
+            }
+        } catch (AtlasBaseException e) {
+            LOG.error("deleteJanusGraphRdbms exception is {}", e);
+        }
+    }
+
+
+    /**
+     * 重新同步所有的HIVE数据
+     *
+     * @throws Exception
+     */
+    public void importDatabasesHive() throws Exception {
+        String taskInstanceId = UUID.randomUUID().toString();
+        syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.RUN, "开始导入");
+        TableSchema tableSchema = new TableSchema();
+        tableSchema.setInstance("hive");
+        tableSchema.setAll(true);
+        SyncTaskDefinition definition = new SyncTaskDefinition();
+        definition.setDataSourceType("HIVE");
+        definition.setCategoryGuid("1");
+        tableSchema.setDefinition(definition);
+        initHiveMetaStoreClient();
+        List<String> allDatabaseName = hiveMetaStoreClient.getAllDatabases();
+        List<String> databaseNames = allDatabaseName;
+        tableSchema.setDatabases(allDatabaseName);
+        //总同步元素数量
+        int totalSize = 0;
+        Map<String, List<String>> database2Table = Maps.newHashMap();
+        for (String databaseName : databaseNames) {
+            List<String> tablesInDB = database2Table.get(databaseName);
+            if (null == tablesInDB) {
+                tablesInDB = Lists.newArrayList();
+            }
+            tablesInDB.addAll(hiveMetaStoreClient.getAllTables(databaseName));
+            database2Table.put(databaseName, tablesInDB);
+            totalSize += tablesInDB.size();
+        }
+
+        totalTables.set(totalSize);
+        LOG.info("Found {} databases", databaseNames.size());
+        for (String databaseName : databaseNames) {
+            AtlasEntityWithExtInfo dbEntity = registerDatabase(databaseName, tableSchema.getDefinition());
+            if (dbEntity != null) {
+                importTables(dbEntity.getEntity(), databaseName, database2Table.get(databaseName), false, tableSchema.getDefinition());
+            }
+        }
+
         syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
         LOG.info("import metadata end at {}", simpleDateFormat.format(new Date()));
     }

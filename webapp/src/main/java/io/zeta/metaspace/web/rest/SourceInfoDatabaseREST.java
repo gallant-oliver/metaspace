@@ -258,15 +258,29 @@ public class SourceInfoDatabaseREST {
     @Path("/file/upload")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.INSERT)
     public Result uploadFile(@FormDataParam("file") InputStream fileInputStream,
                              @FormDataParam("file") FormDataContentDisposition contentDispositionHeader,
-                             @HeaderParam("tenantId")String tenantId){
+                             @HeaderParam("tenantId")String tenantId) throws UnsupportedEncodingException {
+        String fileName = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
+        String fileType = FilenameUtils.getExtension(fileName);
+        log.info("上传文件的格式是:{}",fileType);
+        //判断文件格式是否支持
+        List<String> annexCodeList = annexService.findAllAnnexCode("sourceInfo");
+
+        if(CollectionUtils.isEmpty(annexCodeList)){
+            log.error("系统没有配置附件上传格式.");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"系统没有配置附件上传的文件格式");
+        }
+        if(!CollectionUtils.isEmpty(annexCodeList) && !annexCodeList.contains(fileType)){
+            log.error("不支持的附件上传格式.");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"支持上传的文件类型有:"+String.join(",",annexCodeList));
+        }
+
         File file = null;
         try{
             //tenantId 使用租户id作为上传文件子目录
-            String fileName = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
             String uploadDir = tenantId + "/" + DateTimeUtils.formatTime(System.currentTimeMillis(),"yyyyMMddHHmmss");
-
             file = new File(fileName);
             FileUtils.copyInputStreamToFile(fileInputStream, file);
             long fileSize = file.length();//contentDispositionHeader.getSize();
@@ -274,17 +288,14 @@ public class SourceInfoDatabaseREST {
             String uploadPath = hdfsService.uploadFile(new FileInputStream(file),fileName,uploadDir);
             //组装附件表的字段
             String annexId = UUIDUtils.alphaUUID();
-
-            String fileType = FilenameUtils.getExtension(fileName);
             //保存数据到表 annex
-
             Annex annex = new Annex(annexId,fileName,fileType,uploadPath,fileSize);
             annexService.saveRecord(annex);
             HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"上传附件成功！");
             return ReturnUtil.success("success",annexId);
         }catch (Exception e){
             HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"上传附件失败！");
-            throw new AtlasBaseException("文件上传失败", AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "文件上传失败");
+            throw new AtlasBaseException("文件上传失败", AtlasErrorCode.INTERNAL_UNKNOWN_ERROR,  "文件上传失败");
         }finally {
             if(file != null && file.exists()){
                 file.delete();
@@ -634,6 +645,6 @@ public class SourceInfoDatabaseREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<CategoryPrivilege> getCategories(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        return dataManageService.getAllByUserGroupTechnical(tenantId);
+        return dataManageService.getSourceInfoTechnicalCategory(tenantId);
     }
 }

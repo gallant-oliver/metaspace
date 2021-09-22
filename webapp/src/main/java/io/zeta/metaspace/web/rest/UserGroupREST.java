@@ -31,15 +31,10 @@ import io.zeta.metaspace.model.result.CategoryUpdate;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.UpdateCategory;
 import io.zeta.metaspace.model.share.ProjectHeader;
-import io.zeta.metaspace.model.usergroup.AuthMenuEnum;
-import io.zeta.metaspace.model.usergroup.UserGroup;
-import io.zeta.metaspace.model.usergroup.UserGroupCategories;
-import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
-import io.zeta.metaspace.model.usergroup.result.UserGroupListAndSearchResult;
-import io.zeta.metaspace.model.usergroup.result.UserGroupMemberSearch;
+import io.zeta.metaspace.model.usergroup.*;
+import io.zeta.metaspace.model.usergroup.result.*;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
-import io.zeta.metaspace.model.usergroup.UserGroupPrivileges;
 import io.zeta.metaspace.web.service.UserGroupService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -691,4 +686,97 @@ public class UserGroupREST {
         }
     }
 
+    /**
+     * 获取权限数据库
+     * @param groupId
+     * @param offset
+     * @param limit
+     * @param search
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{id}/database")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDataBaseListAndSearch(
+            @PathParam("id") String groupId,
+            @DefaultValue("0") @QueryParam("offset") int offset,
+            @DefaultValue("10") @QueryParam("limit") int limit,
+            @QueryParam("sourceId") String sourceId,
+            @QueryParam("search") String search) throws AtlasBaseException {
+        try {
+            PageResult<UserGroupDatabaseResult> pageResult = userGroupService.getDatabaseBySearch(groupId, offset, limit,sourceId, search);
+            return ReturnUtil.success(pageResult);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"用户组数据库列表搜索失败");
+        }
+    }
+
+    /**
+     * 添加数据库权限
+     * @param groupId
+     * @param privilegesList
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/{id}/database")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public Result addDataBaseByGroupId(@PathParam("id") String groupId, List<SouceDatabasePrivileges> privilegesList) throws AtlasBaseException {
+        try {
+            UserGroup userGroupByID = userGroupService.getUserGroupByID(groupId);
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组添加数据库权限："+userGroupByID.getName());
+            userGroupService.addDataBaseByGroupId(groupId, privilegesList);
+            return ReturnUtil.success();
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"用户组添加数据库失败");
+        }
+    }
+
+    /**删除数据库权限
+     * @param groupId
+     * @param idsList
+     * @return
+     * @throws AtlasBaseException
+     */
+    @DELETE
+    @Path("/{userGroupId}/database")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public Result deleteDataBaseByGroupId(@PathParam("userGroupId") String groupId, List<String> idsList) throws AtlasBaseException {
+        try {
+            UserGroup userGroupByID = userGroupService.getUserGroupByID(groupId);
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组移除数据库："+userGroupByID.getName());
+            userGroupService.deleteDataBaseByGroupId(idsList);
+            return ReturnUtil.success();
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"用户组移除数据库失败");
+        }
+    }
+
+    /**
+     * 获取未分配给当前用户组的数据源（已分配给用户组）的数据库
+     * @param groupId
+     * @param search
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{id}/notallotdatabase")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDataBaseListNotAllot(
+            @PathParam("id") String groupId,
+            @QueryParam("search") String search) throws AtlasBaseException {
+        try {
+            List<NotAllotDatabaseSearchResult> pageResult = userGroupService.getDataBaseListNotAllot(groupId,search);
+            return ReturnUtil.success(pageResult);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取未分配给当前用户组的数据源（已分配给用户组）的数据库失败");
+        }
+    }
 }

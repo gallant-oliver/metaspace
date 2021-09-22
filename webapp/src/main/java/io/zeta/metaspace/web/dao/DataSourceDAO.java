@@ -85,6 +85,15 @@ public interface DataSourceDAO {
     @Select("select source_name from data_source where source_id=#{sourceId}")
     public String getSourceNameForSourceId(@Param("sourceId") String sourceId);
 
+    //查询数据源名字
+    @Select({"<script>",
+            "select source_name from data_source where source_id in ",
+            "<foreach collection='sourceIds' item='sourceId' index='index' separator=',' open='(' close=')'>" ,
+            "#{sourceId}",
+            "</foreach>",
+            "</script>"})
+    List<String> getSourceNameForSourceIds(@Param("sourceIds") List<String> sourceIds);
+
     //删除数据源
     @Delete({"<script>",
              "delete from data_source where source_id in ",
@@ -560,10 +569,22 @@ public interface DataSourceDAO {
     List<DataSourceBody> getDataSourcesByGroups(@Param("groupIds") List<String> groupIds,@Param("tenantId") String tenantId);
 
     @Select({" <script> ",
+            " select d.* from data_source d join datasource_group_relation dgr on d.source_id=dgr.source_id where d.tenantid=#{tenantId} and d.source_type='ORACLE' and dgr.group_id in  ",
+            " <foreach item='groupId' index='index' collection='groupIds' separator=',' open='(' close=')'>",
+            " #{groupId} ",
+            " </foreach>",
+            " order by d.source_name asc ",
+            " </script>"})
+    List<DataSourceBody> getOracleDataSourcesByGroups(@Param("groupIds") List<String> groupIds,@Param("tenantId") String tenantId);
+
+    @Select({" <script> ",
             "select source_id as sourceId,source_name as sourceName ,source_type as sourceType from data_source where tenantid=#{tenantId} and source_type in ",
             " <foreach item='type' index='index' collection='types' separator=',' open='(' close=')'>",
             " #{type} ",
             " </foreach>",
             " </script>"})
     List<DataSourceInfo> queryDataSourceBySourceTypeIn(@Param("types")List<String> types,@Param("tenantId") String tenantId);
+
+    @Select("select * from data_source")
+    List<DataSourceInfo> selectListAll();
 }

@@ -51,4 +51,10 @@ public class ComparisonMetadata {
     public void setChangedSet(Set<String> changedSet) {
         this.changedSet = changedSet;
     }
+
+    public static class ComparisonResult{
+        public static final String CHANGE_CAUSE_ADD="ADD";//(字段新增)
+        public static final String CHANGE_CAUSE_DELETE="DELETE";// DELETE (字段删除)
+        public static final String CHANGE_CAUSE_TYPE_CHANGE="TYPECHANGE";// TYPECHANGE (字段类型变更)
+    }
 }

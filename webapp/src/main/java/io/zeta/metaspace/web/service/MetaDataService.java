@@ -19,8 +19,10 @@ package io.zeta.metaspace.web.service;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
+import io.zeta.metaspace.bo.DatabaseInfoBO;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
+import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
@@ -30,15 +32,15 @@ import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
-import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.CustomStringUtils;
-import io.zeta.metaspace.web.util.DateUtils;
-import io.zeta.metaspace.web.util.HivePermissionUtil;
+import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -126,6 +128,13 @@ public class MetaDataService {
     DataManageService dataManageService;
     @Autowired
     DataSourceDAO dataSourceDAO;
+    @Autowired
+    DatabaseInfoDAO databaseInfoDAO;
+    @Autowired
+    private SourceInfoDatabaseService sourceInfoDatabaseService;
+
+    @Autowired
+    private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao;
 
 
     private String errorMessage = "";
@@ -207,12 +216,8 @@ public class MetaDataService {
     }
 
     public boolean isHiveTable(String guid) {
-        AtlasEntity entity = getEntityById(guid);
-        if (Objects.isNull(entity)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到表");
-        }
-        String type = entity.getTypeName();
-        if ("hive_table".equalsIgnoreCase(type)) {
+        String type = tableDAO.selectTypeByGuid(guid);
+        if("hive".equalsIgnoreCase(type)){
             return true;
         }
         return false;
@@ -309,11 +314,13 @@ public class MetaDataService {
         return entityRetriever.toAtlasEntityWithAttribute(atlasVertex, attributes, relationshipAttributes, isMinExtInfo);
     }
 
-    public Database getDatabase(String guid, String sourceId) throws AtlasBaseException {
+    public Database getDatabase(String guid,String tenantId, String sourceId) throws AtlasBaseException {
         if (Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
         Database database = new Database();
+        List<DatabaseInfoBO> currentSourceInfoList = databaseInfoDAO.getLastDatabaseInfoByDatabaseId(guid,tenantId,sourceId);
+        database.setHasDatabase(CollectionUtils.isNotEmpty(currentSourceInfoList));
         try {
             //获取对象
             // 转换成AtlasEntity
@@ -350,6 +357,7 @@ public class MetaDataService {
         if (Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
+
         try {
             //获取entity
             AtlasEntity.AtlasEntityWithExtInfo entityInfo = getEntityInfoByGuid(guid, false);
@@ -359,6 +367,15 @@ public class MetaDataService {
             }
             //table
             Table table = extractTableInfo(entityInfo, guid, tenantId);
+            if(StringUtils.isBlank(sourceId)){
+                sourceId="hive";
+            }
+            Table tableAttr = tableDAO.getDbAndTableName(guid);
+            if(tableAttr != null){
+                List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,tableAttr.getDatabaseId(),tableAttr.getTableName());
+                table.setHasDerivetable(CollectionUtils.isNotEmpty(deriveTableInfoList));
+            }
+
 
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
@@ -556,7 +573,7 @@ public class MetaDataService {
         return table;
     }
 
-    public RDBMSTable getRDBMSTableInfoById(String guid, String tenantId) throws AtlasBaseException {
+    public RDBMSTable getRDBMSTableInfoById(String guid, String tenantId,String sourceId) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getRDBMSTableInfoById({})", guid);
         }
@@ -574,6 +591,12 @@ public class MetaDataService {
             }
             //table
             RDBMSTable table = extractRDBMSTableInfo(entity, guid, info, tenantId);
+
+            Table tableAttr = tableDAO.getDbAndTableName(guid);
+            if(tableAttr != null){
+                List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceId == null ? null : sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,tableAttr.getDatabaseId(),tableAttr.getTableName());
+                table.setHasDerivetable(CollectionUtils.isNotEmpty(deriveTableInfoList));
+            }
 
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
@@ -1250,7 +1273,6 @@ public class MetaDataService {
                     column.setDatabaseName(relatedDB.getDisplayText());
 
                     column.setColumnId(referredEntity.getGuid());
-                    column.setPartitionKey(false);
                     if (partitionKeys != null) {
                         for (int i = 0; i < partitionKeys.size(); i++) {
                             if (partitionKeys.get(i).getGuid().equals(column.getColumnId())) {
@@ -1919,8 +1941,6 @@ public class MetaDataService {
                 tableDAO.deleteTableInfo(tableGuid);
                 //owner
                 tableDAO.deleteTableRelatedOwner(tableGuid);
-                //关联关系
-                relationDAO.deleteByTableGuid(tableGuid);
                 //business2table
                 businessDAO.deleteBusinessRelationByTableGuid(tableGuid);
                 //表标签
@@ -2369,8 +2389,8 @@ public class MetaDataService {
         Sheet sheet = workbook.createSheet(CustomStringUtils.handleExcelName(sheetName));
 
         List<Column> columnList = table.getColumns();
-        List<Column> normalColumnList = columnList.stream().filter(column -> column.getPartitionKey() == false).collect(Collectors.toList());
-        List<Column> partitionColumnList = columnList.stream().filter(column -> column.getPartitionKey() == true).collect(Collectors.toList());
+        List<Column> normalColumnList = columnList.stream().filter(column -> !column.getPartitionKey()).collect(Collectors.toList());
+        List<Column> partitionColumnList = columnList.stream().filter(column -> column.getPartitionKey()).collect(Collectors.toList());
 
 
         CellRangeAddress tableAndDbNameRangeAddress = new CellRangeAddress(rowNumber, rowNumber, 0, 2);
@@ -2496,25 +2516,57 @@ public class MetaDataService {
     public ComparisonColumnMetadata getComparisionColumnMetadata(String tableGuid, Integer version) throws AtlasBaseException {
         ComparisonColumnMetadata comparisonMetadata = new ComparisonColumnMetadata();
         Set<String> changedFiledSet = new HashSet<>();
+        comparisonMetadata.setChangedSet(changedFiledSet);
         try {
             List<ColumnMetadata> currentMetadata = metadataHistoryDAO.getLastColumnMetadata(tableGuid);
             List<ColumnMetadata> oldMetadata = metadataHistoryDAO.getColumnMetadata(tableGuid, version);
 
-            Map<String, Map> currentColumnMedataMap = new HashMap<>();
-            for (ColumnMetadata metadata : currentMetadata) {
-                String name = metadata.getName();
-                Map<String, String> columnMetadataMap = BeanUtils.describe(metadata);
-                currentColumnMedataMap.put(name, columnMetadataMap);
+            List<ColumnMetadata> orderMetadata = new ArrayList<>(); //记录有顺序的旧版字段
+            comparisonMetadata.setOldMetadata(orderMetadata);
+            if(CollectionUtils.isNotEmpty(currentMetadata)){
+                if(version.compareTo(currentMetadata.get(0).getVersion())==0){
+                    LOG.info("历史版本对比，版本一样，不需继续执行");
+                    for (ColumnMetadata item : currentMetadata) {
+                        Optional<ColumnMetadata> filterOpt = oldMetadata.stream().filter(p -> StringUtils.equalsIgnoreCase(item.getName(), p.getName())).findFirst();
+                        if (filterOpt.isPresent()) {//名称一样比较类型
+                            ColumnMetadata filter = filterOpt.get();
+                            orderMetadata.add(filter);
+                        }
+                    }
+                }else{
+                    for (ColumnMetadata item : currentMetadata){
+                        Optional<ColumnMetadata> filterOpt = oldMetadata.stream().filter(p->StringUtils.equalsIgnoreCase(item.getName(),p.getName())).findFirst();
+                        if(filterOpt.isPresent()){//名称一样比较类型
+                            ColumnMetadata filter = filterOpt.get();
+                            orderMetadata.add(filter);
+
+                            if(!StringUtils.equalsIgnoreCase(filter.getType(),item.getType()) ) {
+                                item.setHasChange(true);
+                                item.setChangeCause(ComparisonMetadata.ComparisonResult.CHANGE_CAUSE_TYPE_CHANGE);
+                            }
+                        }else{//旧版本找不到字段，则为新增
+                            orderMetadata.add(new ColumnMetadata());
+                            item.setHasChange(true);
+                            item.setChangeCause(ComparisonMetadata.ComparisonResult.CHANGE_CAUSE_ADD);
+                        }
+                    }
+
+                    List<String> currentColNames =  currentMetadata.stream().map(ColumnMetadata::getName).collect(Collectors.toList());
+                    List<ColumnMetadata> deleteColumnList = oldMetadata.stream().filter(p->!currentColNames.contains(p.getName())).collect(Collectors.toList());
+                    if(CollectionUtils.isNotEmpty(deleteColumnList)){
+                        for(ColumnMetadata vo : deleteColumnList){
+                            orderMetadata.add(vo);
+
+                            ColumnMetadata e = new ColumnMetadata();
+                            e.setHasChange(true);
+                            e.setChangeCause(ComparisonMetadata.ComparisonResult.CHANGE_CAUSE_DELETE);
+                            currentMetadata.add(e);
+                        }
+                    }
+                }
             }
-            Map<String, Map> oldColumnMedataMap = new HashMap<>();
-            for (ColumnMetadata metadata : oldMetadata) {
-                String name = metadata.getName();
-                Map<String, String> columnMetadataMap = BeanUtils.describe(metadata);
-                oldColumnMedataMap.put(name, columnMetadataMap);
-            }
+
             comparisonMetadata.setCurrentMetadata(currentMetadata);
-            comparisonMetadata.setOldMetadata(oldMetadata);
-            comparisonMetadata.setChangedSet(changedFiledSet);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
@@ -2696,4 +2748,32 @@ public class MetaDataService {
             }
         });
     }
+
+    public DatabaseInfoBO querySourceInfo(String tenantId, String sourceId, String schemaId) {
+        if(StringUtils.isBlank(tenantId) || StringUtils.isBlank(sourceId) || StringUtils.isBlank(schemaId)){
+            LOG.info("查询源信息登记的请求参数存在空");
+            return null;
+        }
+        List<DatabaseInfoBO> currentSourceInfoList = databaseInfoDAO.getLastDatabaseInfoByDatabaseId(schemaId,tenantId,sourceId);
+        if(CollectionUtils.isEmpty(currentSourceInfoList)){
+            return null;
+        }
+        DatabaseInfoBO bo = new DatabaseInfoBO();
+        //筛选获取最新的记录
+        Optional<DatabaseInfoBO> databaseInfoOpt =  currentSourceInfoList.stream().sorted(Comparator.comparing(DatabaseInfoBO::getVersion)).findFirst();
+        if(databaseInfoOpt.isPresent()){
+            DatabaseInfoBO databaseInfoBO = databaseInfoOpt.get();
+            if (Boolean.FALSE.equals(ParamUtil.isNull(databaseInfoBO))&&Boolean.TRUE.equals(ParamUtil.isNull(databaseInfoBO.getCategoryId()))){
+                databaseInfoBO.setCategoryId(databaseInfoDAO.getParentCategoryIdById(databaseInfoBO.getId()));
+            }
+            if ("hive".equals(databaseInfoBO.getDataSourceId())){
+                databaseInfoBO.setDataSourceName("hive");
+            }
+            databaseInfoBO.setCategoryName(databaseInfoBO.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
+                    sourceInfoDatabaseService.getActiveInfoAllPath(databaseInfoBO.getCategoryId(),tenantId):sourceInfoDatabaseService.getAllPath(databaseInfoBO.getId(),tenantId));
+            return databaseInfoOpt.get();
+        }
+        return null;
+    }
+
 }

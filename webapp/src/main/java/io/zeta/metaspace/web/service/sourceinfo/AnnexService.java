@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.util.List;
 
 @Service
 public class AnnexService {
@@ -25,6 +26,10 @@ public class AnnexService {
 
     public Annex findByAnnexId(String annexId){
         return annexDAO.selectByAnnexId(annexId);
+    }
+
+    public List<String> findAllAnnexCode(String action){
+        return annexDAO.getAnnexCodeList(action);
     }
 
 }

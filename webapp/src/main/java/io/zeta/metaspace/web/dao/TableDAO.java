@@ -78,9 +78,6 @@ public interface TableDAO {
     @Update("update table2owner set tableGuid = #{tableGuid} where tableGuid=#{OldTableGuid}")
     int updateTableRelatedOwner(@Param("tableGuid") String tableGuid, @Param("OldTableGuid") String OldTableGuid);
 
-    @Update("update table_relation set tableguid = #{tableGuid} where tableguid=#{OldTableGuid}")
-    int updateTableRelations(@Param("tableGuid") String tableGuid, @Param("OldTableGuid") String OldTableGuid);
-
     @Update("update table2tag set tableguid = #{tableGuid} where tableguid=#{OldTableGuid}")
     int updateTableTags(@Param("tableGuid") String tableGuid, @Param("OldTableGuid") String OldTableGuid);
 
@@ -93,7 +90,7 @@ public interface TableDAO {
     @Select("select tablename from tableInfo where tableguid=#{guid} and status='ACTIVE'")
     public String getTableNameByTableGuid(String guid);
 
-    @Select("select tableName,dbName as databaseName from tableInfo where tableGuid=#{guid}")
+    @Select("select tableName,dbName as databaseName, databaseguid as databaseId from tableInfo where tableGuid=#{guid}")
     public Table getDbAndTableName(@Param("guid") String guid);
 
     @Select({"<script>",
@@ -270,11 +267,11 @@ public interface TableDAO {
             " SELECT count(*) over() as total, t.* FROM (" +
             " select tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description, source.source_id,source.source_name" +
             " from tableinfo as tb INNER JOIN source_db as sd on  tb.databaseguid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
-            " WHERE tb.status = 'ACTIVE' AND tb.tablename like concat('%',#{tableName},'%')  AND source.tenantid = #{tenantId} AND tb.TYPE = 'table'" +
+            " WHERE tb.status = 'ACTIVE' AND tb.tablename like concat('%',#{tableName},'%')  AND source.tenantid = #{tenantId}" +
             " UNION" +
             " select tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description,'hive' as source_id,'hive' AS source_name" +
-            " from tableinfo as tb" +
-            " WHERE  tb.status = 'ACTIVE' AND tb.tablename like concat('%',#{tableName},'%') AND tb.TYPE = 'table' AND tb.dbname in " +
+            " from tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid" +
+            " WHERE  tb.status = 'ACTIVE' AND tb.databasestatus = 'ACTIVE' AND tb.tablename like concat('%',#{tableName},'%') AND db.db_type = 'HIVE' AND tb.dbname in " +
             " <foreach item='item' index='index' collection='dbNameList' open='(' separator=',' close=')'>" +
             "   #{item}" +
             " </foreach>" +
@@ -321,4 +318,7 @@ public interface TableDAO {
             " offset #{offset}"+
             "</script>")
     List<TableEntity> selectListByHiveDb(@Param("dbGuid") String dbGuid, @Param("isView") Boolean isView, @Param("limit") Long limit, @Param("offset") Long offset);
+
+    @Select("SELECT DISTINCT db_type FROM tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid WHERE tb.tableguid = #{guid}")
+    String selectTypeByGuid(@Param("guid") String guid);
 }

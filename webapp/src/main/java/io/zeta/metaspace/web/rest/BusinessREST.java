@@ -225,6 +225,7 @@ public class BusinessREST {
      * @param tenantId
      * @return
      * @throws AtlasBaseException
+     * @throws AtlasBaseException
      */
     @POST
     @Path("/{businessId}/datashare")
@@ -508,7 +509,7 @@ public class BusinessREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<CategoryPrivilege> getAllCategory(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            return TenantService.defaultTenant.equals(tenantId) ? dataManageService.getAll(TECHNICAL_CATEGORY_TYPE) : dataManageService.getAllByUserGroup(TECHNICAL_CATEGORY_TYPE, tenantId);
+            return dataManageService.getTechnicalCategory(tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取技术目录失败");
         }

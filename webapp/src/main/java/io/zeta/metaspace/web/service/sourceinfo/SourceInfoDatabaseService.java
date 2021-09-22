@@ -10,10 +10,7 @@ import io.zeta.metaspace.model.approve.ApproveParas;
 import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.dto.indices.ApprovalGroupMember;
 import io.zeta.metaspace.model.dto.sourceinfo.DatabaseInfoDTO;
-import io.zeta.metaspace.model.enums.BusinessType;
-import io.zeta.metaspace.model.enums.SourceInfoOperation;
-import io.zeta.metaspace.model.enums.Status;
-import io.zeta.metaspace.model.enums.SubmitType;
+import io.zeta.metaspace.model.enums.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.po.sourceinfo.DatabaseInfoPO;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -23,8 +20,10 @@ import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForCategory;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForList;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.ApproveDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.service.Approve.Approvable;
@@ -73,6 +72,9 @@ public class SourceInfoDatabaseService implements Approvable {
 
     @Autowired
     ApproveDAO approveDAO;
+
+    @Autowired
+    UserGroupDAO userGroupDAO;
 
     @Autowired
     DataManageService dataManageService;
@@ -521,8 +523,10 @@ public class SourceInfoDatabaseService implements Approvable {
             databaseInfoDAO.updateStatusByIds(idList,Status.ACTIVE.getIntValue()+"");
             List<DatabaseInfoForCategory> databaseInfoList = databaseInfoDAO.getDatabaseInfoByIds(idList);
             for (DatabaseInfoForCategory databaseInfo:databaseInfoList){
+                List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(databaseInfo.getCreator(), tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
                 if (Boolean.FALSE.equals(ParamUtil.isNull(databaseInfo.getCategoryId()))){
-                    categoryDAO.updateCategoryName(databaseInfo.getName(),databaseInfo.getCategoryId());
+                    categoryDAO.updateCategoryName(databaseInfo.getName(),databaseInfo.getCategoryId(),databaseInfo.isImportance()? CategoryPrivateStatus.PRIVATE.name():CategoryPrivateStatus.PUBLIC.name());
+                    userGroupDAO.insertGroupRelations(userGroupIds,databaseInfo.getCategoryId(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
                 }else{
                     this.createCategoryInfo(databaseInfo,tenantId);
                 }
@@ -564,7 +568,7 @@ public class SourceInfoDatabaseService implements Approvable {
         }
     }
 
-    private String getActiveInfoAllPath(String categoryId,String tenantId){
+    public String getActiveInfoAllPath(String categoryId,String tenantId){
         String parentCategoryId = categoryId;
         StringBuilder sb = new StringBuilder("/");
         while (Boolean.FALSE.equals(ParamUtil.isNull(parentCategoryId))){
@@ -577,7 +581,7 @@ public class SourceInfoDatabaseService implements Approvable {
         }
         return sb.toString();
     }
-    private String getAllPath(String sourceInfoId,String tenantId){
+    public String getAllPath(String sourceInfoId,String tenantId){
         String parentCategoryId = databaseInfoDAO.getParentCategoryIdById(sourceInfoId);
         StringBuilder sb = new StringBuilder("/");
         while (Boolean.FALSE.equals(ParamUtil.isNull(parentCategoryId))){
@@ -603,6 +607,7 @@ public class SourceInfoDatabaseService implements Approvable {
 
         categoryInfoV2.setAuthorized(Boolean.FALSE);
         categoryInfoV2.setCreator(databaseInfoBO.getCreator());
+        categoryInfoV2.setPrivateStatus(databaseInfoBO.isImportance()?CategoryPrivateStatus.PRIVATE:CategoryPrivateStatus.PUBLIC);
         categoryInfoV2.setName(databaseInfoBO.getName());
         categoryInfoV2.setGuid(databaseInfoBO.getParentCategoryId());
         categoryInfoV2.setParentCategoryGuid(databaseInfoBO.getParentCategoryId());
