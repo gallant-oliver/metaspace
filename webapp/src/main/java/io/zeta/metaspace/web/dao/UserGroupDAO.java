@@ -287,7 +287,7 @@ public interface UserGroupDAO {
     List<RoleModulesCategories.Category> getAllCategorysAndCount(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId,@Param("dbNames") List<String> dbNames);
 
     @Select("<script>" +
-            "select guid,description,name,parentcategoryguid,categorytype,level,safe,tenantid,createtime,creator,sort from category " +
+            "select guid,description,name,parentcategoryguid,categorytype,level,safe,tenantid,createtime,creator,sort,upbrothercategoryguid,downbrothercategoryguid from category " +
             " where categoryType=#{categoryType} and tenantid=#{tenantId}" +
             "</script>")
     List<RoleModulesCategories.Category> getAllCategorysByType(@Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
