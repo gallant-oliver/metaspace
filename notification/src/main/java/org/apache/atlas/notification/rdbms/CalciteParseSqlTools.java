@@ -89,7 +89,7 @@ public class CalciteParseSqlTools {
         dataSourceInfo.setPassword(AESUtils.aesDecode(config.getDbPassword()));
         dataSourceInfo.setDatabase( config.getDbName());
         dataSourceInfo.setSourceType(rdbmsType.toUpperCase());
-        dataSourceInfo.setServiceType("service_name");
+        dataSourceInfo.setServiceType(config.getServiceType());
 
         //1. rdbms_instance 组装
         List<AtlasEntity.AtlasEntityWithExtInfo> instanceEntityList

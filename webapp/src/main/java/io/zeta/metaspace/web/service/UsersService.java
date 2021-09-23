@@ -4,10 +4,7 @@ import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
-import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
-import io.zeta.metaspace.model.result.Item;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.security.RoleResource;
@@ -22,7 +19,6 @@ import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
-import kafka.security.auth.Alter;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -35,11 +31,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,6 +51,8 @@ public class UsersService {
     private RoleDAO roleDAO;
     @Autowired
     private UserGroupDAO userGroupDAO;
+    @Autowired
+    private DataManageService dataManageService;
 
     @Bean(name = "getUserService")
     public UsersService getUserService() {
@@ -329,21 +323,20 @@ public class UsersService {
             user.setAccount(userTmp.getAccount());
             info.setUser(user);
             //userGroups
-            Map<String, CategoryPrivilegeV2> technicalCategories = userGroupService.getUserPrivilegeCategory(tenantId, 0, false);
+            List<CategoryPrivilege> technicalCategoryList = dataManageService.getTechnicalCategoryByUserId(tenantId, userId);
+            List<String> guidList = technicalCategoryList.stream().map(item -> item.getGuid()).collect(Collectors.toList());
+            List<CategoryPath> technicalPaths = categoryDAO.getPathByIds(guidList, 0, tenantId);
+            Map<String,String> technicalPathMap = new HashMap<>();
+            technicalPaths.forEach(path->{
+                String categoryPath = path.getPath().replace("\"", "").replace("{", "").replace("}", "").replace(",", "/");
+                technicalPathMap.put(path.getGuid(),categoryPath);
+            });
             List<UserInfo.Category> technicals = new ArrayList<>();
-            if (technicalCategories.size()!=0){
-                List<CategoryPath> technicalPaths = categoryDAO.getPathByIds(Lists.newArrayList(technicalCategories.keySet()), 0, tenantId);
-                Map<String,String> technicalPathMap = new HashMap<>();
-                technicalPaths.forEach(path->{
-                    String categoryPath = path.getPath().replace("\"", "").replace("{", "").replace("}", "").replace(",", "/");
-                    technicalPathMap.put(path.getGuid(),categoryPath);
-                });
-                for (CategoryPrivilegeV2 category:technicalCategories.values()){
-                    UserInfo.Category technicalCategory = new UserInfo.Category(category);
-                    String path=technicalPathMap.get(category.getGuid());
-                    technicalCategory.setPath(path);
-                    technicals.add(technicalCategory);
-                }
+            for (CategoryPrivilege categoryPrivilege : technicalCategoryList) {
+                UserInfo.Category technicalCategory = new UserInfo.Category(categoryPrivilege);
+                String path=technicalPathMap.get(categoryPrivilege.getGuid());
+                technicalCategory.setPath(path);
+                technicals.add(technicalCategory);
             }
             info.setTechnicalCategory(technicals);
 
