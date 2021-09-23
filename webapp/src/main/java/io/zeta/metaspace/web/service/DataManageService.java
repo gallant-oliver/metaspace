@@ -166,6 +166,8 @@ public class DataManageService {
     int technicalCount = 5;
     int dataStandCount = 14;
 
+    private static final int CREATE_MAX_CATEGORY_LEVEL = 4;
+    private static final int UPDATE_MAX_CATEGORY_LEVEL = 5;
     private static final String ORGANIZATION_FIRST_PID = "sso.organization.first.pid";
 
     /**
@@ -373,7 +375,7 @@ public class DataManageService {
             if (!CollectionUtils.isEmpty(userGroups)) {
                 userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
             }
-            categoryPrivilegeList = categoryDAO.selectListByTenantIdAndStatus(tenantId, user.getUserId(), userGroupIds,SourceInfoOperation.UPDATE.equals(operation)?5:4);
+            categoryPrivilegeList = categoryDAO.selectListByTenantIdAndStatus(tenantId, user.getUserId(), userGroupIds,SourceInfoOperation.UPDATE.equals(operation)?UPDATE_MAX_CATEGORY_LEVEL:CREATE_MAX_CATEGORY_LEVEL);
             for (CategoryPrivilege categoryPrivilege : categoryPrivilegeList) {
                 CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
                 privilege.setHide(false);
