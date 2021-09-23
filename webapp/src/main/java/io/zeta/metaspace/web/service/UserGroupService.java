@@ -787,6 +787,13 @@ public class UserGroupService {
         if (sourceIds == null||sourceIds.size()==0) {
             return;
         }
+        for(String sourceId:sourceIds){
+         int num=userGroupDAO.getDatabaseGroupRelationNum(sourceId,groupId);
+         if(num>0){
+             String name=userGroupDAO.getSourceName(sourceId);
+             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, new Exception(),"数据源["+name+"]下存在已赋权的数据库，不允许删除");
+         }
+        }
         userGroupDAO.deleteDataSourceByGroupId(groupId, sourceIds);
     }
 
