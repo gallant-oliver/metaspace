@@ -259,6 +259,7 @@ public class SourceInfoDatabaseService implements Approvable {
             list=databaseInfoDAO.getDatabaseInfoList(tenantId,null,idList,null,0,Integer.MAX_VALUE);
         }
         HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),this.convertStringFromList(databaseInfoDAO.getDatabaseIdAndAliasByIds(idList).stream().map(DatabaseInfo::getDatabaseAlias).collect(Collectors.toList())));
+
         list.forEach(l->{
             try {
                 if (Status.ACTIVE.name().equals(Status.getStatusByValue(l.getStatus()))|| Status.REJECT.name().equals(Status.getStatusByValue(l.getStatus()))){
@@ -268,12 +269,11 @@ public class SourceInfoDatabaseService implements Approvable {
                     dataManageService.deleteCategory(l.getCategoryId(), tenantId, CATEGORY_TYPE);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录已关联源信息登记，无法删除");
             }
         });
         databaseInfoDAO.deleteSourceInfoAndParentCategoryRelation(idList);
         databaseInfoDAO.deleteSourceInfoForVersion(idList,0);
-
         return ReturnUtil.success();
     }
 
