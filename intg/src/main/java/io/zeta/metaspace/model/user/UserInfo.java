@@ -17,9 +17,8 @@
 package io.zeta.metaspace.model.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
-import io.zeta.metaspace.model.role.Role;
-import io.zeta.metaspace.model.security.RoleResource;
 
 import java.util.List;
 
@@ -203,6 +202,15 @@ public class UserInfo {
             this.read=category.getRead();
             this.editCategory=category.getEditCategory();
             this.editItem=category.getEditItem();
+        }
+
+        public Category(CategoryPrivilege categoryPrivilege){
+            this.guid = categoryPrivilege.getGuid();
+            this.categoryName = categoryPrivilege.getName();
+            this.level=categoryPrivilege.getLevel();
+            this.read=categoryPrivilege.getRead();
+            this.editCategory=categoryPrivilege.getEditCategory();
+            this.editItem=categoryPrivilege.getEditItem();
         }
 
         public Category(String guid, String categoryName, int level, String level2Category) {

@@ -190,7 +190,7 @@ public class MetadataHistoryService {
         List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByGuid(sourceId,tableGuid);
         String[] contacts = null;
         if(!CollectionUtils.isEmpty(deriveTableInfoList)){
-            Optional<SourceInfoDeriveTableInfo> deriveTableInfoOpt = deriveTableInfoList.stream().sorted(Comparator.comparing(SourceInfoDeriveTableInfo::getVersion).reversed()).findFirst();
+            Optional<SourceInfoDeriveTableInfo> deriveTableInfoOpt = deriveTableInfoList.stream().sorted(Comparator.comparing(SourceInfoDeriveTableInfo::getVersion)).findFirst();
             if(deriveTableInfoOpt.isPresent()) {
                 SourceInfoDeriveTableInfo tableInfo = deriveTableInfoOpt.get();
                 paragraphMap.put("deriveTableDesigner",tableInfo.getCreatorName());

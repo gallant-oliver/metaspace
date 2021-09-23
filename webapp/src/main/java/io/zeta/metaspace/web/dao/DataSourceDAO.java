@@ -85,6 +85,15 @@ public interface DataSourceDAO {
     @Select("select source_name from data_source where source_id=#{sourceId}")
     public String getSourceNameForSourceId(@Param("sourceId") String sourceId);
 
+    //查询数据源名字
+    @Select({"<script>",
+            "select source_name from data_source where source_id in ",
+            "<foreach collection='sourceIds' item='sourceId' index='index' separator=',' open='(' close=')'>" ,
+            "#{sourceId}",
+            "</foreach>",
+            "</script>"})
+    List<String> getSourceNameForSourceIds(@Param("sourceIds") List<String> sourceIds);
+
     //删除数据源
     @Delete({"<script>",
              "delete from data_source where source_id in ",

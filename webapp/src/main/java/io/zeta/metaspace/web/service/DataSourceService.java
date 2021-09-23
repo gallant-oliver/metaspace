@@ -243,6 +243,15 @@ public class DataSourceService {
         }
     }
 
+    public List<String> getSourceNameForSourceIds(List<String> sourceIds) throws AtlasBaseException{
+        try {
+            return dataSourceDAO.getSourceNameForSourceIds(sourceIds);
+        } catch (Exception e) {
+            LOG.error("获取数据源名字出错", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据源名字失败\n" + e.getMessage());
+        }
+    }
+
     /**
      * 删除数据源
      *
@@ -260,8 +269,11 @@ public class DataSourceService {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在无权限删除的数据源");
                 }
             }
+            LOG.info("删除数据源操作处理...");
             dataSourceDAO.deleteRelationBySourceId(sourceIds);
+            LOG.info("删除数据源和用户组关系成功...");
             dataSourceDAO.deleteDataSource(sourceIds);
+            LOG.info("删除数据源主表操作成功..");
             return syncTaskDefinitionDAO.deleteByDataSourceId(sourceIds);
         } catch (Exception e) {
             LOG.error("删除数据源失败", e);

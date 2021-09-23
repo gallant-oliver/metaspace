@@ -255,12 +255,42 @@ public class DataManageService {
             //源信息登记的父级目录不能删除
             updateParentCategory(categoryPrivilegeList);
             removeNoParentCategory(categoryPrivilegeList);
+            if(CollectionUtils.isEmpty(userGroups)){
+                for (CategoryPrivilege categoryPrivilege : categoryPrivilegeList) {
+                    categoryPrivilege.getPrivilege().setEdit(false);
+                    categoryPrivilege.getPrivilege().setAddSibling(false);
+                    categoryPrivilege.getPrivilege().setAddChildren(false);
+                    categoryPrivilege.getPrivilege().setDelete(false);
+                }
+            }
         } catch (AtlasBaseException e) {
             LOG.error("getTechnicalCategory exception is {}", e);
         }
         return categoryPrivilegeList;
     }
 
+
+    public List<CategoryPrivilege> getTechnicalCategoryByUserId(String tenantId, String userId) {
+        List<CategoryPrivilege> categoryPrivilegeList = new ArrayList<>();
+        try {
+            List<String> userGroupIds = new ArrayList<>();
+            //获取用户组
+            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(userId, tenantId);
+            if (!CollectionUtils.isEmpty(userGroups)) {
+                userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            }
+            categoryPrivilegeList = categoryDAO.selectListByTenantIdAndGroupId(tenantId, userGroupIds);
+            removeNoParentCategory(categoryPrivilegeList);
+        } catch (AtlasBaseException e) {
+            LOG.error("getTechnicalCategory exception is {}", e);
+        }
+        return categoryPrivilegeList;
+    }
+
+    /**
+     * 删除有父目录，但是父目录不存在的目录
+     * @param categoryPrivilegeList
+     */
     private void removeNoParentCategory(List<CategoryPrivilege> categoryPrivilegeList){
         Map<String,String> map = categoryPrivilegeList.stream().collect(Collectors.toMap(CategoryPrivilege::getGuid, CategoryPrivilege::getName));
         Iterator<CategoryPrivilege> iter = categoryPrivilegeList.iterator();
@@ -780,7 +810,9 @@ public class DataManageService {
     public CategoryDeleteReturn deleteCategory(String guid, String tenantId, int type) throws Exception {
         List<String> categoryIds = categoryDao.queryChildrenCategoryId(guid, tenantId);
         categoryIds.add(guid);
-        this.removeSourceInfo(categoryIds,tenantId,guid);
+        if(Boolean.FALSE.equals(this.removeSourceInfo(categoryIds,tenantId,guid))){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录已关联源信息登记，无法删除");
+        }
         int item = 0;
         if (type == 1) {
             List<String> businessIds = relationDao.getBusinessIdsByCategoryGuid(categoryIds);
@@ -828,12 +860,12 @@ public class DataManageService {
      * @param tenantId
      * @param guid
      */
-    private void removeSourceInfo(List<String> categoryIds, String tenantId, String guid) {
+    private Boolean removeSourceInfo(List<String> categoryIds, String tenantId, String guid) {
         List<DatabaseInfoForCategory> dif = databaseInfoDAO.getDatabaseInfoByCategoryId(categoryIds, tenantId, guid);
         if (Boolean.FALSE.equals(ParamUtil.isNull(dif))) {
-            List<String> idList = dif.stream().map(DatabaseInfoForCategory::getId).collect(Collectors.toList());
-            sourceInfoDatabaseService.delete(tenantId, idList, 1);
+            return Boolean.FALSE;
         }
+        return Boolean.TRUE;
     }
 
     /**
@@ -1656,10 +1688,7 @@ public class DataManageService {
         tableInfo.setOwner(owner);
         tableInfo.setTableGuid(guid);
         tableInfo.setTableName(name);
-        Object createTime = entity.getAttribute("createTime");
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        String formatDateStr = sdf.format(createTime);
-        tableInfo.setCreateTime(formatDateStr);
+        tableInfo.setCreateTime(formatDate(entity.getAttribute("createTime")));
         tableInfo.setStatus(entity.getStatus().name());
         AtlasRelatedObjectId relatedDB = getRelatedDB(entity);
         tableInfo.setDatabaseGuid(relatedDB.getGuid());
@@ -1671,7 +1700,20 @@ public class DataManageService {
         return tableInfo;
     }
 
+    private String formatDate(Object createTime){
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            return sdf.format(createTime);
+        } catch (Exception e) {
+            LOG.error("createTime is {},exception is {}", createTime, e);
+        }
+        return "";
+    }
+
     public void addOrUpdateDb(Database dbInfo, SyncTaskDefinition definition){
+        if(StringUtils.isBlank(dbInfo.getInstanceId()) || "UNKOWN".equalsIgnoreCase(dbInfo.getInstanceId())){
+            return;
+        }
         String var = dbInfo.getInstanceId().intern();
         synchronized (var){
             dbDAO.deleteIfExitDbByName(dbInfo.getDatabaseId(), dbInfo.getInstanceId(), dbInfo.getDatabaseName());
@@ -1837,10 +1879,23 @@ public class DataManageService {
             String typeName = entity.getTypeName();
             String dbType = null;
             String instanceGuid = null;
+            Database dbInfo;
+
             switch (typeName){
                 case "hive_db":
                     dbType = "HIVE";
                     instanceGuid = "hive";
+                    break;
+                case "rdbms_instance":
+                    if(null == dbType){
+                        dbType = getDbType(definition, config);
+                    }
+                    if(null == instanceGuid){
+                        dbType = getDbType(definition, config);
+                        instanceGuid = getInstanceGuid(entity);
+                    }
+                    insertOrUpdateDb(entity, dbType, instanceGuid, definition);
+                    break;
                 case "rdbms_db":
                     if(null == dbType){
                         dbType = getDbType(definition, config);
@@ -1849,18 +1904,11 @@ public class DataManageService {
                         dbType = getDbType(definition, config);
                         instanceGuid = getInstanceGuid(entity);
                     }
-                    Database dbInfo = getDbInfo(entity);
+                    dbInfo = getDbInfo(entity);
                     dbInfo.setDbType(dbType);
                     dbInfo.setInstanceId(instanceGuid);
                     addOrUpdateDb(dbInfo, definition);
                     break;
-                case "hive_table":
-                    if(getOutputFromProcesses(entity) && hiveAtlasEntityAll){
-                        continue;
-                    }
-                    if (entity.getAttribute("temporary") != null && entity.getAttribute("temporary").toString().equals("true")) {
-                        continue;
-                    }
                 case "rdbms_table":
                     TableInfo tableInfo = getTableInfo(entity);
                     addOrUpdateTable(tableInfo,definition);
@@ -1880,6 +1928,37 @@ public class DataManageService {
                     addOrUpdateColumn(column);
                     break;
             }
+        }
+    }
+
+    /**
+     * rdbms元数据采集，添加或更新数据库
+     * @param entity
+     * @param dbType
+     * @param instanceGuid
+     * @param definition
+     */
+    public void insertOrUpdateDb(AtlasEntity entity, String dbType, String instanceGuid, SyncTaskDefinition definition) {
+        List<AtlasRelatedObjectId> atlasRelatedObjectIdList = (List<AtlasRelatedObjectId>)  entity.getRelationshipAttributes().get("databases");
+        if (CollectionUtils.isEmpty(atlasRelatedObjectIdList)) {
+            LOG.warn("数据源下获取不到数据库信息");
+            return;
+        }
+        for (AtlasRelatedObjectId atlasRelatedObjectId : atlasRelatedObjectIdList) {
+            String typeName = atlasRelatedObjectId.getTypeName();
+            if (!"rdbms_db".equals(typeName)) {
+                continue;
+            }
+            String dbName = atlasRelatedObjectId.getDisplayText();
+            String status = atlasRelatedObjectId.getEntityStatus().name();
+            String guid = atlasRelatedObjectId.getGuid();
+            Database database = new Database();
+            database.setDatabaseName(dbName);
+            database.setDatabaseId(guid);
+            database.setStatus(status);
+            database.setDbType(dbType);
+            database.setInstanceId(instanceGuid);
+            addOrUpdateDb(database, definition);
         }
     }
 

@@ -72,18 +72,10 @@ public interface BusinessDAO {
 
     //查询业务信息关联的数据库表-过滤数据源
     @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid," +
-            "COALESCE(display_name,tableName,'') as displayName,description,source_id AS sourceId from tableInfo where status='ACTIVE' and  tableGuid in(select tableGuid from business2table where businessId=#{businessId}) AND (tableInfo.source_id in (SELECT source_id FROM data_source WHERE tenantid = #{tenantId}) or tableInfo.source_id = 'hive')")
+            "COALESCE(display_name,tableName,'') as displayName,description,source_id AS sourceId from tableInfo where status='ACTIVE' and  tableGuid in(select tableGuid from business2table where businessId=#{businessId}) "
+            //"AND (tableInfo.source_id in (SELECT source_id FROM data_source WHERE tenantid = #{tenantId}) or tableInfo.source_id = 'hive')"
+    )
     public List<TechnologyInfo.Table> queryTablesByBusinessIdAndTenantId(@Param("businessId") String businessId, @Param("tenantId") String tenantId);
-
-    @Select({"<script>",
-            " SELECT COUNT(*), businessId FROM tableInfo INNER JOIN business2table ON tableInfo.tableGuid = business2table.tableguid WHERE tableInfo.status = 'ACTIVE' AND businessId IN",
-            " <foreach item='item' index='index' collection='businessIdS' separator=',' open='(' close=')'>" ,
-            " #{item}",
-            " </foreach>",
-            " AND ( tableInfo.source_id IN ( SELECT source_id FROM data_source WHERE tenantid = #{tenantId} ) OR tableInfo.source_id = 'hive' ) ",
-            " GROUP BY businessId",
-            " </script>"})
-    List<TechnologyInfo> getCountByBusinessIdAndTenantId(@Param("businessIdS") List<String> businessIdS, @Param("tenantId") String tenantId);
 
     //添加目录/业务对象关联
     @Insert("insert into business_relation(relationshipGuid,categoryGuid,businessId,generateTime)values(#{relationshipGuid},#{categoryGuid},#{businessId},#{generateTime})")
@@ -112,7 +104,6 @@ public interface BusinessDAO {
              " offset #{offset}",
              " </script>"})
     public List<BusinessInfoHeader> queryBusinessByName(@Param("businessName")String businessName, @Param("ids") List<String> categoryIds, @Param("limit")int limit, @Param("offset") int offset,@Param("tenantId")String tenantId) throws SQLException;
-
 
     @Select({"<script>",
              " select count(*)over() total,businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber,business_relation.categoryGuid from businessInfo",
