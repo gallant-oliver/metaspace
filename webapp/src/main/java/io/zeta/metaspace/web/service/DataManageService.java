@@ -817,10 +817,11 @@ public class DataManageService {
     @Transactional(rollbackFor = Exception.class)
     public CategoryDeleteReturn deleteCategory(String guid, String tenantId, int type) throws Exception {
         List<String> categoryIds = categoryDao.queryChildrenCategoryId(guid, tenantId);
-        categoryIds.add(guid);
+
         if(Boolean.FALSE.equals(this.removeSourceInfo(categoryIds,tenantId,guid))){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录已关联源信息登记，无法删除");
         }
+        categoryIds.add(guid);
         int item = 0;
         if (type == 1) {
             List<String> businessIds = relationDao.getBusinessIdsByCategoryGuid(categoryIds);
@@ -869,9 +870,12 @@ public class DataManageService {
      * @param guid
      */
     private Boolean removeSourceInfo(List<String> categoryIds, String tenantId, String guid) {
+        if (categoryIds==null||categoryIds.size()==0){
+            return Boolean.TRUE;
+        }
         List<DatabaseInfoForCategory> dif = databaseInfoDAO.getDatabaseInfoByCategoryId(categoryIds, tenantId, guid);
-        if (Boolean.FALSE.equals(ParamUtil.isNull(dif))) {
-            return Boolean.FALSE;
+        if (Boolean.FALSE.equals(ParamUtil.isNull(dif))&&!dif.get(0).getCategoryId().equals(guid)) {
+                return Boolean.FALSE;
         }
         return Boolean.TRUE;
     }
