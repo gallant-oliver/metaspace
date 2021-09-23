@@ -48,20 +48,6 @@ public interface CategoryDAO {
     @Select("select * from category where categoryType=#{categoryType} and (tenantid=#{tenantId})")
     public Set<CategoryEntityV2> getAll(@Param("categoryType") int categoryType, @Param("tenantId") String tenantId) throws SQLException;
 
-    @Select("<script>" +
-            " SELECT * FROM category WHERE tenantid = #{tenantId} AND private_status = 'PUBLIC' AND categorytype = 0" +
-            " <if test='groupIdList != null and groupIdList.size() > 0'>"+
-            " UNION" +
-            " SELECT DISTINCT category.* FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
-            " WHERE tenantid = #{tenantId} AND private_status = 'PRIVATE' AND categorytype = 0 AND group_id in" +
-            " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
-            "   #{item} "+
-            " </foreach>" +
-            " </if>"+
-            "</script>")
-    Set<CategoryEntityV2> selectSetByTenantIdAndGroupId(@Param("tenantId") String tenantId, @Param("groupIdList") List<String> groupIdList);
-
-
     @Select("select * from category where categoryType=#{categoryType} and tenantid=#{tenantId} and (code=#{code} or (level=#{level} and name=#{name}))")
     public Set<CategoryEntityV2> getCategoryByNameOrCode(@Param("tenantId") String tenantId, @Param("categoryType") int categoryType, @Param("name") String name, @Param("code") String code, @Param("level") int level) throws SQLException;
 
@@ -421,6 +407,20 @@ public interface CategoryDAO {
             " </if>"+
             "</script>")
     List<CategoryPrivilege> selectListByTenantIdAndStatus(@Param("tenantId") String tenantId, @Param("creator") String creator, @Param("groupIdList") List<String> groupIdList);
+
+    @Select("<script>" +
+            " SELECT * FROM category WHERE tenantid = #{tenantId} AND private_status = 'PUBLIC' AND categorytype = 0" +
+            " <if test='groupIdList != null and groupIdList.size() > 0'>"+
+            " UNION" +
+            " SELECT DISTINCT category.* FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
+            " WHERE tenantid = #{tenantId} AND private_status = 'PRIVATE' AND categorytype = 0 AND group_id in" +
+            " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
+            "   #{item} "+
+            " </foreach>" +
+            " </if>"+
+            "</script>")
+    Set<CategoryEntityV2> selectSetByTenantIdAndStatus(@Param("tenantId") String tenantId, @Param("groupIdList") List<String> groupIdList);
+
 
     @Select("<script>" +
             " SELECT *,true as read,true as edit_category, true as edit_item FROM category WHERE tenantid = #{tenantId} AND private_status = 'PUBLIC' AND categorytype = 0" +

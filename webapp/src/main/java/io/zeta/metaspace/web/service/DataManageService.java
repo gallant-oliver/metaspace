@@ -303,7 +303,7 @@ public class DataManageService {
             if (!CollectionUtils.isEmpty(userGroups)) {
                 userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
             }
-            return categoryDAO.selectSetByTenantIdAndGroupId(tenantId, userGroupIds);
+            return categoryDAO.selectSetByTenantIdAndStatus(tenantId, userGroupIds);
         } catch (AtlasBaseException e) {
             LOG.error("getAllTechnicalCategory exception is {}", e);
         }
