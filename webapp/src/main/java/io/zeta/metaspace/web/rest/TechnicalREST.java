@@ -466,7 +466,8 @@ public class TechnicalREST {
     public void exportSelected(@PathParam("downloadId") String downloadId, @QueryParam("tenantId") String tenantId) throws Exception {
         File exportExcel;
         //全局导出
-        if ("all".equals(downloadId)) {
+        String all = "all";
+        if (all.equals(downloadId)) {
             exportExcel = dataManageService.exportExcelAll(CATEGORY_TYPE, tenantId);
         } else {
             List<String> ids = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
