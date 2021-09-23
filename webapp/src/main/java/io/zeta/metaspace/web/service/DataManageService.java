@@ -33,6 +33,7 @@ import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.dto.indices.IndexFieldExport;
 import io.zeta.metaspace.model.dto.indices.IndexFieldNode;
 import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
+import io.zeta.metaspace.model.enums.SourceInfoOperation;
 import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
@@ -167,6 +168,8 @@ public class DataManageService {
     int technicalCount = 5;
     int dataStandCount = 14;
 
+    private static final int CREATE_MAX_CATEGORY_LEVEL = 4;
+    private static final int UPDATE_MAX_CATEGORY_LEVEL = 5;
     private static final String ORGANIZATION_FIRST_PID = "sso.organization.first.pid";
 
     /**
@@ -224,7 +227,7 @@ public class DataManageService {
             if (!CollectionUtils.isEmpty(userGroups)) {
                 userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
             }
-            categoryPrivilegeList = categoryDAO.selectListByTenantIdAndStatus(tenantId, user.getUserId(), userGroupIds);
+            categoryPrivilegeList = categoryDAO.selectListByTenantIdAndStatus(tenantId, user.getUserId(), userGroupIds,5);
             List<SourceInfo> sourceInfoList = sourceInfoDAO.selectCategoryListAndCount(tenantId);
             Map<String, Integer> map = new HashMap<>();
             if (!CollectionUtils.isEmpty(sourceInfoList)) {
@@ -237,21 +240,24 @@ public class DataManageService {
                 privilege.setAsh(false);
                 privilege.setEdit(true);
                 privilege.setAddSibling(true);
-                privilege.setAddChildren(true);
+                privilege.setCreateRelation(true);
                 privilege.setDelete(true);
                 //源信息登记的，不能编辑，不能添加子目录，不能删除
                 if (map.keySet().contains(categoryPrivilege.getGuid())) {
                     privilege.setEdit(false);
                     privilege.setAddChildren(false);
                     privilege.setDelete(false);
+                    privilege.setCreateRelation(true);
                     categoryPrivilege.setCount(map.get(categoryPrivilege.getGuid()));
                 } else if (MetaspaceConfig.systemCategory.contains(categoryPrivilege.getGuid())) {
                     privilege.setDelete(false);
                     if (privilege.isEdit()){
                         privilege.setEditSafe(true);
+                        privilege.setCreateRelation(true);
                     }
                     privilege.setEdit(false);
                 }
+
                 categoryPrivilege.setPrivilege(privilege);
             }
             //源信息登记的父级目录不能删除
@@ -400,7 +406,7 @@ public class DataManageService {
      * @param tenantId
      * @return
      */
-    public List<CategoryPrivilege> getSourceInfoTechnicalCategory(String tenantId) {
+    public List<CategoryPrivilege> getSourceInfoTechnicalCategory(String tenantId, SourceInfoOperation operation) {
         List<CategoryPrivilege> categoryPrivilegeList = new ArrayList<>();
         try {
             User user = AdminUtils.getUserData();
@@ -410,7 +416,7 @@ public class DataManageService {
             if (!CollectionUtils.isEmpty(userGroups)) {
                 userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
             }
-            categoryPrivilegeList = categoryDAO.selectListByTenantIdAndStatus(tenantId, user.getUserId(), userGroupIds);
+            categoryPrivilegeList = categoryDAO.selectListByTenantIdAndStatus(tenantId, user.getUserId(), userGroupIds,SourceInfoOperation.UPDATE.equals(operation)?UPDATE_MAX_CATEGORY_LEVEL:CREATE_MAX_CATEGORY_LEVEL);
             for (CategoryPrivilege categoryPrivilege : categoryPrivilegeList) {
                 CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
                 privilege.setHide(false);
@@ -421,15 +427,17 @@ public class DataManageService {
                 privilege.setDelete(false);
                 categoryPrivilege.setPrivilege(privilege);
             }
-            List<String> strings = sourceInfoDAO.selectCategoryListByTenantId(tenantId);
-            if(CollectionUtils.isEmpty(strings)){
-                return categoryPrivilegeList;
-            }
-            Iterator<CategoryPrivilege> iter = categoryPrivilegeList.iterator();
-            while (iter.hasNext()){
-                CategoryPrivilege categoryPrivilege = iter.next();
-                if(strings.contains(categoryPrivilege.getGuid())){
-                    iter.remove();
+            if (SourceInfoOperation.CREATE.equals(operation)){
+                List<String> strings = sourceInfoDAO.selectCategoryListByTenantId(tenantId);
+                if (CollectionUtils.isEmpty(strings)) {
+                    return categoryPrivilegeList;
+                }
+                Iterator<CategoryPrivilege> iter = categoryPrivilegeList.iterator();
+                while (iter.hasNext()) {
+                    CategoryPrivilege categoryPrivilege = iter.next();
+                    if (strings.contains(categoryPrivilege.getGuid())) {
+                        iter.remove();
+                    }
                 }
             }
             removeNoParentCategory(categoryPrivilegeList);
@@ -832,10 +840,11 @@ public class DataManageService {
     @Transactional(rollbackFor = Exception.class)
     public CategoryDeleteReturn deleteCategory(String guid, String tenantId, int type) throws Exception {
         List<String> categoryIds = categoryDao.queryChildrenCategoryId(guid, tenantId);
-        categoryIds.add(guid);
+
         if(Boolean.FALSE.equals(this.removeSourceInfo(categoryIds,tenantId,guid))){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录已关联源信息登记，无法删除");
         }
+        categoryIds.add(guid);
         int item = 0;
         if (type == 1) {
             List<String> businessIds = relationDao.getBusinessIdsByCategoryGuid(categoryIds);
@@ -884,9 +893,12 @@ public class DataManageService {
      * @param guid
      */
     private Boolean removeSourceInfo(List<String> categoryIds, String tenantId, String guid) {
+        if (categoryIds==null||categoryIds.size()==0){
+            return Boolean.TRUE;
+        }
         List<DatabaseInfoForCategory> dif = databaseInfoDAO.getDatabaseInfoByCategoryId(categoryIds, tenantId, guid);
-        if (Boolean.FALSE.equals(ParamUtil.isNull(dif))) {
-            return Boolean.FALSE;
+        if (Boolean.FALSE.equals(ParamUtil.isNull(dif))&&!dif.get(0).getCategoryId().equals(guid)) {
+                return Boolean.FALSE;
         }
         return Boolean.TRUE;
     }
@@ -1908,17 +1920,6 @@ public class DataManageService {
                 case "hive_db":
                     dbType = "HIVE";
                     instanceGuid = "hive";
-                    break;
-                case "rdbms_instance":
-                    if(null == dbType){
-                        dbType = getDbType(definition, config);
-                    }
-                    if(null == instanceGuid){
-                        dbType = getDbType(definition, config);
-                        instanceGuid = getInstanceGuid(entity);
-                    }
-                    insertOrUpdateDb(entity, dbType, instanceGuid, definition);
-                    break;
                 case "rdbms_db":
                     if(null == dbType){
                         dbType = getDbType(definition, config);
@@ -1932,6 +1933,23 @@ public class DataManageService {
                     dbInfo.setInstanceId(instanceGuid);
                     addOrUpdateDb(dbInfo, definition);
                     break;
+                case "rdbms_instance":
+                    if(null == dbType){
+                        dbType = getDbType(definition, config);
+                    }
+                    if(null == instanceGuid){
+                        dbType = getDbType(definition, config);
+                        instanceGuid = getInstanceGuid(entity);
+                    }
+                    insertOrUpdateDb(entity, dbType, instanceGuid, definition);
+                    break;
+                case "hive_table":
+                    if(getOutputFromProcesses(entity) && hiveAtlasEntityAll){
+                        continue;
+                    }
+                    if (entity.getAttribute("temporary") != null && entity.getAttribute("temporary").toString().equals("true")) {
+                        continue;
+                    }
                 case "rdbms_table":
                     TableInfo tableInfo = getTableInfo(entity);
                     addOrUpdateTable(tableInfo,definition);

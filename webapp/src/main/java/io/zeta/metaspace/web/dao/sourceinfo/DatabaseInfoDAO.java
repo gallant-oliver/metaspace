@@ -451,11 +451,9 @@ public interface DatabaseInfoDAO {
             " s.ID,\n" +
             " s.category_id AS categoryId,\n" +
             " s.database_id AS databaseId,\n" +
-            " s.database_alias AS name,\n" +
-            " sirc.parent_category_id AS parentCategoryId \n" +
+            " s.database_alias AS name\n" +
             "FROM\n" +
             " source_info s\n" +
-            " LEFT JOIN source_info_relation2parent_category sirc ON s.\"id\" = sirc.source_info_id \n" +
             "WHERE\n" +
             " version = 0"+
             " AND " +
@@ -463,7 +461,6 @@ public interface DatabaseInfoDAO {
             "<foreach collection='ids' item='id' separator=',' open='(' close=')'>"+
             "#{id}"+
             "</foreach>" +
-            " OR sirc.parent_category_id = #{guid}" +
             " ) AND " +
             " s.tenant_id =#{tenantId}"+
             "</script>")
