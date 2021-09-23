@@ -51,6 +51,8 @@ public class KafkaConnector {
         private int dbFetchSize = 10;
         @JsonProperty("start.scn")
         private long startScn = -1L;
+        @JsonProperty("conn.type")
+        private String serviceType;  //SID 或者 SERVICE_NAME
     }
 
     @JsonAutoDetect(getterVisibility = PUBLIC_ONLY, setterVisibility = PUBLIC_ONLY, fieldVisibility = NONE)
