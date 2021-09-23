@@ -401,13 +401,13 @@ public interface CategoryDAO {
             " <if test='groupIdList != null and groupIdList.size() > 0'>"+
             " UNION" +
             " SELECT DISTINCT category.* FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
-            " WHERE tenantid = #{tenantId} AND private_status = 'PRIVATE' AND categorytype = 0 AND group_id in" +
+            " WHERE tenantid = #{tenantId} AND level &lt;= #{maxLevel} AND private_status = 'PRIVATE' AND categorytype = 0 AND group_id in" +
             " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
             "   #{item} "+
             " </foreach>" +
             " </if>"+
             "</script>")
-    List<CategoryPrivilege> selectListByTenantIdAndStatus(@Param("tenantId") String tenantId, @Param("creator") String creator, @Param("groupIdList") List<String> groupIdList);
+    List<CategoryPrivilege> selectListByTenantIdAndStatus(@Param("tenantId") String tenantId, @Param("creator") String creator, @Param("groupIdList") List<String> groupIdList,@Param("maxLevel") int maxLevel);
 
     @Select("<script>" +
             "SELECT COALESCE( MAX(sort),0) + 1  "+

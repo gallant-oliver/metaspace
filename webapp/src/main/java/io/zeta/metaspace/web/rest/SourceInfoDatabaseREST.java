@@ -20,6 +20,7 @@ import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.enums.SourceInfoOperation;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -644,7 +645,7 @@ public class SourceInfoDatabaseREST {
     @Path("technical/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<CategoryPrivilege> getCategories(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        return dataManageService.getSourceInfoTechnicalCategory(tenantId);
+    public List<CategoryPrivilege> getCategories(@HeaderParam("tenantId") String tenantId,@DefaultValue("UPDATE") @QueryParam("operationType") SourceInfoOperation operationType) throws AtlasBaseException {
+        return dataManageService.getSourceInfoTechnicalCategory(tenantId,operationType);
     }
 }
