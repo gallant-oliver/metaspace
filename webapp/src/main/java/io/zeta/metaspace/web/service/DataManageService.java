@@ -160,6 +160,8 @@ public class DataManageService {
     private SourceInfoDAO sourceInfoDAO;
     @Autowired
     private AtlasEntityStore atlasEntityStore;
+    @Autowired
+    private DataManageService dataManageService;
     int technicalType = 0;
     int dataStandType = 3;
     int technicalCount = 5;
@@ -267,6 +269,27 @@ public class DataManageService {
             LOG.error("getTechnicalCategory exception is {}", e);
         }
         return categoryPrivilegeList;
+    }
+
+    /**
+     * 获取当前租户下全部的技术目录
+     * @param tenantId
+     * @return
+     */
+    public Set<CategoryEntityV2> getAllTechnicalCategory(String tenantId) {
+        try {
+            User user = AdminUtils.getUserData();
+            List<String> userGroupIds = new ArrayList<>();
+            //获取用户组
+            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+            if (!CollectionUtils.isEmpty(userGroups)) {
+                userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            }
+            return categoryDAO.selectListByTenantIdAndGroupId(tenantId, userGroupIds);
+        } catch (AtlasBaseException e) {
+            LOG.error("getAllTechnicalCategory exception is {}", e);
+        }
+        return new HashSet<>();
     }
 
     /**
@@ -2081,6 +2104,20 @@ public class DataManageService {
      * @throws AtlasBaseException
      */
     public File exportExcelAll(int categoryType, String tenantId) throws IOException, SQLException {
+        Set<CategoryEntityV2> data = dataManageService.getAllTechnicalCategory(tenantId);
+        Workbook workbook = allData2workbook(userDAO, categoryType, data);
+        return workbook2file(workbook);
+    }
+
+    /**
+     * 全局导出-技术目录
+     *
+     * @param categoryType
+     * @return
+     * @throws IOException
+     * @throws AtlasBaseException
+     */
+    public File exportExcelTechnicalAll(int categoryType, String tenantId) throws IOException, SQLException {
         Set<CategoryEntityV2> data = categoryDao.getAll(categoryType, tenantId);
 
         Workbook workbook = allData2workbook(userDAO, categoryType, data);
