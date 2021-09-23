@@ -23,7 +23,7 @@ public enum SourceInfoOperation {
      */
     CREATE(2),
     /**
-     * 新建
+     * 编辑
      */
     UPDATE(3),
     /**
