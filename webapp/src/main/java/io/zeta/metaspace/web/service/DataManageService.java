@@ -2122,22 +2122,12 @@ public class DataManageService {
      * @throws AtlasBaseException
      */
     public File exportExcelAll(int categoryType, String tenantId) throws IOException, SQLException {
-        Set<CategoryEntityV2> data = dataManageService.getAllTechnicalCategory(tenantId);
-        Workbook workbook = allData2workbook(userDAO, categoryType, data);
-        return workbook2file(workbook);
-    }
-
-    /**
-     * 全局导出-技术目录
-     *
-     * @param categoryType
-     * @return
-     * @throws IOException
-     * @throws AtlasBaseException
-     */
-    public File exportExcelTechnicalAll(int categoryType, String tenantId) throws IOException, SQLException {
-        Set<CategoryEntityV2> data = categoryDao.getAll(categoryType, tenantId);
-
+        Set<CategoryEntityV2> data;
+        if(categoryType == 0){
+            data = dataManageService.getAllTechnicalCategory(tenantId);
+        }else{
+            data = categoryDao.getAll(categoryType, tenantId);
+        }
         Workbook workbook = allData2workbook(userDAO, categoryType, data);
         return workbook2file(workbook);
     }
