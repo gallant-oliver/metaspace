@@ -409,6 +409,20 @@ public interface CategoryDAO {
     List<CategoryPrivilege> selectListByTenantIdAndStatus(@Param("tenantId") String tenantId, @Param("creator") String creator, @Param("groupIdList") List<String> groupIdList,@Param("maxLevel") int maxLevel);
 
     @Select("<script>" +
+            " SELECT * FROM category WHERE tenantid = #{tenantId} AND private_status = 'PUBLIC' AND categorytype = 0" +
+            " <if test='groupIdList != null and groupIdList.size() > 0'>"+
+            " UNION" +
+            " SELECT DISTINCT category.* FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
+            " WHERE tenantid = #{tenantId} AND private_status = 'PRIVATE' AND categorytype = 0 AND group_id in" +
+            " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
+            "   #{item} "+
+            " </foreach>" +
+            " </if>"+
+            "</script>")
+    Set<CategoryEntityV2> selectSetByTenantIdAndStatus(@Param("tenantId") String tenantId, @Param("groupIdList") List<String> groupIdList);
+
+
+    @Select("<script>" +
             " SELECT *,true as read,true as edit_category, true as edit_item FROM category WHERE tenantid = #{tenantId} AND private_status = 'PUBLIC' AND categorytype = 0" +
             " <if test='groupIdList != null and groupIdList.size() > 0'>"+
             " UNION" +
