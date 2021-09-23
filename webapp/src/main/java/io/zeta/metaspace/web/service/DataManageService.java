@@ -269,6 +269,24 @@ public class DataManageService {
         return categoryPrivilegeList;
     }
 
+
+    public List<CategoryPrivilege> getTechnicalCategoryByUserId(String tenantId, String userId) {
+        List<CategoryPrivilege> categoryPrivilegeList = new ArrayList<>();
+        try {
+            List<String> userGroupIds = new ArrayList<>();
+            //获取用户组
+            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(userId, tenantId);
+            if (!CollectionUtils.isEmpty(userGroups)) {
+                userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            }
+            categoryPrivilegeList = categoryDAO.selectListByTenantIdAndGroupId(tenantId, userGroupIds);
+            removeNoParentCategory(categoryPrivilegeList);
+        } catch (AtlasBaseException e) {
+            LOG.error("getTechnicalCategory exception is {}", e);
+        }
+        return categoryPrivilegeList;
+    }
+
     /**
      * 删除有父目录，但是父目录不存在的目录
      * @param categoryPrivilegeList
