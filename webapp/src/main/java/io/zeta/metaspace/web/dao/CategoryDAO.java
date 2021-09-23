@@ -59,7 +59,7 @@ public interface CategoryDAO {
             " </foreach>" +
             " </if>"+
             "</script>")
-    Set<CategoryEntityV2> selectListByTenantIdAndGroupId(@Param("tenantId") String tenantId, @Param("groupIdList") List<String> groupIdList);
+    Set<CategoryEntityV2> selectSetByTenantIdAndGroupId(@Param("tenantId") String tenantId, @Param("groupIdList") List<String> groupIdList);
 
 
     @Select("select * from category where categoryType=#{categoryType} and tenantid=#{tenantId} and (code=#{code} or (level=#{level} and name=#{name}))")
