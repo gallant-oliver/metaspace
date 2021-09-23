@@ -1893,17 +1893,6 @@ public class DataManageService {
                 case "hive_db":
                     dbType = "HIVE";
                     instanceGuid = "hive";
-                    break;
-                case "rdbms_instance":
-                    if(null == dbType){
-                        dbType = getDbType(definition, config);
-                    }
-                    if(null == instanceGuid){
-                        dbType = getDbType(definition, config);
-                        instanceGuid = getInstanceGuid(entity);
-                    }
-                    insertOrUpdateDb(entity, dbType, instanceGuid, definition);
-                    break;
                 case "rdbms_db":
                     if(null == dbType){
                         dbType = getDbType(definition, config);
@@ -1917,6 +1906,23 @@ public class DataManageService {
                     dbInfo.setInstanceId(instanceGuid);
                     addOrUpdateDb(dbInfo, definition);
                     break;
+                case "rdbms_instance":
+                    if(null == dbType){
+                        dbType = getDbType(definition, config);
+                    }
+                    if(null == instanceGuid){
+                        dbType = getDbType(definition, config);
+                        instanceGuid = getInstanceGuid(entity);
+                    }
+                    insertOrUpdateDb(entity, dbType, instanceGuid, definition);
+                    break;
+                case "hive_table":
+                    if(getOutputFromProcesses(entity) && hiveAtlasEntityAll){
+                        continue;
+                    }
+                    if (entity.getAttribute("temporary") != null && entity.getAttribute("temporary").toString().equals("true")) {
+                        continue;
+                    }
                 case "rdbms_table":
                     TableInfo tableInfo = getTableInfo(entity);
                     addOrUpdateTable(tableInfo,definition);
