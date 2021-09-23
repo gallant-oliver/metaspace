@@ -6,6 +6,8 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface AnnexDAO {
 
@@ -17,4 +19,7 @@ public interface AnnexDAO {
     @Select("SELECT annex_id as annexId, file_name as fileName, file_type as fileType, path,file_size AS fileSize \n" +
             " FROM public.annex where annex_id=#{annexId} limit 1;")
     Annex selectByAnnexId(@Param("annexId") String annexId);
+
+    @Select("SELECT code FROM public.code_annex_type where action=#{action}")
+    List<String> getAnnexCodeList(@Param("action") String action);
 }
