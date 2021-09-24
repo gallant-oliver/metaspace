@@ -645,7 +645,7 @@ public class SourceInfoDatabaseREST {
     @Path("technical/category")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<CategoryPrivilege> getCategories(@HeaderParam("tenantId") String tenantId,@DefaultValue("UPDATE") @QueryParam("operationType") SourceInfoOperation operationType) throws AtlasBaseException {
+    public List<CategoryPrivilege> getCategories(@HeaderParam("tenantId") String tenantId,@DefaultValue("CREATE") @QueryParam("operationType") SourceInfoOperation operationType) throws AtlasBaseException {
         return dataManageService.getSourceInfoTechnicalCategory(tenantId,operationType);
     }
 }
