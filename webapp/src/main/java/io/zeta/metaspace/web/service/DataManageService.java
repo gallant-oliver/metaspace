@@ -326,7 +326,7 @@ public class DataManageService {
         Iterator<CategoryPrivilege> iter = categoryPrivilegeList.iterator();
         while (iter.hasNext()){
             CategoryPrivilege categoryPrivilege = iter.next();
-            if(StringUtils.isNotBlank(categoryPrivilege.getParentCategoryGuid()) && !map.keySet().contains(categoryPrivilege.getGuid())){
+            if(StringUtils.isNotBlank(categoryPrivilege.getParentCategoryGuid()) && !map.containsKey(categoryPrivilege.getParentCategoryGuid())){
                 iter.remove();
             }
         }
