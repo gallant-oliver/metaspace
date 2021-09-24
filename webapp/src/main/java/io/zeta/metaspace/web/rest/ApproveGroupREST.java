@@ -33,8 +33,11 @@ import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+
 import javax.inject.Singleton;
 import javax.ws.rs.*;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -78,6 +81,43 @@ public class ApproveGroupREST {
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
             throw new AtlasBaseException("用户组列表及搜索失败，您的租户ID为:" + tenantId + ",请检查好是否配置正确",AtlasErrorCode.BAD_REQUEST,"用户组列表及搜索失败，您的租户ID为:" + tenantId + ",请检查好是否配置正确");
+        }
+    }
+
+    /**
+     * 获取具有源信息登记的审批组数据
+     * @param tenantId
+     * @param params
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/sourceInfo/list")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getSourceInfoApproveGroupList(
+            @HeaderParam("tenantId") String tenantId, Parameters params) throws AtlasBaseException {
+        try {
+            //参数检查
+            if(StringUtils.isBlank(params.getSortby())){
+                params.setSortby("createTime");  //默认排序字段
+            }
+
+            if(StringUtils.isBlank(params.getOrder())){
+                params.setOrder("desc");  //默认降序排列
+            }
+
+            PageResult<ApproveGroupListAndSearchResult> pageResult = approveGroupService.getApproveGroupListAndSearch(tenantId, params);
+            List<ApproveGroupListAndSearchResult> approveList = pageResult.getLists();
+            if(!CollectionUtils.isEmpty(approveList)){
+                approveList = approveList.stream().filter(p->StringUtils.isNotBlank(p.getModules())
+                        && Arrays.asList(p.getModules().split(",")).contains(ModuleEnum.DATABASEREGISTER.getName()))
+                        .collect(Collectors.toList());
+                pageResult.setLists(approveList);
+            }
+            return ReturnUtil.success(pageResult);
+        } catch (Exception e) {
+            throw new AtlasBaseException("源信息登记审批组列表查询失败，您的租户ID为:" + tenantId + ",请检查好是否配置正确",AtlasErrorCode.BAD_REQUEST,"审批组列表搜索失败，您的租户ID为:" + tenantId + ",请检查好是否配置正确");
         }
     }
 
