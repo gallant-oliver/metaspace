@@ -560,19 +560,21 @@ public class DataManageService {
             }
             entity.setCode(info.getCode());
             String parentCategoryGuid = categoryDAO.getParentIdByGuid(currentCategoryGuid,tenantId);
-            int currentCategorySort = 0;
-            if (currentCategoryGuid!=null){
-                currentCategorySort = categoryDAO.getCategorySortById(currentCategoryGuid,tenantId);
-            }
-            if ("up".equals(info.getDirection())){
-                categoryDao.updateSort(currentCategorySort,parentCategoryGuid,tenantId);
-                entity.setSort(currentCategorySort);
-            }else if ("down".equals(info.getDirection())){
-                categoryDao.updateSort(currentCategorySort+1,parentCategoryGuid,tenantId);
-                entity.setSort(currentCategorySort+1);
-            }else{
-                int maxSort = categoryDao.getMaxSortByParentGuid(info.getParentCategoryGuid(), tenantId);
-                entity.setSort(maxSort);
+            if (type == technicalType) {
+                int currentCategorySort = 0;
+                if (currentCategoryGuid != null) {
+                    currentCategorySort = categoryDAO.getCategorySortById(currentCategoryGuid, tenantId);
+                }
+                if ("up".equals(info.getDirection())) {
+                    categoryDao.updateSort(currentCategorySort, parentCategoryGuid, tenantId);
+                    entity.setSort(currentCategorySort);
+                } else if ("down".equals(info.getDirection())) {
+                    categoryDao.updateSort(currentCategorySort + 1, parentCategoryGuid, tenantId);
+                    entity.setSort(currentCategorySort + 1);
+                } else {
+                    int maxSort = categoryDao.getMaxSortByParentGuid(info.getParentCategoryGuid(), tenantId);
+                    entity.setSort(maxSort);
+                }
             }
             //创建一级目录
             if (StringUtils.isEmpty(currentCategoryGuid)) {
@@ -602,7 +604,7 @@ public class DataManageService {
                     oneLevelCategory = createFirstCategory(entity, type, tenantId);
                 }
                 if (authorized) {
-                    CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, false, true, true, true, true, true, true, false);
+                    CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, false, true, false, false);
                     oneLevelCategory.setPrivilege(privilege);
                 }
                 if (!Objects.isNull(oneLevelCategory)) {
@@ -2379,13 +2381,14 @@ public class DataManageService {
         if (parentPrivilege.size() != 0 && categoryEntityV2s != null) {
             userGroupDAO.addUserGroupCategoryPrivileges(parentPrivilege, categoryEntityV2s);
         }
-        AtomicInteger maxSort = new AtomicInteger(categoryDao.getMaxSortByParentGuid(parentCategoryGuid, tenantId));
-        categoryEntityV2s.forEach(c->{
-            c.setPrivateStatus(CategoryPrivateStatus.PRIVATE);
-            c.setSort(maxSort.get());
-            maxSort.getAndIncrement();
-        });
-
+        if (type == technicalType) {
+            AtomicInteger maxSort = new AtomicInteger(categoryDao.getMaxSortByParentGuid(parentCategoryGuid, tenantId));
+            categoryEntityV2s.forEach(c -> {
+                c.setPrivateStatus(CategoryPrivateStatus.PRIVATE);
+                c.setSort(maxSort.get());
+                maxSort.getAndIncrement();
+            });
+        }
         categoryDao.addAll(categoryEntityV2s, tenantId);
         if (type == 3 || type == 4) {
             privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
@@ -3055,13 +3058,16 @@ public class DataManageService {
         try {
             categories = file2AllData(fileInputStream, type, systemCategory);
             Map<String,List<CategoryEntityV2>> map=categories.stream().collect(Collectors.groupingBy(CategoryEntityV2::getParentCategoryGuid));
-            map.forEach((guid,categoryList)->{
-                AtomicInteger maxSort = new AtomicInteger(categoryDao.getMaxSortByParentGuid(guid, tenantId));
-                categoryList.forEach(category->{
-                    category.setSort(maxSort.get());
-                    maxSort.getAndIncrement();
+            if (type ==technicalType){
+                map.forEach((guid,categoryList)->{
+                    AtomicInteger maxSort = new AtomicInteger(categoryDao.getMaxSortByParentGuid(guid, tenantId));
+                    categoryList.forEach(category->{
+                        category.setSort(maxSort.get());
+                        maxSort.getAndIncrement();
+                    });
                 });
-            });
+            }
+
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
