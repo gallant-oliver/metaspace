@@ -322,14 +322,22 @@ public class DataManageService {
      * @param categoryPrivilegeList
      */
     private void removeNoParentCategory(List<CategoryPrivilege> categoryPrivilegeList){
-        Map<String,String> map = categoryPrivilegeList.stream().collect(Collectors.toMap(CategoryPrivilege::getGuid, CategoryPrivilege::getName));
-        Iterator<CategoryPrivilege> iter = categoryPrivilegeList.iterator();
-        while (iter.hasNext()){
-            CategoryPrivilege categoryPrivilege = iter.next();
-            if(StringUtils.isNotBlank(categoryPrivilege.getParentCategoryGuid()) && !map.keySet().contains(categoryPrivilege.getGuid())){
-                iter.remove();
+        Map<String,String> map = categoryPrivilegeList.stream().collect(HashMap::new,(m,v)->m.put(v.getGuid(),v.getParentCategoryGuid()),HashMap::putAll);
+        categoryPrivilegeList.removeIf(categoryPrivilege ->
+                this.checkParentIfExist(map, categoryPrivilege.getParentCategoryGuid(), categoryPrivilegeList));
+    }
+
+    private boolean checkParentIfExist(Map<String,String> map,String parentId,List<CategoryPrivilege> categoryPrivilegeList){
+        if (StringUtils.isEmpty(parentId)){
+            return false;
+        }
+        if (map.containsKey(parentId)){
+            Optional<CategoryPrivilege> result=categoryPrivilegeList.stream().filter(c->parentId.equals(c.getGuid())).findFirst();
+            if (result.isPresent()){
+                return checkParentIfExist(map,result.get().getParentCategoryGuid(),categoryPrivilegeList);
             }
         }
+        return true;
     }
 
     private void updateParentCategory(List<CategoryPrivilege> categoryPrivilegeList) {
