@@ -47,6 +47,15 @@ public class CategoryPrivilege {
     private String safe;
     private String code;
     private Integer sort;
+    private boolean edit;
+
+    public boolean isEdit() {
+        return edit;
+    }
+
+    public void setEdit(boolean edit) {
+        this.edit = edit;
+    }
 
 
     public CategoryPrivilege(CategoryPrivilegeV2 category){

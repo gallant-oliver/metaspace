@@ -13,6 +13,8 @@
 
 package io.zeta.metaspace.model.metadata;
 
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
+
 import java.io.Serializable;
 
 public class Parameters implements Serializable {
@@ -22,6 +24,15 @@ public class Parameters implements Serializable {
     private int limit;
     private String sortby;
     private String order;
+    private ModuleEnum module;
+
+    public ModuleEnum getModule() {
+        return module;
+    }
+
+    public void setModule(ModuleEnum module) {
+        this.module = module;
+    }
 
     public String getSortby() {
         return sortby;
