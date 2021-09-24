@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.atlas</groupId>
     <artifactId>apache-atlas</artifactId>
-    <version>1.12.0</version>
+    <version>1.13.0</version>
   </parent>
   <artifactId>atlas-authorization</artifactId>
   <name>Apache Atlas Authorization</name>
