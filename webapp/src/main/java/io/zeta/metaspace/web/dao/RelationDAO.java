@@ -273,6 +273,8 @@ public interface RelationDAO {
                     "   tableInfo.createtime,\n" +
                     "   tableInfo.dataowner,\n" +
                     "   tableInfo.description,\n" +
+                    "   tableinfo.databaseguid AS dbId,",
+                    "   data_source.source_id AS sourceId,\n" +
                     "   data_source.source_type AS dataSourceType,\n" +
                     "   source_info.category_id AS categoryGuid,\n" +
                     "   source_info.id AS sourceInfoId,\n" +
