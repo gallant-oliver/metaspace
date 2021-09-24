@@ -161,6 +161,8 @@ public class DataManageService {
     private SourceInfoDAO sourceInfoDAO;
     @Autowired
     private AtlasEntityStore atlasEntityStore;
+    @Autowired
+    private DataManageService dataManageService;
     int technicalType = 0;
     int dataStandType = 3;
     int technicalCount = 5;
@@ -274,6 +276,45 @@ public class DataManageService {
             LOG.error("getTechnicalCategory exception is {}", e);
         }
         return categoryPrivilegeList;
+    }
+
+
+    public List<CategoryPrivilege> getTechnicalCategoryByUserId(String tenantId, String userId) {
+        List<CategoryPrivilege> categoryPrivilegeList = new ArrayList<>();
+        try {
+            List<String> userGroupIds = new ArrayList<>();
+            //获取用户组
+            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(userId, tenantId);
+            if (!CollectionUtils.isEmpty(userGroups)) {
+                userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            }
+            categoryPrivilegeList = categoryDAO.selectListByTenantIdAndGroupId(tenantId, userGroupIds);
+            removeNoParentCategory(categoryPrivilegeList);
+        } catch (AtlasBaseException e) {
+            LOG.error("getTechnicalCategory exception is {}", e);
+        }
+        return categoryPrivilegeList;
+    }
+
+    /**
+     * 获取当前租户下全部的技术目录
+     * @param tenantId
+     * @return
+     */
+    public Set<CategoryEntityV2> getAllTechnicalCategory(String tenantId) {
+        try {
+            User user = AdminUtils.getUserData();
+            List<String> userGroupIds = new ArrayList<>();
+            //获取用户组
+            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+            if (!CollectionUtils.isEmpty(userGroups)) {
+                userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            }
+            return categoryDAO.selectSetByTenantIdAndStatus(tenantId, userGroupIds);
+        } catch (AtlasBaseException e) {
+            LOG.error("getAllTechnicalCategory exception is {}", e);
+        }
+        return new HashSet<>();
     }
 
     /**
@@ -1896,17 +1937,6 @@ public class DataManageService {
                 case "hive_db":
                     dbType = "HIVE";
                     instanceGuid = "hive";
-                    break;
-                case "rdbms_instance":
-                    if(null == dbType){
-                        dbType = getDbType(definition, config);
-                    }
-                    if(null == instanceGuid){
-                        dbType = getDbType(definition, config);
-                        instanceGuid = getInstanceGuid(entity);
-                    }
-                    insertOrUpdateDb(entity, dbType, instanceGuid, definition);
-                    break;
                 case "rdbms_db":
                     if(null == dbType){
                         dbType = getDbType(definition, config);
@@ -1920,6 +1950,23 @@ public class DataManageService {
                     dbInfo.setInstanceId(instanceGuid);
                     addOrUpdateDb(dbInfo, definition);
                     break;
+                case "rdbms_instance":
+                    if(null == dbType){
+                        dbType = getDbType(definition, config);
+                    }
+                    if(null == instanceGuid){
+                        dbType = getDbType(definition, config);
+                        instanceGuid = getInstanceGuid(entity);
+                    }
+                    insertOrUpdateDb(entity, dbType, instanceGuid, definition);
+                    break;
+                case "hive_table":
+                    if(getOutputFromProcesses(entity) && hiveAtlasEntityAll){
+                        continue;
+                    }
+                    if (entity.getAttribute("temporary") != null && entity.getAttribute("temporary").toString().equals("true")) {
+                        continue;
+                    }
                 case "rdbms_table":
                     TableInfo tableInfo = getTableInfo(entity);
                     addOrUpdateTable(tableInfo,definition);
@@ -2110,8 +2157,12 @@ public class DataManageService {
      * @throws AtlasBaseException
      */
     public File exportExcelAll(int categoryType, String tenantId) throws IOException, SQLException {
-        Set<CategoryEntityV2> data = categoryDao.getAll(categoryType, tenantId);
-
+        Set<CategoryEntityV2> data;
+        if(categoryType == 0){
+            data = dataManageService.getAllTechnicalCategory(tenantId);
+        }else{
+            data = categoryDao.getAll(categoryType, tenantId);
+        }
         Workbook workbook = allData2workbook(userDAO, categoryType, data);
         return workbook2file(workbook);
     }

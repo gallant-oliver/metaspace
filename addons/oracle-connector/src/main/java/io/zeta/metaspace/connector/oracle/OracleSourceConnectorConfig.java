@@ -22,6 +22,7 @@ public class OracleSourceConnectorConfig extends AbstractConfig {
 	public static final String DB_PASSWORD_CONFIG = "db.password";
 	public static final String DB_FETCH_SIZE = "db.fetch.size";
 	public static final String START_SCN = "start.scn";
+	public static final String SERVICE_TYPE = "conn.type"; //oracle SID 或者 SERVICE_NAME
 
 	private static final String ORACLE_CONNECTOR_CLASS = "io.zeta.metaspace.connector.oracle.OracleSourceConnector";
 	public OracleSourceConnectorConfig(ConfigDef config, Map<String, String> parsedConfig) {
@@ -42,7 +43,8 @@ public class OracleSourceConnectorConfig extends AbstractConfig {
 				.define(DB_USER_CONFIG, Type.STRING,  "", Importance.LOW, "Db User")
 				.define(DB_PASSWORD_CONFIG, Type.STRING,  "", Importance.LOW, "Db Password")
 				.define(DB_FETCH_SIZE, Type.INT, 10, Importance.LOW, "Database Record Fetch Size")
-				.define(START_SCN, Type.LONG, -1L, Importance.LOW, "Start SCN");
+				.define(START_SCN, Type.LONG, -1L, Importance.LOW, "Start SCN")
+				.define(SERVICE_TYPE, Type.STRING, "", Importance.LOW, "Db Conn Type");
 	}
 
 	public String getTopic() {
@@ -80,5 +82,7 @@ public class OracleSourceConnectorConfig extends AbstractConfig {
 	public String getName() {
 		return super.getString(NAME);
 	}
+
+	public String getServiceType(){return super.getString(SERVICE_TYPE);}
 
 }

@@ -56,6 +56,9 @@ public class CategoryPrivilege {
     public void setEdit(boolean edit) {
         this.edit = edit;
     }
+    private Boolean read;
+    private Boolean editCategory;
+    private Boolean editItem;
 
 
     public CategoryPrivilege(CategoryPrivilegeV2 category){
@@ -120,6 +123,30 @@ public class CategoryPrivilege {
 
     public void setSort(Integer sort) {
         this.sort = sort;
+    }
+
+    public Boolean getRead() {
+        return read;
+    }
+
+    public void setRead(Boolean read) {
+        this.read = read;
+    }
+
+    public Boolean getEditCategory() {
+        return editCategory;
+    }
+
+    public void setEditCategory(Boolean editCategory) {
+        this.editCategory = editCategory;
+    }
+
+    public Boolean getEditItem() {
+        return editItem;
+    }
+
+    public void setEditItem(Boolean editItem) {
+        this.editItem = editItem;
     }
 
     public CategoryPrivilege(RoleModulesCategories.Category category) {

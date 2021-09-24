@@ -287,7 +287,7 @@ public interface UserGroupDAO {
     List<RoleModulesCategories.Category> getAllCategorysAndCount(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId,@Param("dbNames") List<String> dbNames);
 
     @Select("<script>" +
-            "select guid,description,name,parentcategoryguid,categorytype,level,safe,tenantid,createtime,creator,sort from category " +
+            "select guid,description,name,parentcategoryguid,categorytype,level,safe,tenantid,createtime,creator,sort,upbrothercategoryguid,downbrothercategoryguid from category " +
             " where categoryType=#{categoryType} and tenantid=#{tenantId}" +
             "</script>")
     List<RoleModulesCategories.Category> getAllCategorysByType(@Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
@@ -1304,4 +1304,15 @@ public interface UserGroupDAO {
              "</if>" +
             "</script>"})
     public int getDatabaseIdNum(@Param("groupIds") List<String> groupIds,@Param("sourceId") String sourceId,@Param("databaseGuid") String databaseGuid);
+
+    @Select({"<script>",
+            "select count(*) from database_group_relation where source_id =#{sourceId} and group_id=#{groupId}",
+            "</script>"})
+    public int getDatabaseGroupRelationNum(@Param("sourceId") String sourceId,@Param("groupId") String groupId);
+
+
+    @Select({"<script>",
+            "select source_name from data_source where source_id =#{sourceId}",
+            "</script>"})
+    public String getSourceName(@Param("sourceId") String sourceId);
 }

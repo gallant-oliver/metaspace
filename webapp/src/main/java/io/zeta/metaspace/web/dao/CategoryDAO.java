@@ -16,7 +16,6 @@
  */
 package io.zeta.metaspace.web.dao;
 
-import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -408,6 +407,33 @@ public interface CategoryDAO {
             " </if>"+
             "</script>")
     List<CategoryPrivilege> selectListByTenantIdAndStatus(@Param("tenantId") String tenantId, @Param("creator") String creator, @Param("groupIdList") List<String> groupIdList,@Param("maxLevel") int maxLevel);
+
+    @Select("<script>" +
+            " SELECT * FROM category WHERE tenantid = #{tenantId} AND private_status = 'PUBLIC' AND categorytype = 0" +
+            " <if test='groupIdList != null and groupIdList.size() > 0'>"+
+            " UNION" +
+            " SELECT DISTINCT category.* FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
+            " WHERE tenantid = #{tenantId} AND private_status = 'PRIVATE' AND categorytype = 0 AND group_id in" +
+            " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
+            "   #{item} "+
+            " </foreach>" +
+            " </if>"+
+            "</script>")
+    Set<CategoryEntityV2> selectSetByTenantIdAndStatus(@Param("tenantId") String tenantId, @Param("groupIdList") List<String> groupIdList);
+
+
+    @Select("<script>" +
+            " SELECT *,true as read,true as edit_category, true as edit_item FROM category WHERE tenantid = #{tenantId} AND private_status = 'PUBLIC' AND categorytype = 0" +
+            " <if test='groupIdList != null and groupIdList.size() > 0'>"+
+            " UNION" +
+            " SELECT DISTINCT category.*,relation.read,relation.edit_category,relation.edit_item FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
+            " WHERE tenantid = #{tenantId} AND private_status = 'PRIVATE' AND categorytype = 0 AND group_id in" +
+            " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
+            "   #{item} "+
+            " </foreach>" +
+            " </if>"+
+            "</script>")
+    List<CategoryPrivilege> selectListByTenantIdAndGroupId(@Param("tenantId") String tenantId, @Param("groupIdList") List<String> groupIdList);
 
     @Select("<script>" +
             "SELECT COALESCE( MAX(sort),0) + 1  "+

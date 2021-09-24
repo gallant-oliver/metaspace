@@ -13,6 +13,7 @@ import java.sql.SQLException;
  */
 
 public class OracleConnection{
+    private static final String SID = "SID";
     static final Logger LOG = LoggerFactory.getLogger(OracleConnection.class);
     static{
         try{
@@ -25,8 +26,11 @@ public class OracleConnection{
     public Connection connect(OracleSourceConnectorConfig config) throws SQLException {
 
         String dbPassword = PassWordUtils.aesDecode(config.getDbPassword());
+        String symbol = SID.equalsIgnoreCase(config.getServiceType()) ? ":" : "/";
+        String jdbcUrl = "jdbc:oracle:thin:@"+config.getDbIp()+":"+config.getDbPort()+symbol+config.getDbName();
+        LOG.info("serviceType:{} ,连接url:{}",config.getServiceType(), jdbcUrl);
         return DriverManager.getConnection(
-            "jdbc:oracle:thin:@"+config.getDbIp()+":"+config.getDbPort()+":"+config.getDbName(),
+                jdbcUrl,
             config.getDbUser(),
                 dbPassword);
     }
