@@ -74,7 +74,7 @@ public class OperateLogService {
     public List<OperateModule> moduleList() {
         return Arrays.stream(ModuleEnum.values()).filter(module -> module.getType() != 0)
                 .filter(module -> MetaspaceConfig.getDataService() ? !ModuleEnum.DATASHARE.equals(module) : !(ModuleEnum.AUDIT.equals(module) || ModuleEnum.APIMANAGE.equals(module)))
-                .filter(module -> !(MetaspaceConfig.getOperateLogModuleMoon() && (ModuleEnum.NORMDESIGN.equals(module) || ModuleEnum.MODIFIER.equals(module) || ModuleEnum.TIMELIMIT.equals(module) || ModuleEnum.APPROVERMANAGE.equals(module) || ModuleEnum.INDEXAREAAUTH.equals(module))))
+                .filter(module -> !(MetaspaceConfig.getOperateLogModuleMoon() && (ModuleEnum.NORMDESIGN.equals(module) || ModuleEnum.MODIFIER.equals(module) || ModuleEnum.TIMELIMIT.equals(module) || ModuleEnum.APPROVERMANAGE.equals(module))))
                 .map(module -> new OperateModule(module.getName(), module.getAlias())).collect(Collectors.toList());
     }
 }
