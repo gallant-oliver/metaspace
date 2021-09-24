@@ -238,10 +238,11 @@ public class DataManageService {
                 CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
                 privilege.setHide(false);
                 privilege.setAsh(false);
-                privilege.setEdit(true);
                 privilege.setAddSibling(true);
+                privilege.setAddChildren(true);
                 privilege.setCreateRelation(true);
-                privilege.setDelete(true);
+                privilege.setEdit(categoryPrivilege.isEdit());
+                privilege.setDelete(categoryPrivilege.isEdit());
                 //源信息登记的，不能编辑，不能添加子目录，不能删除
                 if (map.keySet().contains(categoryPrivilege.getGuid())) {
                     privilege.setEdit(false);
@@ -604,7 +605,7 @@ public class DataManageService {
                     oneLevelCategory = createFirstCategory(entity, type, tenantId);
                 }
                 if (authorized) {
-                    CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, false, false, true, false, false, true, false, false);
+                    CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, false, false, true, false, false);
                     oneLevelCategory.setPrivilege(privilege);
                 }
                 if (!Objects.isNull(oneLevelCategory)) {
@@ -629,7 +630,6 @@ public class DataManageService {
                 }
             }
             CategoryPrivilege.Privilege privilege = createOtherCategory(entity, type, info, tenantId);
-
             categoryDao.add(entity, tenantId);
             CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid, tenantId);
             //有目录权限管理模块权限，可以随意建目录
@@ -646,8 +646,13 @@ public class DataManageService {
                 if (typeBoolean && isAdmin && isPrivilege) {
                     privilege.setAsh(true);
                 }
-                if (type == 0){
+                if (type == technicalType) {
+                    privilege.setDeleteRelation(false);
                     privilege.setAsh(false);
+                    privilege.setAddChildren(true);
+                    privilege.setCreateRelation(true);
+                    privilege.setDelete(false);
+                    privilege.setEdit(false);
                 }
             }
             if (CategoryPrivateStatus.PRIVATE.equals(entity.getPrivateStatus())){
@@ -699,6 +704,11 @@ public class DataManageService {
         }
         if (type == technicalType) {
             privilege.setDeleteRelation(false);
+            privilege.setAsh(false);
+            privilege.setAddChildren(true);
+            privilege.setCreateRelation(true);
+            privilege.setDelete(false);
+            privilege.setEdit(false);
         }
         returnEntity.setPrivilege(privilege);
         return returnEntity;
@@ -730,6 +740,11 @@ public class DataManageService {
         }
         if (type == technicalType) {
             privilege.setDeleteRelation(false);
+            privilege.setAsh(false);
+            privilege.setAddChildren(true);
+            privilege.setCreateRelation(true);
+            privilege.setDelete(false);
+            privilege.setEdit(false);
         }
         returnEntity.setPrivilege(privilege);
         return returnEntity;
