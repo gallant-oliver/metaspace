@@ -396,10 +396,10 @@ public interface CategoryDAO {
     List<CategoryGuidPath> getGuidPathByTenantIdAndCategoryTypeAndId(@Param("tenantId") String tenantId, @Param("type") int type, @Param("guid") String guid);
 
     @Select("<script>" +
-            " SELECT * FROM category WHERE tenantid = #{tenantId} AND private_status = 'PUBLIC' AND categorytype = 0" +
+            " SELECT category.*,COALESCE(relation.edit_category,false,false) AS edit  FROM category LEFT JOIN category_group_relation as relation on category.guid = relation.category_id WHERE tenantid = #{tenantId} AND private_status = 'PUBLIC' AND categorytype = 0" +
             " <if test='groupIdList != null and groupIdList.size() > 0'>"+
             " UNION" +
-            " SELECT DISTINCT category.* FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
+            " SELECT DISTINCT category.*,COALESCE(relation.edit_category,false,false) AS edit FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
             " WHERE tenantid = #{tenantId} AND level &lt;= #{maxLevel} AND private_status = 'PRIVATE' AND categorytype = 0 AND group_id in" +
             " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
             "   #{item} "+

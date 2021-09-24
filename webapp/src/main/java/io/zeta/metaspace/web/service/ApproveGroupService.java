@@ -56,6 +56,7 @@ public class ApproveGroupService {
     ApproveGroupDAO approveGroupDAO;
 
     public PageResult<ApproveGroupListAndSearchResult> getApproveGroupListAndSearch(String tenantId, Parameters params) throws AtlasBaseException {
+
         PageResult<ApproveGroupListAndSearchResult> commonResult = new PageResult<>();
 
         if (params.getQuery() != null) {  //模糊查询的特殊字符转译
