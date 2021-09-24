@@ -16,33 +16,11 @@
  */
 package io.zeta.metaspace.web.dao.dataquality;
 
-import io.zeta.metaspace.model.dataquality2.AtomicTaskExecution;
-import io.zeta.metaspace.model.dataquality2.DataQualityBasicInfo;
-import io.zeta.metaspace.model.dataquality2.DataQualitySubTask;
-import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskObject;
-import io.zeta.metaspace.model.dataquality2.DataQualitySubTaskRule;
-import io.zeta.metaspace.model.dataquality2.DataQualityTask;
-import io.zeta.metaspace.model.dataquality2.DataQualityTaskExecute;
-import io.zeta.metaspace.model.dataquality2.DataQualityTaskRuleExecute;
-import io.zeta.metaspace.model.dataquality2.EditionTaskInfo;
-import io.zeta.metaspace.model.dataquality2.ExecutionLog;
-import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
-import io.zeta.metaspace.model.dataquality2.ExecutionReportData;
-import io.zeta.metaspace.model.dataquality2.RuleHeader;
-import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
-import io.zeta.metaspace.model.dataquality2.TaskHeader;
-import io.zeta.metaspace.model.dataquality2.TaskInfo;
-import io.zeta.metaspace.model.dataquality2.TaskRuleExecutionRecord;
-import io.zeta.metaspace.model.dataquality2.TaskRuleHeader;
-import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
+import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.*;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -923,7 +901,7 @@ public interface TaskManageDAO {
      * @param dbName
      * @return
      */
-    @Select("select distinct databaseguid from tableInfo where dbName=#{dbName} and status='ACTIVE' and source_id='hive'")
+    @Select("select distinct databaseguid from tableInfo AS tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid where dbName=#{dbName} and tb.status='ACTIVE' and db.status = 'ACTIVE' AND db_type = 'HIVE'")
     public String getDbIdByDbName(@Param("dbName")String dbName);
 
     /**
