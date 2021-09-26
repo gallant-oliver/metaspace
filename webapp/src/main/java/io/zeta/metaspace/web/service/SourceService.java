@@ -10,6 +10,7 @@ import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.CodeSourceInfoStatusDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
+import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -49,7 +50,10 @@ public class SourceService {
                 return new ArrayList<>();
             }
         }
-        return databaseDAO.getDataBaseCode(dataSourceId, tenantId, databases);
+
+        // 获取当前登录用户
+        User user = AdminUtils.getUserData();
+        return databaseDAO.getDataBaseCode(dataSourceId, tenantId, databases, user.getUserId());
     }
 
     public List<User> getUserList(String tenantId) {
