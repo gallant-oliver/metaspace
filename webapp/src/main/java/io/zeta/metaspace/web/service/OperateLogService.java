@@ -12,6 +12,7 @@
 // ======================================================================
 package io.zeta.metaspace.web.service;
 
+import com.google.common.base.Enums;
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
 import io.zeta.metaspace.MetaspaceConfig;
@@ -44,7 +45,8 @@ public class OperateLogService {
                 .stream().map(operateLog -> {
                     operateLog.setType(OperateTypeEnum.of(operateLog.getType()).getCn());
                     operateLog.setResult(OperateResultEnum.of(operateLog.getResult()).getCn());
-                    operateLog.setModule(ModuleEnum.valueOf(operateLog.getModule().toUpperCase()).getName());
+                    ModuleEnum currentEnum = Enums.getIfPresent(ModuleEnum.class,operateLog.getModule().toUpperCase()).orNull();
+                    operateLog.setModule(currentEnum == null ? "" : currentEnum.getName());
                     return operateLog;
                 }).collect(Collectors.toList());
         PageResult<OperateLog> pageResult = new PageResult<>();
@@ -74,7 +76,7 @@ public class OperateLogService {
     public List<OperateModule> moduleList() {
         return Arrays.stream(ModuleEnum.values()).filter(module -> module.getType() != 0)
                 .filter(module -> MetaspaceConfig.getDataService() ? !ModuleEnum.DATASHARE.equals(module) : !(ModuleEnum.AUDIT.equals(module) || ModuleEnum.APIMANAGE.equals(module)))
-                .filter(module -> !(MetaspaceConfig.getOperateLogModuleMoon() && (ModuleEnum.NORMDESIGN.equals(module) || ModuleEnum.MODIFIER.equals(module) || ModuleEnum.TIMELIMIT.equals(module) || ModuleEnum.APPROVERMANAGE.equals(module) || ModuleEnum.INDEXAREAAUTH.equals(module))))
+                .filter(module -> !(MetaspaceConfig.getOperateLogModuleMoon() && (ModuleEnum.NORMDESIGN.equals(module) || ModuleEnum.MODIFIER.equals(module) || ModuleEnum.TIMELIMIT.equals(module) || ModuleEnum.APPROVERMANAGE.equals(module))))
                 .map(module -> new OperateModule(module.getName(), module.getAlias())).collect(Collectors.toList());
     }
 }

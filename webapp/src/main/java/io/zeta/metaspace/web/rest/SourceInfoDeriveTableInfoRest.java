@@ -164,7 +164,8 @@ public class SourceInfoDeriveTableInfoRest {
             @ApiParam(value = "请求头-租户Id", required = true) @HeaderParam(value = "tenantId") String tenantId,
             @ApiParam(value = "是否读取贴源层") @QueryParam(value = "source") boolean source) {
         try {
-            return ReturnUtil.success(sourceInfoDeriveTableInfoService.getTechnicalCategory(source, tenantId));
+            // 请求参数source 废弃 贴源层不需要进行筛选，支持衍生表
+            return ReturnUtil.success(sourceInfoDeriveTableInfoService.getTechnicalCategory(true, tenantId));
         } catch (Exception e) {
             LOG.error("查询数据层/库异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询数据层/库异常");

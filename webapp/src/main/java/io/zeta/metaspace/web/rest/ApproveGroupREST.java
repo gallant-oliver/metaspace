@@ -85,18 +85,19 @@ public class ApproveGroupREST {
     }
 
     /**
-     * 获取具有源信息登记的审批组数据
+     * 获取具有指定模块的审批组数据
+     * @param moduleId (13:指标设计 38:数据库登记)
      * @param tenantId
      * @param params
      * @return
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/sourceInfo/list")
+    @Path("/{moduleId}/list")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getSourceInfoApproveGroupList(
-            @HeaderParam("tenantId") String tenantId, Parameters params) throws AtlasBaseException {
+            @HeaderParam("tenantId") String tenantId,@PathParam("moduleId") Integer moduleId, Parameters params) throws AtlasBaseException {
         try {
             //参数检查
             if(StringUtils.isBlank(params.getSortby())){
@@ -111,9 +112,12 @@ public class ApproveGroupREST {
             List<ApproveGroupListAndSearchResult> approveList = pageResult.getLists();
             if(!CollectionUtils.isEmpty(approveList)){
                 approveList = approveList.stream().filter(p->StringUtils.isNotBlank(p.getModules())
-                        && Arrays.asList(p.getModules().split(",")).contains(ModuleEnum.DATABASEREGISTER.getName()))
+                        && Arrays.asList(p.getModules().split(",")).contains(ModuleEnum.getModuleShowName(moduleId)))
                         .collect(Collectors.toList());
                 pageResult.setLists(approveList);
+                long resultSize = approveList.size();
+                pageResult.setTotalSize(resultSize);
+                pageResult.setCurrentSize(resultSize);
             }
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {

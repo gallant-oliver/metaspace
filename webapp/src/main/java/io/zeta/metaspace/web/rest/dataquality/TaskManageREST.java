@@ -29,77 +29,38 @@ import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dataquality.Schedule;
-import io.zeta.metaspace.model.dataquality2.DataQualityBasicInfo;
-import io.zeta.metaspace.model.dataquality2.DataQualityTask;
-import io.zeta.metaspace.model.dataquality2.EditionTaskInfo;
-import io.zeta.metaspace.model.dataquality2.ErrorData;
-import io.zeta.metaspace.model.dataquality2.ExecutionLog;
-import io.zeta.metaspace.model.dataquality2.ExecutionLogHeader;
-import io.zeta.metaspace.model.dataquality2.ExecutionReportData;
-import io.zeta.metaspace.model.dataquality2.Rule;
-import io.zeta.metaspace.model.dataquality2.RuleHeader;
-import io.zeta.metaspace.model.dataquality2.SubTaskRecord;
-import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
-import io.zeta.metaspace.model.dataquality2.TaskHeader;
-import io.zeta.metaspace.model.dataquality2.TaskInfo;
-import io.zeta.metaspace.model.dataquality2.TaskRuleExecutionRecord;
-import io.zeta.metaspace.model.dataquality2.TaskRuleHeader;
-import io.zeta.metaspace.model.dataquality2.TaskWarningHeader;
+import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.metadata.ColumnParameters;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
-import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Queue;
-import io.zeta.metaspace.utils.GsonUtils;
-import io.zeta.metaspace.web.service.BusinessService;
-import io.zeta.metaspace.web.service.DataManageService;
-import io.zeta.metaspace.web.service.DataShareService;
-import io.zeta.metaspace.web.service.SearchService;
-import io.zeta.metaspace.web.service.TenantService;
+import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.service.dataquality.RuleTemplateService;
 import io.zeta.metaspace.web.service.dataquality.TaskManageService;
 import io.zeta.metaspace.web.task.util.LivyTaskSubmitHelper;
 import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
-import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.io.*;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 
@@ -221,7 +182,7 @@ public class TaskManageREST {
     }
 
     /**
-     * 获取库下所有表列表
+     * 获取HIVE库下所有表列表
      * @param dbName
      * @param parameters
      * @return
