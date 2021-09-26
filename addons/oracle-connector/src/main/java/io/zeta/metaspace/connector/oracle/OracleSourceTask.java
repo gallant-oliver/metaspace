@@ -200,9 +200,9 @@ public class OracleSourceTask extends SourceTask {
 	}
 
 	private List<SourceRecord> retry(List<SourceRecord> records) {
-		stop();
 		int times = 1;
 		while(times <= tryTimes){
+			stop();
 			LOG.info("try to execute connector task {} {} times by streamOffsetScn = {}", config.getName(), times, streamOffsetScn);
 			times = times+1;
 			PreparedStatement logMinerSelect = null;
@@ -211,6 +211,7 @@ public class OracleSourceTask extends SourceTask {
 				start(configMap);
 				logMinerSelect = execute(records);
 				LOG.info("connector {} execute success after trying {}  times", times -1, config.getName());
+				break;
 			} catch (Exception ex) {
 				LOG.error("{} : connector {} execute error: {}", times, config.getName(), ex);
 			}finally {
