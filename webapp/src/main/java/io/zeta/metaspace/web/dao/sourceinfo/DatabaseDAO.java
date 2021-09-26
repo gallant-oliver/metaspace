@@ -41,7 +41,7 @@ public interface DatabaseDAO {
             " FROM " +
             " db_info AS info " +
             " LEFT JOIN source_db AS sd ON info.database_guid = sd.db_guid " +
-            " info.database_name in " +
+            " where info.database_name in " +
             " <foreach collection='databases' item='item' separator=',' open='(' close=')'>"+
             "    #{item}"+
             "  </foreach>" +
