@@ -12,6 +12,7 @@
 // ======================================================================
 package io.zeta.metaspace.web.service;
 
+import com.google.common.base.Enums;
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 
 import io.zeta.metaspace.MetaspaceConfig;
@@ -44,7 +45,8 @@ public class OperateLogService {
                 .stream().map(operateLog -> {
                     operateLog.setType(OperateTypeEnum.of(operateLog.getType()).getCn());
                     operateLog.setResult(OperateResultEnum.of(operateLog.getResult()).getCn());
-                    operateLog.setModule(ModuleEnum.valueOf(operateLog.getModule().toUpperCase()).getName());
+                    ModuleEnum currentEnum = Enums.getIfPresent(ModuleEnum.class,operateLog.getModule().toUpperCase()).orNull();
+                    operateLog.setModule(currentEnum == null ? "" : currentEnum.getName());
                     return operateLog;
                 }).collect(Collectors.toList());
         PageResult<OperateLog> pageResult = new PageResult<>();

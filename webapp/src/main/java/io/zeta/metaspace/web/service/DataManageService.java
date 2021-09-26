@@ -1137,6 +1137,10 @@ public class DataManageService {
                 tag = tag.replaceAll("%", "/%").replaceAll("_", "/_");
 
                 List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+                List<String> groupIds = new ArrayList<>();
+                if(userGroups.size()>0) {
+                    groupIds = userGroups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
+                }
                 for (UserGroup userGroup : userGroups) {
                     String userGroupId = userGroup.getId();
                     List<String> category = CategoryRelationUtils.getPermissionCategoryListV2(userGroupId, type, tenantId);
@@ -1164,6 +1168,16 @@ public class DataManageService {
                 String tableGuid = entity.getTableGuid();
                 List<DataOwnerHeader> ownerHeaders = tableDAO.getDataOwnerList(tableGuid);
                 entity.setDataOwner(ownerHeaders);
+                String sourceId=entity.getSourceId();
+                entity.setJump(true);
+                //用户组新增数据库权限，技术目录跳转到元数据管理，判断如果当前表所在数据库未被赋权给用户组，不允许跳转
+                if(StringUtils.isNotBlank(sourceId)){
+                    String dbId=entity.getDbId();
+                    int cnt= userGroupDAO.getDatabaseIdNum(groupIds,sourceId,dbId);
+                    if(cnt==0){
+                        entity.setJump(false);
+                    }
+                }
             }
             long totalNum = 0;
             if (list.size() != 0) {

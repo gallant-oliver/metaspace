@@ -326,7 +326,7 @@ public class SourceInfoDeriveTableInfoRest {
             @ApiParam(value = "数据库类型", required = true) @QueryParam(value = "dbType") String dbType,
             @ApiParam(value = "字段英文名", required = true) @QueryParam(value = "name") String name) {
         boolean result = sourceInfoDeriveTableInfoService.checkColumnNameEn(name);
-        return result ? ReturnUtil.success(true) : ReturnUtil.success("字段英文名不符合规范", false);
+        return result ? ReturnUtil.success(true) : ReturnUtil.success("字段英文名不符合规范：" + name, false);
     }
 
     @ApiOperation(value = "根据数据库ID校验表英文名是否重复", tags = "源信息登记-衍生表登记")
