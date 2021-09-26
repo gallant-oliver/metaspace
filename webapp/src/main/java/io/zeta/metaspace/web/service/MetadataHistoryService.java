@@ -168,7 +168,7 @@ public class MetadataHistoryService {
                     }
                     ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
                     threadPoolExecutor.execute(()->{
-                        sendNoticeByEmail(tableMetadataList);
+                        sendNoticeByEmail(tableMetadataList,tableMetadata.getDatabaseName());
                     });
 
                 }
@@ -180,13 +180,13 @@ public class MetadataHistoryService {
     }
 
     //元数据有变化，需要邮件通知 （开启一个线程处理,目前只有 hive源存在对比）
-    private void sendNoticeByEmail(List<TableMetadata> tableMetadataList) {
+    private void sendNoticeByEmail(List<TableMetadata> tableMetadataList,String dbName) {
         log.info("元数据有变化，查找邮件发送地址.");
         String tableGuid = tableMetadataList.get(0).getGuid();
         String sourceId = "hive";
         Map<String,Object> paragraphMap = new HashMap<>();
         paragraphMap.put("dbType",sourceId);
-        paragraphMap.put("dbName",sourceId);
+        paragraphMap.put("dbName",dbName);
         List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByGuid(sourceId,tableGuid);
         String[] contacts = null;
         if(!CollectionUtils.isEmpty(deriveTableInfoList)){
@@ -210,27 +210,27 @@ public class MetadataHistoryService {
                     Map<String, String> businessCategoryGuidPathMap = sourceInfoDeriveTableInfoService.getCategoryGuidPathMap(tableInfo.getTenantId(), BUSINESS_CATEGORY_TYPE, businessInfo.getDepartmentId());
                     paragraphMap.put("businessPath",businessCategoryGuidPathMap.getOrDefault(businessInfo.getDepartmentId(), ""));
                 }
+            }
+        }
 
-                List<DatabaseInfoBO> currentSourceInfoList = databaseInfoDAO.getLastDatabaseInfoByDatabaseId(tableInfo.getDbId(),tableInfo.getTenantId(),sourceId);
-                if(!CollectionUtils.isEmpty(currentSourceInfoList)){
-                    Optional<DatabaseInfoBO> databaseInfoOpt =  currentSourceInfoList.stream().sorted(Comparator.comparing(DatabaseInfoBO::getVersion).reversed()).findFirst();
-                    if(databaseInfoOpt.isPresent()) {
-                        DatabaseInfoBO databaseInfoBO = databaseInfoOpt.get();
-                        if (Boolean.FALSE.equals(ParamUtil.isNull(databaseInfoBO))&&Boolean.TRUE.equals(ParamUtil.isNull(databaseInfoBO.getCategoryId()))){
-                            databaseInfoBO.setCategoryId(databaseInfoDAO.getParentCategoryIdById(databaseInfoBO.getId()));
-                        }
-                        paragraphMap.put("bizLeader",databaseInfoBO.getBusinessLeaderName());
-                        paragraphMap.put("techenicalPath",databaseInfoBO.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
-                                sourceInfoDatabaseService.getActiveInfoAllPath(databaseInfoBO.getCategoryId(),tableInfo.getTenantId() ):sourceInfoDatabaseService.getAllPath(databaseInfoBO.getId(),tableInfo.getTenantId()));
+        List<DatabaseInfoBO> currentSourceInfoList = databaseInfoDAO.getDatabaseInfoByDatabaseName(dbName,sourceId);
+        if(!CollectionUtils.isEmpty(currentSourceInfoList)){
+            Optional<DatabaseInfoBO> databaseInfoOpt =  currentSourceInfoList.stream().sorted(Comparator.comparing(DatabaseInfoBO::getVersion)).findFirst();
+            if(databaseInfoOpt.isPresent()) {
+                DatabaseInfoBO databaseInfoBO = databaseInfoOpt.get();
+                if (Boolean.FALSE.equals(ParamUtil.isNull(databaseInfoBO))&&Boolean.TRUE.equals(ParamUtil.isNull(databaseInfoBO.getCategoryId()))){
+                    databaseInfoBO.setCategoryId(databaseInfoDAO.getParentCategoryIdById(databaseInfoBO.getId()));
+                }
+                paragraphMap.put("bizLeader",databaseInfoBO.getBusinessLeaderName());
+                paragraphMap.put("techenicalPath",databaseInfoBO.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
+                        sourceInfoDatabaseService.getActiveInfoAllPath(databaseInfoBO.getCategoryId(),databaseInfoBO.getTenantId() ):sourceInfoDatabaseService.getAllPath(databaseInfoBO.getId(),databaseInfoBO.getTenantId()));
 
-                        if(contacts == null){
-                            User user = userDAO.getUser(databaseInfoBO.getBusinessLeaderId());
-                            String email = user.getAccount();
-                            log.info("数据库业务负责人的邮箱地址:{}",email);
-                            if(sourceInfoFileService.isEmail(email)){
-                                contacts = new String[]{email};
-                            }
-                        }
+                if(contacts == null){
+                    User user = userDAO.getUser(databaseInfoBO.getBusinessLeaderId());
+                    String email = user.getAccount();
+                    log.info("数据库业务负责人的邮箱地址:{}",email);
+                    if(sourceInfoFileService.isEmail(email)){
+                        contacts = new String[]{email};
                     }
                 }
             }

@@ -290,6 +290,12 @@ public class DataManageService {
             }
             categoryPrivilegeList = categoryDAO.selectListByTenantIdAndGroupId(tenantId, userGroupIds);
             removeNoParentCategory(categoryPrivilegeList);
+            if(CollectionUtils.isEmpty(userGroups)){
+                categoryPrivilegeList.forEach(categoryPrivilege -> {
+                    categoryPrivilege.setEditItem(false);
+                    categoryPrivilege.setEditCategory(false);
+                });
+            }
         } catch (AtlasBaseException e) {
             LOG.error("getTechnicalCategory exception is {}", e);
         }
@@ -1622,7 +1628,7 @@ public class DataManageService {
                 endIndex += 200;
             }
             insertList = list.subList(startIndex, size);
-            if (Objects.nonNull(insertList) && insertList.size() > 0) {
+            if (!CollectionUtils.isEmpty(insertList)) {
                 organizationDAO.addOrganizations(insertList);
             }
         } catch (AtlasBaseException e) {

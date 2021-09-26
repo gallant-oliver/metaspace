@@ -10,6 +10,7 @@ import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.CodeSourceInfoStatusDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
+import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -48,8 +49,13 @@ public class SourceService {
             if(CollectionUtils.isEmpty(databases)){
                 return new ArrayList<>();
             }
+
+            return databaseDAO.getHiveDataBaseCode(tenantId, databases);
         }
-        return databaseDAO.getDataBaseCode(dataSourceId, tenantId, databases);
+        else {
+            User user = AdminUtils.getUserData();
+            return databaseDAO.getRBMSDataBaseCode(dataSourceId, tenantId, user.getUserId());
+        }
     }
 
     public List<User> getUserList(String tenantId) {

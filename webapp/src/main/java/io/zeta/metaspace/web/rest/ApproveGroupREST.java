@@ -171,7 +171,7 @@ public class ApproveGroupREST {
             approveGroupService.addApproveGroup(tenantId, approveGroup);
             return ReturnUtil.success();
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"新建用户组失败");
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"新建审批组失败");
         }
     }
 

@@ -159,4 +159,5 @@ public class DatabaseInfoBO {
     private String auditorName;
 
     private String auditTime;
+    private String tenantId;
 }
