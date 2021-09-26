@@ -18,6 +18,7 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.metadata.ColumnMetadata;
 import io.zeta.metaspace.model.metadata.ColumnQuery;
+import io.zeta.metaspace.model.metadata.TableEntity;
 import io.zeta.metaspace.model.metadata.TableMetadata;
 import io.zeta.metaspace.model.result.PageResult;
 import org.apache.ibatis.annotations.Insert;
@@ -111,4 +112,27 @@ public interface MetadataHistoryDAO {
     @Select({"select guid,name,creator,updater,create_time as createTime, update_time as updateTime,database_name as databaseName,table_type as tableType,partition_table as partitionTable,table_format as tableFormat,store_location as storeLocation,description,version,status",
             " from table_metadata_history where guid=#{guid} order by version desc "})
     List<TableMetadata> getTableMetadataByGuid(@Param("guid")String tableGuid);
+
+    @Select("SELECT\n" +
+            " COUNT(ti.tableguid)\n" +
+            "FROM\n" +
+            " tableinfo ti\n" +
+            " INNER JOIN db_info di ON ti.databaseguid = di.database_guid\n" +
+            " INNER JOIN source_db sd ON sd.db_guid = di.database_guid\n" +
+            " INNER JOIN data_source ds ON ds.source_id = sd.source_id\n" +
+            "WHERE\n" +
+            " (ds.tenantid = #{tenantId} OR di.db_type = 'HIVE') and di.status = 'ACTIVE'")
+    int getTableCountByTenantId(@Param("tenantId")String tenantId);
+
+    @Select("<script>" +
+            " SELECT count(*) "+
+            " FROM tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid" +
+            " WHERE tb.status = 'ACTIVE' " +
+            " AND db.database_name " +
+            " IN" +
+            "<foreach collection = 'dbGuids' item = 'dbGuid' index='index' separator=',' open='(' close=')'>" +
+            " #{dbGuid}" +
+            "</foreach> AND db.db_type = 'HIVE'" +
+            "</script>")
+    int selectListByHiveDb(@Param("dbGuids") List<String> dbGuids);
 }
