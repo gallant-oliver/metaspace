@@ -594,7 +594,7 @@ public interface DatabaseInfoDAO {
             "source_info s LEFT JOIN db_info db ON s.database_id = db.database_guid  \n" +
             " LEFT JOIN data_source ds ON s.data_source_id = ds.source_id "+
             "WHERE \n" +
-            "s.tenant_id=#{tenantId} AND s.data_source_id=#{sourceId} and s.database_id=#{schemaId} \n")
+            "s.tenant_id=#{tenantId} AND s.data_source_id=#{sourceId} and s.database_id=#{schemaId} and s.version=0 \n")
     List<DatabaseInfoBO> getLastDatabaseInfoByDatabaseId(@Param("schemaId") String schemaId,
                                                    @Param("tenantId") String tenantId, @Param("sourceId") String sourceId);
 
