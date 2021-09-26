@@ -66,7 +66,7 @@ public class ApproveREST {
             throw e;
         }
         catch (Exception e) {  //系统异常
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"获取指标详情失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"获取审批详情失败");
         }
     }
 
