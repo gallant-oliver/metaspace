@@ -48,7 +48,7 @@ public interface MetadataHistoryDAO {
             " select guid,name,creator,updater,create_time as createTime, update_time as updateTime,database_name as databaseName,table_type as tableType,partition_table as partitionTable,table_format as tableFormat,store_location as storeLocation,description,version,status,",
             " count(*)over() as total",
             " from table_metadata_history where",
-            " guid=#{guid}",
+            " guid=#{guid} and version!=(select max(version) from table_metadata_history where guid=#{guid})",
             " order by version desc" ,
             " <if test='limit != null and limit!=-1'>",
             " limit #{limit}",

@@ -2521,6 +2521,23 @@ public class MetaDataService {
             List<ColumnMetadata> currentMetadata = metadataHistoryDAO.getLastColumnMetadata(tableGuid);
             List<ColumnMetadata> oldMetadata = metadataHistoryDAO.getColumnMetadata(tableGuid, version);
 
+            //历史版本字段 获取字段描述信息
+            List<Column>  columns = columnDAO.getColumnInfoListByTableGuid(tableGuid);
+            if(CollectionUtils.isNotEmpty(columns)){
+                for (Column item : columns){
+                    currentMetadata.stream().forEach(t->{
+                        if(StringUtils.equals(t.getGuid(),item.getColumnId())){
+                            t.setDescription(item.getDescription());
+                        }
+                    });
+                    oldMetadata.stream().forEach(t->{
+                        if(StringUtils.equals(t.getGuid(),item.getColumnId())){
+                            t.setDescription(item.getDescription());
+                        }
+                    });
+                }
+            }
+
             List<ColumnMetadata> orderMetadata = new ArrayList<>(); //记录有顺序的旧版字段
             comparisonMetadata.setOldMetadata(orderMetadata);
             if(CollectionUtils.isNotEmpty(currentMetadata)){
