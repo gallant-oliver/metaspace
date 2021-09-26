@@ -40,26 +40,30 @@ public interface DatabaseDAO {
             " info.database_name as databaseName " +
             " FROM " +
             " db_info AS info " +
-            " INNER JOIN database_group_relation dgr ON dgr.database_guid = info.database_guid " +
-            " INNER JOIN user_group_relation ugr ON ugr.group_id = dgr.group_id AND ugr.user_id = #{userId} " +
             " LEFT JOIN source_db AS sd ON info.database_guid = sd.db_guid " +
-            " WHERE " +
-            " <choose>" +
-            "   <when test=\"sourceId != 'hive'\">"+
-            "      sd.source_id = #{sourceId} "+
-            "   </when>" +
-            " <otherwise>" +
-            " info.database_name in " +
+            " where info.database_name in " +
             " <foreach collection='databases' item='item' separator=',' open='(' close=')'>"+
             "    #{item}"+
             "  </foreach>" +
             " and info.db_type = 'HIVE' and sd.id is null" +
-            " </otherwise>" +
-            " </choose>" +
-            "AND info.database_guid NOT IN ( SELECT DISTINCT database_id FROM source_info WHERE tenant_id = #{tenantId} AND version = 0)" +
+            " AND info.database_guid NOT IN ( SELECT DISTINCT database_id FROM source_info WHERE tenant_id = #{tenantId} AND version = 0)" +
             "</script>")
-    List<DataBaseInfo> getDataBaseCode(@Param("sourceId") String sourceId,  @Param("tenantId") String tenantId,
-                                       @Param("databases") List<String> databases, @Param("userId") String userId);
+    List<DataBaseInfo> getHiveDataBaseCode(@Param("tenantId") String tenantId, @Param("databases") List<String> databases);
+
+    @Select("<script>" +
+            " SELECT " +
+            " info.database_guid as databaseId, " +
+            " info.database_name as databaseName " +
+            " FROM " +
+            " db_info AS info " +
+            " INNER JOIN database_group_relation dgr ON dgr.database_guid = info.database_guid " +
+            " INNER JOIN user_group_relation ugr ON ugr.group_id = dgr.group_id AND ugr.user_id = #{userId} " +
+            " INNER JOIN source_db AS sd ON info.database_guid = sd.db_guid " +
+            " WHERE " +
+            " sd.source_id = #{sourceId} " +
+            " AND info.database_guid NOT IN ( SELECT DISTINCT database_id FROM source_info WHERE tenant_id = #{tenantId} AND version = 0)" +
+            "</script>")
+    List<DataBaseInfo> getRBMSDataBaseCode(@Param("sourceId") String sourceId,  @Param("tenantId") String tenantId, @Param("userId") String userId);
 
    /* @Select("<script>"+
             "select  tb.db_type AS dbType,tb.database_guid AS databaseId,tb.database_name AS databaseName," +

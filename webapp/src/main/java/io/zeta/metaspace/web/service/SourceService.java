@@ -49,11 +49,13 @@ public class SourceService {
             if(CollectionUtils.isEmpty(databases)){
                 return new ArrayList<>();
             }
-        }
 
-        // 获取当前登录用户
-        User user = AdminUtils.getUserData();
-        return databaseDAO.getDataBaseCode(dataSourceId, tenantId, databases, user.getUserId());
+            return databaseDAO.getHiveDataBaseCode(tenantId, databases);
+        }
+        else {
+            User user = AdminUtils.getUserData();
+            return databaseDAO.getRBMSDataBaseCode(dataSourceId, tenantId, user.getUserId());
+        }
     }
 
     public List<User> getUserList(String tenantId) {
