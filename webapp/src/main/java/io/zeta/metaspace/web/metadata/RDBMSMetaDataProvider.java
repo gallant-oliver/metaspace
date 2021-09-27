@@ -194,7 +194,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
             LOG.info("No database found");
         }
         checkTaskEnable(taskInstanceId);
-        createKafkaConnector(databases);
+       // createKafkaConnector(databases);
         syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
         LOG.info("import metadata end at {}", new Date());
 
