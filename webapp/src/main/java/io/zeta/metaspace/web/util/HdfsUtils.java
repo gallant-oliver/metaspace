@@ -11,6 +11,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 @Slf4j
 public class HdfsUtils {
+    //定义要解析的变量
+    private static final String HOSTNAME_PATTERN = "_HOST";
 
     public String proxyUser;
     private FileSystem fs;
@@ -139,5 +142,36 @@ public class HdfsUtils {
         return writer;
     }
 
-
+    /**
+     * 进行principal name(_HOST)的转换
+     * @param principalConfig
+     * @return
+     * @throws IOException
+     */
+    public static String getServerPrincipal(String principalConfig) throws IOException {
+        if(StringUtils.isBlank(principalConfig)){
+            return principalConfig;
+        }
+        String[] components = principalConfig.split("/|@");
+        if (components == null || components.length != 3
+                || !components[1].equals(HOSTNAME_PATTERN)) {
+            return principalConfig;
+        } else {
+            InetAddress addr = InetAddress.getLocalHost();
+            if (addr == null) {
+                throw new IOException("Can't replace " + HOSTNAME_PATTERN
+                        + " pattern since client address is null");
+            }
+            return replacePattern(components, addr.getCanonicalHostName());
+        }
+    }
+    private static String replacePattern(String[] components, String hostname)
+            throws IOException {
+        String fqdn = hostname;
+        if (fqdn == null || fqdn.isEmpty() || fqdn.equals("0.0.0.0")) {
+            fqdn = InetAddress.getLocalHost().getCanonicalHostName();
+        }
+        return components[0] + "/" +
+                StringUtils.lowerCase(fqdn) + "@" + components[2];
+    }
 }

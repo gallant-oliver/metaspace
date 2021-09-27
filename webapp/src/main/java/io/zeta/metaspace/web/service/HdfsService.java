@@ -47,11 +47,13 @@ public class HdfsService {
         Configuration conf = HdfsUtils.getHadoopConf();
         try{
             username = ApplicationProperties.get().getString("atlas.authentication.principal");
+            username = HdfsUtils.getServerPrincipal(username);
+            log.info("atlas.authentication.principal 处理后 {}",username);
             keyTabPath = ApplicationProperties.get().getString("atlas.authentication.keytab");
             enableKerberos = ApplicationProperties.get().getBoolean("atlas.authentication.method.kerberos");
             //新增参数
             hdfsBasePath = ApplicationProperties.get().getString("metaspace.upload.hdfs.path");
-        }catch (AtlasException e){
+        }catch (AtlasException | IOException e){
             log.error("初始化 Hdfs 失败", e);
             throw new AtlasBaseException(e);
         }
