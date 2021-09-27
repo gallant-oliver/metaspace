@@ -155,7 +155,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
         if (!CollectionUtils.isEmpty(schemas) && !tableSchema.isAllDatabase()) {
             LOG.info("Found {} databases", schemas.size());
 
-            ThreadPoolExecutor threadPoolExecutor = CollectThreadPoolUtil.getCollectThreadPoolExecutor();
+            ThreadPoolExecutor threadPoolExecutor = CollectThreadPoolUtil.getSchemaCollectThreadPoolExecutor();
             List<CompletableFuture<Void>> completableFutureList = new ArrayList<>(schemas.size());
 
             //导入table
@@ -773,7 +773,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 }
 
                 List<Integer> tablesImportedList = new ArrayList<>(tableNames.size());
-                ThreadPoolExecutor threadPoolExecutor = CollectThreadPoolUtil.getCollectThreadPoolExecutor();
+                ThreadPoolExecutor threadPoolExecutor = CollectThreadPoolUtil.getTableCollectThreadPoolExecutor();
                 List<CompletableFuture<Void>> completableFutureList = new ArrayList<>(tableNames.size());
                 for (Table tableName : tableNames) {
                     completableFutureList.add(CompletableFuture.runAsync(() -> {
