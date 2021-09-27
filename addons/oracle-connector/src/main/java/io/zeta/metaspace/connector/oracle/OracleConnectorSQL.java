@@ -1,7 +1,7 @@
 package io.zeta.metaspace.connector.oracle;
 
 public interface OracleConnectorSQL{
-    String LOGMINER_LOG_FILES_LOGMNR$ = "select filename name from v$logmnr_logs";
+    String LOGMINER_LOG_FILES_LOGMNR$ = "select FILENAME from v$logmnr_logs";
     String SELECT_UTL_DICTIONARY = "SELECT value FROM v$parameter where name = 'utl_file_dir'";
     String SELECT_LOG_FILES = "select MEMBER from v$logfile order by GROUP#";
     String CURRENT_DB_SCN_SQL = "select min(current_scn) CURRENT_SCN from gv$database";
