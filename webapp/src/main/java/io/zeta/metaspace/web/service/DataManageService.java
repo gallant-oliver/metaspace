@@ -1760,11 +1760,8 @@ public class DataManageService {
         LOG.info("组装表信息，guid:{},qualifiedName:{} ", guid,qualifiedName);
         String name = getEntityAttribute(entity, "name");
         String owner = getEntityAttribute(entity, "owner");
-        String type = getEntityAttribute(entity, "type");
         TableInfo tableInfo = new TableInfo();
-        if(null != type){
-            tableInfo.setType(type);
-        }
+        tableInfo.setType(getTableType(entity));
         tableInfo.setOwner(owner);
         tableInfo.setTableGuid(guid);
         tableInfo.setTableName(name);
@@ -1778,6 +1775,17 @@ public class DataManageService {
         }
         tableInfo.setDescription(getEntityAttribute(entity, "comment"));
         return tableInfo;
+    }
+
+    private String getTableType(AtlasEntity entity){
+        String type = getEntityAttribute(entity, "tableType");
+        if(StringUtils.isBlank(type)){
+            return "table";
+        }
+        if("VIRTUAL_VIEW".equalsIgnoreCase(type)){
+            return "view";
+        }
+        return "table";
     }
 
     private String formatDate(Object createTime){
