@@ -464,7 +464,7 @@ public class WarningGroupService {
                 it.remove();
             }
         }
-        pageResult.setTotalSize(errors.get(0).getTotal());
+        pageResult.setTotalSize(CollectionUtils.isEmpty(errors) ? 0 : errors.get(0).getTotal());
         pageResult.setLists(errors);
         pageResult.setCurrentSize(errors.size());
         return pageResult;
