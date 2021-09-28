@@ -1053,18 +1053,16 @@ public class DataManageService {
      */
     public PageResult<RelationEntityV2> getRelationsByCategoryGuidFilter(String categoryGuid, RelationQuery query, String tenantId) throws AtlasBaseException {
         try {
-
             int limit = query.getLimit();
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
-            List<RelationEntityV2> relations = new ArrayList<>();
             int totalNum = 0;
-            User user = AdminUtils.getUserData();
-            List<String> databases = tenantService.getDatabase(tenantId);
-            if (databases != null && databases.size() != 0) {
-                relations = relationDao.queryRelationByCategoryGuidFilterV2(categoryGuid, tenantId, limit, offset, databases);
+            String tableName = query.getFilterTableName();
+            if (StringUtils.isNotBlank(tableName)) {
+                tableName = tableName.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
             }
-            if (relations.size() != 0) {
+            List<RelationEntityV2> relations = relationDao.queryRelationByCategoryGuidFilterV2(categoryGuid, tenantId, limit, offset, tableName);
+            if (!CollectionUtils.isEmpty(relations)) {
                 totalNum = relations.get(0).getTotal();
             }
             getPath(relations, tenantId);
