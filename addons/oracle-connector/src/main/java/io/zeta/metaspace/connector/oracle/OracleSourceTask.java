@@ -181,6 +181,7 @@ public class OracleSourceTask extends SourceTask {
 		}finally{
 			if(null != logMinerSelect){
 				try {
+					logMinerSelect.cancel();
 					logMinerSelect.close();
 				} catch (Exception e) {
 				}
