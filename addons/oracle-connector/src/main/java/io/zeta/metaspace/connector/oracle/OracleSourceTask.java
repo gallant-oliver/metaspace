@@ -207,6 +207,7 @@ public class OracleSourceTask extends SourceTask {
 			PreparedStatement logMinerSelect = null;
 			try{
 				Thread.sleep(5000);
+				streamOffsetScn = 0L;
 				start(configMap);
 				logMinerSelect = execute(records);
 				LOG.info("connector {} execute success after trying {}  times", times -1, config.getName());
@@ -216,6 +217,7 @@ public class OracleSourceTask extends SourceTask {
 			}finally {
 				if(null != logMinerSelect){
 					try {
+						logMinerSelect.cancel();
 						logMinerSelect.close();
 					} catch (Exception e) {
 					}
