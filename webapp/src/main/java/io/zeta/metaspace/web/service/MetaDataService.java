@@ -1172,28 +1172,7 @@ public class MetaDataService {
     }
 
     public List<TableRelation> getRelationList(String tableGuid, String tenantId) throws AtlasBaseException {
-        List<TableRelation> categoryRelations = new ArrayList<>();
-        List<TableRelation> categoryRelationsFromRelation = relationDAO.queryTableCategoryRelations(tableGuid, tenantId);
-        if(CollectionUtils.isNotEmpty(categoryRelationsFromRelation)){
-            categoryRelations.addAll(categoryRelationsFromRelation);
-        }
-        List<TableRelation> categoryRelationsFromDb = relationDAO.queryTableCategoryRelationsFromDb(tableGuid, tenantId);
-        if(CollectionUtils.isNotEmpty(categoryRelationsFromDb)){
-            for(int i = categoryRelationsFromDb.size() -1; i>=0; i--){
-                String categoryGuid = categoryRelationsFromDb.get(i).getCategoryGuid();
-                for(TableRelation categoryRelation : categoryRelations){
-                    if(categoryRelation.getCategoryGuid().equalsIgnoreCase(categoryGuid)){
-                        categoryRelationsFromDb.remove(i);
-                        break;
-                    }
-                }
-            }
-            if(CollectionUtils.isNotEmpty(categoryRelationsFromDb)){
-                categoryRelations.addAll(categoryRelationsFromDb);
-            }
-
-        }
-        return categoryRelations;
+        return relationDAO.queryTableCategoryRelationsFromDb(tableGuid, tenantId);
     }
 
     @Cacheable(value = "columnCache", key = "#query.guid + #query.columnFilter.columnName + #query.columnFilter.type + #query.columnFilter.description", condition = "#refreshCache==false")
