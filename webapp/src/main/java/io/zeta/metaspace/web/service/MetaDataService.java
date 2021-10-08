@@ -673,10 +673,9 @@ public class MetaDataService {
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
             try {
-                List<TableRelation> relationList = getRelationList(guid, tenantId);
+                List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
                 boolean edit = false;
-                if (relationList.size() > 0) {
-                    List<String> categoryIds = relationList.stream().map(r -> r.getCategoryGuid()).collect(Collectors.toList());
+                if (categoryIds.size() > 0) {
                     int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds, tenantId);
                     if (count > 0) {
                         edit = true;
