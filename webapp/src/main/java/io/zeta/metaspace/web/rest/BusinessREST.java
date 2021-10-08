@@ -821,7 +821,7 @@ public class BusinessREST {
             }};
             return ReturnUtil.success(map);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导入失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导入失败:"+e.getMessage());
         } finally {
             if (Objects.nonNull(file) && file.exists()) {
                 file.delete();
@@ -936,6 +936,20 @@ public class BusinessREST {
     public void downloadCategoryTemplate() throws Exception {
         String fileName = TemplateEnum.CATEGORY_TEMPLATE.getFileName();
         InputStream inputStream = PoiExcelUtils.getTemplateInputStream(TemplateEnum.CATEGORY_TEMPLATE);
+        response.setContentType("application/force-download");
+        response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
+        IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+    }
+
+
+    @Permission({ModuleEnum.BUSINESS, ModuleEnum.AUTHORIZATION})
+    @GET
+    @Path("/excel/allcategory/template")
+    @Valid
+    public void downloadAllCategoryTemplate() throws Exception {
+        TemplateEnum templateEnum=TemplateEnum.ALL_CATEGORY_TEMPLATE;
+        String fileName = templateEnum.getFileName();
+        InputStream inputStream = PoiExcelUtils.getTemplateInputStream(templateEnum);
         response.setContentType("application/force-download");
         response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
