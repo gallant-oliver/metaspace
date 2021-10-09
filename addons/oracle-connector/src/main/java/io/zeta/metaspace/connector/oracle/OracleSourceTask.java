@@ -58,9 +58,8 @@ public class OracleSourceTask extends SourceTask {
 
 	@Override
 	public void start(Map<String, String> map) {
-		
 		config = new OracleSourceConnectorConfig(map);
-		LOG.info("connector {} start", config.getName());
+		LOG.info("connector {} start at thread {}", config.getName(),Thread.currentThread().getName());
 		this.closed = false;
 		this.configMap = map;
 		if (isNullDbName()) {
@@ -69,15 +68,14 @@ public class OracleSourceTask extends SourceTask {
 		}
 		
 		try {
-			
 			dbConn = new OracleConnection().connect(config);
 			LOG.info("connector {} get connection success", config.getName());
-			logFiles = getSingleRowMuiltColumnStringResult(OracleConnectorSQL.SELECT_LOG_FILES, "MEMBER");
+			/*logFiles = getSingleRowMuiltColumnStringResult(OracleConnectorSQL.SELECT_LOG_FILES, "MEMBER");
 			if(null == logFiles || logFiles.isEmpty()){
 				throw new RuntimeException(
 						"connector " + config.getName() + " not find any log file by sql : " + OracleConnectorSQL.SELECT_LOG_FILES);
-			} 
-			LOG.info("connector {} find {} log files", config.getName(), logFiles.size());
+			}
+			LOG.info("connector {} find {} log files", config.getName(), logFiles.size());*/
 			if (0L == streamOffsetScn) {
 				streamOffsetScn = config.getStartScn() < 0L
 						? getSingleRowColumnLongResult(OracleConnectorSQL.CURRENT_DB_SCN_SQL, "CURRENT_SCN")
@@ -162,7 +160,7 @@ public class OracleSourceTask extends SourceTask {
 
 	@Override
 	public List<SourceRecord> poll() throws InterruptedException {
-		LOG.info("poll start");
+		LOG.info("poll logminer start execute...-> {}",Thread.currentThread().getName());
 		long startTime = System.currentTimeMillis();
 		List<SourceRecord> records = new ArrayList<>();
 		
@@ -183,6 +181,7 @@ public class OracleSourceTask extends SourceTask {
 		}finally{
 			if(null != logMinerSelect){
 				try {
+					logMinerSelect.cancel();
 					logMinerSelect.close();
 				} catch (Exception e) {
 				}
@@ -226,14 +225,42 @@ public class OracleSourceTask extends SourceTask {
 		return records;
 	}
 
-	private PreparedStatement execute(List<SourceRecord> records) throws SQLException {
-		PreparedStatement logMinerSelect;
-		String newAndAddLogFilesSql = OracleConnectorSQL.NEW_DBMS_LOGMNR.replace("?", logFiles.get(0));
-		for (int i = 1; i < logFiles.size(); i++) {
-			newAndAddLogFilesSql = newAndAddLogFilesSql + OracleConnectorSQL.ADD_DBMS_LOGMNR.replace("?", logFiles.get(i));
+	/**
+	 * 获取logmnr 的log文件
+	 * @return
+	 * @throws SQLException
+	 */
+	private List<String> queryLogmnrLogFile() throws SQLException {
+		logFiles = getSingleRowMuiltColumnStringResult(OracleConnectorSQL.SELECT_LOG_FILES, "MEMBER");
+		if(null == logFiles || logFiles.isEmpty()){
+			logFiles = new ArrayList<>();
+			throw new RuntimeException(
+					"connector " + config.getName() + " not find any log file by sql : " + OracleConnectorSQL.SELECT_LOG_FILES);
 		}
-		executeSql(newAndAddLogFilesSql + "END;");
-		LOG.info("connector {} add log files success", config.getName());
+		return logFiles;
+	}
+	private PreparedStatement execute(List<SourceRecord> records) throws SQLException {
+		PreparedStatement logMinerSelect = null;
+		//增加验证是否添加成功的逻辑
+		List<String> logFileList = getSingleRowMuiltColumnStringResult(OracleConnectorSQL.LOGMINER_LOG_FILES_LOGMNR$,"FILENAME");
+		if(logFileList == null || logFileList.isEmpty()){
+			LOG.info("connector did not add log,need add log ");
+			queryLogmnrLogFile();
+			LOG.info("Logminer log file count:{}",logFiles.size());
+			if(logFiles.isEmpty()){
+				LOG.info("Logminer log file get fail.");
+				return logMinerSelect;
+			}
+			String newAndAddLogFilesSql = OracleConnectorSQL.NEW_DBMS_LOGMNR.replace("?", logFiles.get(0));
+			for (int i = 1; i < logFiles.size(); i++) {
+				newAndAddLogFilesSql = newAndAddLogFilesSql + OracleConnectorSQL.ADD_DBMS_LOGMNR.replace("?", logFiles.get(i));
+			}
+			executeSql(newAndAddLogFilesSql + "END;");
+			LOG.info("connector {} add log files success", config.getName());
+		}else{
+			LOG.info("connector has added log file {}.",String.join(",",logFileList));
+		}
+
 		executeSql(OracleConnectorSQL.START_LOGMINER,streamOffsetScn);
 		LOG.info("connector {} logminer start success", config.getName());
 		

@@ -1,6 +1,7 @@
 package io.zeta.metaspace.utils;
 
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -27,12 +28,20 @@ public class CollectThreadPoolUtil {
     public static final int BLOCKING_QUEUE_SIZE = 1500;
 
     /** 业务请求异步处理线程池 */
-    private static final ThreadPoolExecutor processExecutor = new ThreadPoolExecutor(
+    private static final ThreadPoolExecutor tableProcessExecutor = new ThreadPoolExecutor(
             CORE_POOL_SIZE, MAX_POOL_SIZE, KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
             new LinkedBlockingQueue<Runnable>(BLOCKING_QUEUE_SIZE));
 
-    public static ThreadPoolExecutor getCollectThreadPoolExecutor() {
-        return processExecutor;
+    private static final ThreadPoolExecutor schemaProcessExecutor = new ThreadPoolExecutor(
+            CORE_POOL_SIZE, MAX_POOL_SIZE, KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<Runnable>(BLOCKING_QUEUE_SIZE));
+
+    public static ThreadPoolExecutor getTableCollectThreadPoolExecutor() {
+        return tableProcessExecutor;
+    }
+
+    public static ThreadPoolExecutor getSchemaCollectThreadPoolExecutor() {
+        return schemaProcessExecutor;
     }
 
 }
