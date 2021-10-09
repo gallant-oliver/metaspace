@@ -12,7 +12,7 @@ import java.util.List;
 @Repository
 public interface UserPermissionDAO {
     @Select("<script>" +
-            " select count(*)over() as total,id,user_id as userId, username ,account , permissions , create_time as createTime from user_permission where 1=1 "+
+            " select count(*)over() as total,user_id as userId, username ,account , permissions , create_time as createTime from user_permission where 1=1 "+
             "<if test=\"name != null and name != ''\">"+
             " and username like CONCAT('%',#{name},'%') "+
             "</if>" +
@@ -22,19 +22,13 @@ public interface UserPermissionDAO {
     List<UserPermission> getUserPermissionPageList(@Param("name") String name, @Param("offset") int offset, @Param("limit") int limit);
 
     @Insert("<script>" +
-            " insert into user_permission (id,user_id, username ,account , permissions , create_time) "+
+            " insert into user_permission (user_id, username ,account , permissions , create_time) "+
             "VALUES\n" +
             "  <foreach item='item' index='index' collection='list' separator=','> " +
-            "( #{item.id}, #{item.userId},#{item.username} , #{item.account},#{item.permissions}, NOW( ) )" +
+            "(  #{item.userId},#{item.username} , #{item.account},#{item.permissions}, NOW( ) )" +
             "</foreach>" +
             "</script>")
     int batchSave(@Param("list")List<UserPermission> list);
-
-    @Select(" select id,user_id as userId, username ,account , permissions , create_time as createTime from user_permission where user_id=#{userId} limit 1 ")
-    UserPermission findByUserId(@Param("userId") String userId);
-
-    @Delete("delete from user_permission where id=#{id}")
-    int deleteByPkId(@Param("id") String id);
 
     @Delete("delete from user_permission where user_id=#{userId}")
     int deleteByUserId(@Param("userId") String userId);

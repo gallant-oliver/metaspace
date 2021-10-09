@@ -1,6 +1,5 @@
 package io.zeta.metaspace.web.service;
 
-import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.dto.UserPermissionRequest;
 import io.zeta.metaspace.model.privilege.SSOAccount;
 import io.zeta.metaspace.model.privilege.UserPermission;
@@ -14,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,8 +37,17 @@ public class UserPermissionService {
             pageResult.setCurrentSize(0);
             pageResult.setTotalSize(0);
         }else{
+            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             pageResult.setCurrentSize(result.size());
             pageResult.setTotalSize(result.get(0).getTotal());
+            result.stream().forEach(v->{
+                try {
+                    String formatDate = formatter.format(formatter.parse(v.getCreateTime()));
+                    v.setCreateTime(formatDate);
+                } catch (ParseException e) {
+                    logger.error("日期解析出错:{}",e);
+                }
+            });
         }
         pageResult.setOffset(offset);
         pageResult.setLists(result);
@@ -113,8 +123,7 @@ public class UserPermissionService {
             item.setUserId(param.getUserId());
             item.setAccount(param.getAccount());
             item.setUsername(param.getUsername());
-            item.setId( UUIDUtils.alphaUUID() );
-            item.setPermissions("查看全局数据");
+            item.setPermissions(true);
             lists.add(item);
         }
         return userPermissionDAO.batchSave(lists);
