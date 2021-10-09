@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.dao.dataquality;
 
 import io.zeta.metaspace.model.dataquality2.DataTaskIdAndName;
 import io.zeta.metaspace.model.dataquality2.Rule;
+import io.zeta.metaspace.model.dataquality2.RuleStatistics;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.metadata.Parameters;
 import org.apache.ibatis.annotations.Insert;
@@ -9,6 +10,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 public interface RuleDAO {
@@ -126,4 +128,23 @@ public interface RuleDAO {
             " </foreach>"+
             "</script>")
     public int insertAll(@Param("rules") List<Rule> rules,@Param("tenantId")String tenantId);
+
+    @Select("<script>" +
+            " SELECT COUNT(1) AS count, rule_tmp.rule_type " +
+            " FROM data_quality_rule_template rule_tmp " +
+            " INNER JOIN (" +
+            " SELECT exe.rule_id, task.tenantid " +
+            " FROM data_quality_task_rule_execute exe " +
+            " INNER JOIN data_quality_task task on task.id = exe.task_id " +
+            " WHERE exe.check_status > 0 " +
+            " AND exe.create_time BETWEEN #{startTime} AND #{endTime} " +
+            " ) task_exec " +
+            " ON rule_tmp.id = task_exec.rule_id AND rule_tmp.tenantid = task_exec.tenantid " +
+            " WHERE rule_tmp.rule_type IN " +
+            " <foreach collection='ruleTypes' item='ruleType' index='index' separator=',' open='(' close=')'>" +
+            " #{ruleType}" +
+            " </foreach>" +
+            " GROUP BY rule_tmp.rule_type" +
+            "</script>")
+    public List<RuleStatistics> getRulesStatistics(@Param("ruleTypes") List<String> ruleTypes, @Param("startTime") Timestamp startTime, @Param("endTime") Timestamp endTime);
 }
