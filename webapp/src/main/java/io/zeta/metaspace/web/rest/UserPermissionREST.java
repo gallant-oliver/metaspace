@@ -49,7 +49,7 @@ public class UserPermissionREST {
         return ReturnUtil.success();
     }
 
-    @Path("/users/{userId}")
+    @Path("/{userId}")
     @DELETE
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)

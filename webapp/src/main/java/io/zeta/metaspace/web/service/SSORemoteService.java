@@ -98,7 +98,7 @@ public class SSORemoteService {
             String jsonString = GsonUtils.getInstance().toJson(resultMap.get("data"));
             Map<String, Object> dataMap = GsonUtils.getInstance()
                     .fromJson(jsonString, new TypeToken<Map<String, Object>>() {}.getType());
-            String rowsJsonString = GsonUtils.getInstance().toJson(resultMap.get("rows"));
+            String rowsJsonString = GsonUtils.getInstance().toJson(dataMap.get("rows"));
             List<SSOAccount> list = GsonUtils.getInstance()
                     .fromJson(rowsJsonString, new TypeToken<List<SSOAccount>>() {}.getType());
             return list;

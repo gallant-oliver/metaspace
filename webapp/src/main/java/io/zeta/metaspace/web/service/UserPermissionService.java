@@ -87,7 +87,7 @@ public class UserPermissionService {
         UserPermission item = null;
         for(SSOAccount account : accountList){
             String userId = account.getAccountGuid();
-            if(existList.contains(userId)){
+            if(existList != null && existList.contains(userId)){
                 continue;
             }
             item = new UserPermission();
