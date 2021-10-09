@@ -12,10 +12,7 @@
 // ======================================================================
 package io.zeta.metaspace.web.service.dataquality;
 
-import io.zeta.metaspace.model.dataquality2.DataTaskIdAndName;
-import io.zeta.metaspace.model.dataquality2.Rule;
-import io.zeta.metaspace.model.dataquality2.RuleTemplate;
-import io.zeta.metaspace.model.dataquality2.RuleTemplateType;
+import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
@@ -36,6 +33,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -287,5 +285,24 @@ public class RuleService {
             return new ArrayList<>();
         }
         return ruleDAO.getRuleUsed(ids);
+    }
+
+    public List<RuleStatistics> getRuleExecuteStatistics(Timestamp startTime, Timestamp endTime) {
+        List<String> systemRules = RuleTemplateType.all().stream().map(RuleTemplateType::getRuleType).collect(Collectors.toList());
+
+        List<RuleStatistics> rulesStatistics = ruleDAO.getRulesStatistics(systemRules, startTime, endTime);
+        Map<String, RuleStatistics> rulesStatisticsMap =  rulesStatistics.stream().collect(Collectors.toMap(RuleStatistics::getRuleType, t -> t));
+
+        return RuleTemplateType.all().stream().map(ruleTemplateType -> {
+            RuleStatistics ruleStatistics = rulesStatisticsMap.get(ruleTemplateType.getRuleType());
+            if (ruleStatistics == null) {
+                ruleStatistics = new RuleStatistics();
+                ruleStatistics.setRuleType(ruleTemplateType.getRuleType());
+                ruleStatistics.setCount(0);
+            }
+            ruleStatistics.setRuleName(ruleTemplateType.getStatisticsDisplayName());
+            return ruleStatistics;
+        }).collect(Collectors.toList());
+
     }
 }
