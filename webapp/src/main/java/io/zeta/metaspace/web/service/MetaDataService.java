@@ -673,10 +673,9 @@ public class MetaDataService {
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
             try {
-                List<TableRelation> relationList = getRelationList(guid, tenantId);
+                List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
                 boolean edit = false;
-                if (relationList.size() > 0) {
-                    List<String> categoryIds = relationList.stream().map(r -> r.getCategoryGuid()).collect(Collectors.toList());
+                if (categoryIds.size() > 0) {
                     int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds, tenantId);
                     if (count > 0) {
                         edit = true;
@@ -1173,28 +1172,7 @@ public class MetaDataService {
     }
 
     public List<TableRelation> getRelationList(String tableGuid, String tenantId) throws AtlasBaseException {
-        List<TableRelation> categoryRelations = new ArrayList<>();
-        List<TableRelation> categoryRelationsFromRelation = relationDAO.queryTableCategoryRelations(tableGuid, tenantId);
-        if(CollectionUtils.isNotEmpty(categoryRelationsFromRelation)){
-            categoryRelations.addAll(categoryRelationsFromRelation);
-        }
-        List<TableRelation> categoryRelationsFromDb = relationDAO.queryTableCategoryRelationsFromDb(tableGuid, tenantId);
-        if(CollectionUtils.isNotEmpty(categoryRelationsFromDb)){
-            for(int i = categoryRelationsFromDb.size() -1; i>=0; i--){
-                String categoryGuid = categoryRelationsFromDb.get(i).getCategoryGuid();
-                for(TableRelation categoryRelation : categoryRelations){
-                    if(categoryRelation.getCategoryGuid().equalsIgnoreCase(categoryGuid)){
-                        categoryRelationsFromDb.remove(i);
-                        break;
-                    }
-                }
-            }
-            if(CollectionUtils.isNotEmpty(categoryRelationsFromDb)){
-                categoryRelations.addAll(categoryRelationsFromDb);
-            }
-
-        }
-        return categoryRelations;
+        return relationDAO.queryTableCategoryRelationsFromDb(tableGuid, tenantId);
     }
 
     @Cacheable(value = "columnCache", key = "#query.guid + #query.columnFilter.columnName + #query.columnFilter.type + #query.columnFilter.description", condition = "#refreshCache==false")
