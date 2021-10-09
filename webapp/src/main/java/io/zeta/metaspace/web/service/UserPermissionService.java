@@ -1,0 +1,122 @@
+package io.zeta.metaspace.web.service;
+
+import com.gridsum.gdp.library.commons.utils.UUIDUtils;
+import io.zeta.metaspace.model.dto.UserPermissionRequest;
+import io.zeta.metaspace.model.privilege.SSOAccount;
+import io.zeta.metaspace.model.privilege.UserPermission;
+import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.web.dao.UserPermissionDAO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class UserPermissionService {
+    private final Logger logger  = LoggerFactory.getLogger(UserPermissionService.class);
+    @Autowired
+    private UserPermissionDAO userPermissionDAO;
+    @Autowired
+    private SSORemoteService ssoRemoteService;
+
+    public PageResult<UserPermission> queryUserPermissionPageList(String name, int offset,int limit){
+        List<UserPermission> result = userPermissionDAO.getUserPermissionPageList(name, offset, limit);
+        PageResult<UserPermission> pageResult = new PageResult<>();
+        if(CollectionUtils.isEmpty(result)){
+            logger.info("没有查找到数据");
+            result = Collections.emptyList();
+            pageResult.setCurrentSize(0);
+            pageResult.setTotalSize(0);
+        }else{
+            pageResult.setCurrentSize(result.size());
+            pageResult.setTotalSize(result.get(0).getTotal());
+        }
+        pageResult.setOffset(offset);
+        pageResult.setLists(result);
+        return pageResult;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public int removeUserPermission(String userId){
+        int count = userPermissionDAO.deleteByUserId(userId);
+        logger.info("删除用户信息:{}",count);
+        return count;
+    }
+
+    /**
+     * 查询sso接口，获取用户列表 （模糊查询包含总数记录）
+     * @param offset
+     * @param pageSize
+     * @param name
+     * @return
+     */
+    public PageResult<UserPermission> querySSOUsers(int offset,int pageSize,String name){
+        int currentPage = offset/pageSize + 1;
+        logger.info("获取当前页码是:{}",currentPage);
+
+        List<SSOAccount> accountList = null;
+        PageResult<UserPermission> pageResult = new PageResult<>();
+        if(StringUtils.isBlank(name)){
+            logger.info("获取sso的全部账户信息");
+            accountList = ssoRemoteService.queryAllAccounts(currentPage, pageSize);
+        }else{
+            logger.info("模糊匹配获取sso的账户信息");
+            accountList = ssoRemoteService.queryVagueUserInfo(currentPage, pageSize,name);
+        }
+
+        if(CollectionUtils.isEmpty(accountList)){
+            logger.info("sso查询没有获取到用户信息.");
+            pageResult.setCurrentSize(0);
+            pageResult.setTotalSize(0);
+            pageResult.setOffset(offset);
+            pageResult.setLists(Collections.emptyList());
+            return pageResult;
+        }
+        //排除已配置过全局权限的用户信息
+        List<String> existList = userPermissionDAO.getByUserIdList(accountList.stream().map(SSOAccount::getAccountGuid)
+                .collect(Collectors.toList()));
+        List<UserPermission> result = new ArrayList<>();
+        UserPermission item = null;
+        for(SSOAccount account : accountList){
+            String userId = account.getAccountGuid();
+            if(existList.contains(userId)){
+                continue;
+            }
+            item = new UserPermission();
+            item.setUserId(userId);
+            item.setAccount(account.getLoginEmail());
+            item.setUsername(account.getDisplayName());
+            result.add(item);
+        }
+
+        pageResult.setCurrentSize(result.size());
+        pageResult.setTotalSize(0);
+        pageResult.setOffset(offset);
+        pageResult.setLists(result);
+        return pageResult;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public int savePermission(List<UserPermissionRequest> userPermissionList){
+        List<UserPermission> lists = new ArrayList<>();
+        UserPermission item = null;
+        for(UserPermissionRequest param : userPermissionList){
+            item = new UserPermission();
+            item.setUserId(param.getUserId());
+            item.setAccount(param.getAccount());
+            item.setUsername(param.getUsername());
+            item.setId( UUIDUtils.alphaUUID() );
+            item.setPermissions("查看全局数据");
+            lists.add(item);
+        }
+        return userPermissionDAO.batchSave(lists);
+    }
+}
