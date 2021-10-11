@@ -27,10 +27,13 @@ public class CollectThreadPoolUtil {
     /** 线程池等待队列 */
     public static final int BLOCKING_QUEUE_SIZE = 1500;
 
+    /** 线程池等待队列 */
+    public static final int TABLE_BLOCKING_QUEUE_SIZE = 20000;
+
     /** 业务请求异步处理线程池 */
     private static final ThreadPoolExecutor tableProcessExecutor = new ThreadPoolExecutor(
             CORE_POOL_SIZE, MAX_POOL_SIZE, KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<Runnable>(BLOCKING_QUEUE_SIZE));
+            new LinkedBlockingQueue<Runnable>(TABLE_BLOCKING_QUEUE_SIZE));
 
     private static final ThreadPoolExecutor schemaProcessExecutor = new ThreadPoolExecutor(
             CORE_POOL_SIZE, MAX_POOL_SIZE, KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
