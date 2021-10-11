@@ -239,7 +239,7 @@ public class SearchService {
         if (TenantService.defaultTenant.equals(tenantId)) {
             return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit);
         } else {
-            List<String> dbs = tenantService.getDatabase(tenantId);
+            List<String> dbs = tenantService.getCurrentTenantDatabase(tenantId);
             return metaspaceEntityService.getDatabaseByQuery(queryDb, active, offset, limit, dbs);
         }
 

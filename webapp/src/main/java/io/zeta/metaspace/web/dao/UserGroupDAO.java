@@ -1315,4 +1315,7 @@ public interface UserGroupDAO {
             "select source_name from data_source where source_id =#{sourceId}",
             "</script>"})
     public String getSourceName(@Param("sourceId") String sourceId);
+
+    @Select("select g.*,g.tenant tenantId from user_group g join user_group_relation u on g.id=u.group_id where u.user_id=#{userId} and g.valid=true")
+    List<UserGroup> selectListByUsersId(@Param("userId") String userId);
 }

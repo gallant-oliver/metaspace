@@ -36,14 +36,6 @@ public class CategoryEntityV2 {
     private String upBrotherCategoryGuid;
     private String downBrotherCategoryGuid;
 
-    public CategoryPrivateStatus getPrivateStatus() {
-        return privateStatus;
-    }
-
-    public void setPrivateStatus(CategoryPrivateStatus privateStatus) {
-        this.privateStatus = privateStatus;
-    }
-
     private String parentCategoryGuid;
     private Integer categoryType;
     private int level;
@@ -68,6 +60,11 @@ public class CategoryEntityV2 {
     private String code;
 
     private Integer sort;
+
+    /**
+     * 租户id
+     */
+    private String tenantid;
 
     public Timestamp getCreateTime() {
         return createTime;
@@ -155,8 +152,6 @@ public class CategoryEntityV2 {
         this.code=code;
     }
 
-
-
     public String getGuid() {
         return guid;
     }
@@ -179,6 +174,14 @@ public class CategoryEntityV2 {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public CategoryPrivateStatus getPrivateStatus() {
+        return privateStatus;
+    }
+
+    public void setPrivateStatus(CategoryPrivateStatus privateStatus) {
+        this.privateStatus = privateStatus;
     }
 
     public String getDescription() {
@@ -283,5 +286,13 @@ public class CategoryEntityV2 {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getTenantid() {
+        return tenantid;
+    }
+
+    public void setTenantid(String tenantid) {
+        this.tenantid = tenantid;
     }
 }

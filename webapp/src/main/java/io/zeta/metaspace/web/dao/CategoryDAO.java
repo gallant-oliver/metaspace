@@ -475,4 +475,34 @@ public interface CategoryDAO {
             "</if>"+
             "</script>")
     void updateSort(@Param("sort") int sort,@Param("parentGuid") String parentGuid,@Param("tenantId") String tenantId);
+
+    @Select("select * from category where categoryType=#{categoryType}")
+    Set<CategoryEntityV2> selectGlobal(@Param("categoryType") int categoryType);
+
+    @Select("<script>" +
+            " SELECT * FROM category WHERE private_status = 'PUBLIC' AND categorytype = 0" +
+            " <if test='groupIdList != null and groupIdList.size() > 0'>"+
+            " UNION" +
+            " SELECT DISTINCT category.* FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
+            " WHERE private_status = 'PRIVATE' AND categorytype = 0 AND group_id in" +
+            " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
+            "   #{item} "+
+            " </foreach>" +
+            " </if>"+
+            "</script>")
+    Set<CategoryEntityV2> selectSetByStatus(@Param("groupIdList") List<String> groupIdList);
+
+    @Select("<script>" +
+            " SELECT category.* FROM category LEFT JOIN category_group_relation as relation on category.guid = relation.category_id WHERE private_status = 'PUBLIC' AND categorytype = 0" +
+            " <if test='groupIdList != null and groupIdList.size() > 0'>"+
+            " UNION" +
+            " SELECT DISTINCT category.* FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
+            " WHERE level &lt;= #{maxLevel} AND private_status = 'PRIVATE' AND categorytype = 0 AND group_id in" +
+            " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
+            "   #{item} "+
+            " </foreach>" +
+            " </if>"+
+            "</script>")
+    Set<CategoryEntityV2> selectListByStatus(@Param("creator") String creator, @Param("groupIdList") List<String> groupIdList, @Param("maxLevel") int maxLevel);
+
 }
