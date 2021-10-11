@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.global.UserPermissionPO;
 import io.zeta.metaspace.model.privilege.UserPermission;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
@@ -40,4 +41,7 @@ public interface UserPermissionDAO {
             " </foreach>",
             "</script>"})
     List<String> getByUserIdList( @Param("list") List<String> userIdList);
+
+    @Select("select * from user_permission where user_id = #{userId}")
+    UserPermissionPO selectListByUsersId(@Param("userId") String userId);
 }
