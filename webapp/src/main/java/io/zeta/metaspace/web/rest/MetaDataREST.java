@@ -37,6 +37,7 @@ import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDeriveTableInfoService;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.EntityUtil;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.ApplicationProperties;
@@ -167,6 +168,7 @@ public class MetaDataREST {
                 hive.setSourceType("hive");
                 hive.setSourceName("hive");
                 hive.setSourceId("hive");
+                hive.setBizTreeId(EntityUtil.generateBusinessId(tenantId,"hive","",""));
                 if (limit != -1) {
                     limit--;
                 }
