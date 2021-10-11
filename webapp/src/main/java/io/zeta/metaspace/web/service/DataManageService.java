@@ -1053,18 +1053,16 @@ public class DataManageService {
      */
     public PageResult<RelationEntityV2> getRelationsByCategoryGuidFilter(String categoryGuid, RelationQuery query, String tenantId) throws AtlasBaseException {
         try {
-
             int limit = query.getLimit();
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
-            List<RelationEntityV2> relations = new ArrayList<>();
             int totalNum = 0;
-            User user = AdminUtils.getUserData();
-            List<String> databases = tenantService.getDatabase(tenantId);
-            if (databases != null && databases.size() != 0) {
-                relations = relationDao.queryRelationByCategoryGuidFilterV2(categoryGuid, tenantId, limit, offset, databases);
+            String tableName = query.getFilterTableName();
+            if (StringUtils.isNotBlank(tableName)) {
+                tableName = tableName.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
             }
-            if (relations.size() != 0) {
+            List<RelationEntityV2> relations = relationDao.queryRelationByCategoryGuidFilterV2(categoryGuid, tenantId, limit, offset, tableName);
+            if (!CollectionUtils.isEmpty(relations)) {
                 totalNum = relations.get(0).getTotal();
             }
             getPath(relations, tenantId);
@@ -1760,11 +1758,8 @@ public class DataManageService {
         LOG.info("组装表信息，guid:{},qualifiedName:{} ", guid,qualifiedName);
         String name = getEntityAttribute(entity, "name");
         String owner = getEntityAttribute(entity, "owner");
-        String type = getEntityAttribute(entity, "type");
         TableInfo tableInfo = new TableInfo();
-        if(null != type){
-            tableInfo.setType(type);
-        }
+        tableInfo.setType(getTableType(entity));
         tableInfo.setOwner(owner);
         tableInfo.setTableGuid(guid);
         tableInfo.setTableName(name);
@@ -1778,6 +1773,17 @@ public class DataManageService {
         }
         tableInfo.setDescription(getEntityAttribute(entity, "comment"));
         return tableInfo;
+    }
+
+    private String getTableType(AtlasEntity entity){
+        String type = getEntityAttribute(entity, "tableType");
+        if(StringUtils.isBlank(type)){
+            return "table";
+        }
+        if("VIRTUAL_VIEW".equalsIgnoreCase(type)){
+            return "view";
+        }
+        return "table";
     }
 
     private String formatDate(Object createTime){

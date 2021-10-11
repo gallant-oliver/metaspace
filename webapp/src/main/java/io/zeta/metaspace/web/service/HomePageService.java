@@ -147,7 +147,7 @@ public class HomePageService {
 
     }
 
-    //    @Cacheable(value = "TimeAndDbCache", key = "'TimeAndDbCache'+#tenantId")
+    @Cacheable(value = "TimeAndDbCache", key = "'TimeAndDbCache'+#tenantId")
     public TimeDBTB getTimeDbTb(String tenantId) throws AtlasBaseException {
         try {
             String date = DateUtils.getNow2();

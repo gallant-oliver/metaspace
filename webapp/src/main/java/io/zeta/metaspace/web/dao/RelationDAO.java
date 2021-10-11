@@ -158,8 +158,11 @@ public interface RelationDAO {
                     "   ) \n" +
                     "  OR ti.databaseguid = ( SELECT db_guid FROM db_category_relation dcr WHERE dcr.category_id = #{categoryGuid} AND dcr.tenant_id = #{tenantId} ) \n" +
                     " ) \n" +
-                    " AND ti.status = 'ACTIVE' \n" +
-                    "ORDER BY\n" +
+                    " AND ti.status = 'ACTIVE'" +
+                    " <if test=\"tableName != '' and tableName != null\">",
+                    " AND ti.tablename like concat('%',#{tableName},'%')" +
+                    " </if>",
+                    " ORDER BY" +
                     " ti.status,\n" +
                     " tdsr.update_time DESC,\n" +
                     " ti.tablename",
@@ -168,7 +171,7 @@ public interface RelationDAO {
             " </if>",
             " offset #{offset}",
             " </script>"})
-    public List<RelationEntityV2> queryRelationByCategoryGuidFilterV2(@Param("categoryGuid") String categoryGuid, @Param("tenantId") String tenantId, @Param("limit") int limit, @Param("offset") int offset, @Param("databases") List<String> databases);
+    public List<RelationEntityV2> queryRelationByCategoryGuidFilterV2(@Param("categoryGuid") String categoryGuid, @Param("tenantId") String tenantId, @Param("limit") int limit, @Param("offset") int offset,@Param("tableName") String tableName);
 
     @Select({"<script>",
             " SELECT COUNT ( * ) OVER ( ) total,A.tableGuid,A.tableName,A.databaseguid,A.dbName,A.status FROM ( SELECT tableInfo.tableGuid,tableInfo.tableName,tableInfo.dbName,",
