@@ -257,7 +257,9 @@ public class TenantService {
         return true;
     }
 
-
+    public String getNameById(String tenantId){
+        return tenantDAO.selectNameById(tenantId);
+    }
     /**
      * 获取当前用户在当前租户下的metaspace的功能权限
      * @param tenantId

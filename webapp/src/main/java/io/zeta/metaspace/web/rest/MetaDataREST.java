@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.datasource.DataSourceHead;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.datastandard.DataStandAndTable;
 import io.zeta.metaspace.model.datastandard.DataStandardHead;
+import io.zeta.metaspace.model.global.UserPermissionPO;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -29,14 +30,18 @@ import io.zeta.metaspace.model.result.BuildTableSql;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
+import io.zeta.metaspace.model.security.Tenant;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceInfoDeriveTableColumnVO;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.table.column.tag.ColumnTag;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.web.dao.TableDAO;
+import io.zeta.metaspace.web.dao.UserPermissionDAO;
 import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDeriveTableInfoService;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.EntityUtil;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.ApplicationProperties;
@@ -66,6 +71,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -105,10 +111,45 @@ public class MetaDataREST {
     private DataSourceService dataSourceService;
     @Autowired
     SourceInfoDeriveTableInfoService sourceInfoDeriveTableInfoService;
+    @Autowired
+    private TenantService tenantService;
+    @Autowired
+    private UserPermissionDAO userPermissionDAO;
 
     @Inject
     public MetaDataREST(final MetaDataService metadataService) {
         this.metadataService = metadataService;
+    }
+
+    @GET
+    @Path("/tenantId")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<Tenant> getTenantIdList(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTenantIdList");
+            }
+            List<Tenant> tenants = null;
+            //查看是否配置全局权限，配置则查看所有租户信息，否则只显示当前租户
+            User user = AdminUtils.getUserData();
+            UserPermissionPO userPermissionPO = userPermissionDAO.selectListByUsersId(user.getUserId());
+            if(userPermissionPO == null){
+                tenants = new ArrayList<>();
+                String name = tenantService.getNameById(tenantId);
+                Tenant tenant = new Tenant();
+                tenant.setTenantId(tenantId);
+                tenant.setProjectName(name);
+                tenants.add(tenant);
+            }else{
+                tenants = tenantService.getTenants();
+            }
+
+            return tenants;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
     }
 
     @GET
@@ -167,6 +208,7 @@ public class MetaDataREST {
                 hive.setSourceType("hive");
                 hive.setSourceName("hive");
                 hive.setSourceId("hive");
+                hive.setBizTreeId(EntityUtil.generateBusinessId(tenantId,"hive","",""));
                 if (limit != -1) {
                     limit--;
                 }

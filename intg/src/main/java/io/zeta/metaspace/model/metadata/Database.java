@@ -35,4 +35,5 @@ public class Database implements Serializable {
     @JsonIgnore
     private int total;
     private boolean hasDatabase;
+    private String bizTreeId;
 }

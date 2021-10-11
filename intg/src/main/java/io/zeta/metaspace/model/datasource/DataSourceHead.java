@@ -40,6 +40,15 @@ public class DataSourceHead {
      * 数据库名
      */
     private String database;
+    private String bizTreeId;
+
+    public String getBizTreeId() {
+        return bizTreeId;
+    }
+
+    public void setBizTreeId(String bizTreeId) {
+        this.bizTreeId = bizTreeId;
+    }
 
     public String getServiceType() {
         return serviceType;

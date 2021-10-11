@@ -417,6 +417,7 @@ public class DataSourceService {
                 dataSourceHead.setSourceId("hive");
                 dataSourceHead.setSourceName("hive");
                 dataSourceHead.setSourceType("HIVE");
+                dataSourceHead.setBizTreeId(EntityUtil.generateBusinessId(tenantId,"hive","",""));
                 List<DataSourceHead> list = new ArrayList<>();
                 list.add(dataSourceHead);
                 pageResult.setTotalSize(list.size());
@@ -471,6 +472,7 @@ public class DataSourceService {
                 }
                 String sourceId = head.getSourceId();
                 head.setRely(false);
+                head.setBizTreeId(EntityUtil.generateBusinessId(tenantId,sourceId,"",""));
                 UserPrivilegeDataSource userPrivilegeDataSource = getUserPrivilegesDataSource(userId, sourceId);
                 if (UserPrivilegeDataSource.MANAGER.getPrivilegeName().equals(userPrivilegeDataSource.getPrivilegeName())) {
                     head.setEditManager(true);
