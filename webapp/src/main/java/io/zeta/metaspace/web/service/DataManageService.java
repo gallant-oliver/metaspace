@@ -1004,7 +1004,7 @@ public class DataManageService {
             User user = AdminUtils.getUserData();
             List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
             List<String> groupIds = new ArrayList<>();
-            if(groups.size()>0) {
+            if(!CollectionUtils.isEmpty(groups)) {
                 groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
             }
             relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset, tenantId);
@@ -1026,6 +1026,7 @@ public class DataManageService {
                             entity.setJump(false);
                         }
                     }
+                    entity.setBizTreeId(EntityUtil.generateBusinessId(tenantId,sourceId,entity.getDbId(),entity.getTableGuid()));
                 }
                 getPathByCategoryId(relations, tenantId, categoryGuid);
                 pageResult.setCurrentSize(relations.size());

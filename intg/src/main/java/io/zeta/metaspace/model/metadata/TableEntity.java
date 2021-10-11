@@ -20,4 +20,5 @@ public class TableEntity {
     private String tableType;
     @JsonIgnore
     private int total;
+    private String bizTreeId;
 }

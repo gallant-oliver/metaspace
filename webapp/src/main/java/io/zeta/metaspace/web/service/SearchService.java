@@ -24,6 +24,7 @@ import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.EntityUtil;
 import io.zeta.metaspace.web.util.HiveMetaStoreBridgeUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
@@ -135,6 +136,7 @@ public class SearchService {
                 if(StringUtils.isBlank(database.getDatabaseDescription())){
                     database.setDatabaseDescription("-");
                 }
+                database.setBizTreeId(EntityUtil.generateBusinessId(tenantId,sourceId,database.getDatabaseId(),""));
             });
             databasePageResult.setCurrentSize(databaseList.size());
             databasePageResult.setLists(databaseList);
@@ -172,6 +174,7 @@ public class SearchService {
                     tableEntity.setTableType("TABLE");
                     tableEntity.setHiveTable(false);
                 }
+                tableEntity.setBizTreeId(EntityUtil.generateBusinessId(tenantId,sourceId,schemaId,tableEntity.getId()));
             });
             tablePageResult.setCurrentSize(tableEntityList.size());
             tablePageResult.setOffset(offset);
