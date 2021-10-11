@@ -71,18 +71,9 @@ public class UserPermissionService {
     public PageResult<UserPermission> querySSOUsers(int offset,int pageSize,String name){
         int currentPage = offset/pageSize + 1;
         logger.info("获取当前页码是:{}",currentPage);
-
-        List<SSOAccount> accountList = null;
         PageResult<UserPermission> pageResult = new PageResult<>();
-        if(StringUtils.isBlank(name)){
-            logger.info("获取sso的全部账户信息");
-            accountList = ssoRemoteService.queryAllAccounts(currentPage, pageSize);
-        }else{
-            logger.info("模糊匹配获取sso的账户信息");
-            accountList = ssoRemoteService.queryVagueUserInfo(currentPage, pageSize,name);
-        }
-
-        if(CollectionUtils.isEmpty(accountList)){
+        List<SSOAccount> accountList = querySSOAccount(currentPage,pageSize,name);
+        if(CollectionUtils.isEmpty(accountList) ){
             logger.info("sso查询没有获取到用户信息.");
             pageResult.setCurrentSize(0);
             pageResult.setTotalSize(0);
@@ -90,21 +81,34 @@ public class UserPermissionService {
             pageResult.setLists(Collections.emptyList());
             return pageResult;
         }
-        //排除已配置过全局权限的用户信息
-        List<String> existList = userPermissionDAO.getByUserIdList(accountList.stream().map(SSOAccount::getAccountGuid)
-                .collect(Collectors.toList()));
+
         List<UserPermission> result = new ArrayList<>();
-        UserPermission item = null;
-        for(SSOAccount account : accountList){
-            String userId = account.getAccountGuid();
-            if(existList != null && existList.contains(userId)){
-                continue;
+        while(CollectionUtils.isNotEmpty(accountList)){
+            //排除已配置过全局权限的用户信息
+            List<String> existList = userPermissionDAO.getByUserIdList(accountList.stream().map(SSOAccount::getAccountGuid)
+                    .collect(Collectors.toList()));
+
+            UserPermission item = null;
+            for(SSOAccount account : accountList){
+                String userId = account.getAccountGuid();
+                if(existList != null && existList.contains(userId)){
+                    continue;
+                }
+                item = new UserPermission();
+                item.setUserId(userId);
+                item.setAccount(account.getLoginEmail());
+                item.setUsername(account.getDisplayName());
+                result.add(item);
             }
-            item = new UserPermission();
-            item.setUserId(userId);
-            item.setAccount(account.getLoginEmail());
-            item.setUsername(account.getDisplayName());
-            result.add(item);
+            if(result.size() < pageSize){
+                logger.info("获取下一页的sso数据.");
+                currentPage = currentPage + 1;
+                accountList = querySSOAccount(currentPage,pageSize,name);
+            }else{
+                logger.info("当前页数据满足页大小，返回需要的大小.");
+                result = result.subList(0,pageSize);
+                break;
+            }
         }
 
         pageResult.setCurrentSize(result.size());
@@ -114,6 +118,15 @@ public class UserPermissionService {
         return pageResult;
     }
 
+    private List<SSOAccount> querySSOAccount(int currentPage,int pageSize,String name){
+        if(StringUtils.isBlank(name)){
+            logger.info("获取sso的全部账户信息");
+            return ssoRemoteService.queryAllAccounts(currentPage, pageSize);
+        }else{
+            logger.info("模糊匹配获取sso的账户信息");
+            return ssoRemoteService.queryVagueUserInfo(currentPage, pageSize,name);
+        }
+    }
     @Transactional(rollbackFor = Exception.class)
     public int savePermission(List<UserPermissionRequest> userPermissionList){
         List<UserPermission> lists = new ArrayList<>();
