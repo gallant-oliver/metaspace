@@ -1026,6 +1026,7 @@ public class DataManageService {
                             entity.setJump(false);
                         }
                     }
+                    entity.setBizTreeId(EntityUtil.generateBusinessId(tenantId,sourceId,entity.getDbId(),entity.getTableGuid()));
                 }
                 getPathByCategoryId(relations, tenantId, categoryGuid);
                 pageResult.setCurrentSize(relations.size());

@@ -64,6 +64,15 @@ public class RelationEntityV2 {
     private String description;
     private String sourceName;
     private Boolean jump;
+    private String bizTreeId;
+
+    public String getBizTreeId() {
+        return bizTreeId;
+    }
+
+    public void setBizTreeId(String bizTreeId) {
+        this.bizTreeId = bizTreeId;
+    }
 
     public Boolean getJump() {
         return jump;
