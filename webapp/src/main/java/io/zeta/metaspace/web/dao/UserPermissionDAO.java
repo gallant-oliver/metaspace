@@ -17,10 +17,16 @@ public interface UserPermissionDAO {
             "<if test=\"name != null and name != ''\">"+
             " and username like CONCAT('%',#{name},'%') "+
             "</if>" +
-            " ORDER BY create_time desc "+
+            "<if test=\"orderBy!=null and orderBy !=''\">" +
+            "order by ${orderBy} " +
+                "<if test='sortType!=null '>" +
+                " ${sortType} " +
+                "</if>" +
+            "</if>" +
             " LIMIT #{limit} OFFSET #{offset} "+
             "</script>")
-    List<UserPermission> getUserPermissionPageList(@Param("name") String name, @Param("offset") int offset, @Param("limit") int limit);
+    List<UserPermission> getUserPermissionPageList(@Param("name") String name, @Param("offset") int offset, @Param("limit") int limit,
+                                                   @Param("sortType") String sortType,@Param("orderBy") String orderBy);
 
     @Insert("<script>" +
             " insert into user_permission (user_id, username ,account , permissions , create_time) "+

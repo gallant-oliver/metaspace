@@ -28,8 +28,8 @@ public class UserPermissionService {
     @Autowired
     private SSORemoteService ssoRemoteService;
 
-    public PageResult<UserPermission> queryUserPermissionPageList(String name, int offset,int limit){
-        List<UserPermission> result = userPermissionDAO.getUserPermissionPageList(name, offset, limit);
+    public PageResult<UserPermission> queryUserPermissionPageList(String name, int offset,int limit,String sortType,String orderBy){
+        List<UserPermission> result = userPermissionDAO.getUserPermissionPageList(name, offset, limit,sortType,orderBy);
         PageResult<UserPermission> pageResult = new PageResult<>();
         if(CollectionUtils.isEmpty(result)){
             logger.info("没有查找到数据");

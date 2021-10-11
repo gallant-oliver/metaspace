@@ -31,8 +31,9 @@ public class UserPermissionREST {
     public Result queryUserPermissionPageList(@HeaderParam("tenantId")String tenantId,
                                   @DefaultValue("0")@QueryParam("offset") int offset,
                                   @DefaultValue ("10") @QueryParam("limit") int limit,
-                                  @QueryParam("name")String name){
-        return ReturnUtil.success(userPermissionService.queryUserPermissionPageList(name, offset, limit));
+                                  @QueryParam("name")String name,
+                                  @DefaultValue ("ASC") @QueryParam("sortType")String sortType,@QueryParam("orderBy")String orderBy){
+        return ReturnUtil.success(userPermissionService.queryUserPermissionPageList(name, offset, limit,sortType,orderBy));
     }
 
     @POST
