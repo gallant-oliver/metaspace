@@ -966,12 +966,8 @@ public interface UserGroupDAO {
     @Update ("<script>" +
             "update category_group_relation set " +
              " read=true " +
-             "<if test='privilege.editCategory==true'>" +
-             " ,edit_category=true " +
-             "</if>" +
-             "<if test='privilege.editItem==true'>" +
-             " ,edit_item=true " +
-             "</if>" +
+             " ,edit_category=#{privilege.editCategory} " +
+             " ,edit_item=#{privilege.editItem} " +
              " where group_id=#{userGroupId} and category_id in " +
              "    <foreach item='id' index='index' collection='categoryIds' " +
              "    open='(' separator=',' close=')'>" +
