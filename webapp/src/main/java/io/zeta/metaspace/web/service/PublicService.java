@@ -52,12 +52,10 @@ public class PublicService {
      * @return
      */
     public List<CategoryGlobal> getCategory(Integer categoryType) {
-        Boolean global = false;
+        Boolean global = isGlobal();
         List<CategoryGlobal> categoryGlobalList = new ArrayList<>();
         Set<CategoryEntityV2> categoryEntityV2s;
         try {
-            User user = AdminUtils.getUserData();
-            global = userPermissionDAO.selectListByUsersId(user.getUserId()) != null;
             //获取所有租户
             List<Tenant> tenants = tenantService.getTenants();
             if (global) {
@@ -117,6 +115,7 @@ public class PublicService {
 
     /**
      * 获取业务目录-非全局用户
+     *
      * @return
      */
     public Set<CategoryEntityV2> getCategoryBusiness() {
@@ -157,10 +156,34 @@ public class PublicService {
 
     public PageResult<RelationEntityV2> getCategoryRelations(String categoryGuid, RelationQuery query, String tenantId) throws AtlasBaseException {
         String name = tenantDAO.selectNameById(tenantId);
-        PageResult<RelationEntityV2> relationsByCategoryGuid = dataManageService.getRelationsByCategoryGuid(categoryGuid, query, tenantId);
+        Boolean global = isGlobal();
+        PageResult<RelationEntityV2> relationsByCategoryGuid;
+        if (global) {
+            relationsByCategoryGuid = dataManageService.getRelationsByCategoryGuidGlobal(categoryGuid, query, tenantId);
+        } else {
+            relationsByCategoryGuid = dataManageService.getRelationsByCategoryGuid(categoryGuid, query, tenantId);
+        }
         for (RelationEntityV2 list : relationsByCategoryGuid.getLists()) {
             list.setPath(name + "/" + list.getPath());
         }
         return relationsByCategoryGuid;
+    }
+
+    /**
+     * 获取是否是全局用户
+     *
+     * @return
+     */
+    private Boolean isGlobal() {
+        User user = AdminUtils.getUserData();
+        return userPermissionDAO.selectListByUsersId(user.getUserId()) != null;
+    }
+
+    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
+        if (isGlobal()) {
+            return dataManageService.getRelationsByTableNameGlobal(relationQuery);
+        } else {
+            return dataManageService.getRelationsByTableNameGeneral(relationQuery);
+        }
     }
 }

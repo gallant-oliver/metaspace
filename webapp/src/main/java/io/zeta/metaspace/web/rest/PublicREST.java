@@ -53,4 +53,19 @@ public class PublicREST {
     public PageResult<RelationEntityV2> getCategoryRelations(@PathParam("categoryGuid") String categoryGuid, RelationQuery relationQuery, @PathParam("tenantId") String tenantId) throws AtlasBaseException {
         return publicService.getCategoryRelations(categoryGuid, relationQuery, tenantId);
     }
+
+    /**
+     * 获取表关联
+     *
+     * @param relationQuery
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/table/relations")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
+        return publicService.getQueryTables(relationQuery);
+    }
 }
