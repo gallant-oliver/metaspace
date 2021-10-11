@@ -1,16 +1,20 @@
 package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.global.CategoryGlobal;
+import io.zeta.metaspace.model.metadata.RelationQuery;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Tenant;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.CategoryDAO;
+import io.zeta.metaspace.web.dao.TenantDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.dao.UserPermissionDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
+import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,8 +42,12 @@ public class PublicService {
     @Autowired
     private UserPermissionDAO userPermissionDAO;
 
+    @Autowired
+    private TenantDAO tenantDAO;
+
     /**
      * 获取目录
+     *
      * @param categoryType 目录类型
      * @return
      */
@@ -96,15 +104,31 @@ public class PublicService {
             //获取用户组
             List<UserGroup> userGroups = userGroupDAO.selectListByUsersId(user.getUserId());
             List<String> userGroupIds = new ArrayList<>();
-            if (!CollectionUtils.isEmpty(userGroups)) {
+            if (CollectionUtils.isNotEmpty(userGroups)) {
                 userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
             }
-            categoryEntityV2s = categoryDAO.selectListByStatus(user.getUserId(), userGroupIds, 5);
+            categoryEntityV2s = categoryDAO.selectListByStatus(user.getUserId(), userGroupIds, categoryType);
             removeNoParentCategory(categoryEntityV2s);
         } catch (AtlasBaseException e) {
             log.error("getCategoryGeneral exception {}", e);
         }
         return categoryEntityV2s;
+    }
+
+    /**
+     * 获取业务目录-非全局用户
+     * @return
+     */
+    public Set<CategoryEntityV2> getCategoryBusiness() {
+        User user = AdminUtils.getUserData();
+        //获取用户组
+        List<UserGroup> userGroups = userGroupDAO.selectListByUsersId(user.getUserId());
+        List<String> userGroupIds = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(userGroups)) {
+            userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+        }
+        // TODO: 2021/10/11
+        return null;
     }
 
     /**
@@ -129,5 +153,14 @@ public class PublicService {
             }
         }
         return true;
+    }
+
+    public PageResult<RelationEntityV2> getCategoryRelations(String categoryGuid, RelationQuery query, String tenantId) throws AtlasBaseException {
+        String name = tenantDAO.selectNameById(tenantId);
+        PageResult<RelationEntityV2> relationsByCategoryGuid = dataManageService.getRelationsByCategoryGuid(categoryGuid, query, tenantId);
+        for (RelationEntityV2 list : relationsByCategoryGuid.getLists()) {
+            list.setPath(name + "/" + list.getPath());
+        }
+        return relationsByCategoryGuid;
     }
 }
