@@ -49,7 +49,7 @@ public class PublicREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/category/relations/{categoryGuid}/{tenantId}")
+    @Path("/technical/relations/{categoryGuid}/{tenantId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<RelationEntityV2> getCategoryRelations(@PathParam("categoryGuid") String categoryGuid, RelationQuery relationQuery, @PathParam("tenantId") String tenantId) throws AtlasBaseException {
@@ -80,7 +80,7 @@ public class PublicREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/category/relations/{categoryId}/{tenantId}")
+    @Path("/business/relations/{categoryId}/{tenantId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<BusinessInfoHeader> getBusinessObject(@PathParam("categoryId") String categoryId, @PathParam("tenantId") String tenantId, Parameters parameters) throws AtlasBaseException {
