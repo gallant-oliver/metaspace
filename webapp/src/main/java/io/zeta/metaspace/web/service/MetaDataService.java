@@ -33,7 +33,10 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
+import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import io.zeta.metaspace.model.table.Tag;
+import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
@@ -41,6 +44,7 @@ import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.util.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -96,6 +100,7 @@ import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
  * @author sunhaoning
  * @date 2018/10/25 15:11
  */
+@Slf4j
 @Service
 public class MetaDataService {
     private static final Logger LOG = LoggerFactory.getLogger(MetaDataService.class);
@@ -106,8 +111,14 @@ public class MetaDataService {
     private AtlasEntityStore entitiesStore;
     @Autowired
     private AtlasLineageService atlasLineageService;
+
+    @Autowired
+    private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDAO;
     @Autowired
     AtlasTypeDefStore typeDefStore;
+
+    @Autowired
+    GroupDeriveTableRelationDAO groupDeriveTableRelationDAO;
     @Autowired
     MetaspaceGremlinService metaspaceLineageService;
     @Autowired
@@ -365,8 +376,33 @@ public class MetaDataService {
             if (Objects.isNull(entity)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
+            //查询用户组
+            User user = AdminUtils.getUserData();
+            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
             //table
             Table table = extractTableInfo(entityInfo, guid, tenantId);
+            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableName(),table.getDatabaseId(),tenantId);
+            if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))) {
+                if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
+                    Boolean importancePrivilege = Boolean.TRUE;
+                    Boolean securityPrivilege = Boolean.TRUE;
+                    GroupDeriveTableRelation relation = groupDeriveTableRelationDAO.getByTableIdAndGroups(guid, userGroupIds, tenantId);
+                    if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
+                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
+                        importancePrivilege = Boolean.FALSE;
+
+                    }
+                    if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getSecurity()) &&
+                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
+                        securityPrivilege = Boolean.FALSE;
+                    }
+                    table.setImportancePrivilege(importancePrivilege);
+                    table.setSecurityPrivilege(securityPrivilege);
+                } else {
+                    table.setImportancePrivilege(!sourceInfoDeriveTableInfo.getImportance());
+                    table.setSecurityPrivilege(!sourceInfoDeriveTableInfo.getSecurity());
+                }
+            }
             if(StringUtils.isBlank(sourceId)){
                 sourceId="hive";
             }
@@ -410,6 +446,7 @@ public class MetaDataService {
             }
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
         } catch (Exception e) {
+            log.error(e.getMessage());
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
         }
     }
@@ -589,9 +626,33 @@ public class MetaDataService {
             if (Objects.isNull(entity)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
+            //获取当前用户的用户组
+            User user = AdminUtils.getUserData();
+            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
             //table
             RDBMSTable table = extractRDBMSTableInfo(entity, guid, info, tenantId);
+            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableName(),table.getDatabaseId(),tenantId);
+             if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))){
+                 if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
+                     Boolean importancePrivilege = Boolean.TRUE;
+                     Boolean securityPrivilege = Boolean.TRUE;
+                     GroupDeriveTableRelation relation = groupDeriveTableRelationDAO.getByTableIdAndGroups(guid, userGroupIds, tenantId);
+                     if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
+                             (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
+                         importancePrivilege = Boolean.FALSE;
 
+                     }
+                     if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getSecurity()) &&
+                             (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
+                         securityPrivilege = Boolean.FALSE;
+                     }
+                     table.setImportancePrivilege(importancePrivilege);
+                     table.setSecurityPrivilege(securityPrivilege);
+                 }else{
+                     table.setImportancePrivilege(!sourceInfoDeriveTableInfo.getImportance());
+                     table.setSecurityPrivilege(!sourceInfoDeriveTableInfo.getSecurity());
+                 }
+            }
             Table tableAttr = tableDAO.getDbAndTableName(guid);
             if(tableAttr != null){
                 List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceId == null ? null : sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,tableAttr.getDatabaseId(),tableAttr.getTableName());

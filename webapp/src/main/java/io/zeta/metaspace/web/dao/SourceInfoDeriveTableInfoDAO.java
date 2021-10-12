@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+import org.springframework.security.access.method.P;
 
 import java.util.List;
 
@@ -221,5 +222,13 @@ public interface SourceInfoDeriveTableInfoDAO {
             "</script>"})
     List<SourceInfoDeriveTableInfo> getDeriveTableByGuid(@Param("sourceId")String sourceId,
                                                                    @Param("tableGuid") String tableGuid );
-
+    @Select("SELECT\n" +
+            "id,importance,security \n" +
+            "FROM\n" +
+            "source_info_derive_table_info\n" +
+            "WHERE\n" +
+            " table_name_en = #{tableName}\n" +
+            "AND db_id = #{databaseId} \n" +
+            "AND tenant_id = #{tenantId}")
+    SourceInfoDeriveTableInfo getByNameAndDbGuid(@Param("tableName") String tableName, @Param("databaseId") String databaseId, @Param("tenantId") String tenantId);
 }
