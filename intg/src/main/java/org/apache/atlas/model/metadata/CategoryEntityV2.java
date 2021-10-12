@@ -67,6 +67,11 @@ public class CategoryEntityV2 {
 
     private String approvalId;
 
+    /**
+     * 租户id
+     */
+    private String tenantid;
+
     public String getApprovalId() {
         return approvalId;
     }
