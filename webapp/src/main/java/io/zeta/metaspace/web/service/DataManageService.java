@@ -290,12 +290,17 @@ public class DataManageService {
             }
             categoryPrivilegeList = categoryDAO.selectListByTenantIdAndGroupId(tenantId, userGroupIds);
             removeNoParentCategory(categoryPrivilegeList);
-            if(CollectionUtils.isEmpty(userGroups)){
-                categoryPrivilegeList.forEach(categoryPrivilege -> {
-                    categoryPrivilege.setEditItem(false);
-                    categoryPrivilege.setEditCategory(false);
-                });
-            }
+            categoryPrivilegeList.forEach(categoryPrivilege -> {
+                        if (CollectionUtils.isEmpty(userGroups)) {
+                            categoryPrivilege.setEditItem(false);
+                            categoryPrivilege.setEditCategory(false);
+                        }
+                        if (MetaspaceConfig.systemCategory.contains(categoryPrivilege.getGuid())) {
+                            categoryPrivilege.setEditItem(false);
+                            categoryPrivilege.setEditCategory(false);
+                        }
+                    }
+            );
         } catch (AtlasBaseException e) {
             LOG.error("getTechnicalCategory exception is {}", e);
         }
@@ -3106,8 +3111,8 @@ public class DataManageService {
         List<CategoryEntityV2> systemCategory = new ArrayList<>();
         try {
             categories = file2AllData(fileInputStream, type, systemCategory);
-            Map<String,List<CategoryEntityV2>> map=categories.stream().collect(Collectors.groupingBy(CategoryEntityV2::getParentCategoryGuid));
             if (type ==technicalType){
+                Map<String,List<CategoryEntityV2>> map=categories.stream().collect(Collectors.groupingBy(CategoryEntityV2::getParentCategoryGuid));
                 map.forEach((guid,categoryList)->{
                     AtomicInteger maxSort = new AtomicInteger(categoryDao.getMaxSortByParentGuid(guid, tenantId));
                     categoryList.forEach(category->{
