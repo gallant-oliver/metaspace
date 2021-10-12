@@ -1,7 +1,6 @@
 package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
-import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.global.CategoryGlobal;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
@@ -195,10 +194,9 @@ public class PublicService {
 
     public PageResult<BusinessInfoHeader> getBusinessObject(String categoryId, String tenantId, Parameters parameters) {
         if (isGlobal()) {
-            return businessService.getBusinessListByCategoryId(categoryId, parameters, tenantId);
+            return businessService.getBusinessListByCategoryIdGlobal(categoryId, parameters, tenantId);
         } else {
-            // TODO: 2021/10/12 业务对象-非全局用户查询
-            return null;
+            return businessService.getBusinessListByCategoryId(categoryId, parameters, tenantId);
         }
     }
 
@@ -206,18 +204,7 @@ public class PublicService {
         if (isGlobal()) {
             return businessService.getBusinessListByNameGlobal(parameters);
         } else {
-            // TODO: 2021/10/12 业务对象关联搜索-非全局用户
-            return null;
+            return businessService.getBusinessListByName(parameters, null);
         }
-    }
-
-    public TechnologyInfo getBusinessRelatedTables(String businessId) throws AtlasBaseException {
-        if (isGlobal()) {
-            return businessService.getRelatedTableListGlobal(businessId);
-        } else {
-            // TODO: 2021/10/12 挂载信息-非全局用户
-            return null;
-        }
-
     }
 }

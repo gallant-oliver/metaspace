@@ -392,6 +392,50 @@ public class BusinessService {
         }
     }
 
+
+    public PageResult<BusinessInfoHeader> getBusinessListByCategoryIdGlobal(String categoryId, Parameters parameters, String tenantId) throws AtlasBaseException {
+        try {
+            PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            List<BusinessInfoHeader> list = businessDao.queryBusinessByCatetoryId(categoryId, limit, offset, tenantId);
+            String path = CategoryRelationUtils.getPath(categoryId, tenantId);
+            StringJoiner joiner = null;
+            String[] pathArr = path.split("/");
+            String level2Category = "";
+            int length = 2;
+            if (pathArr.length >= length)
+                level2Category = pathArr[1];
+            for (BusinessInfoHeader infoHeader : list) {
+                joiner = new StringJoiner(".");
+                //path
+                joiner.add(path);
+                infoHeader.setPath(joiner.toString());
+                //level2Category
+                infoHeader.setLevel2Category(level2Category);
+                buildTablesByBusinessId(infoHeader.getBusinessId(), tenantId,infoHeader.getTrustTable(),infoHeader.getTables()==null?new ArrayList<>():infoHeader.getTables());
+                if (CollectionUtils.isEmpty(infoHeader.getTables())) {
+                    infoHeader.setTechnicalStatus("0");
+                } else {
+                    infoHeader.setTechnicalStatus("1");
+                }
+            }
+            Long totalSize = 0L;
+            if (list.size() != 0) {
+                totalSize = Long.valueOf(list.get(0).getTotal());
+            }
+            pageResult.setTotalSize(totalSize);
+            pageResult.setCurrentSize(list.size());
+            pageResult.setLists(list);
+            return pageResult;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("获取业务对象列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取业务对象列表失败");
+        }
+    }
+
     public PageResult<BusinessInfoHeader> getBusinessListByName(Parameters parameters, String tenantId) throws AtlasBaseException {
         try {
             User user = AdminUtils.getUserData();
