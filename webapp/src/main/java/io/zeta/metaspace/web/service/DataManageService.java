@@ -1026,7 +1026,6 @@ public class DataManageService {
                             entity.setJump(false);
                         }
                     }
-                    entity.setBizTreeId(EntityUtil.generateBusinessId(tenantId,sourceId,entity.getDbId(),entity.getTableGuid()));
                 }
                 getPathByCategoryId(relations, tenantId, categoryGuid);
                 pageResult.setCurrentSize(relations.size());
@@ -1313,12 +1312,10 @@ public class DataManageService {
 
     public PageResult<RelationEntityV2> getRelationsByTableNameGlobal(RelationQuery query) throws AtlasBaseException {
         try {
-            List<String> categoryIds = new ArrayList<>();
             String tableName = query.getFilterTableName();
             String tag = query.getTag();
             int limit = query.getLimit();
             int offset = query.getOffset();
-            List<RelationEntityV2> list = new ArrayList<>();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
             if (StringUtils.isNotEmpty(tableName)) {
                 tableName = tableName.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
@@ -1327,8 +1324,12 @@ public class DataManageService {
                 tag = tag.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
             }
 
-            if (!CollectionUtils.isEmpty(categoryIds)) {
-                list = relationDao.queryByTableNameV2Global(tableName, tag, limit, offset);
+            List<RelationEntityV2> list = relationDao.queryByTableNameV2Global(tableName, tag, limit, offset);
+            if(CollectionUtils.isEmpty(list)){
+                pageResult.setCurrentSize(0);
+                pageResult.setLists(new ArrayList<>());
+                pageResult.setTotalSize(0);
+                return pageResult;
             }
             //tag
             list.forEach(entity -> {

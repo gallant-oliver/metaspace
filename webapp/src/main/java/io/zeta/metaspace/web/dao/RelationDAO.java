@@ -366,7 +366,7 @@ public interface RelationDAO {
                     "   LEFT JOIN source_info ON tableinfo.databaseguid = source_info.database_id" +
                     "   LEFT JOIN data_source ON source_info.data_source_id = data_source.source_id " +
                     " WHERE" +
-                    "  tableInfo.status = 'ACTIVE' AND tableInfo.databaseguid = 'ACTIVE' " +
+                    "  tableInfo.status = 'ACTIVE' AND tableInfo.databasestatus = 'ACTIVE' " +
                     "  AND tableinfo.databaseguid IN ( SELECT db_guid FROM db_category_relation dcr WHERE dcr.category_id IN" +
                     "       <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>",
                     "           #{categoryGuid}",
@@ -398,7 +398,7 @@ public interface RelationDAO {
             "   data_source.source_id AS sourceId," +
                     "   data_source.source_type AS dataSourceType," +
                     "   source_info.category_id AS categoryGuid," +
-                    "   source_info.tenant_id AS tenantId" +
+                    "   source_info.tenant_id AS tenantId," +
                     "   source_info.id AS sourceInfoId," +
                     " CASE" +
                     "      data_source.source_type" +
@@ -420,7 +420,7 @@ public interface RelationDAO {
                     "   LEFT JOIN source_info ON tableinfo.databaseguid = source_info.database_id" +
                     "   LEFT JOIN data_source ON source_info.data_source_id = data_source.source_id " +
                     " WHERE" +
-                    "  tableInfo.status = 'ACTIVE' AND tableInfo.databaseguid = 'ACTIVE' " +
+                    "  tableInfo.status = 'ACTIVE' AND tableInfo.databasestatus = 'ACTIVE' " +
             "   AND source_info.version = 0 AND source_info.category_id IS NOT NULL AND source_info.category_id != ''",
             " <if test=\"tableName != null and tableName!=''\">",
             " and tableInfo.tableName like concat('%',#{tableName},'%') ESCAPE '/'",

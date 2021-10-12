@@ -185,11 +185,22 @@ public class PublicService {
     }
 
     public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
+        PageResult<RelationEntityV2> pageResult;
         if (isGlobal()) {
-            return dataManageService.getRelationsByTableNameGlobal(relationQuery);
+            pageResult = dataManageService.getRelationsByTableNameGlobal(relationQuery);
         } else {
-            return dataManageService.getRelationsByTableNameGeneral(relationQuery);
+            pageResult = dataManageService.getRelationsByTableNameGeneral(relationQuery);
         }
+        if (CollectionUtils.isEmpty(pageResult.getLists())) {
+            return pageResult;
+        }
+        //获取所有租户
+        List<Tenant> tenants = tenantService.getTenants();
+        Map<String, String> map = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName));
+        for (RelationEntityV2 item : pageResult.getLists()) {
+            item.setPath(map.get(item.getTenantId()) + "/" + item.getPath());
+        }
+        return pageResult;
     }
 
     public PageResult<BusinessInfoHeader> getBusinessObject(String categoryId, String tenantId, Parameters parameters) {
