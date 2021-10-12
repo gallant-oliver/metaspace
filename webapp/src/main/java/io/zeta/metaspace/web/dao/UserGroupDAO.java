@@ -1350,4 +1350,39 @@ public interface UserGroupDAO {
             "where bi.tenantid=#{tenantId}" +
             "</script>")
     List<BusinessInfo> getBusinessesByTenantId(@Param("tenantId")String tenantId, @Param("groupId")String groupId);
+
+
+    @Select("<script>" +
+            " SELECT c.*,case  when ai.status is null then '0' else ai.status end FROM category c left join approval_item ai on ai.id=c.approval_id  WHERE c.tenantid = #{tenantId} AND c.private_status = 'PUBLIC' AND c.categorytype = #{categoryType}" +
+            " <if test='groupIdList != null and groupIdList.size() > 0'>"+
+            " UNION" +
+            " SELECT DISTINCT c.*,case  when ai.status is null then '0' else ai.status end FROM category c INNER JOIN category_group_relation as relation on c.guid = relation.category_id " +
+            " left join approval_item ai on ai.id=c.approval_id"+
+            " WHERE c.tenantid = #{tenantId} AND c.private_status = 'PRIVATE' AND c.categorytype =#{categoryType} AND relation.group_id in" +
+            " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
+            "   #{item} "+
+            " </foreach>" +
+            " </if>"+
+            " UNION" +
+            " SELECT c.*,case  when ai.status is null then '0' else ai.status end FROM category c" +
+            " left join approval_item ai on ai.id=c.approval_id"+
+            " WHERE c.tenantid = #{tenantId} AND c.private_status = 'PRIVATE' AND c.categorytype =#{categoryType} and c.creator=#{creator}"+
+            "</script>")
+    public List<CategorycateQueryResult> getAllCategory(@Param("groupIdList") List<String> groupIdList,@Param("categoryType") int categoryType,@Param("tenantId")String tenantId,@Param("creator")String creator);
+
+    @Select("select c.*,case  when ai.status is null then '0' else ai.status end from category c left join approval_item ai on ai.id=c.approval_id where c.categoryType=#{categoryType} and c.tenantid=#{tenantId} and guid=#{guid}")
+    public CategorycateQueryResult getCategory(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
+
+
+    @Select({"<script>",
+            "select distinct read,edit_category as editCategory,edit_item as editItem FROM category_group_relation " +
+            "WHERE category_id = #{guid}"+
+            "<if test='userGroupIds != null and userGroupIds.size()>0'>" +
+            " and group_id in "+
+            "<foreach collection='userGroupIds' item='id' index='index' separator=',' open='(' close=')'>",
+            "#{id}",
+            "</foreach>"+
+            "</if>" +
+            "</script>"})
+    public List<CategoryPrivilegeV2> getCataUserGroupPrivilege(@Param("guid") String guid, @Param("userGroupIds") List<String> userGroupIds);
 }

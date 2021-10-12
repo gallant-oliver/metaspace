@@ -185,6 +185,7 @@ public enum ModuleEnum {
         result.add(ModuleEnum.NORMDESIGN);
         result.add(ModuleEnum.DATABASEREGISTER);
         result.add(ModuleEnum.BUSINESSCATALOGUE);
+        result.add(ModuleEnum.BUSINESS);
         return result;
     }
 
