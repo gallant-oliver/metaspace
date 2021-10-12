@@ -3106,8 +3106,8 @@ public class DataManageService {
         List<CategoryEntityV2> systemCategory = new ArrayList<>();
         try {
             categories = file2AllData(fileInputStream, type, systemCategory);
-            Map<String,List<CategoryEntityV2>> map=categories.stream().collect(Collectors.groupingBy(CategoryEntityV2::getParentCategoryGuid));
             if (type ==technicalType){
+                Map<String,List<CategoryEntityV2>> map=categories.stream().collect(Collectors.groupingBy(CategoryEntityV2::getParentCategoryGuid));
                 map.forEach((guid,categoryList)->{
                     AtomicInteger maxSort = new AtomicInteger(categoryDao.getMaxSortByParentGuid(guid, tenantId));
                     categoryList.forEach(category->{
@@ -3169,6 +3169,8 @@ public class DataManageService {
             if (Objects.isNull(cell)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
             } else {
+                System.out.println("strings.get(i)="+strings.get(i));
+                System.out.println("cell.getStringCellValue()="+cell.getStringCellValue());
                 if (!strings.get(i).equals(cell.getStringCellValue())) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
                 }

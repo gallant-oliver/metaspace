@@ -821,7 +821,7 @@ public class BusinessREST {
             }};
             return ReturnUtil.success(map);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导入失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导入失败:"+e.getMessage());
         } finally {
             if (Objects.nonNull(file) && file.exists()) {
                 file.delete();
