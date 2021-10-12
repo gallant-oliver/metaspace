@@ -284,6 +284,29 @@ public interface TableDAO {
     List<TableEntity> selectListByTenantIdAndTableName(@Param("tableName") String tableName, @Param("tenantId") String tenantId, @Param("dbNameList") List<String> dbNameList, @Param("limit") Long limit, @Param("offset") Long offset);
 
     @Select("<script>" +
+            " SELECT count(*) over() as total, t.* FROM (" +
+            " select source.tenantid as tenantId,tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description, source.source_id,source.source_name" +
+            " from tableinfo as tb INNER JOIN source_db as sd on  tb.databaseguid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
+            " WHERE tb.status = 'ACTIVE' AND tb.tablename like concat('%',#{tableName},'%')  AND source.tenantid in " +
+            " <foreach item='item' index='index' collection='tenantList' open='(' separator=',' close=')'>" +
+            "   #{item}" +
+            " </foreach>" +
+            " UNION" +
+            " select '' as tenantId,tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description,'hive' as source_id,'hive' AS source_name" +
+            " from tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid" +
+            " WHERE  tb.status = 'ACTIVE' AND tb.databasestatus = 'ACTIVE' AND tb.tablename like concat('%',#{tableName},'%') AND db.db_type = 'HIVE' AND tb.dbname in " +
+            " <foreach item='item' index='index' collection='dbNameList' open='(' separator=',' close=')'>" +
+            "   #{item}" +
+            " </foreach>" +
+            " ) as t ORDER BY t.name" +
+            " <if test='limit!= -1'>"+
+            " limit #{limit}"+
+            " </if>"+
+            " offset #{offset}"+
+            "</script>")
+    List<TableEntity> selectListByTenantIdListAndTableName(@Param("tableName") String tableName, @Param("tenantList") List<String> tenants, @Param("dbNameList") List<String> dbNameList, @Param("limit") Long limit, @Param("offset") Long offset);
+
+    @Select("<script>" +
             " SELECT count(*) over() as total, tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description, source.source_id,source.source_name" +
             " FROM tableinfo as tb INNER JOIN source_db as sd on tb.databaseguid = sd.db_guid INNER JOIN data_source as source on sd.source_id = source.source_id" +
             " WHERE source.source_id = #{sourceId} AND sd.db_guid = #{dbGuid} AND tb.status = 'ACTIVE' " +

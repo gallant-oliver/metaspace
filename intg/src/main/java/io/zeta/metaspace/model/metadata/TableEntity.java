@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Data
 public class TableEntity {
+    private String tenantId;
     private String sourceId;
     private String sourceName;
     private String databaseId;
