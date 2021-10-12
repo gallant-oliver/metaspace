@@ -17,6 +17,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -279,6 +280,66 @@ public class AuthorizeREST {
             return ReturnUtil.success(adminCategory);
         }catch (Exception e){
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取用户组目录权限列表失败");
+        }
+    }
+
+    /**
+     * 分配业务对象权限
+     * @param business
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/add/business")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public Result addBusinessPrivileges(UpdateBusiness business, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        try{
+            HttpRequestContext.get().auditLog(ModuleEnum.AUTHORIZATION.getAlias(), "分配业务对象权限");
+            userGroupService.addBusinessPrivileges(business, tenantId);
+            return ReturnUtil.success();
+        }catch (Exception e){
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "分配用户组业务对象权限失败");
+        }
+    }
+
+    /**
+     * 获取用户组可配置权限的业务对象列表
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/business")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getBusinesses(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        try{
+            List<BusinessInfo> businesses = userGroupService.getBusinessesByTenantId(tenantId, null);
+            return ReturnUtil.success(businesses);
+        }catch (Exception e){
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取用户组可配置权限的业务对象列表失败");
+        }
+    }
+
+    /**
+     * 获取用户组有权限的业务对象列表
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/business/privilege/{id}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getBusinesses(@HeaderParam("tenantId")String tenantId, @PathParam("id")String id) throws AtlasBaseException {
+        try{
+            List<BusinessInfo> businesses = userGroupService.getBusinessesByTenantId(tenantId, id);
+            return ReturnUtil.success(businesses);
+        }catch (Exception e){
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "获取用户组有权限的业务对象列表失败");
         }
     }
 }
