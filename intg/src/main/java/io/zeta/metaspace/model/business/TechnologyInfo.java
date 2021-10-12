@@ -33,6 +33,7 @@ public class TechnologyInfo {
     private Boolean editTechnical;
     private List<Table> tables;
     private Integer count;
+    private String trustTable;
 
     @Data
     public static class Table {
@@ -179,5 +180,13 @@ public class TechnologyInfo {
 
     public void setCount(Integer count) {
         this.count = count;
+    }
+
+    public String getTrustTable() {
+        return trustTable;
+    }
+
+    public void setTrustTable(String trustTable) {
+        this.trustTable = trustTable;
     }
 }

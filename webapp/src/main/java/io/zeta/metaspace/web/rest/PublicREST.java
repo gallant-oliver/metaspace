@@ -1,6 +1,9 @@
 package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.business.BusinessInfoHeader;
+import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.PublicService;
@@ -67,5 +70,44 @@ public class PublicREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
         return publicService.getQueryTables(relationQuery);
+    }
+
+    /**
+     * 业务对象列表
+     *
+     * @param categoryId
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/category/relations/{categoryId}/{tenantId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<BusinessInfoHeader> getBusinessObject(@PathParam("categoryId") String categoryId, @PathParam("tenantId") String tenantId, Parameters parameters) throws AtlasBaseException {
+        return publicService.getBusinessObject(categoryId, tenantId, parameters);
+    }
+
+    @POST
+    @Path("/business/relations")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<BusinessInfoHeader> getBusinessList(Parameters parameters) throws AtlasBaseException {
+        return publicService.getBusinessList(parameters);
+    }
+
+    /**
+     * 业务对象关联技术信息详情
+     *
+     * @param businessId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{businessId}/technical")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TechnologyInfo getBusinessRelatedTables(@PathParam("businessId") String businessId) throws AtlasBaseException {
+        return publicService.getBusinessRelatedTables(businessId);
     }
 }

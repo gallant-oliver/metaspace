@@ -41,6 +41,7 @@ public class BusinessInfoHeader {
     private String ticketNumber;
     private String categoryGuid;
     private String trustTable;
+    private String tenantId;
     private List<TechnologyInfo.Table> tables;
     @JsonIgnore
     private int total;
@@ -161,5 +162,13 @@ public class BusinessInfoHeader {
 
     public void setTrustTable(String trustTable) {
         this.trustTable = trustTable;
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
     }
 }

@@ -276,9 +276,41 @@ public class BusinessService {
         }
     }
 
+    /**
+     * 获取挂载信息-全局用户
+     * @param businessId
+     * @return
+     * @throws AtlasBaseException
+     */
+    public TechnologyInfo getRelatedTableListGlobal(String businessId) throws AtlasBaseException {
+        try {
+            TechnologyInfo info = businessDao.selectTechnologyInfoByBusinessId(businessId);
+            if (Objects.isNull(info)) {
+                info = new TechnologyInfo();
+            }
+
+            String operator = userGroupDAO.getUserNameById(info.getTechnicalOperator());
+            if (operator != null) {
+                info.setTechnicalOperator(operator);
+            }
+            info.setEditTechnical(false);
+            //tables
+            List<TechnologyInfo.Table> tables = buildTablesByBusinessIdGlobal(businessId, info.getTrustTable());
+            info.setTables(tables);
+            //businessId
+            info.setBusinessId(businessId);
+            return info;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("获取关联表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联表失败");
+        }
+    }
+
     private List<TechnologyInfo.Table> buildTablesByBusinessId(String businessId, String tenantId, String trustTableGuid, List<TechnologyInfo.Table> tables) {
         if(tables ==null ){
-            tables = businessDao.queryTablesByBusinessIdAndTenantId(businessId, tenantId);
+            tables = businessDao.queryTablesByBusinessIdAndTenantId(businessId);
         }
         tables.forEach(table -> {
             if (Objects.nonNull(table.getDisplayName())) {
@@ -293,6 +325,25 @@ public class BusinessService {
         if (Objects.nonNull(trustTableGuid)) {
             String finalTrustTableGuid = trustTableGuid;
             tables.stream().filter(t->finalTrustTableGuid.equals(t.getTableGuid())).forEach(table -> table.setTrust(Boolean.TRUE));
+        }
+        tables.sort(Comparator.comparing(TechnologyInfo.Table::isTrust).reversed());
+        return tables;
+    }
+
+    private List<TechnologyInfo.Table> buildTablesByBusinessIdGlobal(String businessId, String trustTableGuid) {
+        List<TechnologyInfo.Table> tables =  businessDao.queryTablesByBusinessIdAndTenantId(businessId);
+        if(CollectionUtils.isEmpty(tables)){
+            return new ArrayList<>();
+        }
+        tables.forEach(table -> {
+            if (Objects.nonNull(table.getDisplayName())) {
+                table.setDisplayName(table.getDisplayName());
+            } else {
+                table.setDisplayName(table.getTableName());
+            }
+        });
+        if (Objects.nonNull(trustTableGuid)) {
+            tables.stream().filter(t->trustTableGuid.equals(t.getTableGuid())).forEach(table -> table.setTrust(Boolean.TRUE));
         }
         tables.sort(Comparator.comparing(TechnologyInfo.Table::isTrust).reversed());
         return tables;
@@ -409,6 +460,50 @@ public class BusinessService {
                 businessTotal = businessInfoList.get(0).getTotal();
             }
             pageResult.setTotalSize(businessTotal);
+            pageResult.setLists(businessInfoList);
+            pageResult.setCurrentSize(businessInfoList.size());
+            return pageResult;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("搜索业务对象失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "搜索业务对象失败");
+        }
+    }
+
+    /**
+     * 获取业务对象-全局查询
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    public PageResult<BusinessInfoHeader> getBusinessListByNameGlobal(Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
+            String businessName = parameters.getQuery() == null ? "" : parameters.getQuery();
+            businessName = businessName.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            List<BusinessInfoHeader> businessInfoList = businessDao.selectBusinessByNameGlobal(businessName, limit, offset);
+            if (CollectionUtils.isEmpty(businessInfoList)) {
+                pageResult.setTotalSize(0);
+                pageResult.setLists(new ArrayList<>());
+                pageResult.setCurrentSize(0);
+                return pageResult;
+            }
+            for (BusinessInfoHeader infoHeader : businessInfoList) {
+                String path = CategoryRelationUtils.getPath(infoHeader.getCategoryGuid(), infoHeader.getTenantId());
+                StringJoiner joiner = new StringJoiner(".");
+                joiner.add(path);
+                infoHeader.setPath(joiner.toString());
+                String[] pathArr = path.split("/");
+                String level2Category = "";
+                int length = 2;
+                if (pathArr.length >= length)
+                    level2Category = pathArr[1];
+                infoHeader.setLevel2Category(level2Category);
+            }
+            pageResult.setTotalSize(businessInfoList.get(0).getTotal());
             pageResult.setLists(businessInfoList);
             pageResult.setCurrentSize(businessInfoList.size());
             return pageResult;

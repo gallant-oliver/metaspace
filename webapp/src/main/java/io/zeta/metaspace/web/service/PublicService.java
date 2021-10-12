@@ -1,6 +1,9 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.model.business.BusinessInfoHeader;
+import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.global.CategoryGlobal;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Tenant;
@@ -44,6 +47,9 @@ public class PublicService {
 
     @Autowired
     private TenantDAO tenantDAO;
+
+    @Autowired
+    private BusinessService businessService;
 
     /**
      * 获取目录
@@ -126,7 +132,7 @@ public class PublicService {
         if (CollectionUtils.isNotEmpty(userGroups)) {
             userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
         }
-        // TODO: 2021/10/11
+        // TODO: 2021/10/11 获取业务目录-非全局用户
         return null;
     }
 
@@ -185,5 +191,33 @@ public class PublicService {
         } else {
             return dataManageService.getRelationsByTableNameGeneral(relationQuery);
         }
+    }
+
+    public PageResult<BusinessInfoHeader> getBusinessObject(String categoryId, String tenantId, Parameters parameters) {
+        if (isGlobal()) {
+            return businessService.getBusinessListByCategoryId(categoryId, parameters, tenantId);
+        } else {
+            // TODO: 2021/10/12 业务对象-非全局用户查询
+            return null;
+        }
+    }
+
+    public PageResult<BusinessInfoHeader> getBusinessList(Parameters parameters) {
+        if (isGlobal()) {
+            return businessService.getBusinessListByNameGlobal(parameters);
+        } else {
+            // TODO: 2021/10/12 业务对象关联搜索-非全局用户
+            return null;
+        }
+    }
+
+    public TechnologyInfo getBusinessRelatedTables(String businessId) throws AtlasBaseException {
+        if (isGlobal()) {
+            return businessService.getRelatedTableListGlobal(businessId);
+        } else {
+            // TODO: 2021/10/12 挂载信息-非全局用户
+            return null;
+        }
+
     }
 }

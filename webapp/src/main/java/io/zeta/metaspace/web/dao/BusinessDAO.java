@@ -66,16 +66,18 @@ public interface BusinessDAO {
     @Select("select technicalLastUpdate,technicalOperator from businessinfo where businessId=#{businessId}")
     public TechnologyInfo queryTechnologyInfoByBusinessId(@Param("businessId")String businessId);
 
+    @Select("select technicalLastUpdate,technicalOperator,trusttable as trustTable from businessinfo where businessId=#{businessId}")
+    public TechnologyInfo selectTechnologyInfoByBusinessId(@Param("businessId")String businessId);
+
     //查询业务信息关联的数据库表
     @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid,display_name as displayName,description from tableInfo where tableGuid in(select tableGuid from business2table where status='ACTIVE' and businessId=#{businessId})")
     public List<TechnologyInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
 
     //查询业务信息关联的数据库表-过滤数据源
     @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid," +
-            "COALESCE(display_name,tableName,'') as displayName,description,source_id AS sourceId from tableInfo where status='ACTIVE' and  tableGuid in(select tableGuid from business2table where businessId=#{businessId}) "
-            //"AND (tableInfo.source_id in (SELECT source_id FROM data_source WHERE tenantid = #{tenantId}) or tableInfo.source_id = 'hive')"
+            "COALESCE(display_name,tableName,'') as displayName,description from tableInfo where status='ACTIVE' and  tableGuid in (select tableGuid from business2table where businessId=#{businessId}) "
     )
-    public List<TechnologyInfo.Table> queryTablesByBusinessIdAndTenantId(@Param("businessId") String businessId, @Param("tenantId") String tenantId);
+    List<TechnologyInfo.Table> queryTablesByBusinessIdAndTenantId(@Param("businessId") String businessId);
 
     //添加目录/业务对象关联
     @Insert("insert into business_relation(relationshipGuid,categoryGuid,businessId,generateTime)values(#{relationshipGuid},#{categoryGuid},#{businessId},#{generateTime})")
@@ -104,6 +106,21 @@ public interface BusinessDAO {
              " offset #{offset}",
              " </script>"})
     public List<BusinessInfoHeader> queryBusinessByName(@Param("businessName")String businessName, @Param("ids") List<String> categoryIds, @Param("limit")int limit, @Param("offset") int offset,@Param("tenantId")String tenantId) throws SQLException;
+
+    //根据业务信息名称查询列表(有权限)
+    @Select({"<script>",
+            " select count(*)over() total,businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber, business_relation.categoryGuid,businessInfo.tenantid as tenantId from businessInfo",
+            " join business_relation on",
+            " business_relation.businessId=businessInfo.businessId",
+            " where",
+            " businessInfo.name like concat('%',#{businessName},'%') ESCAPE '/'",
+            " order by businessInfo.businessLastUpdate desc",
+            " <if test='limit!= -1'>",
+            " limit #{limit}",
+            " </if>",
+            " offset #{offset}",
+            " </script>"})
+    List<BusinessInfoHeader> selectBusinessByNameGlobal(@Param("businessName")String businessName, @Param("limit")int limit, @Param("offset") int offset) throws SQLException;
 
     @Select({"<script>",
              " select count(*)over() total,businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber,business_relation.categoryGuid from businessInfo",
