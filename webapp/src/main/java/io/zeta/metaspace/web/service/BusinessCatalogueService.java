@@ -41,15 +41,13 @@ import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
-import io.zeta.metaspace.web.dao.CategoryDAO;
-import io.zeta.metaspace.web.dao.RoleDAO;
-import io.zeta.metaspace.web.dao.UserDAO;
-import io.zeta.metaspace.web.dao.UserGroupDAO;
+import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.service.Approve.Approvable;
 import io.zeta.metaspace.web.service.Approve.ApproveService;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.model.metadata.CategoryDeleteReturn;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.commons.lang.StringUtils;
 import org.apache.directory.api.util.Strings;
@@ -94,6 +92,12 @@ public class BusinessCatalogueService implements Approvable {
 
     @Autowired
     private CategoryDAO categoryDAO;
+
+    @Autowired
+    RelationDAO relationDao;
+
+    @Autowired
+    BusinessDAO businessDAO;
 
     int dataStandType = 3;
 
@@ -220,12 +224,6 @@ public class BusinessCatalogueService implements Approvable {
                     privilege.setAsh(true);
                 }
 
-//                if (CategoryPrivateStatus.PRIVATE.equals(entity.getPrivateStatus())) {
-//                    List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(entity.getCreator(), tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
-//                    if (userGroupIds != null && !userGroupIds.isEmpty()) {
-//                        userGroupDAO.insertGroupRelations(userGroupIds, entity.getGuid(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
-//                    }
-//                }
                 returnEntity.setPrivilege(privilege);
 
                 //目录是否需要发布，如果需要发布，则需要选择审批组,记录审批信息
@@ -987,12 +985,6 @@ public class BusinessCatalogueService implements Approvable {
             categoryPrivilege.setPrivateStatus(categoryEntityV2.getPrivateStatus().name());
             categoryPrivileges.add(categoryPrivilege);
         }
-//        List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(AdminUtils.getUserData().getUserId(), tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
-//        if (userGroupIds!=null && !userGroupIds.isEmpty()) {
-//            for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2s) {
-//                userGroupDAO.insertGroupRelations(userGroupIds, categoryEntityV2.getGuid(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
-//            }
-//        }
         return categoryPrivileges;
     }
 
@@ -1040,18 +1032,19 @@ public class BusinessCatalogueService implements Approvable {
      * @throws AtlasBaseException
      */
     public File exportExcelAll(int categoryType, String tenantId) throws IOException, SQLException {
-        Set<CategoryEntityV2> data;
-        data = categoryDao.getAll(categoryType, tenantId);
+        String userId = AdminUtils.getUserData().getUserId();
+        List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(userId, tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+        List<CategorycateQueryResult> data;
+        data = userGroupDAO.getAllCategory(userGroupIds,categoryType,tenantId,userId);
         Workbook workbook = allData2workbook(userDAO, categoryType, data);
         return workbook2file(workbook);
     }
 
     //全局导出
-    private Workbook allData2workbook(UserDAO userDAO, int categoryType, Set<CategoryEntityV2> list) {
-
+    private Workbook allData2workbook(UserDAO userDAO, int categoryType, List<CategorycateQueryResult> list) {
         Workbook workbook = new XSSFWorkbook();
         List<List<String>> dataList = list.stream().map(categoryEntityV2 -> {
-            List<String> data = Lists.newArrayList(categoryEntityV2.getGuid(), categoryEntityV2.getName(), categoryEntityV2.getDescription(), categoryEntityV2.getUpBrotherCategoryGuid(), categoryEntityV2.getDownBrotherCategoryGuid(), categoryEntityV2.getParentCategoryGuid(), categoryEntityV2.getQualifiedName(), new Integer(categoryEntityV2.getLevel()).toString(),categoryEntityV2.getSort().toString());
+        List<String> data = Lists.newArrayList(categoryEntityV2.getGuid(), categoryEntityV2.getName(), categoryEntityV2.getDescription(), categoryEntityV2.getUpBrotherCategoryGuid(), categoryEntityV2.getDownBrotherCategoryGuid(), categoryEntityV2.getParentCategoryGuid(), categoryEntityV2.getQualifiedName(), new Integer(categoryEntityV2.getLevel()).toString(),categoryEntityV2.getSort().toString());
             return data;
         }).collect(Collectors.toList());
         PoiExcelUtils.createSheet(workbook, "目录", Lists.newArrayList("目录id", "目录名字", "目录描述", "同级的上方目录id", "同级的下方目录id", "父目录id", "全名称", "级别", "排序"), dataList);
@@ -1173,6 +1166,27 @@ public class BusinessCatalogueService implements Approvable {
         }
     }
 
+    /**
+     * @Author fanjiajia
+     * @Description 公共租户查询业务目录
+     **/
+    public List<CategoryEntityV2> getCategoryBusiness(Integer type) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            List<String> userGroupIds = userGroupDAO.getAlluserGroupByUsersId(userId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            //目录管理权限
+            List<CategoryEntityV2> categories=userGroupDAO.getAllCategoryByCommonTenant(userGroupIds,type,userId);
+            //删除查看权限不足的目录
+            removeNoParentCategory2(categories);
+            return categories;
+        } catch (MyBatisSystemException e) {
+            LOG.error("数据库服务异常", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常:"+e.getMessage());
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
+    }
+
     public CategoryPrivilegeV2 getCataPrivilege(List<String> userGroupIds, String guid){
         CategoryPrivilegeV2  privilege=new CategoryPrivilegeV2();
         List<CategoryPrivilegeV2>  list=userGroupDAO.getCataUserGroupPrivilege(guid,userGroupIds);
@@ -1184,7 +1198,7 @@ public class BusinessCatalogueService implements Approvable {
             privilege.setEditCategory(false);
             privilege.setEditItem(false);
             if(cp.getEditCategory()){
-                privilege.setRead(true);
+                privilege.setEditCategory(true);
             }
             if(cp.getEditItem()){
                 privilege.setEditItem(true);
@@ -1218,6 +1232,67 @@ public class BusinessCatalogueService implements Approvable {
             }
         }
         return true;
+    }
+
+    private void removeNoParentCategory2(List<CategoryEntityV2> categoryList){
+        Map<String,String> map = categoryList.stream().collect(HashMap::new,(m,v)->m.put(v.getGuid(),v.getParentCategoryGuid()),HashMap::putAll);
+        categoryList.removeIf(categoryPrivilege ->
+                this.checkParentIfExist2(map, categoryPrivilege.getParentCategoryGuid(), categoryList));
+    }
+
+    private boolean checkParentIfExist2(Map<String,String> map,String parentId,List<CategoryEntityV2> categoryPrivilegeList){
+        if (StringUtils.isEmpty(parentId)){
+            return false;
+        }
+        if (map.containsKey(parentId)){
+            Optional<CategoryEntityV2> result=categoryPrivilegeList.stream().filter(c->parentId.equals(c.getGuid())).findFirst();
+            if (result.isPresent()){
+                return checkParentIfExist2(map,result.get().getParentCategoryGuid(),categoryPrivilegeList);
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 删除目录
+     *
+     * @param guid
+     * @return
+     * @throws Exception
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public CategoryDeleteReturn deleteCategory(String guid, String tenantId, int type) throws Exception {
+        List<String> categoryIds = categoryDao.queryChildrenCategoryId(guid, tenantId);
+        categoryIds.add(guid);
+        int item = 0;
+        if (type == 1) {
+            List<String> businessIds = relationDao.getBusinessIdsByCategoryGuid(categoryIds);
+            if (businessIds == null || businessIds.size() == 0) {
+                item = 0;
+            } else {
+                item = businessDAO.deleteBusinessesByIds(businessIds);
+                businessDAO.deleteRelationByBusinessIds(businessIds);
+                businessDAO.deleteRelationByIds(businessIds);
+            }
+        }
+        CategoryEntityV2 currentCatalog = categoryDao.queryByGuid(guid, tenantId);
+        if (Objects.isNull(currentCatalog)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取当前目录信息失败");
+        }
+        String upBrotherCategoryGuid = currentCatalog.getUpBrotherCategoryGuid();
+        String downBrotherCategoryGuid = currentCatalog.getDownBrotherCategoryGuid();
+        if (StringUtils.isNotEmpty(upBrotherCategoryGuid)) {
+            categoryDao.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid, tenantId);
+        }
+        if (StringUtils.isNotEmpty(downBrotherCategoryGuid)) {
+            categoryDao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid, tenantId);
+        }
+        userGroupDAO.deleteCategoryGroupRelationByCategory(guid);
+        int category = categoryDao.deleteCategoryByIds(categoryIds, tenantId);
+        CategoryDeleteReturn deleteReturn = new CategoryDeleteReturn();
+        deleteReturn.setCategory(category);
+        deleteReturn.setItem(item);
+        return deleteReturn;
     }
 
 }

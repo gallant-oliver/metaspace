@@ -1335,6 +1335,23 @@ public interface UserGroupDAO {
             "</script>")
     public List<CategorycateQueryResult> getAllCategory(@Param("groupIdList") List<String> groupIdList,@Param("categoryType") int categoryType,@Param("tenantId")String tenantId,@Param("creator")String creator);
 
+    @Select("<script>" +
+            " SELECT c.* FROM category c left join approval_item ai on ai.id=c.approval_id  WHERE  c.private_status = 'PUBLIC' AND c.categorytype = #{categoryType}" +
+            " <if test='groupIdList != null and groupIdList.size() > 0'>"+
+            " UNION" +
+            " SELECT DISTINCT c.* FROM category c INNER JOIN category_group_relation as relation on c.guid = relation.category_id " +
+            " left join approval_item ai on ai.id=c.approval_id"+
+            " WHERE  c.private_status = 'PRIVATE' AND c.categorytype =#{categoryType} AND relation.group_id in" +
+            " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
+            "   #{item} "+
+            " </foreach>" +
+            " </if>"+
+            " UNION" +
+            " SELECT c.* FROM category c" +
+            " WHERE  c.private_status = 'PRIVATE' AND c.categorytype =#{categoryType} and c.creator=#{creator}"+
+            "</script>")
+    public List<CategoryEntityV2> getAllCategoryByCommonTenant(@Param("groupIdList") List<String> groupIdList, @Param("categoryType") int categoryType, @Param("creator")String creator);
+
     @Select("select c.*,case  when ai.status is null then '0' else ai.status end from category c left join approval_item ai on ai.id=c.approval_id where c.categoryType=#{categoryType} and c.tenantid=#{tenantId} and guid=#{guid}")
     public CategorycateQueryResult getCategory(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
 
@@ -1350,4 +1367,8 @@ public interface UserGroupDAO {
             "</if>" +
             "</script>"})
     public List<CategoryPrivilegeV2> getCataUserGroupPrivilege(@Param("guid") String guid, @Param("userGroupIds") List<String> userGroupIds);
+
+
+    @Select("select g.*,g.tenant tenantId from user_group g join user_group_relation u on g.id=u.group_id where u.user_id=#{userId} and g.valid=true")
+    public List<UserGroup> getAlluserGroupByUsersId(@Param("userId") String userId);
 }
