@@ -21,6 +21,7 @@ public enum ModuleEnum {
     TECHNICAL(2,"数据资产","技术目录",2,"技术目录", "technical", "technical",1, 2),
     INDEX(2,"数据资产","指标目录",47,"指标目录", "index", "index",1, 2),
     BUSINESS(2,"数据资产","业务目录",3,"业务对象", "business", "business",1, 3),
+    BUSINESSCATALOGUE(2,"数据资产","业务目录",48,"业务目录", "businesscatalogue", "businesscatalogue",0, 48),
     BUSINESSMANAGE(2,"数据资产","业务目录",4,"业务对象挂载", "businessmanage", "businessmanage",1, 4),
     COLUMNDOWN(2,"数据资产","业务目录",5,"字段下载", "columndown", "columndown",0, 5),
     BUSINESSEDIT(2,"数据资产","业务目录",6,"数据编辑", "businessedit", "businessedit",0, 6),
@@ -190,6 +191,8 @@ public enum ModuleEnum {
         List<ModuleEnum> result = new LinkedList<>();
         result.add(ModuleEnum.NORMDESIGN);
         result.add(ModuleEnum.DATABASEREGISTER);
+        result.add(ModuleEnum.BUSINESSCATALOGUE);
+        result.add(ModuleEnum.BUSINESS);
         return result;
     }
 
