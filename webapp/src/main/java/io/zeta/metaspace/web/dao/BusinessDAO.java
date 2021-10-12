@@ -449,9 +449,11 @@ public interface BusinessDAO {
             "from businessinfo bi " +
             "join business_relation br on br.businessid=bi.businessid " +
             "where " +
-            "bi.name like concat('%',#{businessName},'%') ESCAPE '/'" +
-            "and bi.tenantid=#{tenantId} and " +
-            "br.categoryguid in " +
+            "bi.name like concat('%',#{businessName},'%') ESCAPE '/' " +
+            "<if test=\"tenantId != null and tenantId!=''\">" +
+            "and bi.tenantid=#{tenantId} " +
+            "</if>" +
+            "and br.categoryguid in " +
             "<foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" +
             "#{categoryGuid}" +
             "</foreach>" +
