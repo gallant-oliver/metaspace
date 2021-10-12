@@ -13,6 +13,7 @@
 
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
@@ -1315,6 +1316,40 @@ public interface UserGroupDAO {
             "select source_name from data_source where source_id =#{sourceId}",
             "</script>"})
     public String getSourceName(@Param("sourceId") String sourceId);
+
+    @Delete("<script>" +
+            "delete from business_2_group " +
+            "where " +
+            "group_id in " +
+            "<foreach collection='groupIds' item='groupId' index='index' separator=',' open='(' close=')'>" +
+            "#{groupId}" +
+            "</foreach>" +
+            " and business_id in " +
+            "<foreach collection='businessIds' item='businessId' index='index' separator=',' open='(' close=')'>" +
+            "#{businessId}" +
+            "</foreach>" +
+            "</script>" )
+    void deleteBusinessPrivileges(@Param("businessIds")List<String> businessIds, @Param("groupIds")List<String> groupIds);
+
+    @Insert("<script>" +
+            "insert into business_2_group(business_id, group_id) values" +
+            "<foreach item='businessId' index='index' collection='businessIds' open='' separator=',' close=''>" +
+            "<foreach item='groupId' index='index' collection='groupIds' open='(' separator='),(' close=')'>" +
+            "#{businessId}, #{groupId}, #{read}" +
+            "</foreach>" +
+            "</foreach>" +
+            "</script>")
+    void addBusinessPrivileges(@Param("businessIds")List<String> businessIds, @Param("groupIds")List<String> groupIds, @Param("read")Boolean read);
+
+    @Select("<script>" +
+            "select bi.businessid businessId, bi.name " +
+            "from businessinfo bi " +
+            "<if test='groupId!=null'>" +
+            "inner join business_2_group b2g on b2g.business_id=bi.businessid and b2g.group_id=#{groupId} " +
+            "</if>" +
+            "where bi.tenantid=#{tenantId}" +
+            "</script>")
+    List<BusinessInfo> getBusinessesByTenantId(@Param("tenantId")String tenantId, @Param("groupId")String groupId);
 
 
     @Select("<script>" +
