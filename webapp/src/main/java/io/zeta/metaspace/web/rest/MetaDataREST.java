@@ -31,6 +31,7 @@ import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.security.Tenant;
+import io.zeta.metaspace.model.security.TenantExtInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceInfoDeriveTableColumnVO;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.table.column.tag.ColumnTag;
@@ -51,6 +52,7 @@ import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -121,29 +123,46 @@ public class MetaDataREST {
         this.metadataService = metadataService;
     }
 
+    /**
+     * 当前账户是否配置全局权限
+     * @return true：已配置全局权限
+     */
+    private boolean isConfigGloble(){
+        User user = AdminUtils.getUserData();
+        UserPermissionPO userPermissionPO = userPermissionDAO.selectListByUsersId(user.getUserId());
+        return userPermissionPO != null;
+    }
     @GET
     @Path("/tenantId")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Tenant> getTenantIdList(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public List<TenantExtInfo> getTenantIdList(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTenantIdList");
             }
-            List<Tenant> tenants = null;
+            List<TenantExtInfo> tenants =  new ArrayList<>();
             //查看是否配置全局权限，配置则查看所有租户信息，否则只显示当前租户
-            User user = AdminUtils.getUserData();
-            UserPermissionPO userPermissionPO = userPermissionDAO.selectListByUsersId(user.getUserId());
-            if(userPermissionPO == null){
-                tenants = new ArrayList<>();
+            if( isConfigGloble() ){
+                List<Tenant> tenantList = tenantService.getTenants();
+                if(CollectionUtils.isNotEmpty(tenantList)){
+                    TenantExtInfo tenant = null;
+                    for(Tenant item : tenantList){
+                        tenant = new TenantExtInfo();
+                        tenant.setTenantId(item.getTenantId());
+                        tenant.setProjectName(item.getProjectName());
+                        tenant.setBizTreeId(EntityUtil.generateBusinessId(item.getTenantId(),"","",""));
+                        tenants.add(tenant);
+                    }
+                }
+            }else{
                 String name = tenantService.getNameById(tenantId);
-                Tenant tenant = new Tenant();
+                TenantExtInfo tenant = new TenantExtInfo();
                 tenant.setTenantId(tenantId);
                 tenant.setProjectName(name);
+                tenant.setBizTreeId(EntityUtil.generateBusinessId(tenantId,"","",""));
                 tenants.add(tenant);
-            }else{
-                tenants = tenantService.getTenants();
             }
 
             return tenants;
@@ -228,6 +247,59 @@ public class MetaDataREST {
         }
     }
 
+    /**
+     * 公共租户下 - 元数据展示的查询数据源列表
+     */
+    @GET
+    @Path("/public/datasource")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<DataSourceHead> getPublicDataSourceList(@QueryParam("limit") int limit, @QueryParam("offset") int offset,
+                                                        @QueryParam("query") String query, @QueryParam("sourceType") String sourceType,
+                                                        @QueryParam("bizTreeId") String bizTreeId,
+                                                        @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        Long start = System.currentTimeMillis();
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getPublicDataSourceList");
+            }
+            String queryTenantIdParam = null;
+            // bizTreeId 不为空则是查询当前租户下的
+            if(StringUtils.isNotBlank(bizTreeId)){
+                Map<String, String> map = EntityUtil.decodeBusinessId(bizTreeId);
+                queryTenantIdParam = map.get("tenantId");
+            }else{
+                //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
+                if(!isConfigGloble()){
+                    queryTenantIdParam = tenantId;
+                }
+            }
+
+            DataSourceHead hive = new DataSourceHead();
+            if (offset == 0 && (query == null || "hive".contains(query))) {
+                hive.setSourceType("hive");
+                hive.setSourceName("hive");
+                hive.setSourceId("hive");
+                hive.setBizTreeId(EntityUtil.generateBusinessId(tenantId,"hive","",""));
+                if (limit != -1) {
+                    limit--;
+                }
+            }
+            PageResult<DataSourceHead> pageResult = dataSourceService.searchDataSources(limit, offset, null, null, query, sourceType, null, null, null, true, queryTenantIdParam);
+            if (offset == 0 && (query == null || "hive".contains(query))) {
+                pageResult.getLists().add(0, hive);
+                pageResult.setCurrentSize(pageResult.getCurrentSize() + 1);
+                pageResult.setTotalSize(pageResult.getTotalSize() + 1);
+            }
+            return pageResult;
+        } finally {
+            if(StringUtils.isNotBlank(query)){
+                dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "metadata");
+            }
+            AtlasPerfTracer.log(perf);
+        }
+    }
 
     //获取数据源 schema 分页列表
     @GET
@@ -247,6 +319,93 @@ public class MetaDataREST {
             }
             PageResult<Database> result = searchService.getDatabases(sourceId, offset, limit, query, tenantId, queryTableCount);
             return result;
+        } finally {
+            if(StringUtils.isNotBlank(query)){
+                dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "metadata");
+            }
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    //公共租户下 - 元数据展示的 获取数据源 schema 分页列表
+    @GET
+    @Path("/public/schema")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Database> getPublicDatabaseList(@QueryParam("active") @DefaultValue("true") Boolean active,
+                                                @QueryParam("queryTableCount") @DefaultValue("false") boolean queryTableCount,
+                                                @QueryParam("sourceId") String sourceId,
+                                                @QueryParam("query") String query,@QueryParam("bizTreeId") String bizTreeId,
+                                                @QueryParam("offset") long offset, @QueryParam("limit") long limit, @HeaderParam("tenantId") String tenantId) throws InterruptedException {
+        AtlasPerfTracer perf = null;
+        Long start = System.currentTimeMillis();
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getPublicDatabaseList(" + sourceId + " )");
+            }
+            String queryTenantIdParam = null;
+            PageResult<Database> result = null;
+            // bizTreeId 不为空则是查询当前租户下的
+            if(StringUtils.isNotBlank(bizTreeId)){
+                Map<String, String> map = EntityUtil.decodeBusinessId(bizTreeId);
+                queryTenantIdParam = map.get("tenantId");
+                result = searchService.getDatabases(sourceId, offset, limit, query, queryTenantIdParam, queryTableCount);
+                return result;
+            }
+            //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
+            if(!isConfigGloble()){
+                queryTenantIdParam = tenantId;
+                result = searchService.getDatabases(sourceId, offset, limit, query, queryTenantIdParam, queryTableCount);
+                return result;
+            }
+
+            result = searchService.getPublicDatabases(offset, limit, query, queryTableCount);
+            return result;
+        } finally {
+            if(StringUtils.isNotBlank(query)){
+                dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "metadata");
+            }
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    //公共租户下 - 元数据展示的 获取数据表 分页
+    @GET
+    @Path("/public/table")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<TableEntity> getPublicTableList(@HeaderParam("tenantId") String tenantId,
+                                                @QueryParam("active") @DefaultValue("true") Boolean active,
+                                                @QueryParam("schemaId") String schemaId,
+                                                @QueryParam("queryInfo") @DefaultValue("false") boolean queryInfo,
+                                                @QueryParam("query") String query, @QueryParam("bizTreeId") String bizTreeId,
+                                                @QueryParam("sourceId") @DefaultValue("")String sourceId,
+                                                @QueryParam("offset") long offset, @QueryParam("limit") long limit,
+                                                @QueryParam("isView") @DefaultValue("") String isViewStr) {
+        AtlasPerfTracer perf = null;
+        Long start = System.currentTimeMillis();
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getPublicTableList(" + schemaId + "," + limit + "," + offset + " )");
+            }
+            Boolean isView = StringUtils.isEmpty(isViewStr) ? null : Boolean.parseBoolean(isViewStr);
+            String queryTenantIdParam = null;
+            PageResult<TableEntity> result = null;
+            // bizTreeId 不为空则是查询当前租户下的
+            if(StringUtils.isNotBlank(bizTreeId)){
+                Map<String, String> map = EntityUtil.decodeBusinessId(bizTreeId);
+                queryTenantIdParam = map.get("tenantId");
+                result = searchService.getTable(schemaId, offset, limit, query, isView, queryInfo, queryTenantIdParam, sourceId);
+                return result;
+            }
+            //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
+            if(!isConfigGloble()){
+                queryTenantIdParam = tenantId;
+                result = searchService.getTable(schemaId, offset, limit, query, isView, queryInfo, queryTenantIdParam, sourceId);
+                return result;
+            }
+            //多租户下的数据查询
+            return searchService.getPublicTable(schemaId,  offset,  limit,  query,  isView, queryInfo);
         } finally {
             if(StringUtils.isNotBlank(query)){
                 dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "metadata");
