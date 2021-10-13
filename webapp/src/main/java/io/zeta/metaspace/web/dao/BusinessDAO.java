@@ -538,6 +538,21 @@ public interface BusinessDAO {
             ")")
     List<BusinessInfo> queryAllAuthBusinessByCategoryId(@Param("categoryGuid")String categoryGuid, @Param("tenantId")String tenantId, @Param("userId")String userId);
 
+    //查询业务目录下业务对象数量
+    @Select("select count(bi.businessid) count " +
+            "from businessinfo bi " +
+            "join business_relation br on bi.businessid = br.businessid " +
+            "where bi.tenantid=#{tenantId} and br.categoryguid=#{categoryGuid} " +
+            "and " +
+            "(" +
+            "bi.private_status='PUBLIC' or (bi.submitter=#{userId} and bi.submitter_read=true) " +
+            "or " +
+            "(select count(*) from business_2_group b2g " +
+            "join user_group_relation ugr on ugr.group_id = b2g.group_id and ugr.user_id=#{userId} " +
+            "where b2g.business_id=bi.businessid and b2g.read=true)>0" +
+            ")")
+    int getBusinessCountByCategoryId(@Param("categoryGuid")String categoryGuid, @Param("tenantId")String tenantId, @Param("userId")String userId);
+
 
     @Select("<script>" +
             "select bi.name, bi.module module, " +

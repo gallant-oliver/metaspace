@@ -33,10 +33,7 @@ import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.CategoryExport;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
-import io.zeta.metaspace.model.result.CategoryPrivilege;
-import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
-import io.zeta.metaspace.model.result.CategorycateQueryResult;
-import io.zeta.metaspace.model.result.GroupPrivilege;
+import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
@@ -193,12 +190,7 @@ public class BusinessCatalogueService implements Approvable {
                 if (!Objects.isNull(oneLevelCategory)) {
                     oneLevelCategory.setCode(entity.getCode());
                 }
-//                if (CategoryPrivateStatus.PRIVATE.equals(entity.getPrivateStatus())){
-//                    List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(entity.getCreator(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
-//                    if (userGroupIds!=null && !userGroupIds.isEmpty()) {
-//                        userGroupDAO.insertGroupRelations(userGroupIds, entity.getGuid(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
-//                    }
-//                }
+
                 //目录是否需要发布，如果需要发布，则需要选择审批组,记录审批信息
                 if (publish) {
                     LOG.info("发起审批:" + approveGroupId);
@@ -1116,9 +1108,8 @@ public class BusinessCatalogueService implements Approvable {
             boolean isUserGroup = userGroupIds == null || userGroupIds.size() == 0;
             //目录管理权限
             boolean isAdmin = modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId() == module.getModuleId());
+            List<CategorycateQueryResult> valuesList=new ArrayList<>();
             List<CategorycateQueryResult> categories=userGroupDAO.getAllCategory(userGroupIds,type,tenantId,userId);
-            //删除查看权限不足的目录
-            removeNoParentCategory(categories);
 
             String status1=String.valueOf(Status.AUDITING.getIntValue());
             for(CategorycateQueryResult result:categories){
@@ -1127,14 +1118,17 @@ public class BusinessCatalogueService implements Approvable {
                 String guid=result.getGuid();
                 String privateStatus=result.getPrivateStatus();
                 String status=result.getStatus();
+                int count=businessDAO.getBusinessCountByCategoryId(guid,tenantId,userId);
+                result.setCount(count);
                 if(CategoryPrivateStatus.PUBLIC.name().equals(privateStatus)){
                     if(String.valueOf(Status.REJECT.getIntValue()).equals(status) ||String.valueOf(Status.ACTIVE.getIntValue()).equals(status) ){
                         edit=true;
                     }
                     CategoryPrivilege.Privilege privilege=new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
                     result.setPrivilege(privilege);
+                    valuesList.add(result);
                 }else {
-                    CategoryPrivilegeV2 userGroupPrivilege=getCataPrivilege(userGroupIds,guid);
+                    UserGroupPrivilege userGroupPrivilege=getCataPrivilege(userGroupIds,guid);
                     if(null !=userGroupPrivilege){
                         result.setEditCategory(userGroupPrivilege.getEditCategory());
                         result.setEditItem(userGroupPrivilege.getEditItem());
@@ -1148,6 +1142,11 @@ public class BusinessCatalogueService implements Approvable {
                     }else {
                         delete=true;
                         edit=true;
+                        //如果当前用户创建的目录已加入其他用户组（其中无当前用户），则该用户不可见
+                        int cnt=userGroupDAO.getCateUserGroupRelationNum(guid);
+                        if(cnt>0){
+                            continue;
+                        }
                     }
                     if(status1.equals(status)){
                         delete=false;
@@ -1155,9 +1154,12 @@ public class BusinessCatalogueService implements Approvable {
                     }
                     CategoryPrivilege.Privilege privilege=new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
                     result.setPrivilege(privilege);
+                    valuesList.add(result);
                 }
             }
-            return categories;
+            //删除查看权限不足的目录
+            removeNoParentCategory(valuesList);
+            return valuesList;
         } catch (MyBatisSystemException e) {
             LOG.error("数据库服务异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常:"+e.getMessage());
@@ -1174,11 +1176,29 @@ public class BusinessCatalogueService implements Approvable {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             List<String> userGroupIds = userGroupDAO.getAlluserGroupByUsersId(userId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
-            //目录管理权限
+            List<CategoryEntityV2> valuesList=new ArrayList<>();
             List<CategoryEntityV2> categories=userGroupDAO.getAllCategoryByCommonTenant(userGroupIds,type,userId);
+            for(CategoryEntityV2 result:categories){
+                String guid=result.getGuid();
+                String privateStatus=result.getPrivateStatus().name();
+                if(CategoryPrivateStatus.PUBLIC.name().equals(privateStatus)){
+                    valuesList.add(result);
+                }else {
+                    UserGroupPrivilege userGroupPrivilege=getCataPrivilege(userGroupIds,guid);
+                    if(null ==userGroupPrivilege){
+                        //如果当前用户创建的目录已加入其他用户组（其中无当前用户），则该用户不可见
+                        int cnt=userGroupDAO.getCateUserGroupRelationNum(guid);
+                        if(cnt>0){
+                            continue;
+                        }
+                    }
+                    valuesList.add(result);
+                }
+            }
+
             //删除查看权限不足的目录
-            removeNoParentCategory2(categories);
-            return categories;
+            removeNoParentCategory2(valuesList);
+            return valuesList;
         } catch (MyBatisSystemException e) {
             LOG.error("数据库服务异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常:"+e.getMessage());
@@ -1187,13 +1207,13 @@ public class BusinessCatalogueService implements Approvable {
         }
     }
 
-    public CategoryPrivilegeV2 getCataPrivilege(List<String> userGroupIds, String guid){
-        CategoryPrivilegeV2  privilege=new CategoryPrivilegeV2();
-        List<CategoryPrivilegeV2>  list=userGroupDAO.getCataUserGroupPrivilege(guid,userGroupIds);
+    public UserGroupPrivilege getCataPrivilege(List<String> userGroupIds, String guid){
+        UserGroupPrivilege  privilege=new UserGroupPrivilege();
+        List<UserGroupPrivilege>  list=userGroupDAO.getCataUserGroupPrivilege(guid,userGroupIds);
         if(list==null || list.size()==0 ){
             return  null;
         }
-        for(CategoryPrivilegeV2 cp:list){
+        for(UserGroupPrivilege cp:list){
             privilege.setRead(false);
             privilege.setEditCategory(false);
             privilege.setEditItem(false);

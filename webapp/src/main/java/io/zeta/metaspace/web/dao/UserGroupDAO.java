@@ -1401,9 +1401,13 @@ public interface UserGroupDAO {
             "</foreach>"+
             "</if>" +
             "</script>"})
-    public List<CategoryPrivilegeV2> getCataUserGroupPrivilege(@Param("guid") String guid, @Param("userGroupIds") List<String> userGroupIds);
+    public List<UserGroupPrivilege> getCataUserGroupPrivilege(@Param("guid") String guid, @Param("userGroupIds") List<String> userGroupIds);
 
 
     @Select("select g.*,g.tenant tenantId from user_group g join user_group_relation u on g.id=u.group_id where u.user_id=#{userId} and g.valid=true")
     public List<UserGroup> getAlluserGroupByUsersId(@Param("userId") String userId);
+
+
+    @Select("select count(*) from category_group_relation where category_id=#{guid}")
+    int getCateUserGroupRelationNum(@Param("guid") String guid);
 }
