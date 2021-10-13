@@ -37,7 +37,6 @@ import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.service.Approve.Approvable;
 import io.zeta.metaspace.web.service.Approve.ApproveService;
@@ -659,6 +658,25 @@ public class BusinessCatalogueService implements Approvable {
         if (systemCategoryGuids.size() != 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内容不合规范，不包含初始目录，请使用全局导出的文件");
         }
+        //全局导入时，目录id新赋值
+        for(CategoryEntityV2 cate: categories){
+            String guid=cate.getGuid();
+            String newGuid= UUID.randomUUID().toString();
+            for(CategoryEntityV2 cate2: categories){
+                if(guid.equals(cate2.getGuid())){
+                    cate2.setGuid(newGuid);
+                }
+                if(guid.equals(cate2.getParentCategoryGuid())){
+                    cate2.setParentCategoryGuid(newGuid);
+                }
+                if(guid.equals(cate2.getUpBrotherCategoryGuid())){
+                    cate2.setUpBrotherCategoryGuid(newGuid);
+                }
+                if(guid.equals(cate2.getDownBrotherCategoryGuid())){
+                    cate2.setDownBrotherCategoryGuid(newGuid);
+                }
+            }
+        }
         return categories;
     }
 
@@ -783,10 +801,14 @@ public class BusinessCatalogueService implements Approvable {
      * @throws Exception
      */
     @Transactional(rollbackFor = Exception.class)
-    public void importAllCategory(File fileInputStream, int type, String tenantId) throws Exception {
+    public void importAllCategory(File fileInputStream, Integer type, String tenantId) throws Exception {
+        if (null==type) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录类型不能为空");
+        }
         if (!fileInputStream.exists()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件丢失，请重新上传");
         }
+
         Set<CategoryEntityV2> all = categoryDao.getAll(type, tenantId);
         if (all != null) {
             int size = all.size();
