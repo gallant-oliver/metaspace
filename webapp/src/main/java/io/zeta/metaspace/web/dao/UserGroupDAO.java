@@ -240,8 +240,15 @@ public interface UserGroupDAO {
     @Select("select g.*,g.tenant tenantId from user_group g join user_group_relation u on g.id=u.group_id where u.user_id=#{userId} and g.valid=true and tenant=#{tenantId}")
     public List<UserGroup> getuserGroupByUsersId(@Param("userId") String userId,@Param("tenantId") String tenantId);
 
-    @Select("select g.*,g.tenant tenantId from user_group g join user_group_relation u on g.id=u.group_id where u.user_id=#{userId} and g.valid=true ")
-    public List<UserGroup> getuserGroupByUid(@Param("userId") String userId);
+    @Select("<script>" +
+            "select g.*,g.tenant tenantId from user_group g join user_group_relation u on g.id=u.group_id where u.user_id=#{userId} and g.valid=true " +
+            " and tenant in  "+
+            "<foreach collection='list' item='tid' index='index' separator=',' open='(' close=')'>"+
+            "#{tid}"+
+            "</foreach>"+
+            "</script>"
+    )
+    public List<UserGroup> getuserGroupByUid(@Param("userId") String userId,@Param("list") List<String> tenantParamList);
 
     @Select("select * from category where categoryType=#{categoryType} and tenantid=#{tenantId}")
     public List<RoleModulesCategories.Category> getAllCategorys(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
