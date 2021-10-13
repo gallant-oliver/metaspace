@@ -14,4 +14,6 @@ public class GroupDeriveTableRelation {
     private Boolean importancePrivilege;
 
     private Boolean securityPrivilege;
+
+    private String tenantId;
 }
