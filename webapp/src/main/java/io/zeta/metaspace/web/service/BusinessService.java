@@ -56,6 +56,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -115,6 +116,9 @@ public class BusinessService implements Approvable {
     @Autowired
     ApproveService approveServiceImp;
 
+    @Autowired
+    BusinessCatalogueService businessCatalogueService;
+
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
 
@@ -166,7 +170,7 @@ public class BusinessService implements Approvable {
             // 默认私密状态为私密
             info.setPrivateStatus("PRIVATE");
 
-            // 手动添加方式
+            // 手动添加方式：0手动添加，1上传文件
             info.setCreateMode(0);
 
             // 添加 “创建人可见” 逻辑
@@ -403,31 +407,39 @@ public class BusinessService implements Approvable {
             List<BusinessInfoHeader> businessInfoList = null;
             List<String> categoryIds = new ArrayList<>();
 
-            //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
-                if (roles.stream().allMatch(role -> role.getStatus() == 0))
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-                for (Role role : roles) {
-                    if (role.getStatus() == 0) {
-                        continue;
-                    }
-                    String roleId = role.getRoleId();
-                    List<String> category = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
-                    for (String categoryId : category) {
-                        if (!categoryIds.contains(categoryId)) {
-                            categoryIds.add(categoryId);
+            if (StringUtils.isEmpty(tenantId)) {
+                List<CategoryEntityV2> categoryBusiness = businessCatalogueService.getCategoryBusiness(1);
+                if (CollectionUtils.isNotEmpty(categoryBusiness)) {
+                    categoryIds = categoryBusiness.stream().map(c -> c.getGuid()).collect(Collectors.toList());
+                }
+            }
+            else {
+                //判断独立部署和多租户
+                if (TenantService.defaultTenant.equals(tenantId)) {
+                    List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
+                    if (roles.stream().allMatch(role -> role.getStatus() == 0))
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
+                    for (Role role : roles) {
+                        if (role.getStatus() == 0) {
+                            continue;
+                        }
+                        String roleId = role.getRoleId();
+                        List<String> category = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
+                        for (String categoryId : category) {
+                            if (!categoryIds.contains(categoryId)) {
+                                categoryIds.add(categoryId);
+                            }
                         }
                     }
-                }
-            } else {
-                Map<String, CategoryPrivilegeV2> categories = userGroupService.getUserPrivilegeCategory(tenantId, BUSINESS_TYPE, false);
-                for (CategoryPrivilegeV2 category : categories.values()) {
-                    if (!category.getEditItem()) {
-                        continue;
-                    }
-                    if (!categoryIds.contains(category.getGuid())) {
-                        categoryIds.add(category.getGuid());
+                } else {
+                    Map<String, CategoryPrivilegeV2> categories = userGroupService.getUserPrivilegeCategory(tenantId, BUSINESS_TYPE, false);
+                    for (CategoryPrivilegeV2 category : categories.values()) {
+                        if (!category.getEditItem()) {
+                            continue;
+                        }
+                        if (!categoryIds.contains(category.getGuid())) {
+                            categoryIds.add(category.getGuid());
+                        }
                     }
                 }
             }
@@ -1590,7 +1602,7 @@ public class BusinessService implements Approvable {
             info.setPublish(false);
             info.setStatus(Status.FOUNDED.getIntValue() + "");
             info.setPrivateStatus("PRIVATE");
-            // 上传文件添加方式
+            // 上传文件添加方式：0手动添加，1上传文件
             info.setCreateMode(1);
             // 创建人可见
             info.setSubmitterRead(true);
