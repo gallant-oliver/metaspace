@@ -507,7 +507,7 @@ public interface CategoryDAO {
 
 
     @Select("select * from category where categoryType=#{categoryType}")
-    Set<CategoryEntityV2> selectGlobal(@Param("categoryType") int categoryType);
+    Set<CategoryEntityV2> selectGlobal(@Param("categoryType") Integer categoryType);
 
     @Select("<script>" +
             " SELECT * FROM category WHERE private_status = 'PUBLIC' AND categorytype = 0" +

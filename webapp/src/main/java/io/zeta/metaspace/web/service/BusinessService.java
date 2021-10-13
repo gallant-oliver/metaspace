@@ -453,7 +453,7 @@ public class BusinessService implements Approvable {
             PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
-            List<BusinessInfoHeader> list = businessDao.queryBusinessByCatetoryId(categoryId, limit, offset, tenantId);
+            List<BusinessInfoHeader> list = businessDao.selectByCategoryIdGlobal(categoryId, limit, offset, tenantId);
             String path = CategoryRelationUtils.getPath(categoryId, tenantId);
             StringJoiner joiner = null;
             String[] pathArr = path.split("/");

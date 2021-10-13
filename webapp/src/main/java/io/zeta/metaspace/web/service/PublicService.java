@@ -91,7 +91,7 @@ public class PublicService {
      * @return
      */
     public Set<CategoryEntityV2> getCategoryGlobal(Integer categoryType) {
-        return categoryDAO.selectGlobal(0);
+        return categoryDAO.selectGlobal(categoryType);
     }
 
     /**
@@ -106,33 +106,19 @@ public class PublicService {
             User user = AdminUtils.getUserData();
             //获取用户组
             List<UserGroup> userGroups = userGroupDAO.selectListByUsersId(user.getUserId());
-            List<String> userGroupIds = new ArrayList<>();
-            if (CollectionUtils.isNotEmpty(userGroups)) {
-                userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            List<String> userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            if (categoryType == 0) {
+                categoryEntityV2s = categoryDAO.selectListByStatus(user.getUserId(), userGroupIds, categoryType);
+            } else {
+                //目录管理权限
+                List<CategoryEntityV2> categories = userGroupDAO.getAllCategoryByCommonTenant(userGroupIds, categoryType, user.getUserId());
+                categoryEntityV2s = new HashSet<>(categories);
             }
-            categoryEntityV2s = categoryDAO.selectListByStatus(user.getUserId(), userGroupIds, categoryType);
             removeNoParentCategory(categoryEntityV2s);
         } catch (AtlasBaseException e) {
             log.error("getCategoryGeneral exception {}", e);
         }
         return categoryEntityV2s;
-    }
-
-    /**
-     * 获取业务目录-非全局用户
-     *
-     * @return
-     */
-    public Set<CategoryEntityV2> getCategoryBusiness() {
-        User user = AdminUtils.getUserData();
-        //获取用户组
-        List<UserGroup> userGroups = userGroupDAO.selectListByUsersId(user.getUserId());
-        List<String> userGroupIds = new ArrayList<>();
-        if (CollectionUtils.isNotEmpty(userGroups)) {
-            userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
-        }
-        // TODO: 2021/10/11 获取业务目录-非全局用户
-        return null;
     }
 
     /**

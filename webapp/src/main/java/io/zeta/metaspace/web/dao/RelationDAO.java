@@ -344,7 +344,7 @@ public interface RelationDAO {
                     "   data_source.source_id AS sourceId," +
                     "   data_source.source_type AS dataSourceType," +
                     "   source_info.category_id AS categoryGuid," +
-                    "   source_info.tenant_id AS tenantId" +
+                    "   source_info.tenant_id AS tenantId," +
                     "   source_info.id AS sourceInfoId," +
                     " CASE" +
                     "      data_source.source_type" +

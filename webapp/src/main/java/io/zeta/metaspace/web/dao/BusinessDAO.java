@@ -23,7 +23,6 @@ import org.apache.ibatis.annotations.*;
 
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Map;
 
 /*
  * @description
@@ -197,6 +196,21 @@ public interface BusinessDAO {
              " offset #{offset}",
              " </script>"})
     public List<BusinessInfoHeader> queryBusinessByCatetoryId(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset,@Param("tenantId")String tenantId);
+
+    @Select({"<script>",
+            " select count(*)over() total,businessInfo.businessId,businessInfo.trustTable,businessInfo.businessId as businessIdVal,businessInfo.name,businessInfo.tenantId as tenantId,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber, business_relation.categoryGuid from businessInfo",
+            " join business_relation",
+            " on",
+            " businessInfo.businessId = business_relation.businessId",
+            " where businessInfo.tenantid=#{tenantId} and ",
+            " business_relation.categoryGuid=#{categoryGuid} order by technicalStatus,businessInfo.businessLastUpdate desc",
+            " <if test='limit!= -1'>",
+            " limit #{limit}",
+            " </if>",
+            " offset #{offset}",
+            " </script>"})
+    List<BusinessInfoHeader> selectByCategoryIdGlobal(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset,@Param("tenantId")String tenantId);
+
 
 
     //更新技术信息操作者及更新时间

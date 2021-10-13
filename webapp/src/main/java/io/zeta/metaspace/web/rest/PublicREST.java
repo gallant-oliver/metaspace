@@ -42,7 +42,7 @@ public class PublicREST {
     }
 
     /**
-     * 获取关联关系
+     * 获取关联关系-技术目录
      *
      * @param categoryGuid
      * @return
@@ -89,6 +89,7 @@ public class PublicREST {
 
     /**
      * 业务对象搜索
+     *
      * @param parameters
      * @return
      * @throws AtlasBaseException

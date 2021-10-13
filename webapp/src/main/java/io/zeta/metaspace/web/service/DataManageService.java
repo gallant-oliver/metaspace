@@ -163,6 +163,8 @@ public class DataManageService {
     private AtlasEntityStore atlasEntityStore;
     @Autowired
     private DataManageService dataManageService;
+    @Autowired
+    private PublicService publicService;
     int technicalType = 0;
     int dataStandType = 3;
     int technicalCount = 5;
@@ -1003,10 +1005,7 @@ public class DataManageService {
             List<RelationEntityV2> relations = new ArrayList<>();
             User user = AdminUtils.getUserData();
             List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
-            List<String> groupIds = new ArrayList<>();
-            if (!CollectionUtils.isEmpty(groups)) {
-                groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
-            }
+            List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
             relations = relationDao.queryRelationByCategoryGuidV2(categoryGuid, limit, offset, tenantId);
             if (!CollectionUtils.isEmpty(relations)) {
                 for (RelationEntityV2 entity : relations) {
@@ -1253,9 +1252,12 @@ public class DataManageService {
             if (StringUtils.isNotEmpty(tag)) {
                 tag = tag.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
             }
-
-            // TODO: 2021/10/11 获取非全局用户的业务目录
-
+            User user = AdminUtils.getUserData();
+            //获取用户组
+            List<UserGroup> userGroups = userGroupDAO.selectListByUsersId(user.getUserId());
+            List<String> userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            Set<CategoryEntityV2> categoryEntityV2s = categoryDAO.selectListByStatus(user.getUserId(), userGroupIds, 0);
+            categoryEntityV2s.forEach(categoryEntityV2 -> categoryIds.add(categoryEntityV2.getGuid()));
             if (!CollectionUtils.isEmpty(categoryIds)) {
                 list = relationDao.queryByTableNameV2General(tableName, tag, categoryIds, limit, offset);
             }
@@ -1265,18 +1267,8 @@ public class DataManageService {
                 List<String> tableTagNameList = tableTageList.stream().map(tableTag -> tableTag.getTagName()).collect(Collectors.toList());
                 entity.setTableTagList(tableTagNameList);
             });
-
             //path
             getPathGlobal(list);
-
-            //获取用户组
-            User user = AdminUtils.getUserData();
-            List<UserGroup> userGroups = userGroupDAO.selectListByUsersId(user.getUserId());
-            List<String> userGroupIds = new ArrayList<>();
-            if (org.apache.commons.collections4.CollectionUtils.isNotEmpty(userGroups)) {
-                userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
-            }
-
             //dataOwner
             for (RelationEntityV2 entity : list) {
                 String tableGuid = entity.getTableGuid();
