@@ -292,8 +292,16 @@ public interface TableDAO {
             "   #{item}" +
             " </foreach>" +
             " UNION" +
-            " select '' as tenantId,tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description,'hive' as source_id,'hive' AS source_name" +
+            " select te.id as tenantId,tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description,'hive' as source_id,'hive' AS source_name" +
             " from tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid" +
+            " <if test='tenantIdList != null and tenantIdList.size() > 0'>" +
+            " INNER JOIN (select id from tenant tmp where tmp.id in  " +
+            " <foreach collection='tenantList' item='item' separator=',' open='(' close=')'>" +
+            "  #{item}" +
+            " </foreach>" +
+            " ) te on 1=1 "+
+            " </if>" +
+
             " WHERE  tb.status = 'ACTIVE' AND tb.databasestatus = 'ACTIVE' AND tb.tablename like concat('%',#{tableName},'%') AND db.db_type = 'HIVE' AND tb.dbname in " +
             " <foreach item='item' index='index' collection='dbNameList' open='(' separator=',' close=')'>" +
             "   #{item}" +
