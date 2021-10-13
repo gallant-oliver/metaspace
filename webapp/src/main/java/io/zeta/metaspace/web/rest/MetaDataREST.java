@@ -115,23 +115,13 @@ public class MetaDataREST {
     SourceInfoDeriveTableInfoService sourceInfoDeriveTableInfoService;
     @Autowired
     private TenantService tenantService;
-    @Autowired
-    private UserPermissionDAO userPermissionDAO;
 
     @Inject
     public MetaDataREST(final MetaDataService metadataService) {
         this.metadataService = metadataService;
     }
 
-    /**
-     * 当前账户是否配置全局权限
-     * @return true：已配置全局权限
-     */
-    private boolean isConfigGloble(){
-        User user = AdminUtils.getUserData();
-        UserPermissionPO userPermissionPO = userPermissionDAO.selectListByUsersId(user.getUserId());
-        return userPermissionPO != null;
-    }
+
     @GET
     @Path("/tenantId")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -144,7 +134,7 @@ public class MetaDataREST {
             }
             List<TenantExtInfo> tenants =  new ArrayList<>();
             //查看是否配置全局权限，配置则查看所有租户信息，否则只显示当前租户
-            if( isConfigGloble() ){
+            if( metadataService.isConfigGloble() ){
                 List<Tenant> tenantList = tenantService.getTenants();
                 if(CollectionUtils.isNotEmpty(tenantList)){
                     TenantExtInfo tenant = null;
@@ -191,7 +181,13 @@ public class MetaDataREST {
     @Path("/info/schema/{schemaId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Database getDatabase(@PathParam("schemaId") String schemaId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId")@DefaultValue("") String sourceId) throws AtlasBaseException {
+    public Database getDatabase(@QueryParam("bizTreeId")String bizTreeId,@PathParam("schemaId") String schemaId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId")@DefaultValue("") String sourceId) throws AtlasBaseException {
+        if(StringUtils.isNotBlank(bizTreeId)){
+            Map<String,String> map = EntityUtil.decodeBusinessId(bizTreeId);
+            if(map != null){
+                tenantId = map.get("tenantId");
+            }
+        }
         return metadataService.getDatabase(schemaId, tenantId,sourceId);
     }
 
@@ -274,7 +270,7 @@ public class MetaDataREST {
                 queryTenantIdParam = map.get("tenantId");
             }else{
                 //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
-                if(!isConfigGloble()){
+                if(!metadataService.isConfigGloble()){
                     queryTenantIdParam = tenantId;
                 }else{
                     //全局权限下的，每个租户下都包含
@@ -379,7 +375,7 @@ public class MetaDataREST {
                 return result;
             }
             //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
-            if(!isConfigGloble()){
+            if(!metadataService.isConfigGloble()){
                 queryTenantIdParam = tenantId;
                 result = searchService.getDatabases(sourceId, offset, limit, query, queryTenantIdParam, queryTableCount);
                 return result;
@@ -425,7 +421,7 @@ public class MetaDataREST {
                 return result;
             }
             //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
-            if(!isConfigGloble()){
+            if(!metadataService.isConfigGloble()){
                 queryTenantIdParam = tenantId;
                 result = searchService.getTable(schemaId, offset, limit, query, isView, queryInfo, queryTenantIdParam, sourceId);
                 return result;
@@ -1156,7 +1152,14 @@ public class MetaDataREST {
     @Path("/rdbms/table/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public RDBMSTable getTableInfoById(@PathParam("tableId") String tableId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
+    public RDBMSTable getTableInfoById(@QueryParam("bizTreeId")String bizTreeId,@PathParam("tableId") String tableId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
+        if(StringUtils.isNotBlank(bizTreeId)){
+            Map<String,String> map = EntityUtil.decodeBusinessId(bizTreeId);
+            if(map != null){
+                tenantId = map.get("tenantId");
+            }
+        }
+
         RDBMSTable table = metadataService.getRDBMSTableInfoById(tableId, tenantId,sourceId);
         if(StringUtils.isNotBlank(sourceId)){
             if("hive".equalsIgnoreCase(sourceId)){
