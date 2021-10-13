@@ -16,9 +16,10 @@ public class CategorycateQueryResult {
     private String downBrotherCategoryGuid;
     private String description;
     private String qualifiedName;
-    private int level;
+    private Integer level;
     private String code;
     private Integer sort;
+    private Integer count;
     private String status;
     private String privateStatus;
     private Boolean publish;
