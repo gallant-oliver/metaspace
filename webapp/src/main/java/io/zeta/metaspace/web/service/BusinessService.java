@@ -507,34 +507,14 @@ public class BusinessService implements Approvable {
                 if (CollectionUtils.isNotEmpty(categoryBusiness)) {
                     categoryIds = categoryBusiness.stream().map(c -> c.getGuid()).collect(Collectors.toList());
                 }
-            }
-            else {
-                //判断独立部署和多租户
-                if (TenantService.defaultTenant.equals(tenantId)) {
-                    List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
-                    if (roles.stream().allMatch(role -> role.getStatus() == 0))
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-                    for (Role role : roles) {
-                        if (role.getStatus() == 0) {
-                            continue;
-                        }
-                        String roleId = role.getRoleId();
-                        List<String> category = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
-                        for (String categoryId : category) {
-                            if (!categoryIds.contains(categoryId)) {
-                                categoryIds.add(categoryId);
-                            }
-                        }
+            } else {
+                Map<String, CategoryPrivilegeV2> categories = userGroupService.getUserPrivilegeCategory(tenantId, BUSINESS_TYPE, false);
+                for (CategoryPrivilegeV2 category : categories.values()) {
+                    if (!category.getEditItem()) {
+                        continue;
                     }
-                } else {
-                    Map<String, CategoryPrivilegeV2> categories = userGroupService.getUserPrivilegeCategory(tenantId, BUSINESS_TYPE, false);
-                    for (CategoryPrivilegeV2 category : categories.values()) {
-                        if (!category.getEditItem()) {
-                            continue;
-                        }
-                        if (!categoryIds.contains(category.getGuid())) {
-                            categoryIds.add(category.getGuid());
-                        }
+                    if (!categoryIds.contains(category.getGuid())) {
+                        categoryIds.add(category.getGuid());
                     }
                 }
             }
@@ -551,6 +531,9 @@ public class BusinessService implements Approvable {
             }
 
             for (BusinessInfoHeader infoHeader : businessInfoList) {
+                if(StringUtils.isEmpty(tenantId)){
+                    tenantId = infoHeader.getTenantId();
+                }
                 String path = CategoryRelationUtils.getPath(infoHeader.getCategoryGuid(), tenantId);
                 StringJoiner joiner = new StringJoiner(".");
                 joiner.add(path);
