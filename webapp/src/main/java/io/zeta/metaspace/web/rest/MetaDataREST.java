@@ -249,6 +249,7 @@ public class MetaDataREST {
 
     /**
      * 公共租户下 - 元数据展示的查询数据源列表
+     * 每个租户下都有一个hive
      */
     @GET
     @Path("/public/datasource")
@@ -265,6 +266,8 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getPublicDataSourceList");
             }
             String queryTenantIdParam = null;
+            boolean hasHive = offset == 0 && (query == null || "hive".contains(query));
+            boolean globalConfig = false;
             // bizTreeId 不为空则是查询当前租户下的
             if(StringUtils.isNotBlank(bizTreeId)){
                 Map<String, String> map = EntityUtil.decodeBusinessId(bizTreeId);
@@ -273,11 +276,14 @@ public class MetaDataREST {
                 //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
                 if(!isConfigGloble()){
                     queryTenantIdParam = tenantId;
+                }else{
+                    //全局权限下的，每个租户下都包含
+                    globalConfig = true;
                 }
             }
 
             DataSourceHead hive = new DataSourceHead();
-            if (offset == 0 && (query == null || "hive".contains(query))) {
+            if (hasHive) {
                 hive.setSourceType("hive");
                 hive.setSourceName("hive");
                 hive.setSourceId("hive");
@@ -287,7 +293,27 @@ public class MetaDataREST {
                 }
             }
             PageResult<DataSourceHead> pageResult = dataSourceService.searchDataSources(limit, offset, null, null, query, sourceType, null, null, null, true, queryTenantIdParam);
-            if (offset == 0 && (query == null || "hive".contains(query))) {
+            if(globalConfig){
+                List<DataSourceHead> list = new ArrayList<>();
+                if(offset == 0 && "hive".contains(query)){
+                    List<Tenant> tenants = tenantService.getTenants();
+                    for (Tenant v : tenants){
+                        hive = new DataSourceHead();
+                        hive.setSourceType("hive");
+                        hive.setSourceName("hive");
+                        hive.setSourceId("hive");
+                        hive.setBizTreeId(EntityUtil.generateBusinessId(v.getTenantId(),"hive","",""));
+                        list.add(hive);
+                    }
+                }
+                if(CollectionUtils.isNotEmpty(list)){
+                    pageResult.getLists().addAll(0,list);
+                    pageResult.setCurrentSize(pageResult.getCurrentSize() + list.size());
+                    pageResult.setTotalSize(pageResult.getTotalSize() + list.size());
+                    return pageResult;
+                }
+            }
+            if (hasHive) {
                 pageResult.getLists().add(0, hive);
                 pageResult.setCurrentSize(pageResult.getCurrentSize() + 1);
                 pageResult.setTotalSize(pageResult.getTotalSize() + 1);

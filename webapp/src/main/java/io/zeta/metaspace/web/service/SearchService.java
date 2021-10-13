@@ -18,6 +18,7 @@ import io.zeta.metaspace.model.security.Tenant;
 import io.zeta.metaspace.model.table.DataSourceHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.usergroup.TenantGroup;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
@@ -155,10 +156,21 @@ public class SearchService {
             List<Database> databaseList = new ArrayList<>();
             //获取当前租户下用户所属用户组
             User user = AdminUtils.getUserData();
-            List<UserGroup> groups = userGroupDAO.getuserGroupByUid(user.getUserId());
-            List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
-
             List<Tenant> tenants = tenantService.getTenants();
+            List<String> tenantParamList = tenants.stream().map(Tenant::getTenantId).collect(Collectors.toList());
+            List<UserGroup> groups = userGroupDAO.getuserGroupByUid(user.getUserId(),tenantParamList);
+            List<TenantGroup> tenantGroups = new ArrayList<>();
+            TenantGroup tenantGroup = null;
+            List<String> configTenantList = groups.stream().map(UserGroup::getTenantId).distinct().collect(Collectors.toList());
+            for (String v : configTenantList){
+                tenantGroup = new TenantGroup();
+                tenantGroup.setTenantId(v);
+                tenantGroup.setGroupList(groups.stream().filter(t->v.equals(t.getTenantId()))
+                        .map(UserGroup::getId).collect(Collectors.toList()));
+                tenantGroups.add(tenantGroup);
+            }
+            //List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
+
             for (Tenant item : tenants){
                 String currentTenantId = item.getTenantId();
                 LOG.info("租户["+currentTenantId+"]下hive的库查询" );
@@ -171,8 +183,8 @@ public class SearchService {
             if(StringUtils.isNotBlank(query)){
                 query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
             }
-            List<String> tenantParamList = tenants.stream().map(Tenant::getTenantId).collect(Collectors.toList());
-            databaseList = databaseInfoDAO.selectByDbNameAndTenantIdList(tenantParamList, groupIds,query, dbList, limit, offset);
+
+            databaseList = databaseInfoDAO.selectByDbNameAndTenantIdList(tenantGroups,query, dbList, limit, offset);
 
             if (CollectionUtils.isEmpty(databaseList)) {
                 return databasePageResult;
