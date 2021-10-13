@@ -37,6 +37,7 @@ import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.table.column.tag.ColumnTag;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.AdapterUtils;
+import io.zeta.metaspace.utils.StringUtil;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.dao.UserPermissionDAO;
 import io.zeta.metaspace.web.service.*;
@@ -76,6 +77,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -196,12 +198,19 @@ public class MetaDataREST {
     @Path("/info/table/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Map<String, Object> getTableTree(@PathParam("guid") String guid, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
+    public Map<String, Object> getTableTree(@PathParam("guid") String guid,
+                                            @QueryParam("sourceId") @DefaultValue("") String sourceId,
+                                            @QueryParam("currentTenantId") String currentTenantId,
+                                            @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
 
         Map<String, Object> tableType = metadataService.getTableType(guid);
         if(StringUtils.isNotBlank(sourceId)){
             tableType.put("sourceId", sourceId);
         }
+        String tid = StringUtils.isBlank(currentTenantId) ? tenantId : currentTenantId;
+        tableType.put("bizTreeId",
+                EntityUtil.generateBusinessId(tid, Objects.toString(tableType.get("sourceId"),""),
+                        Objects.toString(tableType.get("schemaId"),""),guid));
         return tableType;
     }
 
