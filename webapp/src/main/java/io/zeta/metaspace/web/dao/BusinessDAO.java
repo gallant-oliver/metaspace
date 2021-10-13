@@ -16,10 +16,7 @@
  */
 package io.zeta.metaspace.web.dao;
 
-import io.zeta.metaspace.model.business.BusinessInfo;
-import io.zeta.metaspace.model.business.BusinessInfoHeader;
-import io.zeta.metaspace.model.business.BusinessRelationEntity;
-import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.business.*;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableHeader;
 import org.apache.ibatis.annotations.*;
@@ -35,8 +32,10 @@ import java.util.List;
 public interface BusinessDAO {
 
     //添加业务信息
-    @Insert("insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets,submitter,submissionTime,businessOperator,businessLastUpdate,ticketNumber,level2CategoryId,tenantid)" +
-            "values(#{info.departmentId},#{info.businessId},#{info.name},#{info.module},#{info.description},#{info.owner},#{info.manager},#{info.maintainer},#{info.dataAssets},#{info.submitter},#{info.submissionTime},#{info.businessOperator},#{info.businessLastUpdate},#{info.ticketNumber},#{info.level2CategoryId},#{tenantId})")
+    @Insert("insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets,submitter,submissionTime,businessOperator,businessLastUpdate,ticketNumber,level2CategoryId,tenantid," +
+            "private_status,status,publish,publish_desc,approve_group_id,submitter_read,create_mode) " +
+            "values(#{info.departmentId},#{info.businessId},#{info.name},#{info.module},#{info.description},#{info.owner},#{info.manager},#{info.maintainer},#{info.dataAssets},#{info.submitter},#{info.submissionTime},#{info.businessOperator},#{info.businessLastUpdate},#{info.ticketNumber},#{info.level2CategoryId},#{tenantId}," +
+            "#{info.privateStatus},#{info.status},#{info.publish},#{info.publishDesc},#{info.approveGroupId},#{info.submitterRead},#{info.createMode})")
     public int insertBusinessInfo(@Param("info") BusinessInfo info,@Param("tenantId")String tenantId);
 
     @Select("select count(1) from businessInfo where name=#{name} and tenantid=#{tenantId}")
@@ -44,7 +43,9 @@ public interface BusinessDAO {
 
     //更新业务信息
     @Update("update businessinfo set name=#{name},module=#{module},description=#{description},owner=#{owner},manager=#{manager}," +
-            "maintainer=#{maintainer},dataAssets=#{dataAssets},businessOperator=#{businessOperator},businessLastUpdate=#{businessLastUpdate} where businessId=#{businessId}")
+            "maintainer=#{maintainer},dataAssets=#{dataAssets},businessOperator=#{businessOperator},businessLastUpdate=#{businessLastUpdate}," +
+            "publish=#{publish},publish_desc=#{publishDesc},approve_group_id=#{approveGroupId},status=#{status} " +
+            "where businessId=#{businessId}")
     public int updateBusinessInfo(BusinessInfo info);
 
     //更新业务信息补充状态
@@ -66,16 +67,18 @@ public interface BusinessDAO {
     @Select("select technicalLastUpdate,technicalOperator from businessinfo where businessId=#{businessId}")
     public TechnologyInfo queryTechnologyInfoByBusinessId(@Param("businessId")String businessId);
 
+    @Select("select technicalLastUpdate,technicalOperator,trusttable as trustTable from businessinfo where businessId=#{businessId}")
+    public TechnologyInfo selectTechnologyInfoByBusinessId(@Param("businessId")String businessId);
+
     //查询业务信息关联的数据库表
     @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid,display_name as displayName,description from tableInfo where tableGuid in(select tableGuid from business2table where status='ACTIVE' and businessId=#{businessId})")
     public List<TechnologyInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
 
     //查询业务信息关联的数据库表-过滤数据源
     @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid," +
-            "COALESCE(display_name,tableName,'') as displayName,description,source_id AS sourceId from tableInfo where status='ACTIVE' and  tableGuid in(select tableGuid from business2table where businessId=#{businessId}) "
-            //"AND (tableInfo.source_id in (SELECT source_id FROM data_source WHERE tenantid = #{tenantId}) or tableInfo.source_id = 'hive')"
+            "COALESCE(display_name,tableName,'') as displayName,description from tableInfo where status='ACTIVE' and  tableGuid in (select tableGuid from business2table where businessId=#{businessId}) "
     )
-    public List<TechnologyInfo.Table> queryTablesByBusinessIdAndTenantId(@Param("businessId") String businessId, @Param("tenantId") String tenantId);
+    List<TechnologyInfo.Table> queryTablesByBusinessIdAndTenantId(@Param("businessId") String businessId);
 
     //添加目录/业务对象关联
     @Insert("insert into business_relation(relationshipGuid,categoryGuid,businessId,generateTime)values(#{relationshipGuid},#{categoryGuid},#{businessId},#{generateTime})")
@@ -104,6 +107,21 @@ public interface BusinessDAO {
              " offset #{offset}",
              " </script>"})
     public List<BusinessInfoHeader> queryBusinessByName(@Param("businessName")String businessName, @Param("ids") List<String> categoryIds, @Param("limit")int limit, @Param("offset") int offset,@Param("tenantId")String tenantId) throws SQLException;
+
+    //根据业务信息名称查询列表(有权限)
+    @Select({"<script>",
+            " select count(*)over() total,businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber, business_relation.categoryGuid,businessInfo.tenantid as tenantId from businessInfo",
+            " join business_relation on",
+            " business_relation.businessId=businessInfo.businessId",
+            " where",
+            " businessInfo.name like concat('%',#{businessName},'%') ESCAPE '/'",
+            " order by businessInfo.businessLastUpdate desc",
+            " <if test='limit!= -1'>",
+            " limit #{limit}",
+            " </if>",
+            " offset #{offset}",
+            " </script>"})
+    List<BusinessInfoHeader> selectBusinessByNameGlobal(@Param("businessName")String businessName, @Param("limit")int limit, @Param("offset") int offset) throws SQLException;
 
     @Select({"<script>",
              " select count(*)over() total,businessInfo.businessId,businessInfo.name,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber,business_relation.categoryGuid from businessInfo",
@@ -179,6 +197,21 @@ public interface BusinessDAO {
              " </script>"})
     public List<BusinessInfoHeader> queryBusinessByCatetoryId(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset,@Param("tenantId")String tenantId);
 
+    @Select({"<script>",
+            " select count(*)over() total,businessInfo.businessId,businessInfo.trustTable,businessInfo.businessId as businessIdVal,businessInfo.name,businessInfo.tenantId as tenantId,businessInfo.businessStatus,businessInfo.technicalStatus,businessInfo.submitter,businessInfo.submissionTime,businessInfo.ticketNumber, business_relation.categoryGuid from businessInfo",
+            " join business_relation",
+            " on",
+            " businessInfo.businessId = business_relation.businessId",
+            " where businessInfo.tenantid=#{tenantId} and ",
+            " business_relation.categoryGuid=#{categoryGuid} order by technicalStatus,businessInfo.businessLastUpdate desc",
+            " <if test='limit!= -1'>",
+            " limit #{limit}",
+            " </if>",
+            " offset #{offset}",
+            " </script>"})
+    List<BusinessInfoHeader> selectByCategoryIdGlobal(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit,@Param("offset") int offset,@Param("tenantId")String tenantId);
+
+
 
     //更新技术信息操作者及更新时间
     @Update("update businessInfo set technicalOperator=#{technicalOperator},technicalLastUpdate=#{technicalLastUpdate} where businessId=#{businessId}")
@@ -253,26 +286,15 @@ public interface BusinessDAO {
     int updateBusinessTrustTableByTableId(@Param("tableId")String tableId, @Param("OldTableId")String OldTableId);
 
     @Select("<script>" +
-            "select businessInfo.name,businessInfo.module,businessInfo.description,businessInfo.owner,businessInfo.manager,businessInfo.maintainer,businessInfo.dataassets,businessInfo.businesslastupdate,businessInfo.businessoperator " +
+            "select businessInfo.name,businessInfo.module,businessInfo.description,businessInfo.owner," +
+            "businessInfo.manager,businessInfo.maintainer,businessInfo.dataassets," +
+            "businessInfo.businesslastupdate,businessInfo.businessoperator " +
             " from businessInfo join business_relation " +
             " on businessInfo.businessId = business_relation.businessId " +
             " where businessInfo.tenantid=#{tenantId} and " +
             " business_relation.categoryGuid=#{categoryId} " +
             " </script>")
     public List<BusinessInfo> getAllBusinessByCategory(@Param("categoryId")String categoryId,@Param("tenantId")String tenantId);
-
-    @Select("<script>" +
-            "select businessInfo.name,businessInfo.module,businessInfo.description,businessInfo.owner,businessInfo.manager,businessInfo.maintainer,businessInfo.dataassets,businessInfo.businesslastupdate,businessInfo.businessoperator " +
-            " from businessInfo join business_relation " +
-            " on businessInfo.businessId = business_relation.businessId " +
-            " where businessInfo.tenantid=#{tenantId} and " +
-            " business_relation.categoryGuid=#{categoryGuid} and " +
-            " businessInfo.businessid in " +
-            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
-            " #{id}" +
-            " </foreach>" +
-            " </script>")
-    public List<BusinessInfo> getBusinessByIds(@Param("ids")List<String> ids,@Param("categoryGuid")String categoryGuid,@Param("tenantId")String tenantId);
 
     @Select("<script>" +
             "select name from businessInfo " +
@@ -282,10 +304,13 @@ public interface BusinessDAO {
 
     //批量添加业务信息
     @Insert("<script>" +
-            "insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets,submitter,submissionTime,businessOperator,businessLastUpdate,ticketNumber,level2CategoryId,tenantid,businessstatus,technicalstatus) " +
+            "insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets,submitter,submissionTime,businessOperator,businessLastUpdate,ticketNumber,level2CategoryId,tenantid,businessstatus,technicalstatus,publish,status,private_status,create_mode,submitter_read) " +
             " values " +
             " <foreach item='info' index='index' collection='infos' separator='),(' open='(' close=')'>" +
-            "#{info.departmentId},#{info.businessId},#{info.name},#{info.module},#{info.description},#{info.owner},#{info.manager},#{info.maintainer},#{info.dataAssets},#{info.submitter},#{info.submissionTime},#{info.businessOperator},#{info.businessLastUpdate},#{info.ticketNumber},#{info.level2CategoryId},#{tenantId},1,0 " +
+            "#{info.departmentId},#{info.businessId},#{info.name},#{info.module},#{info.description},#{info.owner},#{info.manager}," +
+            "#{info.maintainer},#{info.dataAssets},#{info.submitter},#{info.submissionTime},#{info.businessOperator}," +
+            "#{info.businessLastUpdate},#{info.ticketNumber},#{info.level2CategoryId},#{tenantId},1,0,#{info.publish}," +
+            "#{info.status},#{info.privateStatus},#{info.createMode},#{info.submitterRead}" +
             " </foreach>" +
             " </script>")
     public int insertBusinessInfos(@Param("infos") List<BusinessInfo> infos,@Param("tenantId")String tenantId);
@@ -384,4 +409,198 @@ public interface BusinessDAO {
             " offset #{offset} " +
             "</script>")
     public List<Table> getTablesByBusinessAndColumn(@Param("businessIds")List<String> businessIds, @Param("limit")int limit, @Param("offset") int offset);
+
+    @Update("UPDATE businessinfo SET approve_id=#{approveId} WHERE businessid=#{businessId}")
+    void updateApproveIdAndApproveGroupId(@Param("businessId") String businessId, @Param("approveId") String approveId);
+
+    @Select("SELECT bi.businessid businessId, bi.name businessName, bi.departmentid departmentId, c.name departmentName, " +
+            "bi.create_mode createMode, bi.module module, bi.description description, bi.owner owner, bi.manager manager, " +
+            "bi.maintainer maintainer, bi.dataassets dataAssets, bi.publish publish, bi.publish_desc publishDesc " +
+            "FROM businessinfo bi " +
+            "INNER JOIN category c ON c.guid = bi.departmentId " +
+            "WHERE bi.businessid = #{objectId} AND bi.tenantid=#{tenantId}")
+    BusinessInfoBO getBusinessApproveDetails(@Param("objectId")String objectId, @Param("tenantId")String tenantId);
+
+    @Select("<script>" +
+            "SELECT businessid businessId, publish publish, status, private_status privateStatus, submitter " +
+            "FROM businessinfo " +
+            "WHERE tenantid=#{tenantId} AND businessid IN " +
+            "<foreach item='id' index='index' collection='businessIds' separator=',' open='(' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
+            "</script>")
+    List<BusinessInfo> getBusinessPublicStatus(@Param("businessIds")List<String> businessIds, @Param("tenantId")String tenantId);
+
+    @Update("<script>" +
+            "<foreach item='item' index='index' collection='publishStatus' separator=';'>" +
+            "UPDATE businessinfo SET " +
+            "publish=#{item.publish}, status=#{item.status}, private_status=#{item.privateStatus} " +
+            "WHERE businessid=#{item.businessId}" +
+            "</foreach>" +
+            "</script>")
+    void updateBusinessPublicStatus(@Param("publishStatus")List<BusinessInfo> publishStatus);
+
+    //查询业务目录关系业务信息列表（分页）
+    @Results({
+            @Result(property = "tables",javaType = List.class,column = "{businessId = businessIdVal,tenantId = tenantId}",many = @Many(select = "queryTablesByBusinessIdAndTenantId"))
+    })
+    @Select("<script>" +
+            "select bi.businessid businessId, bi.trusttable trustTable, " +
+            "bi.businessid businessIdVal, bi.name, bi.tenantid tenantId, " +
+            "bi.businessstatus businessStatus, bi.technicalstatus technicalStatus, bi.submitter, " +
+            "bi.submissiontime submissionTime, bi.ticketnumber ticketNumber, " +
+            "bi.publish, bi.status, " +
+            "br.categoryguid categoryGuid, bi.businesslastupdate businessLastUpdate " +
+            "from businessinfo bi " +
+            "join business_relation br on bi.businessid = br.businessid " +
+            "where bi.tenantid=#{tenantId} and br.categoryguid=#{categoryGuid} " +
+            "and " +
+            "(" +
+            "bi.private_status='PUBLIC' or (bi.submitter=#{userId} and bi.submitter_read=true) " +
+            "or " +
+            "(select count(*) from business_2_group b2g " +
+            "join user_group_relation ugr on ugr.group_id = b2g.group_id and ugr.user_id=#{userId} " +
+            "where b2g.business_id=bi.businessid and b2g.read=true)>0" +
+            ") " +
+            "order by technicalStatus, businessLastUpdate desc " +
+            "<if test='limit!= -1'>" +
+            "limit #{limit} " +
+            "</if>" +
+            "offset #{offset}" +
+            "</script>")
+    List<BusinessInfoHeader> queryAuthBusinessByCategoryId(@Param("categoryGuid")String categoryGuid, @Param("limit")int limit, @Param("offset") int offset, @Param("tenantId")String tenantId, @Param("userId")String userId);
+
+    @Select("select max(version) from approval_item where object_id=#{objectId}")
+    Integer getMaxVersionById(@Param("objectId")String objectId);
+
+    @Select("<script>" +
+            "select count(*)over() total, bi.businessid businessId, bi.name, bi.businessstatus businessStatus, bi.technicalstatus technicalStatus, " +
+            "bi.submitter, bi.submissiontime submissionTime, bi.ticketnumber ticketNumber, br.categoryguid categoryGuid, " +
+            "bi.publish, bi.status " +
+            "from businessinfo bi " +
+            "join business_relation br on br.businessid=bi.businessid " +
+            "where " +
+            "bi.name like concat('%',#{businessName},'%') ESCAPE '/' " +
+            "<if test=\"tenantId != null and tenantId!=''\">" +
+            "and bi.tenantid=#{tenantId} " +
+            "</if>" +
+            "and br.categoryguid in " +
+            "<foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            "#{categoryGuid}" +
+            "</foreach>" +
+            " and " +
+            "(" +
+            "bi.private_status='PUBLIC' or (bi.submitter=#{userId} and bi.submitter_read=true) " +
+            "or " +
+            "(select count(*) from business_2_group b2g " +
+            "join user_group_relation ugr on ugr.group_id = b2g.group_id and ugr.user_id=#{userId} " +
+            "where b2g.business_id=bi.businessid and b2g.read=true)>0" +
+            ") " +
+            "order by bi.businesslastupdate desc " +
+            "<if test='limit!= -1'>" +
+            "limit #{limit} " +
+            "</if>" +
+            "offset #{offset}" +
+            "</script>")
+    List<BusinessInfoHeader> queryAuthBusinessByName(@Param("businessName")String businessName, @Param("ids") List<String> categoryIds, @Param("limit")int limit, @Param("offset") int offset, @Param("tenantId")String tenantId, @Param("userId")String userId) throws SQLException;
+
+    //多条件查询业务信息列表
+    @Results({
+            @Result(property = "tables",javaType = List.class,column = "{businessId = businessIdVal,tenantId = tenantId}",many = @Many(select = "queryTablesByBusinessIdAndTenantId"))
+    })
+    @Select("<script>" +
+            "select count(*)over() total, bi.businessid businessId, bi.businessid businessIdVal, " +
+            "bi.tenantid tenantId, bi.departmentid departmentId, bi.name, bi.businessstatus businessStatus, bi.technicalstatus technicalStatus, " +
+            "bi.submissiontime submissionTime, u.username submitter, bi.ticketnumber ticketNumber, br.categoryguid categoryGuid, " +
+            "bi.publish, bi.status " +
+            "from businessinfo bi " +
+            "join business_relation br on br.businessid=bi.businessid " +
+            "join users u on u.userid=bi.submitter " +
+            "where bi.tenantid=#{tenantId} " +
+            "and br.categoryguid in " +
+            "(" +
+            "select guid from category where guid in " +
+            "<foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>"  +
+            "#{categoryGuid}" +
+            "</foreach>" +
+            "and categoryType=1 and tenantid=#{tenantId}" +
+            ") " +
+            "<if test=\"level2CategoryId != null and level2CategoryId!=''\">" +
+            "and bi.level2categoryid=#{level2CategoryId} " +
+            "</if>" +
+            "and bi.technicalstatus=#{status} " +
+            "and bi.name like concat('%',#{businessName},'%') ESCAPE '/' " +
+            "and bi.ticketnumber like concat('%',#{ticketNumber},'%') ESCAPE '/' " +
+            "and u.username like concat('%',#{submitter},'%') ESCAPE '/' " +
+            "and " +
+            "(" +
+            "bi.private_status='PUBLIC' or (bi.submitter=#{userId} and bi.submitter_read=true) " +
+            "or " +
+            "(select count(*) from business_2_group b2g " +
+            "join user_group_relation ugr on ugr.group_id = b2g.group_id and ugr.user_id=#{userId} " +
+            "where b2g.business_id=bi.businessid and b2g.read=true)>0" +
+            ") " +
+            "order by bi.businesslastupdate desc " +
+            "<if test='limit!= -1'>" +
+            "limit #{limit} " +
+            "</if>" +
+            "offset #{offset}" +
+            "</script>")
+    public List<BusinessInfoHeader> queryAuthBusinessByCondition(@Param("ids") List<String> categoryIds, @Param("status")Integer status, @Param("ticketNumber") String ticketNumber,
+                                                                 @Param("businessName")String businessName, @Param("level2CategoryId") String level2CategoryId,
+                                                                 @Param("submitter") String submitter,@Param("limit")int limit,@Param("offset") int offset,
+                                                                 @Param("tenantId")String tenantId, @Param("userId")String userId);
+
+    //查询业务目录关系业务信息列表
+    @Select("select bi.name, bi.module module, " +
+            "bi.description description, bi.owner, " +
+            "bi.manager manager, bi.maintainer maintainer, bi.dataassets dataAssets, " +
+            "bi.businesslastupdate businessLastUpdate, bi.businessoperator businessOperator, " +
+            "bi.private_status privateStatus, " +
+            "(select name from approval_group where id=bi.approve_group_id) as approveGroupId, bi.publish_desc publishDesc " +
+            "from businessinfo bi " +
+            "join business_relation br on bi.businessid = br.businessid " +
+            "where bi.tenantid=#{tenantId} and br.categoryguid=#{categoryGuid} " +
+            "and " +
+            "(" +
+            "bi.private_status='PUBLIC' or (bi.submitter=#{userId} and bi.submitter_read=true) " +
+            "or " +
+            "(select count(*) from business_2_group b2g " +
+            "join user_group_relation ugr on ugr.group_id = b2g.group_id and ugr.user_id=#{userId} " +
+            "where b2g.business_id=bi.businessid and b2g.read=true)>0" +
+            ")")
+    List<BusinessInfo> queryAllAuthBusinessByCategoryId(@Param("categoryGuid")String categoryGuid, @Param("tenantId")String tenantId, @Param("userId")String userId);
+
+    //查询业务目录下业务对象数量
+    @Select("select count(bi.businessid) count " +
+            "from businessinfo bi " +
+            "join business_relation br on bi.businessid = br.businessid " +
+            "where bi.tenantid=#{tenantId} and br.categoryguid=#{categoryGuid} " +
+            "and " +
+            "(" +
+            "bi.private_status='PUBLIC' or (bi.submitter=#{userId} and bi.submitter_read=true) " +
+            "or " +
+            "(select count(*) from business_2_group b2g " +
+            "join user_group_relation ugr on ugr.group_id = b2g.group_id and ugr.user_id=#{userId} " +
+            "where b2g.business_id=bi.businessid and b2g.read=true)>0" +
+            ")")
+    int getBusinessCountByCategoryId(@Param("categoryGuid")String categoryGuid, @Param("tenantId")String tenantId, @Param("userId")String userId);
+
+
+    @Select("<script>" +
+            "select bi.name, bi.module module, " +
+            "bi.description description, bi.owner, " +
+            "bi.manager manager, bi.maintainer maintainer, bi.dataassets dataAssets, " +
+            "bi.businesslastupdate businessLastUpdate, bi.businessoperator businessOperator, " +
+            "bi.private_status privateStatus, " +
+            "(select name from approval_group where id=bi.approve_group_id) as approveGroupId, bi.publish_desc publishDesc " +
+            "from businessinfo bi " +
+            "join business_relation br on bi.businessid = br.businessid " +
+            "where bi.tenantid=#{tenantId} and br.categoryguid=#{categoryGuid} " +
+            "and bi.businessid in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    List<BusinessInfo> getBusinessByIds(@Param("ids")List<String> ids, @Param("categoryGuid")String categoryGuid, @Param("tenantId")String tenantId);
 }

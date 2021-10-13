@@ -58,21 +58,13 @@ public class RelationEntityV2 {
     private String path;
     private String status;
     private String createTime;
+    private String tenantId;
     private String generateTime;
     private List<DataOwnerHeader> dataOwner;
     private List<String> tableTagList;
     private String description;
     private String sourceName;
     private Boolean jump;
-    private String bizTreeId;
-
-    public String getBizTreeId() {
-        return bizTreeId;
-    }
-
-    public void setBizTreeId(String bizTreeId) {
-        this.bizTreeId = bizTreeId;
-    }
 
     public Boolean getJump() {
         return jump;
@@ -231,5 +223,13 @@ public class RelationEntityV2 {
 
     public void setTableTagList(List<String> tableTagList) {
         this.tableTagList = tableTagList;
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
     }
 }

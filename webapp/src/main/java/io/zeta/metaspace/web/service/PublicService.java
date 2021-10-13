@@ -1,6 +1,8 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.global.CategoryGlobal;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Tenant;
@@ -45,6 +47,9 @@ public class PublicService {
     @Autowired
     private TenantDAO tenantDAO;
 
+    @Autowired
+    private BusinessService businessService;
+
     /**
      * 获取目录
      *
@@ -52,12 +57,10 @@ public class PublicService {
      * @return
      */
     public List<CategoryGlobal> getCategory(Integer categoryType) {
-        Boolean global = false;
+        Boolean global = isGlobal();
         List<CategoryGlobal> categoryGlobalList = new ArrayList<>();
         Set<CategoryEntityV2> categoryEntityV2s;
         try {
-            User user = AdminUtils.getUserData();
-            global = userPermissionDAO.selectListByUsersId(user.getUserId()) != null;
             //获取所有租户
             List<Tenant> tenants = tenantService.getTenants();
             if (global) {
@@ -88,7 +91,7 @@ public class PublicService {
      * @return
      */
     public Set<CategoryEntityV2> getCategoryGlobal(Integer categoryType) {
-        return categoryDAO.selectGlobal(0);
+        return categoryDAO.selectGlobal(categoryType);
     }
 
     /**
@@ -103,32 +106,19 @@ public class PublicService {
             User user = AdminUtils.getUserData();
             //获取用户组
             List<UserGroup> userGroups = userGroupDAO.selectListByUsersId(user.getUserId());
-            List<String> userGroupIds = new ArrayList<>();
-            if (CollectionUtils.isNotEmpty(userGroups)) {
-                userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            List<String> userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            if (categoryType == 0) {
+                categoryEntityV2s = categoryDAO.selectListByStatus(user.getUserId(), userGroupIds, categoryType);
+            } else {
+                //目录管理权限
+                List<CategoryEntityV2> categories = userGroupDAO.getAllCategoryByCommonTenant(userGroupIds, categoryType, user.getUserId());
+                categoryEntityV2s = new HashSet<>(categories);
             }
-            categoryEntityV2s = categoryDAO.selectListByStatus(user.getUserId(), userGroupIds, categoryType);
             removeNoParentCategory(categoryEntityV2s);
         } catch (AtlasBaseException e) {
             log.error("getCategoryGeneral exception {}", e);
         }
         return categoryEntityV2s;
-    }
-
-    /**
-     * 获取业务目录-非全局用户
-     * @return
-     */
-    public Set<CategoryEntityV2> getCategoryBusiness() {
-        User user = AdminUtils.getUserData();
-        //获取用户组
-        List<UserGroup> userGroups = userGroupDAO.selectListByUsersId(user.getUserId());
-        List<String> userGroupIds = new ArrayList<>();
-        if (CollectionUtils.isNotEmpty(userGroups)) {
-            userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
-        }
-        // TODO: 2021/10/11
-        return null;
     }
 
     /**
@@ -157,10 +147,61 @@ public class PublicService {
 
     public PageResult<RelationEntityV2> getCategoryRelations(String categoryGuid, RelationQuery query, String tenantId) throws AtlasBaseException {
         String name = tenantDAO.selectNameById(tenantId);
-        PageResult<RelationEntityV2> relationsByCategoryGuid = dataManageService.getRelationsByCategoryGuid(categoryGuid, query, tenantId);
+        Boolean global = isGlobal();
+        PageResult<RelationEntityV2> relationsByCategoryGuid;
+        if (global) {
+            relationsByCategoryGuid = dataManageService.getRelationsByCategoryGuidGlobal(categoryGuid, query, tenantId);
+        } else {
+            relationsByCategoryGuid = dataManageService.getRelationsByCategoryGuid(categoryGuid, query, tenantId);
+        }
         for (RelationEntityV2 list : relationsByCategoryGuid.getLists()) {
             list.setPath(name + "/" + list.getPath());
         }
         return relationsByCategoryGuid;
+    }
+
+    /**
+     * 获取是否是全局用户
+     *
+     * @return
+     */
+    private Boolean isGlobal() {
+        User user = AdminUtils.getUserData();
+        return userPermissionDAO.selectListByUsersId(user.getUserId()) != null;
+    }
+
+    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
+        PageResult<RelationEntityV2> pageResult;
+        if (isGlobal()) {
+            pageResult = dataManageService.getRelationsByTableNameGlobal(relationQuery);
+        } else {
+            pageResult = dataManageService.getRelationsByTableNameGeneral(relationQuery);
+        }
+        if (CollectionUtils.isEmpty(pageResult.getLists())) {
+            return pageResult;
+        }
+        //获取所有租户
+        List<Tenant> tenants = tenantService.getTenants();
+        Map<String, String> map = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName));
+        for (RelationEntityV2 item : pageResult.getLists()) {
+            item.setPath(map.get(item.getTenantId()) + "/" + item.getPath());
+        }
+        return pageResult;
+    }
+
+    public PageResult<BusinessInfoHeader> getBusinessObject(String categoryId, String tenantId, Parameters parameters) {
+        if (isGlobal()) {
+            return businessService.getBusinessListByCategoryIdGlobal(categoryId, parameters, tenantId);
+        } else {
+            return businessService.getBusinessListByCategoryId(categoryId, parameters, tenantId);
+        }
+    }
+
+    public PageResult<BusinessInfoHeader> getBusinessList(Parameters parameters) {
+        if (isGlobal()) {
+            return businessService.getBusinessListByNameGlobal(parameters);
+        } else {
+            return businessService.getBusinessListByName(parameters, null);
+        }
     }
 }

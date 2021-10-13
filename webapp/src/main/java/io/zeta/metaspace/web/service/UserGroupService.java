@@ -17,6 +17,7 @@ package io.zeta.metaspace.web.service;
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -1802,5 +1803,23 @@ public class UserGroupService {
             result.setDbInfoList(dbInfos);
         }
         return sourceIdList;
+    }
+
+    public void addBusinessPrivileges(UpdateBusiness business, String tenantId) {
+        List<String> businessIds = business.getBusinessIds();
+        List<String> groupIds = business.getUserGroupIds();
+
+        // 删除旧的权限
+        userGroupDAO.deleteBusinessPrivileges(businessIds, groupIds);
+
+        // 添加新的权限
+        userGroupDAO.addBusinessPrivileges(businessIds, groupIds, business.getRead());
+
+        Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+        userGroupDAO.updateCategorys(business.getUserGroupIds(), currentTime, AdminUtils.getUserData().getUserId());
+    }
+
+    public List<BusinessInfo> getBusinessesByTenantId(String tenantId, String groupId) {
+        return userGroupDAO.getBusinessesByTenantId(tenantId, groupId);
     }
 }

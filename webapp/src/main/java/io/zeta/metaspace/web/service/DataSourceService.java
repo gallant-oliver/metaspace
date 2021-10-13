@@ -472,7 +472,7 @@ public class DataSourceService {
                 }
                 String sourceId = head.getSourceId();
                 head.setRely(false);
-                head.setBizTreeId(EntityUtil.generateBusinessId(tenantId,sourceId,"",""));
+                head.setBizTreeId(EntityUtil.generateBusinessId(head.getTenantId(),sourceId,"",""));
                 UserPrivilegeDataSource userPrivilegeDataSource = getUserPrivilegesDataSource(userId, sourceId);
                 if (UserPrivilegeDataSource.MANAGER.getPrivilegeName().equals(userPrivilegeDataSource.getPrivilegeName())) {
                     head.setEditManager(true);

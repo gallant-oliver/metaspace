@@ -1,6 +1,8 @@
 package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.business.BusinessInfoHeader;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.PublicService;
@@ -40,17 +42,63 @@ public class PublicREST {
     }
 
     /**
-     * 获取关联关系
+     * 获取关联关系-技术目录
      *
      * @param categoryGuid
      * @return
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/category/relations/{categoryGuid}/{tenantId}")
+    @Path("/technical/relations/{categoryGuid}/{tenantId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<RelationEntityV2> getCategoryRelations(@PathParam("categoryGuid") String categoryGuid, RelationQuery relationQuery, @PathParam("tenantId") String tenantId) throws AtlasBaseException {
         return publicService.getCategoryRelations(categoryGuid, relationQuery, tenantId);
+    }
+
+    /**
+     * 获取表关联
+     *
+     * @param relationQuery
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/table/relations")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
+        return publicService.getQueryTables(relationQuery);
+    }
+
+    /**
+     * 业务对象列表
+     *
+     * @param categoryId
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/business/relations/{categoryId}/{tenantId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<BusinessInfoHeader> getBusinessObject(@PathParam("categoryId") String categoryId, @PathParam("tenantId") String tenantId, Parameters parameters) throws AtlasBaseException {
+        return publicService.getBusinessObject(categoryId, tenantId, parameters);
+    }
+
+    /**
+     * 业务对象搜索
+     *
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/business/relations")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<BusinessInfoHeader> getBusinessList(Parameters parameters) throws AtlasBaseException {
+        return publicService.getBusinessList(parameters);
     }
 }

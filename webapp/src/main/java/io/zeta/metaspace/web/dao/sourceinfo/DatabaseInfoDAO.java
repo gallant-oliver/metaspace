@@ -522,7 +522,7 @@ public interface DatabaseInfoDAO {
 
     @Select("<script>" +
             " SELECT count(t.*)over() total, t.* from (" +
-            " SELECT db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,sd.source_id,db.database_description,db.owner FROM db_info as db" +
+            " SELECT source.tenantid as tenantId,db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,sd.source_id,db.database_description,db.owner FROM db_info as db" +
             " INNER JOIN source_db as sd on db.database_guid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
             " WHERE db.status = 'ACTIVE' AND source.tenantid = #{tenantId} AND database_name like concat('%',#{dbName},'%')" +
             " <if test='groupIds != null and groupIds.size() > 0'>" +
@@ -534,7 +534,7 @@ public interface DatabaseInfoDAO {
             " </if>" +
             " <if test='hiveList != null and hiveList.size() > 0'>" +
             " union" +
-            " SELECT db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,'hive' as source_id,db.database_description,db.owner FROM db_info as db" +
+            " SELECT '' as tenantId,db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,'hive' as source_id,db.database_description,db.owner FROM db_info as db" +
             " WHERE db.status = 'ACTIVE' AND db.db_type = 'HIVE' AND db.database_name like concat('%',#{dbName},'%') AND db.database_name in " +
             " <foreach collection='hiveList' item='item' separator=',' open='(' close=')'>" +
             "  #{item}" +
@@ -549,6 +549,43 @@ public interface DatabaseInfoDAO {
             " </if>" +
             "</script>")
     List<Database> selectByDbNameAndTenantId(@Param("tenantId") String tenantId,@Param("groupIds") List<String> groupIds, @Param("dbName") String dbName, @Param("hiveList") List<String> hiveList, @Param("limit") Long limit, @Param("offset") Long offset);
+
+    @Select("<script>" +
+            " SELECT count(t.*)over() total, t.* from (" +
+            " SELECT source.tenantid as tenantId,db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,sd.source_id,db.database_description,db.owner FROM db_info as db" +
+            " INNER JOIN source_db as sd on db.database_guid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
+            " WHERE db.status = 'ACTIVE' AND database_name like concat('%',#{dbName},'%') " +
+            " <if test='tenantIdList != null and tenantIdList.size() > 0'>" +
+            " AND source.tenantid in " +
+            " <foreach collection='tenantIdList' item='item' separator=',' open='(' close=')'>" +
+            "  #{item}" +
+            " </foreach>" +
+            " </if>" +
+            " <if test='groupIds != null and groupIds.size() > 0'>" +
+            " and db.database_guid in (select database_guid from database_group_relation where "+
+            " group_id in "+
+            " <foreach collection='groupIds' item='id' separator=',' open='(' close=')'>" +
+            "  #{id}" +
+            " </foreach> )" +
+            " </if>" +
+            " <if test='hiveList != null and hiveList.size() > 0'>" +
+            " union" +
+            " SELECT '' as tenantId,db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,'hive' as source_id,db.database_description,db.owner FROM db_info as db" +
+            " WHERE db.status = 'ACTIVE' AND db.db_type = 'HIVE' AND db.database_name like concat('%',#{dbName},'%') AND db.database_name in " +
+            " <foreach collection='hiveList' item='item' separator=',' open='(' close=')'>" +
+            "  #{item}" +
+            " </foreach>" +
+            " </if>" +
+            " ) as t" +
+            " <if test='limit != -1'>" +
+            "  limit #{limit} " +
+            " </if>" +
+            " <if test='offset!= 0'>" +
+            "  offset #{offset}" +
+            " </if>" +
+            "</script>")
+    List<Database> selectByDbNameAndTenantIdList(@Param("tenantIdList") List<String> tenantIdList,@Param("groupIds") List<String> groupIds, @Param("dbName") String dbName, @Param("hiveList") List<String> hiveList, @Param("limit") Long limit, @Param("offset") Long offset);
+
 
     @Select("<script>" +
             " SELECT databaseguid as databaseId, COUNT(tableguid) as tableCount FROM tableinfo" +

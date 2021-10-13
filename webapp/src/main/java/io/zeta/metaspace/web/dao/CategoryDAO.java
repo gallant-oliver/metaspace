@@ -38,8 +38,9 @@ import java.util.Set;
 public interface CategoryDAO {
 
 
-    @Insert("insert into category(private_status,guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType,level,safe,tenantid,createtime,creator,code,sort)" +
-            "values(#{category.privateStatus},#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{tenantId},#{category.createTime},#{category.creator},#{category.code},#{category.sort})")
+    @Insert("insert into category(private_status,guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType,level,safe,tenantid,createtime,creator,code,sort,publish,information,approval_id)" +
+            "values(#{category.privateStatus},#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{tenantId},#{category.createTime},#{category.creator},#{category.code},#{category.sort}," +
+            "#{category.publish},#{category.information},#{category.approvalId})")
     public int add(@Param("category") CategoryEntityV2 category, @Param("tenantId") String tenantId);
 
     @Select("select count(*) from category where categoryType=#{categoryType} and (tenantid=#{tenantId})")
@@ -256,9 +257,9 @@ public interface CategoryDAO {
     @Select("select name from category where guid=#{guid} and tenantid=#{tenantId}")
     public String getCategoryNameById(@Param("guid") String guid, @Param("tenantId") String tenantId);
     @Insert(" <script>" +
-            "INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,qualifiedname,categorytype,level,safe,createtime,tenantid,creator,code,sort,private_status) VALUES " +
+            "INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,qualifiedname,categorytype,level,safe,createtime,tenantid,creator,code,sort,private_status,publish) VALUES " +
             "<foreach item='category' index='index' collection='categorys' separator='),(' open='(' close=')'>" +
-            "#{category.guid},#{category.name},#{category.description},#{category.parentCategoryGuid},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{category.createTime},#{tenantId},#{category.creator},#{category.code},#{category.sort},#{category.privateStatus}" +
+            "#{category.guid},#{category.name},#{category.description},#{category.parentCategoryGuid},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{category.createTime},#{tenantId},#{category.creator},#{category.code},#{category.sort},#{category.privateStatus},#{category.publish}" +
             "</foreach>" +
             " </script>")
     public int addAll(@Param("categorys") List<CategoryEntityV2> categorys, @Param("tenantId") String tenantId);
@@ -476,8 +477,37 @@ public interface CategoryDAO {
             "</script>")
     void updateSort(@Param("sort") int sort,@Param("parentGuid") String parentGuid,@Param("tenantId") String tenantId);
 
+
+    @Update("<script>" +
+            "UPDATE category " +
+            "SET updater = #{updater},updatetime=now(),private_status=#{privateStatus},publish=#{isPublish}\n" +
+            "WHERE"+
+            " guid=#{guid} and  tenantid = #{tenantId}" +
+            "</script>")
+    void updateCataloguePrivateStatus(@Param("guid") String  guid,@Param("privateStatus") String  privateStatus,@Param("isPublish") Boolean isPublish,@Param("tenantId") String tenantId,@Param("updater") String updater);
+
+
+    @Update("<script> " +
+            "update category set name=#{category.name},description=#{category.description},qualifiedName=#{category.qualifiedName},updater=#{updater},updatetime=#{updateTime}" +
+            "<if test = 'category.publish != null'>" +
+            ",publish=#{category.publish}" +
+            "</if>"+
+            "<if test = 'category.code != null'>" +
+            ",code=#{category.code}" +
+            "</if>"+
+            "<if test = 'category.approvalId != null'>" +
+            ",approval_id=#{category.approvalId}" +
+            "</if>"+
+            "<if test = 'category.information != null'>" +
+            ",information=#{category.information}" +
+            "</if>"+
+            " where guid=#{category.guid} and tenantid=#{tenantId}"+
+            "</script>")
+    public int updateCategoryV2Info(@Param("category") CategoryEntityV2 category, @Param("tenantId") String tenantId, @Param("updater") String updater, @Param("updateTime") Timestamp updateTime);
+
+
     @Select("select * from category where categoryType=#{categoryType}")
-    Set<CategoryEntityV2> selectGlobal(@Param("categoryType") int categoryType);
+    Set<CategoryEntityV2> selectGlobal(@Param("categoryType") Integer categoryType);
 
     @Select("<script>" +
             " SELECT * FROM category WHERE private_status = 'PUBLIC' AND categorytype = 0" +
@@ -504,5 +534,6 @@ public interface CategoryDAO {
             " </if>"+
             "</script>")
     Set<CategoryEntityV2> selectListByStatus(@Param("creator") String creator, @Param("groupIdList") List<String> groupIdList, @Param("categoryType") Integer categoryType);
+
 
 }

@@ -88,6 +88,8 @@ public class BusinessREST {
     @Autowired
     private DataManageService dataManageService;
     @Autowired
+    private BusinessCatalogueService businessCatalogueService;
+    @Autowired
     MetaDataService metadataService;
     @Autowired
     DataShareService shareService;
@@ -370,13 +372,16 @@ public class BusinessREST {
     @Path("/categories")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<CategoryPrivilege> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public List<CategorycateQueryResult> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort,@QueryParam("type") Integer type, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
+        if(null==type){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录类型不能为空");
+        }
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategories()");
             }
-            return TenantService.defaultTenant.equals(tenantId) ? dataManageService.getAll(CATEGORY_TYPE) : dataManageService.getAllByUserGroup(CATEGORY_TYPE, tenantId);
+            return  businessCatalogueService.getAllCategories(type, tenantId);
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -385,7 +390,7 @@ public class BusinessREST {
     /**
      * 添加目录
      *
-     * @param categoryInfo
+     * @param bussinessCatalogueInput
      * @return
      * @throws Exception
      */
@@ -395,14 +400,14 @@ public class BusinessREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public CategoryPrivilege createCategory(CategoryInfoV2 categoryInfo, @HeaderParam("tenantId") String tenantId) throws Exception {
-        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), categoryInfo.getName());
+    public CategoryPrivilege createCategory(BussinessCatalogueInput bussinessCatalogueInput, @HeaderParam("tenantId") String tenantId) throws Exception {
+        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), bussinessCatalogueInput.getName());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.createMetadataCategory()");
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessCatalogueREST.createCategory()");
             }
-            return dataManageService.createCategory(categoryInfo, CATEGORY_TYPE, tenantId);
+            return businessCatalogueService.createCategory(bussinessCatalogueInput,tenantId);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -433,7 +438,7 @@ public class BusinessREST {
                 if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                     perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.deleteCategory(" + categoryGuid + ")");
                 }
-                deleteReturn = dataManageService.deleteCategory(categoryGuid, tenantId, CATEGORY_TYPE);
+                deleteReturn = businessCatalogueService.deleteCategory(categoryGuid, tenantId, CATEGORY_TYPE);
                 item += deleteReturn.getItem();
                 categorys += deleteReturn.getCategory();
             }
@@ -443,7 +448,7 @@ public class BusinessREST {
 
             return ReturnUtil.success(deleteReturn);
         } catch (CannotCreateTransactionException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常:"+e.getMessage());
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -461,14 +466,15 @@ public class BusinessREST {
     @Path("/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public String updateCategory(@PathParam("categoryId") String categoryGuid, CategoryInfoV2 categoryInfo, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public String updateCategory(@PathParam("categoryId") String categoryGuid, BussinessCatalogueInput categoryInfo, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
+        int type=categoryInfo.getCategoryType();
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.CategoryEntity()");
             }
             categoryInfo.setGuid(categoryGuid);
-            return dataManageService.updateCategory(categoryInfo, CATEGORY_TYPE, tenantId);
+            return businessCatalogueService.updateCategory(categoryInfo, type, tenantId);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
@@ -758,15 +764,18 @@ public class BusinessREST {
     @GET
     @Path("/export/selected/{downloadId}")
     @Valid
-    public void exportSelected(@PathParam("downloadId") String downloadId, @QueryParam("tenantId") String tenantId) throws Exception {
+    public void exportSelected(@PathParam("downloadId") String downloadId, @QueryParam("tenantId") String tenantId,@QueryParam("type") Integer type) throws Exception {
+        if(null==type){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录类型不能为空");
+        }
         File exportExcel;
         //全局导出
         String all = "all";
         if (all.equals(downloadId)) {
-            exportExcel = dataManageService.exportExcelAll(CATEGORY_TYPE, tenantId);
+            exportExcel = businessCatalogueService.exportExcelAll(type, tenantId);
         } else {
             List<String> ids = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
-            exportExcel = dataManageService.exportExcel(ids, CATEGORY_TYPE, tenantId);
+            exportExcel = businessCatalogueService.exportExcel(ids, type, tenantId);
         }
         try {
             String filePath = exportExcel.getAbsolutePath();
@@ -802,26 +811,27 @@ public class BusinessREST {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result uploadCategory(@FormDataParam("categoryId") String categoryId,
+                                 @FormDataParam("type") int type,
                                  @DefaultValue("false") @FormDataParam("all") boolean all, @FormDataParam("direction") String direction,
                                  @HeaderParam("tenantId") String tenantId, @FormDataParam("file") InputStream fileInputStream,
                                  @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
         File file = null;
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), name);
+            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESSCATALOGUE.getAlias(), name);
             file = ExportDataPathUtils.fileCheck(name, fileInputStream);
             String upload;
             if (all) {
-                upload = dataManageService.uploadAllCategory(file, CATEGORY_TYPE, tenantId);
+                upload = businessCatalogueService.uploadAllCategory(file, type, tenantId);
             } else {
-                upload = dataManageService.uploadCategory(categoryId, direction, file, CATEGORY_TYPE, tenantId);
+                upload = businessCatalogueService.uploadCategory(categoryId, direction, file, type, tenantId);
             }
             HashMap<String, String> map = new HashMap<String, String>() {{
                 put("upload", upload);
             }};
             return ReturnUtil.success(map);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导入失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导入失败:"+e.getMessage());
         } finally {
             if (Objects.nonNull(file) && file.exists()) {
                 file.delete();
@@ -853,20 +863,20 @@ public class BusinessREST {
             } else if (categoryId == null || categoryId.length() == 0) {
                 name = "一级目录";
             } else {
-                name = dataManageService.getCategoryNameById(categoryId, tenantId);
+                name = businessCatalogueService.getCategoryNameById(categoryId, tenantId);
             }
 
             HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "导入目录:" + name + "," + importCategory.getDirection());
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + path);
             List<CategoryPrivilege> categoryPrivileges = null;
             if (importCategory.isAll()) {
-                dataManageService.importAllCategory(file, CATEGORY_TYPE, tenantId);
+                businessCatalogueService.importAllCategory(file, importCategory.getType(), tenantId);
             } else {
-                categoryPrivileges = dataManageService.importCategory(categoryId, importCategory.getDirection(), file, importCategory.isAuthorized(), CATEGORY_TYPE, tenantId);
+                categoryPrivileges = businessCatalogueService.importCategory(categoryId, importCategory.getDirection(), file, importCategory.isAuthorized(), importCategory.getType(), tenantId);
             }
             return ReturnUtil.success(categoryPrivileges);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败:"+e.getMessage());
         } finally {
             if (Objects.nonNull(file) && file.exists()) {
                 file.delete();

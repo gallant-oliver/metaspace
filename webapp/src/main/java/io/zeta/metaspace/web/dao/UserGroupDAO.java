@@ -13,6 +13,7 @@
 
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
@@ -238,6 +239,9 @@ public interface UserGroupDAO {
 
     @Select("select g.*,g.tenant tenantId from user_group g join user_group_relation u on g.id=u.group_id where u.user_id=#{userId} and g.valid=true and tenant=#{tenantId}")
     public List<UserGroup> getuserGroupByUsersId(@Param("userId") String userId,@Param("tenantId") String tenantId);
+
+    @Select("select g.*,g.tenant tenantId from user_group g join user_group_relation u on g.id=u.group_id where u.user_id=#{userId} and g.valid=true ")
+    public List<UserGroup> getuserGroupByUid(@Param("userId") String userId);
 
     @Select("select * from category where categoryType=#{categoryType} and tenantid=#{tenantId}")
     public List<RoleModulesCategories.Category> getAllCategorys(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
@@ -1316,6 +1320,100 @@ public interface UserGroupDAO {
             "</script>"})
     public String getSourceName(@Param("sourceId") String sourceId);
 
+    @Delete("<script>" +
+            "delete from business_2_group " +
+            "where " +
+            "group_id in " +
+            "<foreach collection='groupIds' item='groupId' index='index' separator=',' open='(' close=')'>" +
+            "#{groupId}" +
+            "</foreach>" +
+            " and business_id in " +
+            "<foreach collection='businessIds' item='businessId' index='index' separator=',' open='(' close=')'>" +
+            "#{businessId}" +
+            "</foreach>" +
+            "</script>" )
+    void deleteBusinessPrivileges(@Param("businessIds")List<String> businessIds, @Param("groupIds")List<String> groupIds);
+
+    @Insert("<script>" +
+            "insert into business_2_group(business_id, group_id) values" +
+            "<foreach item='businessId' index='index' collection='businessIds' open='' separator=',' close=''>" +
+            "<foreach item='groupId' index='index' collection='groupIds' open='(' separator='),(' close=')'>" +
+            "#{businessId}, #{groupId}, #{read}" +
+            "</foreach>" +
+            "</foreach>" +
+            "</script>")
+    void addBusinessPrivileges(@Param("businessIds")List<String> businessIds, @Param("groupIds")List<String> groupIds, @Param("read")Boolean read);
+
+    @Select("<script>" +
+            "select bi.businessid businessId, bi.name " +
+            "from businessinfo bi " +
+            "<if test='groupId!=null'>" +
+            "inner join business_2_group b2g on b2g.business_id=bi.businessid and b2g.group_id=#{groupId} " +
+            "</if>" +
+            "where bi.tenantid=#{tenantId}" +
+            "</script>")
+    List<BusinessInfo> getBusinessesByTenantId(@Param("tenantId")String tenantId, @Param("groupId")String groupId);
+
+
+    @Select("<script>" +
+            " SELECT c.*,case  when ai.status is null then '0' else ai.status end FROM category c left join approval_item ai on ai.id=c.approval_id  WHERE c.tenantid = #{tenantId} AND c.private_status = 'PUBLIC' AND c.categorytype = #{categoryType}" +
+            " <if test='groupIdList != null and groupIdList.size() > 0'>"+
+            " UNION" +
+            " SELECT DISTINCT c.*,case  when ai.status is null then '0' else ai.status end FROM category c INNER JOIN category_group_relation as relation on c.guid = relation.category_id " +
+            " left join approval_item ai on ai.id=c.approval_id"+
+            " WHERE c.tenantid = #{tenantId} AND c.private_status = 'PRIVATE' AND c.categorytype =#{categoryType} AND relation.group_id in" +
+            " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
+            "   #{item} "+
+            " </foreach>" +
+            " </if>"+
+            " UNION" +
+            " SELECT c.*,case  when ai.status is null then '0' else ai.status end FROM category c" +
+            " left join approval_item ai on ai.id=c.approval_id"+
+            " WHERE c.tenantid = #{tenantId} AND c.private_status = 'PRIVATE' AND c.categorytype =#{categoryType} and c.creator=#{creator}"+
+            "</script>")
+    public List<CategorycateQueryResult> getAllCategory(@Param("groupIdList") List<String> groupIdList,@Param("categoryType") int categoryType,@Param("tenantId")String tenantId,@Param("creator")String creator);
+
+    @Select("<script>" +
+            " SELECT c.* FROM category c left join approval_item ai on ai.id=c.approval_id  WHERE  c.private_status = 'PUBLIC' AND c.categorytype = #{categoryType}" +
+            " <if test='groupIdList != null and groupIdList.size() > 0'>"+
+            " UNION" +
+            " SELECT DISTINCT c.* FROM category c INNER JOIN category_group_relation as relation on c.guid = relation.category_id " +
+            " left join approval_item ai on ai.id=c.approval_id"+
+            " WHERE  c.private_status = 'PRIVATE' AND c.categorytype =#{categoryType} AND relation.group_id in" +
+            " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
+            "   #{item} "+
+            " </foreach>" +
+            " </if>"+
+            " UNION" +
+            " SELECT c.* FROM category c" +
+            " WHERE  c.private_status = 'PRIVATE' AND c.categorytype =#{categoryType} and c.creator=#{creator}"+
+            "</script>")
+    public List<CategoryEntityV2> getAllCategoryByCommonTenant(@Param("groupIdList") List<String> groupIdList, @Param("categoryType") int categoryType, @Param("creator")String creator);
+
+    @Select("select c.*,case  when ai.status is null then '0' else ai.status end from category c left join approval_item ai on ai.id=c.approval_id where c.categoryType=#{categoryType} and c.tenantid=#{tenantId} and guid=#{guid}")
+    public CategorycateQueryResult getCategory(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
+
+
+    @Select({"<script>",
+            "select distinct read,edit_category as editCategory,edit_item as editItem FROM category_group_relation " +
+            "WHERE category_id = #{guid}"+
+            "<if test='userGroupIds != null and userGroupIds.size()>0'>" +
+            " and group_id in "+
+            "<foreach collection='userGroupIds' item='id' index='index' separator=',' open='(' close=')'>",
+            "#{id}",
+            "</foreach>"+
+            "</if>" +
+            "</script>"})
+    public List<UserGroupPrivilege> getCataUserGroupPrivilege(@Param("guid") String guid, @Param("userGroupIds") List<String> userGroupIds);
+
+
     @Select("select g.*,g.tenant tenantId from user_group g join user_group_relation u on g.id=u.group_id where u.user_id=#{userId} and g.valid=true")
+    public List<UserGroup> getAlluserGroupByUsersId(@Param("userId") String userId);
+
+
+    @Select("select count(*) from category_group_relation where category_id=#{guid}")
+    int getCateUserGroupRelationNum(@Param("guid") String guid);
+
+	@Select("select g.*,g.tenant tenantId from user_group g join user_group_relation u on g.id=u.group_id where u.user_id=#{userId} and g.valid=true")
     List<UserGroup> selectListByUsersId(@Param("userId") String userId);
 }

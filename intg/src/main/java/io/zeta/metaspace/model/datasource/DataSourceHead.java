@@ -17,7 +17,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
 
 public class DataSourceHead {
-
+    private String tenantId;
     private String sourceId;
     private String sourceName;
     private String sourceType;
@@ -41,6 +41,14 @@ public class DataSourceHead {
      */
     private String database;
     private String bizTreeId;
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
+    }
 
     public String getBizTreeId() {
         return bizTreeId;

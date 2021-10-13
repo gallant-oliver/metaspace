@@ -41,9 +41,37 @@ public class BusinessInfoHeader {
     private String ticketNumber;
     private String categoryGuid;
     private String trustTable;
+    private String tenantId;
     private List<TechnologyInfo.Table> tables;
+
+    /**
+     * 状态：0待发布，1待审批，2审核不通过，3审核通过'
+     */
+    private String status;
+
+    /**
+     * 是否发布
+     */
+    private Boolean publish;
+
     @JsonIgnore
     private int total;
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Boolean getPublish() {
+        return publish;
+    }
+
+    public void setPublish(Boolean publish) {
+        this.publish = publish;
+    }
 
     public List<TechnologyInfo.Table> getTables() {
         return tables;
@@ -161,5 +189,13 @@ public class BusinessInfoHeader {
 
     public void setTrustTable(String trustTable) {
         this.trustTable = trustTable;
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
     }
 }
