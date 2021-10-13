@@ -76,7 +76,7 @@ public class PublicService {
                 CategoryGlobal categoryGlobal = new CategoryGlobal();
                 categoryGlobal.setTenantId(tenant.getTenantId());
                 categoryGlobal.setTenantName(tenant.getProjectName());
-                categoryGlobal.setChildren(map.get(tenant.getTenantId()));
+                categoryGlobal.setChildren(map.get(tenant.getTenantId()) == null ? new ArrayList<>() : map.get(tenant.getTenantId()));
                 categoryGlobalList.add(categoryGlobal);
             }
         } catch (AtlasBaseException e) {
