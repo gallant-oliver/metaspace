@@ -37,4 +37,5 @@ public class Database implements Serializable {
     private int total;
     private boolean hasDatabase;
     private String bizTreeId;
+    private String sourceTreeId;
 }

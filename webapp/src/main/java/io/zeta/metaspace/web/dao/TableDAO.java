@@ -352,4 +352,13 @@ public interface TableDAO {
 
     @Select("SELECT DISTINCT db_type FROM tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid WHERE tb.tableguid = #{guid}")
     String selectTypeByGuid(@Param("guid") String guid);
+
+    @Select({"<script>",
+            "select importance_privilege,security_privilege from group_table_relation where tenant_id=#{tenantId} and derive_table_id=#{guid} " +
+            " and  user_group_id in ",
+            "<foreach item='guid' index='index' collection='groupList' separator=',' open='(' close=')'>",
+            "#{guid}",
+            "</foreach>",
+            "</script>"})
+    List<TableExtInfo> selectTableInfoByGroups(@Param("guid") String tableGuid,@Param("tenantId")String tenantId,@Param("groupList")List<String> groups);
 }
