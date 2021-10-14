@@ -770,10 +770,10 @@ public class UserGroupREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getDataBaseListNotAllot(
-            @PathParam("id") String groupId,
+            @PathParam("id") String groupId, @HeaderParam("tenantId")String tenantId,
             @QueryParam("search") String search) throws AtlasBaseException {
         try {
-            List<NotAllotDatabaseSearchResult> pageResult = userGroupService.getDataBaseListNotAllot(groupId,search);
+            List<NotAllotDatabaseSearchResult> pageResult = userGroupService.getDataBaseListNotAllot(groupId, search, tenantId);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取未分配给当前用户组的数据源（已分配给用户组）的数据库失败");

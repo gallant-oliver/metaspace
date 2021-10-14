@@ -33,6 +33,7 @@ import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
+import io.zeta.metaspace.web.model.HiveConstant;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -1787,20 +1788,30 @@ public class UserGroupService {
      * @return
      * @throws AtlasBaseException
      */
-    public List<NotAllotDatabaseSearchResult> getDataBaseListNotAllot(String groupId, String search) {
+    public List<NotAllotDatabaseSearchResult> getDataBaseListNotAllot(String groupId, String search, String tenantId) {
         if (search != null) {
             search = search.replaceAll("%", "/%").replaceAll("_", "/_");
         }
-        List<NotAllotDatabaseSearchResult> sourceIdList=userGroupDAO.getSourceIdByGroupId(groupId,search);
-        if(sourceIdList.size()==0){
-           sourceIdList=new ArrayList<>();
-           return sourceIdList;
-        }
-        for(NotAllotDatabaseSearchResult result:sourceIdList){
+
+        List<NotAllotDatabaseSearchResult> sourceIdList = userGroupDAO.getSourceIdByGroupId(groupId,search);
+        for (NotAllotDatabaseSearchResult result:sourceIdList) {
             String sourceId=result.getSourceId();
             List<DBInfo>  dbInfos = userGroupDAO.getDataBasesBysourceId(groupId,sourceId);
             result.setDbInfoList(dbInfos);
         }
+
+        List<String> dbs = tenantService.getCurrentTenantDatabase(tenantId);
+        NotAllotDatabaseSearchResult hive = new NotAllotDatabaseSearchResult();
+        hive.setSourceId(HiveConstant.SOURCE_ID);
+        hive.setSourceName(HiveConstant.SOURCE_NAME);
+        hive.setSourceType(HiveConstant.SOURCE_TYPE);
+        sourceIdList.add(0, hive);
+        if (CollectionUtils.isEmpty(dbs)) {
+            hive.setDbInfoList(new ArrayList<>());
+            return sourceIdList;
+        }
+        List<DBInfo> hiveDBs = userGroupDAO.getNotAuthHiveDataBases(groupId, "hive", dbs);
+        hive.setDbInfoList(hiveDBs);
         return sourceIdList;
     }
 }
