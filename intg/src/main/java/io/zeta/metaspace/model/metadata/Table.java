@@ -29,6 +29,8 @@ public class Table implements Serializable {
     private String updateTime;
     private String databaseId;
     private String databaseName;
+    private Boolean importancePrivilege;
+    private Boolean securityPrivilege;
     private String partitionKey;
     private Boolean partitionTable;
     private String format;

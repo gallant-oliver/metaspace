@@ -40,11 +40,14 @@ public class TechnologyInfo {
         private String tableGuid;
         private String tableName;
         private String dbName;
+        private String databaseId;
         private String status;
         private String createTime;
         private boolean trust;
         private String databaseGuid;
         private String displayName;
+        private Boolean importancePrivilege;
+        private Boolean securityPrivilege;
         private String description;
         private String sourceId;
         private String sourceName;

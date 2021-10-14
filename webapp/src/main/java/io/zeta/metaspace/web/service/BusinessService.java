@@ -38,6 +38,8 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.ApiHead;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
+import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
@@ -91,10 +93,16 @@ public class BusinessService implements Approvable {
     BusinessDAO businessDao;
     @Autowired
     CategoryDAO categoryDao;
+
+    @Autowired
+    SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDAO;
     @Autowired
     PrivilegeDAO privilegeDao;
     @Autowired
     RoleDAO roleDao;
+
+    @Autowired
+    GroupDeriveTableRelationDAO groupDeriveTableRelationDAO;
     @Autowired
     UserGroupDAO userGroupDAO;
     @Autowired
@@ -372,11 +380,37 @@ public class BusinessService implements Approvable {
         if(tables == null ){
             tables = businessDao.queryAllTablesByBusinessId(businessId, tenantId);
         }
+        User user = AdminUtils.getUserData();
+        List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
+
         tables.forEach(table -> {
             if (Objects.nonNull(table.getDisplayName())) {
                 table.setDisplayName(table.getDisplayName());
             } else {
                 table.setDisplayName(table.getTableName());
+            }
+            //table
+            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableName(),table.getDatabaseId(),tenantId);
+            if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))){
+                if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
+                    Boolean importancePrivilege = Boolean.TRUE;
+                    Boolean securityPrivilege = Boolean.TRUE;
+                    GroupDeriveTableRelation relation = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableGuid(), userGroupIds, tenantId);
+                    if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
+                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
+                        importancePrivilege = Boolean.FALSE;
+
+                    }
+                    if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getSecurity()) &&
+                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
+                        securityPrivilege = Boolean.FALSE;
+                    }
+                    table.setImportancePrivilege(importancePrivilege);
+                    table.setSecurityPrivilege(securityPrivilege);
+                }else{
+                    table.setImportancePrivilege(!sourceInfoDeriveTableInfo.getImportance());
+                    table.setSecurityPrivilege(!sourceInfoDeriveTableInfo.getSecurity());
+                }
             }
         });
         if(trustTableGuid ==null || trustTableGuid.isEmpty()){
