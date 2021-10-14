@@ -18,10 +18,16 @@ package io.zeta.metaspace.web.service;
 
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
+import io.zeta.metaspace.model.approve.ApproveItem;
+import io.zeta.metaspace.model.approve.ApproveOperate;
+import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.business.*;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
+import io.zeta.metaspace.model.enums.BusinessType;
+import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
 import io.zeta.metaspace.model.result.PageResult;
@@ -35,6 +41,8 @@ import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.service.Approve.Approvable;
+import io.zeta.metaspace.web.service.Approve.ApproveService;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -50,13 +58,16 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import javax.inject.Inject;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -69,7 +80,7 @@ import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
  * @date 2019/2/12 14:56
  */
 @Service
-public class BusinessService {
+public class BusinessService implements Approvable {
     private static final Logger LOG = LoggerFactory.getLogger(BusinessService.class);
     @Autowired
     BusinessDAO businessDao;
@@ -110,6 +121,12 @@ public class BusinessService {
     @Autowired
     private CategoryDAO categoryDAO;
 
+    @Autowired
+    ApproveService approveServiceImp;
+
+    @Autowired
+    BusinessCatalogueService businessCatalogueService;
+
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
 
@@ -149,6 +166,24 @@ public class BusinessService {
                 level2CategoryId = pathArr[1];
             }
             info.setLevel2CategoryId(level2CategoryId);
+
+            // 如果发布开关打开，则更新状态为待审核；否则更新为待发布
+            if (info.getPublish()) {
+                info.setStatus(Status.AUDITING.getIntValue() + "");
+            }
+            else {
+                info.setStatus(Status.FOUNDED.getIntValue() + "");
+            }
+
+            // 默认私密状态为私密
+            info.setPrivateStatus("PRIVATE");
+
+            // 手动添加方式：0手动添加，1上传文件
+            info.setCreateMode(0);
+
+            // 添加 “创建人可见” 逻辑
+            info.setSubmitterRead(true);
+
             int insertFlag = businessDao.insertBusinessInfo(info, tenantId);
 
             //更新business编辑状态
@@ -165,6 +200,12 @@ public class BusinessService {
             entity.setCategoryGuid(categoryId);
             entity.setGenerateTime(time);
             int relationFlag = businessDao.addRelation(entity);
+
+            // 如果发布开关打开，则发送审核
+            if (info.getPublish()) {
+                approveItems(tenantId, info, ApproveType.PUBLISH.getCode());
+            }
+
             return insertFlag & relationFlag;
         } catch (AtlasBaseException e) {
             throw e;
@@ -189,7 +230,19 @@ public class BusinessService {
             info.setBusinessOperator(userId);
             info.setBusinessLastUpdate(time);
             info.setBusinessId(businessId);
-            return businessDao.updateBusinessInfo(info);
+
+            // 如果开关变动，则需要审批
+            if (currentInfo.getPublish() != info.getPublish()) {
+                // 修改审批状态
+                info.setStatus(Status.AUDITING.getIntValue() + "");
+
+                approveItems(tenantId, info, info.getPublish() ? ApproveType.PUBLISH.getCode() : ApproveType.OFFLINE.getCode());
+            }
+
+            int result = businessDao.updateBusinessInfo(info);
+
+            // 如果发布状态
+            return result;
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -284,9 +337,41 @@ public class BusinessService {
         }
     }
 
+    /**
+     * 获取挂载信息-全局用户
+     * @param businessId
+     * @return
+     * @throws AtlasBaseException
+     */
+    public TechnologyInfo getRelatedTableListGlobal(String businessId) throws AtlasBaseException {
+        try {
+            TechnologyInfo info = businessDao.selectTechnologyInfoByBusinessId(businessId);
+            if (Objects.isNull(info)) {
+                info = new TechnologyInfo();
+            }
+
+            String operator = userGroupDAO.getUserNameById(info.getTechnicalOperator());
+            if (operator != null) {
+                info.setTechnicalOperator(operator);
+            }
+            info.setEditTechnical(false);
+            //tables
+            List<TechnologyInfo.Table> tables = buildTablesByBusinessIdGlobal(businessId, info.getTrustTable());
+            info.setTables(tables);
+            //businessId
+            info.setBusinessId(businessId);
+            return info;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("获取关联表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联表失败");
+        }
+    }
+
     private List<TechnologyInfo.Table> buildTablesByBusinessId(String businessId, String tenantId, String trustTableGuid, List<TechnologyInfo.Table> tables) {
         if(tables ==null ){
-            tables = businessDao.queryTablesByBusinessIdAndTenantId(businessId, tenantId);
+            tables = businessDao.queryTablesByBusinessIdAndTenantId(businessId);
         }
         User user = AdminUtils.getUserData();
         List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
@@ -332,12 +417,77 @@ public class BusinessService {
         return tables;
     }
 
+    private List<TechnologyInfo.Table> buildTablesByBusinessIdGlobal(String businessId, String trustTableGuid) {
+        List<TechnologyInfo.Table> tables =  businessDao.queryTablesByBusinessIdAndTenantId(businessId);
+        if(CollectionUtils.isEmpty(tables)){
+            return new ArrayList<>();
+        }
+        tables.forEach(table -> {
+            if (Objects.nonNull(table.getDisplayName())) {
+                table.setDisplayName(table.getDisplayName());
+            } else {
+                table.setDisplayName(table.getTableName());
+            }
+        });
+        if (Objects.nonNull(trustTableGuid)) {
+            tables.stream().filter(t->trustTableGuid.equals(t.getTableGuid())).forEach(table -> table.setTrust(Boolean.TRUE));
+        }
+        tables.sort(Comparator.comparing(TechnologyInfo.Table::isTrust).reversed());
+        return tables;
+    }
+
     public PageResult<BusinessInfoHeader> getBusinessListByCategoryId(String categoryId, Parameters parameters, String tenantId) throws AtlasBaseException {
         try {
             PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
             int limit = parameters.getLimit();
             int offset = parameters.getOffset();
-            List<BusinessInfoHeader> list = businessDao.queryBusinessByCatetoryId(categoryId, limit, offset, tenantId);
+            String userId = AdminUtils.getUserData().getUserId();
+
+            List<BusinessInfoHeader> list = businessDao.queryAuthBusinessByCategoryId(categoryId, limit, offset, tenantId, userId);
+            String path = CategoryRelationUtils.getPath(categoryId, tenantId);
+            StringJoiner joiner = null;
+            String[] pathArr = path.split("/");
+            String level2Category = "";
+            int length = 2;
+            if (pathArr.length >= length)
+                level2Category = pathArr[1];
+            for (BusinessInfoHeader infoHeader : list) {
+                joiner = new StringJoiner(".");
+                //path
+                joiner.add(path);
+                infoHeader.setPath(joiner.toString());
+                //level2Category
+                infoHeader.setLevel2Category(level2Category);
+                buildTablesByBusinessId(infoHeader.getBusinessId(), tenantId,infoHeader.getTrustTable(),infoHeader.getTables()==null?new ArrayList<>():infoHeader.getTables());
+                if (CollectionUtils.isEmpty(infoHeader.getTables())) {
+                    infoHeader.setTechnicalStatus("0");
+                } else {
+                    infoHeader.setTechnicalStatus("1");
+                }
+            }
+            Long totalSize = 0L;
+            if (list.size() != 0) {
+                totalSize = Long.valueOf(list.get(0).getTotal());
+            }
+            pageResult.setTotalSize(totalSize);
+            pageResult.setCurrentSize(list.size());
+            pageResult.setLists(list);
+            return pageResult;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("获取业务对象列表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取业务对象列表失败");
+        }
+    }
+
+
+    public PageResult<BusinessInfoHeader> getBusinessListByCategoryIdGlobal(String categoryId, Parameters parameters, String tenantId) throws AtlasBaseException {
+        try {
+            PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            List<BusinessInfoHeader> list = businessDao.selectByCategoryIdGlobal(categoryId, limit, offset, tenantId);
             String path = CategoryRelationUtils.getPath(categoryId, tenantId);
             StringJoiner joiner = null;
             String[] pathArr = path.split("/");
@@ -386,22 +536,10 @@ public class BusinessService {
             List<BusinessInfoHeader> businessInfoList = null;
             List<String> categoryIds = new ArrayList<>();
 
-            //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
-                if (roles.stream().allMatch(role -> role.getStatus() == 0))
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-                for (Role role : roles) {
-                    if (role.getStatus() == 0) {
-                        continue;
-                    }
-                    String roleId = role.getRoleId();
-                    List<String> category = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
-                    for (String categoryId : category) {
-                        if (!categoryIds.contains(categoryId)) {
-                            categoryIds.add(categoryId);
-                        }
-                    }
+            if (StringUtils.isEmpty(tenantId)) {
+                List<CategoryEntityV2> categoryBusiness = businessCatalogueService.getCategoryBusiness(1);
+                if (CollectionUtils.isNotEmpty(categoryBusiness)) {
+                    categoryIds = categoryBusiness.stream().map(c -> c.getGuid()).collect(Collectors.toList());
                 }
             } else {
                 Map<String, CategoryPrivilegeV2> categories = userGroupService.getUserPrivilegeCategory(tenantId, BUSINESS_TYPE, false);
@@ -420,13 +558,16 @@ public class BusinessService {
             if (Objects.nonNull(businessName))
                 businessName = businessName.replaceAll("%", "/%").replaceAll("_", "/_");
             try {
-                businessInfoList = businessDao.queryBusinessByName(businessName, categoryIds, limit, offset, tenantId);
+                businessInfoList = businessDao.queryAuthBusinessByName(businessName, categoryIds, limit, offset, tenantId, user.getUserId());
             } catch (SQLException e) {
                 LOG.error("SQL执行异常", e);
                 businessInfoList = new ArrayList<>();
             }
 
             for (BusinessInfoHeader infoHeader : businessInfoList) {
+                if(StringUtils.isEmpty(tenantId)){
+                    tenantId = infoHeader.getTenantId();
+                }
                 String path = CategoryRelationUtils.getPath(infoHeader.getCategoryGuid(), tenantId);
                 StringJoiner joiner = new StringJoiner(".");
                 joiner.add(path);
@@ -443,6 +584,50 @@ public class BusinessService {
                 businessTotal = businessInfoList.get(0).getTotal();
             }
             pageResult.setTotalSize(businessTotal);
+            pageResult.setLists(businessInfoList);
+            pageResult.setCurrentSize(businessInfoList.size());
+            return pageResult;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("搜索业务对象失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "搜索业务对象失败");
+        }
+    }
+
+    /**
+     * 获取业务对象-全局查询
+     * @param parameters
+     * @return
+     * @throws AtlasBaseException
+     */
+    public PageResult<BusinessInfoHeader> getBusinessListByNameGlobal(Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<BusinessInfoHeader> pageResult = new PageResult<>();
+            String businessName = parameters.getQuery() == null ? "" : parameters.getQuery();
+            businessName = businessName.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
+            int limit = parameters.getLimit();
+            int offset = parameters.getOffset();
+            List<BusinessInfoHeader> businessInfoList = businessDao.selectBusinessByNameGlobal(businessName, limit, offset);
+            if (CollectionUtils.isEmpty(businessInfoList)) {
+                pageResult.setTotalSize(0);
+                pageResult.setLists(new ArrayList<>());
+                pageResult.setCurrentSize(0);
+                return pageResult;
+            }
+            for (BusinessInfoHeader infoHeader : businessInfoList) {
+                String path = CategoryRelationUtils.getPath(infoHeader.getCategoryGuid(), infoHeader.getTenantId());
+                StringJoiner joiner = new StringJoiner(".");
+                joiner.add(path);
+                infoHeader.setPath(joiner.toString());
+                String[] pathArr = path.split("/");
+                String level2Category = "";
+                int length = 2;
+                if (pathArr.length >= length)
+                    level2Category = pathArr[1];
+                infoHeader.setLevel2Category(level2Category);
+            }
+            pageResult.setTotalSize(businessInfoList.get(0).getTotal());
             pageResult.setLists(businessInfoList);
             pageResult.setCurrentSize(businessInfoList.size());
             return pageResult;
@@ -506,7 +691,7 @@ public class BusinessService {
                 ticketNumber = ticketNumber.replaceAll("%", "/%").replaceAll("_", "/_");
             if (Objects.nonNull(submitter))
                 submitter = submitter.replaceAll("%", "/%").replaceAll("_", "/_");
-            List<BusinessInfoHeader> businessInfoList = businessDao.queryBusinessByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter, limit, offset, tenantId);
+            List<BusinessInfoHeader> businessInfoList = businessDao.queryAuthBusinessByCondition(categoryIds, technicalStatus, ticketNumber, businessName, level2CategoryId, submitter, limit, offset, tenantId, user.getUserId());
             for (BusinessInfoHeader infoHeader : businessInfoList) {
                 String path = CategoryRelationUtils.getPath(infoHeader.getDepartmentId(), tenantId);
                 infoHeader.setPath(path + "." + infoHeader.getName());
@@ -1330,7 +1515,8 @@ public class BusinessService {
     public File exportExcelBusiness(List<String> ids, String categoryId, String tenantId) throws IOException {
         List<BusinessInfo> data;
         if (ids == null) {
-            data = businessDao.getAllBusinessByCategory(categoryId, tenantId);
+            String userId = AdminUtils.getUserData().getUserId();
+            data = businessDao.queryAllAuthBusinessByCategoryId(categoryId, tenantId, userId);
         } else if (ids.size() == 0) {
             data = new ArrayList<>();
         } else {
@@ -1356,11 +1542,12 @@ public class BusinessService {
         AtomicInteger index = new AtomicInteger(1);
         List<List<String>> dataList = list.stream().map(businessInfo -> {
             List<String> data = Lists.newArrayList(String.valueOf(index.getAndIncrement()), businessInfo.getName(), businessInfo.getModule(), businessInfo.getDescription(),
-                    businessInfo.getOwner(), businessInfo.getManager(), businessInfo.getMaintainer(), businessInfo.getDataAssets(), businessInfo.getBusinessOperator(),
-                    businessInfo.getBusinessLastUpdate(), path);
+                    businessInfo.getOwner(), businessInfo.getManager(), businessInfo.getMaintainer(), businessInfo.getDataAssets(),
+                    "PUBLIC".equalsIgnoreCase(businessInfo.getPrivateStatus()) ? "已发布" : "待发布",
+                    businessInfo.getApproveGroupId(), businessInfo.getPublishDesc());
             return data;
         }).collect(Collectors.toList());
-        ArrayList<String> attributes = Lists.newArrayList("", "业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产", "更新人", "更新时间", "目录");
+        ArrayList<String> attributes = Lists.newArrayList("", "业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产", "是否发布", "选择审批组", "说明");
         PoiExcelUtils.createSheet(workbook, "业务对象", attributes, dataList, cellStyle, 12);
         return workbook;
     }
@@ -1567,6 +1754,15 @@ public class BusinessService {
 
             info.setLevel2CategoryId(level2CategoryId);
 
+            // 文件导入方式，默认发布开关关闭
+            info.setPublish(false);
+            info.setStatus(Status.FOUNDED.getIntValue() + "");
+            info.setPrivateStatus("PRIVATE");
+            // 上传文件添加方式：0手动添加，1上传文件
+            info.setCreateMode(1);
+            // 创建人可见
+            info.setSubmitterRead(true);
+
             BusinessRelationEntity entity = new BusinessRelationEntity();
             //relationshiGuid
             String relationGuid = UUID.randomUUID().toString();
@@ -1764,5 +1960,122 @@ public class BusinessService {
             cell.setCellStyle(cellStyle);
             cell.setCellValue(attributes.get(i).trim());
         }
+    }
+
+    /**
+     * 将审批对象送审
+     * @param tenantId 租户id
+     * @param info 要被送审的信息对象
+     * @param approveType 审批类型（发布或下线）
+     */
+    private void approveItems(String tenantId, BusinessInfo info, String approveType){
+        String approveGroupId = info.getApproveGroupId();
+        ApproveItem approveItem = buildApproveItem(info, approveGroupId, approveType, tenantId);
+        businessDao.updateApproveIdAndApproveGroupId(info.getBusinessId(), approveItem.getId());
+        approveServiceImp.addApproveItem(approveItem);
+    }
+
+    /**
+     * 构建审批对象
+     * @param info 信息对象
+     * @param approveGroupId 审核组id
+     * @param approveType 审批类型（发布或下线）
+     * @param tenantId 租户id
+     * @return 审批对象
+     */
+    private ApproveItem buildApproveItem(Object info, String approveGroupId, String approveType, String tenantId){
+
+        ApproveItem approveItem = new ApproveItem();
+
+        String approveId = UUID.randomUUID().toString();
+        approveItem.setId(approveId);
+
+        String id = "";
+        String name = "";
+        if (info instanceof BusinessInfo){
+            id = ((BusinessInfo) info).getBusinessId();
+            name = ((BusinessInfo) info).getName();
+
+            approveItem.setBusinessType(BusinessType.BUSINESS_OBJECT.getTypeCode());
+            approveItem.setBusinessTypeText(BusinessType.BUSINESS_OBJECT.getTypeText());
+            approveItem.setModuleId(ModuleEnum.BUSINESS.getId() + "");
+        }
+
+        Integer maxVersion = businessDao.getMaxVersionById(id);
+
+        approveItem.setObjectId(id);
+        approveItem.setObjectName(name);
+        approveItem.setApproveType(approveType);
+        approveItem.setApproveGroup(approveGroupId);
+
+        approveItem.setSubmitter(AdminUtils.getUserData().getUserId());
+        approveItem.setCommitTime(Timestamp.valueOf(LocalDateTime.now()));
+
+        approveItem.setVersion((maxVersion == null ? 0 : maxVersion) + 1);
+        approveItem.setTenantId(tenantId);
+
+        return approveItem;
+    }
+
+    /**
+     * 获取被审批的对象详情接口实现
+     * @param objectId  对象ID
+     * @param type 业务对象类型
+     * @param version 查看版本
+     * @param tenantId 租户id
+     * @return 被审批对象
+     */
+    @Override
+    public Object getObjectDetail(String objectId, String type, int version, String tenantId) {
+        BusinessInfoBO businessInfo = businessDao.getBusinessApproveDetails(objectId, tenantId);
+        businessInfo.setTheme(CategoryRelationUtils.getPath(businessInfo.getDepartmentId(), tenantId));
+        return businessInfo;
+    }
+
+    /**
+     *  修改被审批对象的审批状态的接口实现
+     * @param approveResult 审核结果
+     * @param tenantId 租户id
+     * @param items 被审核对象
+     * @throws Exception
+     */
+    @Override
+    public void changeObjectStatus(String approveResult, String tenantId, List<ApproveItem> items) {
+        List<String> idList = items.stream().map(ApproveItem::getObjectId).collect(Collectors.toList());
+
+        // 发布开关状态
+        List<BusinessInfo> publishStatus = businessDao.getBusinessPublicStatus(idList, tenantId);
+
+        for (BusinessInfo businessInfo : publishStatus) {
+            // 审批通过
+            if (ApproveOperate.APPROVE.getCode().equals(approveResult)) {
+                // 更新审批状态
+                businessInfo.setStatus(Status.ACTIVE.getIntValue() + "");
+
+                // 修改私密状态
+                if (businessInfo.getPublish()) {
+                    businessInfo.setPrivateStatus("PUBLIC");
+                }
+                else {
+                    businessInfo.setPrivateStatus("PRIVATE");
+                }
+            }
+            else {
+                // 审批不通过
+                // 更新审批状态
+                businessInfo.setStatus(Status.REJECT.getIntValue() + "");
+
+                // 还原开关状态：开关为开，还原为关；开关为关，还原为开
+                if (businessInfo.getPublish()) {
+                    businessInfo.setPublish(false);
+                }
+                else {
+                    businessInfo.setPublish(true);
+                }
+            }
+        }
+
+        // 更新
+        businessDao.updateBusinessPublicStatus(publishStatus);
     }
 }

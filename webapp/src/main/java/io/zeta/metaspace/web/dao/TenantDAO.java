@@ -35,4 +35,7 @@ public interface TenantDAO {
             " </foreach> " +
             " </script>")
     int addTenants(@Param("tenants") List<Tenant> tenants);
+
+    @Select("SELECT name FROM tenant WHERE id = #{id}")
+    String selectNameById(String id);
 }

@@ -21,6 +21,7 @@ public enum ModuleEnum {
     TECHNICAL(2,"数据资产","技术目录",2,"技术目录", "technical", "technical",1, 2),
     INDEX(2,"数据资产","指标目录",47,"指标目录", "index", "index",1, 2),
     BUSINESS(2,"数据资产","业务目录",3,"业务对象", "business", "business",1, 3),
+    BUSINESSCATALOGUE(2,"数据资产","业务目录",48,"业务目录", "businesscatalogue", "businesscatalogue",0, 48),
     BUSINESSMANAGE(2,"数据资产","业务目录",4,"业务对象挂载", "businessmanage", "businessmanage",1, 4),
     COLUMNDOWN(2,"数据资产","业务目录",5,"字段下载", "columndown", "columndown",0, 5),
     BUSINESSEDIT(2,"数据资产","业务目录",6,"数据编辑", "businessedit", "businessedit",0, 6),
@@ -78,9 +79,16 @@ public enum ModuleEnum {
     ALARMGROUPMANAGE(8,"系统管理","告警组管理",33,"告警组管理", "alarmgroupmanage", "alarmgroupmanage",1, 33),
     DATASOURCE(8,"系统管理","数据源管理",34,"数据源管理", "dataSource", "dataSource",1, 34),
     OPERATELOG(8,"系统管理","日志审计",35,"日志审计", "operatelog", "operatelog",1, 36),
-    AUTHORIZATION(8,"系统管理","目录管理",36,"目录管理", "authorization", "authorization",1, 35);
+    AUTHORIZATION(8,"系统管理","目录管理",36,"目录管理", "authorization", "authorization",1, 35),
 //    INDEXAREAAUTH(8,"系统管理","指标域授权",37,"指标域授权", "indexareaauth", "indexareaauth",1, 37);
 
+    //公共租户-租户资产
+    TECHNICALALL(10,"租户资产","技术目录",38,"技术目录", "technicalAll", "technicalAll",1, 38),
+    BUSINESSALL(10,"租户资产","业务目录",39,"业务目录", "businessAll", "businessAll",1, 39),
+    INDEXALL(10,"租户资产","指标目录",40,"指标目录", "indexAll", "indexAll",1, 40),
+    METADATAALL(10,"租户资产","元数据管理",41,"元数据管理", "metadataAll", "metadataAll",1, 41),
+    //公共租户-权限管理
+    USERALL(11,"权限管理","用户管理",42,"用户管理", "userAll", "userAll",1, 42);
 
     private int id;
     private String name;
@@ -183,6 +191,8 @@ public enum ModuleEnum {
         List<ModuleEnum> result = new LinkedList<>();
         result.add(ModuleEnum.NORMDESIGN);
         result.add(ModuleEnum.DATABASEREGISTER);
+        result.add(ModuleEnum.BUSINESSCATALOGUE);
+        result.add(ModuleEnum.BUSINESS);
         return result;
     }
 

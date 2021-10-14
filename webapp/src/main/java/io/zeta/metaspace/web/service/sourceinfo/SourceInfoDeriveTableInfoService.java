@@ -7,6 +7,7 @@ import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.result.CategorycateQueryResult;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.Constant;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.DeriveTableStateEnum;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.MetadataDeriveTableInfo;
@@ -612,7 +613,7 @@ public class SourceInfoDeriveTableInfoService {
      * @return
      */
     public List<BusinessCategory> getBusinessCategory(String tenantId) {
-        List<CategoryPrivilege> categories = businessREST.getCategories("ASC", tenantId);
+        List<CategorycateQueryResult> categories = businessREST.getCategories("ASC", 1,tenantId);
         return categories.stream().map(e -> {
             BusinessCategory businessCategory = new BusinessCategory();
             BeanUtils.copyProperties(e, businessCategory);

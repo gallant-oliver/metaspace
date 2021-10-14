@@ -22,7 +22,12 @@ public enum BusinessType {
     ATOMIC_INDEX("1","原子指标"),
     DERIVE_INDEX("2","派生指标"),
     COMPOSITE_INDEX("3","复合指标"),
-    DATABASE_INFO_REGISTER("4","数据库登记");
+    DATABASE_INFO_REGISTER("4","数据库登记"),
+    BUSINESSCATALOGUE_PUBLISH("5","业务目录发布"),
+    BUSINESSCATALOGUE_PUBLISH_CLOSE("6","业务目录关闭发布"),
+    BUSINESS_OBJECT("7","业务对象");
+
+
 
     private final String typeCode;
 
