@@ -3593,3 +3593,8 @@ ALTER TABLE "public"."qrtz_triggers" ADD CONSTRAINT "qrtz_triggers_sched_name_fk
 -- ----------------------------
 ALTER TABLE "public"."source_info" ADD CONSTRAINT "fk_source_info_status" FOREIGN KEY ("status") REFERENCES "public"."code_source_info_status" ("code") ON DELETE NO ACTION ON UPDATE CASCADE;
 ALTER TABLE "public"."source_info" ADD CONSTRAINT "fk_source_info_tenant_id" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenant" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- ----------------------------
+--
+-- ----------------------------
+TRUNCATE TABLE category_group_relation;

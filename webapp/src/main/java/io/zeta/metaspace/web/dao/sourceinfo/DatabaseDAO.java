@@ -51,7 +51,7 @@ public interface DatabaseDAO {
     List<DataBaseInfo> getHiveDataBaseCode(@Param("tenantId") String tenantId, @Param("databases") List<String> databases);
 
     @Select("<script>" +
-            " SELECT " +
+            " SELECT DISTINCT " +
             " info.database_guid as databaseId, " +
             " info.database_name as databaseName " +
             " FROM " +

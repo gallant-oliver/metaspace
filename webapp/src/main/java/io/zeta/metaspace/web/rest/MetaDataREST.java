@@ -938,6 +938,7 @@ public class MetaDataREST {
                 DataSourceInfo dataSourceInfo = dataSourceService.getDataSourceInfo(sourceId);
                 if(null != dataSourceInfo){
                     table.setSourceType(dataSourceInfo.getSourceType().toUpperCase());
+                    table.setSourceName(dataSourceInfo.getSourceName());
                 }
             }
         }
