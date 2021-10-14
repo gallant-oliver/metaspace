@@ -1260,9 +1260,11 @@ public interface UserGroupDAO {
 	
 	
     @Select("<script>" +
-            "select count(*)over() totalSize,dgr.id, di.database_name databaseName,d.source_name sourceName,d.source_type sourceType " +
+            "select count(*)over() totalSize,dgr.id, di.database_name databaseName," +
+            " case when di.source_id = 'hive' then 'hive' else d.source_name end as sourceName," +
+            " case when di.source_id = 'hive' then 'HIVE' else d.source_type end as sourceType " +
             " from database_group_relation dgr " +
-            " join data_source d  " +
+            " left join data_source d  " +
             " on d.source_id=dgr.source_id " +
             " join db_info di  " +
             " on di.database_guid=dgr.database_guid " +
