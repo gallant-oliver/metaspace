@@ -953,6 +953,19 @@ public class BusinessREST {
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
     }
 
+    @Permission({ModuleEnum.BUSINESS, ModuleEnum.AUTHORIZATION})
+    @GET
+    @Path("/excel/allcategory/template")
+    @Valid
+    public void downloadAllCategoryTemplate() throws Exception {
+        TemplateEnum templateEnum=TemplateEnum.ALL_CATEGORY_TEMPLATE;
+        String fileName = templateEnum.getFileName();
+        InputStream inputStream = PoiExcelUtils.getTemplateInputStream(templateEnum);
+        response.setContentType("application/force-download");
+        response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
+        IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+    }
+
     /**
      * 导出业务对象
      *
