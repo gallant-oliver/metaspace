@@ -125,7 +125,7 @@ public class SearchService {
                 if (CollectionUtils.isEmpty(dbList)) {
                     return databasePageResult;
                 }
-                databaseList = databaseInfoDAO.selectAuthHive(dbList, limit, offset, groupIds);
+                databaseList = databaseInfoDAO.selectAuthHive(dbList, limit, offset, groupIds, HiveConstant.SOURCE_ID);
             } else {
 //                databaseList = databaseInfoDAO.selectBySourceId(sourceId, limit, offset);
                 //用户组新增数据库权限，需要根据租户查询用户组，然后显示该用户组下该数据源可显示的数据库
