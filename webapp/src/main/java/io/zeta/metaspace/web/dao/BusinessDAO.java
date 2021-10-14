@@ -440,7 +440,7 @@ public interface BusinessDAO {
     void updateApproveIdAndApproveGroupId(@Param("businessId") String businessId, @Param("approveId") String approveId);
 
     @Select("SELECT bi.businessid businessId, bi.name businessName, bi.departmentid departmentId, c.name departmentName, " +
-            "bi.create_mode createMode, bi.module module, bi.description description, bi.owner owner, bi.manager manager, " +
+            "bi.create_mode createMode, bi.module module, bi.description description, bi.owner, bi.manager manager, " +
             "bi.maintainer maintainer, bi.dataassets dataAssets, bi.publish publish, bi.publish_desc publishDesc " +
             "FROM businessinfo bi " +
             "INNER JOIN category c ON c.guid = bi.departmentId " +
