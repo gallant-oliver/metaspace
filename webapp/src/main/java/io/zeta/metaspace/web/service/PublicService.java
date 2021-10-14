@@ -71,6 +71,7 @@ public class PublicService {
             if (CollectionUtils.isEmpty(categoryEntityV2s)) {
                 return categoryGlobalList;
             }
+            removeNoParentCategory(categoryEntityV2s);
             Map<String, List<CategoryEntityV2>> map = categoryEntityV2s.stream().collect(Collectors.groupingBy(CategoryEntityV2::getTenantid));
             for (Tenant tenant : tenants) {
                 CategoryGlobal categoryGlobal = new CategoryGlobal();
@@ -114,7 +115,6 @@ public class PublicService {
                 List<CategoryEntityV2> categories = userGroupDAO.getAllCategoryByCommonTenant(userGroupIds, categoryType, user.getUserId());
                 categoryEntityV2s = new HashSet<>(categories);
             }
-            removeNoParentCategory(categoryEntityV2s);
         } catch (AtlasBaseException e) {
             log.error("getCategoryGeneral exception {}", e);
         }
