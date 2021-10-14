@@ -22,7 +22,7 @@ public class ImportCategory {
     private boolean all;
     private String direction;
     private boolean authorized;
-    private int type;
+    private Integer type;
 
     public int getType() {
         return type;
