@@ -448,7 +448,7 @@ public interface BusinessDAO {
 
     //查询业务目录关系业务信息列表（分页）
     @Results({
-            @Result(property = "tables",javaType = List.class,column = "{businessId = businessIdVal,tenantId = tenantId}",many = @Many(select = "queryAllTablesByBusinessId"))
+            @Result(property = "tables",javaType = List.class,column = "businessId",many = @Many(select = "queryAllTablesByBusinessId"))
     })
     @Select("<script>" +
             "select bi.businessid businessId, bi.trusttable trustTable, " +
