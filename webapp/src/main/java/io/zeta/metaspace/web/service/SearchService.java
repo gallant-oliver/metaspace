@@ -25,6 +25,7 @@ import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
+import io.zeta.metaspace.web.model.HiveConstant;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.EntityUtil;
 import io.zeta.metaspace.web.util.HiveMetaStoreBridgeUtils;
@@ -106,6 +107,9 @@ public class SearchService {
             //获取当前租户下用户所属用户组
             User user = AdminUtils.getUserData();
             List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+            if (CollectionUtils.isEmpty(groups)) {
+                return databasePageResult;
+            }
             List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
             if (StringUtils.isEmpty(sourceId)) {
                 dbList = tenantService.getDatabase(tenantId);
@@ -116,12 +120,12 @@ public class SearchService {
                     query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
                 }
                 databaseList = databaseInfoDAO.selectByDbNameAndTenantId(tenantId, groupIds,query, dbList, limit, offset);
-            } else if ("hive".equalsIgnoreCase(sourceId)) {
+            } else if (HiveConstant.SOURCE_ID.equalsIgnoreCase(sourceId)) {
                 dbList = tenantService.getCurrentTenantDatabase(tenantId);
                 if (CollectionUtils.isEmpty(dbList)) {
                     return databasePageResult;
                 }
-                databaseList = databaseInfoDAO.selectByHive(dbList, limit, offset);
+                databaseList = databaseInfoDAO.selectAuthHive(dbList, limit, offset, groupIds);
             } else {
 //                databaseList = databaseInfoDAO.selectBySourceId(sourceId, limit, offset);
                 //用户组新增数据库权限，需要根据租户查询用户组，然后显示该用户组下该数据源可显示的数据库
