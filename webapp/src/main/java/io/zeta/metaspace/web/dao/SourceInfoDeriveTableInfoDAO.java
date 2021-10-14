@@ -222,4 +222,10 @@ public interface SourceInfoDeriveTableInfoDAO {
     List<SourceInfoDeriveTableInfo> getDeriveTableByGuid(@Param("sourceId")String sourceId,
                                                                    @Param("tableGuid") String tableGuid );
 
+
+    @Select("SELECT * FROM source_info_derive_table_info WHERE db_id = #{dbId} AND table_name_en = #{tableName}")
+    List<SourceInfoDeriveTableInfo> selectByDbAndTableName(@Param("dbId") String dbId, @Param("tableName") String tableName);
+
+    @Select("SELECT * FROM source_info_derive_table_info WHERE table_guid = #{tableGuid}")
+    List<SourceInfoDeriveTableInfo> selectByTableGuid(@Param("tableGuid") String table_guid);
 }

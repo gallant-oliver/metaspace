@@ -2006,6 +2006,10 @@ public class DataManageService {
         }
     }
 
+    private void updateDeriveTable(TableInfo tableInfo){
+
+    }
+
     private Database getDbInfo(AtlasEntity entity) {
         String guid = entity.getGuid();
         String qualifiedName = getEntityAttribute(entity, "qualifiedName");

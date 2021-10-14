@@ -505,8 +505,12 @@ public interface CategoryDAO {
             "</script>")
     public int updateCategoryV2Info(@Param("category") CategoryEntityV2 category, @Param("tenantId") String tenantId, @Param("updater") String updater, @Param("updateTime") Timestamp updateTime);
 
+    @Select("select max(sort) from category where parentCategoryGuid=#{parentCategoryGuid} and tenantid=#{tenantId}")
+    public int queryLastChildCategorySort(@Param("parentCategoryGuid") String guid, @Param("tenantId") String tenantId);
 
-    @Select("select * from category where categoryType=#{categoryType}")
+    @Update("update category set parentcategoryguid=#{parentcategoryguid},upBrotherCategoryGuid=#{upBrotherCategoryGuid},downBrotherCategoryGuid=#{downBrotherCategoryGuid},sort=#{sort} where guid=#{guid} and tenantid=#{tenantId}")
+    public int updateCategoryGuid(@Param("guid") String guid, @Param("parentcategoryguid") String parentcategoryguid, @Param("upBrotherCategoryGuid") String upBrothCatalogGuid, @Param("downBrotherCategoryGuid") String downBrothCatalogGuid, @Param("tenantId") String tenantId,@Param("sort") Integer sort);
+	@Select("select * from category where categoryType=#{categoryType}")
     Set<CategoryEntityV2> selectGlobal(@Param("categoryType") Integer categoryType);
 
     @Select("<script>" +
@@ -533,7 +537,4 @@ public interface CategoryDAO {
             " </foreach>" +
             " </if>"+
             "</script>")
-    Set<CategoryEntityV2> selectListByStatus(@Param("creator") String creator, @Param("groupIdList") List<String> groupIdList, @Param("categoryType") Integer categoryType);
-
-
-}
+    Set<CategoryEntityV2> selectListByStatus(@Param("creator") String creator, @Param("groupIdList") List<String> groupIdList, @Param("categoryType") Integer categoryType);}

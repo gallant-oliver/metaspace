@@ -24,18 +24,23 @@ import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.business.*;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.enums.BusinessType;
+import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
+import io.zeta.metaspace.model.result.CategorycateQueryResult;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.ApiHead;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
+import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.web.dao.*;
@@ -45,11 +50,13 @@ import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
+import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.atlas.repository.graphdb.AtlasGraph;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.mybatis.spring.MyBatisSystemException;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -362,8 +369,8 @@ public class BusinessService implements Approvable {
     }
 
     private List<TechnologyInfo.Table> buildTablesByBusinessId(String businessId, String tenantId, String trustTableGuid, List<TechnologyInfo.Table> tables) {
-        if(tables ==null ){
-            tables = businessDao.queryTablesByBusinessIdAndTenantId(businessId);
+        if(tables == null ){
+            tables = businessDao.queryAllTablesByBusinessId(businessId, tenantId);
         }
         tables.forEach(table -> {
             if (Objects.nonNull(table.getDisplayName())) {
@@ -699,7 +706,8 @@ public class BusinessService implements Approvable {
             businessDao.updateTrustTable(businessId);
 
             if (Objects.nonNull(list) && list.size() > 0) {
-                businessDao.insertTableRelation(businessId, list);
+                // 关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表
+                businessDao.insertTableRelation(businessId, list, 0);
                 if (Objects.isNull(trustTable)) {
                     trustTable = list.get(0);
                 }
@@ -2043,5 +2051,77 @@ public class BusinessService implements Approvable {
 
         // 更新
         businessDao.updateBusinessPublicStatus(publishStatus);
+    }
+
+    /**
+     * 查询目录中未关联当前业务对象的表
+     *
+     * @param categoryGuid
+     * @param businessId
+     * @param tenantId
+     */
+    public PageResult<RelationEntityV2> getCategoryRelationFilter(String categoryGuid, String businessId, RelationQuery query, String tenantId) {
+        try {
+            int limit = query.getLimit();
+            int offset = query.getOffset();
+            PageResult<RelationEntityV2> pageResult = new PageResult<>();
+            int totalNum = 0;
+            String tableName = query.getFilterTableName();
+            if (org.apache.commons.lang.StringUtils.isNotBlank(tableName)) {
+                tableName = tableName.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
+            }
+            List<RelationEntityV2> relations = businessDao.queryRelationByCategoryGuidAndBusinessIdFilterV2(categoryGuid, businessId, tenantId, limit, offset, tableName);
+            if (!org.springframework.util.CollectionUtils.isEmpty(relations)) {
+                totalNum = relations.get(0).getTotal();
+            }
+            getPath(relations, tenantId);
+            pageResult.setCurrentSize(relations.size());
+            pageResult.setLists(relations);
+            pageResult.setTotalSize(totalNum);
+            return pageResult;
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            LOG.error("获取关联失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联失败");
+        }
+    }
+
+    public void getPath(List<RelationEntityV2> list, String tenantId) throws AtlasBaseException {
+        for (RelationEntityV2 entity : list) {
+            String path = CategoryRelationUtils.getPath(entity.getCategoryGuid(), tenantId);
+            entity.setPath(path);
+        }
+    }
+
+    public Map<String, Boolean> getTableAuth(String tableId, String tenantId) {
+        Map<String, Boolean> result = new HashMap<>();
+        result.put("jump", false);
+
+        List<UserGroupIdAndName> userGroups = AdminUtils.getUserData().getUserGroups();
+
+        if (CollectionUtils.isNotEmpty(userGroups)) {
+            List<String> userGroupIds = userGroups.stream().map(u -> u.getId()).collect(Collectors.toList());
+
+            // 当前用户是否同时有表所在数据库和数据源的查看权限
+            int databaseCount = businessDao.getDatabaseAuth(tableId, userGroupIds);
+            int datasourceCount = businessDao.getDataSourceAuth(tableId, userGroupIds);
+            if (databaseCount > 0 && datasourceCount > 0) {
+                result.put("jump", true);
+            }
+        }
+
+        return result;
+    }
+
+    public List<CategorycateQueryResult> getBusinessPlaceCategories(Integer type, String tenantId) {
+        List<CategorycateQueryResult> result = new ArrayList<>();
+        List<CategorycateQueryResult> allCategories = businessCatalogueService.getAllCategories(1, tenantId);
+        if (CollectionUtils.isNotEmpty(allCategories)) {
+            // 取出有编辑权限的目录
+            result = allCategories.stream().filter(c -> c.getEditItem() != null && c.getEditItem()).collect(Collectors.toList());
+        }
+
+        return result;
     }
 }

@@ -30,6 +30,7 @@ import io.zeta.metaspace.model.share.ProjectHeader;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.*;
 import io.zeta.metaspace.model.usergroup.result.*;
+import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
@@ -76,6 +77,10 @@ public class UserGroupService {
     RelationDAO relationDAO;
     @Autowired
     private SourceInfoDAO sourceInfoDAO;
+
+    @Autowired
+    private BusinessDAO businessDAO;
+
     private static final Logger LOG = LoggerFactory.getLogger(UserGroupService.class);
     public PageResult<UserGroupListAndSearchResult> getUserGroupListAndSearch(String tenantId, int offset, int limit, String sortBy, String order, String query) throws AtlasBaseException {
         PageResult<UserGroupListAndSearchResult> commonResult = new PageResult<>();
@@ -1814,6 +1819,9 @@ public class UserGroupService {
 
         // 添加新的权限
         userGroupDAO.addBusinessPrivileges(businessIds, groupIds, business.getRead());
+
+        // 将业务对象设置为‘创建人不可见’
+        businessDAO.updateBusinessSubmitterRead(false, businessIds);
 
         Timestamp currentTime = new Timestamp(System.currentTimeMillis());
         userGroupDAO.updateCategorys(business.getUserGroupIds(), currentTime, AdminUtils.getUserData().getUserId());
