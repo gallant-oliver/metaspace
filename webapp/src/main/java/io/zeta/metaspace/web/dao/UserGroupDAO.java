@@ -1317,14 +1317,13 @@ public interface UserGroupDAO {
     public String getSourceName(@Param("sourceId") String sourceId);
 
     @Select({"<script>" ,
-            "select sd.db_guid databaseGuid,di.database_name databaseName  from source_db sd" +
-                    " inner join db_info di on di.database_guid=sd.db_guid and di.status='ACTIVE'" +
-                    " where sd.source_id=#{sourceId}" +
+            "select di.database_guid databaseGuid,di.database_name databaseName from db_info di " +
+                    " where di.status='ACTIVE'" +
                     " and di.database_name in " +
                     " <foreach collection='dbs' item='item' separator=',' open='(' close=')'>"+
                     "    #{item}"+
                     "  </foreach>" +
-                    " and sd.db_guid not in (select database_guid from database_group_relation " +
+                    " and di.database_guid not in (select database_guid from database_group_relation " +
                     " where group_id=#{groupId} and source_id=#{sourceId})" +
                     "</script>"})
     public List<DBInfo> getNotAuthHiveDataBases(@Param("groupId") String groupId, @Param("sourceId") String sourceId,
