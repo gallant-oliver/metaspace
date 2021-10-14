@@ -15,8 +15,10 @@ package io.zeta.metaspace.model.result;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.zeta.metaspace.model.business.BusinessInfo;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 /**
  * @author lixiang03
@@ -42,6 +44,8 @@ public class GroupPrivilege {
     private Boolean editCategory;
     private Boolean editItem;
 
+    private List<BusinessInfo> businessInfos;
+
     public GroupPrivilege(GroupPrivilege privilege){
         this.read=privilege.read;
         this.editCategory=privilege.editCategory;
@@ -50,6 +54,14 @@ public class GroupPrivilege {
         this.categoryId=privilege.categoryId;
     }
     public GroupPrivilege(){}
+
+    public List<BusinessInfo> getBusinessInfos() {
+        return businessInfos;
+    }
+
+    public void setBusinessInfos(List<BusinessInfo> businessInfos) {
+        this.businessInfos = businessInfos;
+    }
 
     public String getCategoryId() {
         return categoryId;

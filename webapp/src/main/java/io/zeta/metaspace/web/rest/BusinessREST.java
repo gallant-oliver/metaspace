@@ -374,14 +374,14 @@ public class BusinessREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<CategorycateQueryResult> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort,@QueryParam("type") Integer type, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
-        if(null==type){
+        /*if(null==type){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录类型不能为空");
-        }
+        }*/
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategories()");
             }
-            return  businessCatalogueService.getAllCategories(type, tenantId);
+            return  businessCatalogueService.getAllCategories(1, tenantId);
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -764,10 +764,8 @@ public class BusinessREST {
     @GET
     @Path("/export/selected/{downloadId}")
     @Valid
-    public void exportSelected(@PathParam("downloadId") String downloadId, @QueryParam("tenantId") String tenantId,@QueryParam("type") Integer type) throws Exception {
-        if(null==type){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录类型不能为空");
-        }
+    public void exportSelected(@PathParam("downloadId") String downloadId, @QueryParam("tenantId") String tenantId) throws Exception {
+        Integer type=1;
         File exportExcel;
         //全局导出
         String all = "all";
@@ -811,10 +809,14 @@ public class BusinessREST {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result uploadCategory(@FormDataParam("categoryId") String categoryId,
-                                 @FormDataParam("type") int type,
+                                 @FormDataParam("type") Integer type,
                                  @DefaultValue("false") @FormDataParam("all") boolean all, @FormDataParam("direction") String direction,
                                  @HeaderParam("tenantId") String tenantId, @FormDataParam("file") InputStream fileInputStream,
                                  @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
+
+        if(null==type){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录类型不能为空");
+        }
         File file = null;
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
@@ -1278,6 +1280,83 @@ public class BusinessREST {
             if (exportExcel != null) {
                 exportExcel.delete();
             }
+        }
+    }
+
+    /**
+     * 获取技术目录关联表（过滤掉已关联当前业务对象的表）
+     *
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/technical/{categoryGuid}/{businessId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<RelationEntityV2> getCategoryRelationFilter(@PathParam("categoryGuid") String categoryGuid, @PathParam("businessId") String businessId,
+                                                                  RelationQuery relationQuery, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategoryRelationFilter(" + categoryGuid + ")");
+            }
+
+            return businessService.getCategoryRelationFilter(categoryGuid, businessId, relationQuery, tenantId);
+        } catch (MyBatisSystemException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 当前用户是否同时有表所在数据库和数据源的查看权限
+     *
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{tableId}/auth")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Map<String, Boolean> getTableAuth(@PathParam("tableId") String tableId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getTableAuth(" + tableId + ")");
+            }
+
+            return businessService.getTableAuth(tableId, tenantId);
+        } catch (MyBatisSystemException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 业务对象迁移的可选目录列表
+     *
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/place/categories")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<CategorycateQueryResult> getBusinessPlaceCategories(@QueryParam("type") Integer type, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getBusinessPlaceCategories()");
+            }
+
+            return businessService.getBusinessPlaceCategories(type, tenantId);
+        } catch (MyBatisSystemException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
+        } finally {
+            AtlasPerfTracer.log(perf);
         }
     }
 }
