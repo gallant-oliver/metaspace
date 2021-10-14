@@ -98,7 +98,7 @@ public interface BusinessDAO {
             "  business2table \n" +
             "WHERE\n" +
             " businessId =#{businessId})")
-    public List<TechnologyInfo.Table> queryTablesByBusinessIdAndTenantId(@Param("businessId") String businessId, @Param("tenantId") String tenantId);
+    public List<TechnologyInfo.Table> queryTablesByBusinessIdAndTenantId(@Param("businessId") String businessId);
 
     //添加目录/业务对象关联
     @Insert("insert into business_relation(relationshipGuid,categoryGuid,businessId,generateTime)values(#{relationshipGuid},#{categoryGuid},#{businessId},#{generateTime})")
