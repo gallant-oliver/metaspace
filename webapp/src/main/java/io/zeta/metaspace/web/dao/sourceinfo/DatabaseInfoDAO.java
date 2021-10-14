@@ -532,10 +532,6 @@ public interface DatabaseInfoDAO {
             " <foreach collection='hiveList' item='item' separator=',' open='(' close=')'>" +
             "  #{item}" +
             " </foreach>" +
-            " and group_id in " +
-            "<foreach collection='groupIds' item='id' separator=',' open='(' close=')'>"+
-            "#{id}"+
-            "</foreach>" +
             " <if test='limit != -1'>" +
             "  limit #{limit} " +
             " </if>" +
