@@ -285,11 +285,12 @@ public class MetadataHistoryService {
             return;
         }
         File file =  null;
+        File tplFile = null;
         try {
+            tplFile = File.createTempFile("tpl_"+System.currentTimeMillis(),".docx");
             file = File.createTempFile("tmp_"+System.currentTimeMillis(),".docx");
             String targetPath = file.getAbsolutePath();
-            WordExport.fillDataTemplate(paragraphMap,excelMapList,
-                    MetadataHistoryService.class.getResource("/tpl/table_change_template.docx").getPath(),targetPath);
+            WordExport.fillDataTemplate(paragraphMap,excelMapList,tplFile.getAbsolutePath(),targetPath);
             log.info("模板生成完毕..");
             String attachmentBase64content= Base64Utils.fileToBase64(targetPath), fileName="元数据版本差异清单.docx", content="元数据有变化，请查看附件检查详情信息";
             log.info("转换base64 sucess.");
@@ -298,9 +299,14 @@ public class MetadataHistoryService {
         } catch (IOException e) {
             log.error("生成模板文件出错:{}",e);
         }finally {
+            log.info("开始删除临时文件...");
+            if(tplFile != null && tplFile.exists()){
+                tplFile.delete();
+            }
             if(file != null && file.exists()){
                 file.delete();
             }
+            log.info("删除临时文件ok");
         }
 
     }
