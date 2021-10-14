@@ -544,7 +544,8 @@ public interface DatabaseInfoDAO {
             " </if>" +
             "</script>")
     List<Database> selectAuthHive(@Param("hiveList") List<String> hiveList, @Param("limit") Long limit,
-                                  @Param("offset") Long offset, @Param("groupIds") List<String> groupIds);
+                                  @Param("offset") Long offset, @Param("groupIds") List<String> groupIds,
+                                  @Param("sourceId") String sourceId);
 
     @Select("<script>" +
             " SELECT count(t.*)over() total, t.* from (" +
