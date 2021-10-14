@@ -504,4 +504,10 @@ public interface CategoryDAO {
             " where guid=#{category.guid} and tenantid=#{tenantId}"+
             "</script>")
     public int updateCategoryV2Info(@Param("category") CategoryEntityV2 category, @Param("tenantId") String tenantId, @Param("updater") String updater, @Param("updateTime") Timestamp updateTime);
+
+    @Select("select max(sort) from category where parentCategoryGuid=#{parentCategoryGuid} and tenantid=#{tenantId}")
+    public int queryLastChildCategorySort(@Param("parentCategoryGuid") String guid, @Param("tenantId") String tenantId);
+
+    @Update("update category set parentcategoryguid=#{parentcategoryguid},upBrotherCategoryGuid=#{upBrotherCategoryGuid},downBrotherCategoryGuid=#{downBrotherCategoryGuid},sort=#{sort} where guid=#{guid} and tenantid=#{tenantId}")
+    public int updateCategoryGuid(@Param("guid") String guid, @Param("parentcategoryguid") String parentcategoryguid, @Param("upBrotherCategoryGuid") String upBrothCatalogGuid, @Param("downBrotherCategoryGuid") String downBrothCatalogGuid, @Param("tenantId") String tenantId,@Param("sort") Integer sort);
 }

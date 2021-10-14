@@ -1337,4 +1337,84 @@ public class BusinessCatalogueService implements Approvable {
         return deleteReturn;
     }
 
+    public void migrateCategory(String categoryId, String parentId, int type, String tenantId) throws Exception {
+        CategoryEntityV2 category = categoryDao.queryByGuid(categoryId, tenantId);
+        if (category == null) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录不存在");
+        }
+        if (categoryDao.querySameNameNum(category.getName(), parentId, type, tenantId) > 0) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在同名目录，请迁移到其他目录或修改目录名字");
+        }
+        List<GroupPrivilege> parentPrivilege = userGroupDAO.getCategoryGroupPrivileges(parentId, tenantId);
+        List<GroupPrivilege> oldPrivilege = userGroupDAO.getCategoryGroupPrivileges(categoryId, tenantId);
+        Map<String, GroupPrivilege> privilegeMap = new HashMap<>();
+        List<GroupPrivilege> insertPrivilege = new ArrayList<>();
+        List<GroupPrivilege> updatePrivilege = new ArrayList<>();
+        oldPrivilege.forEach(privilege -> {
+            privilegeMap.put(privilege.getId(), privilege);
+        });
+        parentPrivilege.forEach(privilege -> {
+            GroupPrivilege groupPrivilege = privilegeMap.get(privilege.getId());
+            if (groupPrivilege == null || groupPrivilege.getRead() == null) {
+                GroupPrivilege childPrivilege = new GroupPrivilege(privilege);
+                childPrivilege.setCategoryId(categoryId);
+                insertPrivilege.add(privilege);
+            } else if (privilege.getRead()) {
+                groupPrivilege.setRead(true);
+                groupPrivilege.setCategoryId(categoryId);
+                if (privilege.getEditItem()) {
+                    groupPrivilege.setEditItem(true);
+                }
+                if (privilege.getEditCategory()) {
+                    groupPrivilege.setEditCategory(true);
+                }
+                updatePrivilege.add(groupPrivilege);
+            }
+        });
+
+        //子目录权限
+        List<RoleModulesCategories.Category> childCategorys = userGroupDAO.getChildCategorys(Lists.newArrayList(categoryId), category.getCategoryType(), tenantId);
+        for (RoleModulesCategories.Category childCategory : childCategorys) {
+            privilegeMap.clear();
+            List<GroupPrivilege> childOldPrivilege = userGroupDAO.getCategoryGroupPrivileges(childCategory.getGuid(), tenantId);
+            childOldPrivilege.forEach(privilege -> {
+                privilegeMap.put(privilege.getId(), privilege);
+            });
+            parentPrivilege.forEach(privilege -> {
+                GroupPrivilege groupPrivilege = privilegeMap.get(privilege.getId());
+                if (groupPrivilege == null || groupPrivilege.getRead() == null) {
+                    GroupPrivilege childPrivilege = new GroupPrivilege(privilege);
+                    childPrivilege.setCategoryId(childCategory.getGuid());
+                    insertPrivilege.add(privilege);
+                } else if (privilege.getRead()) {
+                    groupPrivilege.setRead(true);
+                    groupPrivilege.setCategoryId(childCategory.getGuid());
+                    if (privilege.getEditItem()) {
+                        groupPrivilege.setEditItem(true);
+                    }
+                    if (privilege.getEditCategory()) {
+                        groupPrivilege.setEditCategory(true);
+                    }
+                    updatePrivilege.add(groupPrivilege);
+                }
+            });
+
+        }
+
+        if (insertPrivilege.size() != 0) {
+            userGroupDAO.addUserGroupPrivileges(insertPrivilege);
+        }
+        if (updatePrivilege.size() != 0) {
+            userGroupDAO.updateUserGroupPrivileges(updatePrivilege);
+        }
+        String upId = category.getUpBrotherCategoryGuid();
+        String downId = category.getDownBrotherCategoryGuid();
+        String lastChildGuid = categoryDao.queryLastChildCategory(parentId, tenantId);
+        Integer lastSort= categoryDao.queryLastChildCategorySort(parentId,tenantId);
+        categoryDao.updateDownBrotherCategoryGuid(upId, downId, tenantId);
+        categoryDao.updateUpBrotherCategoryGuid(downId, upId, tenantId);
+        categoryDao.updateDownBrotherCategoryGuid(lastChildGuid, categoryId, tenantId);
+        categoryDao.updateCategoryGuid(categoryId, parentId, lastChildGuid, null, tenantId,lastSort+1);
+    }
+
 }

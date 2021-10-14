@@ -764,10 +764,8 @@ public class BusinessREST {
     @GET
     @Path("/export/selected/{downloadId}")
     @Valid
-    public void exportSelected(@PathParam("downloadId") String downloadId, @QueryParam("tenantId") String tenantId,@QueryParam("type") Integer type) throws Exception {
-        if(null==type){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录类型不能为空");
-        }
+    public void exportSelected(@PathParam("downloadId") String downloadId, @QueryParam("tenantId") String tenantId) throws Exception {
+        Integer type=1;
         File exportExcel;
         //全局导出
         String all = "all";
@@ -811,10 +809,14 @@ public class BusinessREST {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result uploadCategory(@FormDataParam("categoryId") String categoryId,
-                                 @FormDataParam("type") int type,
+                                 @FormDataParam("type") Integer type,
                                  @DefaultValue("false") @FormDataParam("all") boolean all, @FormDataParam("direction") String direction,
                                  @HeaderParam("tenantId") String tenantId, @FormDataParam("file") InputStream fileInputStream,
                                  @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
+
+        if(null==type){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录类型不能为空");
+        }
         File file = null;
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
