@@ -557,12 +557,15 @@ public interface DatabaseInfoDAO {
             " SELECT count(t.*)over() total, t.* from (" +
             " SELECT source.tenantid as tenantId,db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,sd.source_id,db.database_description,source.source_name as sourceName,db.owner FROM db_info as db" +
             " INNER JOIN source_db as sd on db.database_guid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
-            " WHERE db.status = 'ACTIVE' AND database_name like concat('%',#{dbName},'%') " +
+            " WHERE db.status = 'ACTIVE' " +
+            "<if test = \"dbName !=null and dbName !=''\">" +
+            "AND database_name like concat('%',#{dbName},'%') " +
+            "</if>" +
 
             " <if test='tenantGroupList != null and tenantGroupList.size() > 0'>" +
             " AND ( " +
-                " <foreach collection='tenantGroupList' item='item' open='(' close=')' separator=' OR '>" +
-                "  source.tenantid=#{item.tenantId} " +
+                " <foreach collection='tenantGroupList' item='item' separator=' OR '>" +
+                "  ( source.tenantid=#{item.tenantId} " +
                 " <if test='item.groupList != null and item.groupList.size() > 0'>" +
                 " and db.database_guid in (select database_guid from database_group_relation where "+
                     " group_id in "+
@@ -570,6 +573,7 @@ public interface DatabaseInfoDAO {
                     "  #{id}" +
                     " </foreach> " +
                     " ) </if>" +
+                 " ) "+
                 " </foreach>" +
             " ) </if>" +
 
@@ -585,7 +589,11 @@ public interface DatabaseInfoDAO {
             " ) te"+
             " </if>" +
 
-            " WHERE db.status = 'ACTIVE' AND db.db_type = 'HIVE' AND db.database_name like concat('%',#{dbName},'%') AND db.database_name in " +
+            " WHERE db.status = 'ACTIVE' AND db.db_type = 'HIVE' " +
+            "<if test = \"dbName !=null and dbName !=''\">" +
+            " AND db.database_name like concat('%',#{dbName},'%')  " +
+            "</if>" +
+            " AND db.database_name in " +
             " <foreach collection='hiveList' item='item' separator=',' open='(' close=')'>" +
             "  #{item}" +
             " </foreach>" +
