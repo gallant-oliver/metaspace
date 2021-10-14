@@ -294,7 +294,7 @@ public interface TableDAO {
             " UNION" +
             " select te.id as tenantId,tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description,'hive' as source_id,'hive' AS source_name" +
             " from tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid" +
-            " <if test='tenantIdList != null and tenantIdList.size() > 0'>" +
+            " <if test='tenantList != null and tenantList.size() > 0'>" +
             " INNER JOIN (select id from tenant tmp where tmp.id in  " +
             " <foreach collection='tenantList' item='item' separator=',' open='(' close=')'>" +
             "  #{item}" +
