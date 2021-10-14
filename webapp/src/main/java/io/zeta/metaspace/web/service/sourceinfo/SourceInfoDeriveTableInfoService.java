@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.service.sourceinfo;
 
+import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
@@ -162,6 +163,9 @@ public class SourceInfoDeriveTableInfoService {
         this.save(sourceInfoDeriveTableInfo);
         sourceInfoDeriveColumnInfoService.saveBatch(sourceInfoDeriveColumnInfos);
         sourceInfoDeriveTableColumnRelationService.saveBatch(sourceInfoDeriveTableColumnRelationList);
+
+        // 新增业务对象-表关系(关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表)
+        businessDAO.insertTableRelation(sourceInfoDeriveTableInfo.getBusinessId(), Lists.newArrayList(sourceInfoDeriveTableInfo.getSourceTableGuid()), 1);
         return true;
     }
 
@@ -185,6 +189,10 @@ public class SourceInfoDeriveTableInfoService {
         // 原表的id和guid
         String tableId = sourceInfoDeriveTableColumnDto.getId();
         String tableGuid = sourceInfoDeriveTableColumnDto.getTableGuid();
+
+        // 查询旧的关联的源表id
+        SourceInfoDeriveTableInfo oldSourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDao.getByIdAndTenantId(tableId, tenantId);
+
         // 表
         SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = new SourceInfoDeriveTableInfo();
         BeanUtils.copyProperties(sourceInfoDeriveTableColumnDto, sourceInfoDeriveTableInfo);
@@ -283,6 +291,11 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveColumnInfoService.saveOrUpdateBatch(sourceInfoDeriveColumnInfos);
         }
         sourceInfoDeriveTableColumnRelationService.saveOrUpdateBatch(sourceInfoDeriveTableColumnRelationList);
+
+        // 删除旧的业务对象-表关联关系
+        businessDAO.deleteRelationByBusinessIdAndTableId(oldSourceInfoDeriveTableInfo.getBusinessId(), oldSourceInfoDeriveTableInfo.getSourceTableGuid());
+        // 新增业务对象-表关系(关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表)
+        businessDAO.insertTableRelation(sourceInfoDeriveTableInfo.getBusinessId(), Lists.newArrayList(sourceInfoDeriveTableInfo.getSourceTableGuid()), 1);
         return true;
     }
 

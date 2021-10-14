@@ -48,8 +48,47 @@ public class TechnologyInfo {
         private String sourceId;
         private String sourceName;
 
+        /**
+        * 与业务对象关联关系来源：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表
+        */
+        private Integer relationType;
+
+        /**
+         * 是否重要
+         */
+        private boolean important;
+
+        /**
+         * 是否保密
+         */
+        private boolean secret;
+
         @JsonIgnore
         private int total;
+
+        public boolean isImportant() {
+            return important;
+        }
+
+        public void setImportant(boolean important) {
+            this.important = important;
+        }
+
+        public boolean isSecret() {
+            return secret;
+        }
+
+        public void setSecret(boolean secret) {
+            this.secret = secret;
+        }
+
+        public Integer getRelationType() {
+            return relationType;
+        }
+
+        public void setRelationType(Integer relationType) {
+            this.relationType = relationType;
+        }
 
         public String getDescription() {
             return description;

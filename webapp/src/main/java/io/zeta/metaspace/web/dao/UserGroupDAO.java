@@ -1175,8 +1175,12 @@ public interface UserGroupDAO {
     public int deleteGroupPrivilege(@Param("ids") List<String> ids,@Param("userGroupIds")List<String> userGroupIds);
 
     //实现用户组列表及搜索
+    @Results({
+            @Result(property = "businessInfos",javaType = List.class,column = "{categoryId = categoryId,tenantId = tenantId,userGroupId=id}",many = @Many(select = "queryBusinessesByUserGroup"))
+    })
     @Select("<script>" +
-            "select count(*) over() totalSize,u.id,u.name,u.description,u.creator,u.createtime,u.updatetime,u.authorize_user authorize,u.authorize_time authorizeTime,c.read,c.edit_item editItem,c.edit_category editCategory " +
+            "select count(*) over() totalSize,u.id id,u.name,u.description,u.creator,u.createtime,u.updatetime,u.authorize_user authorize,u.authorize_time authorizeTime,c.read,c.edit_item editItem,c.edit_category editCategory, " +
+            "#{category.guid} categoryId,#{tenantId} tenantId" +
             " from user_group u join " +
             " category_group_relation c " +
             " on u.id=c.group_id " +
@@ -1207,6 +1211,13 @@ public interface UserGroupDAO {
             "</if>" +
             "</script>")
     public List<GroupPrivilege> getUserGroupByCategory(@Param("category")CategoryGroupPrivilege category, @Param("parameters")Parameters parameters, @Param("tenantId")String tenantId);
+
+    @Select("select bi.businessid businessId, bi.name " +
+            "from businessinfo bi " +
+            "inner join business_relation br on br.businessid=bi.businessid and br.categoryguid=#{categoryId} " +
+            "join business_2_group bg on bg.business_id=bi.businessid and bg.group_id=#{userGroupId} " +
+            "where bi.tenantid=#{tenantId}")
+    List<BusinessInfo> queryBusinessesByUserGroup(@Param("categoryId")String categoryId, @Param("tenantId")String tenantId, @Param("userGroupId")String userGroupId);
 
     //更新用户组
     @Update("<script>" +
