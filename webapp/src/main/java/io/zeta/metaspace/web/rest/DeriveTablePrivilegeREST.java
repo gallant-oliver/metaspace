@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.enums.PrivilegeType;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.CreateRequest;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.DeleteRequest;
 import io.zeta.metaspace.model.table.column.tag.CreateTagRequest;
@@ -26,8 +27,10 @@ public class DeriveTablePrivilegeREST {
     @GET
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public Result getColumnTag(@HeaderParam("tenantId")String tenantId,@QueryParam("columnId")String columnId){
-        return null;
+    public Result getColumnTag(@HeaderParam("tenantId")String tenantId,@QueryParam("privilegeType") PrivilegeType privilegeType,
+                               @QueryParam("userGroupId")String userGroupId,@QueryParam("registerType")Boolean registerType,
+                               @QueryParam("tableName")String tableName,@QueryParam("limit")int limit,@QueryParam("offset")int offset){
+        return deriveTablePrivilegeService.getDeriveTableRelations(tenantId,privilegeType,userGroupId,registerType,tableName,limit,offset);
     }
 
     @POST

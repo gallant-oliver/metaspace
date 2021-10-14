@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.enums.PrivilegeType;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
+import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.DeriveTableVersion;
 import org.apache.ibatis.annotations.*;
@@ -83,4 +84,49 @@ public interface GroupDeriveTableRelationDAO {
             "</foreach>" +
             "</script>")
     void deleteRelation(@Param("ids") List<String> ids);
+
+    @Select("<script>" +
+            "SELECT " +
+            "count(*) over() AS total,\n" +
+            " ti.tableguid AS tableId," +
+            " ti.tablename AS tableNameEn,\n" +
+            "  sidti.table_name_zh AS tableNameZn,\n" +
+            " gtr.importance_privilege AS importancePrivilege,\n" +
+            " gtr.security_privilege AS securityPrivilege,\n" +
+            " gtr.\"id\" AS groupTableRelationId,\n" +
+            " bi.name AS businessObjectName,\n" +
+            " c.name AS businessCategoryName\n" +
+            "FROM\n" +
+            " tableinfo ti \n" +
+            " INNER JOIN source_info_derive_table_info sidti ON sidti.table_name_en = ti.tablename AND sidti.db_id = ti.databaseguid \n" +
+            " LEFT JOIN business2table bt ON bt.tableguid = ti.tableguid\n" +
+            " LEFT JOIN businessinfo bi ON bi.businessid = bt.businessid\n" +
+            " LEFT JOIN business_relation br ON br.businessid = bi.businessid\n" +
+            " LEFT JOIN category c ON c.guid = br.categoryguid\n" +
+            " LEFT JOIN group_table_relation gtr ON gtr.derive_table_id = ti.tableguid AND  gtr.user_group_id = #{userGroupId} \n" +
+            "<if test='privilegeType.name = \"IMPORTANCE\" AND registerType'>" +
+            "   AND gtr.importance_privilege != true OR gtr.importance_privilege IS NULL\n" +
+            "</if>"+
+            "<if test='privilegeType.name = \"IMPORTANCE\" AND registerType'>" +
+            "   AND gtr.importance_privilege = true \n" +
+            "</if>"+
+            "<if test='privilegeType.name = \"SECURITY\" AND registerType'>" +
+            "   AND gtr.security_privilege != true OR gtr.security_privilege IS NULL\n" +
+            "</if>"+
+            "<if test='privilegeType.name = \"SECURITY\" AND registerType'>" +
+            "   AND gtr.security_privilege = true \n" +
+            "</if>"+
+            "<if test='privilegeType.name = \"ALL\" AND registerType'>" +
+            "   AND gtr.security_privilege = true OR gtr.importance_privilege = true\n" +
+            "</if>"+
+            "WHERE\n" +
+            " sidti.tenant_id = #{tenantId} \n" +
+            " AND sidti.table_name_zh like concat('%',#{tableName},'%') ESCAPE '/'\n" +
+            "<if test = 'limit &gt; 0'>"+
+            " LIMIT #{limit} OFFSET #{offset}\n" +
+            "</if>"+
+            "</script>")
+    List<GroupDeriveTableInfo> getRelationInfos(@Param("tenantId") String tenantId, @Param("privilegeType") PrivilegeType privilegeType,
+                                                @Param("userGroupId") String userGroupId, @Param("registerType") Boolean registerType,
+                                                @Param("tableName") String tableName,@Param("limit")  int limit,@Param("offset")  int offset);
 }
