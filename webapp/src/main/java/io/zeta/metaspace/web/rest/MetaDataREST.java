@@ -74,10 +74,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -298,10 +295,10 @@ public class MetaDataREST {
                 }
             }
             PageResult<DataSourceHead> pageResult = dataSourceService.searchDataSources(limit, offset, null, null, query, sourceType, null, null, null, true, queryTenantIdParam);
+            List<Tenant> tenants = tenantService.getTenants();
             if(globalConfig){
                 List<DataSourceHead> list = new ArrayList<>();
                 if(offset == 0 && "hive".contains(query)){
-                    List<Tenant> tenants = tenantService.getTenants();
                     for (Tenant v : tenants){
                         hive = new DataSourceHead();
                         hive.setSourceType("hive");
@@ -315,13 +312,20 @@ public class MetaDataREST {
                     pageResult.getLists().addAll(0,list);
                     pageResult.setCurrentSize(pageResult.getCurrentSize() + list.size());
                     pageResult.setTotalSize(pageResult.getTotalSize() + list.size());
-                    return pageResult;
+                }
+            }else{
+                if (hasHive) {
+                    pageResult.getLists().add(0, hive);
+                    pageResult.setCurrentSize(pageResult.getCurrentSize() + 1);
+                    pageResult.setTotalSize(pageResult.getTotalSize() + 1);
                 }
             }
-            if (hasHive) {
-                pageResult.getLists().add(0, hive);
-                pageResult.setCurrentSize(pageResult.getCurrentSize() + 1);
-                pageResult.setTotalSize(pageResult.getTotalSize() + 1);
+            //如果是查询，则需要补充名称对应的租户额外信息
+            if( CollectionUtils.isNotEmpty(pageResult.getLists()) && StringUtils.isNotBlank(query)){
+                Map<String, String> map = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
+                pageResult.getLists().stream().forEach(v->{
+                        v.setSourceName(v.getSourceName()+"("+map.getOrDefault(v.getTenantId(),"-")+")");
+                });
             }
             return pageResult;
         } finally {
@@ -376,21 +380,48 @@ public class MetaDataREST {
             }
             String queryTenantIdParam = null;
             PageResult<Database> result = null;
+            List<Tenant> tenants = tenantService.getTenants();
             // bizTreeId 不为空则是查询当前租户下的
             if(StringUtils.isNotBlank(bizTreeId)){
                 Map<String, String> map = EntityUtil.decodeBusinessId(bizTreeId);
                 queryTenantIdParam = map.get("tenantId");
                 result = searchService.getDatabases(sourceId, offset, limit, query, queryTenantIdParam, queryTableCount);
+                //如果是查询，则需要补充名称对应的租户额外信息
+                if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
+                    Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
+                    String finalQueryTenantIdParam = queryTenantIdParam;
+                    result.getLists().stream().forEach(v->{
+                        String extInfo = String.join("/",Arrays.asList(tenantMap.getOrDefault(finalQueryTenantIdParam,"-"),v.getSourceName()));
+                        v.setDatabaseName(v.getDatabaseName()+"("+extInfo+")");
+                    });
+                }
                 return result;
             }
             //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
             if(!metadataService.isConfigGloble()){
                 queryTenantIdParam = tenantId;
                 result = searchService.getDatabases(sourceId, offset, limit, query, queryTenantIdParam, queryTableCount);
+                //如果是查询，则需要补充名称对应的租户额外信息
+                if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
+                    Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
+                    result.getLists().stream().forEach(v->{
+                        String extInfo = String.join("/",Arrays.asList(tenantMap.getOrDefault(tenantId,"-"),v.getSourceName()));
+                        v.setDatabaseName(v.getDatabaseName()+"("+extInfo+")");
+                    });
+                }
                 return result;
             }
 
+
             result = searchService.getPublicDatabases(offset, limit, query, queryTableCount);
+            //如果是查询，则需要补充名称对应的租户额外信息
+            if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
+                Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
+                result.getLists().stream().forEach(v->{
+                    String extInfo = String.join("/",Arrays.asList(tenantMap.getOrDefault(v.getTenantId(),"-"),v.getSourceName()));
+                    v.setDatabaseName(v.getDatabaseName()+"("+extInfo+")");
+                });
+            }
             return result;
         } finally {
             if(StringUtils.isNotBlank(query)){
@@ -422,21 +453,51 @@ public class MetaDataREST {
             Boolean isView = StringUtils.isEmpty(isViewStr) ? null : Boolean.parseBoolean(isViewStr);
             String queryTenantIdParam = null;
             PageResult<TableEntity> result = null;
+            List<Tenant> tenants = tenantService.getTenants();
             // bizTreeId 不为空则是查询当前租户下的
             if(StringUtils.isNotBlank(bizTreeId)){
                 Map<String, String> map = EntityUtil.decodeBusinessId(bizTreeId);
                 queryTenantIdParam = map.get("tenantId");
                 result = searchService.getTable(schemaId, offset, limit, query, isView, queryInfo, queryTenantIdParam, sourceId);
+                //如果是查询，则需要补充名称对应的租户额外信息
+                if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
+                    Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
+                    String finalQueryTenantIdParam = queryTenantIdParam;
+                    result.getLists().stream().forEach(v->{
+                        String extInfo = String.join("/",Arrays.asList(tenantMap.getOrDefault(finalQueryTenantIdParam,"-"),
+                                v.getSourceName(),v.getDbName()));
+                        v.setName(v.getName()+"("+extInfo+")");
+                    });
+                }
                 return result;
             }
             //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
             if(!metadataService.isConfigGloble()){
                 queryTenantIdParam = tenantId;
                 result = searchService.getTable(schemaId, offset, limit, query, isView, queryInfo, queryTenantIdParam, sourceId);
+                //如果是查询，则需要补充名称对应的租户额外信息
+                if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
+                    Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
+                    result.getLists().stream().forEach(v->{
+                        String extInfo = String.join("/",Arrays.asList(tenantMap.getOrDefault(tenantId,"-"),
+                                v.getSourceName(),v.getDbName()));
+                        v.setName(v.getName()+"("+extInfo+")");
+                    });
+                }
                 return result;
             }
             //多租户下的数据查询
-            return searchService.getPublicTable(schemaId,  offset,  limit,  query,  isView, queryInfo);
+            result = searchService.getPublicTable(schemaId,  offset,  limit,  query,  isView, queryInfo);
+            //如果是查询，则需要补充名称对应的租户额外信息
+            if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
+                Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
+                result.getLists().stream().forEach(v->{
+                    String extInfo = String.join("/",Arrays.asList(tenantMap.getOrDefault(v.getTenantId(),"-"),
+                            v.getSourceName(),v.getDbName()));
+                    v.setName(v.getName()+"("+extInfo+")");
+                });
+            }
+            return result;
         } finally {
             if(StringUtils.isNotBlank(query)){
                 dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "metadata");
