@@ -289,7 +289,8 @@ public class MetaDataREST {
                 hive.setSourceType("hive");
                 hive.setSourceName("hive");
                 hive.setSourceId("hive");
-                hive.setBizTreeId(EntityUtil.generateBusinessId(tenantId,"hive","",""));
+                hive.setTenantId(queryTenantIdParam);
+                hive.setBizTreeId(EntityUtil.generateBusinessId(queryTenantIdParam,"hive","",""));
                 if (limit != -1) {
                     limit--;
                 }
