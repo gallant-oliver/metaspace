@@ -304,6 +304,7 @@ public class MetaDataREST {
                         hive.setSourceType("hive");
                         hive.setSourceName("hive");
                         hive.setSourceId("hive");
+                        hive.setTenantId(v.getTenantId());
                         hive.setBizTreeId(EntityUtil.generateBusinessId(v.getTenantId(),"hive","",""));
                         list.add(hive);
                     }
