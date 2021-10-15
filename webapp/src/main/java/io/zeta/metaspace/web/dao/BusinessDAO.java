@@ -742,4 +742,13 @@ public interface BusinessDAO {
             "</foreach>" +
             "</script>")
     int getDataSourceAuth(@Param("tableId")String tableId, @Param("userGroupIds")List<String> userGroupIds);
+
+    //删除业务信息与用户组的关联
+    @Delete("<script>" +
+            "delete from business_2_group where business_id in " +
+            " <foreach item='id' index='index' collection='businessIds' separator=',' open='(' close=')'>" +
+            " #{id} " +
+            " </foreach>" +
+            " </script>")
+    int deleteGroupRelationByBusinessIds(@Param("businessIds")List<String> businessIds);
 }
