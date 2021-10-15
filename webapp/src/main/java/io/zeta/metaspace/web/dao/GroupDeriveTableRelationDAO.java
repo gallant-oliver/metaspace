@@ -104,19 +104,19 @@ public interface GroupDeriveTableRelationDAO {
             " LEFT JOIN business_relation br ON br.businessid = bi.businessid\n" +
             " LEFT JOIN category c ON c.guid = br.categoryguid\n" +
             " LEFT JOIN group_table_relation gtr ON gtr.derive_table_id = ti.tableguid AND  gtr.user_group_id = #{userGroupId} \n" +
-            "<if test='privilegeType.name = \"IMPORTANCE\" AND registerType'>" +
+            "<if test='privilegeType.name = \"IMPORTANCE\" AND registerType = false'>" +
             "   AND gtr.importance_privilege != true OR gtr.importance_privilege IS NULL\n" +
             "</if>"+
-            "<if test='privilegeType.name = \"IMPORTANCE\" AND registerType'>" +
+            "<if test='privilegeType.name = \"IMPORTANCE\" AND registerType = true'>" +
             "   AND gtr.importance_privilege = true \n" +
             "</if>"+
-            "<if test='privilegeType.name = \"SECURITY\" AND registerType'>" +
+            "<if test='privilegeType.name = \"SECURITY\" AND registerType= false'>" +
             "   AND gtr.security_privilege != true OR gtr.security_privilege IS NULL\n" +
             "</if>"+
-            "<if test='privilegeType.name = \"SECURITY\" AND registerType'>" +
+            "<if test='privilegeType.name = \"SECURITY\" AND registerType  = true'>" +
             "   AND gtr.security_privilege = true \n" +
             "</if>"+
-            "<if test='privilegeType.name = \"ALL\" AND registerType'>" +
+            "<if test='privilegeType.name = \"ALL\" AND registerType = true'>" +
             "   AND gtr.security_privilege = true OR gtr.importance_privilege = true\n" +
             "</if>"+
             "WHERE\n" +
