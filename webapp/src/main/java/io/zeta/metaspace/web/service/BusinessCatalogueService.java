@@ -144,6 +144,9 @@ public class BusinessCatalogueService implements Approvable {
 
             String approveId = UUID.randomUUID().toString();
             if (publish) {
+                if(StringUtils.isBlank(approveGroupId)){
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审批组不能为空");
+                }
                 entity.setPublish(true);
                 entity.setApprovalId(approveId);
             }else{
@@ -182,14 +185,14 @@ public class BusinessCatalogueService implements Approvable {
 
                 CategoryPrivilege oneLevelCategory = null;
                 if (categoryDao.ifExistCategory(type, tenantId) > 0) {
-                    oneLevelCategory = createOneLevelCategory(entity, type, tenantId);
+                    oneLevelCategory = createOneLevelCategory(entity, type, tenantId,publish);
                 } else {
-                    oneLevelCategory = createFirstCategory(entity, type, tenantId);
+                    oneLevelCategory = createFirstCategory(entity, type, tenantId,publish);
                 }
                 if (!Objects.isNull(oneLevelCategory)) {
                     oneLevelCategory.setCode(entity.getCode());
                 }
-
+                oneLevelCategory.setSort(entity.getSort());
                 //目录是否需要发布，如果需要发布，则需要选择审批组,记录审批信息
                 if (publish) {
                     LOG.info("发起审批:" + approveGroupId);
@@ -200,21 +203,20 @@ public class BusinessCatalogueService implements Approvable {
                 if (Objects.isNull(categoryDao.queryByGuidV2(currentCategoryGuid, tenantId))) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录已被删除，请刷新后重新操作");
                 }
-                CategoryPrivilege.Privilege privilege = createOtherCategory(entity, type, input, tenantId);
+                CategoryPrivilege.Privilege privilege = createOtherCategory(entity, type, input, tenantId,publish);
+
                 categoryDao.add(entity, tenantId);
                 CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid, tenantId);
 
-                boolean isAdmin = modules.contains(ModuleEnum.AUTHORIZATION.getId());
-                //无当前目录权限
-                boolean isPrivilege = !userGroupService.isPrivilegeCategory(creatorId, newCategoryGuid, tenantId, type);
-                boolean typeBoolean = type == 1;
-                if (isAdmin) {
-                    privilege.adminPrivilege(returnEntity.getGuid());
+                returnEntity.setPrivateStatus(CategoryPrivateStatus.PRIVATE.name());
+                if(publish){
+                    returnEntity.setPublish(true);
+                    returnEntity.setStatus("1");//待审批
+                }else {
+                    returnEntity.setPublish(false);
+                    returnEntity.setStatus("0");//待发布
                 }
-                if (typeBoolean && isAdmin && isPrivilege) {
-                    privilege.setAsh(true);
-                }
-
+                returnEntity.setSort(entity.getSort());
                 returnEntity.setPrivilege(privilege);
 
                 //目录是否需要发布，如果需要发布，则需要选择审批组,记录审批信息
@@ -234,7 +236,7 @@ public class BusinessCatalogueService implements Approvable {
     }
 
 
-    private CategoryPrivilege createOneLevelCategory(CategoryEntityV2 entity, int type, String tenantId) throws AtlasBaseException {
+    private CategoryPrivilege createOneLevelCategory(CategoryEntityV2 entity, int type, String tenantId,Boolean publish) throws AtlasBaseException {
         int count = categoryDao.querySameNameOne(entity.getName(), type, tenantId);
         if (count > 0)
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
@@ -252,15 +254,29 @@ public class BusinessCatalogueService implements Approvable {
         returnEntity.setDescription(entity.getDescription());
         returnEntity.setLevel(1);
         returnEntity.setParentCategoryGuid(null);
+        returnEntity.setPrivateStatus(CategoryPrivateStatus.PRIVATE.name());
         CategoryPrivilege.Privilege privilege = null;
+        Boolean delete=true;
+        Boolean edit=true;
+        if(publish){
+            returnEntity.setPublish(true);
+            returnEntity.setStatus("1");//待审批
+            delete=false;
+            edit=false;
+        }else {
+            returnEntity.setPublish(false);
+            returnEntity.setStatus("0");//待发布
+        }
         if (type == 1) {
-            privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
+            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
+        }else {
+            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
         }
         returnEntity.setPrivilege(privilege);
         return returnEntity;
     }
 
-    private CategoryPrivilege createFirstCategory(CategoryEntityV2 entity, int type, String tenantId) throws AtlasBaseException {
+    private CategoryPrivilege createFirstCategory(CategoryEntityV2 entity, int type, String tenantId,Boolean publish) throws AtlasBaseException {
         StringBuffer qualifiedName = new StringBuffer();
         //qualifiedName
         qualifiedName.append(entity.getName());
@@ -275,17 +291,30 @@ public class BusinessCatalogueService implements Approvable {
         returnEntity.setParentCategoryGuid(null);
         returnEntity.setUpBrotherCategoryGuid(null);
         returnEntity.setDownBrotherCategoryGuid(null);
+        returnEntity.setPrivateStatus(CategoryPrivateStatus.PRIVATE.name());
+        Boolean delete=true;
+        Boolean edit=true;
+        if(publish){
+            returnEntity.setPublish(true);
+            returnEntity.setStatus("1");//待审批
+            delete=false;
+            edit=false;
+        }else {
+            returnEntity.setPublish(false);
+            returnEntity.setStatus("0");//待发布
+        }
+
         CategoryPrivilege.Privilege privilege = null;
         if (type == 1) {
-            privilege = new CategoryPrivilege.Privilege(false, true, true, true, true, true, true, true, true, false);
+            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
         } else {
-            privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
+            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
         }
         returnEntity.setPrivilege(privilege);
         return returnEntity;
     }
 
-    private CategoryPrivilege.Privilege createOtherCategory(CategoryEntityV2 entity, int type, BussinessCatalogueInput info, String tenantId) throws SQLException, AtlasBaseException {
+    private CategoryPrivilege.Privilege createOtherCategory(CategoryEntityV2 entity, int type, BussinessCatalogueInput info, String tenantId,Boolean publish) throws SQLException, AtlasBaseException {
         StringBuffer qualifiedName = new StringBuffer();
         String newCategoryGuid = entity.getGuid();
         String newCategoryParentGuid = info.getParentCategoryGuid();
@@ -349,21 +378,19 @@ public class BusinessCatalogueService implements Approvable {
             }
         }
 
-        if (parentGuid == null) {
-            return new CategoryPrivilege.Privilege(false, true, true, true, false, true, false, false, true, false);
+        Boolean delete=true;
+        Boolean edit=true;
+        if(publish){
+            delete=false;
+            edit=false;
         }
-        List<GroupPrivilege> parentPrivilege = userGroupDAO.getCategoryGroupPrivileges(entity.getParentCategoryGuid(), tenantId);
-        parentPrivilege.forEach(privilege -> privilege.setCategoryId(entity.getGuid()));
-        if (parentPrivilege.size() != 0) {
-            userGroupDAO.addUserGroupPrivileges(parentPrivilege);
+        CategoryPrivilege.Privilege privilege = null;
+        if (type == 1) {
+            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
+        } else {
+            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
         }
-        List<CategoryPrivilege> userCategories = userGroupService.getUserCategories(type, tenantId);
-        for (CategoryPrivilege categoryPrivilege : userCategories) {
-            if (categoryPrivilege.getGuid().equals(parentGuid)) {
-                return categoryPrivilege.getPrivilege();
-            }
-        }
-        return null;
+       return privilege;
     }
 
     /**
@@ -434,7 +461,7 @@ public class BusinessCatalogueService implements Approvable {
                         categoryDao.updateCataloguePrivateStatus(objectId,CategoryPrivateStatus.PRIVATE.name(),false,tenantId,updater);
                         LOG.info("目录审批被撤回");
                     }
-                } else if (approveType.equals(ApproveType.CLOSE_PUBLISH.getCode())) {
+                } else if (approveType.equals(ApproveType.OFFLINE.getCode())) {
                     //发布
                     if (approveResult.equals(ApproveOperate.APPROVE.getCode())) {
                         //通过
@@ -445,6 +472,7 @@ public class BusinessCatalogueService implements Approvable {
                         LOG.info("目录审批被驳回");
                     }else if(ApproveOperate.CANCEL.getCode().equals(approveResult)){
                         //撤回
+                        categoryDao.updateCataloguePrivateStatus(objectId,CategoryPrivateStatus.PUBLIC.name(),true,tenantId,updater);
                         LOG.info("目录审批被撤回");
                     }
                 }
@@ -481,7 +509,7 @@ public class BusinessCatalogueService implements Approvable {
                 String approveType="";
                 if(oldisPublish && !newisPublish){
                     businessType= BusinessType.BUSINESSCATALOGUE_PUBLISH_CLOSE;
-                    approveType=ApproveType.CLOSE_PUBLISH.getCode();
+                    approveType=ApproveType.OFFLINE.getCode();
                     entity.setPublish(false);
                 }
                 if(!oldisPublish && newisPublish){
@@ -578,7 +606,6 @@ public class BusinessCatalogueService implements Approvable {
                 }
             }
         }
-
         for (int i = 1; i < rowNum; i++) {
             Row row = sheet.getRow(i);
             CategoryEntityV2 category = new CategoryEntityV2();
@@ -924,6 +951,7 @@ public class BusinessCatalogueService implements Approvable {
         Timestamp timestamp = io.zeta.metaspace.utils.DateUtils.currentTimestamp();
         User user = AdminUtils.getUserData();
         String upId = upGuid;
+        int maxSort = categoryDao.getMaxSortByParentGuid(parentCategoryGuid, tenantId);
         for (CategoryExport categoryExport : categoryExports) {
             StringBuffer qualifiedName = new StringBuffer();
             String name = categoryExport.getName();
@@ -937,16 +965,17 @@ public class BusinessCatalogueService implements Approvable {
             categoryEntityV2.setLevel(level + 1);
             categoryEntityV2.setCreateTime(timestamp);
             categoryEntityV2.setCreator(user.getUserId());
-
+            categoryEntityV2.setSort(maxSort);
             if (StringUtils.isNotEmpty(parentQualifiedName) && parentQualifiedName.length() > 0)
                 qualifiedName.append(parentQualifiedName + ".");
             qualifiedName.append(name);
-
+            categoryEntityV2.setQualifiedName(qualifiedName.toString());
             categoryEntityV2.setUpBrotherCategoryGuid(upId);
             newCategorys.get(upId).setDownBrotherCategoryGuid(categoryExport.getGuid());
             upId = categoryEntityV2.getGuid();
 
             newCategorys.put(categoryEntityV2.getGuid(), categoryEntityV2);
+            maxSort++;
         }
         newCategorys.remove(upGuid);
         if (newCategorys.get(upId) != null) {
@@ -962,41 +991,26 @@ public class BusinessCatalogueService implements Approvable {
 
         CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
         ArrayList<CategoryEntityV2> categoryEntityV2s = new ArrayList<>(newCategorys.values());
-        List<GroupPrivilege> parentPrivilege = userGroupDAO.getCategoryGroupPrivileges(parentCategoryGuid, tenantId);
-//        if (parentPrivilege.size() != 0 && categoryEntityV2s != null) {
-//            userGroupDAO.addUserGroupCategoryPrivileges(parentPrivilege, categoryEntityV2s);
-//        }
 
-        AtomicInteger maxSort = new AtomicInteger(categoryDao.getMaxSortByParentGuid(parentCategoryGuid, tenantId));
         categoryEntityV2s.forEach(c -> {
             c.setPrivateStatus(CategoryPrivateStatus.PRIVATE);
             c.setPublish(false);
-            c.setSort(maxSort.get());
-            maxSort.getAndIncrement();
         });
 
         categoryDao.addAll(categoryEntityV2s, tenantId);
-        if (level != 0 || !authorized) {
-            fileInputStream.delete();
-            GroupPrivilege groupPrivilege = new GroupPrivilege();
-            groupPrivilege.setRead(true);
-            groupPrivilege.setEditCategory(true);
-            groupPrivilege.setEditItem(true);
-            parentPrivilege.forEach(category -> {
-                groupPrivilege.setRead(category.getRead() || groupPrivilege.getRead());
-                groupPrivilege.setEditCategory(category.getEditCategory() || groupPrivilege.getEditCategory());
-                groupPrivilege.setEditItem(category.getEditItem() || groupPrivilege.getEditItem());
-            });
-            privilege = getCategoryPrivilege(groupPrivilege.getRead(), groupPrivilege.getEditItem(), groupPrivilege.getEditCategory());
+        if (type==1) {
+            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true, false);
         } else {
-            privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
+            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true, false);
         }
         List<CategoryPrivilege> categoryPrivileges = new ArrayList<>();
         for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2s) {
             CategoryPrivilege categoryPrivilege = new CategoryPrivilege(categoryEntityV2);
             categoryPrivilege.setPrivilege(privilege);
             categoryPrivilege.setSort(categoryEntityV2.getSort());
-            categoryPrivilege.setPrivateStatus(categoryEntityV2.getPrivateStatus().name());
+            categoryPrivilege.setPrivateStatus(CategoryPrivateStatus.PRIVATE.name());
+            categoryPrivilege.setStatus("0");//0-未发布状态
+            categoryPrivilege.setPublish(false);
             categoryPrivileges.add(categoryPrivilege);
         }
         return categoryPrivileges;
