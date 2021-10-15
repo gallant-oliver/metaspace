@@ -1251,6 +1251,8 @@ public class MetaDataREST {
             }
         }
         table.setSourceId(sourceId);
+        table.setSourceTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),"",""));
+        table.setDbTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),table.getDatabaseId(),""));
         return table;
     }
 
