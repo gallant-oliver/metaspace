@@ -33,17 +33,21 @@ public class TechnologyInfo {
     private Boolean editTechnical;
     private List<Table> tables;
     private Integer count;
+    private String trustTable;
 
     @Data
     public static class Table {
         private String tableGuid;
         private String tableName;
         private String dbName;
+        private String databaseId;
         private String status;
         private String createTime;
         private boolean trust;
         private String databaseGuid;
         private String displayName;
+        private Boolean importancePrivilege;
+        private Boolean securityPrivilege;
         private String description;
         private String sourceId;
         private String sourceName;
@@ -218,5 +222,13 @@ public class TechnologyInfo {
 
     public void setCount(Integer count) {
         this.count = count;
+    }
+
+    public String getTrustTable() {
+        return trustTable;
+    }
+
+    public void setTrustTable(String trustTable) {
+        this.trustTable = trustTable;
     }
 }

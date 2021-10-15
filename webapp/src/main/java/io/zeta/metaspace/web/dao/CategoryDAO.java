@@ -510,4 +510,31 @@ public interface CategoryDAO {
 
     @Update("update category set parentcategoryguid=#{parentcategoryguid},upBrotherCategoryGuid=#{upBrotherCategoryGuid},downBrotherCategoryGuid=#{downBrotherCategoryGuid},sort=#{sort} where guid=#{guid} and tenantid=#{tenantId}")
     public int updateCategoryGuid(@Param("guid") String guid, @Param("parentcategoryguid") String parentcategoryguid, @Param("upBrotherCategoryGuid") String upBrothCatalogGuid, @Param("downBrotherCategoryGuid") String downBrothCatalogGuid, @Param("tenantId") String tenantId,@Param("sort") Integer sort);
-}
+	@Select("select * from category where categoryType=#{categoryType}")
+    Set<CategoryEntityV2> selectGlobal(@Param("categoryType") Integer categoryType);
+
+    @Select("<script>" +
+            " SELECT * FROM category WHERE private_status = 'PUBLIC' AND categorytype = 0" +
+            " <if test='groupIdList != null and groupIdList.size() > 0'>"+
+            " UNION" +
+            " SELECT DISTINCT category.* FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
+            " WHERE private_status = 'PRIVATE' AND categorytype = 0 AND group_id in" +
+            " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
+            "   #{item} "+
+            " </foreach>" +
+            " </if>"+
+            "</script>")
+    Set<CategoryEntityV2> selectSetByStatus(@Param("groupIdList") List<String> groupIdList);
+
+    @Select("<script>" +
+            " SELECT category.* FROM category LEFT JOIN category_group_relation as relation on category.guid = relation.category_id WHERE private_status = 'PUBLIC' AND categorytype = #{categoryType}" +
+            " <if test='groupIdList != null and groupIdList.size() > 0'>"+
+            " UNION" +
+            " SELECT DISTINCT category.* FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
+            " WHERE level &lt;= 5 AND private_status = 'PRIVATE' AND categorytype = #{categoryType} AND group_id in" +
+            " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
+            "   #{item} "+
+            " </foreach>" +
+            " </if>"+
+            "</script>")
+    Set<CategoryEntityV2> selectListByStatus(@Param("creator") String creator, @Param("groupIdList") List<String> groupIdList, @Param("categoryType") Integer categoryType);}

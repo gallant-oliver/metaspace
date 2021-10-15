@@ -17,6 +17,7 @@
 package io.zeta.metaspace.model.business;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Data;
 
 import java.util.List;
 
@@ -25,6 +26,7 @@ import java.util.List;
  * @author sunhaoning
  * @date 2019/2/21 11:43
  */
+@Data
 public class BusinessInfoHeader {
     private String businessId;
     private String name;
@@ -41,6 +43,7 @@ public class BusinessInfoHeader {
     private String ticketNumber;
     private String categoryGuid;
     private String trustTable;
+    private String tenantId;
     private List<TechnologyInfo.Table> tables;
 
     /**
@@ -57,146 +60,4 @@ public class BusinessInfoHeader {
 
     @JsonIgnore
     private int total;
-
-    public String getPrivateStatus() {
-        return privateStatus;
-    }
-
-    public void setPrivateStatus(String privateStatus) {
-        this.privateStatus = privateStatus;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public Boolean getPublish() {
-        return publish;
-    }
-
-    public void setPublish(Boolean publish) {
-        this.publish = publish;
-    }
-
-    public List<TechnologyInfo.Table> getTables() {
-        return tables;
-    }
-
-    public void setTables(List<TechnologyInfo.Table> tables) {
-        this.tables = tables;
-    }
-
-    public int getTotal() {
-        return total;
-    }
-
-    public void setTotal(int total) {
-        this.total = total;
-    }
-    public String getSubmitterName() {
-        return submitterName;
-    }
-
-    public void setSubmitterName(String submitterName) {
-        this.submitterName = submitterName;
-    }
-
-    public String getDepartmentId() {
-        return departmentId;
-    }
-
-    public void setDepartmentId(String departmentId) {
-        this.departmentId = departmentId;
-    }
-    public String getBusinessId() {
-        return businessId;
-    }
-
-    public void setBusinessId(String businessId) {
-        this.businessId = businessId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getLevel2Category() {
-        return level2Category;
-    }
-
-    public void setLevel2Category(String level2Category) {
-        this.level2Category = level2Category;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-    public String getBusinessStatus() {
-        return businessStatus;
-    }
-
-    public void setBusinessStatus(String businessStatus) {
-        this.businessStatus = businessStatus;
-    }
-
-    public String getTechnicalStatus() {
-        return technicalStatus;
-    }
-
-    public void setTechnicalStatus(String technicalStatus) {
-        this.technicalStatus = technicalStatus;
-    }
-
-    public String getSubmitter() {
-        return submitter;
-    }
-
-    public void setSubmitter(String submitter) {
-        this.submitter = submitter;
-    }
-
-    public String getSubmissionTime() {
-        return submissionTime;
-    }
-
-    public void setSubmissionTime(String submissionTime) {
-        this.submissionTime = submissionTime;
-    }
-
-    public String getTicketNumber() {
-        return ticketNumber;
-    }
-
-    public void setTicketNumber(String ticketNumber) {
-        this.ticketNumber = ticketNumber;
-    }
-
-    public String getCategoryGuid() {
-        return categoryGuid;
-    }
-
-    public void setCategoryGuid(String categoryGuid) {
-        this.categoryGuid = categoryGuid;
-    }
-
-    public String getTrustTable() {
-        return trustTable;
-    }
-
-    public void setTrustTable(String trustTable) {
-        this.trustTable = trustTable;
-    }
 }

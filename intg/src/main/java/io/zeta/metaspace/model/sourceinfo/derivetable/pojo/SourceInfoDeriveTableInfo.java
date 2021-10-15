@@ -36,6 +36,12 @@ public class SourceInfoDeriveTableInfo implements Serializable {
     @ApiModelProperty(value = "表英文名")
     private String tableNameEn;
 
+    @ApiModelProperty(value = "是否重要")
+    private Boolean importance;
+
+    @ApiModelProperty(value = "是否保密")
+    private Boolean security;
+
     @ApiModelProperty(value = "表中文名")
     private String tableNameZh;
 

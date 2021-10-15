@@ -12,9 +12,10 @@
 // ======================================================================
 package io.zeta.metaspace.model.dataquality2;
 
-import com.google.common.collect.Lists;
-
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 
 public class RuleTemplateType {
@@ -31,10 +32,24 @@ public class RuleTemplateType {
      * 分类所属规则模版数
      */
     private long count;
+    /**
+     * 统一监控展示名
+     */
+    private String statisticsDisplayName;
 
-    public RuleTemplateType(String ruleType, String name) {
+    private static final Map<String, RuleTemplateType> ALL = new LinkedHashMap<String, RuleTemplateType>(){{
+        put("rule_1", new RuleTemplateType("rule_1", "表体积", "表体积异常"));
+        put("rule_2", new RuleTemplateType("rule_2", "空值校验", "空值异常"));
+        put("rule_3", new RuleTemplateType("rule_3", "唯一值校验", "唯一值异常"));
+        put("rule_4", new RuleTemplateType("rule_4", "重复值校验", "重复值异常"));
+        put("rule_5", new RuleTemplateType("rule_5", "数值型校验", "数据值型异常"));
+        put("rule_6", new RuleTemplateType("rule_6", "一致性校验", "一致性异常"));
+    }};
+
+    public RuleTemplateType(String ruleType, String name, String statisticsDisplayName) {
         this.ruleType = ruleType;
         this.name = name;
+        this.statisticsDisplayName = statisticsDisplayName;
     }
 
     public String getRuleType() {
@@ -61,12 +76,29 @@ public class RuleTemplateType {
         this.count = count;
     }
 
+    public String getStatisticsDisplayName() {
+        return statisticsDisplayName;
+    }
+
+    public void setStatisticsDisplayName(String statisticsDisplayName) {
+        this.statisticsDisplayName = statisticsDisplayName;
+    }
+
     public static List<RuleTemplateType> all() {
-        return Lists.newArrayList(new RuleTemplateType("rule_1", "表体积"),
-                new RuleTemplateType("rule_2", "空值校验"),
-                new RuleTemplateType("rule_3", "唯一值校验"),
-                new RuleTemplateType("rule_4", "重复值校验"),
-                new RuleTemplateType("rule_5", "数值型校验"),
-                new RuleTemplateType("rule_6", "一致性校验"));
+        return ALL.values().stream().collect(Collectors.toList());
+    }
+
+    public static RuleTemplateType getRuleTemplate(String ruleType) {
+        return ALL.get(ruleType);
+    }
+
+    @Override
+    public String toString() {
+        return "RuleTemplateType{" +
+                "ruleType='" + ruleType + '\'' +
+                ", name='" + name + '\'' +
+                ", count=" + count +
+                ", statisticsDisplayName='" + statisticsDisplayName + '\'' +
+                '}';
     }
 }

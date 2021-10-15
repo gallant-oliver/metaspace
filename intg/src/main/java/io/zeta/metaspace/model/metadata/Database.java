@@ -21,6 +21,7 @@ import java.util.List;
 
 @Data
 public class Database implements Serializable {
+    private String tenantId;
     private String sourceId;
     private String sourceName;
     private String instanceId;
@@ -35,4 +36,6 @@ public class Database implements Serializable {
     @JsonIgnore
     private int total;
     private boolean hasDatabase;
+    private String bizTreeId;
+    private String sourceTreeId;
 }
