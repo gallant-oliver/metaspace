@@ -105,23 +105,25 @@ public interface GroupDeriveTableRelationDAO {
             " LEFT JOIN category c ON c.guid = br.categoryguid\n" +
             " LEFT JOIN group_table_relation gtr ON gtr.derive_table_id = ti.tableguid AND  gtr.user_group_id = #{userGroupId} \n" +
             "<if test='privilegeType == \"IMPORTANCE\" and registerType == false'>" +
-            "   AND gtr.importance_privilege != true OR gtr.importance_privilege IS NULL\n" +
+            "   AND ( gtr.importance_privilege != true OR gtr.importance_privilege IS NULL)\n" +
             "</if>"+
             "<if test='privilegeType == \"IMPORTANCE\" and registerType == true'>" +
             "   AND gtr.importance_privilege = true \n" +
             "</if>"+
             "<if test='privilegeType == \"SECURITY\" and registerType == false'>" +
-            "   AND gtr.security_privilege != true OR gtr.security_privilege IS NULL\n" +
+            "   AND (gtr.security_privilege != true OR gtr.security_privilege IS NULL)\n" +
             "</if>"+
             "<if test='privilegeType == \"SECURITY\" and registerType  == true'>" +
             "   AND gtr.security_privilege = true \n" +
             "</if>"+
             "<if test='privilegeType == \"ALL\" and registerType == true'>" +
-            "   AND gtr.security_privilege = true OR gtr.importance_privilege = true\n" +
+            "   AND (gtr.security_privilege = true OR gtr.importance_privilege = true)\n" +
             "</if>"+
             "WHERE\n" +
             " sidti.tenant_id = #{tenantId} \n" +
-            " AND sidti.table_name_zh like concat('%',#{tableName},'%') ESCAPE '/'\n" +
+            "<if test='tableName != null and tableName !=\"\"'>" +
+            " AND sidti.table_name_zh like '%'||#{tableName}||'%' ESCAPE '/'\n" +
+            "</if>" +
             "<if test = 'limit &gt; 0'>"+
             " LIMIT #{limit} OFFSET #{offset}\n" +
             "</if>"+
