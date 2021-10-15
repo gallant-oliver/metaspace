@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.dao;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
+import io.zeta.metaspace.model.table.TableSource;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -321,4 +322,13 @@ public interface TableDAO {
 
     @Select("SELECT DISTINCT db_type FROM tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid WHERE tb.tableguid = #{guid}")
     String selectTypeByGuid(@Param("guid") String guid);
+
+    @Select("SELECT tableinfo.tableguid as id, tableinfo.tablename, CASE WHEN data_source.source_type = 'POSTGRESQL' " +
+            "THEN concat(data_source.database, '.', tableinfo.dbname) ELSE tableinfo.dbname ND AS dbname, " +
+            "tableinfo.dbname, data_source.ip, data_source.port FROM tableinfo " +
+            "INNER JOIN db_info ON tableinfo.databaseguid = db_info.database_guid " +
+            "INNER JOIN source_db ON tableinfo.databaseguid = source_db.db_guid " +
+            "INNER JOIN data_source ON source_db.source_id = data_source.source_id" +
+            "WHERE tableinfo.tableguid = #{guid}")
+    TableSource selectTableSource(@Param("guid") String guid);
 }
