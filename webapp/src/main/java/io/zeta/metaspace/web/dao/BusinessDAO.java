@@ -468,13 +468,14 @@ public interface BusinessDAO {
 
     //查询业务目录关系业务信息列表（分页）
     @Results({
-            @Result(property = "tables",javaType = List.class,column = "businessId",many = @Many(select = "queryAllTablesByBusinessId"))
+            @Result(property = "tables",javaType = List.class,column = "{businessId = businessIdVal,tenantId = tenantId}",many = @Many(select = "queryAllTablesByBusinessId"))
     })
     @Select("<script>" +
             "select bi.businessid businessId, bi.trusttable trustTable, " +
+            "bi.businessid businessIdVal, bi.name, bi.tenantid tenantId, " +
             "bi.businessstatus businessStatus, bi.technicalstatus technicalStatus, bi.submitter, " +
             "bi.submissiontime submissionTime, bi.ticketnumber ticketNumber, " +
-            "bi.publish, bi.status, " +
+            "bi.publish, bi.status, bi.private_status privateStatus, " +
             "br.categoryguid categoryGuid, bi.businesslastupdate businessLastUpdate " +
             "from businessinfo bi " +
             "join business_relation br on bi.businessid = br.businessid " +
@@ -503,7 +504,8 @@ public interface BusinessDAO {
     })
     @Select("<script>" +
             "select count(*)over() total, bi.businessid businessId, bi.businessid businessIdVal, bi.name, bi.businessstatus businessStatus, bi.technicalstatus technicalStatus, " +
-            "bi.publish, bi.status " +
+            "bi.submitter, bi.submissiontime submissionTime, bi.ticketnumber ticketNumber, br.categoryguid categoryGuid, bi.tenantid tenantId, " +
+            "bi.publish, bi.status, bi.private_status privateStatus " +
             "from businessinfo bi " +
             "join business_relation br on br.businessid=bi.businessid " +
             "where " +
@@ -520,6 +522,8 @@ public interface BusinessDAO {
             "bi.private_status='PUBLIC' or (bi.submitter=#{userId} and bi.submitter_read=true) " +
             "or " +
             "(select count(*) from business_2_group b2g " +
+            "join user_group_relation ugr on ugr.group_id = b2g.group_id and ugr.user_id=#{userId} " +
+            "where b2g.business_id=bi.businessid and b2g.read=true)>0" +
             ") " +
             "order by bi.businesslastupdate desc " +
             "<if test='limit!= -1'>" +
@@ -537,7 +541,7 @@ public interface BusinessDAO {
             "select count(*)over() total, bi.businessid businessId, bi.businessid businessIdVal, " +
             "bi.tenantid tenantId, bi.departmentid departmentId, bi.name, bi.businessstatus businessStatus, bi.technicalstatus technicalStatus, " +
             "bi.submissiontime submissionTime, u.username submitter, bi.ticketnumber ticketNumber, br.categoryguid categoryGuid, " +
-            "bi.publish, bi.status " +
+            "bi.publish, bi.status, bi.private_status privateStatus " +
             "from businessinfo bi " +
             "join business_relation br on br.businessid=bi.businessid " +
             "join users u on u.userid=bi.submitter " +
@@ -738,4 +742,13 @@ public interface BusinessDAO {
             "</foreach>" +
             "</script>")
     int getDataSourceAuth(@Param("tableId")String tableId, @Param("userGroupIds")List<String> userGroupIds);
+
+    //删除业务信息与用户组的关联
+    @Delete("<script>" +
+            "delete from business_2_group where business_id in " +
+            " <foreach item='id' index='index' collection='businessIds' separator=',' open='(' close=')'>" +
+            " #{id} " +
+            " </foreach>" +
+            " </script>")
+    int deleteGroupRelationByBusinessIds(@Param("businessIds")List<String> businessIds);
 }

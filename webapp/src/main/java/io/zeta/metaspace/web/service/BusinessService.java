@@ -549,14 +549,9 @@ public class BusinessService implements Approvable {
                     categoryIds = categoryBusiness.stream().map(c -> c.getGuid()).collect(Collectors.toList());
                 }
             } else {
-                Map<String, CategoryPrivilegeV2> categories = userGroupService.getUserPrivilegeCategory(tenantId, BUSINESS_TYPE, false);
-                for (CategoryPrivilegeV2 category : categories.values()) {
-                    if (!category.getEditItem()) {
-                        continue;
-                    }
-                    if (!categoryIds.contains(category.getGuid())) {
-                        categoryIds.add(category.getGuid());
-                    }
+                List<CategorycateQueryResult> allCategories = businessCatalogueService.getAllCategories(BUSINESS_TYPE, tenantId);
+                if (CollectionUtils.isNotEmpty(allCategories)) {
+                    categoryIds = allCategories.stream().map(c -> c.getGuid()).collect(Collectors.toList());
                 }
             }
             if (Objects.isNull(categoryIds) || categoryIds.size() == 0) {
@@ -662,36 +657,18 @@ public class BusinessService implements Approvable {
         Integer technicalStatus = TechnicalStatus.getCodeByDesc(status);
         List<String> categoryIds = new ArrayList<>();
 
-        //判断独立部署和多租户
-        if (TenantService.defaultTenant.equals(tenantId)) {
-            List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
-            if (roles.stream().allMatch(role -> role.getStatus() == 0))
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-            for (Role role : roles) {
-                if (role.getStatus() == 0) {
-                    continue;
-                }
-                String roleId = role.getRoleId();
-                List<String> category = CategoryRelationUtils.getPermissionCategoryList(roleId, BUSINESS_TYPE);
-                for (String categoryId : category) {
-                    if (!categoryIds.contains(categoryId)) {
-                        categoryIds.add(categoryId);
-                    }
-                }
+        if (StringUtils.isEmpty(tenantId)) {
+            List<CategoryEntityV2> categoryBusiness = businessCatalogueService.getCategoryBusiness(1);
+            if (CollectionUtils.isNotEmpty(categoryBusiness)) {
+                categoryIds = categoryBusiness.stream().map(c -> c.getGuid()).collect(Collectors.toList());
             }
         } else {
-            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
-            for (UserGroup userGroup : userGroups) {
-                String userGroupId = userGroup.getId();
-                List<String> category = CategoryRelationUtils.getPermissionCategoryListV2(userGroupId, BUSINESS_TYPE, tenantId);
-                for (String categoryId : category) {
-                    if (!categoryIds.contains(categoryId)) {
-                        categoryIds.add(categoryId);
-                    }
-                }
+            List<CategorycateQueryResult> allCategories = businessCatalogueService.getAllCategories(BUSINESS_TYPE, tenantId);
+            if (CollectionUtils.isNotEmpty(allCategories)) {
+                categoryIds = allCategories.stream().map(c -> c.getGuid()).collect(Collectors.toList());
             }
         }
-        if (Objects.nonNull(categoryIds) && categoryIds.size() > 0) {
+        if (categoryIds.size() > 0) {
             if (Objects.nonNull(businessName))
                 businessName = businessName.replaceAll("%", "/%").replaceAll("_", "/_");
             if (Objects.nonNull(ticketNumber))
@@ -762,6 +739,7 @@ public class BusinessService implements Approvable {
             businessDao.deleteBusinessById(businessId);
             businessDao.deleteRelationByBusinessId(businessId);
             businessDao.deleteRelationById(businessId);
+            businessDao.deleteGroupRelationByBusinessIds(Lists.newArrayList(businessId));
         } catch (Exception e) {
             LOG.error("删除业务对象失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除业务对象失败");
@@ -1794,6 +1772,7 @@ public class BusinessService implements Approvable {
             int num = businessDao.deleteBusinessesByIds(ids);
             businessDao.deleteRelationByBusinessIds(ids);
             businessDao.deleteRelationByIds(ids);
+            businessDao.deleteGroupRelationByBusinessIds(ids);
             return num;
         } catch (Exception e) {
             LOG.error("删除业务对象失败", e);

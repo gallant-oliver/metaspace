@@ -56,7 +56,8 @@ public class BusinessInfoHeader {
      */
     private Boolean publish;
 
+    private String privateStatus;
+
     @JsonIgnore
     private int total;
-    private String  businessIdVal;
 }

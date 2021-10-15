@@ -7,6 +7,7 @@ import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForCategory;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForList;
 import io.zeta.metaspace.model.usergroup.TenantGroup;
+import io.zeta.metaspace.model.usergroup.TenantHive;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -524,6 +525,29 @@ public interface DatabaseInfoDAO {
     List<Database> selectByHive(@Param("hiveList") List<String> hiveList, @Param("limit") Long limit, @Param("offset") Long offset);
 
     @Select("<script>" +
+            " SELECT count(*)over() total,db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,'hive' as source_id,db.database_description,db.owner FROM db_info as db" +
+            " WHERE db.status = 'ACTIVE' and db.database_guid in (select database_guid from database_group_relation where source_id=#{sourceId}"+
+            " and group_id in " +
+            "<foreach collection='groupIds' item='id' separator=',' open='(' close=')'>"+
+            "#{id}"+
+            "</foreach>" +
+            ")"+
+            " AND db.db_type = 'HIVE' AND db.database_name in " +
+            " <foreach collection='hiveList' item='item' separator=',' open='(' close=')'>" +
+            "  #{item}" +
+            " </foreach>" +
+            " <if test='limit != -1'>" +
+            "  limit #{limit} " +
+            " </if>" +
+            " <if test='offset!= 0'>" +
+            "  offset #{offset}" +
+            " </if>" +
+            "</script>")
+    List<Database> selectAuthHive(@Param("hiveList") List<String> hiveList, @Param("limit") Long limit,
+                                  @Param("offset") Long offset, @Param("groupIds") List<String> groupIds,
+                                  @Param("sourceId") String sourceId);
+
+    @Select("<script>" +
             " SELECT count(t.*)over() total, t.* from (" +
             " SELECT db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,sd.source_id,db.database_description,source.source_name as sourceName,db.owner FROM db_info as db" +
             " INNER JOIN source_db as sd on db.database_guid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
@@ -557,12 +581,15 @@ public interface DatabaseInfoDAO {
             " SELECT count(t.*)over() total, t.* from (" +
             " SELECT source.tenantid as tenantId,db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,sd.source_id,db.database_description,source.source_name as sourceName,db.owner FROM db_info as db" +
             " INNER JOIN source_db as sd on db.database_guid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
-            " WHERE db.status = 'ACTIVE' AND database_name like concat('%',#{dbName},'%') " +
+            " WHERE db.status = 'ACTIVE' " +
+            "<if test = \"dbName !=null and dbName !=''\">" +
+            "AND database_name like concat('%',#{dbName},'%') " +
+            "</if>" +
 
             " <if test='tenantGroupList != null and tenantGroupList.size() > 0'>" +
             " AND ( " +
-                " <foreach collection='tenantGroupList' item='item' open='(' close=')' separator=' OR '>" +
-                "  source.tenantid=#{item.tenantId} " +
+                " <foreach collection='tenantGroupList' item='item' separator=' OR '>" +
+                "  ( source.tenantid=#{item.tenantId} " +
                 " <if test='item.groupList != null and item.groupList.size() > 0'>" +
                 " and db.database_guid in (select database_guid from database_group_relation where "+
                     " group_id in "+
@@ -570,24 +597,27 @@ public interface DatabaseInfoDAO {
                     "  #{id}" +
                     " </foreach> " +
                     " ) </if>" +
+                 " ) "+
                 " </foreach>" +
             " ) </if>" +
 
             " <if test='hiveList != null and hiveList.size() > 0'>" +
             " union" +
             " SELECT te.id as tenantId,db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,'hive' as source_id,db.database_description,'hive' as sourceName,db.owner " +
-            " FROM db_info as db " +
-            " <if test='tenantGroupList != null and tenantGroupList.size() > 0'>" +
-            " ,(select id from tenant tmp where tmp.id in  " +
-            " <foreach collection='tenantGroupList' item='item' separator=',' open='(' close=')'>" +
-            "  #{item.tenantId}" +
+            " FROM db_info as db, (" +
+
+            " <foreach collection='hiveList' item='item' separator=' union all '>" +
+            " ( select #{item.tenantId} as id,#{item.hiveDb} as db_name from tenant limit 1 )" +
             " </foreach>" +
             " ) te"+
-            " </if>" +
 
-            " WHERE db.status = 'ACTIVE' AND db.db_type = 'HIVE' AND db.database_name like concat('%',#{dbName},'%') AND db.database_name in " +
+            " WHERE db.database_name=te.db_name and db.status = 'ACTIVE' AND db.db_type = 'HIVE' " +
+            "<if test = \"dbName !=null and dbName !=''\">" +
+            " AND db.database_name like concat('%',#{dbName},'%')  " +
+            "</if>" +
+            " AND db.database_name in " +
             " <foreach collection='hiveList' item='item' separator=',' open='(' close=')'>" +
-            "  #{item}" +
+            "  #{item.hiveDb}" +
             " </foreach>" +
             " </if>" +
             " ) as t" +
@@ -598,7 +628,7 @@ public interface DatabaseInfoDAO {
             "  offset #{offset}" +
             " </if>" +
             "</script>")
-    List<Database> selectByDbNameAndTenantIdList(@Param("tenantGroupList") List<TenantGroup> tenantGroups, @Param("dbName") String dbName, @Param("hiveList") List<String> hiveList, @Param("limit") Long limit, @Param("offset") Long offset);
+    List<Database> selectByDbNameAndTenantIdList(@Param("tenantGroupList") List<TenantGroup> tenantGroups, @Param("dbName") String dbName, @Param("hiveList") List<TenantHive> hiveList, @Param("limit") Long limit, @Param("offset") Long offset);
 
 
     @Select("<script>" +

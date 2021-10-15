@@ -289,7 +289,8 @@ public class MetaDataREST {
                 hive.setSourceType("hive");
                 hive.setSourceName("hive");
                 hive.setSourceId("hive");
-                hive.setBizTreeId(EntityUtil.generateBusinessId(tenantId,"hive","",""));
+                hive.setTenantId(queryTenantIdParam);
+                hive.setBizTreeId(EntityUtil.generateBusinessId(queryTenantIdParam,"hive","",""));
                 if (limit != -1) {
                     limit--;
                 }
@@ -304,6 +305,7 @@ public class MetaDataREST {
                         hive.setSourceType("hive");
                         hive.setSourceName("hive");
                         hive.setSourceId("hive");
+                        hive.setTenantId(v.getTenantId());
                         hive.setBizTreeId(EntityUtil.generateBusinessId(v.getTenantId(),"hive","",""));
                         list.add(hive);
                     }
@@ -841,8 +843,14 @@ public class MetaDataREST {
     @Path("/tag/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Tag> getTag(@PathParam("guid") String guid, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public List<Tag> getTag(@QueryParam("bizTreeId")String bizTreeId,@PathParam("guid") String guid, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
+            if(StringUtils.isNotBlank(bizTreeId)){
+                Map<String,String> map = EntityUtil.decodeBusinessId(bizTreeId);
+                if(map != null){
+                    tenantId = map.get("tenantId");
+                }
+            }
             return tableTagService.getTags(guid, tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取标签失败");
@@ -1243,6 +1251,8 @@ public class MetaDataREST {
             }
         }
         table.setSourceId(sourceId);
+        table.setSourceTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),"",""));
+        table.setDbTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),table.getDatabaseId(),""));
         return table;
     }
 

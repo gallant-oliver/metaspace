@@ -1260,9 +1260,11 @@ public interface UserGroupDAO {
 	
 	
     @Select("<script>" +
-            "select count(*)over() totalSize,dgr.id, di.database_name databaseName,d.source_name sourceName,d.source_type sourceType " +
+            "select count(*)over() totalSize,dgr.id, di.database_name databaseName," +
+            " case when dgr.source_id = 'hive' then 'hive' else d.source_name end as sourceName," +
+            " case when dgr.source_id = 'hive' then 'HIVE' else d.source_type end as sourceType " +
             " from database_group_relation dgr " +
-            " join data_source d  " +
+            " left join data_source d  " +
             " on d.source_id=dgr.source_id " +
             " join db_info di  " +
             " on di.database_guid=dgr.database_guid " +
@@ -1434,4 +1436,17 @@ public interface UserGroupDAO {
 
 	@Select("select g.*,g.tenant tenantId from user_group g join user_group_relation u on g.id=u.group_id where u.user_id=#{userId} and g.valid=true")
     List<UserGroup> selectListByUsersId(@Param("userId") String userId);
+
+    @Select({"<script>" ,
+            "select di.database_guid databaseGuid,di.database_name databaseName from db_info di " +
+                    " where di.status='ACTIVE'" +
+                    " and di.database_name in " +
+                    " <foreach collection='dbs' item='item' separator=',' open='(' close=')'>"+
+                    "    #{item}"+
+                    "  </foreach>" +
+                    " and di.database_guid not in (select database_guid from database_group_relation " +
+                    " where group_id=#{groupId} and source_id=#{sourceId})" +
+                    "</script>"})
+    public List<DBInfo> getNotAuthHiveDataBases(@Param("groupId") String groupId, @Param("sourceId") String sourceId,
+                                                @Param("dbs") List<String> dbs);
 }
