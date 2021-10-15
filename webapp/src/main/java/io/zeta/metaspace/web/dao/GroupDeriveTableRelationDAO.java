@@ -122,7 +122,7 @@ public interface GroupDeriveTableRelationDAO {
             "WHERE\n" +
             " sidti.tenant_id = #{tenantId} \n" +
             "<if test='tableName != null and tableName !=\"\"'>" +
-            " AND sidti.table_name_zh like concat('%',#{tableName},'%') ESCAPE '/'\n" +
+            " AND sidti.table_name_zh like '%'||#{tableName}||'%' ESCAPE '/'\n" +
             "</if>" +
             "<if test = 'limit &gt; 0'>"+
             " LIMIT #{limit} OFFSET #{offset}\n" +
