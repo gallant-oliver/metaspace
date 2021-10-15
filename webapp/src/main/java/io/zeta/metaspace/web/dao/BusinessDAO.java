@@ -468,10 +468,11 @@ public interface BusinessDAO {
 
     //查询业务目录关系业务信息列表（分页）
     @Results({
-            @Result(property = "tables",javaType = List.class,column = "businessId",many = @Many(select = "queryAllTablesByBusinessId"))
+            @Result(property = "tables",javaType = List.class,column = "{businessId = businessIdVal,tenantId = tenantId}",many = @Many(select = "queryAllTablesByBusinessId"))
     })
     @Select("<script>" +
             "select bi.businessid businessId, bi.trusttable trustTable, " +
+            "bi.businessid businessIdVal, bi.name, bi.tenantid tenantId, " +
             "bi.businessstatus businessStatus, bi.technicalstatus technicalStatus, bi.submitter, " +
             "bi.submissiontime submissionTime, bi.ticketnumber ticketNumber, " +
             "bi.publish, bi.status, bi.private_status privateStatus, " +
@@ -521,6 +522,8 @@ public interface BusinessDAO {
             "bi.private_status='PUBLIC' or (bi.submitter=#{userId} and bi.submitter_read=true) " +
             "or " +
             "(select count(*) from business_2_group b2g " +
+            "join user_group_relation ugr on ugr.group_id = b2g.group_id and ugr.user_id=#{userId} " +
+            "where b2g.business_id=bi.businessid and b2g.read=true)>0" +
             ") " +
             "order by bi.businesslastupdate desc " +
             "<if test='limit!= -1'>" +
