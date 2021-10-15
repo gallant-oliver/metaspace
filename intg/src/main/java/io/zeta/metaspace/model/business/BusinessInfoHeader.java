@@ -53,8 +53,18 @@ public class BusinessInfoHeader {
      */
     private Boolean publish;
 
+    private String privateStatus;
+
     @JsonIgnore
     private int total;
+
+    public String getPrivateStatus() {
+        return privateStatus;
+    }
+
+    public void setPrivateStatus(String privateStatus) {
+        this.privateStatus = privateStatus;
+    }
 
     public String getStatus() {
         return status;

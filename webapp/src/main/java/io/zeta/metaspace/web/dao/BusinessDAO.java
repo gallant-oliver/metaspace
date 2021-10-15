@@ -424,7 +424,7 @@ public interface BusinessDAO {
             "bi.businessid businessIdVal, bi.name, bi.tenantid tenantId, " +
             "bi.businessstatus businessStatus, bi.technicalstatus technicalStatus, bi.submitter, " +
             "bi.submissiontime submissionTime, bi.ticketnumber ticketNumber, " +
-            "bi.publish, bi.status, " +
+            "bi.publish, bi.status, bi.private_status privateStatus, " +
             "br.categoryguid categoryGuid, bi.businesslastupdate businessLastUpdate " +
             "from businessinfo bi " +
             "join business_relation br on bi.businessid = br.businessid " +
@@ -453,8 +453,8 @@ public interface BusinessDAO {
     })
     @Select("<script>" +
             "select count(*)over() total, bi.businessid businessId, bi.businessid businessIdVal, bi.name, bi.businessstatus businessStatus, bi.technicalstatus technicalStatus, " +
-            "bi.submitter, bi.submissiontime submissionTime, bi.ticketnumber ticketNumber, br.categoryguid categoryGuid, " +
-            "bi.publish, bi.status " +
+            "bi.submitter, bi.submissiontime submissionTime, bi.ticketnumber ticketNumber, br.categoryguid categoryGuid, bi.tenantid tenantId, " +
+            "bi.publish, bi.status, bi.private_status privateStatus " +
             "from businessinfo bi " +
             "join business_relation br on br.businessid=bi.businessid " +
             "where " +
@@ -490,7 +490,7 @@ public interface BusinessDAO {
             "select count(*)over() total, bi.businessid businessId, bi.businessid businessIdVal, " +
             "bi.tenantid tenantId, bi.departmentid departmentId, bi.name, bi.businessstatus businessStatus, bi.technicalstatus technicalStatus, " +
             "bi.submissiontime submissionTime, u.username submitter, bi.ticketnumber ticketNumber, br.categoryguid categoryGuid, " +
-            "bi.publish, bi.status " +
+            "bi.publish, bi.status, bi.private_status privateStatus " +
             "from businessinfo bi " +
             "join business_relation br on br.businessid=bi.businessid " +
             "join users u on u.userid=bi.submitter " +
