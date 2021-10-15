@@ -76,7 +76,7 @@ public class DeriveTablePrivilegeService {
     public Result getDeriveTableRelations(String tenantId,PrivilegeType privilegeType,
                                           String userGroupId,Boolean registerType,
                                           String tableName,int limit,int offset){
-        List<GroupDeriveTableInfo> groupDeriveTableInfos=relationDAO.getRelationInfos(tenantId,privilegeType,userGroupId,registerType,tableName,limit,offset);
+        List<GroupDeriveTableInfo> groupDeriveTableInfos=relationDAO.getRelationInfos(tenantId,privilegeType.name(),userGroupId,registerType,tableName,limit,offset);
         PageResult<GroupDeriveTableInfo> pageResult=new PageResult<>(groupDeriveTableInfos);
         if (Boolean.TRUE.equals(ParamUtil.isNull(groupDeriveTableInfos))){
             pageResult.setCurrentSize(0);
