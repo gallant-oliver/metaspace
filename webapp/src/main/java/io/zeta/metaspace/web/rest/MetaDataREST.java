@@ -843,8 +843,14 @@ public class MetaDataREST {
     @Path("/tag/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Tag> getTag(@PathParam("guid") String guid, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public List<Tag> getTag(@QueryParam("bizTreeId")String bizTreeId,@PathParam("guid") String guid, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
+            if(StringUtils.isNotBlank(bizTreeId)){
+                Map<String,String> map = EntityUtil.decodeBusinessId(bizTreeId);
+                if(map != null){
+                    tenantId = map.get("tenantId");
+                }
+            }
             return tableTagService.getTags(guid, tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取标签失败");
