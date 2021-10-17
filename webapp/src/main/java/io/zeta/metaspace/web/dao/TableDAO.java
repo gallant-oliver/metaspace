@@ -373,7 +373,7 @@ public interface TableDAO {
     List<TableExtInfo> selectTableInfoByGroups(@Param("guid") String tableGuid,@Param("tenantId")String tenantId,@Param("groupList")List<String> groups);
 
     @Select("SELECT tableinfo.tableguid as id, tableinfo.tablename, CASE WHEN data_source.source_type = 'POSTGRESQL' " +
-            "THEN concat(data_source.database, '.', tableinfo.dbname) ELSE tableinfo.dbname ND AS dbname, " +
+            "THEN concat(data_source.database, '.', tableinfo.dbname) ELSE tableinfo.dbname END AS dbname, " +
             "tableinfo.dbname, data_source.ip, data_source.port FROM tableinfo " +
             "INNER JOIN db_info ON tableinfo.databaseguid = db_info.database_guid " +
             "INNER JOIN source_db ON tableinfo.databaseguid = source_db.db_guid " +
