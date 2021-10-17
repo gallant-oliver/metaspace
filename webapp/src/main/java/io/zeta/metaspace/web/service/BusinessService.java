@@ -739,6 +739,7 @@ public class BusinessService implements Approvable {
             businessDao.deleteBusinessById(businessId);
             businessDao.deleteRelationByBusinessId(businessId);
             businessDao.deleteRelationById(businessId);
+            businessDao.deleteGroupRelationByBusinessIds(Lists.newArrayList(businessId));
         } catch (Exception e) {
             LOG.error("删除业务对象失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除业务对象失败");
@@ -1771,6 +1772,7 @@ public class BusinessService implements Approvable {
             int num = businessDao.deleteBusinessesByIds(ids);
             businessDao.deleteRelationByBusinessIds(ids);
             businessDao.deleteRelationByIds(ids);
+            businessDao.deleteGroupRelationByBusinessIds(ids);
             return num;
         } catch (Exception e) {
             LOG.error("删除业务对象失败", e);

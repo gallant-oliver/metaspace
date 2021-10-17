@@ -683,8 +683,7 @@ public class MetaDataService {
                     column.setDisplayName(columnName);
                 }
             });
-            table.setSourceTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),"",""));
-            table.setDbTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),table.getDatabaseId(),""));
+
             TableExtInfo tableExtInfo = getTableExtAttributes(tenantId,table.getTableId());
             table.setImportance(tableExtInfo.isImportance());
             table.setSecurity(tableExtInfo.isSecurity());
