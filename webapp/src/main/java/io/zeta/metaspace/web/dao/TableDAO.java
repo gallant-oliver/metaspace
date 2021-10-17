@@ -323,12 +323,12 @@ public interface TableDAO {
     @Select("SELECT DISTINCT db_type FROM tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid WHERE tb.tableguid = #{guid}")
     String selectTypeByGuid(@Param("guid") String guid);
 
-    @Select("SELECT tableinfo.tableguid as id, tableinfo.tablename, CASE WHEN data_source.source_type = 'POSTGRESQL' " +
-            "THEN concat(data_source.database, '.', tableinfo.dbname) ELSE tableinfo.dbname END AS dbname, " +
-            "tableinfo.dbname, data_source.ip, data_source.port FROM tableinfo " +
-            "INNER JOIN db_info ON tableinfo.databaseguid = db_info.database_guid " +
-            "INNER JOIN source_db ON tableinfo.databaseguid = source_db.db_guid " +
-            "INNER JOIN data_source ON source_db.source_id = data_source.source_id" +
-            "WHERE tableinfo.tableguid = #{guid}")
+    @Select(" SELECT tableinfo.tableguid as id, tableinfo.tablename, CASE WHEN data_source.source_type = 'POSTGRESQL' " +
+            " THEN concat(data_source.database, '.', tableinfo.dbname) ELSE tableinfo.dbname END AS dbname, " +
+            " tableinfo.dbname, data_source.ip, data_source.port FROM tableinfo " +
+            " INNER JOIN db_info ON tableinfo.databaseguid = db_info.database_guid " +
+            " INNER JOIN source_db ON tableinfo.databaseguid = source_db.db_guid " +
+            " INNER JOIN data_source ON source_db.source_id = data_source.source_id" +
+            " WHERE tableinfo.tableguid = #{guid}")
     TableSource selectTableSource(@Param("guid") String guid);
 }
