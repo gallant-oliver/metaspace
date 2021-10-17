@@ -103,7 +103,7 @@ public interface DataStandardDAO {
              " select count(1)over() total,b.id,b.number,b.content,b.description,b.createtime,b.updatetime,c.username as operator,b.version,b.categoryid,b.delete from ",
              " (select number,max(version) as version from data_standard where delete=false and tenantid=#{tenantId} ",
              " <if test=\"params.query != null and params.query!=''\">",
-             " and (number like concat('%',#{params.query},'%') ESCAPE '/' or content like 'concat('%',#{params.query},'%') ESCAPE '/' or description like concat('%',#{params.query},'%') ESCAPE '/') ",
+             " and (number like concat('%',#{params.query},'%') ESCAPE '/' or content like concat('%',#{params.query},'%') ESCAPE '/' or description like concat('%',#{params.query},'%') ESCAPE '/') ",
              " </if>",
              " <if test=\"params.categoryId != null and params.categoryId!=''\">",
              " and categoryId=#{params.categoryId} ",
