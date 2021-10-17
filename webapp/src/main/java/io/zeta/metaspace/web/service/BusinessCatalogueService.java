@@ -1265,7 +1265,7 @@ public class BusinessCatalogueService implements Approvable {
                 item = businessDAO.deleteBusinessesByIds(businessIds);
                 businessDAO.deleteRelationByBusinessIds(businessIds);
                 businessDAO.deleteRelationByIds(businessIds);
-//                businessDAO.deleteGroupRelationByBusinessIds(businessIds);
+                businessDAO.deleteGroupRelationByBusinessIds(businessIds);
             }
         }
         CategoryEntityV2 currentCatalog = categoryDao.queryByGuid(guid, tenantId);

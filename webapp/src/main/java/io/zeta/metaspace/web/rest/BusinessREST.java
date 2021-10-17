@@ -374,14 +374,14 @@ public class BusinessREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<CategorycateQueryResult> getCategories(@DefaultValue("ASC") @QueryParam("sort") final String sort,@QueryParam("type") Integer type, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
-        /*if(null==type){
+        if(null==type){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录类型不能为空");
-        }*/
+        }
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategories()");
             }
-            return  businessCatalogueService.getAllCategories(1, tenantId);
+            return  businessCatalogueService.getAllCategories(type, tenantId);
         } finally {
             AtlasPerfTracer.log(perf);
         }
