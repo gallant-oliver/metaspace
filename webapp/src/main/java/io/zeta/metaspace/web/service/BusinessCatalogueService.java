@@ -625,6 +625,7 @@ public class BusinessCatalogueService implements Approvable {
             category.setCreateTime(createTime);
             User user = AdminUtils.getUserData();
             category.setCreator(user.getUserId());
+            category.setSafe("1");
             if (systemCategoryGuids.contains(category.getGuid())) {
                 systemCategoryGuids.remove(category.getGuid());
                 systemCategory.add(category);
@@ -645,12 +646,6 @@ public class BusinessCatalogueService implements Approvable {
                 }
                 if(guid.equals(cate2.getParentCategoryGuid())){
                     cate2.setParentCategoryGuid(newGuid);
-                }
-                if(guid.equals(cate2.getUpBrotherCategoryGuid())){
-                    cate2.setUpBrotherCategoryGuid(newGuid);
-                }
-                if(guid.equals(cate2.getDownBrotherCategoryGuid())){
-                    cate2.setDownBrotherCategoryGuid(newGuid);
                 }
             }
         }
@@ -1272,15 +1267,7 @@ public class BusinessCatalogueService implements Approvable {
         if (Objects.isNull(currentCatalog)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取当前目录信息失败");
         }
-        String upBrotherCategoryGuid = currentCatalog.getUpBrotherCategoryGuid();
-        String downBrotherCategoryGuid = currentCatalog.getDownBrotherCategoryGuid();
-        if (StringUtils.isNotEmpty(upBrotherCategoryGuid)) {
-            categoryDao.updateDownBrotherCategoryGuid(upBrotherCategoryGuid, downBrotherCategoryGuid, tenantId);
-        }
-        if (StringUtils.isNotEmpty(downBrotherCategoryGuid)) {
-            categoryDao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid, tenantId);
-        }
-        userGroupDAO.deleteCategoryGroupRelationByCategory(guid);
+        userGroupDAO.deleteCategoryGroupRelationByCategoryIds(categoryIds);
         int category = categoryDao.deleteCategoryByIds(categoryIds, tenantId);
         CategoryDeleteReturn deleteReturn = new CategoryDeleteReturn();
         deleteReturn.setCategory(category);
