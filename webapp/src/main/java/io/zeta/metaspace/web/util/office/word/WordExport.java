@@ -29,57 +29,77 @@ public class WordExport {
     private FileInputStream is = null;
     private OutputStream os = null;
 
-    public static void main(String[] args) {
+    public static boolean generateAttachTemplate(String demoTemplate){
+        // 创建Word文件
+        XWPFDocument docx = new XWPFDocument();
+        XWPFParagraph p = docx.createParagraph();
+        // 设置段落的对齐方式
+        p.setAlignment(ParagraphAlignment.LEFT);
+        //创建段落文本
+        XWPFRun r = p.createRun();
+        r.setText("元数据版本差异清单");
+        r.setBold(true);//设置为粗体
+        r.setColor("FF0000");//设置颜色
+        p = docx.createParagraph();
+        r = p.createRun();
+        r.setBold(true);//设置为粗体
+        r.setText("表名-基础信息");
+        p = docx.createParagraph();
+        r = p.createRun();
+        r.setText("Ip：${ip}");
+        p = docx.createParagraph();
+        r = p.createRun();
+        r.setText("端口：${port}");
+        p = docx.createParagraph();
+        r = p.createRun();
+        r.setText("实例名：${instance}");
+        p = docx.createParagraph();
+        r = p.createRun();
+        r.setText("数据库名：${dbName}");
+        p = docx.createParagraph();
+        r = p.createRun();
+        r.setText("数据库类型：${dbType}");
+        p = docx.createParagraph();
+        r = p.createRun();
+        r.setText("业务负责人：${bizLeader}");
+        p = docx.createParagraph();
+        r = p.createRun();
+        r.setText("衍生表设计人：${deriveTableDesigner}");
+        p = docx.createParagraph();
+        r = p.createRun();
+        r.setText("技术目录路径：${techenicalPath}");
+        p = docx.createParagraph();
+        r = p.createRun();
+        r.setText("业务目录路径：${businessPath}");
 
-        //测试数据准备
-        //1.标题
-        String title = "使用POI导出Word";
-        //2.段落数据
-        String ip = "10.10.10.233";
-        String port = "9990";
-        String instance = "这里是微软雅黑五号红色字体";
+        p = docx.createParagraph();
+        r = p.createRun();
+        r.setBold(true);
+        r.setText("模型变更详情");
+        XWPFTable table= docx.createTable(2, 4);//创建一个表格
+        table.getRow(0).getCell(0).setText("变更列");
+        table.getRow(0).getCell(1).setText("变更前");
+        table.getRow(0).getCell(2).setText("变更类型");
+        table.getRow(0).getCell(3).setText("变更后");
+        table.getRow(1).getCell(0).setText("${changeColumn}");
+        table.getRow(1).getCell(1).setText("${beforeInfo}");
+        table.getRow(1).getCell(2).setText("${changeType}");
+        table.getRow(1).getCell(3).setText("${afterInfo}");
 
-        //存放段落数据
-        Map<String,Object> map = new HashMap<>();
-        map.put("title", title);
-        map.put("ip", ip);
-        map.put("port", port);
-        map.put("instance", instance);
-        map.put("dbname","orcl");
-        map.put("type", "oracle");
+        p = docx.createParagraph();
+        r = p.createRun();
+        r.setText("变更类型：列名称变更，列删除，列添加，列类型变更");
 
-        //3.表格数据
-        List<Map<String,String>> excelMapList = new ArrayList<>();
-        Map<String,String> excelMapTemp = null;
-        for (int i=1;i<11;i++) {
-            excelMapTemp = new HashMap<String,String>();
-            excelMapTemp.put("excelno1", "one-"+i);
-            excelMapTemp.put("excelno2", "two-"+i);
-            excelMapTemp.put("excelno3", "three-"+i);
-            excelMapTemp.put("excelno4", "four-"+i);
-            excelMapList.add(excelMapTemp);
-        }
-
-        //模板存放位置
-        String demoTemplate = "D:\\tmp\\表模型变更.docx";
-        //生成文档存放位置
-        String targetPath = "D:\\tmp\\表模型变更-out.docx";
-
-        //初始化导出
-        WordExport export = new WordExport(demoTemplate);
-        try {
-            export.init();
+        logger.info("开始生成模板文档...");
+        try(FileOutputStream out = new FileOutputStream(demoTemplate); ) {
+            docx.write(out);
+            logger.info("生成模板文档成功.");
+            return true;
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("生成模板文档失败。",e);
+            return false;
         }
-        try {
-            export.export(map);
-            //0为表格的下标，第一个表格下标为0，以此类推
-            export.export(excelMapList, 0);
-            export.generate(targetPath);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+
     }
 
     /**
