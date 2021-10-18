@@ -179,6 +179,25 @@ public class MetadataHistoryService {
         }
     }
 
+    private String[] getEmailAddressList(List<String> userIds){
+        List<String> userEmails = CollectionUtils.isEmpty(userIds) ? null : userDAO.getUsersEmailByIds(userIds);
+        List<String> validEmail = new ArrayList<>();
+        if(CollectionUtils.isNotEmpty(userEmails)){
+            for (String email : userEmails){
+                log.info("邮箱地址:{}",email);
+                if(sourceInfoFileService.isEmail(email)){
+                    validEmail.add(email);
+                }
+            }
+        }
+        String[] contacts = validEmail.toArray(new String[validEmail.size()]);
+        return contacts;
+    }
+
+    private boolean isArrayEmpty(String[] contacts){
+        return contacts == null || contacts.length == 0;
+    }
+
     //元数据有变化，需要邮件通知 （开启一个线程处理,目前只有 hive源存在对比）
     private void sendNoticeByEmail(List<TableMetadata> tableMetadataList,String dbName) {
         log.info("元数据有变化，查找邮件发送地址.");
@@ -212,18 +231,7 @@ public class MetadataHistoryService {
                 }
 
                 List<String> userIds = deriveTableInfoList.stream().map(SourceInfoDeriveTableInfo::getCreator).collect(Collectors.toList());
-                List<String> userEmails = CollectionUtils.isEmpty(userIds) ? null : userDAO.getUsersEmailByIds(userIds);
-                // User user = userDAO.getUser(databaseInfoBO.getBusinessLeaderId());
-                List<String> validEmail = new ArrayList<>();
-                if(CollectionUtils.isNotEmpty(userEmails)){
-                    for (String email : userEmails){
-                        log.info("衍生表设计人的邮箱地址:{}",email);
-                        if(sourceInfoFileService.isEmail(email)){
-                            validEmail.add(email);
-                        }
-                    }
-                }
-                contacts = validEmail.toArray(new String[validEmail.size()]);
+                contacts = getEmailAddressList(userIds);
             }
         }
 
@@ -239,25 +247,14 @@ public class MetadataHistoryService {
                 paragraphMap.put("techenicalPath",databaseInfoBO.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
                         sourceInfoDatabaseService.getActiveInfoAllPath(databaseInfoBO.getCategoryId(),databaseInfoBO.getTenantId() ):sourceInfoDatabaseService.getAllPath(databaseInfoBO.getId(),databaseInfoBO.getTenantId()));
 
-                if(contacts == null || contacts.length == 0 ){
+                if( isArrayEmpty(contacts) ){
                     List<String> userIds = currentSourceInfoList.stream().map(DatabaseInfoBO::getBusinessLeaderId).collect(Collectors.toList());
-                    List<String> userEmails = CollectionUtils.isEmpty(userIds) ? null : userDAO.getUsersEmailByIds(userIds);
-                   // User user = userDAO.getUser(databaseInfoBO.getBusinessLeaderId());
-                    List<String> validEmail = new ArrayList<>();
-                    if(CollectionUtils.isNotEmpty(userEmails)){
-                        for (String email : userEmails){
-                            log.info("数据库业务负责人的邮箱地址:{}",email);
-                            if(sourceInfoFileService.isEmail(email)){
-                                validEmail.add(email);
-                            }
-                        }
-                    }
-                    contacts = validEmail.toArray(new String[validEmail.size()]);
+                    contacts = getEmailAddressList(userIds);
                 }
             }
         }
 
-        if(contacts == null || contacts.length == 0){
+        if(isArrayEmpty(contacts)){
             log.info("要发送的邮件地址为空。");
             return;
         }
