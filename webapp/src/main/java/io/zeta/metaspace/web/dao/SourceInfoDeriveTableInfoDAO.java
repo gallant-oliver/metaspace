@@ -235,4 +235,14 @@ public interface SourceInfoDeriveTableInfoDAO {
 
     @Select("select importance,security from source_info_derive_table_info where table_guid=#{tableGuid} AND tenant_id = #{tenantId} ")
     List<TableExtInfo> getImportanceInfo( @Param("tableGuid") String tableGuid,@Param("tenantId") String tenantId);
+
+    @Select("<script>" +
+            "select business_id businessId, source_table_guid sourceTableGuid " +
+            "from source_info_derive_table_info " +
+            "where state=1 and table_guid in " +
+            " <foreach item='tableGuid' index='index' collection='tableGuids' separator=',' open='(' close=')'>" +
+            " #{tableGuid}" +
+            " </foreach>" +
+            "</script>")
+    List<SourceInfoDeriveTableInfo> getDeriveTableInfoByGuids(@Param("tableGuids")List<String> tableGuids);
 }

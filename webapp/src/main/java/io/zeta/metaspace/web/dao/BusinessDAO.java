@@ -19,6 +19,7 @@ package io.zeta.metaspace.web.dao;
 import io.zeta.metaspace.model.business.*;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableHeader;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.ibatis.annotations.*;
 
@@ -754,4 +755,12 @@ public interface BusinessDAO {
             "</foreach>" +
             "</script>")
     List<String> getTableJump(@Param("tableGuids")List<String> tableGuids, @Param("userId")String userId, @Param("tenantId") String tenantId);
+
+    @Delete("<script>" +
+            "delete from business2table where " +
+            "<foreach item='info' index='index' collection='sourceInfoDeriveTableInfos' separator=' or '>" +
+            "(businessid=#{info.businessId} and tableguid=#{info.sourceTableGuid})" +
+            "</foreach>" +
+            "</script>")
+    void batchDeleteRelationByBusinessIdsAndTableIds(@Param("sourceInfoDeriveTableInfos")List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos);
 }
