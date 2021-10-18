@@ -166,8 +166,10 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveColumnInfoService.saveBatch(sourceInfoDeriveColumnInfos);
         sourceInfoDeriveTableColumnRelationService.saveBatch(sourceInfoDeriveTableColumnRelationList);
 
-        // 新增业务对象-表关系(关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表)
-        businessDAO.insertTableRelation(sourceInfoDeriveTableInfo.getBusinessId(), Lists.newArrayList(sourceInfoDeriveTableInfo.getSourceTableGuid()), 1);
+        // 提交：新增业务对象-表关系(关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表)
+        if (DeriveTableStateEnum.COMMIT.getState() == sourceInfoDeriveTableInfo.getState()) {
+            businessDAO.insertTableRelation(sourceInfoDeriveTableInfo.getBusinessId(), Lists.newArrayList(sourceInfoDeriveTableInfo.getSourceTableGuid()), 1);
+        }
         return true;
     }
 
@@ -295,10 +297,13 @@ public class SourceInfoDeriveTableInfoService {
         }
         sourceInfoDeriveTableColumnRelationService.saveOrUpdateBatch(sourceInfoDeriveTableColumnRelationList);
 
-        // 删除旧的业务对象-表关联关系
-        businessDAO.deleteRelationByBusinessIdAndTableId(oldSourceInfoDeriveTableInfo.getBusinessId(), oldSourceInfoDeriveTableInfo.getSourceTableGuid());
-        // 新增业务对象-表关系(关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表)
-        businessDAO.insertTableRelation(sourceInfoDeriveTableInfo.getBusinessId(), Lists.newArrayList(sourceInfoDeriveTableInfo.getSourceTableGuid()), 1);
+
+        if (DeriveTableStateEnum.COMMIT.getState() == sourceInfoDeriveTableInfo.getState()) {
+            // 删除旧的业务对象-表关联关系
+            businessDAO.deleteRelationByBusinessIdAndTableId(oldSourceInfoDeriveTableInfo.getBusinessId(), oldSourceInfoDeriveTableInfo.getSourceTableGuid());
+            // 新增业务对象-表关系(关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表)
+            businessDAO.insertTableRelation(sourceInfoDeriveTableInfo.getBusinessId(), Lists.newArrayList(sourceInfoDeriveTableInfo.getSourceTableGuid()), 1);
+        }
         return true;
     }
 
