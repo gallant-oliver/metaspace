@@ -683,8 +683,7 @@ public class MetaDataService {
                     column.setDisplayName(columnName);
                 }
             });
-            table.setSourceTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),"",""));
-            table.setDbTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),table.getDatabaseId(),""));
+
             TableExtInfo tableExtInfo = getTableExtAttributes(tenantId,table.getTableId());
             table.setImportance(tableExtInfo.isImportance());
             table.setSecurity(tableExtInfo.isSecurity());
@@ -702,24 +701,36 @@ public class MetaDataService {
             info.setSecurity(false);
             return info;
         }
+        //查看该表在衍生表的重要保密性
+        List<TableExtInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDAO.getImportanceInfo(tableGuid,tenantId);
+        if(CollectionUtils.isEmpty(deriveTableInfoList)){
+            LOG.info("该衍生表没有配置重要保密信息");
+            info.setImportance(false);
+            info.setSecurity(false);
+            return info;
+        }
+        boolean deriveImportance = deriveTableInfoList.stream().anyMatch(v->v.isImportance());
+        boolean deriveSecurity = deriveTableInfoList.stream().anyMatch(v->v.isSecurity());
+
         User user = AdminUtils.getUserData();
         List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId);
         if(CollectionUtils.isEmpty(groups)){
             LOG.info("当前用户没有配置用户组，忽略权限");
-            info.setImportance(false);
-            info.setSecurity(false);
+            info.setImportance(deriveImportance);
+            info.setSecurity(deriveSecurity);
             return info;
         }
         List<String> groupList = groups.stream().map(UserGroup::getId).collect(Collectors.toList());
         List<TableExtInfo> list = tableDAO.selectTableInfoByGroups(tableGuid,tenantId,groupList);
         if(CollectionUtils.isEmpty(list)){
             LOG.info("当前用户组没有配置表的权限，忽略权限");
-            info.setImportance(false);
-            info.setSecurity(false);
+            info.setImportance(deriveImportance);
+            info.setSecurity(deriveSecurity);
             return info;
         }
-        info.setImportance(list.stream().anyMatch(p->p.isImportance()));
-        info.setSecurity(list.stream().anyMatch(p->p.isSecurity()));
+
+        info.setImportance(deriveImportance && list.stream().noneMatch(p->p.isImportance()));
+        info.setSecurity(deriveSecurity && list.stream().noneMatch(p->p.isSecurity()));
         return info;
     }
 
@@ -788,10 +799,9 @@ public class MetaDataService {
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
             try {
-                List<TableRelation> relationList = getRelationList(guid, tenantId);
+                List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
                 boolean edit = false;
-                if (relationList.size() > 0) {
-                    List<String> categoryIds = relationList.stream().map(r -> r.getCategoryGuid()).collect(Collectors.toList());
+                if (categoryIds.size() > 0) {
                     int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds, tenantId);
                     if (count > 0) {
                         edit = true;
@@ -1288,28 +1298,7 @@ public class MetaDataService {
     }
 
     public List<TableRelation> getRelationList(String tableGuid, String tenantId) throws AtlasBaseException {
-        List<TableRelation> categoryRelations = new ArrayList<>();
-        List<TableRelation> categoryRelationsFromRelation = relationDAO.queryTableCategoryRelations(tableGuid, tenantId);
-        if(CollectionUtils.isNotEmpty(categoryRelationsFromRelation)){
-            categoryRelations.addAll(categoryRelationsFromRelation);
-        }
-        List<TableRelation> categoryRelationsFromDb = relationDAO.queryTableCategoryRelationsFromDb(tableGuid, tenantId);
-        if(CollectionUtils.isNotEmpty(categoryRelationsFromDb)){
-            for(int i = categoryRelationsFromDb.size() -1; i>=0; i--){
-                String categoryGuid = categoryRelationsFromDb.get(i).getCategoryGuid();
-                for(TableRelation categoryRelation : categoryRelations){
-                    if(categoryRelation.getCategoryGuid().equalsIgnoreCase(categoryGuid)){
-                        categoryRelationsFromDb.remove(i);
-                        break;
-                    }
-                }
-            }
-            if(CollectionUtils.isNotEmpty(categoryRelationsFromDb)){
-                categoryRelations.addAll(categoryRelationsFromDb);
-            }
-
-        }
-        return categoryRelations;
+        return relationDAO.queryTableCategoryRelationsFromDb(tableGuid, tenantId);
     }
 
     @Cacheable(value = "columnCache", key = "#query.guid + #query.columnFilter.columnName + #query.columnFilter.type + #query.columnFilter.description", condition = "#refreshCache==false")

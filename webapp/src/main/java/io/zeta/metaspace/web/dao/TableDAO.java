@@ -3,6 +3,8 @@ package io.zeta.metaspace.web.dao;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
+import io.zeta.metaspace.model.usergroup.TenantHive;
+import io.zeta.metaspace.model.table.TableSource;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -287,32 +289,40 @@ public interface TableDAO {
             " SELECT count(*) over() as total, t.* FROM (" +
             " select source.tenantid as tenantId,tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description, source.source_id,source.source_name" +
             " from tableinfo as tb INNER JOIN source_db as sd on  tb.databaseguid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
-            " WHERE tb.status = 'ACTIVE' AND tb.tablename like concat('%',#{tableName},'%')  AND source.tenantid in " +
+            " WHERE tb.status = 'ACTIVE' " +
+            "<if test = \"tableName !=null and tableName !=''\">" +
+            " AND tb.tablename like concat('%',#{tableName},'%') " +
+            "</if>" +
+            "   AND source.tenantid in " +
             " <foreach item='item' index='index' collection='tenantList' open='(' separator=',' close=')'>" +
             "   #{item}" +
             " </foreach>" +
             " UNION" +
             " select te.id as tenantId,tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description,'hive' as source_id,'hive' AS source_name" +
             " from tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid" +
-            " <if test='tenantList != null and tenantList.size() > 0'>" +
-            " INNER JOIN (select id from tenant tmp where tmp.id in  " +
-            " <foreach collection='tenantList' item='item' separator=',' open='(' close=')'>" +
-            "  #{item}" +
+            " <if test='dbNameList != null and dbNameList.size() > 0'>" +
+            "  INNER JOIN ( "+
+            " <foreach collection='dbNameList' item='item' separator=' union all '>" +
+            " ( select #{item.tenantId} as id,#{item.hiveDb} as db_name from tenant limit 1 )" +
             " </foreach>" +
-            " ) te on 1=1 "+
+            " ) te on te.db_name=tb.dbname "+
             " </if>" +
 
-            " WHERE  tb.status = 'ACTIVE' AND tb.databasestatus = 'ACTIVE' AND tb.tablename like concat('%',#{tableName},'%') AND db.db_type = 'HIVE' AND tb.dbname in " +
-            " <foreach item='item' index='index' collection='dbNameList' open='(' separator=',' close=')'>" +
-            "   #{item}" +
-            " </foreach>" +
+            " WHERE  tb.status = 'ACTIVE' AND tb.databasestatus = 'ACTIVE' AND db.db_type = 'HIVE'  " +
+            "<if test = \"tableName !=null and tableName !=''\">" +
+            " AND tb.tablename like concat('%',#{tableName},'%') " +
+            "</if>" +
+//            "  AND tb.dbname in " +
+//            " <foreach item='item' index='index' collection='dbNameList' open='(' separator=',' close=')'>" +
+//            "   #{item}" +
+//            " </foreach>" +
             " ) as t ORDER BY t.name" +
             " <if test='limit!= -1'>"+
             " limit #{limit}"+
             " </if>"+
             " offset #{offset}"+
             "</script>")
-    List<TableEntity> selectListByTenantIdListAndTableName(@Param("tableName") String tableName, @Param("tenantList") List<String> tenants, @Param("dbNameList") List<String> dbNameList, @Param("limit") Long limit, @Param("offset") Long offset);
+    List<TableEntity> selectListByTenantIdListAndTableName(@Param("tableName") String tableName, @Param("tenantList") List<String> tenants, @Param("dbNameList") List<TenantHive> dbNameList, @Param("limit") Long limit, @Param("offset") Long offset);
 
     @Select("<script>" +
             " SELECT count(*) over() as total, tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description, source.source_id,source.source_name" +
@@ -361,4 +371,13 @@ public interface TableDAO {
             "</foreach>",
             "</script>"})
     List<TableExtInfo> selectTableInfoByGroups(@Param("guid") String tableGuid,@Param("tenantId")String tenantId,@Param("groupList")List<String> groups);
+
+    @Select(" SELECT DISTINCT tableinfo.tableguid as id, tableinfo.tablename, CASE WHEN data_source.source_type = 'POSTGRESQL' " +
+            " THEN concat(data_source.database, '.', tableinfo.dbname) ELSE tableinfo.dbname END AS dbname, " +
+            " tableinfo.dbname, data_source.ip, data_source.port FROM tableinfo " +
+            " INNER JOIN db_info ON tableinfo.databaseguid = db_info.database_guid " +
+            " INNER JOIN source_db ON tableinfo.databaseguid = source_db.db_guid " +
+            " INNER JOIN data_source ON source_db.source_id = data_source.source_id" +
+            " WHERE tableinfo.tableguid = #{guid}")
+    TableSource selectTableSource(@Param("guid") String guid);
 }

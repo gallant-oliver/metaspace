@@ -6,6 +6,7 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.PublicService;
+import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.RelationEntityV2;
@@ -27,6 +28,9 @@ public class PublicREST {
 
     @Autowired
     private PublicService publicService;
+
+    @Autowired
+    private SourceInfoDatabaseService sourceInfoDatabaseService;
 
     /**
      * 获取所有目录
@@ -100,5 +104,20 @@ public class PublicREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<BusinessInfoHeader> getBusinessList(Parameters parameters) throws AtlasBaseException {
         return publicService.getBusinessList(parameters);
+    }
+
+    /**
+     * 获取源信息登记详情
+     * @param tenantId
+     * @param id
+     * @param version
+     * @return
+     */
+    @GET
+    @Path("source/info/{id}/{tenantId}")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public Result getSourceInfoDetail(@PathParam("tenantId") String tenantId, @PathParam("id") String id, @QueryParam("version") @DefaultValue("0") String version) {
+        return sourceInfoDatabaseService.getDatabaseInfoById(id, tenantId, Integer.parseInt(version));
     }
 }

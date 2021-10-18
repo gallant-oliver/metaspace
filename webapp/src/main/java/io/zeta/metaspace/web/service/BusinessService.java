@@ -316,13 +316,13 @@ public class BusinessService implements Approvable {
                 info.setTechnicalOperator(operator);
             }
 
+            User user = AdminUtils.getUserData();
+            String userId = user.getUserId();
             //判断独立部署和多租户
             if (TenantService.defaultTenant.equals(tenantId)) {
-                User user = AdminUtils.getUserData();
                 List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
                 if (roles.stream().allMatch(role -> role.getStatus() == 0))
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-                String userId = user.getUserId();
                 boolean editTechnical = privilegeDao.queryModulePrivilegeByUser(userId, SystemModule.TECHNICAL_OPERATE.getCode()) == 0 ? false : true;
                 info.setEditTechnical(editTechnical);
             } else {
@@ -332,6 +332,22 @@ public class BusinessService implements Approvable {
             }
             //tables
             List<TechnologyInfo.Table> tables = buildTablesByBusinessId(businessId, tenantId,null,null);
+
+            // 查询表是否可跳转‘元数据管理’
+            if (CollectionUtils.isNotEmpty(tables)) {
+                List<String> tableGuids = tables.stream().map(t -> t.getTableGuid()).collect(Collectors.toList());
+                // 当前用户是否同时有表所在数据库和数据源的查看权限
+                List<String> jumpTableGuids = businessDao.getTableJump(tableGuids, userId, tenantId);
+                for (TechnologyInfo.Table table : tables) {
+                    if (jumpTableGuids.contains(table.getTableGuid())){
+                        table.setJump(true);
+                    }
+                    else {
+                        table.setJump(false);
+                    }
+                }
+            }
+
             info.setTables(tables);
             //businessId
             info.setBusinessId(businessId);
@@ -2105,26 +2121,6 @@ public class BusinessService implements Approvable {
             String path = CategoryRelationUtils.getPath(entity.getCategoryGuid(), tenantId);
             entity.setPath(path);
         }
-    }
-
-    public Map<String, Boolean> getTableAuth(String tableId, String tenantId) {
-        Map<String, Boolean> result = new HashMap<>();
-        result.put("jump", false);
-
-        List<UserGroupIdAndName> userGroups = AdminUtils.getUserData().getUserGroups();
-
-        if (CollectionUtils.isNotEmpty(userGroups)) {
-            List<String> userGroupIds = userGroups.stream().map(u -> u.getId()).collect(Collectors.toList());
-
-            // 当前用户是否同时有表所在数据库和数据源的查看权限
-            int databaseCount = businessDao.getDatabaseAuth(tableId, userGroupIds);
-            int datasourceCount = businessDao.getDataSourceAuth(tableId, userGroupIds);
-            if (databaseCount > 0 && datasourceCount > 0) {
-                result.put("jump", true);
-            }
-        }
-
-        return result;
     }
 
     public List<CategorycateQueryResult> getBusinessPlaceCategories(Integer type, String tenantId) {

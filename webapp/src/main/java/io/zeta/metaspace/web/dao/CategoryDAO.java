@@ -18,6 +18,7 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.DataOwner;
+import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.CategoryGuidPath;
@@ -246,9 +247,7 @@ public interface CategoryDAO {
             " </script>"})
     public int deleteDataOwner(@Param("tableList") List<String> tableList);
 
-    @Select("select t1.category_id from table_data_source_relation t1 where t1.tenant_id = #{tenantId} and t1.table_id = #{guid} " +
-            "union " +
-            "select t2.category_id from  source_info t2 join tableinfo t3 on t2.database_id = t3.databaseguid where t2.tenant_id = #{tenantId} and t3.tableguid = #{guid}")
+    @Select("select t2.category_id from  source_info t2 join tableinfo t3 on t2.database_id = t3.databaseguid where t2.tenant_id = #{tenantId} and t3.tableguid = #{guid} AND t2.version = 0")
     public List<String> getCategoryGuidByTableGuid(@Param("guid") String guid, @Param("tenantId") String tenantId);
 
     @Select("select category.guid from category,business_relation where business_relation.businessid=#{guid} and business_relation.categoryguid=category.guid and tenantid=#{tenantId}")

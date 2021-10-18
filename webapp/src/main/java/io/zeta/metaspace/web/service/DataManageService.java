@@ -292,12 +292,17 @@ public class DataManageService {
             }
             categoryPrivilegeList = categoryDAO.selectListByTenantIdAndGroupId(tenantId, userGroupIds);
             removeNoParentCategory(categoryPrivilegeList);
-            if(CollectionUtils.isEmpty(userGroups)){
-                categoryPrivilegeList.forEach(categoryPrivilege -> {
-                    categoryPrivilege.setEditItem(false);
-                    categoryPrivilege.setEditCategory(false);
-                });
-            }
+            categoryPrivilegeList.forEach(categoryPrivilege -> {
+                        if (CollectionUtils.isEmpty(userGroups)) {
+                            categoryPrivilege.setEditItem(false);
+                            categoryPrivilege.setEditCategory(false);
+                        }
+                        if (MetaspaceConfig.systemCategory.contains(categoryPrivilege.getGuid())) {
+                            categoryPrivilege.setEditItem(false);
+                            categoryPrivilege.setEditCategory(false);
+                        }
+                    }
+            );
         } catch (AtlasBaseException e) {
             LOG.error("getTechnicalCategory exception is {}", e);
         }
