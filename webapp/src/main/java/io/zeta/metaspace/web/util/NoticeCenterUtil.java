@@ -11,7 +11,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 通知工具类 邮件
@@ -55,6 +58,9 @@ public class NoticeCenterUtil {
         jsonMap.put("channel_instance_id",3);
         jsonMap.put("priority", 0);
         jsonMap.put("template_id", 0);
+        //邮件地址列表去重
+        List<String> contactList = Stream.of(contacts).distinct().collect(Collectors.toList());
+        contacts = contactList.toArray(new String[contactList.size()]);
         jsonMap.put("contacts", contacts);
         jsonMap.put("datas", new HashMap<String,String>(1){{
             put("content",content);
