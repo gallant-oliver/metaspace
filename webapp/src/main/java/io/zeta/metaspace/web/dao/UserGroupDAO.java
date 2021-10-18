@@ -134,6 +134,14 @@ public interface UserGroupDAO {
     @Delete("delete from category_group_relation where category_id=#{id}")
     public void deleteCategoryGroupRelationByCategory(String id);
 
+    @Delete("<script>" +
+            "delete from category_group_relation where  category_id in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id} " +
+            " </foreach>" +
+            " </script>")
+    public void deleteCategoryGroupRelationByCategoryIds(@Param("ids") List<String> ids);
+
     @Delete("delete from datasource_group_relation where group_id=#{id}")
     public void deleteUserGroupDataSourceRelationByID(String id);
 
@@ -977,12 +985,8 @@ public interface UserGroupDAO {
     @Update ("<script>" +
             "update category_group_relation set " +
              " read=true " +
-             "<if test='privilege.editCategory==true'>" +
-             " ,edit_category=true " +
-             "</if>" +
-             "<if test='privilege.editItem==true'>" +
-             " ,edit_item=true " +
-             "</if>" +
+             " ,edit_category=#{privilege.editCategory} " +
+             " ,edit_item=#{privilege.editItem} " +
              " where group_id=#{userGroupId} and category_id in " +
              "    <foreach item='id' index='index' collection='categoryIds' " +
              "    open='(' separator=',' close=')'>" +

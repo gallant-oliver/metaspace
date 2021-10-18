@@ -19,6 +19,7 @@ import io.zeta.metaspace.model.table.DataSourceHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.TenantGroup;
+import io.zeta.metaspace.model.usergroup.TenantHive;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
@@ -155,7 +156,7 @@ public class SearchService {
 
     public PageResult<Database> getPublicDatabases(Long offset, Long limit, String query, Boolean queryCount) {
         try {
-            List<String> dbList = new ArrayList<>() ;
+            List<TenantHive> dbList = new ArrayList<>() ;
             PageResult<Database> databasePageResult = new PageResult<>();
             List<Database> databaseList = new ArrayList<>();
             //获取当前租户下用户所属用户组
@@ -179,8 +180,15 @@ public class SearchService {
                 String currentTenantId = item.getTenantId();
                 LOG.info("租户["+currentTenantId+"]下hive的库查询" );
                 List<String> list = tenantService.getDatabase(currentTenantId);
+                TenantHive hive = null;
                 if(CollectionUtils.isNotEmpty(list)){
-                    dbList.addAll(list);
+                    for(String db : list){
+                        hive = new TenantHive();
+                        hive.setTenantId(currentTenantId);
+                        hive.setHiveDb(db);
+                        dbList.add(hive);
+                    }
+                   // dbList.addAll(list);
                 }
             }
 
@@ -213,7 +221,7 @@ public class SearchService {
     }
 
     public PageResult<TableEntity> getPublicTable(String schemaId, long offset, long limit, String query, Boolean isView, Boolean queryInfo) {
-        List<String> dbList = new ArrayList<>();
+        List<TenantHive> dbList = new ArrayList<>();
         PageResult<TableEntity> tablePageResult = new PageResult<>();
         List<TableEntity> tableEntityList;
         try {
@@ -222,9 +230,18 @@ public class SearchService {
                 String currentTenantId = item.getTenantId();
                 LOG.info("租户["+currentTenantId+"]下hive的库查询" );
                 List<String> list = tenantService.getDatabase(currentTenantId);
+                TenantHive hive = null;
                 if(CollectionUtils.isNotEmpty(list)){
-                    dbList.addAll(list);
+                    for(String db : list){
+                        hive = new TenantHive();
+                        hive.setTenantId(currentTenantId);
+                        hive.setHiveDb(db);
+                        dbList.add(hive);
+                    }
                 }
+               /* if(CollectionUtils.isNotEmpty(list)){
+                    dbList.addAll(list);
+                }*/
             }
             if(StringUtils.isNotBlank(query)){
                 query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");

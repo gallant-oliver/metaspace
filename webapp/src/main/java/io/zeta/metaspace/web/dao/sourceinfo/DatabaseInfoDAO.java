@@ -7,6 +7,7 @@ import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForCategory;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForList;
 import io.zeta.metaspace.model.usergroup.TenantGroup;
+import io.zeta.metaspace.model.usergroup.TenantHive;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -204,7 +205,8 @@ public interface DatabaseInfoDAO {
             " (SELECT u.username FROM users u WHERE u.userid = s.updater ) AS updater_name,\n" +
             " s.update_time,\n" +
             " ai.reason as audit_des ,\n" +
-            " (SELECT u.username FROM users u WHERE u.userid = ai.approver ) AS auditor_name\n" +
+            " (SELECT u.username FROM users u WHERE u.userid = ai.approver ) AS auditor_name,\n" +
+            " s.to_department_name as toDepartmentName\n" +
             "FROM\n" +
             " source_info s LEFT JOIN category c ON s.category_id = c.guid AND \n" +
             " c.tenantid = s.tenant_id\n" +
@@ -603,22 +605,20 @@ public interface DatabaseInfoDAO {
             " <if test='hiveList != null and hiveList.size() > 0'>" +
             " union" +
             " SELECT te.id as tenantId,db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,'hive' as source_id,db.database_description,'hive' as sourceName,db.owner " +
-            " FROM db_info as db " +
-            " <if test='tenantGroupList != null and tenantGroupList.size() > 0'>" +
-            " ,(select id from tenant tmp where tmp.id in  " +
-            " <foreach collection='tenantGroupList' item='item' separator=',' open='(' close=')'>" +
-            "  #{item.tenantId}" +
+            " FROM db_info as db, (" +
+
+            " <foreach collection='hiveList' item='item' separator=' union all '>" +
+            " ( select #{item.tenantId} as id,#{item.hiveDb} as db_name from tenant limit 1 )" +
             " </foreach>" +
             " ) te"+
-            " </if>" +
 
-            " WHERE db.status = 'ACTIVE' AND db.db_type = 'HIVE' " +
+            " WHERE db.database_name=te.db_name and db.status = 'ACTIVE' AND db.db_type = 'HIVE' " +
             "<if test = \"dbName !=null and dbName !=''\">" +
             " AND db.database_name like concat('%',#{dbName},'%')  " +
             "</if>" +
             " AND db.database_name in " +
             " <foreach collection='hiveList' item='item' separator=',' open='(' close=')'>" +
-            "  #{item}" +
+            "  #{item.hiveDb}" +
             " </foreach>" +
             " </if>" +
             " ) as t" +
@@ -629,7 +629,7 @@ public interface DatabaseInfoDAO {
             "  offset #{offset}" +
             " </if>" +
             "</script>")
-    List<Database> selectByDbNameAndTenantIdList(@Param("tenantGroupList") List<TenantGroup> tenantGroups, @Param("dbName") String dbName, @Param("hiveList") List<String> hiveList, @Param("limit") Long limit, @Param("offset") Long offset);
+    List<Database> selectByDbNameAndTenantIdList(@Param("tenantGroupList") List<TenantGroup> tenantGroups, @Param("dbName") String dbName, @Param("hiveList") List<TenantHive> hiveList, @Param("limit") Long limit, @Param("offset") Long offset);
 
 
     @Select("<script>" +
