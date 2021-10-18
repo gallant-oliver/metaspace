@@ -24,15 +24,11 @@ import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.business.*;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.enums.BusinessType;
-import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
-import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
-import io.zeta.metaspace.model.result.CategoryPrivilege;
-import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
 import io.zeta.metaspace.model.result.CategorycateQueryResult;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
@@ -58,7 +54,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.mybatis.spring.MyBatisSystemException;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -133,6 +128,9 @@ public class BusinessService implements Approvable {
 
     @Autowired
     BusinessCatalogueService businessCatalogueService;
+
+    @Autowired
+    private PublicService publicService;
 
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
@@ -307,6 +305,7 @@ public class BusinessService implements Approvable {
         try {
             //technicalLastUpdate && technicalOperator
             TechnologyInfo info = businessDao.queryTechnologyInfoByBusinessId(businessId);
+            info.setGlobal(publicService.isGlobal());
             //editTechnical
             if (Objects.isNull(info))
                 info = new TechnologyInfo();

@@ -128,8 +128,7 @@ public class PublicService {
      */
     public void removeNoParentCategory(Set<CategoryEntityV2> categoryEntityV2s) {
         Map<String, String> map = categoryEntityV2s.stream().collect(HashMap::new, (m, v) -> m.put(v.getGuid(), v.getParentCategoryGuid()), HashMap::putAll);
-        categoryEntityV2s.removeIf(categoryPrivilege ->
-                this.checkParentIfExist(map, categoryPrivilege.getParentCategoryGuid(), categoryEntityV2s));
+        categoryEntityV2s.removeIf(categoryPrivilege -> this.checkParentIfExist(map, categoryPrivilege.getParentCategoryGuid(), categoryEntityV2s));
     }
 
     private boolean checkParentIfExist(Map<String, String> map, String parentId, Set<CategoryEntityV2> categoryEntityV2s) {
@@ -165,7 +164,7 @@ public class PublicService {
      *
      * @return
      */
-    private Boolean isGlobal() {
+    public Boolean isGlobal() {
         User user = AdminUtils.getUserData();
         return userPermissionDAO.selectListByUsersId(user.getUserId()) != null;
     }

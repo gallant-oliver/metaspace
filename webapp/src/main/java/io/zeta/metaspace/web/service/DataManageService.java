@@ -332,22 +332,22 @@ public class DataManageService {
 
     /**
      * 删除有父目录，但是父目录不存在的目录
+     *
      * @param categoryPrivilegeList
      */
-    private void removeNoParentCategory(List<CategoryPrivilege> categoryPrivilegeList){
-        Map<String,String> map = categoryPrivilegeList.stream().collect(HashMap::new,(m,v)->m.put(v.getGuid(),v.getParentCategoryGuid()),HashMap::putAll);
-        categoryPrivilegeList.removeIf(categoryPrivilege ->
-                this.checkParentIfExist(map, categoryPrivilege.getParentCategoryGuid(), categoryPrivilegeList));
+    private void removeNoParentCategory(List<CategoryPrivilege> categoryPrivilegeList) {
+        Map<String, String> map = categoryPrivilegeList.stream().collect(HashMap::new, (m, v) -> m.put(v.getGuid(), v.getParentCategoryGuid()), HashMap::putAll);
+        categoryPrivilegeList.removeIf(categoryPrivilege -> this.checkParentIfExist(map, categoryPrivilege.getParentCategoryGuid(), categoryPrivilegeList));
     }
 
-    private boolean checkParentIfExist(Map<String,String> map,String parentId,List<CategoryPrivilege> categoryPrivilegeList){
-        if (StringUtils.isEmpty(parentId)){
+    private boolean checkParentIfExist(Map<String, String> map, String parentId, List<CategoryPrivilege> categoryPrivilegeList) {
+        if (StringUtils.isEmpty(parentId)) {
             return false;
         }
-        if (map.containsKey(parentId)){
-            Optional<CategoryPrivilege> result=categoryPrivilegeList.stream().filter(c->parentId.equals(c.getGuid())).findFirst();
-            if (result.isPresent()){
-                return checkParentIfExist(map,result.get().getParentCategoryGuid(),categoryPrivilegeList);
+        if (map.containsKey(parentId)) {
+            Optional<CategoryPrivilege> result = categoryPrivilegeList.stream().filter(c -> parentId.equals(c.getGuid())).findFirst();
+            if (result.isPresent()) {
+                return checkParentIfExist(map, result.get().getParentCategoryGuid(), categoryPrivilegeList);
             }
         }
         return true;

@@ -34,6 +34,7 @@ public class TechnologyInfo {
     private List<Table> tables;
     private Integer count;
     private String trustTable;
+    private Boolean global;
 
     @Data
     public static class Table {
@@ -230,5 +231,13 @@ public class TechnologyInfo {
 
     public void setTrustTable(String trustTable) {
         this.trustTable = trustTable;
+    }
+
+    public Boolean getGlobal() {
+        return global;
+    }
+
+    public void setGlobal(Boolean global) {
+        this.global = global;
     }
 }
