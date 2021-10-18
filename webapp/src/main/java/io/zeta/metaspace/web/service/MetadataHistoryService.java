@@ -185,8 +185,16 @@ public class MetadataHistoryService {
         String tableGuid = tableMetadataList.get(0).getGuid();
         String sourceId = "hive";
         Map<String,Object> paragraphMap = new HashMap<>();
+        paragraphMap.put("ip","");
+        paragraphMap.put("port","");
+        paragraphMap.put("instance","");
         paragraphMap.put("dbType",sourceId);
         paragraphMap.put("dbName",dbName);
+        paragraphMap.put("deriveTableDesigner","");
+        paragraphMap.put("businessPath","");
+        paragraphMap.put("bizLeader","");
+        paragraphMap.put("techenicalPath","");
+
         List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByGuid(sourceId,tableGuid);
         String[] contacts = null;
         if(!CollectionUtils.isEmpty(deriveTableInfoList)){
@@ -194,22 +202,28 @@ public class MetadataHistoryService {
             if(deriveTableInfoOpt.isPresent()) {
                 SourceInfoDeriveTableInfo tableInfo = deriveTableInfoOpt.get();
                 paragraphMap.put("deriveTableDesigner",tableInfo.getCreatorName());
+
                 BusinessInfo businessInfo = businessDAO.queryBusinessByBusinessId(tableInfo.getBusinessId());
-                if(StringUtils.isNotBlank(tableInfo.getCreator())){
-                    //获取衍生表设计人的邮箱地址
-                    User user = userDAO.getUser(tableInfo.getCreator());
-                    String email = user.getAccount();
-                    log.info("衍生表设计人的邮箱地址:{}",email);
-                    if(sourceInfoFileService.isEmail(email)){
-                        contacts = new String[]{email};
-                    }
-                }
                 if (null != businessInfo) {
                     // 获取该租户下所有的业务目录guid - path
                     int BUSINESS_CATEGORY_TYPE = 1;
                     Map<String, String> businessCategoryGuidPathMap = sourceInfoDeriveTableInfoService.getCategoryGuidPathMap(tableInfo.getTenantId(), BUSINESS_CATEGORY_TYPE, businessInfo.getDepartmentId());
                     paragraphMap.put("businessPath",businessCategoryGuidPathMap.getOrDefault(businessInfo.getDepartmentId(), ""));
                 }
+
+                List<String> userIds = deriveTableInfoList.stream().map(SourceInfoDeriveTableInfo::getCreator).collect(Collectors.toList());
+                List<String> userEmails = userDAO.getUsersEmailByIds(userIds);
+                // User user = userDAO.getUser(databaseInfoBO.getBusinessLeaderId());
+                List<String> validEmail = new ArrayList<>();
+                if(CollectionUtils.isNotEmpty(userEmails)){
+                    for (String email : userEmails){
+                        log.info("衍生表设计人的邮箱地址:{}",email);
+                        if(sourceInfoFileService.isEmail(email)){
+                            validEmail.add(email);
+                        }
+                    }
+                }
+                contacts = validEmail.toArray(new String[validEmail.size()]);
             }
         }
 
@@ -225,18 +239,25 @@ public class MetadataHistoryService {
                 paragraphMap.put("techenicalPath",databaseInfoBO.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
                         sourceInfoDatabaseService.getActiveInfoAllPath(databaseInfoBO.getCategoryId(),databaseInfoBO.getTenantId() ):sourceInfoDatabaseService.getAllPath(databaseInfoBO.getId(),databaseInfoBO.getTenantId()));
 
-                if(contacts == null){
-                    User user = userDAO.getUser(databaseInfoBO.getBusinessLeaderId());
-                    String email = user.getAccount();
-                    log.info("数据库业务负责人的邮箱地址:{}",email);
-                    if(sourceInfoFileService.isEmail(email)){
-                        contacts = new String[]{email};
+                if(contacts == null || contacts.length == 0 ){
+                    List<String> userIds = currentSourceInfoList.stream().map(DatabaseInfoBO::getBusinessLeaderId).collect(Collectors.toList());
+                    List<String> userEmails = userDAO.getUsersEmailByIds(userIds);
+                   // User user = userDAO.getUser(databaseInfoBO.getBusinessLeaderId());
+                    List<String> validEmail = new ArrayList<>();
+                    if(CollectionUtils.isNotEmpty(userEmails)){
+                        for (String email : userEmails){
+                            log.info("数据库业务负责人的邮箱地址:{}",email);
+                            if(sourceInfoFileService.isEmail(email)){
+                                validEmail.add(email);
+                            }
+                        }
                     }
+                    contacts = validEmail.toArray(new String[validEmail.size()]);
                 }
             }
         }
 
-        if(contacts == null){
+        if(contacts == null || contacts.length == 0){
             log.info("要发送的邮件地址为空。");
             return;
         }
