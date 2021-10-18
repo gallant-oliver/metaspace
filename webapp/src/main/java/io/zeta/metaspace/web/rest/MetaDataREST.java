@@ -21,7 +21,6 @@ import io.zeta.metaspace.model.datasource.DataSourceHead;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.datastandard.DataStandAndTable;
 import io.zeta.metaspace.model.datastandard.DataStandardHead;
-import io.zeta.metaspace.model.global.UserPermissionPO;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -35,11 +34,8 @@ import io.zeta.metaspace.model.security.TenantExtInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceInfoDeriveTableColumnVO;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.table.column.tag.ColumnTag;
-import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.AdapterUtils;
-import io.zeta.metaspace.utils.StringUtil;
 import io.zeta.metaspace.web.dao.TableDAO;
-import io.zeta.metaspace.web.dao.UserPermissionDAO;
 import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDeriveTableInfoService;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -956,7 +952,7 @@ public class MetaDataREST {
     @Path("/table/{guid}")
     @OperateType(UPDATE)
     public Response updateTableInfo(@PathParam("guid") final String guid, Table tableInfo) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(), tableInfo.getTableName());
+        HttpRequestContext.get().auditLog(ModuleEnum.METADATACOLLECTION.getAlias(), tableInfo.getTableName());
         try {
             metadataService.updateTableInfo(guid, tableInfo);
             return Response.status(200).entity("success").build();
@@ -1076,7 +1072,7 @@ public class MetaDataREST {
         if (tableName == null) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表不存在或已删除，请刷新或者检查元数据");
         }
-        HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(), tableName);
+        HttpRequestContext.get().auditLog(ModuleEnum.METADATACOLLECTION.getAlias(), tableName);
         try {
             dataStandardService.assignTableToStandard(dataStandAndTable, tableName, tenantId);
             return true;
