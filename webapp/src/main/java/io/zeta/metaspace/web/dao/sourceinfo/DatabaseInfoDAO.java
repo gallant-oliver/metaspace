@@ -205,7 +205,8 @@ public interface DatabaseInfoDAO {
             " (SELECT u.username FROM users u WHERE u.userid = s.updater ) AS updater_name,\n" +
             " s.update_time,\n" +
             " ai.reason as audit_des ,\n" +
-            " (SELECT u.username FROM users u WHERE u.userid = ai.approver ) AS auditor_name\n" +
+            " (SELECT u.username FROM users u WHERE u.userid = ai.approver ) AS auditor_name,\n" +
+            " s.to_department_name as toDepartmentName\n" +
             "FROM\n" +
             " source_info s LEFT JOIN category c ON s.category_id = c.guid AND \n" +
             " c.tenantid = s.tenant_id\n" +

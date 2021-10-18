@@ -134,6 +134,14 @@ public interface UserGroupDAO {
     @Delete("delete from category_group_relation where category_id=#{id}")
     public void deleteCategoryGroupRelationByCategory(String id);
 
+    @Delete("<script>" +
+            "delete from category_group_relation where  category_id in " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id} " +
+            " </foreach>" +
+            " </script>")
+    public void deleteCategoryGroupRelationByCategoryIds(@Param("ids") List<String> ids);
+
     @Delete("delete from datasource_group_relation where group_id=#{id}")
     public void deleteUserGroupDataSourceRelationByID(String id);
 

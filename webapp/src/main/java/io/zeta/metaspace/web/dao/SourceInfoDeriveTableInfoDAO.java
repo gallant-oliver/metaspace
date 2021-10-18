@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.metadata.TableExtInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.DeriveTableVersion;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import org.apache.ibatis.annotations.Delete;
@@ -231,4 +232,7 @@ public interface SourceInfoDeriveTableInfoDAO {
             "AND db_id = #{databaseId} \n" +
             "AND tenant_id = #{tenantId}")
     SourceInfoDeriveTableInfo getByNameAndDbGuid(@Param("tableName") String tableName, @Param("databaseId") String databaseId, @Param("tenantId") String tenantId);
+
+    @Select("select importance,security from source_info_derive_table_info where table_guid=#{tableGuid} AND tenant_id = #{tenantId} ")
+    List<TableExtInfo> getImportanceInfo( @Param("tableGuid") String tableGuid,@Param("tenantId") String tenantId);
 }
