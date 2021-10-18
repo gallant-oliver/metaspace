@@ -1355,7 +1355,7 @@ public interface UserGroupDAO {
     void deleteBusinessPrivileges(@Param("businessIds")List<String> businessIds, @Param("groupIds")List<String> groupIds);
 
     @Insert("<script>" +
-            "insert into business_2_group(business_id, group_id) values" +
+            "insert into business_2_group(business_id, group_id, read) values" +
             "<foreach item='businessId' index='index' collection='businessIds' open='' separator=',' close=''>" +
             "<foreach item='groupId' index='index' collection='groupIds' open='(' separator='),(' close=')'>" +
             "#{businessId}, #{groupId}, #{read}" +
