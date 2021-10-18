@@ -19,6 +19,7 @@ package io.zeta.metaspace.web.dao;
 import io.zeta.metaspace.model.business.*;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableHeader;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import org.apache.atlas.model.metadata.RelationEntityV2;
 import org.apache.ibatis.annotations.*;
 
@@ -719,30 +720,6 @@ public interface BusinessDAO {
             " </script>")
     List<RelationEntityV2> queryRelationByCategoryGuidAndBusinessIdFilterV2(@Param("categoryGuid")String categoryGuid, @Param("businessId")String businessId, @Param("tenantId") String tenantId, @Param("limit") int limit, @Param("offset") int offset,@Param("tableName") String tableName);
 
-    @Select("<script>" +
-            "select count(*) " +
-            "from tableinfo ti " +
-            "join database_group_relation dbgr on dbgr.database_guid=ti.databaseguid " +
-            "where ti.tableguid=#{tableId} " +
-            "and dbgr.group_id in " +
-            "<foreach item='id' index='index' collection='userGroupIds' separator=',' open='(' close=')'>" +
-            "#{id}" +
-            "</foreach>" +
-            "</script>")
-    int getDatabaseAuth(@Param("tableId")String tableId, @Param("userGroupIds")List<String> userGroupIds);
-
-    @Select("<script>" +
-            "select count(*) " +
-            "from tableinfo ti " +
-            "join datasource_group_relation dsgr on dsgr.source_id=ti.source_id " +
-            "where ti.tableguid=#{tableId} " +
-            "and dsgr.group_id in " +
-            "<foreach item='id' index='index' collection='userGroupIds' separator=',' open='(' close=')'>" +
-            "#{id}" +
-            "</foreach>" +
-            "</script>")
-    int getDataSourceAuth(@Param("tableId")String tableId, @Param("userGroupIds")List<String> userGroupIds);
-
     //删除业务信息与用户组的关联
     @Delete("<script>" +
             "delete from business_2_group where business_id in " +
@@ -751,4 +728,39 @@ public interface BusinessDAO {
             " </foreach>" +
             " </script>")
     int deleteGroupRelationByBusinessIds(@Param("businessIds")List<String> businessIds);
+
+    @Select("<script>" +
+            "select distinct ti.tableguid tableGuid " +
+            "from tableinfo ti " +
+            "join db_info di on di.database_guid=ti.databaseguid and di.db_type!='HIVE' " +
+            "join database_group_relation dbgr on dbgr.database_guid=di.database_guid " +
+            "join source_db sd on sd.db_guid=dbgr.database_guid " +
+            "join datasource_group_relation dsgr on dsgr.source_id=sd.source_id " +
+            "join user_group_relation ugr on ugr.group_id=dsgr.group_id and ugr.group_id=dbgr.group_id and ugr.user_id=#{userId} " +
+            "join user_group ug on ug.id=ugr.group_id and ug.tenant=#{tenantId} " +
+            "where ti.tableguid in " +
+            "<foreach item='tableGuid' index='index' collection='tableGuids' separator=',' open='(' close=')'>" +
+            "#{tableGuid}" +
+            "</foreach>" +
+            " union all " +
+            "select distinct ti.tableguid tableGuid " +
+            "from tableinfo ti " +
+            "join db_info di on di.database_guid=ti.databaseguid and di.db_type='HIVE' " +
+            "join database_group_relation dbgr on dbgr.database_guid=di.database_guid " +
+            "join user_group_relation ugr on ugr.group_id=dbgr.group_id and ugr.user_id=#{userId} " +
+            "join user_group ug on ug.id=ugr.group_id and ug.tenant=#{tenantId} " +
+            "where ti.tableguid in " +
+            "<foreach item='tableGuid' index='index' collection='tableGuids' separator=',' open='(' close=')'>" +
+            "#{tableGuid}" +
+            "</foreach>" +
+            "</script>")
+    List<String> getTableJump(@Param("tableGuids")List<String> tableGuids, @Param("userId")String userId, @Param("tenantId") String tenantId);
+
+    @Delete("<script>" +
+            "delete from business2table where " +
+            "<foreach item='info' index='index' collection='sourceInfoDeriveTableInfos' separator=' or '>" +
+            "(businessid=#{info.businessId} and tableguid=#{info.sourceTableGuid})" +
+            "</foreach>" +
+            "</script>")
+    void batchDeleteRelationByBusinessIdsAndTableIds(@Param("sourceInfoDeriveTableInfos")List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos);
 }

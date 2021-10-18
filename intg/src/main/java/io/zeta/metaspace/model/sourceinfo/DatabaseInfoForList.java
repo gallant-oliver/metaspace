@@ -69,7 +69,7 @@ public class DatabaseInfoForList {
     /**
      * 业务Owner部门名称
      * **/
-    private String toDepartmentName;
+    private String boDepartmentName;
 
 
 }

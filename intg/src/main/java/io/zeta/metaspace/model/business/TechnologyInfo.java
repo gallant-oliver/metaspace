@@ -68,8 +68,21 @@ public class TechnologyInfo {
          */
         private boolean secret;
 
+        /**
+        * 表是否可跳转（用于业务对象详情页面）
+        */
+        private boolean jump;
+
         @JsonIgnore
         private int total;
+
+        public boolean isJump() {
+            return jump;
+        }
+
+        public void setJump(boolean jump) {
+            this.jump = jump;
+        }
 
         public boolean isImportant() {
             return important;

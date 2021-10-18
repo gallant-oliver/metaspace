@@ -1324,31 +1324,6 @@ public class BusinessREST {
     }
 
     /**
-     * 当前用户是否同时有表所在数据库和数据源的查看权限
-     *
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/{tableId}/auth")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Map<String, Boolean> getTableAuth(@PathParam("tableId") String tableId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        AtlasPerfTracer perf = null;
-        try {
-            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getTableAuth(" + tableId + ")");
-            }
-
-            return businessService.getTableAuth(tableId, tenantId);
-        } catch (MyBatisSystemException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } finally {
-            AtlasPerfTracer.log(perf);
-        }
-    }
-
-    /**
      * 业务对象迁移的可选目录列表
      *
      * @return

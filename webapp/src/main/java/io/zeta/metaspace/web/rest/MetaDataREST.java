@@ -1226,11 +1226,17 @@ public class MetaDataREST {
     @Path("/rdbms/table/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public RDBMSTable getTableInfoById(@QueryParam("bizTreeId")String bizTreeId,@PathParam("tableId") String tableId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
-        if(StringUtils.isNotBlank(bizTreeId)){
-            Map<String,String> map = EntityUtil.decodeBusinessId(bizTreeId);
-            if(map != null){
-                tenantId = map.get("tenantId");
+    public RDBMSTable getTableInfoById(@QueryParam("bizTreeId")String bizTreeId,@PathParam("tableId") String tableId,
+                                       @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") @DefaultValue("") String sourceId,
+                                        @QueryParam("currentTenantId")String currentTenantId) throws AtlasBaseException {
+        if(StringUtils.isNotBlank(currentTenantId)){
+            tenantId = currentTenantId;
+        }else{
+            if(StringUtils.isNotBlank(bizTreeId)){
+                Map<String,String> map = EntityUtil.decodeBusinessId(bizTreeId);
+                if(map != null){
+                    tenantId = map.get("tenantId");
+                }
             }
         }
 
@@ -1498,7 +1504,11 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getDeriveTableInfo(@HeaderParam("tenantId") String tenantId,@PathParam("tableGuid") String tableGuid,
-                                     @QueryParam("sourceId") String sourceId,@QueryParam("schemaId") String schemaId){
+                                     @QueryParam("sourceId") String sourceId,@QueryParam("schemaId") String schemaId,
+                                     @QueryParam("currentTenantId")String currentTenantId){
+        if(StringUtils.isNotBlank(currentTenantId)){
+            tenantId = currentTenantId;
+        }
         SourceInfoDeriveTableColumnVO metadataDeriveTableInfo = sourceInfoDeriveTableInfoService.queryDeriveTableInfo(tenantId,sourceId,schemaId,tableGuid);
         if(metadataDeriveTableInfo == null){
             return new Result("-1","没有找到对应的衍生表登记信息");
