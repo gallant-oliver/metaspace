@@ -803,6 +803,13 @@ public class SourceInfoDeriveTableInfoService {
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteDeriveTable(List<String> tableGuids) {
+        // 查询衍生表信息
+        List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos = sourceInfoDeriveTableInfoDao.getDeriveTableInfoByGuids(tableGuids);
+        if (!CollectionUtils.isEmpty(sourceInfoDeriveTableInfos)) {
+            // 删除旧的业务对象-表关联关系
+            businessDAO.batchDeleteRelationByBusinessIdsAndTableIds(sourceInfoDeriveTableInfos);
+        }
+
         sourceInfoDeriveTableInfoDao.deleteByTableGuids(tableGuids);
         sourceInfoDeriveColumnInfoService.deleteByTableGuids(tableGuids);
         sourceInfoDeriveTableColumnRelationService.deleteByTableGuids(tableGuids);
