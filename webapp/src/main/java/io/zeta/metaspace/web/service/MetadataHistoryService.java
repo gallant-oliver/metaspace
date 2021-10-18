@@ -254,6 +254,8 @@ public class MetadataHistoryService {
                 if(!filterDataOpt.isPresent()){
                     map.put("changeColumn",item.getName());
                     map.put("changeType","列删除");
+                    map.put("beforeInfo","");
+                    map.put("afterInfo","");
                     excelMapList.add(map);
                     continue;
                 }
@@ -275,6 +277,8 @@ public class MetadataHistoryService {
                     Map<String,String> map = new HashMap<>();
                     map.put("changeColumn",item.getName());
                     map.put("changeType","列添加");
+                    map.put("beforeInfo","");
+                    map.put("afterInfo","");
                     excelMapList.add(map);
                 }
             }
@@ -290,7 +294,9 @@ public class MetadataHistoryService {
             tplFile = File.createTempFile("tpl_"+System.currentTimeMillis(),".docx");
             file = File.createTempFile("tmp_"+System.currentTimeMillis(),".docx");
             String targetPath = file.getAbsolutePath();
-            WordExport.fillDataTemplate(paragraphMap,excelMapList,tplFile.getAbsolutePath(),targetPath);
+            String tplPath = tplFile.getAbsolutePath();
+            WordExport.generateAttachTemplate(tplPath);
+            WordExport.fillDataTemplate(paragraphMap,excelMapList,tplPath,targetPath);
             log.info("模板生成完毕..");
             String attachmentBase64content= Base64Utils.fileToBase64(targetPath), fileName="元数据版本差异清单.docx", content="元数据有变化，请查看附件检查详情信息";
             log.info("转换base64 sucess.");
