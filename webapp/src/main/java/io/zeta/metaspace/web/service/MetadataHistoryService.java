@@ -212,7 +212,7 @@ public class MetadataHistoryService {
                 }
 
                 List<String> userIds = deriveTableInfoList.stream().map(SourceInfoDeriveTableInfo::getCreator).collect(Collectors.toList());
-                List<String> userEmails = userDAO.getUsersEmailByIds(userIds);
+                List<String> userEmails = CollectionUtils.isEmpty(userIds) ? null : userDAO.getUsersEmailByIds(userIds);
                 // User user = userDAO.getUser(databaseInfoBO.getBusinessLeaderId());
                 List<String> validEmail = new ArrayList<>();
                 if(CollectionUtils.isNotEmpty(userEmails)){
@@ -241,7 +241,7 @@ public class MetadataHistoryService {
 
                 if(contacts == null || contacts.length == 0 ){
                     List<String> userIds = currentSourceInfoList.stream().map(DatabaseInfoBO::getBusinessLeaderId).collect(Collectors.toList());
-                    List<String> userEmails = userDAO.getUsersEmailByIds(userIds);
+                    List<String> userEmails = CollectionUtils.isEmpty(userIds) ? null : userDAO.getUsersEmailByIds(userIds);
                    // User user = userDAO.getUser(databaseInfoBO.getBusinessLeaderId());
                     List<String> validEmail = new ArrayList<>();
                     if(CollectionUtils.isNotEmpty(userEmails)){
