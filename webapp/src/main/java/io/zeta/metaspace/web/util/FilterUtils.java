@@ -23,8 +23,11 @@ public class FilterUtils {
         add("/api/metaspace/cache");
         add("api/metaspace/metadata/update/supplementTable");
         add("/api/metaspace/dataquality/monitor");
+        // 供指标的统一监控使用，由于当前统一监控并未通过sso认证，只通过ip白名单过滤，故此放行
+        add("/api/metaspace/internal/table/");
     }};
 
+    // TODO 这种实现方式存在风险，而且粒度也不好控制
     public static boolean isSkipUrl(String requestURL) {
 
         if (skipUrl.stream().anyMatch(url->requestURL.contains(url))) {
