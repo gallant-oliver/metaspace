@@ -22,6 +22,7 @@ import java.util.List;
 
 @Data
 public class Table implements Serializable {
+    private String tenantId;
     private String tableId;
     private String tableName;
     private String owner;

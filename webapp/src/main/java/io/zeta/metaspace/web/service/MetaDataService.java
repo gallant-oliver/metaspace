@@ -449,6 +449,7 @@ public class MetaDataService {
             TableExtInfo tableExtInfo = getTableExtAttributes(tenantId,table.getTableId());
             table.setImportance(tableExtInfo.isImportance());
             table.setSecurity(tableExtInfo.isSecurity());
+            table.setTenantId(tenantId);
             return table;
         } catch (AtlasBaseException e) {
             String message = "无效的实体ID";

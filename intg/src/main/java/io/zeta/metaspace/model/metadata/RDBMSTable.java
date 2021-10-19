@@ -25,6 +25,7 @@ import java.util.List;
  */
 @Data
 public class RDBMSTable implements Serializable {
+    private String tenantId;
     private String tableId;
     private String tableName;
     private String tableDescription;
