@@ -791,6 +791,7 @@ public class UserGroupREST {
     @Path("/{groupId}/{businessId}/remove")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
     public Result removeBusiness(@PathParam("groupId") String groupId,
                                  @PathParam("businessId") String businessId,
                                  @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
