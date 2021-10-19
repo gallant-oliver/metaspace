@@ -14,6 +14,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.business.BusinessInfo;
+import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
@@ -1190,11 +1191,11 @@ public interface UserGroupDAO {
 
     //实现用户组列表及搜索
     @Results({
-            @Result(property = "businessInfos",javaType = List.class,column = "{categoryId = categoryId,tenantId = tenantId,userGroupId=id}",many = @Many(select = "queryBusinessesByUserGroup"))
+            @Result(property = "businessInfos",javaType = List.class,column = "{categoryId = categoryIdVal,tenantId = tenantId,userGroupId=groupId}",many = @Many(select = "queryBusinessesByUserGroup"))
     })
     @Select("<script>" +
-            "select count(*) over() totalSize,u.id id,u.name,u.description,u.creator,u.createtime,u.updatetime,u.authorize_user authorize,u.authorize_time authorizeTime,c.read,c.edit_item editItem,c.edit_category editCategory, " +
-            "#{category.guid} categoryId,#{tenantId} tenantId" +
+            "select count(*) over() totalSize,u.id,u.id groupId,u.name,u.description,u.creator,u.createtime,u.updatetime,u.authorize_user authorize,u.authorize_time authorizeTime,c.read,c.edit_item editItem,c.edit_category editCategory, " +
+            "c.category_id categoryId,c.category_id categoryIdVal,#{tenantId} tenantId" +
             " from user_group u join " +
             " category_group_relation c " +
             " on u.id=c.group_id " +
@@ -1453,4 +1454,19 @@ public interface UserGroupDAO {
                     "</script>"})
     public List<DBInfo> getNotAuthHiveDataBases(@Param("groupId") String groupId, @Param("sourceId") String sourceId,
                                                 @Param("dbs") List<String> dbs);
+
+    @Delete("delete from business_2_group where group_id=#{groupId} and business_id=#{businessId}")
+    void removeBusiness(@Param("groupId")String groupId, @Param("businessId")String businessId);
+
+    @Select("<script>" +
+            "select bi.businessid businessId, bi.name, br.categoryguid categoryGuid " +
+            "from business_relation br " +
+            "join businessinfo bi on bi.businessid=br.businessid and bi.tenantid=#{tenantId} " +
+            "join business_2_group bg on bg.business_id=bi.businessid and bg.group_id=#{groupId} " +
+            "where br.categoryguid in " +
+            "<foreach collection='categoryGuids' item='id' index='index' separator=',' open='(' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
+            "</script>")
+    List<BusinessInfoHeader> getBusinessesByGroup(@Param("categoryGuids")List<String> categoryGuids, @Param("groupId")String groupId, @Param("tenantId")String tenantId);
 }
