@@ -13,6 +13,10 @@
 
 package io.zeta.metaspace.model.result;
 
+import io.zeta.metaspace.model.business.BusinessInfoHeader;
+
+import java.util.List;
+
 /**
  * @author lixiang03
  * @Data 2020/7/27 16:06
@@ -32,6 +36,8 @@ public class CategoryGroupAndUser {
     private CategoryPrivilegeV2 groupPrivilege;
     private CategoryPrivilegeV2 userPrivilege;
 
+    private List<BusinessInfoHeader> businessInfos;
+
     public CategoryGroupAndUser(){}
     public CategoryGroupAndUser(CategoryPrivilegeV2 category){
         this.guid = category.getGuid();
@@ -41,6 +47,14 @@ public class CategoryGroupAndUser {
         this.downBrotherCategoryGuid = category.getDownBrotherCategoryGuid();
         this.description = category.getDescription();
         this.level = category.getLevel();
+    }
+
+    public List<BusinessInfoHeader> getBusinessInfos() {
+        return businessInfos;
+    }
+
+    public void setBusinessInfos(List<BusinessInfoHeader> businessInfos) {
+        this.businessInfos = businessInfos;
     }
 
     public boolean isDelete() {

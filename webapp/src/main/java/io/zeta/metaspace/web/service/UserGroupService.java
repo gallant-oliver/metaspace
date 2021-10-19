@@ -18,6 +18,7 @@ import com.google.common.collect.Lists;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.BusinessInfo;
+import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -1290,6 +1291,14 @@ public class UserGroupService {
             categories.add(groupAndUser);
         }
 
+        // 业务目录，需要查询有权限的业务对象
+        if (type == 1 && CollectionUtils.isNotEmpty(categories)) {
+            List<String> categoryGuids = categories.stream().map(c -> c.getGuid()).collect(Collectors.toList());
+            List<BusinessInfoHeader> businessInfos = userGroupDAO.getBusinessesByGroup(categoryGuids, groupId, tenantId);
+            Map<String, List<BusinessInfoHeader>> collect = businessInfos.stream().collect(Collectors.groupingBy(BusinessInfoHeader::getCategoryGuid));
+            categories.forEach(c -> c.setBusinessInfos(collect.get(c.getGuid())));
+        }
+
         return categories;
     }
 
@@ -1481,6 +1490,7 @@ public class UserGroupService {
             });
             userCategories.addAll(parentCategory);
         }
+
         //遍历并合并目录权限
         for (CategoryPrivilegeV2 userCategory : userCategories) {
             if (userMap.containsKey(userCategory.getGuid())){
@@ -1839,5 +1849,9 @@ public class UserGroupService {
 
     public List<BusinessInfo> getBusinessesByTenantId(String tenantId, String groupId) {
         return userGroupDAO.getBusinessesByTenantId(tenantId, groupId);
+    }
+
+    public void removeBusiness(String groupId, String businessId, String tenantId) {
+        userGroupDAO.removeBusiness(groupId, businessId);
     }
 }
