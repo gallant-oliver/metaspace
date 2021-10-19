@@ -787,7 +787,7 @@ public class UserGroupREST {
      * @return
      * @throws AtlasBaseException
      */
-    @GET
+    @DELETE
     @Path("/{groupId}/{businessId}/remove")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
