@@ -105,7 +105,7 @@ public interface SourceInfoDeriveTableInfoDAO {
             " INSERT INTO source_info_derive_table_info",
             " (id, table_guid, table_name_en, table_name_zh, procedure, category_id, db_type, business_id, db_id, source_id,",
             " update_frequency, etl_policy, incre_standard, clean_rule, filter, tenant_id, remark, version,",
-            " source_table_guid, creator, create_time, updater, update_time, ddl, dml, state, state,importance,security)) VALUES ",
+            " source_table_guid, creator, create_time, updater, update_time, ddl, dml, state,importance,security) VALUES ",
             " (#{deriveTable.id},#{deriveTable.tableGuid},#{deriveTable.tableNameEn},#{deriveTable.tableNameZh},",
             " #{deriveTable.procedure},#{deriveTable.categoryId},#{deriveTable.dbType},#{deriveTable.businessId},",
             " #{deriveTable.dbId},#{deriveTable.sourceId},#{deriveTable.updateFrequency},",
