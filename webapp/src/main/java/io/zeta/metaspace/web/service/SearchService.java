@@ -139,6 +139,7 @@ public class SearchService {
                 if(StringUtils.isBlank(database.getDatabaseDescription())){
                     database.setDatabaseDescription("-");
                 }
+                database.setTenantId(tenantId);
                 database.setBizTreeId(EntityUtil.generateBusinessId(tenantId,sourceId,database.getDatabaseId(),""));
             });
             databasePageResult.setCurrentSize(databaseList.size());
@@ -301,6 +302,7 @@ public class SearchService {
                     tableEntity.setHiveTable(false);
                 }
                 tableEntity.setBizTreeId(EntityUtil.generateBusinessId(tenantId,sourceId,schemaId,tableEntity.getId()));
+                tableEntity.setTenantId(tenantId);
             });
             tablePageResult.setCurrentSize(tableEntityList.size());
             tablePageResult.setOffset(offset);
