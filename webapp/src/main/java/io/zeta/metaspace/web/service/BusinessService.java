@@ -38,7 +38,6 @@ import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTable
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
-import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.web.dao.*;
@@ -259,28 +258,18 @@ public class BusinessService implements Approvable {
     public BusinessInfo getBusinessInfo(String businessId, String tenantId) throws AtlasBaseException {
         try {
             BusinessInfo info = businessDao.queryBusinessByBusinessId(businessId);
-            //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                User user = AdminUtils.getUserData();
-                List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
-                if (roles.stream().allMatch(role -> role.getStatus() == 0))
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-                String userId = user.getUserId();
-                boolean editBusiness = privilegeDao.queryModulePrivilegeByUser(userId, SystemModule.BUSINESSE_OPERATE.getCode()) == 0 ? false : true;
-                info.setEditBusiness(editBusiness);
-            } else {
-                List<String> categoryIds = categoryDAO.getCategoryGuidByBusinessGuid(businessId, tenantId);
-                boolean edit = false;
-                if (categoryIds.size() > 0) {
-                    int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds, tenantId);
-                    if (count > 0) {
-                        edit = true;
-                    }
+            List<String> categoryIds = categoryDAO.getCategoryGuidByBusinessGuid(businessId, tenantId);
+            boolean edit = false;
+            if (categoryIds.size() > 0) {
+                int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds, tenantId);
+                if (count > 0) {
+                    edit = true;
                 }
-
-
-                info.setEditBusiness(edit);
             }
+
+
+            info.setEditBusiness(edit);
+
             String submitter = userGroupDAO.getUserNameById(info.getSubmitter());
             String operator = userGroupDAO.getUserNameById(info.getBusinessOperator());
             if (submitter != null) {
