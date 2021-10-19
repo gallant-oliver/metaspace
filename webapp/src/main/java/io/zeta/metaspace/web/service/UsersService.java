@@ -18,7 +18,6 @@ import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
-import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -247,33 +246,10 @@ public class UsersService {
     public Item getUserItems(String tenantId) throws AtlasBaseException {
         try {
             Item item = new Item();
-            List<Module> modules;
-            if (TenantService.defaultTenant.equals(tenantId)){
-                String userId = AdminUtils.getUserData().getUserId();
-                List<Role> roleByUserIds = userDAO.getRoleByUserId(userId);
-                if (roleByUserIds.stream().allMatch(role -> role.getStatus() == 0)) {
-                    item.setModules(new ArrayList<>());
-                    item.setRoles(roleByUserIds);
-                    return item;
-                }
-                modules = userDAO.getModuleByUserId(userId);
-                for (Role role : roleByUserIds) {
-                    String roleId = role.getRoleId();
-                    List<UserInfo.Module> moduleList = userDAO.getModuleByRoleId(roleId);
-                    for (UserInfo.Module module : moduleList) {
-                        if (!modules.stream().anyMatch(userModule -> userModule.getModuleId() == module.getModuleId())) {
-                            modules.add(new Module(module));
-                        }
-                    }
-                }
-                item.setRoles(roleByUserIds);
-            }else{
-                modules = tenantService.getModule(tenantId);
-            }
-            item.setModules(modules);
+            item.setModules(tenantService.getModule(tenantId));
             return item;
         } catch (Exception e) {
-            LOG.error("获取失败",e);
+            LOG.error("获取失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户功能模块失败");
         }
     }
