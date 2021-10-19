@@ -246,7 +246,7 @@ public class UsersService {
     public Item getUserItems(String tenantId) throws AtlasBaseException {
         try {
             Item item = new Item();
-            item.setModules(tenantService.getModule(tenantId));
+            item.setModules(new HashSet<>(tenantService.getModule(tenantId)));
             return item;
         } catch (Exception e) {
             LOG.error("获取失败", e);
