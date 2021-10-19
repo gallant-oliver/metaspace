@@ -49,6 +49,7 @@ import io.zeta.metaspace.model.share.APIDataOwner;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForCategory;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.user.User;
@@ -164,7 +165,7 @@ public class DataManageService {
     @Autowired
     private DataManageService dataManageService;
     @Autowired
-    private PublicService publicService;
+    private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDAO;
     int technicalType = 0;
     int dataStandType = 3;
     int technicalCount = 5;
@@ -1996,23 +1997,50 @@ public class DataManageService {
             }
         }
     }
-    private void addOrUpdateTable(TableInfo tableInfo, SyncTaskDefinition definition){
+
+    public void addOrUpdateTable(TableInfo tableInfo, SyncTaskDefinition definition) throws Exception {
         String tableGuid = tableInfo.getTableGuid();
-        synchronized (tableGuid){
-            if("ACTIVE".equalsIgnoreCase(tableInfo.getStatus())){
+        synchronized (tableGuid) {
+            if ("ACTIVE".equalsIgnoreCase(tableInfo.getStatus())) {
                 tableDAO.deleteIfExist(tableGuid, tableInfo.getDatabaseGuid(), tableInfo.getTableName());
             }
             TableInfo table = tableDAO.getTableInfoByTableguid(tableGuid);
-            if(null != table){
-                tableDAO.updateTable(tableInfo);
-            }else{
-                tableDAO.addTable(tableInfo);
+            if (null != table) {
+                ProxyUtil.getProxy(DataManageService.class).updateTable(tableInfo);
+            } else {
+                ProxyUtil.getProxy(DataManageService.class).addTable(tableInfo);
             }
         }
     }
 
-    private void updateDeriveTable(TableInfo tableInfo){
+    /**
+     * 创建表，同时更新衍生表id
+     *
+     * @param tableInfo
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void addTable(TableInfo tableInfo) throws Exception {
+        tableDAO.addTable(tableInfo);
+        List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos = sourceInfoDeriveTableInfoDAO.selectByDbAndTableName(tableInfo.getDatabaseGuid(), tableInfo.getTableName());
+        if (CollectionUtils.isEmpty(sourceInfoDeriveTableInfos)) {
+            return;
+        }
+        sourceInfoDeriveTableInfoDAO.updateByDbAndTableName(tableInfo.getDatabaseGuid(), tableInfo.getTableName(), tableInfo.getTableGuid());
+    }
 
+    /**
+     * 更新表，同时更新衍生表名称
+     *
+     * @param tableInfo
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void updateTable(TableInfo tableInfo) throws Exception {
+        tableDAO.updateTable(tableInfo);
+        List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos = sourceInfoDeriveTableInfoDAO.selectByTableGuid(tableInfo.getTableGuid());
+        if (CollectionUtils.isEmpty(sourceInfoDeriveTableInfos)) {
+            return;
+        }
+        sourceInfoDeriveTableInfoDAO.updateByTableGuid(tableInfo.getTableGuid(), tableInfo.getTableName());
     }
 
     private Database getDbInfo(AtlasEntity entity) {
@@ -2137,7 +2165,7 @@ public class DataManageService {
         }
     }
 
-    private void createOrUpdateEntities(List<AtlasEntity> entities, SyncTaskDefinition definition, KafkaConnector.Config config, Boolean enableEmail) {
+    private void createOrUpdateEntities(List<AtlasEntity> entities, SyncTaskDefinition definition, KafkaConnector.Config config, Boolean enableEmail) throws Exception {
         Boolean hiveAtlasEntityAll = getHiveAtlasEntityAll(entities);
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
