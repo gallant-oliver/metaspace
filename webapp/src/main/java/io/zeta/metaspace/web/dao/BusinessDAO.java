@@ -649,7 +649,7 @@ public interface BusinessDAO {
 
     //查询业务信息关联的数据库表（包含衍生表登记所关联的表）
     @Select("select ti.tableguid tableGuid, ti.tablename tableName, ti.dbname dbName, ti.status, ti.createtime createTime, ti.databaseguid databaseGuid, " +
-            "COALESCE(ti.display_name, ti.tablename, '') as displayName, ti.description, ti.source_id sourceId, b2t.relation_type relationType, " +
+            "COALESCE(ti.display_name, ti.tablename, '') as displayName, ti.description, sd.source_id sourceId, b2t.relation_type relationType, " +
             "case when " +
             "(select count(*) from source_info_derive_table_info sidti " +
             "inner join source_info_derive_column_info sidci on sidci.table_guid= sidti.table_guid and sidci.important=true " +
@@ -660,6 +660,7 @@ public interface BusinessDAO {
             "where sidti.source_table_guid=ti.tableguid)>0 then true else false end as secret " +
             "from business2table b2t " +
             "join tableInfo ti on ti.tableguid=b2t.tableguid and status='ACTIVE' " +
+            "join source_db sd on sd.db_guid=ti.databaseguid " +
             "where b2t.businessid=#{businessId}"
     )
     List<TechnologyInfo.Table> queryAllTablesByBusinessId(@Param("businessId") String businessId, @Param("tenantId") String tenantId);
