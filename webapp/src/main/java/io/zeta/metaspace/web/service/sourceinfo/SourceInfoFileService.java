@@ -393,7 +393,7 @@ public class SourceInfoFileService {
         }else{
             // 判断具体数据库类型下的英文名是否存在
             List<String[]> unExistExcelInfo = CollectionUtils.isEmpty(excelDataList) ? new ArrayList<>() : excelDataList.stream()
-                    .filter( p->dbInfoExistList.stream().filter(v->v.getDbType().equalsIgnoreCase(p[dbTypeIndex]) && v.getDatabaseName().equalsIgnoreCase(p[dbEnIndex])).count() ==0 )
+                    .filter( p->dbInfoExistList.stream().filter(v->!(v.getDbType().equalsIgnoreCase(p[dbTypeIndex]) && v.getDatabaseName().equalsIgnoreCase(p[dbEnIndex]))).count() ==0 )
                     .collect(Collectors.toList());
             resultMap.put("unExistDbList",unExistExcelInfo);
 
