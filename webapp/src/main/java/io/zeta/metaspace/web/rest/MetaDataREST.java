@@ -1490,7 +1490,10 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getSourceInfo(@HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") String sourceId,
-                                @QueryParam("schemaId") String schemaId){
+                                @QueryParam("schemaId") String schemaId,@QueryParam("currentTenantId")String currentTenantId){
+        if(StringUtils.isNotBlank(currentTenantId)){
+            tenantId = currentTenantId;
+        }
         DatabaseInfoBO resultBO = metadataService.querySourceInfo(tenantId,sourceId,schemaId);
         if(resultBO == null){
             return new Result("-1","没有找到对应的数据库登记信息");
