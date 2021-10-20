@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.*;
@@ -28,6 +29,7 @@ public class WordExport {
     private XWPFDocument doc = null;
     private FileInputStream is = null;
     private OutputStream os = null;
+
 
     public static boolean generateAttachTemplate(String demoTemplate){
         // 创建Word文件
@@ -77,6 +79,10 @@ public class WordExport {
         r.setBold(true);
         r.setText("模型变更详情");
         XWPFTable table= docx.createTable(2, 4);//创建一个表格
+        CTTblWidth width = table.getCTTbl().addNewTblPr().addNewTblW();
+        width.setType(STTblWidth.DXA);
+        width.setW(BigInteger.valueOf(9072));
+
         table.getRow(0).getCell(0).setText("变更列");
         table.getRow(0).getCell(1).setText("变更前");
         table.getRow(0).getCell(2).setText("变更类型");
@@ -432,10 +438,10 @@ public class WordExport {
         CTTcPr ctPr = cttc.addNewTcPr();
         //cell.setColor(tmpCell.getColor());
         // cell.setVerticalAlignment(tmpCell.getVerticalAlignment());
-        if (ctPr2.getTcW() != null) {
+        if (ctPr2 != null && ctPr2.getTcW() != null) {
             ctPr.addNewTcW().setW(ctPr2.getTcW().getW());
         }
-        if (ctPr2.getVAlign() != null) {
+        if (ctPr2 != null && ctPr2.getVAlign() != null) {
             ctPr.addNewVAlign().setVal(ctPr2.getVAlign().getVal());
         }
         if (cttc2.getPList().size() > 0) {
@@ -448,7 +454,7 @@ public class WordExport {
             }
         }
 
-        if (ctPr2.getTcBorders() != null) {
+        if (ctPr2 != null && ctPr2.getTcBorders() != null) {
             ctPr.setTcBorders(ctPr2.getTcBorders());
         }
 
