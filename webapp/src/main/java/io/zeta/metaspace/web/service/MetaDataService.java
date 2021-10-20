@@ -23,6 +23,7 @@ import io.zeta.metaspace.bo.DatabaseInfoBO;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.enums.Status;
+import io.zeta.metaspace.model.global.UserPermissionPO;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
@@ -32,8 +33,12 @@ import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
+import io.zeta.metaspace.model.security.Tenant;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
+import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import io.zeta.metaspace.model.table.Tag;
+import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
@@ -41,6 +46,7 @@ import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.util.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -96,6 +102,7 @@ import static org.apache.cassandra.utils.concurrent.Ref.DEBUG_ENABLED;
  * @author sunhaoning
  * @date 2018/10/25 15:11
  */
+@Slf4j
 @Service
 public class MetaDataService {
     private static final Logger LOG = LoggerFactory.getLogger(MetaDataService.class);
@@ -106,8 +113,14 @@ public class MetaDataService {
     private AtlasEntityStore entitiesStore;
     @Autowired
     private AtlasLineageService atlasLineageService;
+
+    @Autowired
+    private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDAO;
     @Autowired
     AtlasTypeDefStore typeDefStore;
+
+    @Autowired
+    GroupDeriveTableRelationDAO groupDeriveTableRelationDAO;
     @Autowired
     MetaspaceGremlinService metaspaceLineageService;
     @Autowired
@@ -135,6 +148,8 @@ public class MetaDataService {
 
     @Autowired
     private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao;
+    @Autowired
+    private UserPermissionDAO userPermissionDAO;
 
 
     private String errorMessage = "";
@@ -321,6 +336,7 @@ public class MetaDataService {
         Database database = new Database();
         List<DatabaseInfoBO> currentSourceInfoList = databaseInfoDAO.getLastDatabaseInfoByDatabaseId(guid,tenantId,sourceId);
         database.setHasDatabase(CollectionUtils.isNotEmpty(currentSourceInfoList));
+        database.setSourceTreeId(EntityUtil.generateBusinessId(tenantId,sourceId,"",""));
         try {
             //获取对象
             // 转换成AtlasEntity
@@ -365,8 +381,33 @@ public class MetaDataService {
             if (Objects.isNull(entity)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
+            //查询用户组
+            User user = AdminUtils.getUserData();
+            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
             //table
             Table table = extractTableInfo(entityInfo, guid, tenantId);
+            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableName(),table.getDatabaseId(),tenantId);
+            if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))) {
+                if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
+                    Boolean importancePrivilege = Boolean.TRUE;
+                    Boolean securityPrivilege = Boolean.TRUE;
+                    GroupDeriveTableRelation relation = groupDeriveTableRelationDAO.getByTableIdAndGroups(guid, userGroupIds, tenantId);
+                    if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
+                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
+                        importancePrivilege = Boolean.FALSE;
+
+                    }
+                    if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getSecurity()) &&
+                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
+                        securityPrivilege = Boolean.FALSE;
+                    }
+                    table.setImportancePrivilege(importancePrivilege);
+                    table.setSecurityPrivilege(securityPrivilege);
+                } else {
+                    table.setImportancePrivilege(!sourceInfoDeriveTableInfo.getImportance());
+                    table.setSecurityPrivilege(!sourceInfoDeriveTableInfo.getSecurity());
+                }
+            }
             if(StringUtils.isBlank(sourceId)){
                 sourceId="hive";
             }
@@ -402,6 +443,13 @@ public class MetaDataService {
                 table.setSourceId("hive");
                 table.setSourceName("hive");
             }
+
+            table.setSourceTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),"",""));
+            table.setDbTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),table.getDatabaseId(),""));
+            TableExtInfo tableExtInfo = getTableExtAttributes(tenantId,table.getTableId());
+            table.setImportance(tableExtInfo.isImportance());
+            table.setSecurity(tableExtInfo.isSecurity());
+            table.setTenantId(tenantId);
             return table;
         } catch (AtlasBaseException e) {
             String message = "无效的实体ID";
@@ -410,6 +458,7 @@ public class MetaDataService {
             }
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
         } catch (Exception e) {
+            log.error(e.getMessage());
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
         }
     }
@@ -589,9 +638,33 @@ public class MetaDataService {
             if (Objects.isNull(entity)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
+            //获取当前用户的用户组
+            User user = AdminUtils.getUserData();
+            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
             //table
             RDBMSTable table = extractRDBMSTableInfo(entity, guid, info, tenantId);
+            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableName(),table.getDatabaseId(),tenantId);
+             if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))){
+                 if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
+                     Boolean importancePrivilege = Boolean.TRUE;
+                     Boolean securityPrivilege = Boolean.TRUE;
+                     GroupDeriveTableRelation relation = groupDeriveTableRelationDAO.getByTableIdAndGroups(guid, userGroupIds, tenantId);
+                     if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
+                             (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
+                         importancePrivilege = Boolean.FALSE;
 
+                     }
+                     if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getSecurity()) &&
+                             (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
+                         securityPrivilege = Boolean.FALSE;
+                     }
+                     table.setImportancePrivilege(importancePrivilege);
+                     table.setSecurityPrivilege(securityPrivilege);
+                 }else{
+                     table.setImportancePrivilege(!sourceInfoDeriveTableInfo.getImportance());
+                     table.setSecurityPrivilege(!sourceInfoDeriveTableInfo.getSecurity());
+                 }
+            }
             Table tableAttr = tableDAO.getDbAndTableName(guid);
             if(tableAttr != null){
                 List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceId == null ? null : sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,tableAttr.getDatabaseId(),tableAttr.getTableName());
@@ -612,13 +685,67 @@ public class MetaDataService {
                 }
             });
 
+            TableExtInfo tableExtInfo = getTableExtAttributes(tenantId,table.getTableId());
+            table.setImportance(tableExtInfo.isImportance());
+            table.setSecurity(tableExtInfo.isSecurity());
             return table;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
         }
     }
 
+    private TableExtInfo getTableExtAttributes(String tenantId,String tableGuid){
+        TableExtInfo info = new TableExtInfo();
+        if(isConfigGloble()){
+            LOG.info("当前用户已配置全局权限，忽略重要保密权限");
+            info.setImportance(false);
+            info.setSecurity(false);
+            return info;
+        }
+        //查看该表在衍生表的重要保密性
+        List<TableExtInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDAO.getImportanceInfo(tableGuid,tenantId);
+        if(CollectionUtils.isEmpty(deriveTableInfoList)){
+            LOG.info("该衍生表没有配置重要保密信息");
+            info.setImportance(false);
+            info.setSecurity(false);
+            return info;
+        }
+        boolean deriveImportance = deriveTableInfoList.stream().anyMatch(v->v.isImportance());
+        boolean deriveSecurity = deriveTableInfoList.stream().anyMatch(v->v.isSecurity());
 
+        User user = AdminUtils.getUserData();
+        List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId);
+        if(CollectionUtils.isEmpty(groups)){
+            LOG.info("当前用户没有配置用户组，忽略权限");
+            info.setImportance(deriveImportance);
+            info.setSecurity(deriveSecurity);
+            return info;
+        }
+        List<String> groupList = groups.stream().map(UserGroup::getId).collect(Collectors.toList());
+        List<TableExtInfo> list = tableDAO.selectTableInfoByGroups(tableGuid,tenantId,groupList);
+        if(CollectionUtils.isEmpty(list)){
+            LOG.info("当前用户组没有配置表的权限，忽略权限");
+            info.setImportance(deriveImportance);
+            info.setSecurity(deriveSecurity);
+            return info;
+        }
+
+        info.setImportance(deriveImportance && list.stream().noneMatch(p->p.isImportance()));
+        info.setSecurity(deriveSecurity && list.stream().noneMatch(p->p.isSecurity()));
+        return info;
+    }
+
+    /**
+     * 当前账户是否配置全局权限
+     * @return true：已配置全局权限
+     */
+    public boolean isConfigGloble(){
+        User user = AdminUtils.getUserData();
+        UserPermissionPO userPermissionPO = userPermissionDAO.selectListByUsersId(user.getUserId());
+        boolean flag = userPermissionPO != null;
+        LOG.info("当前用户配置全局权限:{}",flag);
+        return flag;
+    }
     public RDBMSTable extractRDBMSTableInfo(AtlasEntity entity, String guid, AtlasEntity.AtlasEntityWithExtInfo info, String tenantId) throws AtlasBaseException {
         RDBMSTable table = new RDBMSTable();
         table.setTableId(guid);

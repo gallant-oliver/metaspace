@@ -333,6 +333,110 @@ public interface RelationDAO {
     public List<RelationEntityV2> queryByTableNameV2(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset, @Param("databases") List<String> databases, @Param("tenantId") String tenantId);
 
     @Select({"<script>",
+                    " SELECT tableInfo.tablename," +
+                    "   tableInfo.dbname," +
+                    "   tableInfo.tableguid," +
+                    "   tableInfo.status," +
+                    "   tableInfo.createtime," +
+                    "   tableInfo.dataowner," +
+                    "   tableInfo.description," +
+                    "   tableinfo.databaseguid AS dbId,",
+                    "   data_source.source_id AS sourceId," +
+                    "   data_source.source_type AS dataSourceType," +
+                    "   source_info.category_id AS categoryGuid," +
+                    "   source_info.tenant_id AS tenantId," +
+                    "   source_info.id AS sourceInfoId," +
+                    " CASE" +
+                    "      data_source.source_type" +
+                    "      WHEN 'ORACLE' THEN" +
+                    "      data_source.database ELSE '' " +
+                    "   END AS databaseInstance," +
+                    " CASE" +
+                    "     WHEN  data_source.source_id = " +
+                    "      'hive' THEN" +
+                    "      'hive' " +
+                    "     WHEN  data_source.source_id is " +
+                    "     null THEN" +
+                    "      'hive' "+
+                    " ELSE data_source.source_name " +
+                    "   END AS source_name," +
+                    "   COUNT ( * ) OVER () total " +
+                    " FROM" +
+                    "   tableInfo " +
+                    "   LEFT JOIN source_info ON tableinfo.databaseguid = source_info.database_id" +
+                    "   LEFT JOIN data_source ON source_info.data_source_id = data_source.source_id " +
+                    " WHERE" +
+                    "  tableInfo.status = 'ACTIVE' AND tableInfo.databasestatus = 'ACTIVE' " +
+                    "  AND tableinfo.databaseguid IN ( SELECT db_guid FROM db_category_relation dcr WHERE dcr.category_id IN" +
+                    "       <foreach item='categoryGuid' index='index' collection='ids' separator=',' open='(' close=')'>",
+                    "           #{categoryGuid}",
+                    "       </foreach>)",
+                    "   AND source_info.version = 0 AND source_info.category_id IS NOT NULL AND source_info.category_id != ''",
+                    " <if test=\"tableName != null and tableName!=''\">",
+                    " and tableInfo.tableName like concat('%',#{tableName},'%') ESCAPE '/'",
+                    " </if>",
+                    " <if test=\"tagName != null and tagName!=''\">",
+                    " and tableInfo.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like concat('%',#{tagName},'%') ESCAPE '/') ",
+                    " </if>",
+                    " order by tableinfo.tablename ",
+                    " <if test='limit!= -1'>",
+                    " limit #{limit}",
+                    " </if>",
+                    " offset #{offset}",
+                    " </script>"})
+    List<RelationEntityV2> queryByTableNameV2General(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("ids") List<String> categoryIds, @Param("limit") int limit, @Param("offset") int offset);
+
+    @Select({"<script>",
+            " SELECT tableInfo.tablename," +
+                    "   tableInfo.dbname," +
+                    "   tableInfo.tableguid," +
+                    "   tableInfo.status," +
+                    "   tableInfo.createtime," +
+                    "   tableInfo.dataowner," +
+                    "   tableInfo.description," +
+                    "   tableinfo.databaseguid AS dbId,",
+            "   data_source.source_id AS sourceId," +
+                    "   data_source.source_type AS dataSourceType," +
+                    "   source_info.category_id AS categoryGuid," +
+                    "   source_info.tenant_id AS tenantId," +
+                    "   source_info.id AS sourceInfoId," +
+                    " CASE" +
+                    "      data_source.source_type" +
+                    "      WHEN 'ORACLE' THEN" +
+                    "      data_source.database ELSE '' " +
+                    "   END AS databaseInstance," +
+                    " CASE" +
+                    "     WHEN  data_source.source_id = " +
+                    "      'hive' THEN" +
+                    "      'hive' " +
+                    "     WHEN  data_source.source_id is " +
+                    "     null THEN" +
+                    "      'hive' "+
+                    " ELSE data_source.source_name " +
+                    "   END AS source_name," +
+                    "   COUNT ( * ) OVER () total " +
+                    " FROM" +
+                    "   tableInfo " +
+                    "   LEFT JOIN source_info ON tableinfo.databaseguid = source_info.database_id" +
+                    "   LEFT JOIN data_source ON source_info.data_source_id = data_source.source_id " +
+                    " WHERE" +
+                    "  tableInfo.status = 'ACTIVE' AND tableInfo.databasestatus = 'ACTIVE' " +
+            "   AND source_info.version = 0 AND source_info.category_id IS NOT NULL AND source_info.category_id != ''",
+            " <if test=\"tableName != null and tableName!=''\">",
+            " and tableInfo.tableName like concat('%',#{tableName},'%') ESCAPE '/'",
+            " </if>",
+            " <if test=\"tagName != null and tagName!=''\">",
+            " and tableInfo.tableGuid in (select tableGuid from table2tag join tag on table2tag.tagId=tag.tagId where tag.tagName like concat('%',#{tagName},'%') ESCAPE '/') ",
+            " </if>",
+            " order by tableinfo.tablename ",
+            " <if test='limit!= -1'>",
+            " limit #{limit}",
+            " </if>",
+            " offset #{offset}",
+            " </script>"})
+    List<RelationEntityV2> queryByTableNameV2Global(@Param("tableName") String tableName, @Param("tagName") String tagName, @Param("limit") int limit, @Param("offset") int offset);
+
+    @Select({"<script>",
             " select tableInfo.tablename,",
             " tableInfo.dbname,",
             " tableInfo.tableguid,",
