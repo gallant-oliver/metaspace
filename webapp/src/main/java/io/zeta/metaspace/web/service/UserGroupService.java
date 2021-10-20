@@ -17,6 +17,8 @@ package io.zeta.metaspace.web.service;
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.business.BusinessInfo;
+import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -29,6 +31,7 @@ import io.zeta.metaspace.model.share.ProjectHeader;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.*;
 import io.zeta.metaspace.model.usergroup.result.*;
+import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.RelationDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
@@ -75,6 +78,10 @@ public class UserGroupService {
     RelationDAO relationDAO;
     @Autowired
     private SourceInfoDAO sourceInfoDAO;
+
+    @Autowired
+    private BusinessDAO businessDAO;
+
     private static final Logger LOG = LoggerFactory.getLogger(UserGroupService.class);
     public PageResult<UserGroupListAndSearchResult> getUserGroupListAndSearch(String tenantId, int offset, int limit, String sortBy, String order, String query) throws AtlasBaseException {
         PageResult<UserGroupListAndSearchResult> commonResult = new PageResult<>();
@@ -1284,6 +1291,14 @@ public class UserGroupService {
             categories.add(groupAndUser);
         }
 
+        // 业务目录，需要查询有权限的业务对象
+        if (type == 1 && CollectionUtils.isNotEmpty(categories)) {
+            List<String> categoryGuids = categories.stream().map(c -> c.getGuid()).collect(Collectors.toList());
+            List<BusinessInfoHeader> businessInfos = userGroupDAO.getBusinessesByGroup(categoryGuids, groupId, tenantId);
+            Map<String, List<BusinessInfoHeader>> collect = businessInfos.stream().collect(Collectors.groupingBy(BusinessInfoHeader::getCategoryGuid));
+            categories.forEach(c -> c.setBusinessInfos(collect.get(c.getGuid())));
+        }
+
         return categories;
     }
 
@@ -1475,6 +1490,7 @@ public class UserGroupService {
             });
             userCategories.addAll(parentCategory);
         }
+
         //遍历并合并目录权限
         for (CategoryPrivilegeV2 userCategory : userCategories) {
             if (userMap.containsKey(userCategory.getGuid())){
@@ -1812,5 +1828,30 @@ public class UserGroupService {
         List<DBInfo> hiveDBs = userGroupDAO.getNotAuthHiveDataBases(groupId, "hive", dbs);
         hive.setDbInfoList(hiveDBs);
         return sourceIdList;
+    }
+
+    public void addBusinessPrivileges(UpdateBusiness business, String tenantId) {
+        List<String> businessIds = business.getBusinessIds();
+        List<String> groupIds = business.getUserGroupIds();
+
+        // 删除旧的权限
+        userGroupDAO.deleteBusinessPrivileges(businessIds, groupIds);
+
+        // 添加新的权限
+        userGroupDAO.addBusinessPrivileges(businessIds, groupIds, business.getRead());
+
+        // 将业务对象设置为‘创建人不可见’
+        businessDAO.updateBusinessSubmitterRead(false, businessIds);
+
+        Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+        userGroupDAO.updateCategorys(business.getUserGroupIds(), currentTime, AdminUtils.getUserData().getUserId());
+    }
+
+    public List<BusinessInfo> getBusinessesByTenantId(String tenantId, String groupId) {
+        return userGroupDAO.getBusinessesByTenantId(tenantId, groupId);
+    }
+
+    public void removeBusiness(String groupId, String businessId, String tenantId) {
+        userGroupDAO.removeBusiness(groupId, businessId);
     }
 }

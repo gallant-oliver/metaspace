@@ -58,6 +58,7 @@ public class RelationEntityV2 {
     private String path;
     private String status;
     private String createTime;
+    private String tenantId;
     private String generateTime;
     private List<DataOwnerHeader> dataOwner;
     private List<String> tableTagList;
@@ -222,5 +223,13 @@ public class RelationEntityV2 {
 
     public void setTableTagList(List<String> tableTagList) {
         this.tableTagList = tableTagList;
+    }
+
+    public String getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(String tenantId) {
+        this.tenantId = tenantId;
     }
 }

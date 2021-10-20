@@ -1,14 +1,9 @@
 package io.zeta.metaspace.web.dao;
 
-import io.zeta.metaspace.model.sourceinfo.derivetable.vo.DeriveTableVersion;
+import io.zeta.metaspace.model.metadata.TableExtInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
-import org.springframework.security.access.method.P;
+import io.zeta.metaspace.model.sourceinfo.derivetable.vo.DeriveTableVersion;
+import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
@@ -231,4 +226,29 @@ public interface SourceInfoDeriveTableInfoDAO {
             "AND db_id = #{databaseId} \n" +
             "AND tenant_id = #{tenantId}")
     SourceInfoDeriveTableInfo getByNameAndDbGuid(@Param("tableName") String tableName, @Param("databaseId") String databaseId, @Param("tenantId") String tenantId);
+
+    @Select("select importance,security from source_info_derive_table_info where table_guid=#{tableGuid} AND tenant_id = #{tenantId} ")
+    List<TableExtInfo> getImportanceInfo( @Param("tableGuid") String tableGuid,@Param("tenantId") String tenantId);
+
+    @Select("<script>" +
+            "select business_id businessId, source_table_guid sourceTableGuid " +
+            "from source_info_derive_table_info " +
+            "where state=1 and table_guid in " +
+            " <foreach item='tableGuid' index='index' collection='tableGuids' separator=',' open='(' close=')'>" +
+            " #{tableGuid}" +
+            " </foreach>" +
+            "</script>")
+    List<SourceInfoDeriveTableInfo> getDeriveTableInfoByGuids(@Param("tableGuids")List<String> tableGuids);
+
+    @Select("SELECT * FROM source_info_derive_table_info WHERE db_id = #{dbId} AND table_name_en = #{tableName}")
+    List<SourceInfoDeriveTableInfo> selectByDbAndTableName(@Param("dbId") String dbId, @Param("tableName") String tableName);
+
+    @Update("update source_info_derive_table_info SET table_guid = #{tableGuid},update_time = now() WHERE db_id = #{dbId} AND table_name_en = #{tableName}")
+    int updateByDbAndTableName(@Param("dbId") String dbId, @Param("tableName") String tableName, @Param("tableGuid") String tableGuid);
+
+    @Select("SELECT * FROM source_info_derive_table_info WHERE table_guid = #{tableGuid}")
+    List<SourceInfoDeriveTableInfo> selectByTableGuid(@Param("tableGuid") String table_guid);
+
+    @Update("update source_info_derive_table_info set table_name_en = #{tableName},update_time = now() WHERE table_guid = #{tableGuid}")
+    int updateByTableGuid(@Param("tableGuid") String table_guid, @Param("tableName") String tableName);
 }

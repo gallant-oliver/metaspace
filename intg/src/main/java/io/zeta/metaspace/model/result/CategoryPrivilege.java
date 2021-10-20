@@ -59,6 +59,26 @@ public class CategoryPrivilege {
     private Boolean read;
     private Boolean editCategory;
     private Boolean editItem;
+    private String status;
+    private Boolean publish;
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Boolean getPublish() {
+        return publish;
+    }
+
+    public void setPublish(Boolean publish) {
+        this.publish = publish;
+    }
+
+
 
 
     public CategoryPrivilege(CategoryPrivilegeV2 category){

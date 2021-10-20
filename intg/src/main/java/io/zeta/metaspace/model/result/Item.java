@@ -2,26 +2,13 @@ package io.zeta.metaspace.model.result;
 
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.role.Role;
+import lombok.Data;
 
 import java.util.List;
+import java.util.Set;
 
+@Data
 public class Item {
-    private List<Module> modules;
+    private Set<Module> modules;
     private List<Role> roles;
-
-    public List<Module> getModules() {
-        return modules;
-    }
-
-    public void setModules(List<Module> modules) {
-        this.modules = modules;
-    }
-
-    public List<Role> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(List<Role> roles) {
-        this.roles = roles;
-    }
 }
