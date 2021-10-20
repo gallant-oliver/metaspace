@@ -37,14 +37,14 @@ public class NoticeCenterUtil {
             log.error("properties ENV param [notice.email.url] is not setting");
             return false;
         }
-
+        log.info("组装发送邮件请求参数...");
         //组装请求接口参数
         HashMap<String,Object> headerMap =  new HashMap<String, Object>(3){
             private static final long serialVersionUID = 1L;
             {
                 put("Content-Type","application/json");
-                put("X-SSO-FullticketId", AdminUtils.getSSOTicket());
-                put("X-Authenticated-Userid", AdminUtils.getUserData().getUserId());
+                put("X-SSO-FullticketId", "");
+                put("X-Authenticated-Userid", 1);
             }
         };
         Map<String,Object> queryParamMap = new HashMap<String, Object>(1){
@@ -53,6 +53,7 @@ public class NoticeCenterUtil {
                 put("cmd","CreateMessageMission");
             }
         };
+        log.info("组装发送邮件请求body.");
         HashMap<String,Object> jsonMap = new HashMap<>();
         jsonMap.put("event_id","notice__"+ UUIDUtils.alphaUUID());
         jsonMap.put("channel_instance_id",3);
@@ -70,6 +71,7 @@ public class NoticeCenterUtil {
             put("file_name",fileName);
         }});
         String json = new JSONObject(jsonMap).toString();
+        log.info("执行发送邮件请求命令.");
         String responseStr = OKHttpClient.doPost(emailUrlPrefix+NOTICE_EMAIL_API,headerMap,queryParamMap,json,3);
         log.info("通知返回响应:: {}",responseStr);
         if(StringUtils.isBlank(responseStr)){
@@ -86,4 +88,52 @@ public class NoticeCenterUtil {
         return false;
     }
 
+    public static void main(String[] args) {
+        String emailUrlPrefix = "http://10.201.82.121:38000";
+
+        //组装请求接口参数
+        HashMap<String,Object> headerMap =  new HashMap<String, Object>(3){
+            private static final long serialVersionUID = 1L;
+            {
+                put("Content-Type","application/json");
+                put("X-SSO-FullticketId", "TGT-363-Y92OE1nXyI5SMtbaypAiboUikJnSJSpI119uJsET6vxz2jzbvJ-x-gridsumdissector");
+                put("X-Authenticated-Userid", "27sdsd");
+            }
+        };
+        Map<String,Object> queryParamMap = new HashMap<String, Object>(1){
+            private static final long serialVersionUID = 10L;
+            {
+                put("cmd","CreateMessageMission");
+            }
+        };
+        HashMap<String,Object> jsonMap = new HashMap<>();
+        jsonMap.put("event_id","notice__"+ UUIDUtils.alphaUUID());
+        jsonMap.put("channel_instance_id",3);
+        jsonMap.put("priority", 0);
+        jsonMap.put("template_id", 0);
+        //邮件地址列表去重
+        List<String> contactList = Stream.of("guowenkui@gridsum.com").distinct().collect(Collectors.toList());
+        String[] contacts = contactList.toArray(new String[contactList.size()]);
+        jsonMap.put("contacts", contacts);
+        jsonMap.put("datas", new HashMap<String,String>(1){{
+            put("content","的测试邮件");
+        }});
+        jsonMap.put("attachment", new HashMap<String,String>(2){{
+            put("payload","5rWL6K+V6ISa5pys5YaF5a655a6e5oiY");
+            put("file_name","aa.txt");
+        }});
+        String json = new JSONObject(jsonMap).toString();
+        String responseStr = OKHttpClient.doPost(emailUrlPrefix+NOTICE_EMAIL_API,headerMap,queryParamMap,json,3);
+        log.info("通知返回响应:: {}",responseStr);
+        if(StringUtils.isBlank(responseStr)){
+            log.error("请求email服务失败");
+        }
+        Gson gson = new Gson();
+        Map map = gson.fromJson(responseStr, HashMap.class);
+        Object status =  map.getOrDefault("error_code","-1");
+        if( "0".equals(status) ){
+            log.info("发送email成功");
+        }
+        System.out.println("ok");
+    }
 }
