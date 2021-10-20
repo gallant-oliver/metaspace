@@ -8,7 +8,8 @@ public enum AuthMenuEnum {
     DATA_SOURCE_PERMISSIONS("data-source", 4),
     PROJECT_PERMISSIONS("project", 5),
     INDICATOR_DOMAIN("norm", 6),
-    DATA_BASE_PERMISSIONS("data-base", 7);
+    DATA_BASE_PERMISSIONS("data-base", 7),
+    DERIVE_TABLE_PERMISSIONS("derive-table", 8);
 
     private String name;
     private int num;

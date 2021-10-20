@@ -84,6 +84,8 @@ public class DataSourceService {
     @Autowired
     private DataSourceDAO datasourceDAO;
     @Autowired
+    private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDAO;
+    @Autowired
     private AtlasEntityStoreV2 atlasEntityStoreV2;
     @Autowired
     private TenantService tenantService;

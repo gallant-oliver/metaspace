@@ -127,6 +127,8 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableInfo.setUpdater(user.getUserId());
         sourceInfoDeriveTableInfo.setUpdateTime(LocalDateTime.now());
         sourceInfoDeriveTableInfo.setTenantId(tenantId);
+        sourceInfoDeriveTableInfo.setImportance(sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isImportant));
+        sourceInfoDeriveTableInfo.setSecurity(sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isSecret));
         sourceInfoDeriveTableInfo.setVersion(-1);
 
         // 操作是保存，状态是0
@@ -195,7 +197,8 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableInfo.setUpdater(user.getUserId());
         sourceInfoDeriveTableInfo.setUpdateTime(LocalDateTime.now());
         sourceInfoDeriveTableInfo.setTenantId(tenantId);
-
+        sourceInfoDeriveTableInfo.setImportance(sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isImportant));
+        sourceInfoDeriveTableInfo.setSecurity(sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isSecret));
         // 操作保存
         if (!sourceInfoDeriveTableColumnDto.isSubmit()) {
             // 如果上次是已提交

@@ -71,10 +71,29 @@ public interface BusinessDAO {
     public List<TechnologyInfo.Table> queryTablesByBusinessId(@Param("businessId")String businessId);
 
     //查询业务信息关联的数据库表-过滤数据源
-    @Select("select tableGuid,tableName,dbName,status,createTime,databaseGuid," +
-            "COALESCE(display_name,tableName,'') as displayName,description,source_id AS sourceId from tableInfo where status='ACTIVE' and  tableGuid in(select tableGuid from business2table where businessId=#{businessId}) "
-            //"AND (tableInfo.source_id in (SELECT source_id FROM data_source WHERE tenantid = #{tenantId}) or tableInfo.source_id = 'hive')"
-    )
+    @Select("SELECT\n" +
+            " ti.tableGuid,\n" +
+            " ti.tableName,\n" +
+            " ti.dbName,\n" +
+            " ti.databaseguid AS databaseId,\n" +
+            " ti.status,\n" +
+            " ti.createTime,\n" +
+            " ti.databaseGuid,\n" +
+            " COALESCE ( ti.display_name, ti.tableName, '' ) AS displayName,\n" +
+            " ti.description,\n" +
+            " sidti.importance as importance,\n" +
+            " sidti.security as security\n" +
+            "FROM\n" +
+            " tableInfo ti LEFT JOIN source_info_derive_table_info sidti ON ti.tableguid = sidti.table_guid\n" +
+            "WHERE\n" +
+            " status = 'ACTIVE' \n" +
+            " AND tableGuid IN (\n" +
+            " SELECT\n" +
+            "  tableGuid \n" +
+            " FROM\n" +
+            "  business2table \n" +
+            "WHERE\n" +
+            " businessId =#{businessId})")
     public List<TechnologyInfo.Table> queryTablesByBusinessIdAndTenantId(@Param("businessId") String businessId, @Param("tenantId") String tenantId);
 
     //添加目录/业务对象关联

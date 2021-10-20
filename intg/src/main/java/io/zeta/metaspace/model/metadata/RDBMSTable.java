@@ -44,7 +44,8 @@ public class RDBMSTable implements Serializable {
     private List<RDBMSIndex> indexes;
     private boolean subscribeTo;
     private String owner;
-
+    private Boolean importancePrivilege;
+    private Boolean securityPrivilege;
     private String subordinateSystem;
     private String subordinateDatabase;
     private String systemAdmin;
