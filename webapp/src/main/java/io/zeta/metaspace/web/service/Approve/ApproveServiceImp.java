@@ -173,7 +173,7 @@ public class ApproveServiceImp implements ApproveService{
             Approvable obj = (Approvable)applicationContext.getBean(serviceName);
             objectDetail = obj.getObjectDetail(objectId, objectType, version,tenantId);
             if(objectDetail == null){
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取指标详情失败,对应审批对象已删除");
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"获取详情失败,对应审批对象已删除");
             }
         } catch (Exception e) {
             LOG.error("查询审批对象详情失败", e);
