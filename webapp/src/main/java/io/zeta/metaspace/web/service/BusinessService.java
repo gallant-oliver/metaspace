@@ -714,7 +714,7 @@ public class BusinessService implements Approvable {
 
     @Transactional(rollbackFor = Exception.class)
     public void addBusinessAndTableRelation(String businessId, BusinessTableList tableIdList) throws AtlasBaseException {
-        List<String> list = tableIdList.getList();
+        List<BusinessTable> tableList = tableIdList.getTableList();
         String trustTable = tableIdList.getTrust();
         try {
             String userId = AdminUtils.getUserData().getUserId();
@@ -723,7 +723,7 @@ public class BusinessService implements Approvable {
             String time = format.format(timestamp);
             businessDao.updateTechnicalInfo(businessId, userId, time);
             //更新technical编辑状态
-            if (Objects.nonNull(list) && list.size() > 0) {
+            if (CollectionUtils.isNotEmpty(tableList)) {
                 businessDao.updateTechnicalStatus(businessId, TechnicalStatus.ADDED.code);
             } else {
                 businessDao.updateTechnicalStatus(businessId, TechnicalStatus.BLANK.code);
@@ -732,11 +732,11 @@ public class BusinessService implements Approvable {
 
             businessDao.updateTrustTable(businessId);
 
-            if (Objects.nonNull(list) && list.size() > 0) {
+            if (CollectionUtils.isNotEmpty(tableList)) {
                 // 关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表
-                businessDao.insertTableRelation(businessId, list, 0);
+                businessDao.insertTableRelation(businessId, tableList, 0);
                 if (Objects.isNull(trustTable)) {
-                    trustTable = list.get(0);
+                    trustTable = tableList.get(0).getTableGuid();
                 }
             }
             if (Objects.nonNull(trustTable)) {

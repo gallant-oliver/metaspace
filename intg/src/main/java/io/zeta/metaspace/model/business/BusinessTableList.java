@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.model.business;
 
+import lombok.Data;
+
 import java.util.List;
 
 /*
@@ -23,23 +25,9 @@ import java.util.List;
  * @author sunhaoning
  * @date 2019/3/18 15:26
  */
+@Data
 public class BusinessTableList {
     private List<String> list;
     private String trust;
-
-    public List<String> getList() {
-        return list;
-    }
-
-    public void setList(List<String> list) {
-        this.list = list;
-    }
-
-    public String getTrust() {
-        return trust;
-    }
-
-    public void setTrust(String trust) {
-        this.trust = trust;
-    }
+    private List<BusinessTable> tableList;
 }
