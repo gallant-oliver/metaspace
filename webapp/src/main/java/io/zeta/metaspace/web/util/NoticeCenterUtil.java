@@ -43,8 +43,6 @@ public class NoticeCenterUtil {
             private static final long serialVersionUID = 1L;
             {
                 put("Content-Type","application/json");
-                put("X-SSO-FullticketId", "");
-                put("X-Authenticated-Userid", 1);
             }
         };
         Map<String,Object> queryParamMap = new HashMap<String, Object>(1){
