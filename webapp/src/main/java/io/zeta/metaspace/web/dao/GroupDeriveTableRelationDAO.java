@@ -53,7 +53,7 @@ public interface GroupDeriveTableRelationDAO {
             "INSERT INTO group_table_relation ( ID, derive_table_id, importance_privilege, user_group_id, tenant_id ) " +
             "VALUES " +
             " <foreach item='relation' index='index' collection='relations' separator=','>" +
-            " ( #{ relation.id }, #{ relation.deriveTableId }, TRUE, #{ relation.userGroupId }, #{ relation.tenantId } )" +
+            " ( #{ relation.groupTableRelationId }, #{ relation.deriveTableId }, TRUE, #{ relation.userGroupId }, #{ relation.tenantId } )" +
             "</foreach>" +
             "ON conflict ( user_group_id, derive_table_id, tenant_id ) " +
             "DO " +
