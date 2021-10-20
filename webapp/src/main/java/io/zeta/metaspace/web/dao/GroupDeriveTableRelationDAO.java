@@ -98,7 +98,7 @@ public interface GroupDeriveTableRelationDAO {
             " c.name AS businessCategoryName " +
             "FROM " +
             " tableinfo ti  " +
-            " INNER JOIN source_info_derive_table_info sidti ON sidti.table_name_en = ti.tablename AND sidti.db_id = ti.databaseguid  " +
+            " INNER JOIN source_info_derive_table_info sidti ON sidti.table_name_en = ti.tablename AND sidti.db_id = ti.databaseguid AND sidti.version = -1 " +
             " LEFT JOIN business2table bt ON bt.tableguid = ti.tableguid " +
             " LEFT JOIN businessinfo bi ON bi.businessid = bt.businessid " +
             " LEFT JOIN business_relation br ON br.businessid = bi.businessid " +
