@@ -770,11 +770,34 @@ public class UserGroupREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getDataBaseListNotAllot(
-            @PathParam("id") String groupId,
+            @PathParam("id") String groupId, @HeaderParam("tenantId")String tenantId,
             @QueryParam("search") String search) throws AtlasBaseException {
         try {
-            List<NotAllotDatabaseSearchResult> pageResult = userGroupService.getDataBaseListNotAllot(groupId,search);
+            List<NotAllotDatabaseSearchResult> pageResult = userGroupService.getDataBaseListNotAllot(groupId, search, tenantId);
             return ReturnUtil.success(pageResult);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取未分配给当前用户组的数据源（已分配给用户组）的数据库失败");
+        }
+    }
+
+    /**
+     * 移除业务对象
+     * @param groupId
+     * @param businessId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @DELETE
+    @Path("/{groupId}/{businessId}/remove")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.DELETE)
+    public Result removeBusiness(@PathParam("groupId") String groupId,
+                                 @PathParam("businessId") String businessId,
+                                 @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+        try {
+            userGroupService.removeBusiness(groupId, businessId, tenantId);
+            return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取未分配给当前用户组的数据源（已分配给用户组）的数据库失败");
         }

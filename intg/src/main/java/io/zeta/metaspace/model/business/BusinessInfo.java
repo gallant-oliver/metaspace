@@ -49,6 +49,110 @@ public class BusinessInfo {
     @JsonIgnore
     private String categoryName;
 
+    /**
+     * 是否发布
+    */
+    private Boolean publish;
+
+    /**
+     * 审批组id
+     */
+    private String approveGroupId;
+
+    /**
+     * 审批id
+     */
+    private String approveId;
+
+    /**
+     * 说明信息
+     */
+    private String publishDesc;
+
+    /**
+     * 状态：0待发布，1待审批，2审核不通过，3审核通过'
+     */
+    private String status;
+
+    /**
+     * 创建方式：0（手动添加），1（上传文件）
+     */
+    private int createMode;
+
+    /**
+     * 私密状态：PUBLIC公开；PRIVATE私密
+     */
+    private String privateStatus;
+
+    /**
+     * 是否创建人可见
+     */
+    private Boolean submitterRead;
+
+    public Boolean getSubmitterRead() {
+        return submitterRead;
+    }
+
+    public void setSubmitterRead(Boolean submitterRead) {
+        this.submitterRead = submitterRead;
+    }
+
+    public String getPrivateStatus() {
+        return privateStatus;
+    }
+
+    public void setPrivateStatus(String privateStatus) {
+        this.privateStatus = privateStatus;
+    }
+
+    public Boolean getPublish() {
+        return publish;
+    }
+
+    public void setPublish(Boolean publish) {
+        this.publish = publish;
+    }
+
+    public String getApproveGroupId() {
+        return approveGroupId;
+    }
+
+    public void setApproveGroupId(String approveGroupId) {
+        this.approveGroupId = approveGroupId;
+    }
+
+    public String getApproveId() {
+        return approveId;
+    }
+
+    public void setApproveId(String approveId) {
+        this.approveId = approveId;
+    }
+
+    public String getPublishDesc() {
+        return publishDesc;
+    }
+
+    public void setPublishDesc(String publishDesc) {
+        this.publishDesc = publishDesc;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public int getCreateMode() {
+        return createMode;
+    }
+
+    public void setCreateMode(int createMode) {
+        this.createMode = createMode;
+    }
+
     public String getCategoryName() {
         return categoryName;
     }

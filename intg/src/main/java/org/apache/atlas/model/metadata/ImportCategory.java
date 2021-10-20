@@ -22,6 +22,15 @@ public class ImportCategory {
     private boolean all;
     private String direction;
     private boolean authorized;
+    private Integer type;
+
+    public int getType() {
+        return type;
+    }
+
+    public void setType(int type) {
+        this.type = type;
+    }
 
     public boolean isAuthorized() {
         return authorized;

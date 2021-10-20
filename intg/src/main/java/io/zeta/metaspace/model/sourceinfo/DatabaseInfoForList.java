@@ -65,4 +65,11 @@ public class DatabaseInfoForList {
      * **/
     private String auditDes;
 
+
+    /**
+     * 业务Owner部门名称
+     * **/
+    private String boDepartmentName;
+
+
 }

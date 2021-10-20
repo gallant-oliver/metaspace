@@ -25,6 +25,7 @@ import java.util.List;
  */
 @Data
 public class RDBMSTable implements Serializable {
+    private String tenantId;
     private String tableId;
     private String tableName;
     private String tableDescription;
@@ -44,7 +45,8 @@ public class RDBMSTable implements Serializable {
     private List<RDBMSIndex> indexes;
     private boolean subscribeTo;
     private String owner;
-
+    private Boolean importancePrivilege;
+    private Boolean securityPrivilege;
     private String subordinateSystem;
     private String subordinateDatabase;
     private String systemAdmin;
@@ -61,4 +63,10 @@ public class RDBMSTable implements Serializable {
     private List<DataOwnerHeader> dataOwner;
     private List<Tag> tags;
     private boolean hasDerivetable;
+    private String sourceTreeId;
+    private String dbTreeId;
+    //是否重要
+    private boolean importance;
+    //是否保密
+    private boolean security;
 }

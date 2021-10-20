@@ -44,16 +44,16 @@ public class SourceService {
      */
     public List<DataBaseInfo> getDatabaseByType(String dataSourceId, String tenantId) {
         List<String> databases = new ArrayList<>();
+        User user = AdminUtils.getUserData();
         if("hive".equalsIgnoreCase(dataSourceId)){
             databases = tenantService.getDatabase(tenantId);
             if(CollectionUtils.isEmpty(databases)){
                 return new ArrayList<>();
             }
 
-            return databaseDAO.getHiveDataBaseCode(tenantId, databases);
+            return databaseDAO.getHiveDataBaseCode(tenantId, databases, user.getUserId());
         }
         else {
-            User user = AdminUtils.getUserData();
             return databaseDAO.getRBMSDataBaseCode(dataSourceId, tenantId, user.getUserId());
         }
     }

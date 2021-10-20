@@ -84,6 +84,8 @@ public class DataSourceService {
     @Autowired
     private DataSourceDAO datasourceDAO;
     @Autowired
+    private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDAO;
+    @Autowired
     private AtlasEntityStoreV2 atlasEntityStoreV2;
     @Autowired
     private TenantService tenantService;
@@ -417,6 +419,7 @@ public class DataSourceService {
                 dataSourceHead.setSourceId("hive");
                 dataSourceHead.setSourceName("hive");
                 dataSourceHead.setSourceType("HIVE");
+                dataSourceHead.setBizTreeId(EntityUtil.generateBusinessId(tenantId,"hive","",""));
                 List<DataSourceHead> list = new ArrayList<>();
                 list.add(dataSourceHead);
                 pageResult.setTotalSize(list.size());
@@ -471,6 +474,7 @@ public class DataSourceService {
                 }
                 String sourceId = head.getSourceId();
                 head.setRely(false);
+                head.setBizTreeId(EntityUtil.generateBusinessId(head.getTenantId(),sourceId,"",""));
                 UserPrivilegeDataSource userPrivilegeDataSource = getUserPrivilegesDataSource(userId, sourceId);
                 if (UserPrivilegeDataSource.MANAGER.getPrivilegeName().equals(userPrivilegeDataSource.getPrivilegeName())) {
                     head.setEditManager(true);

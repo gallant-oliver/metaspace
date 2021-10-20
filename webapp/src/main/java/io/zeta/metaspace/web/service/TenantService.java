@@ -257,7 +257,9 @@ public class TenantService {
         return true;
     }
 
-
+    public String getNameById(String tenantId){
+        return tenantDAO.selectNameById(tenantId);
+    }
     /**
      * 获取当前用户在当前租户下的metaspace的功能权限
      * @param tenantId
@@ -466,7 +468,7 @@ public class TenantService {
      */
     public List<String> getCurrentTenantDatabase(String tenantId) throws AtlasBaseException {
         String cacheKey = tenantId;
-        List<String> dbs = databaseCache.getIfPresent(cacheKey);
+        List<String> dbs = databaseCache.getIfPresent("current_tenant:" + cacheKey);
         if (dbs!=null) {
             return dbs;
         }
@@ -487,7 +489,7 @@ public class TenantService {
     public List<String> getDatabase(String tenantId) throws AtlasBaseException {
         String msgDesc=null;
         String cacheKey = tenantId;
-        List<String> dbs = databaseCache.getIfPresent(cacheKey);
+        List<String> dbs = databaseCache.getIfPresent("privilege:" + cacheKey);
         if (dbs!=null) {
             return dbs;
         }

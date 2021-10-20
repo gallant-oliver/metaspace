@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.service.sourceinfo;
 
+import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
@@ -7,6 +8,7 @@ import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.result.CategorycateQueryResult;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.Constant;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.DeriveTableStateEnum;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.MetadataDeriveTableInfo;
@@ -127,6 +129,8 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableInfo.setUpdater(user.getUserId());
         sourceInfoDeriveTableInfo.setUpdateTime(LocalDateTime.now());
         sourceInfoDeriveTableInfo.setTenantId(tenantId);
+        sourceInfoDeriveTableInfo.setImportance(sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isImportant));
+        sourceInfoDeriveTableInfo.setSecurity(sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isSecret));
         sourceInfoDeriveTableInfo.setVersion(-1);
 
         // 操作是保存，状态是0
@@ -161,6 +165,11 @@ public class SourceInfoDeriveTableInfoService {
         this.save(sourceInfoDeriveTableInfo);
         sourceInfoDeriveColumnInfoService.saveBatch(sourceInfoDeriveColumnInfos);
         sourceInfoDeriveTableColumnRelationService.saveBatch(sourceInfoDeriveTableColumnRelationList);
+
+        // 提交：新增业务对象-表关系(关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表)
+        if (DeriveTableStateEnum.COMMIT.getState() == sourceInfoDeriveTableInfo.getState()) {
+            businessDAO.insertDerivedTableRelation(sourceInfoDeriveTableInfo.getBusinessId(), sourceInfoDeriveTableInfo.getSourceTableGuid(), 1, sourceInfoDeriveTableInfo.getSourceId());
+        }
         return true;
     }
 
@@ -184,6 +193,10 @@ public class SourceInfoDeriveTableInfoService {
         // 原表的id和guid
         String tableId = sourceInfoDeriveTableColumnDto.getId();
         String tableGuid = sourceInfoDeriveTableColumnDto.getTableGuid();
+
+        // 查询旧的关联的源表id
+        SourceInfoDeriveTableInfo oldSourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDao.getByIdAndTenantId(tableId, tenantId);
+
         // 表
         SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = new SourceInfoDeriveTableInfo();
         BeanUtils.copyProperties(sourceInfoDeriveTableColumnDto, sourceInfoDeriveTableInfo);
@@ -195,7 +208,8 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableInfo.setUpdater(user.getUserId());
         sourceInfoDeriveTableInfo.setUpdateTime(LocalDateTime.now());
         sourceInfoDeriveTableInfo.setTenantId(tenantId);
-
+        sourceInfoDeriveTableInfo.setImportance(sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isImportant));
+        sourceInfoDeriveTableInfo.setSecurity(sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isSecret));
         // 操作保存
         if (!sourceInfoDeriveTableColumnDto.isSubmit()) {
             // 如果上次是已提交
@@ -282,6 +296,14 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveColumnInfoService.saveOrUpdateBatch(sourceInfoDeriveColumnInfos);
         }
         sourceInfoDeriveTableColumnRelationService.saveOrUpdateBatch(sourceInfoDeriveTableColumnRelationList);
+
+
+        if (DeriveTableStateEnum.COMMIT.getState() == sourceInfoDeriveTableInfo.getState()) {
+            // 删除旧的业务对象-表关联关系
+            businessDAO.deleteRelationByBusinessIdAndTableId(oldSourceInfoDeriveTableInfo.getBusinessId(), oldSourceInfoDeriveTableInfo.getSourceTableGuid(), oldSourceInfoDeriveTableInfo.getSourceId());
+            // 新增业务对象-表关系(关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表)
+            businessDAO.insertDerivedTableRelation(sourceInfoDeriveTableInfo.getBusinessId(), sourceInfoDeriveTableInfo.getSourceTableGuid(), 1, sourceInfoDeriveTableInfo.getSourceId());
+        }
         return true;
     }
 
@@ -609,7 +631,7 @@ public class SourceInfoDeriveTableInfoService {
      * @return
      */
     public List<BusinessCategory> getBusinessCategory(String tenantId) {
-        List<CategoryPrivilege> categories = businessREST.getCategories("ASC", tenantId);
+        List<CategorycateQueryResult> categories = businessREST.getCategories("ASC", 1,tenantId);
         return categories.stream().map(e -> {
             BusinessCategory businessCategory = new BusinessCategory();
             BeanUtils.copyProperties(e, businessCategory);
@@ -781,6 +803,13 @@ public class SourceInfoDeriveTableInfoService {
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean deleteDeriveTable(List<String> tableGuids) {
+        // 查询衍生表信息
+        List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos = sourceInfoDeriveTableInfoDao.getDeriveTableInfoByGuids(tableGuids);
+        if (!CollectionUtils.isEmpty(sourceInfoDeriveTableInfos)) {
+            // 删除旧的业务对象-表关联关系
+            businessDAO.batchDeleteRelationByBusinessIdsAndTableIds(sourceInfoDeriveTableInfos);
+        }
+
         sourceInfoDeriveTableInfoDao.deleteByTableGuids(tableGuids);
         sourceInfoDeriveColumnInfoService.deleteByTableGuids(tableGuids);
         sourceInfoDeriveTableColumnRelationService.deleteByTableGuids(tableGuids);

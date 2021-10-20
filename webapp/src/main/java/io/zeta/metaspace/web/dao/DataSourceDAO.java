@@ -145,12 +145,15 @@ public interface DataSourceDAO {
 
     //搜索数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
+            "select count(*)over() totalSize,ds.tenantid tenantId,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
             " from data_source ds left join ( " +
             "  select distinct dgr.source_id from datasource_group_relation dgr join user_group_relation ug on ug.group_id=dgr.group_id " +
             "  where ug.user_id=#{userId} " +
             ") da on da.source_id=ds.source_id " +
-            "where (da.source_id is not null or ds.manager=#{userId}) and (isapi=false or isapi is null) and ds.tenantid=#{tenantId} " +
+            "where (da.source_id is not null or ds.manager=#{userId}) and (isapi=false or isapi is null) " +
+            "<if test='tenantId!=null'>" +
+            "and ds.tenantid=#{tenantId} " +
+            "</if>" +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like concat('%',#{dataSourceSearch.sourceName},'%') ESCAPE '/'" +
             "</if>" +
@@ -183,12 +186,15 @@ public interface DataSourceDAO {
 
     //搜索Api权限数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
+            "select count(*)over() totalSize,ds.tenantid tenantId,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
             " from data_source ds left join ( " +
             "  select distinct dgr.source_id from datasource_group_relation dgr join user_group_relation ug on ug.group_id=dgr.group_id " +
             "  where ug.user_id=#{userId} " +
             ") da on da.source_id=ds.source_id " +
-            "where (da.source_id is not null or ds.manager=#{userId}) and isapi=true and ds.tenantid=#{tenantId} " +
+            "where (da.source_id is not null or ds.manager=#{userId}) and isapi=true " +
+            "<if test='tenantId!=null'>" +
+            " and ds.tenantid=#{tenantId} " +
+            "</if>" +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like concat('%',#{dataSourceSearch.sourceName},'%') ESCAPE '/'" +
             "</if>" +

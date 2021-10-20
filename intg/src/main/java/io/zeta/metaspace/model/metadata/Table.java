@@ -22,6 +22,7 @@ import java.util.List;
 
 @Data
 public class Table implements Serializable {
+    private String tenantId;
     private String tableId;
     private String tableName;
     private String owner;
@@ -29,6 +30,8 @@ public class Table implements Serializable {
     private String updateTime;
     private String databaseId;
     private String databaseName;
+    private Boolean importancePrivilege;
+    private Boolean securityPrivilege;
     private String partitionKey;
     private Boolean partitionTable;
     private String format;
@@ -54,6 +57,12 @@ public class Table implements Serializable {
     private String sourceId;
     private String sourceName;
     private boolean hasDerivetable;
+    private String sourceTreeId;
+    private String dbTreeId;
+    //是否重要
+    private boolean importance;
+    //是否保密
+    private boolean security;
 
     public int getTotal() {
         return total;

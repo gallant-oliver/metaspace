@@ -2,7 +2,7 @@ package io.zeta.metaspace.model.approve;
 
 public enum ApproveType {
 
-    PUBLISH("1","发布") , OFFLINE("2","下线");
+    PUBLISH("1","发布") , OFFLINE("2","下线"), CLOSE_PUBLISH("3","关闭发布");
     public String code;
 
     public String getCode() {

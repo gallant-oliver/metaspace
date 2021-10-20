@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Data
 public class TableEntity {
+    private String tenantId;
     private String sourceId;
     private String sourceName;
     private String databaseId;
@@ -20,4 +21,5 @@ public class TableEntity {
     private String tableType;
     @JsonIgnore
     private int total;
+    private String bizTreeId;
 }

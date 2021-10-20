@@ -61,10 +61,40 @@ public class CategoryEntityV2 {
 
     private Integer sort;
 
+    private Boolean publish;
+
+    private String information;
+
+    private String approvalId;
+
     /**
      * 租户id
      */
     private String tenantid;
+
+    public String getApprovalId() {
+        return approvalId;
+    }
+
+    public void setApprovalId(String approvalId) {
+        this.approvalId = approvalId;
+    }
+
+    public Boolean getPublish() {
+        return publish;
+    }
+
+    public void setPublish(Boolean publish) {
+        this.publish = publish;
+    }
+
+    public String getInformation() {
+        return information;
+    }
+
+    public void setInformation(String information) {
+        this.information = information;
+    }
 
     public Timestamp getCreateTime() {
         return createTime;
