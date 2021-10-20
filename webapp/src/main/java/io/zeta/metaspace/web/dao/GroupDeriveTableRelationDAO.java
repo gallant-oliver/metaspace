@@ -52,24 +52,26 @@ public interface GroupDeriveTableRelationDAO {
     @Update("<script>" +
             "INSERT INTO group_table_relation ( ID, derive_table_id, importance_privilege, user_group_id, tenant_id ) " +
             "VALUES " +
-            " <foreach item='relation' index='index' collection='relations' separator=',' open='(' close=')'>" +
-            " ( #{ relation.id }, #{ relation.deriveTableId }, TRUE, #{ relation.userGroupId }, #{ relation.tenantId } ) ON conflict ( user_group_id, derive_table_id, tenant_id ) " +
+            " <foreach item='relation' index='index' collection='relations' separator=','>" +
+            " ( #{ relation.id }, #{ relation.deriveTableId }, TRUE, #{ relation.userGroupId }, #{ relation.tenantId } )" +
             "</foreach>" +
+            "ON conflict ( user_group_id, derive_table_id, tenant_id ) " +
             "DO " +
             "UPDATE  " +
-            " SET importance_privilege = excluded.importance_privilege" +
+            " SET ID = excluded.ID, importance_privilege = excluded.importance_privilege" +
             "</script>")
     void updateDeriveTableImportancePrivilege(@Param("relations") List<GroupDeriveTableRelation> relationList);
 
     @Update("<script>" +
             "INSERT INTO group_table_relation ( ID, derive_table_id, security_privilege, user_group_id, tenant_id ) " +
             "VALUES " +
-            " <foreach item='relation' index='index' collection='relations' separator=',' open='(' close=')'>" +
-            " ( #{ relation.id }, #{ relation.deriveTableId }, TRUE, #{ relation.userGroupId }, #{ relation.tenantId } ) ON conflict ( user_group_id, derive_table_id, tenant_id ) " +
+            " <foreach item='relation' index='index' collection='relations' separator=','>" +
+            " ( #{ relation.groupTableRelationId }, #{ relation.deriveTableId }, TRUE, #{ relation.userGroupId }, #{ relation.tenantId } ) " +
             "</foreach>" +
+            " ON conflict ( user_group_id, derive_table_id, tenant_id ) " +
             "DO " +
             "UPDATE  " +
-            " SET security_privilege = excluded.security_privilege" +
+            " SET ID = excluded.ID, security_privilege = excluded.security_privilege" +
             "</script>")
     void updateDeriveTableSecurityPrivilege(@Param("relations") List<GroupDeriveTableRelation> relationList);
     
