@@ -764,7 +764,7 @@ public interface BusinessDAO {
     @Delete("<script>" +
             "delete from business2table where " +
             "<foreach item='info' index='index' collection='sourceInfoDeriveTableInfos' separator=' or '>" +
-            "(businessid=#{info.businessId} and tableguid=#{info.sourceTableGuid})" +
+            "(businessid=#{info.businessId} and tableguid=#{info.sourceTableGuid} and source_id=#{info.sourceId})" +
             "</foreach>" +
             "</script>")
     void batchDeleteRelationByBusinessIdsAndTableIds(@Param("sourceInfoDeriveTableInfos")List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos);
