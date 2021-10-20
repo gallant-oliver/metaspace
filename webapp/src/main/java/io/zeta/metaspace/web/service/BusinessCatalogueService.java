@@ -179,7 +179,7 @@ public class BusinessCatalogueService implements Approvable {
                 //目录是否需要发布，如果需要发布，则需要选择审批组,记录审批信息
                 if (publish) {
                     LOG.info("发起审批:" + approveGroupId);
-                    this.approveItems(approveId,tenantId, entity, ApproveType.PUBLISH.getCode(), BusinessType.BUSINESSCATALOGUE_PUBLISH, approveGroupId);
+                    this.approveItems(approveId,tenantId, entity, ApproveType.PUBLISH.getCode(), BusinessType.BUSINESSCATALOGUE, approveGroupId);
                 }
                 return oneLevelCategory;
             }else {
@@ -205,7 +205,7 @@ public class BusinessCatalogueService implements Approvable {
                 //目录是否需要发布，如果需要发布，则需要选择审批组,记录审批信息
                 if (publish) {
                     LOG.info("发起审批:" + approveGroupId);
-                    this.approveItems(approveId,tenantId, entity, ApproveType.PUBLISH.getCode(), BusinessType.BUSINESSCATALOGUE_PUBLISH, approveGroupId);
+                    this.approveItems(approveId,tenantId, entity, ApproveType.PUBLISH.getCode(), BusinessType.BUSINESSCATALOGUE, approveGroupId);
                 }
 
                 return returnEntity;
@@ -457,12 +457,12 @@ public class BusinessCatalogueService implements Approvable {
                 BusinessType businessType=null;
                 String approveType="";
                 if(oldisPublish && !newisPublish){
-                    businessType= BusinessType.BUSINESSCATALOGUE_PUBLISH_CLOSE;
+                    businessType= BusinessType.BUSINESSCATALOGUE;
                     approveType=ApproveType.OFFLINE.getCode();
                     entity.setPublish(false);
                 }
                 if(!oldisPublish && newisPublish){
-                    businessType=BusinessType.BUSINESSCATALOGUE_PUBLISH;
+                    businessType=BusinessType.BUSINESSCATALOGUE;
                     approveType=ApproveType.PUBLISH.getCode();
                     entity.setPublish(true);
                 }

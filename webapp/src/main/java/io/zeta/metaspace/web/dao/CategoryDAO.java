@@ -264,7 +264,17 @@ public interface CategoryDAO {
     public int addAll(@Param("categorys") List<CategoryEntityV2> categorys, @Param("tenantId") String tenantId);
 
 
-    @Select("select name from category where parentCategoryGuid=#{parentCategoryGuid} and tenantid=#{tenantId}")
+    @Select("<script>"+
+            "select name from category where tenantid=#{tenantId}" +
+            " <choose>"+
+            " <when test='parentCategoryGuid != null'>"+
+            " and parentCategoryGuid=#{parentCategoryGuid}"+
+            " </when>"+
+            " <otherwise>"+
+            " and parentCategoryGuid is null"+
+            " </otherwise>"+
+            " </choose>"+
+            " </script>")
     public List<String> getChildCategoryName(@Param("parentCategoryGuid") String guid, @Param("tenantId") String tenantId);
 
     @Select("select guid from category where categorytype=#{type} and (downBrotherCategoryGuid is NULL or downBrotherCategoryGuid='') and level=1 and tenantid=#{tenantId}")
