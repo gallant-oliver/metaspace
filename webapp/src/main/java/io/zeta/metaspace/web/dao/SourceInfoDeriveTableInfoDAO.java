@@ -237,7 +237,7 @@ public interface SourceInfoDeriveTableInfoDAO {
     List<TableExtInfo> getImportanceInfo( @Param("tableGuid") String tableGuid,@Param("tenantId") String tenantId);
 
     @Select("<script>" +
-            "select business_id businessId, source_table_guid sourceTableGuid " +
+            "select business_id businessId, source_table_guid sourceTableGuid, source_id sourceId " +
             "from source_info_derive_table_info " +
             "where state=1 and table_guid in " +
             " <foreach item='tableGuid' index='index' collection='tableGuids' separator=',' open='(' close=')'>" +
