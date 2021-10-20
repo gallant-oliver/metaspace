@@ -37,14 +37,12 @@ public class NoticeCenterUtil {
             log.error("properties ENV param [notice.email.url] is not setting");
             return false;
         }
-
+        log.info("组装发送邮件请求参数...");
         //组装请求接口参数
         HashMap<String,Object> headerMap =  new HashMap<String, Object>(3){
             private static final long serialVersionUID = 1L;
             {
                 put("Content-Type","application/json");
-                put("X-SSO-FullticketId", AdminUtils.getSSOTicket());
-                put("X-Authenticated-Userid", AdminUtils.getUserData().getUserId());
             }
         };
         Map<String,Object> queryParamMap = new HashMap<String, Object>(1){
@@ -53,6 +51,7 @@ public class NoticeCenterUtil {
                 put("cmd","CreateMessageMission");
             }
         };
+        log.info("组装发送邮件请求body.");
         HashMap<String,Object> jsonMap = new HashMap<>();
         jsonMap.put("event_id","notice__"+ UUIDUtils.alphaUUID());
         jsonMap.put("channel_instance_id",3);
@@ -70,6 +69,7 @@ public class NoticeCenterUtil {
             put("file_name",fileName);
         }});
         String json = new JSONObject(jsonMap).toString();
+        log.info("执行发送邮件请求命令.");
         String responseStr = OKHttpClient.doPost(emailUrlPrefix+NOTICE_EMAIL_API,headerMap,queryParamMap,json,3);
         log.info("通知返回响应:: {}",responseStr);
         if(StringUtils.isBlank(responseStr)){
