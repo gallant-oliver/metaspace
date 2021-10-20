@@ -101,6 +101,15 @@ public interface GroupDeriveTableRelationDAO {
             "FROM " +
             " tableinfo ti  " +
             " INNER JOIN source_info_derive_table_info sidti ON sidti.table_name_en = ti.tablename AND sidti.db_id = ti.databaseguid AND sidti.version = -1 " +
+            "<if test='privilegeType == \"IMPORTANCE\">" +
+            "   AND sidti.importance = true  " +
+            "</if>"+
+            "<if test='privilegeType == \"SECURITY\" >" +
+            "   AND sidti.security = true " +
+            "</if>"+
+            "<if test='privilegeType == \"ALL\" >" +
+            "   AND (sidti.security = true OR sidti.importance = true  )" +
+            "</if>"+
             " LEFT JOIN business2table bt ON bt.tableguid = ti.tableguid " +
             " LEFT JOIN businessinfo bi ON bi.businessid = bt.businessid " +
             " LEFT JOIN business_relation br ON br.businessid = bi.businessid " +
