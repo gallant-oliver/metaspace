@@ -294,7 +294,6 @@ public class BusinessService implements Approvable {
         try {
             //technicalLastUpdate && technicalOperator
             TechnologyInfo info = businessDao.queryTechnologyInfoByBusinessId(businessId);
-            info.setGlobal(publicService.isGlobal());
             //editTechnical
             if (Objects.isNull(info))
                 info = new TechnologyInfo();
@@ -303,7 +302,7 @@ public class BusinessService implements Approvable {
             if (operator != null) {
                 info.setTechnicalOperator(operator);
             }
-
+            info.setGlobal(publicService.isGlobal());
             User user = AdminUtils.getUserData();
             String userId = user.getUserId();
             //判断独立部署和多租户
