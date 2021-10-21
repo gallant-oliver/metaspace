@@ -526,14 +526,14 @@ public interface DatabaseInfoDAO {
 
     @Select("<script>" +
             " SELECT count(*)over() total,db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,'hive' as source_id,db.database_description,db.owner FROM db_info as db" +
-            " WHERE db.status = 'ACTIVE' and db.database_guid in (select database_guid from database_group_relation where source_id=#{sourceId}"+
+            " WHERE db.status = 'ACTIVE' "+
             " <if test='groupIds != null and groupIds.size() > 0'>" +
-            " and group_id in " +
+            " and db.database_guid in (select database_guid from database_group_relation where source_id=#{sourceId} and group_id in " +
             "<foreach collection='groupIds' item='id' separator=',' open='(' close=')'>"+
             "#{id}"+
             "</foreach>" +
-            " </if>"+
             ")"+
+            " </if>"+
             " AND db.db_type = 'HIVE' AND db.database_name in " +
             " <foreach collection='hiveList' item='item' separator=',' open='(' close=')'>" +
             "  #{item}" +
