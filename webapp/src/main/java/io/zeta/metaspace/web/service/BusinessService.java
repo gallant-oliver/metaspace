@@ -102,8 +102,6 @@ public class BusinessService implements Approvable {
     @Autowired
     TenantService tenantService;
     @Autowired
-    RoleService roleService;
-    @Autowired
     ColumnPrivilegeDAO columnPrivilegeDAO;
     @Autowired
     MetaDataService metaDataService;

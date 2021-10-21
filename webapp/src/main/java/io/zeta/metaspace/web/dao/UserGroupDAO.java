@@ -1422,12 +1422,17 @@ public interface UserGroupDAO {
     @Select({"<script>",
             "select distinct read,edit_category as editCategory,edit_item as editItem FROM category_group_relation " +
             "WHERE category_id = #{guid}"+
-            "<if test='userGroupIds != null and userGroupIds.size()>0'>" +
-            " and group_id in "+
-            "<foreach collection='userGroupIds' item='id' index='index' separator=',' open='(' close=')'>",
-            "#{id}",
-            "</foreach>"+
-            "</if>" +
+            "<choose>" +
+            " <when test='userGroupIds != null and userGroupIds.size()>0'>" +
+                " and group_id in "+
+                "<foreach collection='userGroupIds' item='id' index='index' separator=',' open='(' close=')'>",
+                "#{id}",
+                "</foreach>"+
+            " </when>" +
+            " <otherwise>" +
+            "   and category_id is null" +
+            " </otherwise>" +
+            "</choose>" +
             "</script>"})
     public List<UserGroupPrivilege> getCataUserGroupPrivilege(@Param("guid") String guid, @Param("userGroupIds") List<String> userGroupIds);
 

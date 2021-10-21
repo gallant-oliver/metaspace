@@ -24,7 +24,8 @@ public enum BusinessType {
     COMPOSITE_INDEX("3","复合指标"),
     DATABASE_INFO_REGISTER("4","数据库登记"),
     BUSINESSCATALOGUE("5","业务目录"),
-    BUSINESS_OBJECT("6","业务对象");
+    BUSINESS_OBJECT("6","业务对象"),
+    INDEXCATALOGUE("7","指标目录");
 
 
 
