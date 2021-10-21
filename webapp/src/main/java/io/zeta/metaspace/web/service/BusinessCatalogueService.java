@@ -179,7 +179,11 @@ public class BusinessCatalogueService implements Approvable {
                 //目录是否需要发布，如果需要发布，则需要选择审批组,记录审批信息
                 if (publish) {
                     LOG.info("发起审批:" + approveGroupId);
-                    this.approveItems(approveId,tenantId, entity, ApproveType.PUBLISH.getCode(), BusinessType.BUSINESSCATALOGUE, approveGroupId);
+                    BusinessType businessType=BusinessType.BUSINESSCATALOGUE;
+                    if(type==5){//指标目录
+                        businessType=BusinessType.INDEXCATALOGUE;
+                    }
+                    this.approveItems(approveId,tenantId, entity, ApproveType.PUBLISH.getCode(), businessType, approveGroupId);
                 }
                 return oneLevelCategory;
             }else {
@@ -205,7 +209,11 @@ public class BusinessCatalogueService implements Approvable {
                 //目录是否需要发布，如果需要发布，则需要选择审批组,记录审批信息
                 if (publish) {
                     LOG.info("发起审批:" + approveGroupId);
-                    this.approveItems(approveId,tenantId, entity, ApproveType.PUBLISH.getCode(), BusinessType.BUSINESSCATALOGUE, approveGroupId);
+                    BusinessType businessType=BusinessType.BUSINESSCATALOGUE;
+                    if(type==5){//指标目录
+                        businessType=BusinessType.INDEXCATALOGUE;
+                    }
+                    this.approveItems(approveId,tenantId, entity, ApproveType.PUBLISH.getCode(), businessType, approveGroupId);
                 }
 
                 return returnEntity;
@@ -454,15 +462,17 @@ public class BusinessCatalogueService implements Approvable {
                 if (StringUtils.isBlank(approveGroupId)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审批组不能为空");
                 }
-                BusinessType businessType=null;
                 String approveType="";
+                BusinessType businessType=BusinessType.BUSINESSCATALOGUE;
+                if(type==5){//指标目录
+                    businessType=BusinessType.INDEXCATALOGUE;
+                }
+
                 if(oldisPublish && !newisPublish){
-                    businessType= BusinessType.BUSINESSCATALOGUE;
                     approveType=ApproveType.OFFLINE.getCode();
                     entity.setPublish(false);
                 }
                 if(!oldisPublish && newisPublish){
-                    businessType=BusinessType.BUSINESSCATALOGUE;
                     approveType=ApproveType.PUBLISH.getCode();
                     entity.setPublish(true);
                 }
@@ -1093,6 +1103,12 @@ public class BusinessCatalogueService implements Approvable {
                     }
                     CategoryPrivilege.Privilege privilege=new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
                     result.setPrivilege(privilege);
+                    UserGroupPrivilege userGroupPrivilege=getCataPrivilege(userGroupIds,guid);
+                    if(null !=userGroupPrivilege) {
+                        result.setEditCategory(userGroupPrivilege.getEditCategory());
+                        result.setEditItem(userGroupPrivilege.getEditItem());
+                        result.setRead(userGroupPrivilege.getRead());
+                    }
                     valuesList.add(result);
                 }else {
                     UserGroupPrivilege userGroupPrivilege=getCataPrivilege(userGroupIds,guid);
@@ -1180,10 +1196,10 @@ public class BusinessCatalogueService implements Approvable {
         if(list==null || list.size()==0 ){
             return  null;
         }
+        privilege.setRead(false);
+        privilege.setEditCategory(false);
+        privilege.setEditItem(false);
         for(UserGroupPrivilege cp:list){
-            privilege.setRead(false);
-            privilege.setEditCategory(false);
-            privilege.setEditItem(false);
             if(cp.getEditCategory()){
                 privilege.setEditCategory(true);
             }
