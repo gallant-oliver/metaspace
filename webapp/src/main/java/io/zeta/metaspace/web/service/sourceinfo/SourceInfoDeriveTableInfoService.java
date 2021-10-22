@@ -101,6 +101,9 @@ public class SourceInfoDeriveTableInfoService {
         BeanUtils.copyProperties(sourceInfoDeriveTableColumnDto, sourceInfoDeriveTableInfo);
         // 字段
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
+        if(CollectionUtils.isEmpty(sourceInfoDeriveColumnInfos)){
+            sourceInfoDeriveColumnInfos = new ArrayList<>();
+        }
 
         // 英文名设置为小写
         sourceInfoDeriveTableInfo.setTableNameEn(sourceInfoDeriveTableInfo.getTableNameEn().toLowerCase());
@@ -146,8 +149,10 @@ public class SourceInfoDeriveTableInfoService {
         }).collect(Collectors.toList());
 
         this.save(sourceInfoDeriveTableInfo);
-        sourceInfoDeriveColumnInfoService.saveBatch(sourceInfoDeriveColumnInfos);
-        sourceInfoDeriveTableColumnRelationService.saveBatch(sourceInfoDeriveTableColumnRelationList);
+        if(!CollectionUtils.isEmpty(sourceInfoDeriveColumnInfos)){
+            sourceInfoDeriveColumnInfoService.saveBatch(sourceInfoDeriveColumnInfos);
+            sourceInfoDeriveTableColumnRelationService.saveBatch(sourceInfoDeriveTableColumnRelationList);
+        }
 
         // 提交：新增业务对象-表关系(关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表)
         if (DeriveTableStateEnum.COMMIT.getState() == sourceInfoDeriveTableInfo.getState()) {
@@ -275,7 +280,7 @@ public class SourceInfoDeriveTableInfoService {
 
         this.saveOrUpdate(sourceInfoDeriveTableInfo);
         // 有新增的列入库
-        if (!CollectionUtils.isEmpty(sourceInfoDeriveColumnInfos)) {
+         if (!CollectionUtils.isEmpty(sourceInfoDeriveColumnInfos)) {
             sourceInfoDeriveColumnInfoService.saveOrUpdateBatch(sourceInfoDeriveColumnInfos);
         }
         sourceInfoDeriveTableColumnRelationService.saveOrUpdateBatch(sourceInfoDeriveTableColumnRelationList);
@@ -1054,8 +1059,8 @@ public class SourceInfoDeriveTableInfoService {
      * @param tenantId
      * @return
      */
-    public SourceInfoDeriveTableInfo getTableByIdAndGuid(String id, String guid, String tenantId) {
-        return sourceInfoDeriveTableInfoDao.getByIdAndGuidAndTenantId(id, guid, tenantId);
+    public SourceInfoDeriveTableInfo getTableByIdAndGuid(String id, String tenantId) {
+        return sourceInfoDeriveTableInfoDao.getByIdAndGuidAndTenantId(id, tenantId);
     }
 
     /**
