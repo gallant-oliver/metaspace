@@ -128,28 +128,17 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTenantIdList");
             }
             List<TenantExtInfo> tenants =  new ArrayList<>();
-            //查看是否配置全局权限，配置则查看所有租户信息，否则只显示当前租户
-            if( metadataService.isConfigGloble() ){
-                List<Tenant> tenantList = tenantService.getTenants();
-                if(CollectionUtils.isNotEmpty(tenantList)){
-                    TenantExtInfo tenant = null;
-                    for(Tenant item : tenantList){
-                        tenant = new TenantExtInfo();
-                        tenant.setTenantId(item.getTenantId());
-                        tenant.setProjectName(item.getProjectName());
-                        tenant.setBizTreeId(EntityUtil.generateBusinessId(item.getTenantId(),"","",""));
-                        tenants.add(tenant);
-                    }
+            List<Tenant> tenantList = tenantService.getTenants();
+            if(CollectionUtils.isNotEmpty(tenantList)){
+                TenantExtInfo tenant = null;
+                for(Tenant item : tenantList){
+                    tenant = new TenantExtInfo();
+                    tenant.setTenantId(item.getTenantId());
+                    tenant.setProjectName(item.getProjectName());
+                    tenant.setBizTreeId(EntityUtil.generateBusinessId(item.getTenantId(),"","",""));
+                    tenants.add(tenant);
                 }
-            }else{
-                String name = tenantService.getNameById(tenantId);
-                TenantExtInfo tenant = new TenantExtInfo();
-                tenant.setTenantId(tenantId);
-                tenant.setProjectName(name);
-                tenant.setBizTreeId(EntityUtil.generateBusinessId(tenantId,"","",""));
-                tenants.add(tenant);
             }
-
             return tenants;
         } finally {
             AtlasPerfTracer.log(perf);
