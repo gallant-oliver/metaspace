@@ -83,6 +83,7 @@ public class CalciteParseSqlTools {
 
         DataSourceInfo dataSourceInfo = new DataSourceInfo();
         //获取表字段信息
+        dataSourceInfo.setSourceId(config.getName());
         dataSourceInfo.setIp(config.getDbIp());
         dataSourceInfo.setPort(config.getDbPort()+"");
         dataSourceInfo.setUserName(username);
