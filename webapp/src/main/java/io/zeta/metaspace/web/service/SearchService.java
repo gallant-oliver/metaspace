@@ -100,18 +100,45 @@ public class SearchService {
     @Autowired
     private DataSourceDAO dataSourceDAO;
 
-    public PageResult<Database> getDatabases(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount) {
+    public PageResult<Database> queryDatabases(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount,boolean isPublic) {
+        PageResult<Database> databasePageResult = null;
+        //公共服务，
+        if(isPublic){
+            //全局权限
+            if(metaDataService.isConfigGloble()){
+                databasePageResult = getDatabaseData( sourceId,  offset,  limit,  query,  tenantId,  queryCount,true);
+            }else{
+                //非全局，只能查看权限下数据
+                databasePageResult = getDatabases( sourceId,  offset,  limit,  query,  tenantId,  queryCount);
+            }
+        }else{
+            databasePageResult = getDatabases( sourceId,  offset,  limit,  query,  tenantId,  queryCount);
+        }
+
+        return databasePageResult;
+
+    }
+    public PageResult<Database> getDatabases(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount){
+        PageResult<Database> databasePageResult = getDatabaseData( sourceId,  offset,  limit,  query,  tenantId,  queryCount,false);
+        return databasePageResult;
+    }
+
+    private PageResult<Database> getDatabaseData(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount,boolean isGlobal) {
         try {
             List<String> dbList;
             PageResult<Database> databasePageResult = new PageResult<>();
             List<Database> databaseList;
-            //获取当前租户下用户所属用户组
-            User user = AdminUtils.getUserData();
-            List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
-            if (CollectionUtils.isEmpty(groups)) {
-                return databasePageResult;
+            List<String> groupIds = null;
+            if(!isGlobal){
+                //获取当前租户下用户所属用户组
+                User user = AdminUtils.getUserData();
+                List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+                if (CollectionUtils.isEmpty(groups)) {
+                    return databasePageResult;
+                }
+                groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
             }
-            List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
+
             if (StringUtils.isEmpty(sourceId)) {
                 dbList = tenantService.getDatabase(tenantId);
                 if (CollectionUtils.isEmpty(dbList)) {
