@@ -527,40 +527,19 @@ public class MetaDataService {
             }
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
-            //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                try {
-                    List<Role> roles = userDAO.getRoleByUserId(AdminUtils.getUserData().getUserId());
-                    if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))) {
-                        table.setEdit(true);
-                    } else {
-                        List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
-                        for (Module module : modules) {
-                            if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
-                                if (table.getTablePermission().isWrite()) {
-                                    table.setEdit(true);
-                                    break;
-                                }
-                            }
-                        }
+
+            try {
+                List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
+                boolean edit = false;
+                if (categoryIds.size() > 0) {
+                    int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds, tenantId);
+                    if (count > 0) {
+                        edit = true;
                     }
-                } catch (Exception e) {
-                    LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
                 }
-            } else {
-                try {
-                    List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
-                    boolean edit = false;
-                    if (categoryIds.size() > 0) {
-                        int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds, tenantId);
-                        if (count > 0) {
-                            edit = true;
-                        }
-                    }
-                    table.setEdit(edit);
-                } catch (Exception e) {
-                    LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
-                }
+                table.setEdit(edit);
+            } catch (Exception e) {
+                LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
             }
 
             //1.4新增

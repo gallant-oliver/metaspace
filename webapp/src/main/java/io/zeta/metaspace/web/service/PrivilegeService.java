@@ -17,15 +17,11 @@
 package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.PrivilegeHeader;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
-import io.zeta.metaspace.model.privilege.SystemPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.web.dao.PrivilegeDAO;
-import io.zeta.metaspace.web.dao.RoleDAO;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
@@ -35,7 +31,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -79,22 +74,8 @@ public class PrivilegeService {
             if(Objects.nonNull(modules)) {
                 privilegeDAO.addModule2Privilege(privilegeId, modules);
             }
-            if(Objects.nonNull(roleIds)) {
-                privilegeDAO.updateRolePrivilege(privilegeId, roleIds);
-            }
             privilegeDAO.addPrivilege(privilege);
 
-
-            if(!modules.contains(ModuleEnum.BUSINESS.getId()) && !modules.contains(ModuleEnum.BUSINESSEDIT) && !modules.contains(ModuleEnum.BUSINESSMANAGE)) {
-                for(String roleId : roleIds) {
-                    privilegeDAO.deleteRole2Category(roleId, BUSINESS_TYPE);
-                }
-            }
-            if(!modules.contains(ModuleEnum.TECHNICAL) && !modules.contains(ModuleEnum.TECHNICALEDIT)) {
-                for(String roleId: roleIds) {
-                    privilegeDAO.deleteRole2Category(roleId, TECHNICAL_TYPE);
-                }
-            }
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -125,17 +106,6 @@ public class PrivilegeService {
             //删除privilege2module
             privilegeDAO.deletePrivilege2Module(privilegeId);
 
-            List<Role> roleList = privilegeDAO.getRoleByPrivilegeId(privilegeId);
-            List<String> roleIds = new ArrayList<>();
-            //删除该privilege下的role关联的category
-            privilegeDAO.deleteRole2Category(privilegeId, BUSINESS_TYPE);
-            privilegeDAO.deleteRole2Category(privilegeId, TECHNICAL_TYPE);
-
-            roleList.forEach(role -> roleIds.add(role.getRoleId()));
-            //删除privilege后将role中分配该privilege的修改为Guet的privilege
-            String guetPrivigeId = SystemPrivilege.GUEST.getCode();
-            privilegeDAO.updateRolePrivilege(guetPrivigeId, roleIds);
-
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -156,26 +126,6 @@ public class PrivilegeService {
             privilegeDAO.updatePrivilege(privilege);
             List<Integer> moduleIds = privilege.getModules();
             List<String> roleIds = privilege.getRoles();
-
-            if(!moduleIds.contains(ModuleEnum.BUSINESS.getId()) && !moduleIds.contains(ModuleEnum.BUSINESSEDIT) && !moduleIds.contains(ModuleEnum.BUSINESSMANAGE)) {
-                for(String roleId : roleIds) {
-                    privilegeDAO.deleteRole2Category(roleId, BUSINESS_TYPE);
-                }
-            }
-            if(!moduleIds.contains(ModuleEnum.TECHNICAL) && !moduleIds.contains(ModuleEnum.TECHNICALEDIT)) {
-                for(String roleId: roleIds) {
-                    privilegeDAO.deleteRole2Category(roleId, TECHNICAL_TYPE);
-                }
-            }
-
-            String guetPrivigeId = SystemPrivilege.GUEST.getCode();
-            //将拥有该privilege的role更新为guet的privilege
-            privilegeDAO.deleteRelatedRoleByPrivilegeId(privilegeId, guetPrivigeId);
-
-            //更新role的privilege
-            if(Objects.nonNull(roleIds) && roleIds.size() > 0)
-                privilegeDAO.updateRoleWithNewPrivilege(privilegeId, roleIds.toArray(new String[roleIds.size()]));
-
             //module
             privilegeDAO.deleteModule2PrivilegeById(privilegeId);
             if(Objects.nonNull(moduleIds) && moduleIds.size()>0)
@@ -200,10 +150,10 @@ public class PrivilegeService {
             if(Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             privilegeList = privilegeDAO.getPrivilegeList(query, limit, offset);
-            for(PrivilegeInfo info : privilegeList) {
-                List<Role> roleList = privilegeDAO.getRoleByPrivilegeId(info.getPrivilegeId());
-                info.setRoles(roleList);
-            }
+//            for(PrivilegeInfo info : privilegeList) {
+//                List<Role> roleList = privilegeDAO.getRoleByPrivilegeId(info.getPrivilegeId());
+//                info.setRoles(roleList);
+//            }
             long privilegetotalSize = 0;
             if (privilegeList.size()!=0){
                 privilegetotalSize = privilegeList.get(0).getTotal();
@@ -221,10 +171,6 @@ public class PrivilegeService {
     public PrivilegeInfo getPrivilegeInfo(String privilegeId) throws AtlasBaseException {
         try {
             PrivilegeInfo privilege = privilegeDAO.getPrivilegeInfo(privilegeId);
-            //roles
-            List<Role> roleList = privilegeDAO.getRelatedRoleWithPrivilege(privilegeId);
-            if(Objects.nonNull(roleList))
-                privilege.setRoles(roleList);
             //modules
             List<Module> moduleList = privilegeDAO.getRelatedModuleWithPrivilege(privilegeId);
             if(Objects.nonNull(moduleList))
@@ -236,23 +182,23 @@ public class PrivilegeService {
         }
     }
 
-    public PageResult<Role> getAllPermissionRole(Parameters parameters) throws AtlasBaseException {
-        try {
-            int limit = parameters.getLimit();
-            int offset = parameters.getOffset();
-            PageResult<Role> pageResult = new PageResult<>();
-            List<Role> roleList = privilegeDAO.getAllPermissionRole(limit, offset);
-            long totalSize = 0;
-            if (roleList.size()!=0){
-                totalSize = roleList.get(0).getTotal();
-            }
-            pageResult.setLists(roleList);
-            pageResult.setCurrentSize(roleList.size());
-            pageResult.setTotalSize(totalSize);
-            return pageResult;
-        } catch (Exception e) {
-            LOG.error("获取角色列表失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取角色列表失败");
-        }
-    }
+//    public PageResult<Role> getAllPermissionRole(Parameters parameters) throws AtlasBaseException {
+//        try {
+//            int limit = parameters.getLimit();
+//            int offset = parameters.getOffset();
+//            PageResult<Role> pageResult = new PageResult<>();
+//            List<Role> roleList = privilegeDAO.getAllPermissionRole(limit, offset);
+//            long totalSize = 0;
+//            if (roleList.size()!=0){
+//                totalSize = roleList.get(0).getTotal();
+//            }
+//            pageResult.setLists(roleList);
+//            pageResult.setCurrentSize(roleList.size());
+//            pageResult.setTotalSize(totalSize);
+//            return pageResult;
+//        } catch (Exception e) {
+//            LOG.error("获取角色列表失败", e);
+//            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取角色列表失败");
+//        }
+//    }
 }

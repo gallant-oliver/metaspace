@@ -42,7 +42,6 @@ import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.metadata.BaseFields;
 import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
 import io.zeta.metaspace.web.util.*;
-import jnr.ffi.Struct;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -1052,25 +1051,21 @@ public class DataSourceService {
      */
     public List<UserIdAndName> getManager(String tenantId) throws AtlasBaseException {
         try {
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                return dataSourceDAO.getManager();
-            } else {
-                SecuritySearch securitySearch = new SecuritySearch();
-                securitySearch.setTenantId(tenantId);
-                PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
-                List<UserIdAndName> users = new ArrayList<>();
-                for (UserAndModule userAndModule : userAndModules.getLists()) {
-                    if (!userAndModule.getToolRoleResources().stream().anyMatch(module -> ModuleEnum.DATASOURCE.getAlias().equalsIgnoreCase(module.getRoleName()))) {
-                        continue;
-                    }
-                    UserIdAndName user = new UserIdAndName();
-                    user.setUserName(userAndModule.getUserName());
-                    user.setAccount(userAndModule.getEmail());
-                    user.setUserId(userDAO.getUserIdByAccount(userAndModule.getEmail()));
-                    users.add(user);
+            SecuritySearch securitySearch = new SecuritySearch();
+            securitySearch.setTenantId(tenantId);
+            PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
+            List<UserIdAndName> users = new ArrayList<>();
+            for (UserAndModule userAndModule : userAndModules.getLists()) {
+                if (!userAndModule.getToolRoleResources().stream().anyMatch(module -> ModuleEnum.DATASOURCE.getAlias().equalsIgnoreCase(module.getRoleName()))) {
+                    continue;
                 }
-                return users;
+                UserIdAndName user = new UserIdAndName();
+                user.setUserName(userAndModule.getUserName());
+                user.setAccount(userAndModule.getEmail());
+                user.setUserId(userDAO.getUserIdByAccount(userAndModule.getEmail()));
+                users.add(user);
             }
+            return users;
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
