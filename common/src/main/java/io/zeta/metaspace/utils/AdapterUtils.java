@@ -121,7 +121,7 @@ public class AdapterUtils {
             log.info("数据源配置没有sourceId信息,使用配置生成");
             List<String> connectionConfigList = Arrays.asList(dataSourceInfo.getIp(),dataSourceInfo.getPort(),
                     dataSourceInfo.getUserName(),dataSourceInfo.getPassword(),dataSourceInfo.getDatabase(),dataSourceInfo.getServiceType());
-            dataSourceId = Base64Utils.encodeToString(String.join("-",connectionConfigList).getBytes());
+            dataSourceId = String.join("-",connectionConfigList);
         }
         if (StringUtils.isNotEmpty(dataSourceId) && adapterSourceMap.containsKey(dataSourceId)) {
             adapterSource = adapterSourceMap.get(dataSourceId);
