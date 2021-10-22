@@ -157,7 +157,11 @@ public interface DatabaseInfoDAO {
     DatabaseInfoBO getDatabaseInfoById(@Param("id") String id, @Param("tenantId") String tenantId, @Param("version") int version);
 
     @Select("<script>" +
-            "SELECT id,database_alias " +
+            "SELECT id, database_alias databaseAlias, database_id databaseId, category_id categoryId, data_source_id dataSourceId," +
+            "security, security_cycle securityCycle, " +
+            "bo_department_name boDepartmentName, bo_name boName, bo_email boEmail, bo_tel boTel, " +
+            "to_department_name toDepartmentName, to_name toName, to_email toEmail, to_tel toTel, " +
+            "technical_leader technicalLeader, business_leader businessLeader " +
             "FROM " +
             " source_info " +
             "WHERE\n" +
