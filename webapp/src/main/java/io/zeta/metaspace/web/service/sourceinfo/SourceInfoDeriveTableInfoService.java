@@ -1,37 +1,25 @@
 package io.zeta.metaspace.web.service.sourceinfo;
 
-import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
+import io.zeta.metaspace.model.dto.sourceinfo.SourceInfoDeriveTableColumnDTO;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
-import io.zeta.metaspace.model.result.CategorycateQueryResult;
-import io.zeta.metaspace.model.sourceinfo.derivetable.constant.Constant;
-import io.zeta.metaspace.model.sourceinfo.derivetable.constant.DeriveTableStateEnum;
-import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.MetadataDeriveTableInfo;
-import io.zeta.metaspace.model.sourceinfo.derivetable.vo.BusinessCategory;
-import io.zeta.metaspace.model.sourceinfo.derivetable.vo.CategoryGuidPath;
-import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceBusinessInfo;
-import io.zeta.metaspace.model.sourceinfo.derivetable.vo.DeriveTableVersion;
-import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceColumnEntity;
-import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceInfoDeriveColumnVO;
-import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceInfoDeriveTableColumnVO;
-import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceInfoDeriveTableVO;
-import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceTableEntity;
-import io.zeta.metaspace.model.sourceinfo.derivetable.vo.TechnicalCategory;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
+import io.zeta.metaspace.model.result.CategorycateQueryResult;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.sourceinfo.derivetable.constant.Constant;
+import io.zeta.metaspace.model.sourceinfo.derivetable.constant.DeriveTableStateEnum;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveColumnInfo;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableColumnRelation;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
+import io.zeta.metaspace.model.sourceinfo.derivetable.vo.*;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.web.dao.BusinessDAO;
-import io.zeta.metaspace.web.dao.CategoryDAO;
-import io.zeta.metaspace.web.dao.ColumnDAO;
-import io.zeta.metaspace.web.dao.DbDAO;
-import io.zeta.metaspace.web.dao.SourceInfoDeriveTableInfoDAO;
-import io.zeta.metaspace.web.dao.TableDAO;
+import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.rest.BusinessREST;
 import io.zeta.metaspace.web.rest.TechnicalREST;
 import io.zeta.metaspace.web.service.DataSourceService;
@@ -39,10 +27,6 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveColumnInfo;
-import io.zeta.metaspace.model.dto.sourceinfo.SourceInfoDeriveTableColumnDTO;
-import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableColumnRelation;
-import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +40,6 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -588,7 +571,7 @@ public class SourceInfoDeriveTableInfoService {
             sourceColumnEntity.setSourceColumnGuid(e.getColumnId());
             sourceColumnEntity.setSourceColumnNameEn(e.getColumnName());
             sourceColumnEntity.setSourceColumnNameZh(e.getDescription());
-            sourceColumnEntity.setSourceColumnType(e.getType());
+            sourceColumnEntity.setSourceColumnType(e.getType() != null ? e.getType().toLowerCase() : "");
             sourceColumnEntity.setSourceTableGuid(tableInfo.getTableGuid());
             sourceColumnEntity.setSourceTableNameEn(tableInfo.getTableName());
             sourceColumnEntity.setSourceTableNameZh(tableInfo.getDescription());
@@ -968,6 +951,9 @@ public class SourceInfoDeriveTableInfoService {
     }
 
     public Result checkAddOrEditDeriveTableEntity(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String tenantId) throws SQLException {
+        if(!sourceInfoDeriveTableColumnDto.isSubmit()){
+            return ReturnUtil.success();
+        }
 
         // 源信息登记数据源类型的参数
         String sourceInfoDbTypeKey = "dbr";
