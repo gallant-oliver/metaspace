@@ -2122,52 +2122,6 @@ CREATE TABLE "public"."report_userrule2threshold" (
 ;
 
 -- ----------------------------
--- Table structure for role
--- ----------------------------
-DROP TABLE IF EXISTS "public"."role";
-CREATE TABLE "public"."role" (
-  "roleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-  "rolename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "privilegeid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "updatetime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "status" int2,
-  "createtime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "disable" int2,
-  "delete" int2,
-  "edit" int2,
-  "valid" bool,
-  "creator" varchar COLLATE "pg_catalog"."default",
-  "updater" varchar COLLATE "pg_catalog"."default"
-)
-;
-COMMENT ON COLUMN "public"."role"."roleid" IS '角色id';
-COMMENT ON COLUMN "public"."role"."rolename" IS '角色名';
-COMMENT ON COLUMN "public"."role"."description" IS '角色描述';
-COMMENT ON COLUMN "public"."role"."privilegeid" IS '方案id';
-COMMENT ON COLUMN "public"."role"."updatetime" IS '角色更新时间';
-COMMENT ON COLUMN "public"."role"."status" IS '角色是否启用，0未启用，1已启用';
-COMMENT ON COLUMN "public"."role"."createtime" IS '创建时间';
-COMMENT ON COLUMN "public"."role"."disable" IS '是否可禁用';
-COMMENT ON COLUMN "public"."role"."delete" IS '是否可删除';
-COMMENT ON COLUMN "public"."role"."edit" IS '是否可编辑';
-COMMENT ON COLUMN "public"."role"."valid" IS '角色是否有效';
-COMMENT ON COLUMN "public"."role"."creator" IS '创建者';
-COMMENT ON COLUMN "public"."role"."updater" IS '更新者';
-
--- ----------------------------
--- Table structure for role2category
--- ----------------------------
-DROP TABLE IF EXISTS "public"."role2category";
-CREATE TABLE "public"."role2category" (
-  "roleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-  "categoryid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-  "operation" int2
-)
-;
-COMMENT ON COLUMN "public"."role2category"."operation" IS '是否允许操作，0不允许，1允许';
-
--- ----------------------------
 -- Table structure for rule2buildtype
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."rule2buildtype";
@@ -2755,16 +2709,6 @@ CREATE TABLE "public"."user2apistar" (
 ;
 
 -- ----------------------------
--- Table structure for user2role
--- ----------------------------
-DROP TABLE IF EXISTS "public"."user2role";
-CREATE TABLE "public"."user2role" (
-  "userid" varchar(225) COLLATE "pg_catalog"."default" NOT NULL,
-  "roleid" varchar(225) COLLATE "pg_catalog"."default" NOT NULL
-)
-;
-
--- ----------------------------
 -- Table structure for user_group
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."user_group";
@@ -3325,16 +3269,6 @@ ALTER TABLE "public"."report_userrule" ADD CONSTRAINT "report_ruleresult_pkey" P
 ALTER TABLE "public"."report_userrule2threshold" ADD CONSTRAINT "report_threshold_value_pkey" PRIMARY KEY ("thresholdvalue", "ruleid");
 
 -- ----------------------------
--- Primary Key structure for table role
--- ----------------------------
-ALTER TABLE "public"."role" ADD CONSTRAINT "role_pkey" PRIMARY KEY ("roleid");
-
--- ----------------------------
--- Primary Key structure for table role2category
--- ----------------------------
-ALTER TABLE "public"."role2category" ADD CONSTRAINT "role2category_pkey" PRIMARY KEY ("roleid", "categoryid");
-
--- ----------------------------
 -- Primary Key structure for table rule2buildtype
 -- ----------------------------
 ALTER TABLE "public"."rule2buildtype" ADD CONSTRAINT "rule2buildtype_pkey" PRIMARY KEY ("ruleid", "buildtype");
@@ -3515,11 +3449,6 @@ ALTER TABLE "public"."time_limit" ADD CONSTRAINT "timelimit_pkey" PRIMARY KEY ("
 ALTER TABLE "public"."user2apistar" ADD CONSTRAINT "user2apistar_pkey" PRIMARY KEY ("apiguid", "userid");
 
 -- ----------------------------
--- Primary Key structure for table user2role
--- ----------------------------
-ALTER TABLE "public"."user2role" ADD CONSTRAINT "user2role_pkey" PRIMARY KEY ("userid", "roleid");
-
--- ----------------------------
 -- Primary Key structure for table users
 -- ----------------------------
 ALTER TABLE "public"."users" ADD CONSTRAINT "user_pkey" PRIMARY KEY ("userid");
@@ -3604,12 +3533,6 @@ INSERT INTO "public"."statisticaltype" VALUES (2, '数据表总量');
 INSERT INTO "public"."statisticaltype" VALUES (3, '业务对象总量');
 INSERT INTO "public"."statisticaltype" VALUES (4, '业务对象已补充');
 INSERT INTO "public"."statisticaltype" VALUES (5, '业务对象未补充');
-INSERT INTO "public"."role" VALUES ('4', '业务', '业务数据负责人', '4', to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, 0, 1, true);
-INSERT INTO "public"."role" VALUES ('5', '技术', '技术数据负责人', '5', to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, 0, 1, true);
-INSERT INTO "public"."role" VALUES ('1', '平台管理员', '平台管理员', '1', to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 0, 0, 0, true);
-INSERT INTO "public"."role" VALUES ('3', '管理员', '管理员', '3', to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, 0, 1, true);
-INSERT INTO "public"."role" VALUES ('6', '业务目录管理员', '业务目录管理员', '6', to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, 0, 1, true);
-INSERT INTO "public"."role" VALUES ('7', '技术目录管理员', '技术目录管理员', '7', to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, to_char(current_timestamp, 'yyyy-mm-dd hh24:mi:ss'), 1, 0, 1, true);
 INSERT INTO "public"."module" VALUES (5, '业务对象管理', 1);
 INSERT INTO "public"."module" VALUES (6, '权限', 1);
 INSERT INTO "public"."module" VALUES (7, '元数据管理', 1);
@@ -3848,5 +3771,3 @@ INSERT INTO "public"."api_module" VALUES ('authorization', 'OPTION', 19, 't');
 INSERT INTO "public"."api_module" VALUES ('businesses', 'OPTION', 2, 't');
 INSERT INTO "public"."api_module" VALUES ('userGroups', 'OPTION', 16, 't');
 INSERT INTO "public"."api_module" VALUES ('technical', 'OPTION', 1, 't');
-
-INSERT INTO "public"."user2role"("userid","roleid") VALUES ('1', '1');

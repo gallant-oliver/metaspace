@@ -224,7 +224,7 @@ public class RuleService {
 
     public List<CategoryPrivilege> getAll(Integer categoryType,String tenantId) throws AtlasBaseException {
         try {
-            List<CategoryPrivilege> resultList = TenantService.defaultTenant.equals(tenantId) ?dataManageService.getAll(categoryType) : dataManageService.getAllByUserGroup(categoryType, tenantId) ;
+            List<CategoryPrivilege> resultList = dataManageService.getAllByUserGroup(categoryType, tenantId) ;
             String parentPattern = "^rule_([0-9])";
             for (CategoryPrivilege res : resultList) {
                 if (res.getGuid().matches(parentPattern)){
