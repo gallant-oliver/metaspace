@@ -209,8 +209,7 @@ public interface DatabaseInfoDAO {
             " (SELECT u.username FROM users u WHERE u.userid = s.updater ) AS updater_name,\n" +
             " s.update_time,\n" +
             " ai.reason as audit_des ,\n" +
-            " (SELECT u.username FROM users u WHERE u.userid = ai.approver ) AS auditor_name,\n" +
-            " s.bo_department_name as boDepartmentName\n" +
+            " (SELECT u.username FROM users u WHERE u.userid = ai.approver ) AS auditor_name\n" +
             "FROM\n" +
             " source_info s LEFT JOIN category c ON s.category_id = c.guid AND \n" +
             " c.tenantid = s.tenant_id\n" +
@@ -497,14 +496,14 @@ public interface DatabaseInfoDAO {
             "(SELECT source_name FROM public.data_source where source_id=sd.source_id limit 1) as sourceName "+
            " FROM db_info as db INNER JOIN source_db as sd on db.database_guid = sd.db_guid" +
             " WHERE db.status = 'ACTIVE' AND sd.source_id = #{sourceId}" +
+           " <if test='groupIds!=null and groupIds.size() > 0'>" +
             " and db.database_guid in (select database_guid from database_group_relation where source_id=#{sourceId}"+
-            " <if test='groupIds!=null and groupIds.size() > 0'>" +
             " and group_id in " +
             "<foreach collection='groupIds' item='id' separator=',' open='(' close=')'>"+
             "#{id}"+
             "</foreach>" +
-            " </if>" +
             ")"+
+           " </if>" +
             " <if test='limit != -1'>" +
             "  limit #{limit} " +
             " </if>" +
@@ -531,12 +530,14 @@ public interface DatabaseInfoDAO {
 
     @Select("<script>" +
             " SELECT count(*)over() total,db.database_guid as databaseId,db.database_name as databaseName,db.db_type,db.status,'hive' as source_id,db.database_description,db.owner FROM db_info as db" +
-            " WHERE db.status = 'ACTIVE' and db.database_guid in (select database_guid from database_group_relation where source_id=#{sourceId}"+
-            " and group_id in " +
+            " WHERE db.status = 'ACTIVE' "+
+            " <if test='groupIds != null and groupIds.size() > 0'>" +
+            " and db.database_guid in (select database_guid from database_group_relation where source_id=#{sourceId} and group_id in " +
             "<foreach collection='groupIds' item='id' separator=',' open='(' close=')'>"+
             "#{id}"+
             "</foreach>" +
             ")"+
+            " </if>"+
             " AND db.db_type = 'HIVE' AND db.database_name in " +
             " <foreach collection='hiveList' item='item' separator=',' open='(' close=')'>" +
             "  #{item}" +

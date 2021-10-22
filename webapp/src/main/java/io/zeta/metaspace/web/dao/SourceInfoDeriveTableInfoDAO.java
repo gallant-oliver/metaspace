@@ -224,7 +224,7 @@ public interface SourceInfoDeriveTableInfoDAO {
             "WHERE\n" +
             " table_name_en = #{tableName}\n" +
             "AND db_id = #{databaseId} \n" +
-            "AND tenant_id = #{tenantId}")
+            "AND tenant_id = #{tenantId} AND  version=-1 LIMIT 1 ")
     SourceInfoDeriveTableInfo getByNameAndDbGuid(@Param("tableName") String tableName, @Param("databaseId") String databaseId, @Param("tenantId") String tenantId);
 
     @Select("select importance,security from source_info_derive_table_info where table_guid=#{tableGuid} AND tenant_id = #{tenantId} ")

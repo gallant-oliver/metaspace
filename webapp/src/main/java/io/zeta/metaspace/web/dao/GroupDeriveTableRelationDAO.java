@@ -52,24 +52,26 @@ public interface GroupDeriveTableRelationDAO {
     @Update("<script>" +
             "INSERT INTO group_table_relation ( ID, derive_table_id, importance_privilege, user_group_id, tenant_id ) " +
             "VALUES " +
-            " <foreach item='relation' index='index' collection='relations' separator=',' open='(' close=')'>" +
-            " ( #{ relation.id }, #{ relation.deriveTableId }, TRUE, #{ relation.userGroupId }, #{ relation.tenantId } ) ON conflict ( user_group_id, derive_table_id, tenant_id ) " +
+            " <foreach item='relation' index='index' collection='relations' separator=','>" +
+            " ( #{ relation.groupTableRelationId }, #{ relation.deriveTableId }, TRUE, #{ relation.userGroupId }, #{ relation.tenantId } )" +
             "</foreach>" +
+            "ON conflict ( user_group_id, derive_table_id, tenant_id ) " +
             "DO " +
             "UPDATE  " +
-            " SET importance_privilege = excluded.importance_privilege" +
+            " SET ID = excluded.ID, importance_privilege = excluded.importance_privilege" +
             "</script>")
     void updateDeriveTableImportancePrivilege(@Param("relations") List<GroupDeriveTableRelation> relationList);
 
     @Update("<script>" +
             "INSERT INTO group_table_relation ( ID, derive_table_id, security_privilege, user_group_id, tenant_id ) " +
             "VALUES " +
-            " <foreach item='relation' index='index' collection='relations' separator=',' open='(' close=')'>" +
-            " ( #{ relation.id }, #{ relation.deriveTableId }, TRUE, #{ relation.userGroupId }, #{ relation.tenantId } ) ON conflict ( user_group_id, derive_table_id, tenant_id ) " +
+            " <foreach item='relation' index='index' collection='relations' separator=','>" +
+            " ( #{ relation.groupTableRelationId }, #{ relation.deriveTableId }, TRUE, #{ relation.userGroupId }, #{ relation.tenantId } ) " +
             "</foreach>" +
+            " ON conflict ( user_group_id, derive_table_id, tenant_id ) " +
             "DO " +
             "UPDATE  " +
-            " SET security_privilege = excluded.security_privilege" +
+            " SET ID = excluded.ID, security_privilege = excluded.security_privilege" +
             "</script>")
     void updateDeriveTableSecurityPrivilege(@Param("relations") List<GroupDeriveTableRelation> relationList);
     
@@ -98,29 +100,38 @@ public interface GroupDeriveTableRelationDAO {
             " c.name AS businessCategoryName " +
             "FROM " +
             " tableinfo ti  " +
-            " INNER JOIN source_info_derive_table_info sidti ON sidti.table_name_en = ti.tablename AND sidti.db_id = ti.databaseguid  " +
+            " INNER JOIN source_info_derive_table_info sidti ON sidti.table_name_en = ti.tablename AND sidti.db_id = ti.databaseguid AND sidti.version = -1 " +
+            "<if test='privilegeType == \"IMPORTANCE\"'>" +
+            "   AND sidti.importance = true  " +
+            "</if>"+
+            "<if test='privilegeType == \"SECURITY\"' >" +
+            "   AND sidti.security = true " +
+            "</if>"+
+            "<if test='privilegeType == \"ALL\"' >" +
+            "   AND (sidti.security = true OR sidti.importance = true  )" +
+            "</if>"+
             " LEFT JOIN business2table bt ON bt.tableguid = ti.tableguid " +
             " LEFT JOIN businessinfo bi ON bi.businessid = bt.businessid " +
             " LEFT JOIN business_relation br ON br.businessid = bi.businessid " +
             " LEFT JOIN category c ON c.guid = br.categoryguid " +
-            " LEFT JOIN group_table_relation gtr ON gtr.derive_table_id = ti.tableguid AND  gtr.user_group_id = #{userGroupId}  " +
-            "<if test='privilegeType == \"IMPORTANCE\" and registerType == false'>" +
-            "   AND ( gtr.importance_privilege != true OR gtr.importance_privilege IS NULL) " +
-            "</if>"+
-            "<if test='privilegeType == \"IMPORTANCE\" and registerType == true'>" +
-            "   AND gtr.importance_privilege = true  " +
-            "</if>"+
-            "<if test='privilegeType == \"SECURITY\" and registerType == false'>" +
-            "   AND (gtr.security_privilege != true OR gtr.security_privilege IS NULL) " +
-            "</if>"+
-            "<if test='privilegeType == \"SECURITY\" and registerType  == true'>" +
-            "   AND gtr.security_privilege = true  " +
-            "</if>"+
-            "<if test='privilegeType == \"ALL\" and registerType == true'>" +
-            "   AND (gtr.security_privilege = true OR gtr.importance_privilege = true) " +
-            "</if>"+
+            " LEFT JOIN group_table_relation gtr ON gtr.derive_table_id = ti.tableguid " +
             "WHERE " +
             " sidti.tenant_id = #{tenantId}  " +
+            "<if test='privilegeType == \"IMPORTANCE\" and registerType == false'>" +
+            "   AND ( (gtr.importance_privilege != true  AND  gtr.user_group_id = #{userGroupId} ) OR gtr.importance_privilege IS NULL)  " +
+            "</if>"+
+            "<if test='privilegeType == \"IMPORTANCE\" and registerType == true'>" +
+            "   AND gtr.importance_privilege = true  AND  gtr.user_group_id = #{userGroupId}  " +
+            "</if>"+
+            "<if test='privilegeType == \"SECURITY\" and registerType == false'>" +
+            "   AND ((gtr.security_privilege != true  AND  gtr.user_group_id = #{userGroupId}  )OR gtr.security_privilege IS NULL) " +
+            "</if>"+
+            "<if test='privilegeType == \"SECURITY\" and registerType  == true'>" +
+            "   AND gtr.security_privilege = true  AND  gtr.user_group_id = #{userGroupId}   " +
+            "</if>"+
+            "<if test='privilegeType == \"ALL\" and registerType == true'>" +
+            "   AND (gtr.security_privilege = true OR gtr.importance_privilege = true)  AND  gtr.user_group_id = #{userGroupId}  " +
+            "</if>"+
             "<if test='tableName != null and tableName !=\"\"'>" +
             " AND sidti.table_name_zh like '%'||#{tableName}||'%' ESCAPE '/' " +
             "</if>" +
