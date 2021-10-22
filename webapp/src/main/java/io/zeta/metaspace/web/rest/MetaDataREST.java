@@ -98,8 +98,8 @@ public class MetaDataREST {
     private TableDAO tableDAO;
     @Autowired
     private DataStandardService dataStandardService;
-
-    private final MetaDataService metadataService;
+    @Autowired
+    private MetaDataService metadataService;
     @Autowired
     private BusinessService businessService;
     @Context
@@ -291,7 +291,7 @@ public class MetaDataREST {
                     limit--;
                 }
             }
-            PageResult<DataSourceHead> pageResult = dataSourceService.searchDataSources(limit, offset, null, null, query, sourceType, null, null, null, true, queryTenantIdParam);
+            PageResult<DataSourceHead> pageResult = dataSourceService.searchPublicDataSources(limit, offset, null, null, query, sourceType, null, null, null, true, queryTenantIdParam);
             List<Tenant> tenants = tenantService.getTenants();
             if(globalConfig){
                 List<DataSourceHead> list = new ArrayList<>();
@@ -383,7 +383,7 @@ public class MetaDataREST {
             if(StringUtils.isNotBlank(bizTreeId)){
                 Map<String, String> map = EntityUtil.decodeBusinessId(bizTreeId);
                 queryTenantIdParam = map.get("tenantId");
-                result = searchService.getDatabases(sourceId, offset, limit, query, queryTenantIdParam, queryTableCount);
+                result = searchService.queryDatabases(sourceId, offset, limit, query, queryTenantIdParam, queryTableCount,true);
                 //如果是查询，则需要补充名称对应的租户额外信息
                 if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
                     Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
@@ -398,7 +398,7 @@ public class MetaDataREST {
             //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
             if(!metadataService.isConfigGloble()){
                 queryTenantIdParam = tenantId;
-                result = searchService.getDatabases(sourceId, offset, limit, query, queryTenantIdParam, queryTableCount);
+                result = searchService.queryDatabases(sourceId, offset, limit, query, queryTenantIdParam, queryTableCount,true);
                 //如果是查询，则需要补充名称对应的租户额外信息
                 if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
                     Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
