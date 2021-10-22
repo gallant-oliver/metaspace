@@ -130,9 +130,8 @@ public class MetaDataREST {
             List<TenantExtInfo> tenants =  new ArrayList<>();
             List<Tenant> tenantList = tenantService.getTenants();
             if(CollectionUtils.isNotEmpty(tenantList)){
-                TenantExtInfo tenant = null;
                 for(Tenant item : tenantList){
-                    tenant = new TenantExtInfo();
+                    TenantExtInfo tenant = new TenantExtInfo();
                     tenant.setTenantId(item.getTenantId());
                     tenant.setProjectName(item.getProjectName());
                     tenant.setBizTreeId(EntityUtil.generateBusinessId(item.getTenantId(),"","",""));
