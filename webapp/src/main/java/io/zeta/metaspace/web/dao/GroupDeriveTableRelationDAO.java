@@ -33,7 +33,7 @@ public interface GroupDeriveTableRelationDAO {
             " </foreach>" +
             " AND tenant_id = #{tenantId}" +
             " </script>")
-    GroupDeriveTableRelation getByTableIdAndGroups(@Param("tableId") String tableId,
+    List<GroupDeriveTableRelation> getByTableIdAndGroups(@Param("tableId") String tableId,
                                                    @Param("userGroupIds") List<String> userGroups,
                                                    @Param("tenantId")String tenantId);
 
@@ -81,7 +81,7 @@ public interface GroupDeriveTableRelationDAO {
             " group_table_relation  " +
             "WHERE " +
             " id IN " +
-            " <foreach item='id' index='ids' collection='relations' separator=',' open='(' close=')'>" +
+            " <foreach item='id' index='ids' collection='ids' separator=',' open='(' close=')'>" +
             "#{id}" +
             "</foreach>" +
             "</script>")

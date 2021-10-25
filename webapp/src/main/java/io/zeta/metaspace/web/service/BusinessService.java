@@ -303,14 +303,19 @@ public class BusinessService {
                 if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
                     Boolean importancePrivilege = Boolean.TRUE;
                     Boolean securityPrivilege = Boolean.TRUE;
-                    GroupDeriveTableRelation relation = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableGuid(), userGroupIds, tenantId);
+                    List<GroupDeriveTableRelation> relations = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableGuid(), userGroupIds, tenantId);
+                    GroupDeriveTableRelation relation = new GroupDeriveTableRelation();
+                    boolean ifSecurityNull=relations.stream().allMatch(r-> r.getSecurityPrivilege()==null);
+                    boolean ifImportanceNull=relations.stream().allMatch(r-> r.getImportancePrivilege()==null);
+                    relation.setSecurityPrivilege(ifSecurityNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getSecurityPrivilege));
+                    relation.setImportancePrivilege(ifImportanceNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getImportancePrivilege));
                     if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
-                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
+                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getImportancePrivilege() == null || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
                         importancePrivilege = Boolean.FALSE;
 
                     }
                     if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getSecurity()) &&
-                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
+                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || relation.getSecurityPrivilege() == null || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
                         securityPrivilege = Boolean.FALSE;
                     }
                     table.setImportancePrivilege(importancePrivilege);
