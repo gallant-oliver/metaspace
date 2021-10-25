@@ -227,8 +227,7 @@ public interface SourceInfoDeriveTableInfoDAO {
             "FROM\n" +
             "source_info_derive_table_info\n" +
             "WHERE\n" +
-            " table_name_en = #{tableName}\n" +
-            "AND db_id = #{databaseId} \n" +
-            "AND tenant_id = #{tenantId}")
-    SourceInfoDeriveTableInfo getByNameAndDbGuid(@Param("tableName") String tableName, @Param("databaseId") String databaseId, @Param("tenantId") String tenantId);
+            " table_guid = #{tableGuid}\n" +
+            "AND tenant_id = #{tenantId} AND  version=-1 LIMIT 1 ")
+    SourceInfoDeriveTableInfo getByNameAndDbGuid(@Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
 }

@@ -298,7 +298,7 @@ public class BusinessService {
                 table.setDisplayName(table.getTableName());
             }
             //table
-            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableName(),table.getDatabaseId(),tenantId);
+            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableGuid(),tenantId);
             if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))){
                 if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
                     Boolean importancePrivilege = Boolean.TRUE;

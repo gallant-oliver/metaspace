@@ -381,7 +381,7 @@ public class MetaDataService {
             List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
             //table
             Table table = extractTableInfo(entityInfo, guid, tenantId);
-            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableName(),table.getDatabaseId(),tenantId);
+            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableId(),tenantId);
             if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))) {
                 if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
                     Boolean importancePrivilege = Boolean.TRUE;
@@ -631,7 +631,7 @@ public class MetaDataService {
             List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
             //table
             RDBMSTable table = extractRDBMSTableInfo(entity, guid, info, tenantId);
-            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableName(),table.getDatabaseId(),tenantId);
+            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableId(),tenantId);
              if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))){
                  if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
                      Boolean importancePrivilege = Boolean.TRUE;

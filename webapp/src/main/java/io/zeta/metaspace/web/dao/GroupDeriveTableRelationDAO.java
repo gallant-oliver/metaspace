@@ -100,7 +100,7 @@ public interface GroupDeriveTableRelationDAO {
             " c.name AS businessCategoryName " +
             "FROM " +
             " tableinfo ti  " +
-            " INNER JOIN source_info_derive_table_info sidti ON sidti.table_name_en = ti.tablename AND sidti.db_id = ti.databaseguid AND sidti.version = -1 " +
+            " INNER JOIN source_info_derive_table_info sidti ON sidti.table_guid = ti.tableguid AND sidti.version = -1 " +
             "<if test='privilegeType == \"IMPORTANCE\"'>" +
             "   AND sidti.importance = true  " +
             "</if>"+
