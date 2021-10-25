@@ -146,9 +146,9 @@ public interface SourceInfoDeriveTableInfoDAO {
             " tenant_id as tenantId, remark as remark, version as version,",
             " source_table_guid as sourceTableGuid, creator as creator, cast(create_time as varchar) as createTimeStr,",
             " updater as updater, cast(update_time as varchar) as updateTimeStr, ddl as ddl, dml as dml, state as state",
-            " from source_info_derive_table_info where id = #{tableId} and table_guid = #{tableGuid} and tenant_id = #{tenantId}",
+            " from source_info_derive_table_info where id = #{tableId} and tenant_id = #{tenantId}",
             "</script>"})
-    SourceInfoDeriveTableInfo getByIdAndGuidAndTenantId(@Param("tableId") String tableId, @Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
+    SourceInfoDeriveTableInfo getByIdAndGuidAndTenantId(@Param("tableId") String tableId, @Param("tenantId") String tenantId);
 
     @Select({"<script>",
             " select id as id, ",

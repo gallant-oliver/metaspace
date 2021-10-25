@@ -34,6 +34,7 @@ public class ApproveServiceImp implements ApproveService{
             .put(ModuleEnum.NORMDESIGN, "indexService")
             .put(ModuleEnum.DATABASEREGISTER, "sourceInfoDatabaseService")
             .put(ModuleEnum.BUSINESSCATALOGUE, "businessCatalogueService")
+            .put(ModuleEnum.INDEX, "businessCatalogueService")
             .put(ModuleEnum.BUSINESS, "businessService")
             .build();
 

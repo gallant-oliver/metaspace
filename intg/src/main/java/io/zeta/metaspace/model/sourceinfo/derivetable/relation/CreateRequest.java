@@ -18,5 +18,5 @@ public class CreateRequest {
     private PrivilegeType privilegeType;
 
     @ApiModelProperty(value = "被授权表列表")
-    private List<String> tableList;
+    private List<String> tableIdList;
 }
