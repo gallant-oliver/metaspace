@@ -43,8 +43,6 @@ import io.zeta.metaspace.model.po.sourceinfo.SourceInfo;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.*;
-import io.zeta.metaspace.model.role.Role;
-import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.share.APIDataOwner;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.Organization;
@@ -115,8 +113,6 @@ public class DataManageService {
     @Autowired
     RoleDAO roleDao;
     @Autowired
-    RoleService roleService;
-    @Autowired
     TableDAO tableDAO;
     @Autowired
     DataShareDAO shareDAO;
@@ -175,50 +171,6 @@ public class DataManageService {
     private static final int UPDATE_MAX_CATEGORY_LEVEL = 5;
     private static final String ORGANIZATION_FIRST_PID = "sso.organization.first.pid";
 
-    /**
-     * 获取用户有权限的全部目录
-     *
-     * @param type
-     * @return
-     * @throws AtlasBaseException
-     */
-    //独立部署
-    public List<CategoryPrivilege> getAll(int type) throws AtlasBaseException {
-        try {
-            User user = AdminUtils.getUserData();
-            List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
-            List<CategoryPrivilege> valueList = null;
-            if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))) {
-                valueList = roleService.getUserCategory(SystemRole.ADMIN.getCode(), type);
-            } else {
-                Map<String, CategoryPrivilege> valueMap = new HashMap<>();
-                if (roles.stream().allMatch(role -> role.getStatus() == 0)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-                }
-                for (Role role : roles) {
-                    if (role.getStatus() == 0) {
-                        continue;
-                    }
-                    String roleId = role.getRoleId();
-                    for (CategoryPrivilege categoryPrivilege : roleService.getUserCategory(roleId, type)) {
-                        if (valueMap.containsKey(categoryPrivilege.getGuid()) && valueMap.get(categoryPrivilege.getGuid()) != null) {
-                            valueMap.get(categoryPrivilege.getGuid()).getPrivilege().mergePrivilege(categoryPrivilege.getPrivilege());
-                        } else {
-                            valueMap.put(categoryPrivilege.getGuid(), categoryPrivilege);
-                        }
-                    }
-                }
-                valueList = new ArrayList<>(valueMap.values());
-            }
-            getCount(valueList, type, TenantService.defaultTenant);
-            return valueList;
-        } catch (MyBatisSystemException e) {
-            LOG.error("数据库服务异常", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
-        } catch (AtlasBaseException e) {
-            throw e;
-        }
-    }
 
     public List<CategoryPrivilege> getTechnicalCategory(String tenantId) {
         List<CategoryPrivilege> categoryPrivilegeList = new ArrayList<>();
@@ -585,7 +537,7 @@ public class DataManageService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名不能为空");
             }
             //判断独立部署和多租户
-            List<Module> moduleByUserId = TenantService.defaultTenant.equals(tenantId) ? userDAO.getModuleByUserId(creatorId) : tenantService.getModule(tenantId);
+            List<Module> moduleByUserId = tenantService.getModule(tenantId);
             List<Integer> modules = new ArrayList<>();
             for (Module module : moduleByUserId) {
                 modules.add(module.getModuleId());
@@ -633,18 +585,12 @@ public class DataManageService {
                         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前指标域名称或编码已被使用");
                     }
                 }
-                if (TenantService.defaultTenant.equals(tenantId)) {
-                    List<Role> roles = roleDao.getRoleByUsersId(creatorId);
-                    if (!roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))) {
-                        throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED, "当前用户没有创建目录权限");
-                    }
 
-                } else {
-                    boolean bool = type == 1 || type == 0 || type == 5;
-                    if (!modules.contains(ModuleEnum.AUTHORIZATION.getId()) && bool) {
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有目录授权模块权限，无法创建一级目录");
-                    }
+                boolean bool = type == 1 || type == 0 || type == 5;
+                if (!modules.contains(ModuleEnum.AUTHORIZATION.getId()) && bool) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有目录授权模块权限，无法创建一级目录");
                 }
+
                 CategoryPrivilege oneLevelCategory = null;
                 if (categoryDao.ifExistCategory(type, tenantId) > 0) {
                     oneLevelCategory = createOneLevelCategory(entity, type, tenantId);
@@ -934,15 +880,7 @@ public class DataManageService {
         if (StringUtils.isNotEmpty(downBrotherCategoryGuid)) {
             categoryDao.updateUpBrotherCategoryGuid(downBrotherCategoryGuid, upBrotherCategoryGuid, tenantId);
         }
-        if (TenantService.defaultTenant.equals(tenantId)) {
-            List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
-            if (roles.stream().allMatch(role -> role.getStatus() == 0)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-            }
-            roleDao.deleteRole2categoryByUserId(guid);
-        } else {
-            userGroupDAO.deleteCategoryGroupRelationByCategory(guid);
-        }
+        userGroupDAO.deleteCategoryGroupRelationByCategory(guid);
         int category = categoryDao.deleteCategoryByIds(categoryIds, tenantId);
         CategoryDeleteReturn deleteReturn = new CategoryDeleteReturn();
         deleteReturn.setCategory(category);
@@ -1400,46 +1338,19 @@ public class DataManageService {
             if (StringUtils.isNotEmpty(tag))
                 tag = tag.replaceAll("%", "/%").replaceAll("_", "/_");
             List<RelationEntityV2> list = new ArrayList<>();
-
-            //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
-                if (roles.stream().allMatch(role -> role.getStatus() == 0)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-                }
-                if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))) {
-                    categoryIds = CategoryRelationUtils.getPermissionCategoryList(SystemRole.ADMIN.getCode(), type);
-                } else {
-                    for (Role role : roles) {
-                        if (role.getStatus() == 0) {
-                            continue;
-                        }
-                        String roleId = role.getRoleId();
-                        List<String> category = CategoryRelationUtils.getPermissionCategoryList(roleId, type);
-                        for (String categoryId : category) {
-                            if (!categoryIds.contains(categoryId)) {
-                                categoryIds.add(categoryId);
-                            }
-                        }
+            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+            for (UserGroup userGroup : userGroups) {
+                String userGroupId = userGroup.getId();
+                List<String> category = CategoryRelationUtils.getPermissionCategoryListV2(userGroupId, type, tenantId);
+                for (String categoryId : category) {
+                    if (!categoryIds.contains(categoryId)) {
+                        categoryIds.add(categoryId);
                     }
                 }
-                list = categoryIds.size() != 0 ? new ArrayList<>() : relationDao.queryByTableNameFilter(tableName, tag, categoryIds, limit, offset);
-            } else {
-                List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
-                for (UserGroup userGroup : userGroups) {
-                    String userGroupId = userGroup.getId();
-                    List<String> category = CategoryRelationUtils.getPermissionCategoryListV2(userGroupId, type, tenantId);
-                    for (String categoryId : category) {
-                        if (!categoryIds.contains(categoryId)) {
-                            categoryIds.add(categoryId);
-                        }
-                    }
-                }
-                List<String> databases = tenantService.getDatabase(tenantId);
-                if (databases != null && databases.size() != 0 && categoryIds.size() != 0)
-                    list = relationDao.queryByTableNameFilterV2(tenantId, tableName, tag, categoryIds, limit, offset, databases);
             }
-
+            List<String> databases = tenantService.getDatabase(tenantId);
+            if (databases != null && databases.size() != 0 && categoryIds.size() != 0)
+                list = relationDao.queryByTableNameFilterV2(tenantId, tableName, tag, categoryIds, limit, offset, databases);
             getPath(list, tenantId);
             long totalNum = 0;
             if (list.size() != 0) {
