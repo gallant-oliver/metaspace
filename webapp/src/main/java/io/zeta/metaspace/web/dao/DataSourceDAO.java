@@ -627,12 +627,16 @@ public interface DataSourceDAO {
     List<DataSourceBody> getOracleDataSourcesByGroups(@Param("groupIds") List<String> groupIds,@Param("tenantId") String tenantId);
 
     @Select({" <script> ",
-            "select source_id as sourceId,source_name as sourceName ,source_type as sourceType from data_source where tenantid=#{tenantId} and source_type in ",
+            "select da.source_id as sourceId,da.source_name as sourceName ,da.source_type as sourceType from data_source da," +
+            " ( select distinct dgr.source_id from datasource_group_relation dgr join user_group_relation ug on ug.group_id=dgr.group_id " +
+            "  where ug.user_id=#{userId} " +
+            ") da where da.source_id=ds.source_id " +
+            " and da.tenantid=#{tenantId} and da.source_type in ",
             " <foreach item='type' index='index' collection='types' separator=',' open='(' close=')'>",
             " #{type} ",
             " </foreach>",
             " </script>"})
-    List<DataSourceInfo> queryDataSourceBySourceTypeIn(@Param("types")List<String> types,@Param("tenantId") String tenantId);
+    List<DataSourceInfo> queryDataSourceBySourceTypeIn(@Param("types")List<String> types,@Param("tenantId") String tenantId,@Param("userId")String userId);
 
     @Select("select * from data_source")
     List<DataSourceInfo> selectListAll();
