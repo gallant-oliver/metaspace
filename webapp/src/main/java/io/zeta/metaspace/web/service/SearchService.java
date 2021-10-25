@@ -12,8 +12,6 @@ import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.*;
-import io.zeta.metaspace.model.role.Role;
-import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.security.Tenant;
 import io.zeta.metaspace.model.table.DataSourceHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
@@ -449,47 +447,6 @@ public class SearchService {
     }
 
 
-    //独立部署
-    public List<String> getPermissionCategoryIds() throws AtlasBaseException {
-        try {
-            User user = AdminUtils.getUserData();
-            List<Role> roles = roleDAO.getRoleByUsersId(user.getUserId());
-            if (roles.stream().allMatch(role -> role.getStatus() == 0)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-            }
-            ArrayList<String> strings = new ArrayList<>();
-            List<String> categoryIds = null;
-            if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))) {
-                categoryIds = roleDAO.getTopCategoryGuid(0, TenantService.defaultTenant);
-                List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0, TenantService.defaultTenant);
-                for (RoleModulesCategories.Category child : childs) {
-                    if (!strings.contains(child.getGuid())) {
-                        strings.add(child.getGuid());
-                    }
-                }
-                return strings;
-            }
-            for (Role role : roles) {
-                String roleId = role.getRoleId();
-                if (role.getStatus() == 0) {
-                    continue;
-                }
-                categoryIds = roleDAO.getCategorysByTypeIds(roleId, 0, TenantService.defaultTenant);
-                if (categoryIds.size() == 0) {
-                    continue;
-                }
-                List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0, TenantService.defaultTenant);
-                for (RoleModulesCategories.Category child : childs) {
-                    if (!strings.contains(child.getGuid())) {
-                        strings.add(child.getGuid());
-                    }
-                }
-            }
-            return strings;
-        } catch (AtlasBaseException e) {
-            throw e;
-        }
-    }
 
     //多租户
     public List<String> getPermissionCategoryIds(String tenantId) throws AtlasBaseException {
@@ -519,7 +476,7 @@ public class SearchService {
 
     public PageResult<TableInfo> getTableByDBWithQueryWithoutTmp(String databaseId, Parameters parameters, String tenantId) throws AtlasBaseException {
         try {
-            List<String> categoryIds = TenantService.defaultTenant.equals(tenantId) ? getPermissionCategoryIds() : getPermissionCategoryIds(tenantId);
+            List<String> categoryIds = getPermissionCategoryIds(tenantId);
             PageResult<TableInfo> pageResult = new PageResult<>();
             if (Objects.isNull(categoryIds) || categoryIds.size() == 0) {
                 return pageResult;
@@ -1044,33 +1001,11 @@ public class SearchService {
     @Transactional(rollbackFor = Exception.class)
     public PageResult<AddRelationTable> getPermissionTablePageResultV2(Parameters parameters, String tenantId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
-        //判断多租户和独立部署
-        if (TenantService.defaultTenant.equals(tenantId)) {
-            //独立部署
-            List<Role> roles = roleDAO.getRoleByUsersId(user.getUserId());
-            if (roles.stream().allMatch(role -> role.getStatus() == 0)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-            }
-            List<String> strings = new ArrayList<>();
-            if (roles != null && roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))) {
-                List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0, tenantId);
-                List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(topCategoryGuid, 0, TenantService.defaultTenant);
-                for (RoleModulesCategories.Category child : childs) {
-                    strings.add(child.getGuid());
-                }
-                return getTableResultV2(parameters, strings);
-            }
-            strings = getChildAndOwnerCategorysByRoles(roles);
-            if (strings.size() > 0) {
-                return getTableResultV2(parameters, strings);
-            }
-        } else {
-            //多租户
-            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
-            List<String> strings = getChildAndOwnerCategorysByRoles(userGroups, tenantId);
-            if (strings.size() > 0) {
-                return getTableResultV2(parameters, strings, tenantId);
-            }
+        //多租户
+        List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+        List<String> strings = getChildAndOwnerCategorysByRoles(userGroups, tenantId);
+        if (strings.size() > 0) {
+            return getTableResultV2(parameters, strings, tenantId);
         }
         return null;
     }
@@ -1118,41 +1053,6 @@ public class SearchService {
         }
         tablePageResult.setCurrentSize(tableInfo.size());
         tablePageResult.setLists(tables);
-        return tablePageResult;
-    }
-
-    //一组目录查子表
-    //独立部署
-    @Transactional(rollbackFor = Exception.class)
-    public PageResult<AddRelationTable> getTableResultV2(Parameters parameters, List<String> categoryIds) {
-        PageResult<AddRelationTable> tablePageResult = new PageResult<>();
-
-        String query = parameters.getQuery();
-        int limit = parameters.getLimit();
-        int offset = parameters.getOffset();
-        List<TechnologyInfo.Table> tableInfo = null;
-        if (categoryIds.size() > 0) {
-            List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categoryIds, 0, TenantService.defaultTenant);
-            ArrayList<String> strings = new ArrayList<>();
-            for (RoleModulesCategories.Category child : childs) {
-                strings.add(child.getGuid());
-            }
-            if (strings.size() == 0) {
-                tablePageResult.setTotalSize(0);
-                tablePageResult.setCurrentSize(0);
-                return tablePageResult;
-            }
-            if (Objects.nonNull(query))
-                query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
-            tableInfo = roleDAO.getTableInfosV2(strings, query, offset, limit);
-            List<AddRelationTable> tables = getTables(tableInfo);
-            tablePageResult.setTotalSize(0);
-            if (tableInfo.size() != 0) {
-                tablePageResult.setTotalSize(tableInfo.get(0).getTotal());
-            }
-            tablePageResult.setCurrentSize(tableInfo.size());
-            tablePageResult.setLists(tables);
-        }
         return tablePageResult;
     }
 
@@ -1271,51 +1171,12 @@ public class SearchService {
     public PageResult<Database> getDatabasePageResultV2(Parameters parameters, String tenantId) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         List<String> strings = new ArrayList<>();
-        //判断多租户和独立部署
-        if (TenantService.defaultTenant.equals(tenantId)) {
-            List<Role> roles = roleDAO.getRoleByUsersId(user.getUserId());
-            if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))) {
-                List<String> topCategoryGuid = roleDAO.getTopCategoryGuid(0, tenantId);
-                List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(topCategoryGuid, 0, tenantId);
-                for (RoleModulesCategories.Category child : childs) {
-                    strings.add(child.getGuid());
-                }
-                return getDatabaseV2(parameters, strings, tenantId);
-            }
-            if (roles.stream().allMatch(role -> role.getStatus() == 0)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-            }
-            strings = getChildAndOwnerCategorysByRoles(roles);
-        } else {
-            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
-            strings = getChildAndOwnerCategorysByRoles(userGroups, tenantId);
-        }
+        List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+        strings = getChildAndOwnerCategorysByRoles(userGroups, tenantId);
         if (strings.size() > 0) {
             return getDatabaseV2(parameters, strings, tenantId);
         }
         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无获取库表权限");
-    }
-
-
-    //独立部署
-    public List<String> getChildAndOwnerCategorysByRoles(List<Role> roles) {
-        ArrayList<String> strings = new ArrayList<>();
-        for (Role role : roles) {
-            String roleId = role.getRoleId();
-            if (role.getStatus() == 0) {
-                continue;
-            }
-            List<String> categorysByTypeIds = roleDAO.getCategorysByTypeIds(roleId, 0, TenantService.defaultTenant);
-            if (categorysByTypeIds.size() > 0) {
-                List<RoleModulesCategories.Category> childs = roleDAO.getChildAndOwnerCategorys(categorysByTypeIds, 0, TenantService.defaultTenant);
-                for (RoleModulesCategories.Category child : childs) {
-                    if (!strings.contains(child.getGuid())) {
-                        strings.add(child.getGuid());
-                    }
-                }
-            }
-        }
-        return strings;
     }
 
     //多租户
@@ -1348,20 +1209,15 @@ public class SearchService {
             return databasePageResult;
         }
         List<Database> databaseList = null;
-        //判断独立部署和多租户
-        if (TenantService.defaultTenant.equals(tenantId)) {
-            dbName = roleDAO.getDBInfo(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit());
-            totalSize = roleDAO.getDBCountV2(strings, parameters.getQuery());
-        } else {
-            User user = AdminUtils.getUserData();
-            List<String> databases = tenantService.getCurrentTenantDatabase(tenantId);
-            if (databases != null && databases.size() != 0){
-                databaseList = databaseInfoDAO.selectByHive(databases, (long)parameters.getLimit(),  (long)parameters.getOffset());
-               // dbName = userGroupDAO.getDBInfo(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit(), databases, tenantId);
-               //  totalSize = userGroupDAO.getDBCountV2(strings, parameters.getQuery(), databases, tenantId);
-            }
 
+        User user = AdminUtils.getUserData();
+        List<String> databases = tenantService.getCurrentTenantDatabase(tenantId);
+        if (databases != null && databases.size() != 0){
+            databaseList = databaseInfoDAO.selectByHive(databases, (long)parameters.getLimit(),  (long)parameters.getOffset());
+           // dbName = userGroupDAO.getDBInfo(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit(), databases, tenantId);
+           //  totalSize = userGroupDAO.getDBCountV2(strings, parameters.getQuery(), databases, tenantId);
         }
+
         List<Database> lists = new ArrayList<>();
         if (databaseList == null) {
             return databasePageResult;
@@ -1386,22 +1242,13 @@ public class SearchService {
      */
     public List<String> getUserTableIds(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                List<String> categoryIds = getPermissionCategoryIds();
-                if (Objects.isNull(categoryIds) || categoryIds.size() == 0) {
-                    return new ArrayList<String>();
-                }
-                return roleDAO.getTableIds(categoryIds);
-            } else {
-                User user = AdminUtils.getUserData();
-                List<String> categoryIds = getPermissionCategoryIds(tenantId);
-                if (Objects.isNull(categoryIds) || categoryIds.size() == 0) {
-                    return new ArrayList<String>();
-                }
-                List<String> databases = tenantService.getDatabase(tenantId);
-                return databases != null && databases.size() != 0 ? userGroupDAO.getTableIds(categoryIds, databases, tenantId) : new ArrayList<>();
+            User user = AdminUtils.getUserData();
+            List<String> categoryIds = getPermissionCategoryIds(tenantId);
+            if (Objects.isNull(categoryIds) || categoryIds.size() == 0) {
+                return new ArrayList<String>();
             }
+            List<String> databases = tenantService.getDatabase(tenantId);
+            return databases != null && databases.size() != 0 ? userGroupDAO.getTableIds(categoryIds, databases, tenantId) : new ArrayList<>();
         } catch (Exception e) {
             LOG.error("获取用户管理的所有表失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
