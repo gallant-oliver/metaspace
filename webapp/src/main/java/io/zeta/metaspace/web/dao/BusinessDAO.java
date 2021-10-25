@@ -743,7 +743,7 @@ public interface BusinessDAO {
     void batchDeleteRelationByBusinessIdsAndTableIds(@Param("sourceInfoDeriveTableInfos")List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos);
 
     @Select("select count(*)>0 from business2table where businessid=#{businessId} and tableguid=#{sourceTableGuid} and source_id=#{sourceId}")
-    boolean isRelationExist(@Param("businessId")String businessId, @Param("sourceTableGuid")String tableGuid, @Param("sourceId")String sourceId);
+    boolean isRelationExist(@Param("businessId")String businessId, @Param("sourceTableGuid")String sourceTableGuid, @Param("sourceId")String sourceId);
 
     @Update("update business2table set relation_type= #{relationType} where businessid=#{businessId} and tableguid=#{sourceTableGuid} and source_id=#{sourceId}")
     void updateRelationType(@Param("businessId")String businessId, @Param("sourceTableGuid")String sourceTableGuid, @Param("sourceId")String sourceId, @Param("relationType")int relationType);
