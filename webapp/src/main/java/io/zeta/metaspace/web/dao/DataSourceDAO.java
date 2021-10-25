@@ -223,7 +223,7 @@ public interface DataSourceDAO {
     //搜索Api权限数据源
     @Select("<script>" +
             "select count(*)over() totalSize,ds.tenantid tenantId,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
-            " from data_source ds left join ( " +
+            " from data_source ds inner join ( " +
             "  select distinct dgr.source_id from datasource_group_relation dgr join user_group_relation ug on ug.group_id=dgr.group_id " +
             "  where ug.user_id=#{userId} " +
             ") da on da.source_id=ds.source_id " +
@@ -627,11 +627,11 @@ public interface DataSourceDAO {
     List<DataSourceBody> getOracleDataSourcesByGroups(@Param("groupIds") List<String> groupIds,@Param("tenantId") String tenantId);
 
     @Select({" <script> ",
-            "select da.source_id as sourceId,da.source_name as sourceName ,da.source_type as sourceType from data_source da," +
+            "select ds.source_id as sourceId,ds.source_name as sourceName ,ds.source_type as sourceType from data_source ds," +
             " ( select distinct dgr.source_id from datasource_group_relation dgr join user_group_relation ug on ug.group_id=dgr.group_id " +
             "  where ug.user_id=#{userId} " +
             ") da where da.source_id=ds.source_id " +
-            " and da.tenantid=#{tenantId} and da.source_type in ",
+            " and ds.tenantid=#{tenantId} and ds.source_type in ",
             " <foreach item='type' index='index' collection='types' separator=',' open='(' close=')'>",
             " #{type} ",
             " </foreach>",
