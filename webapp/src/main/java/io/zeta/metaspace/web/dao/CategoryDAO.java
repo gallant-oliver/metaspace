@@ -18,7 +18,6 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.DataOwner;
-import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.CategoryGuidPath;
@@ -406,7 +405,7 @@ public interface CategoryDAO {
     List<CategoryGuidPath> getGuidPathByTenantIdAndCategoryTypeAndId(@Param("tenantId") String tenantId, @Param("type") int type, @Param("guid") String guid);
 
     @Select("<script>" +
-            " SELECT category.*,COALESCE(relation.edit_category,false,false) AS edit  FROM category LEFT JOIN category_group_relation as relation on category.guid = relation.category_id WHERE tenantid = #{tenantId} AND private_status = 'PUBLIC' AND categorytype = 0" +
+            " SELECT DISTINCT category.*,COALESCE(relation.edit_category,false,false) AS edit FROM category LEFT JOIN category_group_relation as relation on category.guid = relation.category_id WHERE tenantid = #{tenantId} AND private_status = 'PUBLIC' AND categorytype = 0" +
             " <if test='groupIdList != null and groupIdList.size() > 0'>"+
             " UNION" +
             " SELECT DISTINCT category.*,COALESCE(relation.edit_category,false,false) AS edit FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
@@ -536,7 +535,7 @@ public interface CategoryDAO {
     Set<CategoryEntityV2> selectSetByStatus(@Param("groupIdList") List<String> groupIdList);
 
     @Select("<script>" +
-            " SELECT category.* FROM category LEFT JOIN category_group_relation as relation on category.guid = relation.category_id WHERE private_status = 'PUBLIC' AND categorytype = #{categoryType}" +
+            " SELECT DISTINCT category.* FROM category LEFT JOIN category_group_relation as relation on category.guid = relation.category_id WHERE private_status = 'PUBLIC' AND categorytype = #{categoryType}" +
             " <if test='groupIdList != null and groupIdList.size() > 0'>"+
             " UNION" +
             " SELECT DISTINCT category.* FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +

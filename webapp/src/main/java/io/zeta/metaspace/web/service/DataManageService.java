@@ -47,6 +47,7 @@ import io.zeta.metaspace.model.share.APIDataOwner;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForCategory;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.user.User;
@@ -160,7 +161,7 @@ public class DataManageService {
     @Autowired
     private DataManageService dataManageService;
     @Autowired
-    private PublicService publicService;
+    private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDAO;
     int technicalType = 0;
     int dataStandType = 3;
     int technicalCount = 5;
@@ -173,6 +174,7 @@ public class DataManageService {
 
     public List<CategoryPrivilege> getTechnicalCategory(String tenantId) {
         List<CategoryPrivilege> categoryPrivilegeList = new ArrayList<>();
+        List<CategoryPrivilege> categoryPrivilegeListNew = new ArrayList<>();
         try {
             User user = AdminUtils.getUserData();
             List<String> userGroupIds = new ArrayList<>();
@@ -181,12 +183,13 @@ public class DataManageService {
             if (!CollectionUtils.isEmpty(userGroups)) {
                 userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
             }
-            categoryPrivilegeList = categoryDAO.selectListByTenantIdAndStatus(tenantId, user.getUserId(), userGroupIds,5);
+            categoryPrivilegeList = categoryDAO.selectListByTenantIdAndStatus(tenantId, user.getUserId(), userGroupIds, 5);
             List<SourceInfo> sourceInfoList = sourceInfoDAO.selectCategoryListAndCount(tenantId);
             Map<String, Integer> map = new HashMap<>();
             if (!CollectionUtils.isEmpty(sourceInfoList)) {
                 map = sourceInfoList.stream().collect(Collectors.toMap(SourceInfo::getCategoryId, SourceInfo::getCount));
             }
+            Set<String> guidSet = new HashSet<>();
             for (CategoryPrivilege categoryPrivilege : categoryPrivilegeList) {
                 categoryPrivilege.setCount(0);
                 CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
@@ -206,7 +209,7 @@ public class DataManageService {
                     categoryPrivilege.setCount(map.get(categoryPrivilege.getGuid()));
                 } else if (MetaspaceConfig.systemCategory.contains(categoryPrivilege.getGuid())) {
                     privilege.setDelete(false);
-                    if (privilege.isEdit()){
+                    if (privilege.isEdit()) {
                         privilege.setEditSafe(true);
                         privilege.setCreateRelation(true);
                     }
@@ -214,12 +217,21 @@ public class DataManageService {
                 }
 
                 categoryPrivilege.setPrivilege(privilege);
+                if (guidSet.contains(categoryPrivilege.getGuid())) {
+                    if (categoryPrivilege.isEdit()) {
+                        removeDuplicatedData(categoryPrivilegeListNew, categoryPrivilege.getGuid());
+                        categoryPrivilegeListNew.add(categoryPrivilege);
+                    }
+                } else {
+                    guidSet.add(categoryPrivilege.getGuid());
+                    categoryPrivilegeListNew.add(categoryPrivilege);
+                }
             }
             //源信息登记的父级目录不能删除
-            updateParentCategory(categoryPrivilegeList);
-            removeNoParentCategory(categoryPrivilegeList);
-            if(CollectionUtils.isEmpty(userGroups)){
-                for (CategoryPrivilege categoryPrivilege : categoryPrivilegeList) {
+            updateParentCategory(categoryPrivilegeListNew);
+            removeNoParentCategory(categoryPrivilegeListNew);
+            if (CollectionUtils.isEmpty(userGroups)) {
+                for (CategoryPrivilege categoryPrivilege : categoryPrivilegeListNew) {
                     categoryPrivilege.getPrivilege().setEdit(false);
                     categoryPrivilege.getPrivilege().setAddSibling(false);
                     categoryPrivilege.getPrivilege().setAddChildren(false);
@@ -229,7 +241,21 @@ public class DataManageService {
         } catch (AtlasBaseException e) {
             LOG.error("getTechnicalCategory exception is {}", e);
         }
-        return categoryPrivilegeList;
+        return categoryPrivilegeListNew;
+    }
+
+    /**
+     * 删除指定数据
+     */
+    private void removeDuplicatedData(List<CategoryPrivilege> categoryPrivilegeListNew, String guid) {
+        Iterator<CategoryPrivilege> iterator = categoryPrivilegeListNew.iterator();
+        while (iterator.hasNext()) {
+            CategoryPrivilege categoryPrivilege = iterator.next();
+            if (categoryPrivilege.getGuid().equals(guid)) {
+                iterator.remove();
+                return;
+            }
+        }
     }
 
 
@@ -284,22 +310,22 @@ public class DataManageService {
 
     /**
      * 删除有父目录，但是父目录不存在的目录
+     *
      * @param categoryPrivilegeList
      */
-    private void removeNoParentCategory(List<CategoryPrivilege> categoryPrivilegeList){
-        Map<String,String> map = categoryPrivilegeList.stream().collect(HashMap::new,(m,v)->m.put(v.getGuid(),v.getParentCategoryGuid()),HashMap::putAll);
-        categoryPrivilegeList.removeIf(categoryPrivilege ->
-                this.checkParentIfExist(map, categoryPrivilege.getParentCategoryGuid(), categoryPrivilegeList));
+    private void removeNoParentCategory(List<CategoryPrivilege> categoryPrivilegeList) {
+        Map<String, String> map = categoryPrivilegeList.stream().collect(HashMap::new, (m, v) -> m.put(v.getGuid(), v.getParentCategoryGuid()), HashMap::putAll);
+        categoryPrivilegeList.removeIf(categoryPrivilege -> this.checkParentIfExist(map, categoryPrivilege.getParentCategoryGuid(), categoryPrivilegeList));
     }
 
-    private boolean checkParentIfExist(Map<String,String> map,String parentId,List<CategoryPrivilege> categoryPrivilegeList){
-        if (StringUtils.isEmpty(parentId)){
+    private boolean checkParentIfExist(Map<String, String> map, String parentId, List<CategoryPrivilege> categoryPrivilegeList) {
+        if (StringUtils.isEmpty(parentId)) {
             return false;
         }
-        if (map.containsKey(parentId)){
-            Optional<CategoryPrivilege> result=categoryPrivilegeList.stream().filter(c->parentId.equals(c.getGuid())).findFirst();
-            if (result.isPresent()){
-                return checkParentIfExist(map,result.get().getParentCategoryGuid(),categoryPrivilegeList);
+        if (map.containsKey(parentId)) {
+            Optional<CategoryPrivilege> result = categoryPrivilegeList.stream().filter(c -> parentId.equals(c.getGuid())).findFirst();
+            if (result.isPresent()) {
+                return checkParentIfExist(map, result.get().getParentCategoryGuid(), categoryPrivilegeList);
             }
         }
         return true;
@@ -1907,23 +1933,50 @@ public class DataManageService {
             }
         }
     }
-    private void addOrUpdateTable(TableInfo tableInfo, SyncTaskDefinition definition){
+
+    public void addOrUpdateTable(TableInfo tableInfo, SyncTaskDefinition definition) throws Exception {
         String tableGuid = tableInfo.getTableGuid();
-        synchronized (tableGuid){
-            if("ACTIVE".equalsIgnoreCase(tableInfo.getStatus())){
+        synchronized (tableGuid) {
+            if ("ACTIVE".equalsIgnoreCase(tableInfo.getStatus())) {
                 tableDAO.deleteIfExist(tableGuid, tableInfo.getDatabaseGuid(), tableInfo.getTableName());
             }
             TableInfo table = tableDAO.getTableInfoByTableguid(tableGuid);
-            if(null != table){
-                tableDAO.updateTable(tableInfo);
-            }else{
-                tableDAO.addTable(tableInfo);
+            if (null != table) {
+                ProxyUtil.getProxy(DataManageService.class).updateTable(tableInfo);
+            } else {
+                ProxyUtil.getProxy(DataManageService.class).addTable(tableInfo);
             }
         }
     }
 
-    private void updateDeriveTable(TableInfo tableInfo){
+    /**
+     * 创建表，同时更新衍生表id
+     *
+     * @param tableInfo
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void addTable(TableInfo tableInfo) throws Exception {
+        tableDAO.addTable(tableInfo);
+        List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos = sourceInfoDeriveTableInfoDAO.selectByDbAndTableName(tableInfo.getDatabaseGuid(), tableInfo.getTableName());
+        if (CollectionUtils.isEmpty(sourceInfoDeriveTableInfos)) {
+            return;
+        }
+        sourceInfoDeriveTableInfoDAO.updateByDbAndTableName(tableInfo.getDatabaseGuid(), tableInfo.getTableName(), tableInfo.getTableGuid());
+    }
 
+    /**
+     * 更新表，同时更新衍生表名称
+     *
+     * @param tableInfo
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void updateTable(TableInfo tableInfo) throws Exception {
+        tableDAO.updateTable(tableInfo);
+        List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos = sourceInfoDeriveTableInfoDAO.selectByTableGuid(tableInfo.getTableGuid());
+        if (CollectionUtils.isEmpty(sourceInfoDeriveTableInfos)) {
+            return;
+        }
+        sourceInfoDeriveTableInfoDAO.updateByTableGuid(tableInfo.getTableGuid(), tableInfo.getTableName());
     }
 
     private Database getDbInfo(AtlasEntity entity) {
@@ -2048,7 +2101,7 @@ public class DataManageService {
         }
     }
 
-    private void createOrUpdateEntities(List<AtlasEntity> entities, SyncTaskDefinition definition, KafkaConnector.Config config, Boolean enableEmail) {
+    private void createOrUpdateEntities(List<AtlasEntity> entities, SyncTaskDefinition definition, KafkaConnector.Config config, Boolean enableEmail) throws Exception {
         Boolean hiveAtlasEntityAll = getHiveAtlasEntityAll(entities);
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();

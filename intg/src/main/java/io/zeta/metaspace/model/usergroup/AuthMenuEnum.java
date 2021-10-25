@@ -9,7 +9,11 @@ public enum AuthMenuEnum {
     PROJECT_PERMISSIONS("project", 5),
     INDICATOR_DOMAIN("norm", 6),
     DATA_BASE_PERMISSIONS("data-base", 7),
+    DERIVE_TABLE_PERMISSIONS("derive-table", 8),
     INDEX_DIRECTORY_PERMISSIONS("index", 9);
+
+    
+
 
     private String name;
     private int num;

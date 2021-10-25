@@ -1,11 +1,18 @@
 package io.zeta.metaspace.web.util;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class FilterUtils {
+    /**
+     * 特殊排序参数
+     */
+    private static final List<String> SPECIAL_CONDITIONS = Lists.newArrayList("update", "update ", " update", " update ",
+            "create", "create ", " create", " create ");
+
     private static List<String> skipUrl = new ArrayList<String>(){{
         add("v2/entity/uniqueAttribute/type/");
         add("api/metaspace/v2/entity/");
@@ -61,7 +68,10 @@ public class FilterUtils {
         //去除执行SQL语句的命令关键字
         source = replaceWithCase(source, "select", "", Boolean.TRUE);
         source = replaceWithCase(source, "insert", "", Boolean.TRUE);
-        source = replaceWithCase(source, "update", "", Boolean.TRUE);
+
+        if (SPECIAL_CONDITIONS.contains(source.toLowerCase())) {
+            source = replaceWithCase(source, "update", "", Boolean.TRUE);
+        }
         source = replaceWithCase(source, "delete", "", Boolean.TRUE);
         source = replaceWithCase(source, "drop", "", Boolean.TRUE);
         source = replaceWithCase(source, "truncate", "", Boolean.TRUE);

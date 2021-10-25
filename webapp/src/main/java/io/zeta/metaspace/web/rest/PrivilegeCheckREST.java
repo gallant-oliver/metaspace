@@ -33,11 +33,17 @@ public class PrivilegeCheckREST {
     @Path("/metadata/table/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Table getTableInfoById(@QueryParam("bizTreeId")String bizTreeId,@PathParam("guid") String guid, @HeaderParam("tenantId")String tenantId, @RequestParam("sourceId")@DefaultValue("") String sourceId) throws AtlasBaseException {
-        if(StringUtils.isNotBlank(bizTreeId)){
-            Map<String,String> map = EntityUtil.decodeBusinessId(bizTreeId);
-            if(map != null){
-                tenantId = map.get("tenantId");
+    public Table getTableInfoById(@QueryParam("bizTreeId")String bizTreeId,@PathParam("guid") String guid, @HeaderParam("tenantId")String tenantId,
+                                  @RequestParam("sourceId")@DefaultValue("") String sourceId,
+                                  @QueryParam("currentTenantId")String currentTenantId) throws AtlasBaseException {
+        if(StringUtils.isNotBlank(currentTenantId)){
+            tenantId = currentTenantId;
+        }else{
+            if(StringUtils.isNotBlank(bizTreeId)){
+                Map<String,String> map = EntityUtil.decodeBusinessId(bizTreeId);
+                if(map != null){
+                    tenantId = map.get("tenantId");
+                }
             }
         }
         return metaDataService.getTableInfoById(guid,tenantId, sourceId);

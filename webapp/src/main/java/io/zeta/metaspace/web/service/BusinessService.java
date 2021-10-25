@@ -24,15 +24,11 @@ import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.business.*;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.enums.BusinessType;
-import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
-import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.SystemModule;
-import io.zeta.metaspace.model.result.CategoryPrivilege;
-import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
 import io.zeta.metaspace.model.result.CategorycateQueryResult;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
@@ -42,7 +38,6 @@ import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTable
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
-import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.web.dao.*;
@@ -58,7 +53,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.mybatis.spring.MyBatisSystemException;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -131,6 +125,9 @@ public class BusinessService implements Approvable {
 
     @Autowired
     BusinessCatalogueService businessCatalogueService;
+
+    @Autowired
+    private PublicService publicService;
 
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
@@ -269,7 +266,6 @@ public class BusinessService implements Approvable {
             }
 
             info.setEditBusiness(edit);
-
             String submitter = userGroupDAO.getUserNameById(info.getSubmitter());
             String operator = userGroupDAO.getUserNameById(info.getBusinessOperator());
             if (submitter != null) {
@@ -302,7 +298,7 @@ public class BusinessService implements Approvable {
             if (operator != null) {
                 info.setTechnicalOperator(operator);
             }
-
+            info.setGlobal(publicService.isGlobal());
             User user = AdminUtils.getUserData();
             String userId = user.getUserId();
 //                List<Module> modules = tenantService.getModule(tenantId);

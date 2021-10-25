@@ -3,7 +3,6 @@ package io.zeta.metaspace.web.service;
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
-import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.security.RoleResource;
@@ -163,11 +162,10 @@ public class UsersService {
     public Item getUserItems(String tenantId) throws AtlasBaseException {
         try {
             Item item = new Item();
-            List<Module> modules = tenantService.getModule(tenantId);
-            item.setModules(modules);
+            item.setModules(new HashSet<>(tenantService.getModule(tenantId)));
             return item;
         } catch (Exception e) {
-            LOG.error("获取失败",e);
+            LOG.error("获取失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户功能模块失败");
         }
     }

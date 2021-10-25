@@ -38,4 +38,7 @@ public interface TenantDAO {
 
     @Select("SELECT name FROM tenant WHERE id = #{id}")
     String selectNameById(String id);
+
+    @Select("select DISTINCT id as tenantId,name as projectName from tenant")
+    List<Tenant> selectAll();
 }

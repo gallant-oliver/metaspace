@@ -5,23 +5,18 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.dto.sourceinfo.SourceInfoDeriveTableColumnDTO;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
-import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
-import io.zeta.metaspace.model.sourceinfo.derivetable.constant.Constant;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.DeriveTableStateEnum;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.DeriveTableStateModel;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceInfoDeriveTableVO;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDeriveColumnInfoService;
-import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDeriveTableColumnRelationService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDeriveTableInfoService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveColumnInfo;
-import io.zeta.metaspace.model.dto.sourceinfo.SourceInfoDeriveTableColumnDTO;
 import org.apache.atlas.web.util.Servlets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,18 +29,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -128,12 +113,15 @@ public class SourceInfoDeriveTableInfoRest {
             // 编辑衍生表ID不能为空
             String id = sourceInfoDeriveTableColumnDto.getId();
             String tableGuid = sourceInfoDeriveTableColumnDto.getTableGuid();
-            if (StringUtils.isEmpty(id) || StringUtils.isEmpty(tableGuid)) {
-                return ReturnUtil.error("400", "编辑衍生表ID或GUID为空或记录不存在");
+            if (StringUtils.isEmpty(id)) {
+                return ReturnUtil.error("400", "编辑衍生表ID为空");
             }
-            SourceInfoDeriveTableInfo tableByIdAndGuid = sourceInfoDeriveTableInfoService.getTableByIdAndGuid(id, tableGuid, tenantId);
+            SourceInfoDeriveTableInfo tableByIdAndGuid = sourceInfoDeriveTableInfoService.getTableByIdAndGuid(id, tenantId);
             if (null == tableByIdAndGuid) {
                 return ReturnUtil.error("400", "编辑的记录不存在");
+            }
+            if(sourceInfoDeriveTableColumnDto.isSubmit() && StringUtils.isEmpty(tableGuid)){
+                return ReturnUtil.error("400", "编辑衍生表GUID为空");
             }
             // 老信息的一些默认属性
             sourceInfoDeriveTableColumnDto.setCreateTime(tableByIdAndGuid.getCreateTimeStr());

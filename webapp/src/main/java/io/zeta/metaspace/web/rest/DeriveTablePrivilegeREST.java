@@ -34,6 +34,7 @@ public class DeriveTablePrivilegeREST {
     }
 
     @POST
+    @Path("/privilege")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     public Result createDeriveTableUserGroupRelation(@HeaderParam("tenantId")String tenantId, CreateRequest request){
@@ -42,6 +43,7 @@ public class DeriveTablePrivilegeREST {
 
 
     @DELETE
+    @Path("/privilege")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     public Result deleteRelations(@HeaderParam("tenantId")String tenantId, List<String> groupTableRelationIds){
