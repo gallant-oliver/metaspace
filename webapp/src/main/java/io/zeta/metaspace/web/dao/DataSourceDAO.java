@@ -418,18 +418,6 @@ public interface DataSourceDAO {
             "where source_id=#{sourceId} and authorize_user_id=#{userId}")
     public int isApiAuthorizeUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
 
-    //获取数据源未授权人
-    @Select("<script>" +
-            "select count(*)over() totalSize,u.userid,u.username userName,u.account from " +
-            " (select distinct user2role.userid userid from privilege2module p join role r on p.privilegeid=r.privilegeid join user2role on r.roleid=user2role.roleid where p.moduleid='14' and r.status=1 ) us " +
-            " join users u on u.userid=us.userid " +
-            " where u.valid=true " +
-            "and u.userid not in (select authorize_user_id from data_source_authorize where source_id=#{sourceId} union select userid from user2role where roleid='1' or roleid='3') " +
-            "<if test='query!=null'>" +
-            "and username like concat('%',#{query},'%') ESCAPE '/'" +
-            "</if>" +
-            "</script>")
-    public List<UserIdAndName> getNoAuthorizeUser(@Param("sourceId") String sourceId,@Param("query") String query);
 
     //新增授权人
     @Insert("insert into data_source_authorize(source_id,authorize_user_id)" +
@@ -450,19 +438,6 @@ public interface DataSourceDAO {
     @Select("select count(*)over() totalSize,users.userid,users.userName,users.account from users join data_source_api_authorize on data_source_api_authorize.authorize_user_id=users.userid " +
             "where source_id=#{sourceId} and users.userid!=#{userId} and users.valid=true")
     public List<UserIdAndName> getApiAuthorizeUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
-
-
-    @Select("<script>" +
-            "select count(*)over() totalSize,u.userid,u.username userName,u.account from " +
-            " (select distinct user2role.userid userid from privilege2module p join role r on p.privilegeid=r.privilegeid join user2role on r.roleid=user2role.roleid where p.moduleid='14' and r.status=1 ) us " +
-            " join users u on u.userid=us.userid " +
-            "where u.valid=true " +
-            "and u.userid not in (select authorize_user_id from data_source_api_authorize where source_id=#{sourceId} union select userid from user2role where roleid='1' or roleid='3') " +
-            "<if test='query!=null'>" +
-            "and username like concat('%',#{query},'%') ESCAPE '/'" +
-            "</if>" +
-            "</script>")
-    public List<UserIdAndName> getApiNoAuthorizeUser(@Param("sourceId") String sourceId,@Param("query") String query);
 
     //新增授权人
     @Insert("insert into data_source_api_authorize(source_id,authorize_user_id)" +
@@ -539,12 +514,6 @@ public interface DataSourceDAO {
             "update_time=#{updateTime}" +
             "where source_id=#{sourceId}")
     public int updateManager(@Param("userId") String userId,@Param("managerUserId") String managerUserId,@Param("sourceId") String sourceId,@Param("updateTime") Timestamp updateTime);
-
-    //获取可以成为数据源管理者的用户
-    @Select("select count(*)over() totalSize,u.userid,u.username userName,u.account " +
-            "from (select distinct user2role.userid from privilege2module p join role r on p.privilegeid=r.privilegeid join user2role on r.roleid=user2role.roleid where p.moduleid='14' and r.status=1 ) ro join users u on u.userid=ro.userid " +
-            "where u.valid=true ")
-    public List<UserIdAndName> getManager();
 
     //查询数据源管理者
     @Select("select manager from data_source where source_id=#{sourceId}")

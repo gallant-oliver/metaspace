@@ -75,7 +75,7 @@ public class UserREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getUserItems(@HeaderParam("tenantId")String tenantId, @PathParam("userId") String userId) throws AtlasBaseException {
         try {
-            return ReturnUtil.success(TenantService.defaultTenant.equals(tenantId)? usersService.getUserInfoById(userId) : usersService.getUserInfoByIdV2(tenantId, userId));
+            return ReturnUtil.success(usersService.getUserInfoByIdV2(tenantId, userId));
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取用户信息失败");
         }

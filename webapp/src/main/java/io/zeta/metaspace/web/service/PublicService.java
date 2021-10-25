@@ -62,7 +62,7 @@ public class PublicService {
         Set<CategoryEntityV2> categoryEntityV2s;
         try {
             //获取所有租户
-            List<Tenant> tenants = tenantService.getTenants();
+            List<Tenant> tenants = tenantService.getTenantAll();
             if (global) {
                 categoryEntityV2s = getCategoryGlobal(categoryType);
             } else {
@@ -180,7 +180,7 @@ public class PublicService {
             return pageResult;
         }
         //获取所有租户
-        List<Tenant> tenants = tenantService.getTenants();
+        List<Tenant> tenants = tenantService.getTenantAll();
         Map<String, String> map = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName));
         for (RelationEntityV2 item : pageResult.getLists()) {
             item.setPath(map.get(item.getTenantId()) + "/" + item.getPath());

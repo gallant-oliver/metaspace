@@ -269,9 +269,7 @@ public class BusinessService implements Approvable {
                 }
             }
 
-
             info.setEditBusiness(edit);
-
             String submitter = userGroupDAO.getUserNameById(info.getSubmitter());
             String operator = userGroupDAO.getUserNameById(info.getBusinessOperator());
             if (submitter != null) {
@@ -307,18 +305,9 @@ public class BusinessService implements Approvable {
             info.setGlobal(publicService.isGlobal());
             User user = AdminUtils.getUserData();
             String userId = user.getUserId();
-            //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
-                if (roles.stream().allMatch(role -> role.getStatus() == 0))
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-                boolean editTechnical = privilegeDao.queryModulePrivilegeByUser(userId, SystemModule.TECHNICAL_OPERATE.getCode()) == 0 ? false : true;
-                info.setEditTechnical(editTechnical);
-            } else {
 //                List<Module> modules = tenantService.getModule(tenantId);
 //                boolean editTechnical = modules.stream().anyMatch(module-> ModuleEnum.TECHNICALEDIT.getId()==module.getModuleId());
-                info.setEditTechnical(true);
-            }
+            info.setEditTechnical(true);
             //tables
             List<TechnologyInfo.Table> tables = buildTablesByBusinessId(businessId, tenantId,null,null);
 

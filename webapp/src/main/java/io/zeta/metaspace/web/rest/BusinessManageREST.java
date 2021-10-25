@@ -34,7 +34,6 @@ import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.GuidCount;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
-import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
@@ -50,7 +49,6 @@ import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataShareService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import io.zeta.metaspace.web.service.SearchService;
-import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -282,7 +280,7 @@ public class BusinessManageREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<CategoryPrivilege> getAllCategory(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return TenantService.defaultTenant.equals(tenantId) ? dataManageService.getAll(TECHNICAL_CATEGORY_TYPE) : dataManageService.getAllByUserGroup(TECHNICAL_CATEGORY_TYPE, tenantId);
+            return dataManageService.getAllByUserGroup(TECHNICAL_CATEGORY_TYPE, tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"获取技术目录失败");
         }

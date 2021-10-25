@@ -3,9 +3,7 @@ package io.zeta.metaspace.web.service;
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
-import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.*;
-import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.security.RoleResource;
 import io.zeta.metaspace.model.security.SecuritySearch;
@@ -15,9 +13,7 @@ import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.model.user.UserInfoGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.web.dao.CategoryDAO;
-import io.zeta.metaspace.web.dao.RoleDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
-import io.zeta.metaspace.web.dao.UserGroupDAO;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -47,20 +43,11 @@ public class UsersService {
     @Autowired
     private CategoryDAO categoryDAO;
     @Autowired
-    private RoleDAO roleDAO;
-    @Autowired
-    private UserGroupDAO userGroupDAO;
-    @Autowired
     private DataManageService dataManageService;
 
     @Bean(name = "getUserService")
     public UsersService getUserService() {
         return usersService;
-    }
-
-    public boolean isRole(String userId){
-        List<String> roleId = userDAO.getRoleIdByUserId(userId);
-        return roleId==null||roleId.size()==0;
     }
 
 
@@ -103,74 +90,6 @@ public class UsersService {
             user.setUsername(userTmp.getUsername());
             user.setAccount(userTmp.getAccount());
             info.setUser(user);
-            //role
-            List<Role> roleTmps = userDAO.getRoleByUserId(userId);
-            List<UserInfo.Role> roles = new ArrayList<>();
-            for (Role roleTmp:roleTmps){
-                UserInfo.Role role = new UserInfo.Role();
-                role.setRoleId(roleTmp.getRoleId());
-                role.setRoleName(roleTmp.getRoleName());
-                roles.add(role);
-            }
-            info.setRoles(roles);
-            List<String> technicalChildCategorys = new ArrayList<>();
-            List<String> businessChildCategorys = new ArrayList<>();
-            List<UserInfo.Category> userBusiCategoryList = new ArrayList<>();
-            List<UserInfo.Category> userTechCategoryList = new ArrayList<>();
-            List<UserInfo.Module> modules = new ArrayList<>();
-            for (UserInfo.Role role:roles){
-                String roleId = role.getRoleId();
-                //module
-                List<UserInfo.Module> moduleList = userDAO.getModuleByRoleId(roleId);
-                for (UserInfo.Module module:moduleList){
-                    if (!modules.stream().anyMatch(userModule -> userModule.getModuleId()==module.getModuleId())){
-                        modules.add(module);
-                    }
-                }
-                //technicalCategory
-                List<CategoryEntityV2> technicalCategoryList = userDAO.getTechnicalCategoryByRoleId(roleId);
-                for (CategoryEntityV2 entity : technicalCategoryList) {
-                    if (userTechCategoryList.stream().anyMatch(technicalCategory -> technicalCategory.getGuid().equals(entity.getGuid()))){
-                        continue;
-                    }
-                    if (technicalChildCategorys.contains(entity.getGuid())){
-                        continue;
-                    }
-                    addUserCategory(userTechCategoryList,entity,0,"default");
-                }
-                if (technicalCategoryList!=null&&technicalCategoryList.size()!=0){
-                    List<RoleModulesCategories.Category> techChildCategorys = roleDAO.getChildCategorys(technicalCategoryList.stream().map(categoryEntityV2 -> categoryEntityV2.getGuid()).collect(Collectors.toList()), 0,TenantService.defaultTenant);
-                    for (RoleModulesCategories.Category category:techChildCategorys){
-                        if (!technicalChildCategorys.contains(category.getGuid())){
-                            technicalChildCategorys.add(category.getGuid());
-                        }
-                    }
-                }
-                //businessCategory
-                List<CategoryEntityV2> businessCategoryList = userDAO.getBusinessCategoryByRoleId(roleId);
-                for (CategoryEntityV2 entity : businessCategoryList) {
-                    if (userBusiCategoryList.stream().anyMatch(technicalCategory -> technicalCategory.getGuid().equals(entity.getGuid()))){
-                        continue;
-                    }
-                    if (businessChildCategorys.contains(entity.getGuid())){
-                        continue;
-                    }
-                    addUserCategory(userBusiCategoryList,entity,1,"default");
-                }
-                if (businessCategoryList!=null&&businessCategoryList.size()!=0){
-                    List<RoleModulesCategories.Category> busiChildCategorys = roleDAO.getChildCategorys(businessCategoryList.stream().map(categoryEntityV2 -> categoryEntityV2.getGuid()).collect(Collectors.toList()), 1,TenantService.defaultTenant);
-                    for (RoleModulesCategories.Category category:busiChildCategorys){
-                        if (!businessChildCategorys.contains(category.getGuid())){
-                            businessChildCategorys.add(category.getGuid());
-                        }
-                    }
-                }
-            }
-            userTechCategoryList = userTechCategoryList.stream().filter(category->!technicalChildCategorys.contains(category.getGuid())).collect(Collectors.toList());
-            userBusiCategoryList = userBusiCategoryList.stream().filter(category->!businessChildCategorys.contains(category.getGuid())).collect(Collectors.toList());
-            info.setModules(modules);
-            info.setTechnicalCategory(userTechCategoryList);
-            info.setBusinessCategory(userBusiCategoryList);
             return info;
         } catch (Exception e) {
             LOG.error("获取用户信息失败", e);
@@ -211,9 +130,6 @@ public class UsersService {
             if(Objects.nonNull(query))
                 query = query.replaceAll("%", "/%").replaceAll("_", "/_");
             List<User> userList = userDAO.getUserList(query, limit, offset);
-            for (User user:userList){
-                user.setRoles(userDAO.getRolesByUser(user.getUserId()));
-            }
             userPageResult.setLists(userList);
             long userTotalSize = 0;
             if (userList.size()!=0){
@@ -251,39 +167,6 @@ public class UsersService {
         } catch (Exception e) {
             LOG.error("获取失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取用户功能模块失败");
-        }
-    }
-
-    public List<Module> getModules(String userId) {
-        return userDAO.getModuleByUserId(userId);
-    }
-
-    public List<String> getRoleIdByUserId(String userId) {
-        return roleDAO.getRoleIdByUserId(userId);
-    }
-
-    public List<Role> getRoleByUserId(String userId) {
-        return userDAO.getRoleByUserId(userId);
-    }
-
-    public PageResult<User> getUserListFilterAdmin(Parameters parameters) throws AtlasBaseException {
-
-        String query = parameters.getQuery();
-        int limit = parameters.getLimit();
-        int offset = parameters.getOffset();
-        try {
-            PageResult<User> userPageResult = new PageResult<>();
-            if(Objects.nonNull(query))
-                query = query.replaceAll("%", "/%").replaceAll("_", "/_");
-            List<User> userList = userDAO.getUserListFilterAdmin(query, limit, offset);
-            userPageResult.setLists(userList);
-            long userCount = userDAO.getUsersCount(query);
-            userPageResult.setCurrentSize(userList.size());
-            userPageResult.setTotalSize(userCount);
-            return userPageResult;
-        } catch (Exception e) {
-            LOG.error("获取成员失败",e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取成员失败");
         }
     }
 
@@ -424,9 +307,5 @@ public class UsersService {
             return;
         }
         userDAO.addGroupByUser(userId,userGroups);
-    }
-
-    public void getCategoryPrivilege(String categeoryId){
-
     }
 }
