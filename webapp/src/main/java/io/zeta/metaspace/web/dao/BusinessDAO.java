@@ -620,6 +620,11 @@ public interface BusinessDAO {
             ")")
     int getBusinessCountByCategoryId(@Param("categoryGuid")String categoryGuid, @Param("tenantId")String tenantId, @Param("userId")String userId);
 
+    //查询指标目录下指标数量
+    @Select("select count(id) count " +
+            "from business_indicators " +
+            "where indicator_group=#{categoryGuid} and deleted=1 ")
+    int getIndicatorCountByCategoryId(@Param("categoryGuid")String categoryGuid);
 
     @Select("<script>" +
             "select bi.name, bi.module module, " +
