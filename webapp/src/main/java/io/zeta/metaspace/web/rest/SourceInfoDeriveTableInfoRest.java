@@ -101,7 +101,7 @@ public class SourceInfoDeriveTableInfoRest {
             return ReturnUtil.success(true);
         } catch (Exception e) {
             LOG.error("新建衍生表登记异常", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新建衍生表登记异常");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "新建衍生表登记异常:"+e.getMessage());
         }
     }
 
