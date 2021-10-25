@@ -29,6 +29,7 @@ import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.SystemModule;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.CategorycateQueryResult;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
@@ -128,6 +129,9 @@ public class BusinessService implements Approvable {
 
     @Autowired
     private PublicService publicService;
+
+    @Autowired
+    private DataManageService dataManageService;
 
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
@@ -2064,12 +2068,19 @@ public class BusinessService implements Approvable {
     /**
      * 查询目录中未关联当前业务对象的表
      *
-     * @param categoryGuid
+     * @param categoryGuids
      * @param businessId
      * @param tenantId
      */
-    public PageResult<RelationEntityV2> getCategoryRelationFilter(String categoryGuid, String businessId, RelationQuery query, String tenantId) {
+    public PageResult<RelationEntityV2> getCategoryRelationFilter(List<String> categoryGuids, String businessId, RelationQuery query, String tenantId) {
         try {
+            if (CollectionUtils.isEmpty(categoryGuids)) {
+                List<CategoryPrivilege> allCategories = dataManageService.getTechnicalCategory(tenantId);
+                if (CollectionUtils.isNotEmpty(allCategories)) {
+                    categoryGuids = allCategories.stream().map(c -> c.getGuid()).collect(Collectors.toList());
+                }
+            }
+
             int limit = query.getLimit();
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
@@ -2078,11 +2089,20 @@ public class BusinessService implements Approvable {
             if (org.apache.commons.lang.StringUtils.isNotBlank(tableName)) {
                 tableName = tableName.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
             }
-            List<RelationEntityV2> relations = businessDao.queryRelationByCategoryGuidAndBusinessIdFilterV2(categoryGuid, businessId, tenantId, limit, offset, tableName);
-            if (!org.springframework.util.CollectionUtils.isEmpty(relations)) {
-                totalNum = relations.get(0).getTotal();
+
+            List<RelationEntityV2> relations = new ArrayList<>();
+
+            User user = AdminUtils.getUserData();
+            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+            if (CollectionUtils.isNotEmpty(userGroups) && CollectionUtils.isNotEmpty(categoryGuids)) {
+                List<String> userGroupIds = userGroups.stream().map(UserGroup::getId).collect(Collectors.toList());
+
+                relations = businessDao.queryRelationByCategoryGuidAndBusinessIdFilterV2(categoryGuids, businessId, tenantId, limit, offset, tableName, userGroupIds);
+                if (!org.springframework.util.CollectionUtils.isEmpty(relations)) {
+                    totalNum = relations.get(0).getTotal();
+                }
+                getPath(relations, tenantId);
             }
-            getPath(relations, tenantId);
             pageResult.setCurrentSize(relations.size());
             pageResult.setLists(relations);
             pageResult.setTotalSize(totalNum);

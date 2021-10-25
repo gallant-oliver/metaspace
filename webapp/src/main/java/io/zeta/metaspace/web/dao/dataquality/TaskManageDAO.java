@@ -20,6 +20,8 @@ import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.sync.SyncTaskDefinition;
+import io.zeta.metaspace.web.typeHandler.ListStringTypeHandler;
 import org.apache.ibatis.annotations.*;
 
 import java.sql.SQLException;
@@ -944,4 +946,24 @@ public interface TaskManageDAO {
      */
     @Select("select distinct subtask_id from data_quality_task_rule_execute where id=#{id}")
     public List<String> getSubTaskId(@Param("id")String id);
+
+    @Results(id="base", value ={
+            @Result(property = "schemas", column = "schemas", typeHandler = ListStringTypeHandler.class)
+    })
+    @Select("<script>" +
+            "SELECT " +
+            "(case d.data_source_id when 'hive' then 'HIVE' else db.source_type) end as dataSourceType, " +
+            "FROM sync_task_definition d " +
+            "join data_source db on db.source_id = d.data_source_id " +
+            "WHERE definition.tenant_id = #{tenantId} and d.data_source_id = #{sourceId} " +
+            "<choose>" +
+            " <when test=\"searchType=='SCHEMA'\">" +
+            " and d.data_source_id = 'hive'" +
+            " </when>" +
+            " <otherwise>" +
+            " and d.data_source_id != 'hive'" +
+            " </otherwise>" +
+            "</choose>" +
+            "</script>")
+    List<SyncTaskDefinition> getTaskSchemas(@Param("tenantId")String tenantId, @Param("sourceId")String sourceId, @Param("searchType")String searchType);
 }
