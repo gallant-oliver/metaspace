@@ -1,11 +1,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveColumnInfo;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.*;
 
 import java.util.List;
 
@@ -68,4 +64,9 @@ public interface SourceInfoDeriveColumnInfoDAO {
             "</script>"})
     int upsert(@Param("deriveColumn") SourceInfoDeriveColumnInfo deriveColumn);
 
+    @Update("update source_info_derive_column_info set table_guid=#{newTableGuid} where table_guid=#{oldTableGuid}")
+    void updateColumnInfoByTableGuid(@Param("newTableGuid")String newTableGuid, @Param("oldTableGuid")String oldTableGuid);
+
+    @Update("update source_info_derive_table_column_relation set table_guid=#{newTableGuid} where table_guid=#{oldTableGuid}")
+    void updateColumnRelationByTableGuid(@Param("newTableGuid")String newTableGuid, @Param("oldTableGuid")String oldTableGuid);
 }

@@ -737,7 +737,7 @@ public interface BusinessDAO {
     @Delete("<script>" +
             "delete from business2table where " +
             "<foreach item='info' index='index' collection='sourceInfoDeriveTableInfos' separator=' or '>" +
-            "(businessid=#{info.businessId} and tableguid=#{info.sourceTableGuid} and source_id=#{info.sourceId} and relation_type=1)" +
+            "(businessid=#{info.businessId} and tableguid=#{info.tableGuid} and source_id=#{info.sourceId} and relation_type=1)" +
             "</foreach>" +
             "</script>")
     void batchDeleteRelationByBusinessIdsAndTableIds(@Param("sourceInfoDeriveTableInfos")List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos);
@@ -747,4 +747,7 @@ public interface BusinessDAO {
 
     @Update("update business2table set relation_type= #{relationType} where businessid=#{businessId} and tableguid=#{sourceTableGuid} and source_id=#{sourceId}")
     void updateRelationType(@Param("businessId")String businessId, @Param("sourceTableGuid")String sourceTableGuid, @Param("sourceId")String sourceId, @Param("relationType")int relationType);
+
+    @Update("update business2table set tableguid=#{newTableGuid} where tableguid=#{oldTableGuid}")
+    void updateBusiness2TableByTableGuid(@Param("newTableGuid")String newTableGuid, @Param("oldTableGuid")String oldTableGuid);
 }

@@ -162,6 +162,10 @@ public class DataManageService {
     private DataManageService dataManageService;
     @Autowired
     private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDAO;
+
+    @Autowired
+    private SourceInfoDeriveColumnInfoDAO sourceInfoDeriveColumnInfoDAO;
+
     int technicalType = 0;
     int dataStandType = 3;
     int technicalCount = 5;
@@ -1957,10 +1961,16 @@ public class DataManageService {
     @Transactional(rollbackFor = Exception.class)
     public void addTable(TableInfo tableInfo) throws Exception {
         tableDAO.addTable(tableInfo);
-        List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos = sourceInfoDeriveTableInfoDAO.selectByDbAndTableName(tableInfo.getDatabaseGuid(), tableInfo.getTableName());
-        if (CollectionUtils.isEmpty(sourceInfoDeriveTableInfos)) {
+        SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.selectByDbAndTableName(tableInfo.getDatabaseGuid(), tableInfo.getTableName());
+        if (sourceInfoDeriveTableInfo == null) {
             return;
         }
+
+        businessDAO.updateBusiness2TableByTableGuid(tableInfo.getTableGuid(), sourceInfoDeriveTableInfo.getTableGuid());
+
+        sourceInfoDeriveColumnInfoDAO.updateColumnInfoByTableGuid(tableInfo.getTableGuid(), sourceInfoDeriveTableInfo.getTableGuid());
+        sourceInfoDeriveColumnInfoDAO.updateColumnRelationByTableGuid(tableInfo.getTableGuid(), sourceInfoDeriveTableInfo.getTableGuid());
+
         sourceInfoDeriveTableInfoDAO.updateByDbAndTableName(tableInfo.getDatabaseGuid(), tableInfo.getTableName(), tableInfo.getTableGuid());
     }
 
@@ -1972,11 +1982,19 @@ public class DataManageService {
     @Transactional(rollbackFor = Exception.class)
     public void updateTable(TableInfo tableInfo) throws Exception {
         tableDAO.updateTable(tableInfo);
-        List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos = sourceInfoDeriveTableInfoDAO.selectByTableGuid(tableInfo.getTableGuid());
-        if (CollectionUtils.isEmpty(sourceInfoDeriveTableInfos)) {
+        SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.selectByTableGuid(tableInfo.getTableGuid());
+        if (sourceInfoDeriveTableInfo == null) {
             return;
         }
-        sourceInfoDeriveTableInfoDAO.updateByTableGuid(tableInfo.getTableGuid(), tableInfo.getTableName());
+
+        // 更新表名、ddl、dml
+        String ddl = sourceInfoDeriveTableInfo.getDdl();
+        String dml = sourceInfoDeriveTableInfo.getDml();
+
+        ddl = ddl.replace("." + sourceInfoDeriveTableInfo.getTableNameEn(), "." + tableInfo.getTableName());
+        dml = dml.replace("insert into " + sourceInfoDeriveTableInfo.getTableNameEn(), "insert into " + tableInfo.getTableName());
+
+        sourceInfoDeriveTableInfoDAO.updateByTableGuid(tableInfo.getTableGuid(), tableInfo.getTableName(), ddl, dml);
     }
 
     private Database getDbInfo(AtlasEntity entity) {
