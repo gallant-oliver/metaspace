@@ -19,6 +19,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -307,5 +308,11 @@ public class UsersService {
             return;
         }
         userDAO.addGroupByUser(userId,userGroups);
+    }
+
+    public List<String> getMailsByGroups(String[] toList) {
+        List<String> userIds = userGroupService.getUserIdsByGroups(Arrays.asList(toList));
+        List<String> emails=userDAO.getUsersEmailByIds(userIds);
+        return emails;
     }
 }

@@ -1474,4 +1474,12 @@ public interface UserGroupDAO {
             "</foreach>" +
             "</script>")
     List<BusinessInfoHeader> getBusinessesByGroup(@Param("categoryGuids")List<String> categoryGuids, @Param("groupId")String groupId, @Param("tenantId")String tenantId);
+
+    @Select("<script>" +
+            "select DISTINCT user_id from user_group_relation where group_id IN" +
+            "<foreach item='groupId' index='index' collection='groupIds' open='(' separator=',' close=')'>" +
+            "#{groupId}" +
+            "</foreach>" +
+            "</script>")
+    List<String> getUserIdByUserGroups(@Param("groupIds") List<String> idList);
 }
