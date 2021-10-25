@@ -380,4 +380,7 @@ public interface TableDAO {
             " INNER JOIN data_source ON source_db.source_id = data_source.source_id" +
             " WHERE tableinfo.tableguid = #{guid}")
     TableSource selectTableSource(@Param("guid") String guid);
+
+    @Select("select * from tableinfo where databaseguid = #{dbId} and tablename = #{tableName}")
+    TableInfo selectByDbGuidAndTableName(@Param("dbId") String dbId, @Param("tableName") String tableName);
 }

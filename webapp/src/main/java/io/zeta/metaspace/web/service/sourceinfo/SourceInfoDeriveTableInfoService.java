@@ -113,7 +113,14 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableInfo.setTableNameEn(sourceInfoDeriveTableInfo.getTableNameEn().toLowerCase());
         // 设置主键id和tableGuid
         sourceInfoDeriveTableInfo.setId(UUID.randomUUID().toString());
-        sourceInfoDeriveTableInfo.setTableGuid(UUID.randomUUID().toString());
+
+        TableInfo tableInfo = tableDAO.selectByDbGuidAndTableName(sourceInfoDeriveTableColumnDto.getDbId(), sourceInfoDeriveTableColumnDto.getTableNameEn());
+        if(tableInfo != null){
+            sourceInfoDeriveTableInfo.setTableGuid(tableInfo.getTableGuid());
+        }else {
+            sourceInfoDeriveTableInfo.setTableGuid(UUID.randomUUID().toString());
+        }
+
         sourceInfoDeriveTableInfo.setCreator(user.getUserId());
         sourceInfoDeriveTableInfo.setCreateTime(LocalDateTime.now());
         sourceInfoDeriveTableInfo.setUpdater(user.getUserId());
@@ -195,7 +202,11 @@ public class SourceInfoDeriveTableInfoService {
         // 列
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
         // 表英文名设置为小写
-        sourceInfoDeriveTableInfo.setTableNameEn(sourceInfoDeriveTableInfo.getTableNameEn().toLowerCase());
+//        sourceInfoDeriveTableInfo.setTableNameEn(sourceInfoDeriveTableInfo.getTableNameEn().toLowerCase());
+        TableInfo tableInfo = tableDAO.selectByDbGuidAndTableName(sourceInfoDeriveTableColumnDto.getDbId(), sourceInfoDeriveTableColumnDto.getTableNameEn());
+        if(tableInfo != null){
+            sourceInfoDeriveTableInfo.setTableGuid(tableInfo.getTableGuid());
+        }
         sourceInfoDeriveTableInfo.setCreateTime(LocalDateTime.parse(sourceInfoDeriveTableColumnDto.getCreateTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         sourceInfoDeriveTableInfo.setUpdater(user.getUserId());
         sourceInfoDeriveTableInfo.setUpdateTime(LocalDateTime.now());
@@ -964,6 +975,10 @@ public class SourceInfoDeriveTableInfoService {
     }
 
     public Result checkAddOrEditDeriveTableEntity(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String tenantId) throws SQLException {
+        if (!checkTableNameDump(sourceInfoDeriveTableColumnDto.getTableNameEn(), sourceInfoDeriveTableColumnDto.getDbId(), sourceInfoDeriveTableColumnDto.getId())) {
+            return ReturnUtil.error("400", "目标库下表英文名已存在");
+        }
+
         if(!sourceInfoDeriveTableColumnDto.isSubmit()){
             return ReturnUtil.success();
         }
@@ -984,9 +999,6 @@ public class SourceInfoDeriveTableInfoService {
             return ReturnUtil.error("400", "数据源类型不符合规范");
         }
 
-        if (!checkTableNameDump(sourceInfoDeriveTableColumnDto.getTableNameEn(), sourceInfoDeriveTableColumnDto.getDbId(), sourceInfoDeriveTableColumnDto.getId())) {
-            return ReturnUtil.error("400", "目标库下表英文名已存在");
-        }
         // 检验表英文名
         if (!checkTableOrColumnNameEnPattern(sourceInfoDeriveTableColumnDto.getTableNameEn())) {
             return ReturnUtil.error("400", "衍生表英文名不符合规范");
