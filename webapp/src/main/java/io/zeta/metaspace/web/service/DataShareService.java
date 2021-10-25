@@ -1398,7 +1398,7 @@ public class DataShareService {
     }
 
     public PageResult getDataList(SEARCH_TYPE searchType, ColumnParameters parameters, String tenantId, String sourceId, String... ids) throws AtlasBaseException {
-        return getTaskDataList(null, searchType, parameters, tenantId, sourceId, ids);
+        return getDataList(null, searchType, parameters, tenantId, sourceId, ids);
     }
 
     public List<String> getUserDataBases(String tenantId, String sourceId) throws AtlasBaseException {

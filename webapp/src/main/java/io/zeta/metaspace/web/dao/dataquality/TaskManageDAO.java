@@ -952,7 +952,7 @@ public interface TaskManageDAO {
     })
     @Select("<script>" +
             "SELECT " +
-            "(case d.data_source_id when 'hive' then 'HIVE' else db.source_type end) as dataSourceType, " +
+            "(case d.data_source_id when 'hive' then 'HIVE' else db.source_type) end as dataSourceType, " +
             "FROM sync_task_definition d " +
             "join data_source db on db.source_id = d.data_source_id " +
             "WHERE definition.tenant_id = #{tenantId} and d.data_source_id = #{sourceId} " +

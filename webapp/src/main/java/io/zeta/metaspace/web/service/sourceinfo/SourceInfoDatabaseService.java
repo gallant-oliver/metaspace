@@ -161,7 +161,7 @@ public class SourceInfoDatabaseService implements Approvable {
 
         // 发布时做检测；只保存不发布时不做检测
         Result checkParamResult = checkService.checkCreateListParam(databaseInfoList, tenantId);
-        if (Boolean.FALSE.equals((ReturnUtil.isSuccess(checkResult)))) {
+        if (Boolean.FALSE.equals((ReturnUtil.isSuccess(checkParamResult)))) {
             return checkParamResult;
         }
 
