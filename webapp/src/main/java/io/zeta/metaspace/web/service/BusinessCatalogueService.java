@@ -34,8 +34,6 @@ import io.zeta.metaspace.model.metadata.CategoryExport;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.*;
-import io.zeta.metaspace.model.role.Role;
-import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.service.Approve.Approvable;
@@ -46,7 +44,6 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryDeleteReturn;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.commons.lang.StringUtils;
-import org.apache.directory.api.util.Strings;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.mybatis.spring.MyBatisSystemException;
@@ -64,7 +61,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 
@@ -1080,11 +1076,6 @@ public class BusinessCatalogueService implements Approvable {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(userId, tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
-            List<Module> modules = tenantService.getModule(tenantId);
-            //是否无用户组
-            boolean isUserGroup = userGroupIds == null || userGroupIds.size() == 0;
-            //目录管理权限
-            boolean isAdmin = modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId() == module.getModuleId());
             List<CategorycateQueryResult> valuesList=new ArrayList<>();
             List<CategorycateQueryResult> categories=userGroupDAO.getAllCategory(userGroupIds,type,tenantId,userId);
 
@@ -1095,7 +1086,12 @@ public class BusinessCatalogueService implements Approvable {
                 String guid=result.getGuid();
                 String privateStatus=result.getPrivateStatus();
                 String status=result.getStatus();
-                int count=businessDAO.getBusinessCountByCategoryId(guid,tenantId,userId);
+                int  count=0;
+                if(type==1){//业务目录
+                    count=businessDAO.getBusinessCountByCategoryId(guid,tenantId,userId);
+                }else if(type==5){//指标目录
+                    count=businessDAO.getIndicatorCountByCategoryId(guid);
+                }
                 result.setCount(count);
                 if(CategoryPrivateStatus.PUBLIC.name().equals(privateStatus)){
                     if(String.valueOf(Status.REJECT.getIntValue()).equals(status) ||String.valueOf(Status.ACTIVE.getIntValue()).equals(status) ){

@@ -199,7 +199,7 @@ public interface SourceInfoDeriveTableInfoDAO {
             " where t1.tenant_id = #{tenantId} and t1.source_id=#{sourceId}  and t1.db_id=#{schemaId} and t1.table_name_en=#{tableName}",
             "</script>"})
     List<SourceInfoDeriveTableInfo> getDeriveTableByIdAndTenantId( @Param("tenantId")String tenantId, @Param("sourceId")String sourceId,
-                                                             @Param("schemaId") String schemaId,@Param("tableName") String tableName );
+                                                                   @Param("schemaId") String schemaId,@Param("tableName") String tableName );
 
     @Select({"<script>",
             " select t1.id as id, ",
@@ -216,16 +216,15 @@ public interface SourceInfoDeriveTableInfoDAO {
             " where  t1.source_id=#{sourceId} and t1.table_guid=#{tableGuid}",
             "</script>"})
     List<SourceInfoDeriveTableInfo> getDeriveTableByGuid(@Param("sourceId")String sourceId,
-                                                                   @Param("tableGuid") String tableGuid );
+                                                         @Param("tableGuid") String tableGuid );
     @Select("SELECT\n" +
             "id,importance,security \n" +
             "FROM\n" +
             "source_info_derive_table_info\n" +
             "WHERE\n" +
-            " table_name_en = #{tableName}\n" +
-            "AND db_id = #{databaseId} \n" +
+            " table_guid = #{tableGuid}\n" +
             "AND tenant_id = #{tenantId} AND  version=-1 LIMIT 1 ")
-    SourceInfoDeriveTableInfo getByNameAndDbGuid(@Param("tableName") String tableName, @Param("databaseId") String databaseId, @Param("tenantId") String tenantId);
+    SourceInfoDeriveTableInfo getByNameAndDbGuid(@Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
 
     @Select("select importance,security from source_info_derive_table_info where table_guid=#{tableGuid} AND tenant_id = #{tenantId} ")
     List<TableExtInfo> getImportanceInfo( @Param("tableGuid") String tableGuid,@Param("tenantId") String tenantId);

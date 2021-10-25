@@ -55,6 +55,10 @@ public class SourceInfoDeriveTableInfoService {
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceInfoDeriveTableInfoService.class);
 
+    public final int BUSINESS_CATEGORY_TYPE = 1;
+
+    public final int TECHNIACL_CATEGORY_TYPE = 0;
+
     private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao;
     private DbDAO dbDao;
     private TableDAO tableDAO;
@@ -743,34 +747,20 @@ public class SourceInfoDeriveTableInfoService {
         SourceInfoDeriveTableColumnVO sourceInfoDeriveTableColumnVO = new SourceInfoDeriveTableColumnVO();
         BeanUtils.copyProperties(byId, sourceInfoDeriveTableColumnVO);
 
-        TableInfo sourceTableInfo = tableDAO.getTableInfoByTableguidAndStatus(byId.getSourceTableGuid());
-        if (null == sourceTableInfo) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "原表不存在");
-        }
-        List<Column> sourceColumnInfoList = columnDAO.getColumnInfoListByTableGuid(byId.getSourceTableGuid());
-        Map<String, Column> idColumnMap = sourceColumnInfoList.stream().collect(Collectors.toMap(Column::getColumnId, e -> e));
-
-        String sourceCategoryId = categoryDAO.queryCategoryIdByGuidByDBId(sourceTableInfo.getDatabaseGuid(), tenantId);
         BusinessInfo businessInfo = businessDAO.queryBusinessByBusinessId(sourceInfoDeriveTableColumnVO.getBusinessId());
-        // 设置表的技术目录和业务目录
-        // 获取租户下所有的技术目录guid - path
-        int TECHNIACL_CATEGORY_TYPE = 0;
-        Map<String, String> technicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE, sourceInfoDeriveTableColumnVO.getCategoryId());
-        Map<String, String> sourceTechnicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE, sourceCategoryId);
-        // 获取该租户下所有的业务目录guid - path
-        int BUSINESS_CATEGORY_TYPE = 1;
-        Map<String, String> businessCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, BUSINESS_CATEGORY_TYPE, businessInfo.getDepartmentId());
         if (null != businessInfo) {
+            // 获取该租户下所有的业务目录guid - path
+            Map<String, String> businessCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, BUSINESS_CATEGORY_TYPE, businessInfo.getDepartmentId());
             sourceInfoDeriveTableColumnVO.setBusiness(businessInfo.getName());
             sourceInfoDeriveTableColumnVO.setBusinessHeaderId(businessInfo.getDepartmentId());
             sourceInfoDeriveTableColumnVO.setBusinessHeader(businessCategoryGuidPathMap.getOrDefault(businessInfo.getDepartmentId(), ""));
         }
 
+        // 设置表的技术目录和业务目录
+        // 获取租户下所有的技术目录guid - path
+        Map<String, String> technicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE, sourceInfoDeriveTableColumnVO.getCategoryId());
+
         sourceInfoDeriveTableColumnVO.setCategory(technicalCategoryGuidPathMap.getOrDefault(sourceInfoDeriveTableColumnVO.getCategoryId(), ""));
-        sourceInfoDeriveTableColumnVO.setSourceTable(sourceTableInfo.getTableName());
-        // 获取源数据层、库
-        sourceInfoDeriveTableColumnVO.setSourceDbGuid(sourceCategoryId);
-        sourceInfoDeriveTableColumnVO.setSourceDb(sourceTechnicalCategoryGuidPathMap.getOrDefault(sourceCategoryId, ""));
 
         // 开始设置数据库和数据源名称
         String dbId = sourceInfoDeriveTableColumnVO.getDbId();
@@ -784,6 +774,24 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableColumnVO.setSourceName(collect.get(sourceId));
         sourceInfoDeriveTableColumnVO.setCreateTime(byId.getCreateTimeStr());
         sourceInfoDeriveTableColumnVO.setUpdateTime(byId.getUpdateTimeStr());
+
+        if(StringUtils.isBlank(byId.getSourceTableGuid())) {
+            return sourceInfoDeriveTableColumnVO;
+        }
+
+        TableInfo sourceTableInfo = tableDAO.getTableInfoByTableguidAndStatus(byId.getSourceTableGuid());
+        if (null == sourceTableInfo) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "原表不存在");
+        }
+        List<Column> sourceColumnInfoList = columnDAO.getColumnInfoListByTableGuid(byId.getSourceTableGuid());
+        Map<String, Column> idColumnMap = sourceColumnInfoList.stream().collect(Collectors.toMap(Column::getColumnId, e -> e));
+
+        String sourceCategoryId = categoryDAO.queryCategoryIdByGuidByDBId(sourceTableInfo.getDatabaseGuid(), tenantId);
+        Map<String, String> sourceTechnicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE, sourceCategoryId);
+        sourceInfoDeriveTableColumnVO.setSourceTable(sourceTableInfo.getTableName());
+        // 获取源数据层、库
+        sourceInfoDeriveTableColumnVO.setSourceDbGuid(sourceCategoryId);
+        sourceInfoDeriveTableColumnVO.setSourceDb(sourceTechnicalCategoryGuidPathMap.getOrDefault(sourceCategoryId, ""));
 
         sourceInfoDeriveTableColumnVO.setSourceInfoDeriveColumnVOS(deriveColumnInfoListByTableId.stream().map(e -> {
             Column column = idColumnMap.get(e.getSourceColumnGuid());

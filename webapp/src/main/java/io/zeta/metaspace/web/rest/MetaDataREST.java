@@ -128,7 +128,7 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTenantIdList");
             }
             List<TenantExtInfo> tenants =  new ArrayList<>();
-            List<Tenant> tenantList = tenantService.getTenants();
+            List<Tenant> tenantList = tenantService.getTenantAll();
             if(CollectionUtils.isNotEmpty(tenantList)){
                 for(Tenant item : tenantList){
                     TenantExtInfo tenant = new TenantExtInfo();

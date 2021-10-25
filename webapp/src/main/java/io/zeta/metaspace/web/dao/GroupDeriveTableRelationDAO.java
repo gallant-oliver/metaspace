@@ -33,7 +33,7 @@ public interface GroupDeriveTableRelationDAO {
             " </foreach>" +
             " AND tenant_id = #{tenantId}" +
             " </script>")
-    GroupDeriveTableRelation getByTableIdAndGroups(@Param("tableId") String tableId,
+    List<GroupDeriveTableRelation> getByTableIdAndGroups(@Param("tableId") String tableId,
                                                    @Param("userGroupIds") List<String> userGroups,
                                                    @Param("tenantId")String tenantId);
 
@@ -81,7 +81,7 @@ public interface GroupDeriveTableRelationDAO {
             " group_table_relation  " +
             "WHERE " +
             " id IN " +
-            " <foreach item='id' index='ids' collection='relations' separator=',' open='(' close=')'>" +
+            " <foreach item='id' index='ids' collection='ids' separator=',' open='(' close=')'>" +
             "#{id}" +
             "</foreach>" +
             "</script>")
@@ -100,7 +100,7 @@ public interface GroupDeriveTableRelationDAO {
             " c.name AS businessCategoryName " +
             "FROM " +
             " tableinfo ti  " +
-            " INNER JOIN source_info_derive_table_info sidti ON sidti.table_name_en = ti.tablename AND sidti.db_id = ti.databaseguid AND sidti.version = -1 " +
+            " INNER JOIN source_info_derive_table_info sidti ON sidti.table_guid = ti.tableguid AND sidti.version = -1 " +
             "<if test='privilegeType == \"IMPORTANCE\"'>" +
             "   AND sidti.importance = true  " +
             "</if>"+
