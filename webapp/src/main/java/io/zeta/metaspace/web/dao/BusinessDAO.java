@@ -620,6 +620,11 @@ public interface BusinessDAO {
             ")")
     int getBusinessCountByCategoryId(@Param("categoryGuid")String categoryGuid, @Param("tenantId")String tenantId, @Param("userId")String userId);
 
+    //查询指标目录下指标数量
+    @Select("select count(id) count " +
+            "from business_indicators " +
+            "where indicator_group=#{categoryGuid} and deleted=1 ")
+    int getIndicatorCountByCategoryId(@Param("categoryGuid")String categoryGuid);
 
     @Select("<script>" +
             "select bi.name, bi.module module, " +
@@ -648,82 +653,50 @@ public interface BusinessDAO {
             "</script>")
     void updateBusinessSubmitterRead(@Param("submitterRead")boolean submitterRead, @Param("ids")List<String> ids);
 
-    @Delete("delete from business2table where businessid=#{businessId} and tableguid=#{tableId} and source_id=#{sourceId}")
-    void deleteRelationByBusinessIdAndTableId(@Param("businessId")String businessId, @Param("tableId")String tableId, @Param("sourceId")String sourceId);
+    @Delete("delete from business2table where businessid=#{businessId} and tableguid=#{tableId} and source_id=#{sourceId} and relation_type=#{relationType}")
+    void deleteRelationByBusinessIdAndTableId(@Param("businessId")String businessId, @Param("tableId")String tableId, @Param("sourceId")String sourceId, @Param("relationType")int relationType);
 
     //查询业务信息关联的数据库表（包含衍生表登记所关联的表）
     @Select("select ti.tableguid tableGuid, ti.tablename tableName, ti.dbname dbName, ti.status, ti.createtime createTime, ti.databaseguid databaseGuid, " +
             "COALESCE(ti.display_name, ti.tablename, '') as displayName, ti.description, " +
             "b2t.source_id sourceId, " +
             "b2t.relation_type relationType, " +
-            "case when " +
-            "(select count(*) from source_info_derive_table_info sidti " +
-            "inner join source_info_derive_column_info sidci on sidci.table_guid= sidti.table_guid and sidci.important=true " +
-            "where sidti.source_table_guid=ti.tableguid)>0 then true else false end as important, " +
-            "case when " +
-            "(select count(*) from source_info_derive_table_info sidti " +
-            "inner join source_info_derive_column_info sidci on sidci.table_guid= sidti.table_guid and sidci.secret=true " +
-            "where sidti.source_table_guid=ti.tableguid)>0 then true else false end as secret " +
+            "case when sidti.importance is null then false else sidti.importance end as important, " +
+            "case when sidti.security is null then false else sidti.security end as secret " +
             "from business2table b2t " +
             "join tableInfo ti on ti.tableguid=b2t.tableguid and status='ACTIVE' " +
+            "left join source_info_derive_table_info sidti on sidti.table_guid=ti.tableguid and sidti.version=-1 " +
             "where b2t.businessid=#{businessId}")
     List<TechnologyInfo.Table> queryAllTablesByBusinessId(@Param("businessId") String businessId, @Param("tenantId") String tenantId);
 
     @Select("<script>" +
-            "SELECT DISTINCT\n" +
-                    " ti.tableGuid,\n" +
-                    " COUNT ( * ) OVER () total,\n" +
-                    " COALESCE(tdsr.data_source_id,(SELECT data_source_id FROM source_info WHERE \"version\" = 0 AND category_id = #{categoryGuid} AND tenant_id = #{tenantId} ),'ID') AS sourceId,\n" +
-                    "\n" +
-                    " COALESCE (\n" +
-                    "  ( SELECT source_name FROM data_source WHERE source_id = tdsr.data_source_id ),\n" +
-                    "  (\n" +
-                    "  SELECT\n" +
-                    "   ds.source_name \n" +
-                    "  FROM\n" +
-                    "   source_info si\n" +
-                    "   LEFT JOIN data_source ds ON si.data_source_id = ds.source_id \n" +
-                    "  WHERE\n" +
-                    "   VERSION = 0 \n" +
-                    "   AND category_id = #{categoryGuid} \n" +
-                    "   AND tenant_id = #{tenantId} \n" +
-                    "  ),\n" +
-                    "  'hive' \n" +
-                    " ) AS sourceName," +
-                    " (SELECT id FROM source_info WHERE \"version\" = 0 AND category_id = #{categoryGuid} AND tenant_id = #{tenantId} ) AS sourceInfoId, " +
-                    " tdsr.category_id AS categoryGuid,\n" +
-                    " ti.tableName,\n" +
-                    " ti.dbName,\n" +
-                    " ti.databaseguid AS dbId,\n" +
-                    " ti.tableGuid,\n" +
-                    " ti.status,\n" +
-                    " tdsr.update_time AS generateTime,\n" +
-                    " ti.description \n" +
-                    "FROM\n" +
-                    " tableinfo ti\n" +
-                    " LEFT JOIN table_data_source_relation tdsr ON tdsr.table_id = ti.tableGuid \n" +
-                    "WHERE\n" +
-                    " ((\n" +
-                    "   tdsr.category_id = #{categoryGuid} \n" +
-                    "   AND tdsr.tenant_id = #{tenantId} \n" +
-                    "   ) \n" +
-                    "  OR ti.databaseguid = ( SELECT db_guid FROM db_category_relation dcr WHERE dcr.category_id = #{categoryGuid} AND dcr.tenant_id = #{tenantId} ) \n" +
-                    " ) \n" +
-                    " AND ti.status = 'ACTIVE'" +
-                    " <if test=\"tableName != '' and tableName != null\">" +
-            " AND ti.tablename like concat('%',#{tableName},'%')" +
-                    " </if>" +
-            " AND ti.tableguid not in (select tableguid from business2table where businessid=#{businessId}) " +
-            " ORDER BY" +
-                    " ti.status,\n" +
-                    " tdsr.update_time DESC,\n" +
-                    " ti.tablename" +
-            " <if test='limit!= -1'>" +
+            "select distinct COUNT ( * ) OVER () total, ti.tableguid tableGuid, ti.tablename tableName, " +
+            "si.data_source_id sourceId, " +
+            "si.category_id categoryGuid, " +
+            "ti.dbname dbName, ti.databaseguid dbId, ti.status, ti.description " +
+            "from tableinfo ti " +
+            "inner join source_info si on si.database_id=ti.databaseguid and si.tenant_id=#{tenantId} and si.version=0 " +
+            "inner join database_group_relation dbgr on dbgr.database_guid=si.database_id and dbgr.source_id=si.data_source_id " +
+            "where ti.status = 'ACTIVE' " +
+            "<if test=\"tableName != '' and tableName != null\">" +
+            "and ti.tablename like concat('%',#{tableName},'%') " +
+            "</if>" +
+            "and ti.tableguid not in (select tableguid from business2table where businessid=#{businessId}) " +
+            "and si.category_id in " +
+            "<foreach item='categoryGuid' index='index' collection='categoryGuids' separator=',' open='(' close=')'>" +
+            "#{categoryGuid} " +
+            "</foreach>" +
+            " and dbgr.group_id in " +
+            "<foreach item='userGroupId' index='index' collection='userGroupIds' separator=',' open='(' close=')'>" +
+            "#{userGroupId} " +
+            "</foreach>" +
+            " order by ti.status, ti.tablename" +
+            "<if test='limit!= -1'>" +
             " limit #{limit}" +
-            " </if>" +
+            "</if>" +
             " offset #{offset}" +
-            " </script>")
-    List<RelationEntityV2> queryRelationByCategoryGuidAndBusinessIdFilterV2(@Param("categoryGuid")String categoryGuid, @Param("businessId")String businessId, @Param("tenantId") String tenantId, @Param("limit") int limit, @Param("offset") int offset,@Param("tableName") String tableName);
+            "</script>")
+    List<RelationEntityV2> queryRelationByCategoryGuidAndBusinessIdFilterV2(@Param("categoryGuids")List<String> categoryGuids, @Param("businessId")String businessId, @Param("tenantId") String tenantId, @Param("limit") int limit, @Param("offset") int offset, @Param("tableName") String tableName, @Param("userGroupIds") List<String> userGroupIds);
 
     //删除业务信息与用户组的关联
     @Delete("<script>" +
@@ -764,8 +737,14 @@ public interface BusinessDAO {
     @Delete("<script>" +
             "delete from business2table where " +
             "<foreach item='info' index='index' collection='sourceInfoDeriveTableInfos' separator=' or '>" +
-            "(businessid=#{info.businessId} and tableguid=#{info.sourceTableGuid} and source_id=#{info.sourceId})" +
+            "(businessid=#{info.businessId} and tableguid=#{info.sourceTableGuid} and source_id=#{info.sourceId} and relation_type=1)" +
             "</foreach>" +
             "</script>")
     void batchDeleteRelationByBusinessIdsAndTableIds(@Param("sourceInfoDeriveTableInfos")List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos);
+
+    @Select("select count(*)>0 from business2table where businessid=#{businessId} and tableguid=#{sourceTableGuid} and source_id=#{sourceId}")
+    boolean isRelationExist(@Param("businessId")String businessId, @Param("sourceTableGuid")String sourceTableGuid, @Param("sourceId")String sourceId);
+
+    @Update("update business2table set relation_type= #{relationType} where businessid=#{businessId} and tableguid=#{sourceTableGuid} and source_id=#{sourceId}")
+    void updateRelationType(@Param("businessId")String businessId, @Param("sourceTableGuid")String sourceTableGuid, @Param("sourceId")String sourceId, @Param("relationType")int relationType);
 }

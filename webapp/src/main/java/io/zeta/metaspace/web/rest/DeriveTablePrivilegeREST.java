@@ -46,8 +46,8 @@ public class DeriveTablePrivilegeREST {
     @Path("/privilege")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public Result deleteRelations(@HeaderParam("tenantId")String tenantId, List<String> groupTableRelationIds){
-        return deriveTablePrivilegeService.deleteRelations(groupTableRelationIds);
+    public Result deleteRelations(@HeaderParam("tenantId")String tenantId, DeleteRequest request){
+        return deriveTablePrivilegeService.deleteRelations(request.getGroupTableRelationIds());
     }
 
 }

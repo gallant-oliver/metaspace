@@ -1,6 +1,5 @@
 package io.zeta.metaspace.web.service.sourceinfo;
 
-import com.google.gson.Gson;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.bo.DatabaseInfoBO;
 import io.zeta.metaspace.model.Result;
@@ -41,7 +40,6 @@ import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import javax.ws.rs.DefaultValue;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -90,8 +88,9 @@ public class SourceInfoDatabaseService implements Approvable {
      */
     @Transactional(rollbackFor = Exception.class)
     public Result addDatabaseInfo(String tenantId, DatabaseInfo databaseInfo,String approveGroupId,SubmitType submitType){
-        Result checkResult = checkService.checkCreateParam(databaseInfo,tenantId,approveGroupId,submitType);
-        if (Boolean.FALSE.equals((ReturnUtil.isSuccess(checkResult)))){
+        // 发布时做检测；只保存不发布时不做检测
+        Result checkResult = checkService.checkCreateParam(databaseInfo, tenantId, approveGroupId, submitType);
+        if (Boolean.FALSE.equals((ReturnUtil.isSuccess(checkResult))) && SubmitType.SUBMIT_AND_PUBLISH.equals(submitType)) {
             return checkResult;
         }
         DatabaseInfoPO dp = this.convertToPO(tenantId,databaseInfo);
@@ -107,7 +106,7 @@ public class SourceInfoDatabaseService implements Approvable {
             databaseInfoDAO.updateStatusByIds(ids,Status.AUDITING.getIntValue()+"");
             this.approveItems(tenantId,databaseInfoList,approveGroupId);
         }
-        return ReturnUtil.success();
+        return checkResult;
     }
 
     /**
@@ -159,6 +158,13 @@ public class SourceInfoDatabaseService implements Approvable {
                     AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("审核组"));
         }
         List<DatabaseInfo> databaseInfoList = databaseInfoDAO.getDatabaseIdAndAliasByIds(idList);
+
+        // 发布时做检测；只保存不发布时不做检测
+        Result checkParamResult = checkService.checkCreateListParam(databaseInfoList, tenantId);
+        if (Boolean.FALSE.equals((ReturnUtil.isSuccess(checkParamResult)))) {
+            return checkParamResult;
+        }
+
         databaseInfoDAO.updateStatusByIds(idList,Status.AUDITING.getIntValue()+"");
         this.approveItems(tenantId,databaseInfoList,approveGroupId);
 
@@ -287,10 +293,11 @@ public class SourceInfoDatabaseService implements Approvable {
      */
     @Transactional(rollbackFor = Exception.class)
     public Result updateSourceInfo(DatabaseInfo databaseInfo,String tenantId,String approveGroupId,SubmitType submitType){
-        Result checkResult = checkService.checkUpdateParam(databaseInfo,tenantId,approveGroupId,submitType);
-        if (Boolean.FALSE.equals((ReturnUtil.isSuccess(checkResult)))){
+        Result checkResult = checkService.checkUpdateParam(databaseInfo, tenantId, approveGroupId, submitType);
+        if (Boolean.FALSE.equals((ReturnUtil.isSuccess(checkResult))) && SubmitType.SUBMIT_AND_PUBLISH.equals(submitType)) {
             return checkResult;
         }
+
         databaseInfoDAO.updateSourceInfo(databaseInfo,AdminUtils.getUserData().getUserId());
         if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfoDAO.getParentCategoryIdById(databaseInfo.getId())))) {
             databaseInfoDAO.insertParentRelation(databaseInfo);
@@ -305,7 +312,7 @@ public class SourceInfoDatabaseService implements Approvable {
         }else{
             databaseInfoDAO.updateStatusByIds(ids,Status.FOUNDED.getIntValue()+"");
         }
-        return ReturnUtil.success();
+        return checkResult;
     }
 
     /**

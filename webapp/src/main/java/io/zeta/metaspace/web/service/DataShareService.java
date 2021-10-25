@@ -52,6 +52,7 @@ import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.share.*;
+import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
@@ -1451,6 +1452,75 @@ public class DataShareService {
             case TABLE: {
                 String schemaName = ids[0];
                 return adapterExecutor.getTablePage(schemaName, parameters);
+            }
+            case COLUMN: {
+                String schemaName = ids[0];
+                String tableName = ids[1];
+                //判断规则是否还有数值型规则
+                int count = 0;
+                List<String> ruleIds = parameters.getRuleIds();
+                if (ruleIds != null && ruleIds.size() != 0) {
+                    count = taskManageDAO.getNumericTypeTemplateRuleIdCount(ruleIds, tenantId);
+                }
+                boolean isNum = count != 0;
+                return adapterExecutor.getColumnPage(schemaName, tableName, parameters, isNum);
+            }
+            default:
+                break;
+        }
+        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据源元数据失败");
+    }
+
+    public PageResult getTaskDataList(String proxyUser, SEARCH_TYPE searchType, ColumnParameters parameters, String tenantId, String sourceId, String... ids) throws AtlasBaseException {
+        AdapterSource adapterSource = "hive".equalsIgnoreCase(sourceId) ?
+                AdapterUtils.getHiveAdapterSource() :
+                AdapterUtils.getAdapterSource(dataSourceService.getUnencryptedDataSourceInfo(sourceId));
+        AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
+
+        // 已配置元数据采集任务的schema
+        List<SyncTaskDefinition> syncTaskDefinitions = taskManageDAO.getTaskSchemas(tenantId, sourceId, searchType.toString());
+        List<String> names = new ArrayList<>();
+        for (SyncTaskDefinition s :syncTaskDefinitions) {
+            names.addAll(s.getSchemas());
+        }
+
+        switch (searchType) {
+            case SCHEMA: {
+                PageResult<LinkedHashMap<String, Object>> schemaPage = adapterExecutor.getSchemaPage(parameters, proxyUser);
+                List<LinkedHashMap<String, Object>> allSchemas = schemaPage.getLists();
+                List<LinkedHashMap<String, Object>> resultSchemas = new ArrayList<>();
+
+                if (CollectionUtils.isNotEmpty(allSchemas)) {
+                    for (LinkedHashMap<String, Object> s : allSchemas) {
+                        if (names.contains(s.get("schemaName").toString())) {
+                            resultSchemas.add(s);
+                        }
+                    }
+                }
+
+                schemaPage.setTotalSize(resultSchemas.size());
+                schemaPage.setLists(resultSchemas);
+                schemaPage.setCurrentSize(resultSchemas.size());
+                return schemaPage;
+            }
+            case TABLE: {
+                String schemaName = ids[0];
+                PageResult<LinkedHashMap<String, Object>> tablePage = adapterExecutor.getTablePage(schemaName, parameters);
+                List<LinkedHashMap<String, Object>> allTables = tablePage.getLists();
+                List<LinkedHashMap<String, Object>> resultTables = new ArrayList<>();
+
+                if (CollectionUtils.isNotEmpty(allTables)) {
+                    for (LinkedHashMap<String, Object> s : allTables) {
+                        if (names.contains(s.get("schemaName").toString())) {
+                            resultTables.add(s);
+                        }
+                    }
+                }
+
+                tablePage.setTotalSize(resultTables.size());
+                tablePage.setLists(resultTables);
+                tablePage.setCurrentSize(resultTables.size());
+                return tablePage;
             }
             case COLUMN: {
                 String schemaName = ids[0];

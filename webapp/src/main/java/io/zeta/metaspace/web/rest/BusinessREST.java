@@ -23,6 +23,7 @@ package io.zeta.metaspace.web.rest;
  */
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
@@ -529,16 +530,18 @@ public class BusinessREST {
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/technical/table/relations")
+    @Path("/technical/table/relations/{businessId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public PageResult<RelationEntityV2> getQueryTables(@PathParam("businessId") String businessId,
+                                                       RelationQuery relationQuery,
+                                                       @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getQueryTables()");
             }
-            return dataManageService.getRelationsByTableNameFilter(relationQuery, TECHNICAL_CATEGORY_TYPE, tenantId);
+            return businessService.getCategoryRelationFilter(null, businessId, relationQuery, tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "业务对象查询表关联失败");
         } finally {
@@ -1315,7 +1318,7 @@ public class BusinessREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategoryRelationFilter(" + categoryGuid + ")");
             }
 
-            return businessService.getCategoryRelationFilter(categoryGuid, businessId, relationQuery, tenantId);
+            return businessService.getCategoryRelationFilter(Lists.newArrayList(categoryGuid), businessId, relationQuery, tenantId);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {
