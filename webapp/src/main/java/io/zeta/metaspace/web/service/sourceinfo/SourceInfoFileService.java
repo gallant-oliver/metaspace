@@ -19,6 +19,7 @@ import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.UserGroupService;
 import io.zeta.metaspace.web.service.UsersService;
+import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -33,9 +34,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -72,8 +70,14 @@ public class SourceInfoFileService {
 
     private final String[] validFields = new String[]{"数据层名称","数据库中文名","数据库类型","数据源","数据库英文名称",
             "数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","业务Owner手机号",
-            "数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","技术Owner手机号","技术负责人","业务负责人"};
-    private Map<String,String> categoryMap  = new HashMap<String,String>();
+            "数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","技术Owner手机号",
+            "技术负责人","业务负责人"};
+    private Map<String,String> categoryMap  = new HashMap<String,String>(){{
+        put("贴源层","1");
+        put("基础层","2");
+        put("通用层","4");
+        put("应用层","5");
+    }};
   
     private String[] tableTitleAttr = {"数据层名称","数据库中文名","数据库类型","数据源","数据库实例","数据库英文名称","抽取频率","抽取工具","规划包编号","规划包名称",
             "是否保密","保密期限","是否重要","描述","数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","业务Owner手机号","数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","技术Owner手机号",
@@ -111,16 +115,10 @@ public class SourceInfoFileService {
      * @return
      */
     public Workbook exportExcelTemplate(String tenantId){
-       // File templateFile = File.createTempFile("template", "."+PoiExcelUtils.XLSX);
         List<String> tableAttributes = Arrays.asList(tableTitleAttr);
         List<Object> tableData = new ArrayList<>();
         //模板处理
-        categoryMap = getCategoryFromDb(tenantId);
-        if(categoryMap != null && !categoryMap.isEmpty()){
-            tableData.add(new ArrayList<>(categoryMap.keySet()));
-        }else{
-            tableData.add("层级之间使用-分开");
-        }
+        tableData.add(new ArrayList<>(categoryMap.keySet()));
         tableData.add("数据库中文名");
         List<DataSourceTypeInfo> sourceTypeInfos = dataSourceService.getDataSourceType("dbr");
         List<DataSourceInfo> dataSourceInfos = null;
@@ -128,7 +126,7 @@ public class SourceInfoFileService {
             tableData.add("例如:ORACLE、MYSQL");
         }else{
             List<String> sourceTypeList = sourceTypeInfos.stream().map(v->v.getName()).collect(Collectors.toList());
-            tableData.add(sourceTypeList ); //Joiner.on(";").join(sourceTypeList)
+            tableData.add(sourceTypeList );
             dataSourceInfos = getDataSource(sourceTypeList,tenantId);
         }
         Map<String, Set<String>> dataSourceMap = CollectionUtils.isEmpty(dataSourceInfos) ? null
@@ -396,7 +394,7 @@ public class SourceInfoFileService {
         }else{
             // 判断具体数据库类型下的英文名是否存在
             List<String[]> unExistExcelInfo = CollectionUtils.isEmpty(excelDataList) ? new ArrayList<>() : excelDataList.stream()
-                    .filter( p->dbInfoExistList.stream().filter(v->!(v.getDbType().equalsIgnoreCase(p[dbTypeIndex]) && v.getDatabaseName().equalsIgnoreCase(p[dbEnIndex]))).count() ==0 )
+                    .filter( p->dbInfoExistList.stream().filter(v->(v.getDbType().equalsIgnoreCase(p[dbTypeIndex]) && v.getDatabaseName().equalsIgnoreCase(p[dbEnIndex]))).count() ==0 )
                     .collect(Collectors.toList());
             resultMap.put("unExistDbList",unExistExcelInfo);
 
@@ -488,7 +486,7 @@ public class SourceInfoFileService {
 
         String[] titleArray = excelDataList.get(0);
         Map<String,Integer> map = propertyToColumnIndexMap(titleArray);
-        categoryMap = getCategoryFromDb(tenantId);
+        //categoryMap = getCategoryFromDb(tenantId);
         excelDataList.remove(0);
 
         Map<String,List<String[]>> resultMap = new HashMap<>();
@@ -533,16 +531,11 @@ public class SourceInfoFileService {
      * @return
      */
     private Map<String,String> getCategoryFromDb(String tenantId){
-        /*if(categoryMap != null && !categoryMap.isEmpty()){
-            return categoryMap;
-        }*/
         Map<String,String> result = new HashMap<>();
         List<CategoryPrivilege> adminCategory = userGroupService.getAdminCategoryView(0, tenantId);
-        //List<CategoryEntityV2> list = categoryDao.queryNameByType(0);
         if(CollectionUtils.isEmpty(adminCategory)){
             return result;
         }
-
         for(CategoryPrivilege item : adminCategory){
             String name = "";
             if(item.getLevel() == 1){
@@ -617,7 +610,7 @@ public class SourceInfoFileService {
         int dbZhIndex = map.getOrDefault("数据库中文名", -1);
         int categoryIndex = map.getOrDefault("数据层名称", -1);
         int dbTypeIndex = map.getOrDefault("数据库类型", -1);
-        categoryMap = getCategoryFromDb(tenantId);
+        //categoryMap = getCategoryFromDb(tenantId);
         excelDataList.remove(0);
 
         Map<String,List<String[]>> resultMap = new HashMap<>();
@@ -769,7 +762,8 @@ public class SourceInfoFileService {
     }
 
     private List<DataSourceInfo>  getDataSource(List<String> sourceTypeList,String tenantId){
-        List<DataSourceInfo> dataSourceInfoList = dataSourceDAO.queryDataSourceBySourceTypeIn(sourceTypeList,tenantId);
+        String userId = AdminUtils.getUserData().getUserId();
+        List<DataSourceInfo> dataSourceInfoList = dataSourceDAO.queryDataSourceBySourceTypeIn(sourceTypeList,tenantId,userId);
         if(dataSourceInfoList == null){
             dataSourceInfoList = new ArrayList<>();
         }

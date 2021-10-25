@@ -19,7 +19,6 @@ package io.zeta.metaspace.web.dao;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.privilege.PrivilegeHeader;
 import io.zeta.metaspace.model.privilege.PrivilegeInfo;
-import io.zeta.metaspace.model.role.Role;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -52,18 +51,6 @@ public interface PrivilegeDAO {
     @Delete("delete from privilege2module where privilegeId=#{privilegeId}")
     public int deleteModule2PrivilegeById(@Param("privilegeId")String privilegeId);
 
-    @Update({
-            "<script>" ,
-            "<foreach item='roleId' index='index' collection='roleIds' separator=';'>" ,
-            "update role set privilegeId=#{privilegeId} where roleId=#{roleId}",
-            "</foreach>",
-            "</script>"
-    })
-    public int updateRolePrivilege(@Param("privilegeId")String privilegeId, @Param("roleIds")List<String> roleIds);
-
-    @Delete("delete from role2Category where roleId in (select roleId from role where privilegeId=#{privilegeId} and valid=true) and categoryId in (select categoryId from role2Category join category on role2Category.categoryId=category.guid where category.categoryType=#{type})")
-    public int deleteRole2Category(@Param("privilegeId")String privilegeId, @Param("type")int type);
-
     @Select("select * from module")
     public List<Module> getAllModule();
 
@@ -76,16 +63,6 @@ public interface PrivilegeDAO {
     @Update("update privilege set privilegeName=#{privilegeName},description=#{description} where privilegeId=#{privilegeId}")
     public int updatePrivilege(PrivilegeHeader privilege);
 
-    @Update("update role set privilegeId=#{systemPrivilegeId} where privilegeId=#{privilegeId}")
-    public int deleteRelatedRoleByPrivilegeId(@Param("privilegeId")String privilegeId, @Param("systemPrivilegeId")String systemPrivilegeId);
-
-    @Update({"<script>",
-            "<foreach item='roleId' index='index' collection='ids' separator=';'>" ,
-            "update role set privilegeId=#{privilegeId} where roleId=#{roleId}",
-            "</foreach>",
-            "</script>"
-    })
-    public int updateRoleWithNewPrivilege(@Param("privilegeId")String privilegeId, @Param("ids")String[] roldIds);
 
     @Select({" <script>",
              " select count(*)over() total,* from privilege where privilegeName like '%'||#{privilegeName}||'%' ESCAPE '/' order by privilegeId",
@@ -97,33 +74,23 @@ public interface PrivilegeDAO {
     public List<PrivilegeInfo> getPrivilegeList(@Param("privilegeName")String query, @Param("limit")int limit, @Param("offset")int offset);
 
 
-    @Select("select * from role where privilegeId=#{privilegeId} and valid=true order by roleId")
-    public List<Role> getRoleByPrivilegeId(@Param("privilegeId")String privilegeId);
-
-
     @Select("select * from privilege where privilegeId = #{privilegeId} order by privilegeId")
     public PrivilegeInfo getPrivilegeInfo(@Param("privilegeId")String privilegeId);
 
     @Select("select delete from privilege where privilegeId = #{privilegeId}")
     public int getEnableDelete(@Param("privilegeId")String privilegeId);
 
-    @Select("select * from role where privilegeId=#{privilegeId} and valid=true order by roleId")
-    public List<Role> getRelatedRoleWithPrivilege(@Param("privilegeId")String privilegeId);
-
     @Select("select * from module where moduleId in (select moduleId from privilege2module where privilegeId=#{privilegeId})")
     public List<Module> getRelatedModuleWithPrivilege(@Param("privilegeId")String privilegeId);
 
-    @Select("select count(*) from privilege2module where privilegeId in (select privilegeId from role where roleId in (select user2role.roleId from users join user2role on user2role.userid=users.userid where users.userId=#{userId} and users.valid=true) and role.valid=true) and moduleId=#{moduleId}")
-    public int queryModulePrivilegeByUser(@Param("userId")String userId,@Param("moduleId")int moduleId);
-
-    @Select({" <script>",
+    /*@Select({" <script>",
              " select count(*)over() total,* from role where edit=1 and valid=true order by roleId",
              " <if test='limit!= -1'>",
              " limit #{limit}",
              " </if>",
              " offset #{offset}",
              " </script>"})
-    public List<Role> getAllPermissionRole(@Param("limit")int limit, @Param("offset")int offset);
+    public List<Role> getAllPermissionRole(@Param("limit")int limit, @Param("offset")int offset);*/
 
     @Select("select moduleid from module where modulename=#{moduleName}")
     public String getModluleIdByModuleName(@Param("moduleName")String moduleName);

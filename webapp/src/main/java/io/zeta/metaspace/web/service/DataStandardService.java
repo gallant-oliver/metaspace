@@ -35,7 +35,6 @@ import io.zeta.metaspace.web.util.PoiExcelUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
-import org.apache.ibatis.annotations.Param;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -361,7 +360,7 @@ public class DataStandardService {
     }
 
     public List<CategoryPrivilege> getCategory(Integer categoryType,String tenantId) throws AtlasBaseException {
-        List<CategoryPrivilege> result = TenantService.defaultTenant.equals(tenantId) ? dataManageService.getAll(categoryType) : dataManageService.getAllByUserGroup(categoryType,tenantId);
+        List<CategoryPrivilege> result = dataManageService.getAllByUserGroup(categoryType,tenantId);
         for (CategoryPrivilege category : result) {
             String parentGuid = category.getParentCategoryGuid();
             CategoryPrivilege.Privilege privilege = null;

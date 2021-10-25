@@ -35,4 +35,10 @@ public interface TenantDAO {
             " </foreach> " +
             " </script>")
     int addTenants(@Param("tenants") List<Tenant> tenants);
+
+    @Select("SELECT name FROM tenant WHERE id = #{id}")
+    String selectNameById(String id);
+
+    @Select("select DISTINCT id as tenantId,name as projectName from tenant")
+    List<Tenant> selectAll();
 }

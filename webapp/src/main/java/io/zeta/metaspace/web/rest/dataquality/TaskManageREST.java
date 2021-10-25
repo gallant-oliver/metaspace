@@ -251,7 +251,7 @@ public class TaskManageREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<CategoryPrivilege> getAll(@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        return TenantService.defaultTenant.equals(tenantId) ? dataManageService.getAll(CategoryType): dataManageService.getAllByUserGroup(CategoryType, tenantId);
+        return dataManageService.getAllByUserGroup(CategoryType, tenantId);
     }
 
     /**

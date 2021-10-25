@@ -40,6 +40,8 @@ public interface DatabaseDAO {
             " info.database_name as databaseName " +
             " FROM " +
             " db_info AS info " +
+            " INNER JOIN database_group_relation dgr ON dgr.database_guid = info.database_guid " +
+            " INNER JOIN user_group_relation ugr ON ugr.group_id = dgr.group_id AND ugr.user_id = #{userId} " +
             " LEFT JOIN source_db AS sd ON info.database_guid = sd.db_guid " +
             " where info.database_name in " +
             " <foreach collection='databases' item='item' separator=',' open='(' close=')'>"+
@@ -48,7 +50,7 @@ public interface DatabaseDAO {
             " and info.db_type = 'HIVE' and sd.id is null" +
             " AND info.database_guid NOT IN ( SELECT DISTINCT database_id FROM source_info WHERE tenant_id = #{tenantId} AND version = 0)" +
             "</script>")
-    List<DataBaseInfo> getHiveDataBaseCode(@Param("tenantId") String tenantId, @Param("databases") List<String> databases);
+    List<DataBaseInfo> getHiveDataBaseCode(@Param("tenantId") String tenantId, @Param("databases") List<String> databases, @Param("userId") String userId);
 
     @Select("<script>" +
             " SELECT DISTINCT " +

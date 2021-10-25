@@ -23,6 +23,7 @@ import io.zeta.metaspace.bo.DatabaseInfoBO;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.enums.Status;
+import io.zeta.metaspace.model.global.UserPermissionPO;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
@@ -32,6 +33,7 @@ import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.role.SystemRole;
+import io.zeta.metaspace.model.security.Tenant;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import io.zeta.metaspace.model.table.Tag;
@@ -146,6 +148,8 @@ public class MetaDataService {
 
     @Autowired
     private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao;
+    @Autowired
+    private UserPermissionDAO userPermissionDAO;
 
 
     private String errorMessage = "";
@@ -332,6 +336,7 @@ public class MetaDataService {
         Database database = new Database();
         List<DatabaseInfoBO> currentSourceInfoList = databaseInfoDAO.getLastDatabaseInfoByDatabaseId(guid,tenantId,sourceId);
         database.setHasDatabase(CollectionUtils.isNotEmpty(currentSourceInfoList));
+        database.setSourceTreeId(EntityUtil.generateBusinessId(tenantId,sourceId,"",""));
         try {
             //获取对象
             // 转换成AtlasEntity
@@ -443,6 +448,13 @@ public class MetaDataService {
                 table.setSourceId("hive");
                 table.setSourceName("hive");
             }
+
+            table.setSourceTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),"",""));
+            table.setDbTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),table.getDatabaseId(),""));
+            TableExtInfo tableExtInfo = getTableExtAttributes(tenantId,table.getTableId());
+            table.setImportance(tableExtInfo.isImportance());
+            table.setSecurity(tableExtInfo.isSecurity());
+            table.setTenantId(tenantId);
             return table;
         } catch (AtlasBaseException e) {
             String message = "无效的实体ID";
@@ -521,40 +533,19 @@ public class MetaDataService {
             }
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
-            //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                try {
-                    List<Role> roles = userDAO.getRoleByUserId(AdminUtils.getUserData().getUserId());
-                    if (roles.stream().anyMatch(role -> SystemRole.ADMIN.getCode().equals(role.getRoleId()))) {
-                        table.setEdit(true);
-                    } else {
-                        List<Module> modules = userDAO.getModuleByUserId(AdminUtils.getUserData().getUserId());
-                        for (Module module : modules) {
-                            if (module.getModuleId() == SystemModule.TECHNICAL_OPERATE.getCode()) {
-                                if (table.getTablePermission().isWrite()) {
-                                    table.setEdit(true);
-                                    break;
-                                }
-                            }
-                        }
+
+            try {
+                List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
+                boolean edit = false;
+                if (categoryIds.size() > 0) {
+                    int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds, tenantId);
+                    if (count > 0) {
+                        edit = true;
                     }
-                } catch (Exception e) {
-                    LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
                 }
-            } else {
-                try {
-                    List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
-                    boolean edit = false;
-                    if (categoryIds.size() > 0) {
-                        int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds, tenantId);
-                        if (count > 0) {
-                            edit = true;
-                        }
-                    }
-                    table.setEdit(edit);
-                } catch (Exception e) {
-                    LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
-                }
+                table.setEdit(edit);
+            } catch (Exception e) {
+                LOG.error("获取系统权限失败,错误信息:" + e.getMessage(), e);
             }
 
             //1.4新增
@@ -683,13 +674,67 @@ public class MetaDataService {
                 }
             });
 
+            TableExtInfo tableExtInfo = getTableExtAttributes(tenantId,table.getTableId());
+            table.setImportance(tableExtInfo.isImportance());
+            table.setSecurity(tableExtInfo.isSecurity());
             return table;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
         }
     }
 
+    private TableExtInfo getTableExtAttributes(String tenantId,String tableGuid){
+        TableExtInfo info = new TableExtInfo();
+        if(isConfigGloble()){
+            LOG.info("当前用户已配置全局权限，忽略重要保密权限");
+            info.setImportance(false);
+            info.setSecurity(false);
+            return info;
+        }
+        //查看该表在衍生表的重要保密性
+        List<TableExtInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDAO.getImportanceInfo(tableGuid,tenantId);
+        if(CollectionUtils.isEmpty(deriveTableInfoList)){
+            LOG.info("该衍生表没有配置重要保密信息");
+            info.setImportance(false);
+            info.setSecurity(false);
+            return info;
+        }
+        boolean deriveImportance = deriveTableInfoList.stream().anyMatch(v->v.isImportance());
+        boolean deriveSecurity = deriveTableInfoList.stream().anyMatch(v->v.isSecurity());
 
+        User user = AdminUtils.getUserData();
+        List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId);
+        if(CollectionUtils.isEmpty(groups)){
+            LOG.info("当前用户没有配置用户组，忽略权限");
+            info.setImportance(deriveImportance);
+            info.setSecurity(deriveSecurity);
+            return info;
+        }
+        List<String> groupList = groups.stream().map(UserGroup::getId).collect(Collectors.toList());
+        List<TableExtInfo> list = tableDAO.selectTableInfoByGroups(tableGuid,tenantId,groupList);
+        if(CollectionUtils.isEmpty(list)){
+            LOG.info("当前用户组没有配置表的权限，忽略权限");
+            info.setImportance(deriveImportance);
+            info.setSecurity(deriveSecurity);
+            return info;
+        }
+
+        info.setImportance(deriveImportance && list.stream().noneMatch(p->p.isImportance()));
+        info.setSecurity(deriveSecurity && list.stream().noneMatch(p->p.isSecurity()));
+        return info;
+    }
+
+    /**
+     * 当前账户是否配置全局权限
+     * @return true：已配置全局权限
+     */
+    public boolean isConfigGloble(){
+        User user = AdminUtils.getUserData();
+        UserPermissionPO userPermissionPO = userPermissionDAO.selectListByUsersId(user.getUserId());
+        boolean flag = userPermissionPO != null;
+        LOG.info("当前用户配置全局权限:{}",flag);
+        return flag;
+    }
     public RDBMSTable extractRDBMSTableInfo(AtlasEntity entity, String guid, AtlasEntity.AtlasEntityWithExtInfo info, String tenantId) throws AtlasBaseException {
         RDBMSTable table = new RDBMSTable();
         table.setTableId(guid);
@@ -744,10 +789,9 @@ public class MetaDataService {
             //获取权限判断是否能编辑,默认不能
             table.setEdit(false);
             try {
-                List<TableRelation> relationList = getRelationList(guid, tenantId);
+                List<String> categoryIds = categoryDAO.getCategoryGuidByTableGuid(guid, tenantId);
                 boolean edit = false;
-                if (relationList.size() > 0) {
-                    List<String> categoryIds = relationList.stream().map(r -> r.getCategoryGuid()).collect(Collectors.toList());
+                if (categoryIds.size() > 0) {
                     int count = userGroupDAO.useCategoryPrivilege(AdminUtils.getUserData().getUserId(), categoryIds, tenantId);
                     if (count > 0) {
                         edit = true;
@@ -1244,28 +1288,7 @@ public class MetaDataService {
     }
 
     public List<TableRelation> getRelationList(String tableGuid, String tenantId) throws AtlasBaseException {
-        List<TableRelation> categoryRelations = new ArrayList<>();
-        List<TableRelation> categoryRelationsFromRelation = relationDAO.queryTableCategoryRelations(tableGuid, tenantId);
-        if(CollectionUtils.isNotEmpty(categoryRelationsFromRelation)){
-            categoryRelations.addAll(categoryRelationsFromRelation);
-        }
-        List<TableRelation> categoryRelationsFromDb = relationDAO.queryTableCategoryRelationsFromDb(tableGuid, tenantId);
-        if(CollectionUtils.isNotEmpty(categoryRelationsFromDb)){
-            for(int i = categoryRelationsFromDb.size() -1; i>=0; i--){
-                String categoryGuid = categoryRelationsFromDb.get(i).getCategoryGuid();
-                for(TableRelation categoryRelation : categoryRelations){
-                    if(categoryRelation.getCategoryGuid().equalsIgnoreCase(categoryGuid)){
-                        categoryRelationsFromDb.remove(i);
-                        break;
-                    }
-                }
-            }
-            if(CollectionUtils.isNotEmpty(categoryRelationsFromDb)){
-                categoryRelations.addAll(categoryRelationsFromDb);
-            }
-
-        }
-        return categoryRelations;
+        return relationDAO.queryTableCategoryRelationsFromDb(tableGuid, tenantId);
     }
 
     @Cacheable(value = "columnCache", key = "#query.guid + #query.columnFilter.columnName + #query.columnFilter.type + #query.columnFilter.description", condition = "#refreshCache==false")

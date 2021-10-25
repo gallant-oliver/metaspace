@@ -228,16 +228,16 @@ public class PrivilegeREST {
         }
     }
 
-    @POST
-    @Path("/roles")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<Role> getPrivilegeInfo(Parameters parameters) throws AtlasBaseException {
-        try {
-            return privilegeService.getAllPermissionRole(parameters);
-        } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取角色列表失败");
-        }
-    }
+//    @POST
+//    @Path("/roles")
+//    @Consumes(Servlets.JSON_MEDIA_TYPE)
+//    @Produces(Servlets.JSON_MEDIA_TYPE)
+//    public PageResult<Role> getPrivilegeInfo(Parameters parameters) throws AtlasBaseException {
+//        try {
+//            return privilegeService.getAllPermissionRole(parameters);
+//        } catch (Exception e) {
+//            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取角色列表失败");
+//        }
+//    }
 
 }

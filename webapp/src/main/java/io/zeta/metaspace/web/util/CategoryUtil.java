@@ -85,7 +85,7 @@ public class CategoryUtil {
             add(new CategoryEntityV2("rule_4"  ,"重复值校验", "重复值校验",null,"rule_3", "rule_5",4 ,1,"1",  createTime,null, 8, CategoryPrivateStatus.PUBLIC));
             add(new CategoryEntityV2("rule_5"  ,"数值型校验", "数值型校验",null,"rule_4", "rule_6",4 ,1,"1",  createTime,null, 9, CategoryPrivateStatus.PUBLIC));
             add(new CategoryEntityV2("rule_6"  ,"一致性校验", "一致性校验",null,"rule_5", null,4 ,1,"1",  createTime,null, 10, CategoryPrivateStatus.PUBLIC));
-            add(new CategoryEntityV2("index_field_default","默认域","默认域",null,null,null,5,1,"1",createTime,"IndexFieldDefault01", 11, CategoryPrivateStatus.PUBLIC));
+//            add(new CategoryEntityV2("index_field_default","默认域","默认域",null,null,null,5,1,"1",createTime,"IndexFieldDefault01", 11, CategoryPrivateStatus.PUBLIC));
         }
     };
 

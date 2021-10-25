@@ -64,8 +64,6 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
     @Autowired
     UsersService usersService;
     @Autowired
-    RoleService roleService;
-    @Autowired
     ApiModuleDAO apiModuleDAO;
     @Autowired
     UserGroupDAO userGroupDAO;
@@ -75,8 +73,7 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
     private UserGroupService userGroupService;
     @Autowired
     private TenantService tenantService;
-    @Autowired
-    private DataShareService dataShareService;
+
 
     @Override
     public Object invoke(MethodInvocation invocation) throws Throwable {
@@ -120,7 +117,7 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                     switch (privilegeType) {
                         case "table":
                             //到这里再查库
-                            Map<String, RoleModulesCategories.Category> userCategory = TenantService.defaultTenant.equals(tenantId) ? getUserCategory(userId) : getUserCategory(userId,tenantId);
+                            Map<String, RoleModulesCategories.Category> userCategory =getUserCategory(userId,tenantId);
                             Collection<RoleModulesCategories.Category> categories = userCategory.values();
                             ArrayList<String> categoryGuids = new ArrayList<>();
                             for (RoleModulesCategories.Category category : categories) {
@@ -145,23 +142,16 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                 }
             } else {
                 List<Integer> moduleIds;
-                //判断独立部署和多租户
-                if (TenantService.defaultTenant.equals(tenantId)){
-                    UserInfo userInfo = usersService.getUserInfoById(userId);
-                    List<UserInfo.Module> modules = userInfo.getModules();
-                    moduleIds = modules.stream().map(module -> module.getModuleId()).collect(Collectors.toList());
-                }else {
-                    if (true){
-                        return invocation.proceed();
-                    }
-                    List<Module> modules = tenantService.getModule(tenantId);
-                    moduleIds = modules.stream().map(module -> module.getModuleId()).collect(Collectors.toList());
-                    String dataquality = "dataquality";
-                    if (prefix.equals(dataquality)){
-                        Path annotation = method.getDeclaringClass().getAnnotation(Path.class);
-                        prefix = annotation==null?prefix : annotation.value();
-                        urlStr = prefix + pathStr;
-                    }
+                if (true){
+                    return invocation.proceed();
+                }
+                List<Module> modules = tenantService.getModule(tenantId);
+                moduleIds = modules.stream().map(module -> module.getModuleId()).collect(Collectors.toList());
+                String dataquality = "dataquality";
+                if (prefix.equals(dataquality)){
+                    Path annotation = method.getDeclaringClass().getAnnotation(Path.class);
+                    prefix = annotation==null?prefix : annotation.value();
+                    urlStr = prefix + pathStr;
                 }
                 Integer moduleId = null;
 
@@ -209,26 +199,6 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
         operateLogService.insert(operateLog,tenantId);
     }
 
-    //独立部署
-    private Map<String, RoleModulesCategories.Category> getUserCategory(String userId) {
-        //技术目录
-        Map<String, RoleModulesCategories.Category> userStringCategoryMap = new HashMap<>();
-        for (Role role:roleService.getRoleIdBYUserId(userId)){
-            if (role.getStatus() == 0){
-                continue;
-            }
-            Map<String, RoleModulesCategories.Category> categoryMap = roleService.getUserStringCategoryMap(role.getRoleId(), 0);
-            for (String categoryId:categoryMap.keySet()) {
-                if (userStringCategoryMap.containsKey(categoryId)&&userStringCategoryMap.get(categoryId)!=null){
-                    RoleModulesCategories.Category category = userStringCategoryMap.get(categoryId);
-                    category.setShow(category.isShow()||categoryMap.get(categoryId).isShow());
-                }else{
-                    userStringCategoryMap.put(categoryId, categoryMap.get(categoryId));
-                }
-            }
-        }
-        return userStringCategoryMap;
-    }
     //多租户
     private Map<String, RoleModulesCategories.Category> getUserCategory(String userId,String tenantId) {
         //技术目录

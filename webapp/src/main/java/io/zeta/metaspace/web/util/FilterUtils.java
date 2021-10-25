@@ -1,11 +1,18 @@
 package io.zeta.metaspace.web.util;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class FilterUtils {
+    /**
+     * 特殊排序参数
+     */
+    private static final List<String> SPECIAL_CONDITIONS = Lists.newArrayList("update", "update ", " update", " update ",
+            "create", "create ", " create", " create ");
+
     private static List<String> skipUrl = new ArrayList<String>(){{
         add("v2/entity/uniqueAttribute/type/");
         add("api/metaspace/v2/entity/");
@@ -13,8 +20,8 @@ public class FilterUtils {
         add("api/metaspace/v2/entity");
         add("api/metaspace/metadata/supplementTable");
         add("api/metaspace/metadata/business/trust");
-        add("api/metaspace/role/roles/sso");
-        add("api/metaspace/role/users/sso");
+//        add("api/metaspace/role/roles/sso");
+//        add("api/metaspace/role/users/sso");
         add("api/metaspace/market/business");
         add("api/metaspace/metadata/refreshcache");
         add("api/metaspace/api");
@@ -22,8 +29,12 @@ public class FilterUtils {
         add("/api/metaspace/admin/version");
         add("/api/metaspace/cache");
         add("api/metaspace/metadata/update/supplementTable");
+        add("/api/metaspace/dataquality/monitor");
+        // 供指标的统一监控使用，由于当前统一监控并未通过sso认证，只通过ip白名单过滤，故此放行
+        add("/api/metaspace/internal/table/");
     }};
 
+    // TODO 这种实现方式存在风险，而且粒度也不好控制
     public static boolean isSkipUrl(String requestURL) {
 
         if (skipUrl.stream().anyMatch(url->requestURL.contains(url))) {
@@ -57,7 +68,10 @@ public class FilterUtils {
         //去除执行SQL语句的命令关键字
         source = replaceWithCase(source, "select", "", Boolean.TRUE);
         source = replaceWithCase(source, "insert", "", Boolean.TRUE);
-        source = replaceWithCase(source, "update", "", Boolean.TRUE);
+
+        if (SPECIAL_CONDITIONS.contains(source.toLowerCase())) {
+            source = replaceWithCase(source, "update", "", Boolean.TRUE);
+        }
         source = replaceWithCase(source, "delete", "", Boolean.TRUE);
         source = replaceWithCase(source, "drop", "", Boolean.TRUE);
         source = replaceWithCase(source, "truncate", "", Boolean.TRUE);

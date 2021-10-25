@@ -33,6 +33,8 @@ public class TechnologyInfo {
     private Boolean editTechnical;
     private List<Table> tables;
     private Integer count;
+    private String trustTable;
+    private Boolean global;
 
     @Data
     public static class Table {
@@ -51,8 +53,60 @@ public class TechnologyInfo {
         private String sourceId;
         private String sourceName;
 
+        /**
+        * 与业务对象关联关系来源：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表
+        */
+        private Integer relationType;
+
+        /**
+         * 是否重要
+         */
+        private boolean important;
+
+        /**
+         * 是否保密
+         */
+        private boolean secret;
+
+        /**
+        * 表是否可跳转（用于业务对象详情页面）
+        */
+        private boolean jump;
+
         @JsonIgnore
         private int total;
+
+        public boolean isJump() {
+            return jump;
+        }
+
+        public void setJump(boolean jump) {
+            this.jump = jump;
+        }
+
+        public boolean isImportant() {
+            return important;
+        }
+
+        public void setImportant(boolean important) {
+            this.important = important;
+        }
+
+        public boolean isSecret() {
+            return secret;
+        }
+
+        public void setSecret(boolean secret) {
+            this.secret = secret;
+        }
+
+        public Integer getRelationType() {
+            return relationType;
+        }
+
+        public void setRelationType(Integer relationType) {
+            this.relationType = relationType;
+        }
 
         public String getDescription() {
             return description;
@@ -182,5 +236,21 @@ public class TechnologyInfo {
 
     public void setCount(Integer count) {
         this.count = count;
+    }
+
+    public String getTrustTable() {
+        return trustTable;
+    }
+
+    public void setTrustTable(String trustTable) {
+        this.trustTable = trustTable;
+    }
+
+    public Boolean getGlobal() {
+        return global;
+    }
+
+    public void setGlobal(Boolean global) {
+        this.global = global;
     }
 }

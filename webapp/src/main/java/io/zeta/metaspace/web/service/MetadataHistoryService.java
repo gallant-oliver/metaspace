@@ -179,14 +179,41 @@ public class MetadataHistoryService {
         }
     }
 
+    private String[] getEmailAddressList(List<String> userIds){
+        List<String> userEmails = CollectionUtils.isEmpty(userIds) ? null : userDAO.getUsersEmailByIds(userIds);
+        List<String> validEmail = new ArrayList<>();
+        if(CollectionUtils.isNotEmpty(userEmails)){
+            for (String email : userEmails){
+                log.info("邮箱地址:{}",email);
+                if(sourceInfoFileService.isEmail(email)){
+                    validEmail.add(email);
+                }
+            }
+        }
+        String[] contacts = validEmail.toArray(new String[validEmail.size()]);
+        return contacts;
+    }
+
+    private boolean isArrayEmpty(String[] contacts){
+        return contacts == null || contacts.length == 0;
+    }
+
     //元数据有变化，需要邮件通知 （开启一个线程处理,目前只有 hive源存在对比）
     private void sendNoticeByEmail(List<TableMetadata> tableMetadataList,String dbName) {
         log.info("元数据有变化，查找邮件发送地址.");
         String tableGuid = tableMetadataList.get(0).getGuid();
         String sourceId = "hive";
         Map<String,Object> paragraphMap = new HashMap<>();
+        paragraphMap.put("ip","");
+        paragraphMap.put("port","");
+        paragraphMap.put("instance","");
         paragraphMap.put("dbType",sourceId);
         paragraphMap.put("dbName",dbName);
+        paragraphMap.put("deriveTableDesigner","");
+        paragraphMap.put("businessPath","");
+        paragraphMap.put("bizLeader","");
+        paragraphMap.put("techenicalPath","");
+
         List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByGuid(sourceId,tableGuid);
         String[] contacts = null;
         if(!CollectionUtils.isEmpty(deriveTableInfoList)){
@@ -194,22 +221,17 @@ public class MetadataHistoryService {
             if(deriveTableInfoOpt.isPresent()) {
                 SourceInfoDeriveTableInfo tableInfo = deriveTableInfoOpt.get();
                 paragraphMap.put("deriveTableDesigner",tableInfo.getCreatorName());
+
                 BusinessInfo businessInfo = businessDAO.queryBusinessByBusinessId(tableInfo.getBusinessId());
-                if(StringUtils.isNotBlank(tableInfo.getCreator())){
-                    //获取衍生表设计人的邮箱地址
-                    User user = userDAO.getUser(tableInfo.getCreator());
-                    String email = user.getAccount();
-                    log.info("衍生表设计人的邮箱地址:{}",email);
-                    if(sourceInfoFileService.isEmail(email)){
-                        contacts = new String[]{email};
-                    }
-                }
                 if (null != businessInfo) {
                     // 获取该租户下所有的业务目录guid - path
                     int BUSINESS_CATEGORY_TYPE = 1;
                     Map<String, String> businessCategoryGuidPathMap = sourceInfoDeriveTableInfoService.getCategoryGuidPathMap(tableInfo.getTenantId(), BUSINESS_CATEGORY_TYPE, businessInfo.getDepartmentId());
                     paragraphMap.put("businessPath",businessCategoryGuidPathMap.getOrDefault(businessInfo.getDepartmentId(), ""));
                 }
+
+                List<String> userIds = deriveTableInfoList.stream().map(SourceInfoDeriveTableInfo::getCreator).collect(Collectors.toList());
+                contacts = getEmailAddressList(userIds);
             }
         }
 
@@ -225,18 +247,14 @@ public class MetadataHistoryService {
                 paragraphMap.put("techenicalPath",databaseInfoBO.getStatus().equals(Status.ACTIVE.getIntValue()+"")?
                         sourceInfoDatabaseService.getActiveInfoAllPath(databaseInfoBO.getCategoryId(),databaseInfoBO.getTenantId() ):sourceInfoDatabaseService.getAllPath(databaseInfoBO.getId(),databaseInfoBO.getTenantId()));
 
-                if(contacts == null){
-                    User user = userDAO.getUser(databaseInfoBO.getBusinessLeaderId());
-                    String email = user.getAccount();
-                    log.info("数据库业务负责人的邮箱地址:{}",email);
-                    if(sourceInfoFileService.isEmail(email)){
-                        contacts = new String[]{email};
-                    }
+                if( isArrayEmpty(contacts) ){
+                    List<String> userIds = currentSourceInfoList.stream().map(DatabaseInfoBO::getBusinessLeaderId).collect(Collectors.toList());
+                    contacts = getEmailAddressList(userIds);
                 }
             }
         }
 
-        if(contacts == null){
+        if(isArrayEmpty(contacts)){
             log.info("要发送的邮件地址为空。");
             return;
         }
@@ -254,6 +272,8 @@ public class MetadataHistoryService {
                 if(!filterDataOpt.isPresent()){
                     map.put("changeColumn",item.getName());
                     map.put("changeType","列删除");
+                    map.put("beforeInfo","");
+                    map.put("afterInfo","");
                     excelMapList.add(map);
                     continue;
                 }
@@ -275,6 +295,8 @@ public class MetadataHistoryService {
                     Map<String,String> map = new HashMap<>();
                     map.put("changeColumn",item.getName());
                     map.put("changeType","列添加");
+                    map.put("beforeInfo","");
+                    map.put("afterInfo","");
                     excelMapList.add(map);
                 }
             }
@@ -285,11 +307,14 @@ public class MetadataHistoryService {
             return;
         }
         File file =  null;
+        File tplFile = null;
         try {
+            tplFile = File.createTempFile("tpl_"+System.currentTimeMillis(),".docx");
             file = File.createTempFile("tmp_"+System.currentTimeMillis(),".docx");
             String targetPath = file.getAbsolutePath();
-            WordExport.fillDataTemplate(paragraphMap,excelMapList,
-                    MetadataHistoryService.class.getResource("/tpl/table_change_template.docx").getPath(),targetPath);
+            String tplPath = tplFile.getAbsolutePath();
+            WordExport.generateAttachTemplate(tplPath);
+            WordExport.fillDataTemplate(paragraphMap,excelMapList,tplPath,targetPath);
             log.info("模板生成完毕..");
             String attachmentBase64content= Base64Utils.fileToBase64(targetPath), fileName="元数据版本差异清单.docx", content="元数据有变化，请查看附件检查详情信息";
             log.info("转换base64 sucess.");
@@ -298,9 +323,14 @@ public class MetadataHistoryService {
         } catch (IOException e) {
             log.error("生成模板文件出错:{}",e);
         }finally {
+            log.info("开始删除临时文件...");
+            if(tplFile != null && tplFile.exists()){
+                tplFile.delete();
+            }
             if(file != null && file.exists()){
                 file.delete();
             }
+            log.info("删除临时文件ok");
         }
 
     }

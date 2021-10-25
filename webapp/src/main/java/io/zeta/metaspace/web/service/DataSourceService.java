@@ -42,7 +42,6 @@ import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.metadata.BaseFields;
 import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
 import io.zeta.metaspace.web.util.*;
-import jnr.ffi.Struct;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -84,7 +83,7 @@ public class DataSourceService {
     @Autowired
     private DataSourceDAO datasourceDAO;
     @Autowired
-    private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDAO;
+    private MetaDataService metadataService;
     @Autowired
     private AtlasEntityStoreV2 atlasEntityStoreV2;
     @Autowired
@@ -413,96 +412,120 @@ public class DataSourceService {
      */
     public PageResult<DataSourceHead> searchDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId) throws AtlasBaseException {
         try {
-            PageResult<DataSourceHead> pageResult = new PageResult<>();
-            if("hive".equalsIgnoreCase(sourceType)){
-                DataSourceHead dataSourceHead = new DataSourceHead();
-                dataSourceHead.setSourceId("hive");
-                dataSourceHead.setSourceName("hive");
-                dataSourceHead.setSourceType("HIVE");
-                List<DataSourceHead> list = new ArrayList<>();
-                list.add(dataSourceHead);
-                pageResult.setTotalSize(list.size());
-                pageResult.setLists(list);
-                pageResult.setLists(list);
-                return pageResult;
-            }
-            DataSourceSearch dataSourceSearch = new DataSourceSearch(sourceName, sourceType, createTime, updateTime, updateUserName);
-            Parameters parameters = new Parameters();
-            parameters.setLimit(limit);
-            parameters.setOffset(offset);
-            if (!StringUtils.isEmpty(sortby)) {
-                if (sortby.equals("sourceName")) {
-                    sortby = "source_name";
-                } else if (sortby.equals("sourceType")) {
-                    sortby = "source_type";
-                } else if (sortby.equals("createTime")) {
-                    sortby = "create_time";
-                } else if (sortby.equals("updateTime")) {
-                    sortby = "update_time";
-                } else {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "排序类型错误");
-                }
-            }
-            if (sortby == null) {
-                sortby = "source_name";
-            }
-
-            parameters.setSortby(sortby);
-            parameters.setOrder(order);
-            if (Objects.nonNull(dataSourceSearch.getSourceName()))
-                dataSourceSearch.setSourceName(dataSourceSearch.getSourceName().replaceAll("%", "/%").replaceAll("_", "/_"));
-            if (Objects.nonNull(dataSourceSearch.getSourceType()))
-                dataSourceSearch.setSourceType(dataSourceSearch.getSourceType().replaceAll("%", "/%").replaceAll("_", "/_").toUpperCase());
-            if (Objects.nonNull(dataSourceSearch.getCreateTime()))
-                dataSourceSearch.setCreateTime(dataSourceSearch.getCreateTime().replaceAll("%", "/%").replaceAll("_", "/_"));
-            if (Objects.nonNull(dataSourceSearch.getUpdateTime()))
-                dataSourceSearch.setUpdateTime(dataSourceSearch.getUpdateTime().replaceAll("%", "/%").replaceAll("_", "/_"));
-            if (Objects.nonNull(dataSourceSearch.getUpdateUserName()))
-                dataSourceSearch.setUpdateUserName(dataSourceSearch.getUpdateUserName().replaceAll("%", "/%").replaceAll("_", "/_"));
-            String userId = AdminUtils.getUserData().getUserId();
-
-            List<DataSourceHead> list = isApi ? dataSourceDAO.searchApiDataSources(parameters, dataSourceSearch, userId, tenantId) : dataSourceDAO.searchDataSources(parameters, dataSourceSearch, userId, tenantId);
-
-            for (DataSourceHead head : list) {
-                if (head.getManager() != null) {
-                    String manager = userDAO.getUserName(head.getManager());
-                    head.setManager(manager);
-                }
-                if (head.getUpdateUserName() != null) {
-                    head.setUpdateUserName(userDAO.getUserName(head.getUpdateUserName()));
-                }
-                String sourceId = head.getSourceId();
-                head.setRely(false);
-                UserPrivilegeDataSource userPrivilegeDataSource = getUserPrivilegesDataSource(userId, sourceId);
-                if (UserPrivilegeDataSource.MANAGER.getPrivilegeName().equals(userPrivilegeDataSource.getPrivilegeName())) {
-                    head.setEditManager(true);
-                    head.setPermission(true);
-                } else if ("w".equals(userPrivilegeDataSource.getPrivilege())) {
-                    head.setEditManager(false);
-                    head.setPermission(true);
-                } else {
-                    head.setEditManager(false);
-                    head.setPermission(false);
-                }
-                if (head.getOracleDb() == null || head.getOracleDb().length() == 0) {
-                    head.setSchema(false);
-                } else {
-                    head.setSchema(true);
-                }
-            }
-            pageResult.setCurrentSize(list.size());
-            pageResult.setLists(list);
-            if (list.size() != 0) {
-                pageResult.setTotalSize(list.get(0).getTotalSize());
-            } else {
-                pageResult.setTotalSize(0);
-            }
-
+            PageResult<DataSourceHead> pageResult = getDataSources(limit,  offset,  sortby,  order,  sourceName,  sourceType,  createTime,  updateTime,  updateUserName,  isApi,  tenantId,false);
             return pageResult;
         } catch (Exception e) {
             LOG.error("查询数据源失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源查询失败\n" + e.getMessage());
         }
+
+    }
+    public PageResult<DataSourceHead> searchPublicDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId) throws AtlasBaseException {
+        try {
+            boolean globalConfig = metadataService.isConfigGloble();
+            PageResult<DataSourceHead> pageResult = getDataSources(limit,  offset,  sortby,  order,  sourceName,  sourceType,  createTime,  updateTime,  updateUserName,  isApi,  tenantId,globalConfig);
+            return pageResult;
+        } catch (Exception e) {
+            LOG.error("查询数据源失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源查询失败\n" + e.getMessage());
+        }
+
+    }
+
+    private PageResult<DataSourceHead> getDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId,boolean isGlobalConfig) throws AtlasBaseException {
+        PageResult<DataSourceHead> pageResult = new PageResult<>();
+        if("hive".equalsIgnoreCase(sourceType)){
+            DataSourceHead dataSourceHead = new DataSourceHead();
+            dataSourceHead.setSourceId("hive");
+            dataSourceHead.setSourceName("hive");
+            dataSourceHead.setSourceType("HIVE");
+            dataSourceHead.setBizTreeId(EntityUtil.generateBusinessId(tenantId,"hive","",""));
+            List<DataSourceHead> list = new ArrayList<>();
+            list.add(dataSourceHead);
+            pageResult.setTotalSize(list.size());
+            pageResult.setLists(list);
+            pageResult.setLists(list);
+            return pageResult;
+        }
+        DataSourceSearch dataSourceSearch = new DataSourceSearch(sourceName, sourceType, createTime, updateTime, updateUserName);
+        Parameters parameters = new Parameters();
+        parameters.setLimit(limit);
+        parameters.setOffset(offset);
+        if (!StringUtils.isEmpty(sortby)) {
+            if (sortby.equals("sourceName")) {
+                sortby = "source_name";
+            } else if (sortby.equals("sourceType")) {
+                sortby = "source_type";
+            } else if (sortby.equals("createTime")) {
+                sortby = "create_time";
+            } else if (sortby.equals("updateTime")) {
+                sortby = "update_time";
+            } else {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "排序类型错误");
+            }
+        }
+        if (sortby == null) {
+            sortby = "source_name";
+        }
+
+        parameters.setSortby(sortby);
+        parameters.setOrder(order);
+        if (Objects.nonNull(dataSourceSearch.getSourceName()))
+            dataSourceSearch.setSourceName(dataSourceSearch.getSourceName().replaceAll("%", "/%").replaceAll("_", "/_"));
+        if (Objects.nonNull(dataSourceSearch.getSourceType()))
+            dataSourceSearch.setSourceType(dataSourceSearch.getSourceType().replaceAll("%", "/%").replaceAll("_", "/_").toUpperCase());
+        if (Objects.nonNull(dataSourceSearch.getCreateTime()))
+            dataSourceSearch.setCreateTime(dataSourceSearch.getCreateTime().replaceAll("%", "/%").replaceAll("_", "/_"));
+        if (Objects.nonNull(dataSourceSearch.getUpdateTime()))
+            dataSourceSearch.setUpdateTime(dataSourceSearch.getUpdateTime().replaceAll("%", "/%").replaceAll("_", "/_"));
+        if (Objects.nonNull(dataSourceSearch.getUpdateUserName()))
+            dataSourceSearch.setUpdateUserName(dataSourceSearch.getUpdateUserName().replaceAll("%", "/%").replaceAll("_", "/_"));
+        String userId = AdminUtils.getUserData().getUserId();
+
+        List<DataSourceHead> list = null;
+        if(isGlobalConfig){
+            list = isApi ? dataSourceDAO.searchGlobalApiDataSources(parameters, dataSourceSearch, userId, tenantId) : dataSourceDAO.searchGlobalDataSources(parameters, dataSourceSearch, userId, tenantId);
+        }else{
+            list = isApi ? dataSourceDAO.searchApiDataSources(parameters, dataSourceSearch, userId, tenantId) : dataSourceDAO.searchDataSources(parameters, dataSourceSearch, userId, tenantId);
+        }
+
+        for (DataSourceHead head : list) {
+            if (head.getManager() != null) {
+                String manager = userDAO.getUserName(head.getManager());
+                head.setManager(manager);
+            }
+            if (head.getUpdateUserName() != null) {
+                head.setUpdateUserName(userDAO.getUserName(head.getUpdateUserName()));
+            }
+            String sourceId = head.getSourceId();
+            head.setRely(false);
+            head.setBizTreeId(EntityUtil.generateBusinessId(head.getTenantId(),sourceId,"",""));
+            UserPrivilegeDataSource userPrivilegeDataSource = getUserPrivilegesDataSource(userId, sourceId);
+            if (UserPrivilegeDataSource.MANAGER.getPrivilegeName().equals(userPrivilegeDataSource.getPrivilegeName())) {
+                head.setEditManager(true);
+                head.setPermission(true);
+            } else if ("w".equals(userPrivilegeDataSource.getPrivilege())) {
+                head.setEditManager(false);
+                head.setPermission(true);
+            } else {
+                head.setEditManager(false);
+                head.setPermission(false);
+            }
+            if (head.getOracleDb() == null || head.getOracleDb().length() == 0) {
+                head.setSchema(false);
+            } else {
+                head.setSchema(true);
+            }
+        }
+        pageResult.setCurrentSize(list.size());
+        pageResult.setLists(list);
+        if (list.size() != 0) {
+            pageResult.setTotalSize(list.get(0).getTotalSize());
+        } else {
+            pageResult.setTotalSize(0);
+        }
+
+        return pageResult;
     }
 
     /**
@@ -1050,25 +1073,21 @@ public class DataSourceService {
      */
     public List<UserIdAndName> getManager(String tenantId) throws AtlasBaseException {
         try {
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                return dataSourceDAO.getManager();
-            } else {
-                SecuritySearch securitySearch = new SecuritySearch();
-                securitySearch.setTenantId(tenantId);
-                PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
-                List<UserIdAndName> users = new ArrayList<>();
-                for (UserAndModule userAndModule : userAndModules.getLists()) {
-                    if (!userAndModule.getToolRoleResources().stream().anyMatch(module -> ModuleEnum.DATASOURCE.getAlias().equalsIgnoreCase(module.getRoleName()))) {
-                        continue;
-                    }
-                    UserIdAndName user = new UserIdAndName();
-                    user.setUserName(userAndModule.getUserName());
-                    user.setAccount(userAndModule.getEmail());
-                    user.setUserId(userDAO.getUserIdByAccount(userAndModule.getEmail()));
-                    users.add(user);
+            SecuritySearch securitySearch = new SecuritySearch();
+            securitySearch.setTenantId(tenantId);
+            PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
+            List<UserIdAndName> users = new ArrayList<>();
+            for (UserAndModule userAndModule : userAndModules.getLists()) {
+                if (!userAndModule.getToolRoleResources().stream().anyMatch(module -> ModuleEnum.DATASOURCE.getAlias().equalsIgnoreCase(module.getRoleName()))) {
+                    continue;
                 }
-                return users;
+                UserIdAndName user = new UserIdAndName();
+                user.setUserName(userAndModule.getUserName());
+                user.setAccount(userAndModule.getEmail());
+                user.setUserId(userDAO.getUserIdByAccount(userAndModule.getEmail()));
+                users.add(user);
             }
+            return users;
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {

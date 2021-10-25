@@ -29,6 +29,8 @@ import io.zeta.metaspace.model.result.BuildTableSql;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
+import io.zeta.metaspace.model.security.Tenant;
+import io.zeta.metaspace.model.security.TenantExtInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceInfoDeriveTableColumnVO;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.table.column.tag.ColumnTag;
@@ -37,6 +39,7 @@ import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDeriveTableInfoService;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.EntityUtil;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.ApplicationProperties;
@@ -46,6 +49,7 @@ import org.apache.atlas.model.instance.EntityMutationResponse;
 import org.apache.atlas.model.lineage.AtlasLineageInfo;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -66,8 +70,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -95,8 +98,8 @@ public class MetaDataREST {
     private TableDAO tableDAO;
     @Autowired
     private DataStandardService dataStandardService;
-
-    private final MetaDataService metadataService;
+    @Autowired
+    private MetaDataService metadataService;
     @Autowired
     private BusinessService businessService;
     @Context
@@ -105,10 +108,40 @@ public class MetaDataREST {
     private DataSourceService dataSourceService;
     @Autowired
     SourceInfoDeriveTableInfoService sourceInfoDeriveTableInfoService;
+    @Autowired
+    private TenantService tenantService;
 
     @Inject
     public MetaDataREST(final MetaDataService metadataService) {
         this.metadataService = metadataService;
+    }
+
+
+    @GET
+    @Path("/tenantId")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<TenantExtInfo> getTenantIdList(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTenantIdList");
+            }
+            List<TenantExtInfo> tenants =  new ArrayList<>();
+            List<Tenant> tenantList = tenantService.getTenantAll();
+            if(CollectionUtils.isNotEmpty(tenantList)){
+                for(Tenant item : tenantList){
+                    TenantExtInfo tenant = new TenantExtInfo();
+                    tenant.setTenantId(item.getTenantId());
+                    tenant.setProjectName(item.getProjectName());
+                    tenant.setBizTreeId(EntityUtil.generateBusinessId(item.getTenantId(),"","",""));
+                    tenants.add(tenant);
+                }
+            }
+            return tenants;
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
     }
 
     @GET
@@ -131,7 +164,13 @@ public class MetaDataREST {
     @Path("/info/schema/{schemaId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Database getDatabase(@PathParam("schemaId") String schemaId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId")@DefaultValue("") String sourceId) throws AtlasBaseException {
+    public Database getDatabase(@QueryParam("bizTreeId")String bizTreeId,@PathParam("schemaId") String schemaId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId")@DefaultValue("") String sourceId) throws AtlasBaseException {
+        if(StringUtils.isNotBlank(bizTreeId)){
+            Map<String,String> map = EntityUtil.decodeBusinessId(bizTreeId);
+            if(map != null){
+                tenantId = map.get("tenantId");
+            }
+        }
         return metadataService.getDatabase(schemaId, tenantId,sourceId);
     }
 
@@ -140,12 +179,19 @@ public class MetaDataREST {
     @Path("/info/table/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Map<String, Object> getTableTree(@PathParam("guid") String guid, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
+    public Map<String, Object> getTableTree(@PathParam("guid") String guid,
+                                            @QueryParam("sourceId") @DefaultValue("") String sourceId,
+                                            @QueryParam("currentTenantId") String currentTenantId,
+                                            @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
 
         Map<String, Object> tableType = metadataService.getTableType(guid);
         if(StringUtils.isNotBlank(sourceId)){
             tableType.put("sourceId", sourceId);
         }
+        String tid = StringUtils.isBlank(currentTenantId) ? tenantId : currentTenantId;
+        tableType.put("bizTreeId",
+                EntityUtil.generateBusinessId(tid, Objects.toString(tableType.get("sourceId"),""),
+                        Objects.toString(tableType.get("schemaId"),""),guid));
         return tableType;
     }
 
@@ -167,6 +213,7 @@ public class MetaDataREST {
                 hive.setSourceType("hive");
                 hive.setSourceName("hive");
                 hive.setSourceId("hive");
+                hive.setBizTreeId(EntityUtil.generateBusinessId(tenantId,"hive","",""));
                 if (limit != -1) {
                     limit--;
                 }
@@ -186,6 +233,94 @@ public class MetaDataREST {
         }
     }
 
+    /**
+     * 公共租户下 - 元数据展示的查询数据源列表
+     * 每个租户下都有一个hive
+     */
+    @GET
+    @Path("/public/datasource")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<DataSourceHead> getPublicDataSourceList(@QueryParam("limit") int limit, @QueryParam("offset") int offset,
+                                                        @QueryParam("query") String query, @QueryParam("sourceType") String sourceType,
+                                                        @QueryParam("bizTreeId") String bizTreeId,
+                                                        @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        Long start = System.currentTimeMillis();
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getPublicDataSourceList");
+            }
+            String queryTenantIdParam = null;
+            boolean hasHive = offset == 0 && (query == null || "hive".contains(query));
+            boolean globalConfig = false;
+            // bizTreeId 不为空则是查询当前租户下的
+            if(StringUtils.isNotBlank(bizTreeId)){
+                Map<String, String> map = EntityUtil.decodeBusinessId(bizTreeId);
+                queryTenantIdParam = map.get("tenantId");
+            }else{
+                //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
+                if(!metadataService.isConfigGloble()){
+                    queryTenantIdParam = tenantId;
+                }else{
+                    //全局权限下的，每个租户下都包含
+                    globalConfig = true;
+                }
+            }
+
+            DataSourceHead hive = new DataSourceHead();
+            if (hasHive) {
+                hive.setSourceType("hive");
+                hive.setSourceName("hive");
+                hive.setSourceId("hive");
+                hive.setTenantId(queryTenantIdParam);
+                hive.setBizTreeId(EntityUtil.generateBusinessId(queryTenantIdParam,"hive","",""));
+                if (limit != -1) {
+                    limit--;
+                }
+            }
+            PageResult<DataSourceHead> pageResult = dataSourceService.searchPublicDataSources(limit, offset, null, null, query, sourceType, null, null, null, true, queryTenantIdParam);
+            List<Tenant> tenants = tenantService.getTenants();
+            if(globalConfig){
+                List<DataSourceHead> list = new ArrayList<>();
+                if(offset == 0 && "hive".contains(query)){
+                    for (Tenant v : tenants){
+                        hive = new DataSourceHead();
+                        hive.setSourceType("hive");
+                        hive.setSourceName("hive");
+                        hive.setSourceId("hive");
+                        hive.setTenantId(v.getTenantId());
+                        hive.setBizTreeId(EntityUtil.generateBusinessId(v.getTenantId(),"hive","",""));
+                        list.add(hive);
+                    }
+                }
+                if(CollectionUtils.isNotEmpty(list)){
+                    pageResult.getLists().addAll(0,list);
+                    pageResult.setCurrentSize(pageResult.getCurrentSize() + list.size());
+                    pageResult.setTotalSize(pageResult.getTotalSize() + list.size());
+                }
+            }else{
+                if (hasHive) {
+                    pageResult.getLists().add(0, hive);
+                    pageResult.setCurrentSize(pageResult.getCurrentSize() + 1);
+                    pageResult.setTotalSize(pageResult.getTotalSize() + 1);
+                }
+            }
+            //如果是查询，则需要补充名称对应的租户额外信息
+            if( CollectionUtils.isNotEmpty(pageResult.getLists()) && StringUtils.isNotBlank(query)){
+                Map<String, String> map = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
+                pageResult.getLists().stream().forEach(v->{
+                        v.setSourceName(v.getSourceName()+"("+map.getOrDefault(v.getTenantId(),"-")+")");
+                });
+            }
+            return pageResult;
+        } finally {
+            if(StringUtils.isNotBlank(query)){
+                dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "metadata");
+            }
+            AtlasPerfTracer.log(perf);
+        }
+    }
 
     //获取数据源 schema 分页列表
     @GET
@@ -204,6 +339,150 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDatabaseList(" + sourceId + " )");
             }
             PageResult<Database> result = searchService.getDatabases(sourceId, offset, limit, query, tenantId, queryTableCount);
+            return result;
+        } finally {
+            if(StringUtils.isNotBlank(query)){
+                dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "metadata");
+            }
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    //公共租户下 - 元数据展示的 获取数据源 schema 分页列表
+    @GET
+    @Path("/public/schema")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<Database> getPublicDatabaseList(@QueryParam("active") @DefaultValue("true") Boolean active,
+                                                @QueryParam("queryTableCount") @DefaultValue("false") boolean queryTableCount,
+                                                @QueryParam("sourceId") String sourceId,
+                                                @QueryParam("query") String query,@QueryParam("bizTreeId") String bizTreeId,
+                                                @QueryParam("offset") long offset, @QueryParam("limit") long limit, @HeaderParam("tenantId") String tenantId) throws InterruptedException {
+        AtlasPerfTracer perf = null;
+        Long start = System.currentTimeMillis();
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getPublicDatabaseList(" + sourceId + " )");
+            }
+            String queryTenantIdParam = null;
+            PageResult<Database> result = null;
+            List<Tenant> tenants = tenantService.getTenants();
+            // bizTreeId 不为空则是查询当前租户下的
+            if(StringUtils.isNotBlank(bizTreeId)){
+                Map<String, String> map = EntityUtil.decodeBusinessId(bizTreeId);
+                queryTenantIdParam = map.get("tenantId");
+                result = searchService.queryDatabases(sourceId, offset, limit, query, queryTenantIdParam, queryTableCount,true);
+                //如果是查询，则需要补充名称对应的租户额外信息
+                if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
+                    Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
+                    String finalQueryTenantIdParam = queryTenantIdParam;
+                    result.getLists().stream().forEach(v->{
+                        String extInfo = String.join("/",Arrays.asList(tenantMap.getOrDefault(finalQueryTenantIdParam,"-"),v.getSourceName()));
+                        v.setDatabaseName(v.getDatabaseName()+"("+extInfo+")");
+                    });
+                }
+                return result;
+            }
+            //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
+            if(!metadataService.isConfigGloble()){
+                queryTenantIdParam = tenantId;
+                result = searchService.queryDatabases(sourceId, offset, limit, query, queryTenantIdParam, queryTableCount,true);
+                //如果是查询，则需要补充名称对应的租户额外信息
+                if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
+                    Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
+                    result.getLists().stream().forEach(v->{
+                        String extInfo = String.join("/",Arrays.asList(tenantMap.getOrDefault(tenantId,"-"),v.getSourceName()));
+                        v.setDatabaseName(v.getDatabaseName()+"("+extInfo+")");
+                    });
+                }
+                return result;
+            }
+
+
+            result = searchService.getPublicDatabases(offset, limit, query, queryTableCount);
+            //如果是查询，则需要补充名称对应的租户额外信息
+            if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
+                Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
+                result.getLists().stream().forEach(v->{
+                    String extInfo = String.join("/",Arrays.asList(tenantMap.getOrDefault(v.getTenantId(),"-"),v.getSourceName()));
+                    v.setDatabaseName(v.getDatabaseName()+"("+extInfo+")");
+                });
+            }
+            return result;
+        } finally {
+            if(StringUtils.isNotBlank(query)){
+                dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "metadata");
+            }
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    //公共租户下 - 元数据展示的 获取数据表 分页
+    @GET
+    @Path("/public/table")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<TableEntity> getPublicTableList(@HeaderParam("tenantId") String tenantId,
+                                                @QueryParam("active") @DefaultValue("true") Boolean active,
+                                                @QueryParam("schemaId") String schemaId,
+                                                @QueryParam("queryInfo") @DefaultValue("false") boolean queryInfo,
+                                                @QueryParam("query") String query, @QueryParam("bizTreeId") String bizTreeId,
+                                                @QueryParam("sourceId") @DefaultValue("")String sourceId,
+                                                @QueryParam("offset") long offset, @QueryParam("limit") long limit,
+                                                @QueryParam("isView") @DefaultValue("") String isViewStr) {
+        AtlasPerfTracer perf = null;
+        Long start = System.currentTimeMillis();
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getPublicTableList(" + schemaId + "," + limit + "," + offset + " )");
+            }
+            Boolean isView = StringUtils.isEmpty(isViewStr) ? null : Boolean.parseBoolean(isViewStr);
+            String queryTenantIdParam = null;
+            PageResult<TableEntity> result = null;
+            List<Tenant> tenants = tenantService.getTenants();
+            // bizTreeId 不为空则是查询当前租户下的
+            if(StringUtils.isNotBlank(bizTreeId)){
+                Map<String, String> map = EntityUtil.decodeBusinessId(bizTreeId);
+                queryTenantIdParam = map.get("tenantId");
+                result = searchService.getTable(schemaId, offset, limit, query, isView, queryInfo, queryTenantIdParam, sourceId);
+                //如果是查询，则需要补充名称对应的租户额外信息
+                if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
+                    Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
+                    String finalQueryTenantIdParam = queryTenantIdParam;
+                    result.getLists().stream().forEach(v->{
+                        String extInfo = String.join("/",Arrays.asList(tenantMap.getOrDefault(finalQueryTenantIdParam,"-"),
+                                v.getSourceName(),v.getDbName()));
+                        v.setName(v.getName()+"("+extInfo+")");
+                    });
+                }
+                return result;
+            }
+            //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
+            if(!metadataService.isConfigGloble()){
+                queryTenantIdParam = tenantId;
+                result = searchService.getTable(schemaId, offset, limit, query, isView, queryInfo, queryTenantIdParam, sourceId);
+                //如果是查询，则需要补充名称对应的租户额外信息
+                if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
+                    Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
+                    result.getLists().stream().forEach(v->{
+                        String extInfo = String.join("/",Arrays.asList(tenantMap.getOrDefault(tenantId,"-"),
+                                v.getSourceName(),v.getDbName()));
+                        v.setName(v.getName()+"("+extInfo+")");
+                    });
+                }
+                return result;
+            }
+            //多租户下的数据查询
+            result = searchService.getPublicTable(schemaId,  offset,  limit,  query,  isView, queryInfo);
+            //如果是查询，则需要补充名称对应的租户额外信息
+            if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
+                Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
+                result.getLists().stream().forEach(v->{
+                    String extInfo = String.join("/",Arrays.asList(tenantMap.getOrDefault(v.getTenantId(),"-"),
+                            v.getSourceName(),v.getDbName()));
+                    v.setName(v.getName()+"("+extInfo+")");
+                });
+            }
             return result;
         } finally {
             if(StringUtils.isNotBlank(query)){
@@ -548,8 +827,14 @@ public class MetaDataREST {
     @Path("/tag/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<Tag> getTag(@PathParam("guid") String guid, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public List<Tag> getTag(@QueryParam("bizTreeId")String bizTreeId,@PathParam("guid") String guid, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
+            if(StringUtils.isNotBlank(bizTreeId)){
+                Map<String,String> map = EntityUtil.decodeBusinessId(bizTreeId);
+                if(map != null){
+                    tenantId = map.get("tenantId");
+                }
+            }
             return tableTagService.getTags(guid, tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取标签失败");
@@ -655,7 +940,7 @@ public class MetaDataREST {
     @Path("/table/{guid}")
     @OperateType(UPDATE)
     public Response updateTableInfo(@PathParam("guid") final String guid, Table tableInfo) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(), tableInfo.getTableName());
+        HttpRequestContext.get().auditLog(ModuleEnum.METADATACOLLECTION.getAlias(), tableInfo.getTableName());
         try {
             metadataService.updateTableInfo(guid, tableInfo);
             return Response.status(200).entity("success").build();
@@ -775,7 +1060,7 @@ public class MetaDataREST {
         if (tableName == null) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表不存在或已删除，请刷新或者检查元数据");
         }
-        HttpRequestContext.get().auditLog(ModuleEnum.METADATA.getAlias(), tableName);
+        HttpRequestContext.get().auditLog(ModuleEnum.METADATACOLLECTION.getAlias(), tableName);
         try {
             dataStandardService.assignTableToStandard(dataStandAndTable, tableName, tenantId);
             return true;
@@ -929,7 +1214,20 @@ public class MetaDataREST {
     @Path("/rdbms/table/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public RDBMSTable getTableInfoById(@PathParam("tableId") String tableId, @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
+    public RDBMSTable getTableInfoById(@QueryParam("bizTreeId")String bizTreeId,@PathParam("tableId") String tableId,
+                                       @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") @DefaultValue("") String sourceId,
+                                        @QueryParam("currentTenantId")String currentTenantId) throws AtlasBaseException {
+        if(StringUtils.isNotBlank(currentTenantId)){
+            tenantId = currentTenantId;
+        }else{
+            if(StringUtils.isNotBlank(bizTreeId)){
+                Map<String,String> map = EntityUtil.decodeBusinessId(bizTreeId);
+                if(map != null){
+                    tenantId = map.get("tenantId");
+                }
+            }
+        }
+
         RDBMSTable table = metadataService.getRDBMSTableInfoById(tableId, tenantId,sourceId);
         if(StringUtils.isNotBlank(sourceId)){
             if("hive".equalsIgnoreCase(sourceId)){
@@ -942,7 +1240,10 @@ public class MetaDataREST {
                 }
             }
         }
+        table.setTenantId(tenantId);
         table.setSourceId(sourceId);
+        table.setSourceTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),"",""));
+        table.setDbTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),table.getDatabaseId(),""));
         return table;
     }
 
@@ -1173,7 +1474,10 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getSourceInfo(@HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") String sourceId,
-                                @QueryParam("schemaId") String schemaId){
+                                @QueryParam("schemaId") String schemaId,@QueryParam("currentTenantId")String currentTenantId){
+        if(StringUtils.isNotBlank(currentTenantId)){
+            tenantId = currentTenantId;
+        }
         DatabaseInfoBO resultBO = metadataService.querySourceInfo(tenantId,sourceId,schemaId);
         if(resultBO == null){
             return new Result("-1","没有找到对应的数据库登记信息");
@@ -1192,7 +1496,11 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getDeriveTableInfo(@HeaderParam("tenantId") String tenantId,@PathParam("tableGuid") String tableGuid,
-                                     @QueryParam("sourceId") String sourceId,@QueryParam("schemaId") String schemaId){
+                                     @QueryParam("sourceId") String sourceId,@QueryParam("schemaId") String schemaId,
+                                     @QueryParam("currentTenantId")String currentTenantId){
+        if(StringUtils.isNotBlank(currentTenantId)){
+            tenantId = currentTenantId;
+        }
         SourceInfoDeriveTableColumnVO metadataDeriveTableInfo = sourceInfoDeriveTableInfoService.queryDeriveTableInfo(tenantId,sourceId,schemaId,tableGuid);
         if(metadataDeriveTableInfo == null){
             return new Result("-1","没有找到对应的衍生表登记信息");

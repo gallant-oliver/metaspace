@@ -38,8 +38,9 @@ import java.util.Set;
 public interface CategoryDAO {
 
 
-    @Insert("insert into category(private_status,guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType,level,safe,tenantid,createtime,creator,code,sort)" +
-            "values(#{category.privateStatus},#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{tenantId},#{category.createTime},#{category.creator},#{category.code},#{category.sort})")
+    @Insert("insert into category(private_status,guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,categoryType,level,safe,tenantid,createtime,creator,code,sort,publish,information,approval_id)" +
+            "values(#{category.privateStatus},#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{tenantId},#{category.createTime},#{category.creator},#{category.code},#{category.sort}," +
+            "#{category.publish},#{category.information},#{category.approvalId})")
     public int add(@Param("category") CategoryEntityV2 category, @Param("tenantId") String tenantId);
 
     @Select("select count(*) from category where categoryType=#{categoryType} and (tenantid=#{tenantId})")
@@ -245,9 +246,7 @@ public interface CategoryDAO {
             " </script>"})
     public int deleteDataOwner(@Param("tableList") List<String> tableList);
 
-    @Select("select t1.category_id from table_data_source_relation t1 where t1.tenant_id = #{tenantId} and t1.table_id = #{guid} " +
-            "union " +
-            "select t2.category_id from  source_info t2 join tableinfo t3 on t2.database_id = t3.databaseguid where t2.tenant_id = #{tenantId} and t3.tableguid = #{guid}")
+    @Select("select t2.category_id from  source_info t2 join tableinfo t3 on t2.database_id = t3.databaseguid where t2.tenant_id = #{tenantId} and t3.tableguid = #{guid} AND t2.version = 0")
     public List<String> getCategoryGuidByTableGuid(@Param("guid") String guid, @Param("tenantId") String tenantId);
 
     @Select("select category.guid from category,business_relation where business_relation.businessid=#{guid} and business_relation.categoryguid=category.guid and tenantid=#{tenantId}")
@@ -256,15 +255,25 @@ public interface CategoryDAO {
     @Select("select name from category where guid=#{guid} and tenantid=#{tenantId}")
     public String getCategoryNameById(@Param("guid") String guid, @Param("tenantId") String tenantId);
     @Insert(" <script>" +
-            "INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,qualifiedname,categorytype,level,safe,createtime,tenantid,creator,code,sort,private_status) VALUES " +
+            "INSERT INTO category(guid,name,description,parentcategoryguid,upbrothercategoryguid,downbrothercategoryguid,qualifiedname,categorytype,level,safe,createtime,tenantid,creator,code,sort,private_status,publish) VALUES " +
             "<foreach item='category' index='index' collection='categorys' separator='),(' open='(' close=')'>" +
-            "#{category.guid},#{category.name},#{category.description},#{category.parentCategoryGuid},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{category.createTime},#{tenantId},#{category.creator},#{category.code},#{category.sort},#{category.privateStatus}" +
+            "#{category.guid},#{category.name},#{category.description},#{category.parentCategoryGuid},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.qualifiedName},#{category.categoryType},#{category.level},#{category.safe},#{category.createTime},#{tenantId},#{category.creator},#{category.code},#{category.sort},#{category.privateStatus},#{category.publish}" +
             "</foreach>" +
             " </script>")
     public int addAll(@Param("categorys") List<CategoryEntityV2> categorys, @Param("tenantId") String tenantId);
 
 
-    @Select("select name from category where parentCategoryGuid=#{parentCategoryGuid} and tenantid=#{tenantId}")
+    @Select("<script>"+
+            "select name from category where tenantid=#{tenantId}" +
+            " <choose>"+
+            " <when test='parentCategoryGuid != null'>"+
+            " and parentCategoryGuid=#{parentCategoryGuid}"+
+            " </when>"+
+            " <otherwise>"+
+            " and parentCategoryGuid is null"+
+            " </otherwise>"+
+            " </choose>"+
+            " </script>")
     public List<String> getChildCategoryName(@Param("parentCategoryGuid") String guid, @Param("tenantId") String tenantId);
 
     @Select("select guid from category where categorytype=#{type} and (downBrotherCategoryGuid is NULL or downBrotherCategoryGuid='') and level=1 and tenantid=#{tenantId}")
@@ -396,7 +405,7 @@ public interface CategoryDAO {
     List<CategoryGuidPath> getGuidPathByTenantIdAndCategoryTypeAndId(@Param("tenantId") String tenantId, @Param("type") int type, @Param("guid") String guid);
 
     @Select("<script>" +
-            " SELECT category.*,COALESCE(relation.edit_category,false,false) AS edit  FROM category LEFT JOIN category_group_relation as relation on category.guid = relation.category_id WHERE tenantid = #{tenantId} AND private_status = 'PUBLIC' AND categorytype = 0" +
+            " SELECT DISTINCT category.*,COALESCE(relation.edit_category,false,false) AS edit FROM category LEFT JOIN category_group_relation as relation on category.guid = relation.category_id WHERE tenantid = #{tenantId} AND private_status = 'PUBLIC' AND categorytype = 0" +
             " <if test='groupIdList != null and groupIdList.size() > 0'>"+
             " UNION" +
             " SELECT DISTINCT category.*,COALESCE(relation.edit_category,false,false) AS edit FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
@@ -475,4 +484,65 @@ public interface CategoryDAO {
             "</if>"+
             "</script>")
     void updateSort(@Param("sort") int sort,@Param("parentGuid") String parentGuid,@Param("tenantId") String tenantId);
-}
+
+
+    @Update("<script>" +
+            "UPDATE category " +
+            "SET updater = #{updater},updatetime=now(),private_status=#{privateStatus},publish=#{isPublish}\n" +
+            "WHERE"+
+            " guid=#{guid} and  tenantid = #{tenantId}" +
+            "</script>")
+    void updateCataloguePrivateStatus(@Param("guid") String  guid,@Param("privateStatus") String  privateStatus,@Param("isPublish") Boolean isPublish,@Param("tenantId") String tenantId,@Param("updater") String updater);
+
+
+    @Update("<script> " +
+            "update category set name=#{category.name},description=#{category.description},qualifiedName=#{category.qualifiedName},updater=#{updater},updatetime=#{updateTime}" +
+            "<if test = 'category.publish != null'>" +
+            ",publish=#{category.publish}" +
+            "</if>"+
+            "<if test = 'category.code != null'>" +
+            ",code=#{category.code}" +
+            "</if>"+
+            "<if test = 'category.approvalId != null'>" +
+            ",approval_id=#{category.approvalId}" +
+            "</if>"+
+            "<if test = 'category.information != null'>" +
+            ",information=#{category.information}" +
+            "</if>"+
+            " where guid=#{category.guid} and tenantid=#{tenantId}"+
+            "</script>")
+    public int updateCategoryV2Info(@Param("category") CategoryEntityV2 category, @Param("tenantId") String tenantId, @Param("updater") String updater, @Param("updateTime") Timestamp updateTime);
+
+    @Select("select max(sort) from category where parentCategoryGuid=#{parentCategoryGuid} and tenantid=#{tenantId}")
+    public int queryLastChildCategorySort(@Param("parentCategoryGuid") String guid, @Param("tenantId") String tenantId);
+
+    @Update("update category set parentcategoryguid=#{parentcategoryguid},upBrotherCategoryGuid=#{upBrotherCategoryGuid},downBrotherCategoryGuid=#{downBrotherCategoryGuid},sort=#{sort} where guid=#{guid} and tenantid=#{tenantId}")
+    public int updateCategoryGuid(@Param("guid") String guid, @Param("parentcategoryguid") String parentcategoryguid, @Param("upBrotherCategoryGuid") String upBrothCatalogGuid, @Param("downBrotherCategoryGuid") String downBrothCatalogGuid, @Param("tenantId") String tenantId,@Param("sort") Integer sort);
+	@Select("select * from category where categoryType=#{categoryType}")
+    Set<CategoryEntityV2> selectGlobal(@Param("categoryType") Integer categoryType);
+
+    @Select("<script>" +
+            " SELECT * FROM category WHERE private_status = 'PUBLIC' AND categorytype = 0" +
+            " <if test='groupIdList != null and groupIdList.size() > 0'>"+
+            " UNION" +
+            " SELECT DISTINCT category.* FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
+            " WHERE private_status = 'PRIVATE' AND categorytype = 0 AND group_id in" +
+            " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
+            "   #{item} "+
+            " </foreach>" +
+            " </if>"+
+            "</script>")
+    Set<CategoryEntityV2> selectSetByStatus(@Param("groupIdList") List<String> groupIdList);
+
+    @Select("<script>" +
+            " SELECT DISTINCT category.* FROM category LEFT JOIN category_group_relation as relation on category.guid = relation.category_id WHERE private_status = 'PUBLIC' AND categorytype = #{categoryType}" +
+            " <if test='groupIdList != null and groupIdList.size() > 0'>"+
+            " UNION" +
+            " SELECT DISTINCT category.* FROM category INNER JOIN category_group_relation as relation on category.guid = relation.category_id " +
+            " WHERE level &lt;= 5 AND private_status = 'PRIVATE' AND categorytype = #{categoryType} AND group_id in" +
+            " <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>" +
+            "   #{item} "+
+            " </foreach>" +
+            " </if>"+
+            "</script>")
+    Set<CategoryEntityV2> selectListByStatus(@Param("creator") String creator, @Param("groupIdList") List<String> groupIdList, @Param("categoryType") Integer categoryType);}

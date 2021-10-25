@@ -145,12 +145,15 @@ public interface DataSourceDAO {
 
     //搜索数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
-            " from data_source ds left join ( " +
+            "select count(*)over() totalSize,ds.tenantid tenantId,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
+            " from data_source ds inner join ( " +
             "  select distinct dgr.source_id from datasource_group_relation dgr join user_group_relation ug on ug.group_id=dgr.group_id " +
             "  where ug.user_id=#{userId} " +
             ") da on da.source_id=ds.source_id " +
-            "where (da.source_id is not null or ds.manager=#{userId}) and (isapi=false or isapi is null) and ds.tenantid=#{tenantId} " +
+            "where (da.source_id is not null or ds.manager=#{userId}) and (isapi=false or isapi is null) " +
+            "<if test='tenantId!=null'>" +
+            "and ds.tenantid=#{tenantId} " +
+            "</if>" +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like concat('%',#{dataSourceSearch.sourceName},'%') ESCAPE '/'" +
             "</if>" +
@@ -181,14 +184,53 @@ public interface DataSourceDAO {
             "</script>")
     public List<DataSourceHead> searchDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId,@Param("tenantId")String tenantId);
 
+    //搜索数据源
+    @Select("<script>" +
+            "select count(*)over() totalSize,ds.tenantid tenantId,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
+            " from data_source ds "+
+            "where  ds.manager=#{userId} and (isapi=false or isapi is null) " +
+            "<if test='tenantId!=null'>" +
+            "and ds.tenantid=#{tenantId} " +
+            "</if>" +
+            "<if test='dataSourceSearch.sourceName!=null'>" +
+            "and ds.source_name like concat('%',#{dataSourceSearch.sourceName},'%') ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.sourceType!=null'>" +
+            "and ds.source_type like concat('%',#{dataSourceSearch.sourceType},'%') ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.createTime!=null'>" +
+            "and to_char(ds.create_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.createTime},'%') ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.updateTime!=null'>" +
+            "and to_char(ds.update_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.updateTime},'%') ESCAPE '/'" +
+            "</if>" +
+
+            "<if test='parameters.sortby!=null'>" +
+            "order by ds.${parameters.sortby} " +
+            "</if>" +
+            "<if test='parameters.order!=null and parameters.sortby!=null'>" +
+            "${parameters.order} " +
+            "</if>" +
+            "<if test='parameters.limit!=-1'>" +
+            "limit ${parameters.limit} " +
+            "</if>" +
+            "<if test='parameters.offset!=0'>" +
+            "offset ${parameters.offset}" +
+            "</if>" +
+            "</script>")
+    public List<DataSourceHead> searchGlobalDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId,@Param("tenantId")String tenantId);
+
     //搜索Api权限数据源
     @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
-            " from data_source ds left join ( " +
+            "select count(*)over() totalSize,ds.tenantid tenantId,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
+            " from data_source ds inner join ( " +
             "  select distinct dgr.source_id from datasource_group_relation dgr join user_group_relation ug on ug.group_id=dgr.group_id " +
             "  where ug.user_id=#{userId} " +
             ") da on da.source_id=ds.source_id " +
-            "where (da.source_id is not null or ds.manager=#{userId}) and isapi=true and ds.tenantid=#{tenantId} " +
+            "where (da.source_id is not null or ds.manager=#{userId}) and isapi=true " +
+            "<if test='tenantId!=null'>" +
+            " and ds.tenantid=#{tenantId} " +
+            "</if>" +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like concat('%',#{dataSourceSearch.sourceName},'%') ESCAPE '/'" +
             "</if>" +
@@ -218,6 +260,44 @@ public interface DataSourceDAO {
             "</if>" +
             "</script>")
     public List<DataSourceHead> searchApiDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId,@Param("tenantId")String tenantId);
+
+    //搜索Api权限数据源
+    @Select("<script>" +
+            "select count(*)over() totalSize,ds.tenantid tenantId,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
+            " from data_source ds "+
+            "where  ds.manager=#{userId} and isapi=true " +
+            "<if test='tenantId!=null'>" +
+            " and ds.tenantid=#{tenantId} " +
+            "</if>" +
+            "<if test='dataSourceSearch.sourceName!=null'>" +
+            "and ds.source_name like concat('%',#{dataSourceSearch.sourceName},'%') ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.sourceType!=null'>" +
+            "and ds.source_type like concat('%',#{dataSourceSearch.sourceType},'%') ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.createTime!=null'>" +
+            "and to_char(ds.create_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.createTime},'%')  ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.updateTime!=null'>" +
+            "and to_char(ds.update_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.updateTime},'%') ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.updateUserName!=null'>" +
+            "and us.username like concat('%',#{dataSourceSearch.updateUserName},'%') ESCAPE '/'" +
+            "</if>" +
+            "<if test='parameters.sortby!=null'>" +
+            "order by ds.${parameters.sortby} " +
+            "</if>" +
+            "<if test='parameters.order!=null and parameters.sortby!=null'>" +
+            "${parameters.order} " +
+            "</if>" +
+            "<if test='parameters.limit!=-1'>" +
+            "limit #{parameters.limit} " +
+            "</if>" +
+            "<if test='parameters.offset!=0'>" +
+            "offset #{parameters.offset}" +
+            "</if>" +
+            "</script>")
+    public List<DataSourceHead> searchGlobalApiDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId,@Param("tenantId")String tenantId);
 
     //搜索数据源
     @Select("<script>" +
@@ -338,18 +418,6 @@ public interface DataSourceDAO {
             "where source_id=#{sourceId} and authorize_user_id=#{userId}")
     public int isApiAuthorizeUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
 
-    //获取数据源未授权人
-    @Select("<script>" +
-            "select count(*)over() totalSize,u.userid,u.username userName,u.account from " +
-            " (select distinct user2role.userid userid from privilege2module p join role r on p.privilegeid=r.privilegeid join user2role on r.roleid=user2role.roleid where p.moduleid='14' and r.status=1 ) us " +
-            " join users u on u.userid=us.userid " +
-            " where u.valid=true " +
-            "and u.userid not in (select authorize_user_id from data_source_authorize where source_id=#{sourceId} union select userid from user2role where roleid='1' or roleid='3') " +
-            "<if test='query!=null'>" +
-            "and username like concat('%',#{query},'%') ESCAPE '/'" +
-            "</if>" +
-            "</script>")
-    public List<UserIdAndName> getNoAuthorizeUser(@Param("sourceId") String sourceId,@Param("query") String query);
 
     //新增授权人
     @Insert("insert into data_source_authorize(source_id,authorize_user_id)" +
@@ -370,19 +438,6 @@ public interface DataSourceDAO {
     @Select("select count(*)over() totalSize,users.userid,users.userName,users.account from users join data_source_api_authorize on data_source_api_authorize.authorize_user_id=users.userid " +
             "where source_id=#{sourceId} and users.userid!=#{userId} and users.valid=true")
     public List<UserIdAndName> getApiAuthorizeUser(@Param("sourceId") String sourceId,@Param("userId") String userId);
-
-
-    @Select("<script>" +
-            "select count(*)over() totalSize,u.userid,u.username userName,u.account from " +
-            " (select distinct user2role.userid userid from privilege2module p join role r on p.privilegeid=r.privilegeid join user2role on r.roleid=user2role.roleid where p.moduleid='14' and r.status=1 ) us " +
-            " join users u on u.userid=us.userid " +
-            "where u.valid=true " +
-            "and u.userid not in (select authorize_user_id from data_source_api_authorize where source_id=#{sourceId} union select userid from user2role where roleid='1' or roleid='3') " +
-            "<if test='query!=null'>" +
-            "and username like concat('%',#{query},'%') ESCAPE '/'" +
-            "</if>" +
-            "</script>")
-    public List<UserIdAndName> getApiNoAuthorizeUser(@Param("sourceId") String sourceId,@Param("query") String query);
 
     //新增授权人
     @Insert("insert into data_source_api_authorize(source_id,authorize_user_id)" +
@@ -459,12 +514,6 @@ public interface DataSourceDAO {
             "update_time=#{updateTime}" +
             "where source_id=#{sourceId}")
     public int updateManager(@Param("userId") String userId,@Param("managerUserId") String managerUserId,@Param("sourceId") String sourceId,@Param("updateTime") Timestamp updateTime);
-
-    //获取可以成为数据源管理者的用户
-    @Select("select count(*)over() totalSize,u.userid,u.username userName,u.account " +
-            "from (select distinct user2role.userid from privilege2module p join role r on p.privilegeid=r.privilegeid join user2role on r.roleid=user2role.roleid where p.moduleid='14' and r.status=1 ) ro join users u on u.userid=ro.userid " +
-            "where u.valid=true ")
-    public List<UserIdAndName> getManager();
 
     //查询数据源管理者
     @Select("select manager from data_source where source_id=#{sourceId}")
@@ -578,12 +627,16 @@ public interface DataSourceDAO {
     List<DataSourceBody> getOracleDataSourcesByGroups(@Param("groupIds") List<String> groupIds,@Param("tenantId") String tenantId);
 
     @Select({" <script> ",
-            "select source_id as sourceId,source_name as sourceName ,source_type as sourceType from data_source where tenantid=#{tenantId} and source_type in ",
+            "select ds.source_id as sourceId,ds.source_name as sourceName ,ds.source_type as sourceType from data_source ds," +
+            " ( select distinct dgr.source_id from datasource_group_relation dgr join user_group_relation ug on ug.group_id=dgr.group_id " +
+            "  where ug.user_id=#{userId} " +
+            ") da where da.source_id=ds.source_id " +
+            " and ds.tenantid=#{tenantId} and ds.source_type in ",
             " <foreach item='type' index='index' collection='types' separator=',' open='(' close=')'>",
             " #{type} ",
             " </foreach>",
             " </script>"})
-    List<DataSourceInfo> queryDataSourceBySourceTypeIn(@Param("types")List<String> types,@Param("tenantId") String tenantId);
+    List<DataSourceInfo> queryDataSourceBySourceTypeIn(@Param("types")List<String> types,@Param("tenantId") String tenantId,@Param("userId")String userId);
 
     @Select("select * from data_source")
     List<DataSourceInfo> selectListAll();
