@@ -44,6 +44,9 @@ public class SourceInfoDeriveColumnInfo implements Serializable {
     @ApiModelProperty(value = "来源字段的guid（column_info）", required = true)
     private String sourceColumnGuid;
 
+    @ApiModelProperty(value = "来源字段的名称")
+    private String sourceColumnName;
+
     @ApiModelProperty(value = "是否是主键")
     private boolean primaryKey;
 

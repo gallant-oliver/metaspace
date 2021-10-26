@@ -900,6 +900,9 @@ public class SourceInfoDeriveTableInfoService {
                 tableDDL.append(";\r\n").append(tableComment);
             }
         }
+        if("hive".equalsIgnoreCase(sourceInfoDeriveTableColumnDto.getDbType())){
+            tableDDL.append("\r\nrow format delimited fields terminated by '\\001' stored as orc");
+        }
         tableDDL.append(";\r\n");
         if (StringUtils.isNotBlank(primaryKeyField.toString())) {
             primaryKeyDDLHeader.append(primaryKeyField.substring(0, primaryKeyField.length() - 1)).append(");\r\n");
@@ -924,58 +927,26 @@ public class SourceInfoDeriveTableInfoService {
         String tableNameEn = sourceInfoDeriveTableColumnDto.getTableNameEn();
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
         addTimeField(sourceInfoDeriveColumnInfos);
-        StringBuilder columnBuilder = new StringBuilder("insert into ").append(tableNameEn).append("(\r\n");
-        StringBuilder valueBuilder = new StringBuilder("values (\r\n");
-        for (int i = 0; i < sourceInfoDeriveColumnInfos.size(); i++) {
-            SourceInfoDeriveColumnInfo e = sourceInfoDeriveColumnInfos.get(i);
-            String columnNameEn = e.getColumnNameEn();
-            String dataType = e.getDataType();
-            boolean primaryKey = e.isPrimaryKey();
-            boolean groupField = e.isGroupField();
-            boolean removeSensitive = e.isRemoveSensitive();
-            boolean important = e.isImportant();
-            boolean secret = e.isSecret();
-            boolean permissionField = e.isPermissionField();
-            String secretPeriod = e.getSecretPeriod();
-            String mappingRule = e.getMappingRule();
-            String mappingDescribe = e.getMappingDescribe();
-            String remark = e.getRemark();
-            columnBuilder.append(columnNameEn);
-            if (i < sourceInfoDeriveColumnInfos.size() - 1) {
-                columnBuilder.append(",");
-            }
-            StringBuilder remarkBuilder = new StringBuilder();
-            if (primaryKey)
-                remarkBuilder.append("主键;");
-            if (groupField)
-                remarkBuilder.append("分组字段;");
-            if (important)
-                remarkBuilder.append("重要;");
-            if (removeSensitive)
-                remarkBuilder.append("脱敏;");
-            if (permissionField)
-                remarkBuilder.append("权限字段;");
-            if (secret)
-                remarkBuilder.append("保密;");
-            if (StringUtils.isNotBlank(secretPeriod))
-                remarkBuilder.append("保密期限:").append(secretPeriod).append(";");
-            if (StringUtils.isNotBlank(mappingRule))
-                remarkBuilder.append("映射规则:").append(mappingRule).append(";");
-            if (StringUtils.isNotBlank(mappingDescribe))
-                remarkBuilder.append("映射说明:").append(mappingDescribe).append(";");
-            if (StringUtils.isNotBlank(remark))
-                remarkBuilder.append("备注:").append(remark).append(";");
-            if (StringUtils.isNotEmpty(remarkBuilder.toString()))
-                columnBuilder.append(" --  ").append(remarkBuilder);
-            columnBuilder.append("\r\n");
-            valueBuilder.append(stringObjectMap.get(dataType));
-            if (i < sourceInfoDeriveColumnInfos.size() - 1) {
-                valueBuilder.append(",\r\n");
-            }
-        }
+        StringBuilder columnBuilder = new StringBuilder("insert into ").append(tableNameEn).append("\r\n");
         removeTimeField(sourceInfoDeriveColumnInfos);
-        columnBuilder.append(")").append(valueBuilder).append(");");
+        columnBuilder.append(this.getMapping(sourceInfoDeriveTableColumnDto));
         return columnBuilder.toString();
+    }
+
+    /**
+     * 获取select映射
+     * @param sourceInfoDeriveTableColumnDto
+     * @return
+     */
+    private String getMapping(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto){
+        StringBuilder str = new StringBuilder();
+        str.append("select \r\n");
+        for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos()) {
+            str.append(sourceInfoDeriveColumnInfo.getSourceColumnName()).append(" as ").append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(",");
+        }
+        str = new StringBuilder(str.substring(0, str.length() - 1));
+        str.append("\r\n from " + sourceInfoDeriveTableColumnDto.getSourceTableName()).append(";");
+        return str.toString();
     }
 
     private void addTimeField(List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos) {
