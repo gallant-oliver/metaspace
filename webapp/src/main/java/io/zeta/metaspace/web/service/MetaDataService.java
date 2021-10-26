@@ -409,7 +409,7 @@ public class MetaDataService {
                     if (sourceInfoDeriveTableInfo.getImportance()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getImportance())){
                         importancePrivilege = null;                    }
                     if (sourceInfoDeriveTableInfo.getSecurity()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getSecurity())){
-                        importancePrivilege = null;                    }
+                        securityPrivilege = null;                    }
                     table.setImportancePrivilege(importancePrivilege);
                     table.setSecurityPrivilege(securityPrivilege);
                 } else {
@@ -654,7 +654,7 @@ public class MetaDataService {
                          importancePrivilege = null;
                      }
                      if (sourceInfoDeriveTableInfo.getSecurity()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getSecurity())){
-                         importancePrivilege = null;
+                         securityPrivilege = null;
                      }
                          table.setImportancePrivilege(importancePrivilege);
                          table.setSecurityPrivilege(securityPrivilege);
