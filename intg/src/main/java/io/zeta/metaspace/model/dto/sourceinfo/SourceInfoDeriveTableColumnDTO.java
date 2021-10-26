@@ -82,7 +82,7 @@ public class SourceInfoDeriveTableColumnDTO implements Serializable {
     private String sourceTableGuid;
 
     @ApiModelProperty(value = "源表的名称")
-    private String sourceTableName;
+    private String sourceTableNameEn;
 
     @ApiModelProperty(value = "设计人")
     private String creator;

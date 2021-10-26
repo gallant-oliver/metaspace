@@ -942,10 +942,10 @@ public class SourceInfoDeriveTableInfoService {
         StringBuilder str = new StringBuilder();
         str.append("select \r\n");
         for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos()) {
-            str.append(sourceInfoDeriveColumnInfo.getSourceColumnName()).append(" as ").append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(",");
+            str.append(sourceInfoDeriveColumnInfo.getSourceColumnNameEn()).append(" as ").append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(",");
         }
         str = new StringBuilder(str.substring(0, str.length() - 1));
-        str.append("\r\n from " + sourceInfoDeriveTableColumnDto.getSourceTableName()).append(";");
+        str.append("\r\n from " + sourceInfoDeriveTableColumnDto.getSourceTableNameEn()).append(";");
         return str.toString();
     }
 
