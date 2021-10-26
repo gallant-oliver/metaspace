@@ -9,7 +9,7 @@ class VersionUtil {
 		try {
 			return VersionUtil.class.getPackage().getImplementationVersion();
 		} catch (Exception ex) {
-			return "1.13.0";
+			return "1.13.1";
 		}
 	}
 }
