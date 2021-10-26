@@ -172,6 +172,9 @@ public interface SourceInfoDeriveTableInfoDAO {
 
     @Select({"<script>",
             " select count(1) from source_info_derive_table_info where db_id = #{dbId} and table_name_en = #{tableName} and version = -1 ",
+            " <if test='id != null'>",
+            " and id != #{id}",
+            " </if>",
             "</script>"})
     int checkTableNameDump(@Param("tableName") String tableName, @Param("dbId") String dbId, @Param("id") String id);
 
