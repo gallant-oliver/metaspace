@@ -16,7 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional(rollbackFor = Exception.class)
@@ -64,7 +67,12 @@ public class DeriveTablePrivilegeService {
     public Result getDeriveTableRelations(String tenantId,PrivilegeType privilegeType,
                                           String userGroupId,Boolean registerType,
                                           String tableName,int limit,int offset){
-        List<GroupDeriveTableInfo> groupDeriveTableInfos=relationDAO.getRelationInfos(tenantId,privilegeType.name(),userGroupId,registerType,tableName,limit,offset);
+        List<String> importanceTableId = relationDAO.selectTableIdByGroupId(userGroupId,PrivilegeType.IMPORTANCE.name());
+        List<String> securityTableId = relationDAO.selectTableIdByGroupId(userGroupId,PrivilegeType.SECURITY.name());
+
+        List<GroupDeriveTableInfo> groupDeriveTableInfos=relationDAO.getRelationInfos(tenantId,privilegeType.name(),importanceTableId,securityTableId,
+                userGroupId,registerType,tableName,limit,offset);
+        groupDeriveTableInfos=groupDeriveTableInfos.stream().collect(Collectors.collectingAndThen(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(GroupDeriveTableInfo::getTableId))), ArrayList::new));
         PageResult<GroupDeriveTableInfo> pageResult=new PageResult<>(groupDeriveTableInfos);
         if (Boolean.TRUE.equals(ParamUtil.isNull(groupDeriveTableInfos))){
             pageResult.setCurrentSize(0);
