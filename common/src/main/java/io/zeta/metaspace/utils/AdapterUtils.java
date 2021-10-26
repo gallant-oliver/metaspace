@@ -12,13 +12,11 @@ import jdk.nashorn.internal.runtime.regexp.joni.exception.InternalException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.pf4j.*;
+import org.springframework.util.Base64Utils;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -118,6 +116,13 @@ public class AdapterUtils {
     public static AdapterSource getAdapterSource(DataSourceInfo dataSourceInfo) {
         AdapterSource adapterSource = null;
         String dataSourceId = dataSourceInfo.getSourceId();
+        //根据配置信息，生成与之对应的id便于使用一个连接池， 防止后期没有传该参数导致连接数大量增长
+        if(StringUtils.isBlank(dataSourceId)){
+            log.info("数据源配置没有sourceId信息,使用配置生成");
+            List<String> connectionConfigList = Arrays.asList(dataSourceInfo.getIp(),dataSourceInfo.getPort(),
+                    dataSourceInfo.getUserName(),dataSourceInfo.getPassword(),dataSourceInfo.getDatabase(),dataSourceInfo.getServiceType());
+            dataSourceId = String.join("-",connectionConfigList);
+        }
         if (StringUtils.isNotEmpty(dataSourceId) && adapterSourceMap.containsKey(dataSourceId)) {
             adapterSource = adapterSourceMap.get(dataSourceId);
             if (adapterSource != null) {

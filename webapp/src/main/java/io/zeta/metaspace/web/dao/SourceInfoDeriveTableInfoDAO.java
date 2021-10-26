@@ -171,14 +171,10 @@ public interface SourceInfoDeriveTableInfoDAO {
     int updateVersionToShowByTableGuid(@Param("tableGuid") String tableGuid);
 
     @Select({"<script>",
-            " select count(1) from ",
-            " (select tablename from tableinfo where databaseguid = #{dbId} and tablename = #{tableName}",
-            " union",
-            " select table_name_en from source_info_derive_table_info where db_id = #{dbId} and table_name_en = #{tableName} and version = -1 ",
+            " select count(1) from source_info_derive_table_info where db_id = #{dbId} and table_name_en = #{tableName} and version = -1 ",
             " <if test='id != null'>",
             " and id != #{id}",
             " </if>",
-            ")e ",
             "</script>"})
     int checkTableNameDump(@Param("tableName") String tableName, @Param("dbId") String dbId, @Param("id") String id);
 
@@ -199,7 +195,7 @@ public interface SourceInfoDeriveTableInfoDAO {
             " where t1.tenant_id = #{tenantId} and t1.source_id=#{sourceId}  and t1.db_id=#{schemaId} and t1.table_name_en=#{tableName}",
             "</script>"})
     List<SourceInfoDeriveTableInfo> getDeriveTableByIdAndTenantId( @Param("tenantId")String tenantId, @Param("sourceId")String sourceId,
-                                                             @Param("schemaId") String schemaId,@Param("tableName") String tableName );
+                                                                   @Param("schemaId") String schemaId,@Param("tableName") String tableName );
 
     @Select({"<script>",
             " select t1.id as id, ",
@@ -216,22 +212,21 @@ public interface SourceInfoDeriveTableInfoDAO {
             " where  t1.source_id=#{sourceId} and t1.table_guid=#{tableGuid}",
             "</script>"})
     List<SourceInfoDeriveTableInfo> getDeriveTableByGuid(@Param("sourceId")String sourceId,
-                                                                   @Param("tableGuid") String tableGuid );
+                                                         @Param("tableGuid") String tableGuid );
     @Select("SELECT\n" +
             "id,importance,security \n" +
             "FROM\n" +
             "source_info_derive_table_info\n" +
             "WHERE\n" +
-            " table_name_en = #{tableName}\n" +
-            "AND db_id = #{databaseId} \n" +
+            " table_guid = #{tableGuid}\n" +
             "AND tenant_id = #{tenantId} AND  version=-1 LIMIT 1 ")
-    SourceInfoDeriveTableInfo getByNameAndDbGuid(@Param("tableName") String tableName, @Param("databaseId") String databaseId, @Param("tenantId") String tenantId);
+    SourceInfoDeriveTableInfo getByNameAndDbGuid(@Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
 
     @Select("select importance,security from source_info_derive_table_info where table_guid=#{tableGuid} AND tenant_id = #{tenantId} ")
     List<TableExtInfo> getImportanceInfo( @Param("tableGuid") String tableGuid,@Param("tenantId") String tenantId);
 
     @Select("<script>" +
-            "select business_id businessId, source_table_guid sourceTableGuid, source_id sourceId " +
+            "select business_id businessId, table_guid tableGuid, source_id sourceId " +
             "from source_info_derive_table_info " +
             "where state=1 and table_guid in " +
             " <foreach item='tableGuid' index='index' collection='tableGuids' separator=',' open='(' close=')'>" +
@@ -240,15 +235,17 @@ public interface SourceInfoDeriveTableInfoDAO {
             "</script>")
     List<SourceInfoDeriveTableInfo> getDeriveTableInfoByGuids(@Param("tableGuids")List<String> tableGuids);
 
-    @Select("SELECT * FROM source_info_derive_table_info WHERE db_id = #{dbId} AND table_name_en = #{tableName}")
-    List<SourceInfoDeriveTableInfo> selectByDbAndTableName(@Param("dbId") String dbId, @Param("tableName") String tableName);
+    @Select("SELECT * FROM source_info_derive_table_info WHERE db_id = #{dbId} AND table_name_en = #{tableName} and version=-1")
+    SourceInfoDeriveTableInfo selectByDbAndTableName(@Param("dbId") String dbId, @Param("tableName") String tableName);
 
     @Update("update source_info_derive_table_info SET table_guid = #{tableGuid},update_time = now() WHERE db_id = #{dbId} AND table_name_en = #{tableName}")
     int updateByDbAndTableName(@Param("dbId") String dbId, @Param("tableName") String tableName, @Param("tableGuid") String tableGuid);
 
-    @Select("SELECT * FROM source_info_derive_table_info WHERE table_guid = #{tableGuid}")
-    List<SourceInfoDeriveTableInfo> selectByTableGuid(@Param("tableGuid") String table_guid);
+    @Select("SELECT * FROM source_info_derive_table_info WHERE table_guid = #{tableGuid} and version=-1")
+    SourceInfoDeriveTableInfo selectByTableGuid(@Param("tableGuid") String table_guid);
 
-    @Update("update source_info_derive_table_info set table_name_en = #{tableName},update_time = now() WHERE table_guid = #{tableGuid}")
-    int updateByTableGuid(@Param("tableGuid") String table_guid, @Param("tableName") String tableName);
+    @Update("update source_info_derive_table_info set table_name_en = #{tableName},update_time = now(), " +
+            "ddl=#{ddl}, dml=#{dml} " +
+            "WHERE table_guid = #{tableGuid}")
+    int updateByTableGuid(@Param("tableGuid") String table_guid, @Param("tableName") String tableName, @Param("ddl") String ddl, @Param("dml") String dml);
 }

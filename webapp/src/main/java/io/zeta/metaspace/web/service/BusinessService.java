@@ -29,6 +29,7 @@ import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.SystemModule;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.CategorycateQueryResult;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
@@ -128,6 +129,9 @@ public class BusinessService implements Approvable {
 
     @Autowired
     private PublicService publicService;
+
+    @Autowired
+    private DataManageService dataManageService;
 
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
@@ -265,9 +269,7 @@ public class BusinessService implements Approvable {
                 }
             }
 
-
             info.setEditBusiness(edit);
-
             String submitter = userGroupDAO.getUserNameById(info.getSubmitter());
             String operator = userGroupDAO.getUserNameById(info.getBusinessOperator());
             if (submitter != null) {
@@ -303,18 +305,9 @@ public class BusinessService implements Approvable {
             info.setGlobal(publicService.isGlobal());
             User user = AdminUtils.getUserData();
             String userId = user.getUserId();
-            //判断独立部署和多租户
-            if (TenantService.defaultTenant.equals(tenantId)) {
-                List<Role> roles = roleDao.getRoleByUsersId(user.getUserId());
-                if (roles.stream().allMatch(role -> role.getStatus() == 0))
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户所属角色已被禁用");
-                boolean editTechnical = privilegeDao.queryModulePrivilegeByUser(userId, SystemModule.TECHNICAL_OPERATE.getCode()) == 0 ? false : true;
-                info.setEditTechnical(editTechnical);
-            } else {
 //                List<Module> modules = tenantService.getModule(tenantId);
 //                boolean editTechnical = modules.stream().anyMatch(module-> ModuleEnum.TECHNICALEDIT.getId()==module.getModuleId());
-                info.setEditTechnical(true);
-            }
+            info.setEditTechnical(true);
             //tables
             List<TechnologyInfo.Table> tables = buildTablesByBusinessId(businessId, tenantId,null,null);
 
@@ -391,21 +384,30 @@ public class BusinessService implements Approvable {
                 table.setDisplayName(table.getTableName());
             }
             //table
-            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableName(),table.getDatabaseId(),tenantId);
+            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableGuid(),tenantId);
             if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))){
                 if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
                     Boolean importancePrivilege = Boolean.TRUE;
                     Boolean securityPrivilege = Boolean.TRUE;
-                    GroupDeriveTableRelation relation = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableGuid(), userGroupIds, tenantId);
+                    List<GroupDeriveTableRelation> relations = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableGuid(), userGroupIds, tenantId);
+                    GroupDeriveTableRelation relation = new GroupDeriveTableRelation();
+                    boolean ifSecurityNull=relations.stream().allMatch(r-> r.getSecurityPrivilege()==null);
+                    boolean ifImportanceNull=relations.stream().allMatch(r-> r.getImportancePrivilege()==null);
+                    relation.setSecurityPrivilege(ifSecurityNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getSecurityPrivilege));
+                    relation.setImportancePrivilege(ifImportanceNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getImportancePrivilege));
                     if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
-                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
+                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getImportancePrivilege() == null || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
                         importancePrivilege = Boolean.FALSE;
 
                     }
                     if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getSecurity()) &&
-                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
+                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || relation.getSecurityPrivilege() == null || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
                         securityPrivilege = Boolean.FALSE;
                     }
+                    if (sourceInfoDeriveTableInfo.getImportance()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getImportance())){
+                        importancePrivilege = null;                    }
+                    if (sourceInfoDeriveTableInfo.getSecurity()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getSecurity())){
+                        securityPrivilege = null;                    }
                     table.setImportancePrivilege(importancePrivilege);
                     table.setSecurityPrivilege(securityPrivilege);
                 }else{
@@ -2070,12 +2072,19 @@ public class BusinessService implements Approvable {
     /**
      * 查询目录中未关联当前业务对象的表
      *
-     * @param categoryGuid
+     * @param categoryGuids
      * @param businessId
      * @param tenantId
      */
-    public PageResult<RelationEntityV2> getCategoryRelationFilter(String categoryGuid, String businessId, RelationQuery query, String tenantId) {
+    public PageResult<RelationEntityV2> getCategoryRelationFilter(List<String> categoryGuids, String businessId, RelationQuery query, String tenantId) {
         try {
+            if (CollectionUtils.isEmpty(categoryGuids)) {
+                List<CategoryPrivilege> allCategories = dataManageService.getTechnicalCategory(tenantId);
+                if (CollectionUtils.isNotEmpty(allCategories)) {
+                    categoryGuids = allCategories.stream().map(c -> c.getGuid()).collect(Collectors.toList());
+                }
+            }
+
             int limit = query.getLimit();
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
@@ -2084,11 +2093,20 @@ public class BusinessService implements Approvable {
             if (org.apache.commons.lang.StringUtils.isNotBlank(tableName)) {
                 tableName = tableName.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
             }
-            List<RelationEntityV2> relations = businessDao.queryRelationByCategoryGuidAndBusinessIdFilterV2(categoryGuid, businessId, tenantId, limit, offset, tableName);
-            if (!org.springframework.util.CollectionUtils.isEmpty(relations)) {
-                totalNum = relations.get(0).getTotal();
+
+            List<RelationEntityV2> relations = new ArrayList<>();
+
+            User user = AdminUtils.getUserData();
+            List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+            if (CollectionUtils.isNotEmpty(userGroups) && CollectionUtils.isNotEmpty(categoryGuids)) {
+                List<String> userGroupIds = userGroups.stream().map(UserGroup::getId).collect(Collectors.toList());
+
+                relations = businessDao.queryRelationByCategoryGuidAndBusinessIdFilterV2(categoryGuids, businessId, tenantId, limit, offset, tableName, userGroupIds);
+                if (!org.springframework.util.CollectionUtils.isEmpty(relations)) {
+                    totalNum = relations.get(0).getTotal();
+                }
+                getPath(relations, tenantId);
             }
-            getPath(relations, tenantId);
             pageResult.setCurrentSize(relations.size());
             pageResult.setLists(relations);
             pageResult.setTotalSize(totalNum);

@@ -20,8 +20,8 @@ public class FilterUtils {
         add("api/metaspace/v2/entity");
         add("api/metaspace/metadata/supplementTable");
         add("api/metaspace/metadata/business/trust");
-        add("api/metaspace/role/roles/sso");
-        add("api/metaspace/role/users/sso");
+//        add("api/metaspace/role/roles/sso");
+//        add("api/metaspace/role/users/sso");
         add("api/metaspace/market/business");
         add("api/metaspace/metadata/refreshcache");
         add("api/metaspace/api");
