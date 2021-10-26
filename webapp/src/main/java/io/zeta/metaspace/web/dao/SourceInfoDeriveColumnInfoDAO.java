@@ -16,7 +16,7 @@ import java.util.List;
 @Mapper
 public interface SourceInfoDeriveColumnInfoDAO {
 
-    @Select("select * from source_info_derive_column_info where column_guid in (select column_guid from source_info_derive_table_column_relation where table_id = #{tableId})")
+    @Select("select * from source_info_derive_column_info where column_guid in (select column_guid from source_info_derive_table_column_relation where table_id = #{tableId}) order by column_name_en")
     List<SourceInfoDeriveColumnInfo> getDeriveColumnInfoListByTableId(@Param("tableId") String tableId);
 
     @Delete("delete from source_info_derive_column_info where column_guid in " +
