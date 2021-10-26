@@ -31,10 +31,7 @@ import io.zeta.metaspace.model.share.ProjectHeader;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.*;
 import io.zeta.metaspace.model.usergroup.result.*;
-import io.zeta.metaspace.web.dao.BusinessDAO;
-import io.zeta.metaspace.web.dao.CategoryDAO;
-import io.zeta.metaspace.web.dao.RelationDAO;
-import io.zeta.metaspace.web.dao.UserGroupDAO;
+import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.model.HiveConstant;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -78,6 +75,9 @@ public class UserGroupService {
     RelationDAO relationDAO;
     @Autowired
     private SourceInfoDAO sourceInfoDAO;
+
+    @Autowired
+    private GroupDeriveTableRelationDAO groupDeriveTableRelationDAO;
 
     @Autowired
     private BusinessDAO businessDAO;
@@ -190,6 +190,7 @@ public class UserGroupService {
         userGroupDAO.deleteCategoryGroupRelationByID(id);
         userGroupDAO.deleteUserGroupDataSourceRelationByID(id);
         userGroupDAO.deleteUserGroupProjectRelationByID(id);
+        groupDeriveTableRelationDAO.deleteRelationByGroupId(id);
     }
 
     /**

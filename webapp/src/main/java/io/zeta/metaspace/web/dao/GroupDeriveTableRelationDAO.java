@@ -87,17 +87,37 @@ public interface GroupDeriveTableRelationDAO {
             "</script>")
     void deleteRelation(@Param("ids") List<String> ids);
 
+    @Delete("<script>" +
+            "DELETE  " +
+            "FROM " +
+            " group_table_relation  " +
+            "WHERE " +
+            " user_group_id = #{id}" +
+            "</script>")
+    void deleteRelationByGroupId(@Param("id") String groupId);
+
+    @Select("<script>" +
+            "SELECT DISTINCT (derive_table_id)  FROM group_table_relation WHERE user_group_id = #{id} AND " +
+            "<if test='type == \"IMPORTANCE\"'>" +
+            "   importance_privilege = true  " +
+            "</if>"+
+            "<if test='type == \"SECURITY\"' >" +
+            "   security_privilege = true " +
+            "</if>"+
+            "</script>")
+    List<String> selectTableIdByGroupId(@Param("id") String groupId,@Param("type")String type);
+
     @Select("<script>" +
             "SELECT " +
             "count(*) over() AS total, " +
-            " ti.tableguid AS tableId," +
             " ti.tablename AS tableNameEn, " +
-            "  sidti.table_name_zh AS tableNameZn, " +
+            " sidti.table_name_zh AS tableNameZn, " +
             " gtr.importance_privilege AS importancePrivilege, " +
             " gtr.security_privilege AS securityPrivilege, " +
             " gtr.\"id\" AS groupTableRelationId, " +
-            " bi.name AS businessObjectName, " +
-            " c.name AS businessCategoryName " +
+            " string_agg(bi.name,',') AS businessObjectName, " +
+            " string_agg(c.name,',') AS businessCategoryName, " +
+            " ti.tableguid AS tableId " +
             "FROM " +
             " tableinfo ti  " +
             " INNER JOIN source_info_derive_table_info sidti ON sidti.table_guid = ti.tableguid AND sidti.version = -1 " +
@@ -107,9 +127,7 @@ public interface GroupDeriveTableRelationDAO {
             "<if test='privilegeType == \"SECURITY\"' >" +
             "   AND sidti.security = true " +
             "</if>"+
-            "<if test='privilegeType == \"ALL\"' >" +
             "   AND (sidti.security = true OR sidti.importance = true  )" +
-            "</if>"+
             " LEFT JOIN business2table bt ON bt.tableguid = ti.tableguid " +
             " LEFT JOIN businessinfo bi ON bi.businessid = bt.businessid " +
             " LEFT JOIN business_relation br ON br.businessid = bi.businessid " +
@@ -118,13 +136,31 @@ public interface GroupDeriveTableRelationDAO {
             "WHERE " +
             " sidti.tenant_id = #{tenantId}  " +
             "<if test='privilegeType == \"IMPORTANCE\" and registerType == false'>" +
-            "   AND ( (gtr.importance_privilege != true  AND  gtr.user_group_id = #{userGroupId} ) OR gtr.importance_privilege IS NULL)  " +
+            "   AND( ( (gtr.importance_privilege = false OR gtr.importance_privilege is null )  AND  gtr.user_group_id = #{userGroupId}   )" +
+            "  OR ( " +
+            "<if test='importantList != null and importantList.size() != 0'>" +
+            "gtr.derive_table_id NOT IN " +
+            " <foreach item='id' index='ids' collection='importantList' separator=',' open='(' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
+            " AND  " +
+            "</if>" +
+            "gtr.user_group_id != #{userGroupId}))"+
             "</if>"+
             "<if test='privilegeType == \"IMPORTANCE\" and registerType == true'>" +
             "   AND gtr.importance_privilege = true  AND  gtr.user_group_id = #{userGroupId}  " +
             "</if>"+
             "<if test='privilegeType == \"SECURITY\" and registerType == false'>" +
-            "   AND ((gtr.security_privilege != true  AND  gtr.user_group_id = #{userGroupId}  )OR gtr.security_privilege IS NULL) " +
+            "   AND( ( (gtr.security_privilege = false OR gtr.security_privilege is null )  AND  gtr.user_group_id = #{userGroupId}   )" +
+            "  OR ( " +
+            "<if test='securityList != null and securityList.size() != 0'>" +
+            "gtr.derive_table_id NOT IN " +
+            " <foreach item='id' index='ids' collection='securityList' separator=',' open='(' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
+            " AND  " +
+            "</if>" +
+            "gtr.user_group_id != #{userGroupId}))"+
             "</if>"+
             "<if test='privilegeType == \"SECURITY\" and registerType  == true'>" +
             "   AND gtr.security_privilege = true  AND  gtr.user_group_id = #{userGroupId}   " +
@@ -133,13 +169,14 @@ public interface GroupDeriveTableRelationDAO {
             "   AND (gtr.security_privilege = true OR gtr.importance_privilege = true)  AND  gtr.user_group_id = #{userGroupId}  " +
             "</if>"+
             "<if test='tableName != null and tableName !=\"\"'>" +
-            " AND sidti.table_name_zh like '%'||#{tableName}||'%' ESCAPE '/' " +
+            " AND (sidti.table_name_zh like '%'||#{tableName}||'%' ESCAPE '/' OR sidti.table_name_en like '%'||#{tableName}||'%' ESCAPE '/' )" +
             "</if>" +
+            "GROUP BY ti.tableguid,gtr.\"id\", sidti.table_name_zh,gtr.importance_privilege,gtr.security_privilege " +
             "<if test = 'limit &gt; 0'>"+
             " LIMIT #{limit} OFFSET #{offset} " +
             "</if>"+
             "</script>")
-    List<GroupDeriveTableInfo> getRelationInfos(@Param("tenantId") String tenantId, @Param("privilegeType") String privilegeType,
+    List<GroupDeriveTableInfo> getRelationInfos(@Param("tenantId") String tenantId, @Param("privilegeType") String privilegeType,@Param("importantList") List<String> importantList,@Param("securityList") List<String> securityList,
                                                 @Param("userGroupId") String userGroupId, @Param("registerType") Boolean registerType,
                                                 @Param("tableName") String tableName,@Param("limit")  int limit,@Param("offset")  int offset);
 }
