@@ -78,12 +78,12 @@ public class SourceInfoParamCheckService {
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                     AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("保密期限"));
         }
-        //对接人信息校验
+        /*//对接人信息校验
         if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getBoDepartmentName(),databaseInfo.getBoName(),databaseInfo.getBoEmail(),databaseInfo.getBoTel(),
                 databaseInfo.getToDepartmentName(),databaseInfo.getToName(),databaseInfo.getToEmail(),databaseInfo.getToTel()))){
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                     AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("对接人信息"));
-        }
+        }*/
 
         if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getTechnicalLeader()))){
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
@@ -158,12 +158,12 @@ public class SourceInfoParamCheckService {
                 return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                         AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("保密期限"));
             }
-            //对接人信息校验
+            /*//对接人信息校验
             if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getBoDepartmentName(), databaseInfo.getBoName(), databaseInfo.getBoEmail(), databaseInfo.getBoTel(),
                     databaseInfo.getToDepartmentName(), databaseInfo.getToName(), databaseInfo.getToEmail(), databaseInfo.getToTel()))) {
                 return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                         AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("对接人信息"));
-            }
+            }*/
 
             if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getTechnicalLeader()))) {
                 return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
@@ -215,12 +215,12 @@ public class SourceInfoParamCheckService {
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                     AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("保密期限"));
         }
-        //对接人信息校验
+        /*//对接人信息校验
         if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getBoDepartmentName(),databaseInfo.getBoName(),databaseInfo.getBoEmail(),databaseInfo.getBoTel(),
                 databaseInfo.getToDepartmentName(),databaseInfo.getToName(),databaseInfo.getToEmail(),databaseInfo.getToTel()))){
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                     AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("对接人信息"));
-        }
+        }*/
 
         if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getTechnicalLeader()))){
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
