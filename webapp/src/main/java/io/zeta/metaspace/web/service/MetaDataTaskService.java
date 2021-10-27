@@ -15,9 +15,11 @@ import io.zeta.metaspace.web.task.quartz.QuartzManager;
 import io.zeta.metaspace.web.task.sync.SyncTaskJob;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.LocalCacheUtils;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.quartz.CronExpression;
 import org.slf4j.Logger;
@@ -36,6 +38,12 @@ import java.util.stream.Collectors;
 @Service
 public class MetaDataTaskService {
 
+    private static Configuration conf;
+
+    public final static String SYNC_TASK_STATUS = "metaspace.sync.task.status";
+
+    private static Boolean syncTask;
+
     @Autowired
     private SyncTaskDefinitionDAO syncTaskDefinitionDAO;
     @Autowired
@@ -47,9 +55,20 @@ public class MetaDataTaskService {
     @Autowired
     UserDAO userDAO;
 
+    static {
+        try {
+            conf = ApplicationProperties.get();
+            syncTask = conf.getBoolean(SYNC_TASK_STATUS, false);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @PostConstruct
     public void init() {
-        syncTaskInstanceDAO.updateStatusAndAppendLogAllFail(SyncTaskInstance.Status.FAIL, "服务异常自动停止任务实例");
+        if(syncTask){
+            syncTaskInstanceDAO.updateStatusAndAppendLogAllFail(SyncTaskInstance.Status.FAIL, "服务异常自动停止任务实例");
+        }
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(TaskManageService.class);
