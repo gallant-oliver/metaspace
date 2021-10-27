@@ -13,27 +13,14 @@
 
 package io.zeta.metaspace.model.security;
 
+import lombok.Data;
+
 /**
  * @author lixiang03
  * @Data 2020/2/25 15:53
  */
+@Data
 public class Tenant {
     private String tenantId;
     private String projectName;
-
-    public String getTenantId() {
-        return tenantId;
-    }
-
-    public void setTenantId(String tenantId) {
-        this.tenantId = tenantId;
-    }
-
-    public String getProjectName() {
-        return projectName;
-    }
-
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
-    }
 }

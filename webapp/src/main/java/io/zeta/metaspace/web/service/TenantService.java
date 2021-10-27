@@ -16,6 +16,7 @@ package io.zeta.metaspace.web.service;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
@@ -30,7 +31,7 @@ import io.zeta.metaspace.web.util.CategoryUtil;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -53,6 +54,7 @@ public class TenantService {
     public final static String SECURITY_CENTER_HOST = "security.center.host";
     private final static String TICKET_KEY = "X-SSO-FullticketId";
     private final static String TENANT_LIST = "/service/tools/tenant/metaspace";
+    private final static String TENANT_ALL_LIST = "/service/projectmanager/projects?pageSize=1000&startIndex=0";
     private final static String TENANT_USER_MODULE= "/service/tools/users";
     private final static String TENANT_MODULE="/service/tools/toolRoles";
     private final static String POOL="/service/cluster/pools";
@@ -70,6 +72,7 @@ public class TenantService {
     private static int USER_INFO_EXPIRE ;
     private static Cache<String, PageResult<UserAndModule>> userModulesCache;
     private static Cache<String, List<Tenant>> tenantsCache;
+    private static Cache<String, List<Tenant>> tenantsCacheAll;
     private static Cache<String, List<Module>> modulesCache;
     private static Cache<String, Pool> poolCache;
     private static Cache<String, List<String>> databaseCache;
@@ -87,6 +90,7 @@ public class TenantService {
             USER_INFO_EXPIRE = conf.getInt(USER_CACHE_EXPIRE, 30);
             userModulesCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(USER_INFO_EXPIRE, TimeUnit.MINUTES).build();
             tenantsCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(USER_INFO_EXPIRE, TimeUnit.MINUTES).build();
+            tenantsCacheAll = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(USER_INFO_EXPIRE, TimeUnit.MINUTES).build();
             modulesCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(USER_INFO_EXPIRE, TimeUnit.MINUTES).build();
             poolCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(USER_INFO_EXPIRE, TimeUnit.MINUTES).build();
             databaseCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(USER_INFO_EXPIRE, TimeUnit.MINUTES).build();
@@ -252,8 +256,45 @@ public class TenantService {
         throw getAtlasBaseException(status,msgDesc,"从安全中心获取租户列表失败");
     }
 
-    public List<Tenant> getTenantAll(){
-        return tenantDAO.selectAll();
+    /**
+     * 获取所有租户列表
+     * @return
+     */
+    public List<Tenant> getTenantAll() {
+        String cacheKey = "metaspace:tenant:all";
+        List<Tenant> list = tenantsCacheAll.getIfPresent(cacheKey);
+        if (CollectionUtils.isNotEmpty(list)) {
+            return list;
+        }
+        try {
+            HashMap<String, String> hashMap = new HashMap<>();
+            hashMap.put(TICKET_KEY, AdminUtils.getSSOTicket());
+            hashMap.put("User-Agent", "Chrome");
+            int retryCount = 0;
+            int retries = 3;
+            while (retryCount < retries) {
+                String string = OKHttpClient.doGet(SECURITY_HOST + TENANT_ALL_LIST, null, hashMap);
+                Gson gson = new Gson();
+                try {
+                    JsonObject jsonObject = gson.fromJson(string, JsonObject.class);
+                    jsonObject = gson.fromJson(jsonObject.get("data"), JsonObject.class);
+                    list = gson.fromJson(gson.toJson(jsonObject.get("projects")), new TypeToken<List<Tenant>>() {
+                    }.getType());
+                } catch (Exception e) {
+                    Map map = gson.fromJson(string, HashMap.class);
+                    retryCount++;
+                    continue;
+                }
+                if (CollectionUtils.isEmpty(list)) {
+                    return new ArrayList<>();
+                }
+                tenantsCacheAll.put(cacheKey, list);
+                return list;
+            }
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "从安全中心获取租户列表失败:");
+        }
+        return new ArrayList<>();
     }
 
     public Boolean initTechnicalCategory() throws AtlasBaseException {
