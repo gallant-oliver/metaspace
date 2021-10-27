@@ -188,7 +188,8 @@ public interface DataSourceDAO {
     @Select("<script>" +
             "select count(*)over() totalSize,ds.tenantid tenantId,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
             " from data_source ds "+
-            "where  ds.manager=#{userId} and (isapi=false or isapi is null) " +
+            //"where  ds.manager=#{userId} and (isapi=false or isapi is null) " +
+            "where  (isapi=false or isapi is null) " +
             "<if test='tenantId!=null'>" +
             "and ds.tenantid=#{tenantId} " +
             "</if>" +
@@ -265,7 +266,8 @@ public interface DataSourceDAO {
     @Select("<script>" +
             "select count(*)over() totalSize,ds.tenantid tenantId,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
             " from data_source ds "+
-            "where  ds.manager=#{userId} and isapi=true " +
+            //"where  ds.manager=#{userId} and isapi=true " +
+            "where  isapi=true " +
             "<if test='tenantId!=null'>" +
             " and ds.tenantid=#{tenantId} " +
             "</if>" +
