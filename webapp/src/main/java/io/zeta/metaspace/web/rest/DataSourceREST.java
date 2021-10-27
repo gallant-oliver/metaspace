@@ -281,7 +281,7 @@ public class DataSourceREST {
     public PageResult<DataSourceHead> searchApiDataSources(@QueryParam("limit") int limit,@QueryParam("offset") int offset,@QueryParam("sortby") String sortby,@QueryParam("order") String order,
                                                         @QueryParam("sourceName") String sourceName,@QueryParam("sourceType") String sourceType,@QueryParam("createTime") String createTime,
                                                         @QueryParam("updateTime") String updateTime,@QueryParam("updateUserName") String updateUserName,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        PageResult<DataSourceHead> pageResult= dataSourceService.searchDataSources(limit,offset,sortby,order,sourceName,sourceType,createTime,updateTime,updateUserName,true,tenantId);
+        PageResult<DataSourceHead> pageResult= dataSourceService.searchNotHiveDataSources(limit,offset,sortby,order,sourceName,sourceType,createTime,updateTime,updateUserName,true,tenantId);
         return pageResult;
 
     }
