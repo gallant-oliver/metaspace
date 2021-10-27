@@ -1440,7 +1440,7 @@ public class DataSourceService {
 
     public List<ColumnDTO> getOptionalColumn(String sourceId,String tableId) throws IOException, SQLException {
         GuidCount guidCount=new GuidCount();
-        guidCount.setCount(5);
+        guidCount.setCount(100);//指标纬度管理编辑纬度映射字段预览量由5改为100
         guidCount.setGuid(tableId);
         guidCount.setSourceId(sourceId);
         TableShow tableShow = searchService.getTableShow(guidCount, false);
