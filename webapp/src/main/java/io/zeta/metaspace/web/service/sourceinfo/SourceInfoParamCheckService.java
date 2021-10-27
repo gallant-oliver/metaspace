@@ -135,7 +135,7 @@ public class SourceInfoParamCheckService {
                         AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("数据库中文名"));
             }
             //校验中文名重名
-            if (databaseInfoDAO.getDatabaseDuplicateName(tenantId, databaseInfo.getDatabaseAlias(), null)) {
+            if (databaseInfoDAO.getDatabaseDuplicateName(tenantId, databaseInfo.getDatabaseAlias(), databaseInfo.getId())) {
                 return ReturnUtil.error(AtlasErrorCode.DUPLICATE_ALIAS_NAME.getErrorCode(),
                         AtlasErrorCode.DUPLICATE_ALIAS_NAME.getFormattedErrorMessage(databaseInfo.getDatabaseAlias()));
             }

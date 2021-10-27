@@ -157,20 +157,22 @@ public interface DatabaseInfoDAO {
     DatabaseInfoBO getDatabaseInfoById(@Param("id") String id, @Param("tenantId") String tenantId, @Param("version") int version);
 
     @Select("<script>" +
-            "SELECT id, database_alias databaseAlias, database_id databaseId, category_id categoryId, data_source_id dataSourceId," +
-            "security, security_cycle securityCycle, " +
-            "bo_department_name boDepartmentName, bo_name boName, bo_email boEmail, bo_tel boTel, " +
-            "to_department_name toDepartmentName, to_name toName, to_email toEmail, to_tel toTel, " +
-            "technical_leader technicalLeader, business_leader businessLeader " +
+            "SELECT si.id, si.database_alias databaseAlias, si.database_id databaseId, si.data_source_id dataSourceId," +
+            "si.security, si.security_cycle securityCycle, " +
+            "si.bo_department_name boDepartmentName, si.bo_name boName, si.bo_email boEmail, si.bo_tel boTel, " +
+            "si.to_department_name toDepartmentName, si.to_name toName, si.to_email toEmail, si.to_tel toTel, " +
+            "si.technical_leader technicalLeader, si.business_leader businessLeader, " +
+            "sirpc.parent_category_id categoryId " +
             "FROM " +
-            " source_info " +
+            " source_info si " +
+            "inner join source_info_relation2parent_category sirpc on sirpc.source_info_id = si.id " +
             "WHERE\n" +
-            " id IN " +
+            " si.id IN " +
             "<foreach collection='ids' item='id' separator=',' open='(' close=')'>" +
             "#{id}" +
             "</foreach>" +
             " AND " +
-            " version = 0" +
+            " si.version = 0" +
             "</script>")
     List<DatabaseInfo> getDatabaseIdAndAliasByIds(@Param("ids") List<String> idList);
 
