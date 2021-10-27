@@ -70,9 +70,10 @@ public class SourceInfoDeriveTableInfoService {
     private BusinessREST businessREST;
     private TechnicalREST technicalREST;
     private DataSourceService dataSourceService;
+    private GroupDeriveTableRelationDAO relationDAO;
 
     @Autowired
-    public SourceInfoDeriveTableInfoService(SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao, DbDAO dbDao, BusinessDAO businessDAO,
+    public SourceInfoDeriveTableInfoService(SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao, GroupDeriveTableRelationDAO relationDAO, DbDAO dbDao, BusinessDAO businessDAO,
                                             TableDAO tableDAO, ColumnDAO columnDAO, BusinessREST businessREST, TechnicalREST technicalREST,
                                             CategoryDAO categoryDAO, SourceInfoDeriveColumnInfoService sourceInfoDeriveColumnInfoService,
                                             SourceInfoDeriveTableColumnRelationService sourceInfoDeriveTableColumnRelationService,
@@ -88,6 +89,7 @@ public class SourceInfoDeriveTableInfoService {
         this.dataSourceService = dataSourceService;
         this.sourceInfoDeriveColumnInfoService = sourceInfoDeriveColumnInfoService;
         this.sourceInfoDeriveTableColumnRelationService = sourceInfoDeriveTableColumnRelationService;
+        this.relationDAO = relationDAO;
     }
 
     /**
@@ -220,8 +222,16 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableInfo.setUpdater(user.getUserId());
         sourceInfoDeriveTableInfo.setUpdateTime(LocalDateTime.now());
         sourceInfoDeriveTableInfo.setTenantId(tenantId);
-        sourceInfoDeriveTableInfo.setImportance(sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isImportant));
-        sourceInfoDeriveTableInfo.setSecurity(sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isSecret));
+        boolean important = sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isImportant);
+        boolean security = sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isSecret);
+        if (!important){
+            relationDAO.deleteRelationImportantPrivilegeByTableId(tenantId,oldSourceInfoDeriveTableInfo.getTableGuid());
+        }
+        if (!security){
+            relationDAO.deleteRelationSecurityPrivilegeByTableId(tenantId,oldSourceInfoDeriveTableInfo.getTableGuid());
+        }
+        sourceInfoDeriveTableInfo.setImportance(important);
+        sourceInfoDeriveTableInfo.setSecurity(security);
         // 操作保存
         if (!sourceInfoDeriveTableColumnDto.isSubmit()) {
             // 如果上次是已提交
