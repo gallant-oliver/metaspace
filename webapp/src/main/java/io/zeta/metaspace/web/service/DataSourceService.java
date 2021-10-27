@@ -432,6 +432,17 @@ public class DataSourceService {
 
     }
 
+    public PageResult<DataSourceHead> searchNotHiveDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId) throws AtlasBaseException {
+        try {
+            PageResult<DataSourceHead> pageResult = getDataSources(limit,  offset,  sortby,  order,  sourceName,  sourceType,  createTime,  updateTime,  updateUserName,  isApi,  tenantId,true);
+            return pageResult;
+        } catch (Exception e) {
+            LOG.error("查询数据源失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源查询失败\n" + e.getMessage());
+        }
+    }
+
+
     private PageResult<DataSourceHead> getDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId,boolean isGlobalConfig) throws AtlasBaseException {
         PageResult<DataSourceHead> pageResult = new PageResult<>();
         if("hive".equalsIgnoreCase(sourceType)){
@@ -486,8 +497,7 @@ public class DataSourceService {
         if(isGlobalConfig){
             list = isApi ? dataSourceDAO.searchGlobalApiDataSources(parameters, dataSourceSearch, userId, tenantId) : dataSourceDAO.searchGlobalDataSources(parameters, dataSourceSearch, userId, tenantId);
         }else{
-//            list = isApi ? dataSourceDAO.searchApiDataSources(parameters, dataSourceSearch, userId, tenantId) : dataSourceDAO.searchDataSources(parameters, dataSourceSearch, userId, tenantId);
-            list = dataSourceDAO.searchGlobalApiDataSources(parameters, dataSourceSearch, userId, tenantId);
+            list = isApi ? dataSourceDAO.searchApiDataSources(parameters, dataSourceSearch, userId, tenantId) : dataSourceDAO.searchDataSources(parameters, dataSourceSearch, userId, tenantId);
         }
 
         for (DataSourceHead head : list) {
