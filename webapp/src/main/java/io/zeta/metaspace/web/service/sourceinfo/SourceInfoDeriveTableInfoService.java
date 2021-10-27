@@ -27,7 +27,7 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -929,6 +929,7 @@ public class SourceInfoDeriveTableInfoService {
         addTimeField(sourceInfoDeriveColumnInfos);
         StringBuilder columnBuilder = new StringBuilder("insert into ").append(tableNameEn).append("\r\n");
         removeTimeField(sourceInfoDeriveColumnInfos);
+
         columnBuilder.append(this.getMapping(sourceInfoDeriveTableColumnDto));
         return columnBuilder.toString();
     }
@@ -940,12 +941,21 @@ public class SourceInfoDeriveTableInfoService {
      */
     private String getMapping(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto){
         StringBuilder str = new StringBuilder();
-        str.append("select \r\n");
+        StringBuilder strColumn = new StringBuilder();
+        StringBuilder strSelect = new StringBuilder();
+        strColumn.append("(");
         for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos()) {
-            str.append(sourceInfoDeriveColumnInfo.getSourceColumnNameEn()).append(" as ").append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(",");
+            if(StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceColumnNameEn())){
+                continue;
+            }
+            strColumn.append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(", ");
+            strSelect.append(sourceInfoDeriveColumnInfo.getSourceColumnNameEn()).append(" as ").append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(",");
         }
-        str = new StringBuilder(str.substring(0, str.length() - 1));
-        str.append("\r\n from " + sourceInfoDeriveTableColumnDto.getSourceTableNameEn()).append(";");
+        strColumn = new StringBuilder(strColumn.substring(0, strColumn.length() - 2));
+        strColumn.append(")\r\n");
+        str.append(strColumn).append("select \r\n");
+        strSelect = new StringBuilder(strSelect.substring(0, strSelect.length() - 1));
+        str.append(strSelect).append("\r\n from " + sourceInfoDeriveTableColumnDto.getSourceTableNameEn()).append(";");
         return str.toString();
     }
 

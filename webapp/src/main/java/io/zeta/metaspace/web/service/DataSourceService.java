@@ -432,6 +432,17 @@ public class DataSourceService {
 
     }
 
+    public PageResult<DataSourceHead> searchNotHiveDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId) throws AtlasBaseException {
+        try {
+            PageResult<DataSourceHead> pageResult = getDataSources(limit,  offset,  sortby,  order,  sourceName,  sourceType,  createTime,  updateTime,  updateUserName,  isApi,  tenantId,true);
+            return pageResult;
+        } catch (Exception e) {
+            LOG.error("查询数据源失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源查询失败\n" + e.getMessage());
+        }
+    }
+
+
     private PageResult<DataSourceHead> getDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId,boolean isGlobalConfig) throws AtlasBaseException {
         PageResult<DataSourceHead> pageResult = new PageResult<>();
         if("hive".equalsIgnoreCase(sourceType)){
@@ -484,10 +495,9 @@ public class DataSourceService {
 
         List<DataSourceHead> list = null;
         if(isGlobalConfig){
-            list = isApi ? dataSourceDAO.searchGlobalApiDataSources(parameters, dataSourceSearch, userId, tenantId) : dataSourceDAO.searchGlobalDataSources(parameters, dataSourceSearch, userId, tenantId);
+            list = isApi ? dataSourceDAO.searchGlobalApiDataSources(parameters, dataSourceSearch, null, tenantId) : dataSourceDAO.searchGlobalDataSources(parameters, dataSourceSearch, null, tenantId);
         }else{
-//            list = isApi ? dataSourceDAO.searchApiDataSources(parameters, dataSourceSearch, userId, tenantId) : dataSourceDAO.searchDataSources(parameters, dataSourceSearch, userId, tenantId);
-            list = dataSourceDAO.searchGlobalApiDataSources(parameters, dataSourceSearch, userId, tenantId);
+            list = isApi ? dataSourceDAO.searchApiDataSources(parameters, dataSourceSearch, userId, tenantId) : dataSourceDAO.searchDataSources(parameters, dataSourceSearch, userId, tenantId);
         }
 
         for (DataSourceHead head : list) {
@@ -1430,7 +1440,7 @@ public class DataSourceService {
 
     public List<ColumnDTO> getOptionalColumn(String sourceId,String tableId) throws IOException, SQLException {
         GuidCount guidCount=new GuidCount();
-        guidCount.setCount(5);
+        guidCount.setCount(100);//指标纬度管理编辑纬度映射字段预览量由5改为100
         guidCount.setGuid(tableId);
         guidCount.setSourceId(sourceId);
         TableShow tableShow = searchService.getTableShow(guidCount, false);
