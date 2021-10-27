@@ -484,7 +484,7 @@ public class DataSourceService {
 
         List<DataSourceHead> list = null;
         if(isGlobalConfig){
-            list = isApi ? dataSourceDAO.searchGlobalApiDataSources(parameters, dataSourceSearch, userId, tenantId) : dataSourceDAO.searchGlobalDataSources(parameters, dataSourceSearch, userId, tenantId);
+            list = isApi ? dataSourceDAO.searchGlobalApiDataSources(parameters, dataSourceSearch, null, tenantId) : dataSourceDAO.searchGlobalDataSources(parameters, dataSourceSearch, null, tenantId);
         }else{
 //            list = isApi ? dataSourceDAO.searchApiDataSources(parameters, dataSourceSearch, userId, tenantId) : dataSourceDAO.searchDataSources(parameters, dataSourceSearch, userId, tenantId);
             list = dataSourceDAO.searchGlobalApiDataSources(parameters, dataSourceSearch, userId, tenantId);
