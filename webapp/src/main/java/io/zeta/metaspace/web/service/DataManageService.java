@@ -82,7 +82,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
-
 import javax.mail.Message;
 import javax.mail.Session;
 import javax.mail.Transport;
@@ -2352,13 +2351,66 @@ public class DataManageService {
      */
     public File exportExcelAll(int categoryType, String tenantId) throws IOException, SQLException {
         Set<CategoryEntityV2> data;
+        List<CategoryEntityV2> valueList=new ArrayList<>();
+        Map<String,List<CategoryEntityV2>> parent;
         if(categoryType == 0){
             data = dataManageService.getAllTechnicalCategory(tenantId);
+            parent=data.stream().collect(Collectors.groupingBy(c -> c.getParentCategoryGuid() +"str"));
+            parent.forEach((k,v) -> {
+            List<CategoryEntityV2> list=v.stream().sorted(Comparator.comparing(s -> s.getSort())).collect(Collectors.toList());
+                parent.put(k,list);
+            });
+           List<CategoryEntityV2> cateList= parent.get("nullstr");
+           for(CategoryEntityV2 c:cateList){
+               getCate(valueList,c,parent);
+           }
         }else{
             data = categoryDao.getAll(categoryType, tenantId);
+            //将目录排序
+            parent=data.stream().collect(Collectors.groupingBy(c -> c.getParentCategoryGuid() +"str"));
+            parent.forEach((k,v) -> {
+            List<CategoryEntityV2> list=new ArrayList<>();
+            for(CategoryEntityV2 cv:v){
+                if(StringUtils.isBlank(cv.getUpBrotherCategoryGuid())){
+                    list.add(cv);
+                }
+            }
+            if(list.size()>0) {
+                String id = list.get(0).getGuid();
+                String guid=id;
+                for (int i = 0; i < v.size(); i++) {
+                    for (CategoryEntityV2 cv3 : v) {
+                        if (StringUtils.isNotBlank(cv3.getUpBrotherCategoryGuid())) {
+                            if (cv3.getUpBrotherCategoryGuid().equals(guid)) {
+                                list.add(cv3);
+                                guid = cv3.getGuid();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+             parent.put(k,list);
+            });
+            List<CategoryEntityV2> cateList= parent.get("nullstr");
+            for(CategoryEntityV2 c:cateList){
+                getCate(valueList,c,parent);
+            }
         }
-        Workbook workbook = allData2workbook(userDAO, categoryType, data);
+        Workbook workbook = allData2workbook(userDAO, categoryType, valueList);
         return workbook2file(workbook);
+    }
+
+    private List getCate( List<CategoryEntityV2> valueList,CategoryEntityV2 cate,Map<String,List<CategoryEntityV2>> parent){
+        valueList.add(cate);
+        String guid=cate.getGuid();
+        List<CategoryEntityV2> sonCate=parent.get(guid+"str");
+        if(!CollectionUtils.isEmpty(sonCate)){
+           for( CategoryEntityV2 c:sonCate){
+               getCate(valueList,c,parent);
+           }
+        }
+       return valueList;
     }
 
     private List<CategoryExport> queryByIds(List<String> ids, int categoryType, String tenantId) throws AtlasBaseException {
@@ -2392,7 +2444,7 @@ public class DataManageService {
     }
 
     //全局导出
-    private Workbook allData2workbook(UserDAO userDAO, int categoryType, Set<CategoryEntityV2> list) {
+    private Workbook allData2workbook(UserDAO userDAO, int categoryType, List<CategoryEntityV2> list) {
 
         Workbook workbook = new XSSFWorkbook();
         if (categoryType == 5) {
