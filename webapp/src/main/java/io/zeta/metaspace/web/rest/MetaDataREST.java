@@ -252,20 +252,15 @@ public class MetaDataREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getPublicDataSourceList");
             }
             String queryTenantIdParam = null;
+            boolean isSearchFlag = false;
             boolean hasHive = offset == 0 && (query == null || "hive".contains(query));
-            boolean globalConfig = false;
             // bizTreeId 不为空则是查询当前租户下的
             if(StringUtils.isNotBlank(bizTreeId)){
                 Map<String, String> map = EntityUtil.decodeBusinessId(bizTreeId);
                 queryTenantIdParam = map.get("tenantId");
             }else{
-                //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
-                if(!metadataService.isConfigGloble()){
-                    queryTenantIdParam = tenantId;
-                }else{
-                    //全局权限下的，每个租户下都包含
-                    globalConfig = true;
-                }
+                queryTenantIdParam = tenantId;
+                isSearchFlag = true;
             }
 
             DataSourceHead hive = new DataSourceHead();
@@ -280,10 +275,10 @@ public class MetaDataREST {
                 }
             }
             PageResult<DataSourceHead> pageResult = dataSourceService.searchPublicDataSources(limit, offset, null, null, query, sourceType, null, null, null, true, queryTenantIdParam);
-            List<Tenant> tenants = tenantService.getTenants();
-            if(globalConfig){
+            List<Tenant> tenants = tenantService.getTenantAll();
+            if(isSearchFlag){
                 List<DataSourceHead> list = new ArrayList<>();
-                if(offset == 0 && "hive".contains(query)){
+                if(hasHive){
                     for (Tenant v : tenants){
                         hive = new DataSourceHead();
                         hive.setSourceType("hive");
@@ -306,6 +301,7 @@ public class MetaDataREST {
                     pageResult.setTotalSize(pageResult.getTotalSize() + 1);
                 }
             }
+
             //如果是查询，则需要补充名称对应的租户额外信息
             if( CollectionUtils.isNotEmpty(pageResult.getLists()) && StringUtils.isNotBlank(query)){
                 Map<String, String> map = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
@@ -366,7 +362,7 @@ public class MetaDataREST {
             }
             String queryTenantIdParam = null;
             PageResult<Database> result = null;
-            List<Tenant> tenants = tenantService.getTenants();
+            List<Tenant> tenants = tenantService.getTenantAll();
             // bizTreeId 不为空则是查询当前租户下的
             if(StringUtils.isNotBlank(bizTreeId)){
                 Map<String, String> map = EntityUtil.decodeBusinessId(bizTreeId);
@@ -439,7 +435,7 @@ public class MetaDataREST {
             Boolean isView = StringUtils.isEmpty(isViewStr) ? null : Boolean.parseBoolean(isViewStr);
             String queryTenantIdParam = null;
             PageResult<TableEntity> result = null;
-            List<Tenant> tenants = tenantService.getTenants();
+            List<Tenant> tenants = tenantService.getTenantAll();
             // bizTreeId 不为空则是查询当前租户下的
             if(StringUtils.isNotBlank(bizTreeId)){
                 Map<String, String> map = EntityUtil.decodeBusinessId(bizTreeId);
