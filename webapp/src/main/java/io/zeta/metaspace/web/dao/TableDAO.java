@@ -383,4 +383,22 @@ public interface TableDAO {
 
     @Select("select * from tableinfo where databaseguid = #{dbId} and tablename = #{tableName}")
     TableInfo selectByDbGuidAndTableName(@Param("dbId") String dbId, @Param("tableName") String tableName);
+
+    @Select("<script>" +
+            " SELECT COUNT(0) FROM (" +
+            " SELECT DISTINCT tb.tableguid FROM tableinfo AS tb" +
+            " INNER JOIN source_db AS sd ON tb.databaseguid = sd.db_guid INNER JOIN data_source AS ds ON ds.source_id = sd.source_id " +
+            " WHERE tb.status = 'ACTIVE' AND tb.databasestatus = 'ACTIVE' AND ds.tenantid = #{tenantId} " +
+            " <if test='dbs != null and dbs.size()>0'>" +
+            " UNION" +
+            " SELECT DISTINCT tb.tableguid FROM tableinfo AS tb" +
+            " INNER JOIN db_info AS db ON tb.databaseguid = db.database_guid" +
+            " WHERE db.db_type = 'HIVE' AND tb.databasestatus = 'ACTIVE' AND tb.status = 'ACTIVE' AND db.database_name IN " +
+            " <foreach item='item' index='index' collection='dbs' open='(' separator=',' close=')'>" +
+            "   #{item}" +
+            " </foreach> " +
+            " </if>" +
+            " ) AS A" +
+            "</script>")
+    int selectCountByTenantIdAndDbName(@Param("tenantId") String tenantId, @Param("dbs") List<String> dbs);
 }
