@@ -91,6 +91,27 @@ public interface RelationDAO {
             " </script>"})
     public List<String> queryRDBNameByCategoryGuidV2(@Param("tenantId") String tenantId);
 
+    @Select("<script>" +
+            " SELECT COUNT(0) FROM (" +
+            " SELECT DISTINCT" +
+            " db_info.database_guid " +
+            " FROM db_info,source_db,data_source" +
+            " WHERE db_info.database_guid = source_db.db_guid AND source_db.source_id = data_source.source_id AND db_info.status = 'ACTIVE'" +
+            " AND db_info.db_type != 'HIVE' AND data_source.tenantid = #{tenantId}" +
+            " <if test='dbs != null and dbs.size()>0'>" +
+            " UNION" +
+            " SELECT DISTINCT database_guid" +
+            " FROM db_info" +
+            " WHERE db_type = 'HIVE' AND database_name IN " +
+            " <foreach item='item' index='index' collection='dbs' open='(' separator=',' close=')'>" +
+            "   #{item}" +
+            " </foreach> " +
+            " AND status = 'ACTIVE'" +
+            " </if>" +
+            " ) AS A" +
+            "</script>")
+    int selectByTenantIdAndDatabaseName(@Param("tenantId") String tenantId, @Param("dbs") List<String> dbs);
+
     @Select({"<script>",
             " select count(*)over() total,table_relation.relationshipGuid,table_relation.categoryGuid,tableInfo.tableName,tableInfo.dbName,tableInfo.tableGuid, tableInfo.status,tableInfo.description,data_source.source_name sourceName",
             " from table_relation,tableInfo,data_source where categoryGuid=#{categoryGuid} and tableInfo.tableGuid=table_relation.tableGuid and tableinfo.source_id = data_source.source_id and status !='DELETED' order by tableinfo.tablename",

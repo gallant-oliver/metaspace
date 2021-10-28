@@ -145,7 +145,7 @@ public interface GroupDeriveTableRelationDAO {
             "</foreach>" +
             " AND  " +
             "</if>" +
-            "gtr.user_group_id != #{userGroupId}))"+
+            " (gtr.user_group_id != #{userGroupId} OR gtr.user_group_id is NULL)))"+
             "</if>"+
             "<if test='privilegeType == \"IMPORTANCE\" and registerType == true'>" +
             "   AND gtr.importance_privilege = true  AND  gtr.user_group_id = #{userGroupId}  " +
@@ -160,7 +160,7 @@ public interface GroupDeriveTableRelationDAO {
             "</foreach>" +
             " AND  " +
             "</if>" +
-            "gtr.user_group_id != #{userGroupId}))"+
+            "(gtr.user_group_id != #{userGroupId} OR gtr.user_group_id is NULL)))"+
             "</if>"+
             "<if test='privilegeType == \"SECURITY\" and registerType  == true'>" +
             "   AND gtr.security_privilege = true  AND  gtr.user_group_id = #{userGroupId}   " +
@@ -179,4 +179,21 @@ public interface GroupDeriveTableRelationDAO {
     List<GroupDeriveTableInfo> getRelationInfos(@Param("tenantId") String tenantId, @Param("privilegeType") String privilegeType,@Param("importantList") List<String> importantList,@Param("securityList") List<String> securityList,
                                                 @Param("userGroupId") String userGroupId, @Param("registerType") Boolean registerType,
                                                 @Param("tableName") String tableName,@Param("limit")  int limit,@Param("offset")  int offset);
+    @Update("<script>" +
+            "UPDATE   " +
+            " group_table_relation  " +
+            " SET importance_privilege = null " +
+            "WHERE " +
+            " derive_table_id = #{tableId} AND tenant_id=#{tenantId}" +
+            "</script>")
+    void deleteRelationImportantPrivilegeByTableId(@Param("tenantId") String tenantId,@Param("tableId") String tableGuid);
+
+    @Update("<script>" +
+            "UPDATE   " +
+            " group_table_relation  " +
+            " SET security_privilege = null " +
+            "WHERE " +
+            " derive_table_id = #{tableId} AND tenant_id=#{tenantId}" +
+            "</script>")
+    void deleteRelationSecurityPrivilegeByTableId(@Param("tenantId") String tenantId,@Param("tableId") String tableGuid);
 }
