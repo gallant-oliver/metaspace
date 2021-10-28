@@ -174,6 +174,20 @@ public interface DatabaseInfoDAO {
             " AND " +
             " si.version = 0" +
             "</script>")
+    List<DatabaseInfo> getDatabaseInfosByIds(@Param("ids") List<String> idList);
+
+    @Select("<script>" +
+            "SELECT id,database_alias " +
+            "FROM " +
+            " source_info " +
+            "WHERE\n" +
+            " id IN " +
+            "<foreach collection='ids' item='id' separator=',' open='(' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
+            " AND " +
+            " version = 0" +
+            "</script>")
     List<DatabaseInfo> getDatabaseIdAndAliasByIds(@Param("ids") List<String> idList);
 
     @Update("<script>" +
