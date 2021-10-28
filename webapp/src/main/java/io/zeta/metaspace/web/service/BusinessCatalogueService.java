@@ -32,7 +32,6 @@ import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.CategoryExport;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
-import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.*;
@@ -1003,6 +1002,8 @@ public class BusinessCatalogueService implements Approvable {
         List<CategorycateQueryResult> valuesList=new ArrayList<>();
         List<CategorycateQueryResult> cateList=new ArrayList<>();
         data = userGroupDAO.getAllCategory(userGroupIds,categoryType,tenantId,userId);
+        //目录权限校验
+        //目录状态公开的租户下所以用户可见，私有目录是否加入用户组判断，加入用户组后，目录创建者无法查看
         for(CategorycateQueryResult result:data){
             String guid=result.getGuid();
             String privateStatus=result.getPrivateStatus();
@@ -1020,7 +1021,7 @@ public class BusinessCatalogueService implements Approvable {
                 valuesList.add(result);
             }
         }
-        //删除查看权限不足的目录
+        //剔除查看权限不足的目录：如果子目录有权限可查出，但其父目录无权限，未查出，此时，需要剔除子目录
         removeNoParentCategory(valuesList);
         Map<String,List<CategorycateQueryResult>> parent;
         parent=valuesList.stream().collect(Collectors.groupingBy(c -> c.getParentCategoryGuid()+"str"));//用父目录id分组
@@ -1031,6 +1032,7 @@ public class BusinessCatalogueService implements Approvable {
         });
         List<CategorycateQueryResult> parentCateList=parent.get("nullstr");
         for(CategorycateQueryResult result:parentCateList){
+            //将目录按照目录-子目录-目录-子目录顺序拼装到新的list中，按此顺序生成文件
             getSonCate(result,parent,cateList);
         }
         Workbook workbook = allData2workbook(userDAO, categoryType, cateList);
