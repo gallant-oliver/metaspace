@@ -1475,37 +1475,22 @@ public class DataShareService {
     // 只返回采集任务中已配置的库（出hive数据源外）
     public PageResult getTaskDataList(String proxyUser, SEARCH_TYPE searchType, ColumnParameters parameters, String tenantId, String sourceId) throws AtlasBaseException {
         try {
-            AdapterSource adapterSource = "hive".equalsIgnoreCase(sourceId) ?
-                    AdapterUtils.getHiveAdapterSource() :
-                    AdapterUtils.getAdapterSource(dataSourceService.getUnencryptedDataSourceInfo(sourceId));
-            AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
-
             // 已配置元数据采集任务的schema
-            List<SyncTaskDefinition> syncTaskDefinitions = taskManageDAO.getTaskSchemas(tenantId, sourceId, searchType.toString());
-            List<String> names = new ArrayList<>();
+            List<SyncTaskDefinition> syncTaskDefinitions = taskManageDAO.getTaskSchemas(tenantId, sourceId);
+            List<String> allSchemas = new ArrayList<>();
             for (SyncTaskDefinition s : syncTaskDefinitions) {
-                names.addAll(s.getSchemas());
-            }
-            Collection<Schema> schemaList = adapterExecutor.getAllSchema(parameters.getQuery() , proxyUser);
-            List<Schema> allSchemas = new ArrayList<>();
-
-            if (CollectionUtils.isNotEmpty(schemaList)) {
-                for (Schema s : schemaList) {
-                    if (names.contains(s.getFullName())) {
-                        allSchemas.add(s);
-                    }
-                }
+                allSchemas.addAll(s.getSchemas());
             }
 
             PageResult<Map<String, Object>> schemaPage = new PageResult<>();
 
-            Stream<Schema> skip = allSchemas.stream().skip(parameters.getOffset());
+            Stream<String> skip = allSchemas.stream().skip(parameters.getOffset());
             if (parameters.getLimit() != -1) {
                 skip = skip.limit(parameters.getLimit());
             }
             List<Map<String, Object>> lists = skip.map(schema -> {
                 Map<String, Object> schemaName = new HashMap<>();
-                schemaName.put("schemaName", schema.getFullName());
+                schemaName.put("schemaName", schema);
                 return schemaName;
             }).collect(Collectors.toList());
 

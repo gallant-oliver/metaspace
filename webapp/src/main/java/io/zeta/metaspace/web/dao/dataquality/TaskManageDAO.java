@@ -954,6 +954,7 @@ public interface TaskManageDAO {
             "db.source_type dataSourceType " +
             "FROM sync_task_definition d " +
             "join data_source db on db.source_id = d.data_source_id " +
-            "WHERE d.tenant_id = #{tenantId} and d.data_source_id = #{sourceId}")
-    List<SyncTaskDefinition> getTaskSchemas(@Param("tenantId")String tenantId, @Param("sourceId")String sourceId, @Param("searchType")String searchType);
+            "WHERE d.tenant_id = #{tenantId} and d.data_source_id = #{sourceId} " +
+            "order by d.id")
+    List<SyncTaskDefinition> getTaskSchemas(@Param("tenantId")String tenantId, @Param("sourceId")String sourceId);
 }
