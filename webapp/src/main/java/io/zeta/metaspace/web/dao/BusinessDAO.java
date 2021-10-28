@@ -586,7 +586,7 @@ public interface BusinessDAO {
                                                                  @Param("tenantId")String tenantId, @Param("userId")String userId);
 
     //查询业务目录关系业务信息列表
-    @Select("select bi.name, bi.module module, " +
+    @Select("select bi.name, bi.module module, bi.technicalStatus, " +
             "bi.description description, bi.owner, " +
             "bi.manager manager, bi.maintainer maintainer, bi.dataassets dataAssets, " +
             "bi.businesslastupdate businessLastUpdate, bi.businessoperator businessOperator, " +
@@ -602,7 +602,7 @@ public interface BusinessDAO {
             "(select count(*) from business_2_group b2g " +
             "join user_group_relation ugr on ugr.group_id = b2g.group_id and ugr.user_id=#{userId} " +
             "where b2g.business_id=bi.businessid and b2g.read=true)>0" +
-            ")")
+            ") order by technicalStatus, businessLastUpdate desc ")
     List<BusinessInfo> queryAllAuthBusinessByCategoryId(@Param("categoryGuid")String categoryGuid, @Param("tenantId")String tenantId, @Param("userId")String userId);
 
     //查询业务目录下业务对象数量
@@ -627,7 +627,7 @@ public interface BusinessDAO {
     int getIndicatorCountByCategoryId(@Param("categoryGuid")String categoryGuid);
 
     @Select("<script>" +
-            "select bi.name, bi.module module, " +
+            "select bi.name, bi.module module, bi.technicalStatus," +
             "bi.description description, bi.owner, " +
             "bi.manager manager, bi.maintainer maintainer, bi.dataassets dataAssets, " +
             "bi.businesslastupdate businessLastUpdate, bi.businessoperator businessOperator, " +
@@ -640,6 +640,7 @@ public interface BusinessDAO {
             " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
             " #{id}" +
             " </foreach>" +
+            "order by technicalStatus, businessLastUpdate desc " +
             "</script>")
     List<BusinessInfo> getBusinessByIds(@Param("ids")List<String> ids, @Param("categoryGuid")String categoryGuid, @Param("tenantId")String tenantId);
 
