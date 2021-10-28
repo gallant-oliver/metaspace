@@ -159,7 +159,7 @@ public class SourceInfoDatabaseService implements Approvable {
         }
         List<DatabaseInfo> databaseInfoList = databaseInfoDAO.getDatabaseIdAndAliasByIds(idList);
 
-        // 发布时做检测；只保存不发布时不做检测
+        // 发布时做检测
         Result checkParamResult = checkService.checkCreateListParam(databaseInfoList, tenantId);
         if (Boolean.FALSE.equals((ReturnUtil.isSuccess(checkParamResult)))) {
             return checkParamResult;

@@ -1643,31 +1643,15 @@ public class BusinessService implements Approvable {
                     }
 
                     Cell ownerCell = row.getCell(4);
-                    if (Objects.isNull(ownerCell)) {
-                        error.add(String.format(cellFormat, i + 1, j, "所有者不能为空"));
-                        continue;
-                    }
                     businessInfo.setOwner(PoiExcelUtils.getCellValue(ownerCell));
 
                     Cell mangerCell = row.getCell(5);
-                    if (Objects.isNull(mangerCell)) {
-                        error.add(String.format(cellFormat, i + 1, j, "管理者不能为空"));
-                        continue;
-                    }
                     businessInfo.setManager(PoiExcelUtils.getCellValue(mangerCell));
 
                     Cell maintainerCell = row.getCell(6);
-                    if (Objects.isNull(maintainerCell)) {
-                        error.add(String.format(cellFormat, i + 1, j, "维护者不能为空"));
-                        continue;
-                    }
                     businessInfo.setMaintainer(PoiExcelUtils.getCellValue(maintainerCell));
 
                     Cell dataAssetsCell = row.getCell(7);
-                    if (Objects.isNull(dataAssetsCell)) {
-                        error.add(String.format(cellFormat, i + 1, j, "相关数据资产不能为空"));
-                        continue;
-                    }
                     businessInfo.setDataAssets(PoiExcelUtils.getCellValue(dataAssetsCell));
                     business.add(businessInfo);
                     fileNames.add(name);

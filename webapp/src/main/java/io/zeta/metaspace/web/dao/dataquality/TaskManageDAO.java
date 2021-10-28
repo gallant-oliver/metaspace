@@ -950,20 +950,11 @@ public interface TaskManageDAO {
     @Results(id="base", value ={
             @Result(property = "schemas", column = "schemas", typeHandler = ListStringTypeHandler.class)
     })
-    @Select("<script>" +
-            "SELECT " +
-            "(case d.data_source_id when 'hive' then 'HIVE' else db.source_type) end as dataSourceType, " +
+    @Select("SELECT d.id, d.name, d.schemas, " +
+            "db.source_type dataSourceType " +
             "FROM sync_task_definition d " +
             "join data_source db on db.source_id = d.data_source_id " +
-            "WHERE definition.tenant_id = #{tenantId} and d.data_source_id = #{sourceId} " +
-            "<choose>" +
-            " <when test=\"searchType=='SCHEMA'\">" +
-            " and d.data_source_id = 'hive'" +
-            " </when>" +
-            " <otherwise>" +
-            " and d.data_source_id != 'hive'" +
-            " </otherwise>" +
-            "</choose>" +
-            "</script>")
-    List<SyncTaskDefinition> getTaskSchemas(@Param("tenantId")String tenantId, @Param("sourceId")String sourceId, @Param("searchType")String searchType);
+            "WHERE d.tenant_id = #{tenantId} and d.data_source_id = #{sourceId} " +
+            "order by d.id")
+    List<SyncTaskDefinition> getTaskSchemas(@Param("tenantId")String tenantId, @Param("sourceId")String sourceId);
 }
