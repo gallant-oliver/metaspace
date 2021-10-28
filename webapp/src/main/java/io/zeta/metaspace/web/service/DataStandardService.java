@@ -75,9 +75,9 @@ public class DataStandardService {
     CategoryDAO categoryDAO;
 
     public int insert(DataStandard dataStandard,String tenantId) throws AtlasBaseException {
-        String regexp = "^[A-Z0-9]+$";
+        String regexp = "^[0-9A-Z_]{1,}$";
         if(!dataStandard.getNumber().matches(regexp)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编号内容格式错误，请输入大写英文字母或数字");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编号内容格式错误，请输入大写英文字母或数字或下划线");
         }
         dataStandard.setId(UUID.randomUUID().toString());
         dataStandard.setCreateTime(DateUtils.currentTimestamp());
