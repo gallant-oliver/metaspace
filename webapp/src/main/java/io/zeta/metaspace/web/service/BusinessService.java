@@ -1600,7 +1600,7 @@ public class BusinessService implements Approvable {
                 int rowNum = sheet.getLastRowNum() + 1;
                 //文件格式校验
                 Row first = sheet.getRow(0);
-                ArrayList<String> strings = Lists.newArrayList("", "业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产");
+                ArrayList<String> strings = Lists.newArrayList("业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产");
                 for (int j = 0; j < strings.size(); j++) {
                     Cell cell = first.getCell(j);
                     if (!strings.get(j).equals(cell.getStringCellValue())) {
@@ -1613,7 +1613,7 @@ public class BusinessService implements Approvable {
                     Row row = sheet.getRow(j);
                     BusinessInfo businessInfo = new BusinessInfo();
 
-                    Cell nameCell = row.getCell(1);
+                    Cell nameCell = row.getCell(0);
                     if (Objects.isNull(nameCell)) {
                         error.add(String.format(cellFormat, i + 1, j, "业务名称不能为空"));
                         continue;
@@ -1628,30 +1628,30 @@ public class BusinessService implements Approvable {
                     }
                     businessInfo.setName(name);
 
-                    Cell moduleCell = row.getCell(2);
+                    Cell moduleCell = row.getCell(1);
                     if (Objects.isNull(moduleCell)) {
                         error.add(String.format(cellFormat, i + 1, j, "业务模块不能为空"));
                         continue;
                     }
                     businessInfo.setModule(PoiExcelUtils.getCellValue(moduleCell));
 
-                    Cell discriptionCell = row.getCell(3);
+                    Cell discriptionCell = row.getCell(2);
                     if (Objects.isNull(discriptionCell)) {
                         businessInfo.setDescription("");
                     } else {
                         businessInfo.setDescription(PoiExcelUtils.getCellValue(discriptionCell));
                     }
 
-                    Cell ownerCell = row.getCell(4);
+                    Cell ownerCell = row.getCell(3);
                     businessInfo.setOwner(PoiExcelUtils.getCellValue(ownerCell));
 
-                    Cell mangerCell = row.getCell(5);
+                    Cell mangerCell = row.getCell(4);
                     businessInfo.setManager(PoiExcelUtils.getCellValue(mangerCell));
 
-                    Cell maintainerCell = row.getCell(6);
+                    Cell maintainerCell = row.getCell(5);
                     businessInfo.setMaintainer(PoiExcelUtils.getCellValue(maintainerCell));
 
-                    Cell dataAssetsCell = row.getCell(7);
+                    Cell dataAssetsCell = row.getCell(6);
                     businessInfo.setDataAssets(PoiExcelUtils.getCellValue(dataAssetsCell));
                     business.add(businessInfo);
                     fileNames.add(name);
