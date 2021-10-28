@@ -298,7 +298,7 @@ public class ApiGroupService {
     }
 
     public void updateApiRelationStatus(){
-        Date date = DateUtils.addDays(new Date(System.currentTimeMillis()), -90);
+        Date date = DateUtils.addDays(new Date(System.currentTimeMillis()), -3);
         Timestamp timestamp = new Timestamp(date.getTime());
         apiGroupDAO.updateApiRelationStatusByTime(timestamp);
     }
