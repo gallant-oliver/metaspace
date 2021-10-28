@@ -10,6 +10,8 @@ public class GroupDeriveTableInfo {
 
     private String tableId;
 
+    private String dbname;
+
     private String businessCategoryName;
 
     private String businessObjectName;

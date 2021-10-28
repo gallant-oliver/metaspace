@@ -111,6 +111,7 @@ public interface GroupDeriveTableRelationDAO {
             "SELECT " +
             "count(*) over() AS total, " +
             " ti.tablename AS tableNameEn, " +
+            " ti.dbname AS dbname, " +
             " sidti.table_name_zh AS tableNameZn, " +
             " gtr.importance_privilege AS importancePrivilege, " +
             " gtr.security_privilege AS securityPrivilege, " +
@@ -131,6 +132,7 @@ public interface GroupDeriveTableRelationDAO {
             " LEFT JOIN business2table bt ON bt.tableguid = ti.tableguid " +
             " LEFT JOIN businessinfo bi ON bi.businessid = bt.businessid " +
             " LEFT JOIN business_relation br ON br.businessid = bi.businessid " +
+            " INNER JOIN business_2_group btg ON btg.business_id = bi.businessid AND btg.group_id = #{userGroupId} "+
             " LEFT JOIN category c ON c.guid = br.categoryguid " +
             " LEFT JOIN group_table_relation gtr ON gtr.derive_table_id = ti.tableguid " +
             "WHERE " +
