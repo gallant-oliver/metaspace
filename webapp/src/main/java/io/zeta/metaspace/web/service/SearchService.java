@@ -186,10 +186,10 @@ public class SearchService {
             PageResult<Database> databasePageResult = new PageResult<>();
             List<Database> databaseList = new ArrayList<>();
             //获取当前租户下用户所属用户组
-            User user = AdminUtils.getUserData();
-            List<Tenant> tenants = tenantService.getTenants();
+            //User user = AdminUtils.getUserData();
+            List<Tenant> tenants = tenantService.getTenantAll();
             List<String> tenantParamList = tenants.stream().map(Tenant::getTenantId).collect(Collectors.toList());
-            List<UserGroup> groups = userGroupDAO.getuserGroupByUid(user.getUserId(),tenantParamList);
+            List<UserGroup> groups = userGroupDAO.getuserGroupByUid(tenantParamList);
             List<TenantGroup> tenantGroups = new ArrayList<>();
             TenantGroup tenantGroup = null;
             List<String> configTenantList = groups.stream().map(UserGroup::getTenantId).distinct().collect(Collectors.toList());
@@ -251,7 +251,7 @@ public class SearchService {
         PageResult<TableEntity> tablePageResult = new PageResult<>();
         List<TableEntity> tableEntityList;
         try {
-            List<Tenant> tenants = tenantService.getTenants();
+            List<Tenant> tenants = tenantService.getTenantAll();
             for (Tenant item : tenants){
                 String currentTenantId = item.getTenantId();
                 LOG.info("租户["+currentTenantId+"]下hive的库查询" );

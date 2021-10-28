@@ -379,21 +379,6 @@ public class MetaDataREST {
                 }
                 return result;
             }
-            //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
-            if(!metadataService.isConfigGloble()){
-                queryTenantIdParam = tenantId;
-                result = searchService.queryDatabases(sourceId, offset, limit, query, queryTenantIdParam, queryTableCount,true);
-                //如果是查询，则需要补充名称对应的租户额外信息
-                if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
-                    Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
-                    result.getLists().stream().forEach(v->{
-                        String extInfo = String.join("/",Arrays.asList(tenantMap.getOrDefault(tenantId,"-"),v.getSourceName()));
-                        v.setDatabaseName(v.getDatabaseName()+"("+extInfo+")");
-                    });
-                }
-                return result;
-            }
-
 
             result = searchService.getPublicDatabases(offset, limit, query, queryTableCount);
             //如果是查询，则需要补充名称对应的租户额外信息
@@ -453,21 +438,7 @@ public class MetaDataREST {
                 }
                 return result;
             }
-            //查询当前用户是否拥有全局权限，是则显示所有租户下的，否则只展示当前租户下的
-            if(!metadataService.isConfigGloble()){
-                queryTenantIdParam = tenantId;
-                result = searchService.getTable(schemaId, offset, limit, query, isView, queryInfo, queryTenantIdParam, sourceId);
-                //如果是查询，则需要补充名称对应的租户额外信息
-                if( CollectionUtils.isNotEmpty(result.getLists()) && StringUtils.isNotBlank(query)){
-                    Map<String, String> tenantMap = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId, Tenant::getProjectName, (key1, key2) -> key2));
-                    result.getLists().stream().forEach(v->{
-                        String extInfo = String.join("/",Arrays.asList(tenantMap.getOrDefault(tenantId,"-"),
-                                v.getSourceName(),v.getDbName()));
-                        v.setName(v.getName()+"("+extInfo+")");
-                    });
-                }
-                return result;
-            }
+
             //多租户下的数据查询
             result = searchService.getPublicTable(schemaId,  offset,  limit,  query,  isView, queryInfo);
             //如果是查询，则需要补充名称对应的租户额外信息
