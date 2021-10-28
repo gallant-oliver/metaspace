@@ -20,21 +20,11 @@ import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.homepage.*;
 import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.role.Role;
-import io.zeta.metaspace.model.security.Tenant;
-import io.zeta.metaspace.model.security.TenantDatabaseList;
-import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.web.dao.HomePageDAO;
-import io.zeta.metaspace.web.dao.MetadataHistoryDAO;
-import io.zeta.metaspace.web.dao.RelationDAO;
-import io.zeta.metaspace.web.dao.TenantDAO;
+import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +36,6 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 /*
  * @description
@@ -66,7 +55,8 @@ public class HomePageService {
     private TenantDAO tenantDAO;
     @Autowired
     private RelationDAO relationDAO;
-
+    @Autowired
+    private TableDAO tableDAO;
     @Autowired
     private MetadataHistoryDAO metadataHistoryDAO;
     @Autowired
@@ -202,27 +192,12 @@ public class HomePageService {
 
     private int getSingleDayDBTotal(String tenantId) {
         List<String> dbs = tenantService.getDatabase(tenantId);
-        List<String> rdbs = relationDAO.queryRDBNameByCategoryGuidV2(tenantId);
-        List<String> allDBNames = new ArrayList<>();
-        if (dbs != null && !dbs.isEmpty()) {
-            allDBNames.addAll(dbs);
-        }
-        if (rdbs != null && !rdbs.isEmpty()) {
-            allDBNames.addAll(rdbs);
-            Set<String> set = new HashSet<>(allDBNames);
-            allDBNames = new ArrayList<>(set);
-        }
-        return allDBNames.size();
+        return relationDAO.selectByTenantIdAndDatabaseName(tenantId, dbs);
     }
 
     private int getSingleDayTBTotal(String tenantId) {
-        int relationTable = metadataHistoryDAO.getTableCountByTenantId(tenantId);
-        List<String> dbList = tenantService.getCurrentTenantDatabase(tenantId);
-        int hiveTable =0;
-        if (!CollectionUtils.isEmpty(dbList)){
-            hiveTable = metadataHistoryDAO.selectListByHiveDb(dbList);
-        }
-        return hiveTable+relationTable;
+        List<String> dbs = tenantService.getDatabase(tenantId);
+        return tableDAO.selectCountByTenantIdAndDbName(tenantId, dbs);
     }
 
     private void addBrokenLine(BrokenLine brokenLine, SystemStatistical systemStatistical, String tenantId) throws AtlasBaseException {
