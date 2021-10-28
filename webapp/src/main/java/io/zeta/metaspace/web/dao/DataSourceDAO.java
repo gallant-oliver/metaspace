@@ -306,10 +306,16 @@ public interface DataSourceDAO {
     public List<DataSourceHead> searchGlobalApiDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId,@Param("tenantId")String tenantId);
 
     //搜索数据源
-    @Select("<script>" +
-            "select count(*)over() totalSize,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,us.username updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType " +
-            "from data_source ds, users us " +
-            "where ds.update_user_id=us.userid and (isapi=false or isapi is null) and tenantid=#{tenantId} " +
+    @Select("<script> select  count(*)over() as totalSize,a.* from " +
+            "(select ds.tenantid tenantId,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
+            " from data_source ds "+
+            "where  isapi=true " +
+            "<if test='userId!=null'>" +
+            " and ds.manager=#{userId} " +
+            "</if>" +
+            "<if test='tenantId!=null'>" +
+            " and ds.tenantid=#{tenantId} " +
+            "</if>" +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like concat('%',#{dataSourceSearch.sourceName},'%') ESCAPE '/'" +
             "</if>" +
@@ -317,7 +323,7 @@ public interface DataSourceDAO {
             "and ds.source_type like concat('%',#{dataSourceSearch.sourceType},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.createTime!=null'>" +
-            "and to_char(ds.create_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.createTime},'%') ESCAPE '/'" +
+            "and to_char(ds.create_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.createTime},'%')  ESCAPE '/'" +
             "</if>" +
             "<if test='dataSourceSearch.updateTime!=null'>" +
             "and to_char(ds.update_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.updateTime},'%') ESCAPE '/'" +
@@ -325,20 +331,45 @@ public interface DataSourceDAO {
             "<if test='dataSourceSearch.updateUserName!=null'>" +
             "and us.username like concat('%',#{dataSourceSearch.updateUserName},'%') ESCAPE '/'" +
             "</if>" +
+            " UNION " +
+            "select ds.tenantid tenantId,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
+            " from data_source ds inner join ( " +
+            "  select distinct dgr.source_id from datasource_group_relation dgr join user_group_relation ug on ug.group_id=dgr.group_id " +
+            "  where ug.user_id=#{userId} " +
+            ") da on da.source_id=ds.source_id " +
+            "where (da.source_id is not null or ds.manager=#{userId}) and isapi=true " +
+            "<if test='tenantId!=null'>" +
+            " and ds.tenantid=#{tenantId} " +
+            "</if>" +
+            "<if test='dataSourceSearch.sourceName!=null'>" +
+            "and ds.source_name like concat('%',#{dataSourceSearch.sourceName},'%') ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.sourceType!=null'>" +
+            "and ds.source_type like concat('%',#{dataSourceSearch.sourceType},'%') ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.createTime!=null'>" +
+            "and to_char(ds.create_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.createTime},'%')  ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.updateTime!=null'>" +
+            "and to_char(ds.update_time,'yyyy-MM-dd') like concat('%',#{dataSourceSearch.updateTime},'%') ESCAPE '/'" +
+            "</if>" +
+            "<if test='dataSourceSearch.updateUserName!=null'>" +
+            "and us.username like concat('%',#{dataSourceSearch.updateUserName},'%') ESCAPE '/'" +
+            "</if>) a " +
             "<if test='parameters.sortby!=null'>" +
-            "order by ds.${parameters.sortby} " +
+            "order by a.${parameters.sortby} " +
             "</if>" +
             "<if test='parameters.order!=null and parameters.sortby!=null'>" +
             "${parameters.order} " +
             "</if>" +
             "<if test='parameters.limit!=-1'>" +
-            "limit ${parameters.limit} " +
+            "limit #{parameters.limit} " +
             "</if>" +
             "<if test='parameters.offset!=0'>" +
-            "offset ${parameters.offset}" +
+            "offset #{parameters.offset}" +
             "</if>" +
             "</script>")
-    public List<DataSourceHead> searchAllDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("tenantId")String tenantId);
+    public List<DataSourceHead> searchAllDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId,@Param("tenantId")String tenantId);
 
     //搜索api数据源
     @Select("<script>" +
