@@ -89,6 +89,30 @@ public interface DatabaseDAO {
             "</script>")
     List<DatabaseInfoForDb> findExistDbName(@Param("dbNameList")List<String> dbNameList);
 
+    @Select("<script>" +
+            " SELECT db.database_guid AS databaseId,db.database_name AS databaseName,db.db_type AS dbType,db.instance_guid AS instanceGuid,sd.source_id as sourceId," +
+            " ds.source_name AS sourceName, ds.DATABASE as database" +
+            " FROM db_info AS db INNER JOIN source_db AS sd ON db.database_guid = sd.db_guid INNER JOIN data_source AS ds ON ds.source_id = sd.source_id " +
+            " WHERE ds.tenantid = #{tenantId} AND db.status = 'ACTIVE' AND db.database_name IN " +
+            " <foreach collection='dbNameList' item='dbName' separator=',' open='(' close=')'>"+
+            " #{dbName}"+
+            " </foreach>" +
+            " <if test='hiveList != null and hiveList.size()>0'>" +
+            " SELECT db.database_guid AS databaseId,db.database_name AS databaseName,db.db_type AS dbType,'hive' AS instanceGuid,'hive' as sourceId," +
+            " 'hive' AS sourceName,'hive' as database" +
+            " FROM db_info AS db" +
+            " WHERE db.status = 'ACTIVE' AND db.db_type = 'HIVE' AND db.database_name IN" +
+            " <foreach collection='dbNameList' item='dbName' separator=',' open='(' close=')'>"+
+            " #{dbName}"+
+            " </foreach>" +
+            " AND db.database_name IN" +
+            " <foreach collection='hiveList' item='dbName' separator=',' open='(' close=')'>"+
+            " #{dbName}"+
+            " </foreach>" +
+            " </if>" +
+            "</script>")
+    List<DatabaseInfoForDb> selectByTenantIdAndDbName(@Param("dbNameList")List<String> dbNameList, @Param("tenantId") String tenantId, @Param("hiveList") List<String> hiveList);
+
     @Select("<script>"+
             "select  ts.tenant_id AS tenantId, ts.database_alias AS databaseAlias,ts.category_id AS  categoryId, " +
             " db.database_name databaseName,db.db_type AS dbType "+
