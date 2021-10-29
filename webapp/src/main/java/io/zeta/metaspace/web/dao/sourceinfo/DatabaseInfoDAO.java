@@ -165,7 +165,7 @@ public interface DatabaseInfoDAO {
             "sirpc.parent_category_id categoryId " +
             "FROM " +
             " source_info si " +
-            "inner join source_info_relation2parent_category sirpc on sirpc.source_info_id = si.id " +
+            "left join source_info_relation2parent_category sirpc on sirpc.source_info_id = si.id " +
             "WHERE\n" +
             " si.id IN " +
             "<foreach collection='ids' item='id' separator=',' open='(' close=')'>" +
