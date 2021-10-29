@@ -14,6 +14,6 @@ public class LocalCacheUtils {
      * 元数据采集开关-手动关闭按钮
      */
     public final static Cache<String, String> RDBMS_METADATA_GATHER_ENABLE_CACHE = CacheBuilder.newBuilder().maximumSize(10000).
-            expireAfterWrite(600000, TimeUnit.MILLISECONDS).build();
+            expireAfterWrite(10, TimeUnit.HOURS).build();
 
 }
