@@ -623,16 +623,16 @@ public class DataSourceREST {
      * @return
      */
     @GET
-    @Path("/typeForSearch")
+    @Path("/database/typeForSearch")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getDataSourceTypeForSearch() {
         List<DataSourceTypeInfo> dataSourceType = dataSourceService.getDataSourceType(null);
-        if (dataSourceType.stream().filter(dataSourceTypeInfo -> {
-            return HiveConstant.SOURCE_NAME.equals(dataSourceTypeInfo.getName());
+        if (!dataSourceType.stream().filter(dataSourceTypeInfo -> {
+            return HiveConstant.SOURCE_TYPE.equals(dataSourceTypeInfo.getName());
         }).findAny().isPresent()) {
             DataSourceTypeInfo hiveInfo = new DataSourceTypeInfo();
-            hiveInfo.setName(HiveConstant.SOURCE_NAME);
+            hiveInfo.setName(HiveConstant.SOURCE_TYPE);
             dataSourceType.add(hiveInfo);
         }
         return ReturnUtil.success(dataSourceType);
