@@ -434,7 +434,7 @@ public class DataSourceService {
 
     public PageResult<DataSourceHead> searchNotHiveDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId) throws AtlasBaseException {
         try {
-            PageResult<DataSourceHead> pageResult = getDataSources(limit,  offset,  sortby,  order,  sourceName,  sourceType,  createTime,  updateTime,  updateUserName,  isApi,  tenantId,true);
+            PageResult<DataSourceHead> pageResult = getNotHiveDataSources(limit,  offset,  sortby,  order,  sourceName,  sourceType,  createTime,  updateTime,  updateUserName,  isApi,  tenantId,true);
             return pageResult;
         } catch (Exception e) {
             LOG.error("查询数据源失败", e);
@@ -536,6 +536,73 @@ public class DataSourceService {
             pageResult.setTotalSize(0);
         }
 
+        return pageResult;
+    }
+
+    /**
+     * @Author fanjiajia
+     * @Description 数据源管理数据源列表展示
+     **/
+    private PageResult<DataSourceHead> getNotHiveDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId,boolean isGlobalConfig) throws AtlasBaseException {
+        PageResult<DataSourceHead> pageResult = new PageResult<>();
+        DataSourceSearch dataSourceSearch = new DataSourceSearch(sourceName, sourceType, createTime, updateTime, updateUserName);
+        Parameters parameters = new Parameters();
+        parameters.setLimit(limit);
+        parameters.setOffset(offset);
+        if (sortby == null) {
+            sortby = "sourceName";
+        }
+        parameters.setSortby(sortby);
+        parameters.setOrder(order);
+        if (Objects.nonNull(dataSourceSearch.getSourceName()))
+            dataSourceSearch.setSourceName(dataSourceSearch.getSourceName().replaceAll("%", "/%").replaceAll("_", "/_"));
+        if (Objects.nonNull(dataSourceSearch.getSourceType()))
+            dataSourceSearch.setSourceType(dataSourceSearch.getSourceType().replaceAll("%", "/%").replaceAll("_", "/_").toUpperCase());
+        if (Objects.nonNull(dataSourceSearch.getCreateTime()))
+            dataSourceSearch.setCreateTime(dataSourceSearch.getCreateTime().replaceAll("%", "/%").replaceAll("_", "/_"));
+        if (Objects.nonNull(dataSourceSearch.getUpdateTime()))
+            dataSourceSearch.setUpdateTime(dataSourceSearch.getUpdateTime().replaceAll("%", "/%").replaceAll("_", "/_"));
+        if (Objects.nonNull(dataSourceSearch.getUpdateUserName()))
+            dataSourceSearch.setUpdateUserName(dataSourceSearch.getUpdateUserName().replaceAll("%", "/%").replaceAll("_", "/_"));
+        String userId = AdminUtils.getUserData().getUserId();
+
+        //查询当前用户创建的数据源
+        List<DataSourceHead> list = dataSourceDAO.searchAllDataSources(parameters, dataSourceSearch, userId, tenantId);
+        for (DataSourceHead head : list) {
+            if (head.getManager() != null) {
+                String manager = userDAO.getUserName(head.getManager());
+                head.setManager(manager);
+            }
+            if (head.getUpdateUserName() != null) {
+                head.setUpdateUserName(userDAO.getUserName(head.getUpdateUserName()));
+            }
+            String sourceId = head.getSourceId();
+            head.setRely(false);
+            head.setBizTreeId(EntityUtil.generateBusinessId(head.getTenantId(),sourceId,"",""));
+            UserPrivilegeDataSource userPrivilegeDataSource = getUserPrivilegesDataSource(userId, sourceId);
+            if (UserPrivilegeDataSource.MANAGER.getPrivilegeName().equals(userPrivilegeDataSource.getPrivilegeName())) {
+                head.setEditManager(true);
+                head.setPermission(true);
+            } else if ("w".equals(userPrivilegeDataSource.getPrivilege())) {
+                head.setEditManager(false);
+                head.setPermission(true);
+            } else {
+                head.setEditManager(false);
+                head.setPermission(false);
+            }
+            if (head.getOracleDb() == null || head.getOracleDb().length() == 0) {
+                head.setSchema(false);
+            } else {
+                head.setSchema(true);
+            }
+        }
+        pageResult.setCurrentSize(list.size());
+        pageResult.setLists(list);
+        if (list.size() != 0) {
+            pageResult.setTotalSize(list.get(0).getTotalSize());
+        } else {
+            pageResult.setTotalSize(0);
+        }
         return pageResult;
     }
 

@@ -157,7 +157,7 @@ public class SourceInfoDatabaseService implements Approvable {
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                     AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("审核组"));
         }
-        List<DatabaseInfo> databaseInfoList = databaseInfoDAO.getDatabaseIdAndAliasByIds(idList);
+        List<DatabaseInfo> databaseInfoList = databaseInfoDAO.getDatabaseInfosByIds(idList);
 
         // 发布时做检测
         Result checkParamResult = checkService.checkCreateListParam(databaseInfoList, tenantId);

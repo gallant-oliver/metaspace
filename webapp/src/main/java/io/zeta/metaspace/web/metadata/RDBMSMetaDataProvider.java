@@ -27,10 +27,7 @@ import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.KafkaConnectorService;
 import io.zeta.metaspace.web.util.LocalCacheUtils;
 import io.zeta.metaspace.web.util.ZkLockUtils;
-import org.apache.atlas.ApplicationProperties;
-import org.apache.atlas.AtlasConfiguration;
-import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.AtlasException;
+import org.apache.atlas.*;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.*;
 import org.apache.atlas.notification.rdbms.KafkaConnectorUtil;
@@ -151,45 +148,33 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
 
         String instanceGuid = atlasEntityWithExtInfo.getEntity().getGuid();
         List<Schema> schemas = new ArrayList<>(metaDataInfo.getSchemas());
-        final List<String> databases = new ArrayList<>();
         if (!CollectionUtils.isEmpty(schemas) && !tableSchema.isAllDatabase()) {
             LOG.info("Found {} databases", schemas.size());
 
-            ThreadPoolExecutor threadPoolExecutor = CollectThreadPoolUtil.getSchemaCollectThreadPoolExecutor();
-            List<CompletableFuture<Void>> completableFutureList = new ArrayList<>(schemas.size());
-
-            //导入table
-            List<List<Schema>> slicedList = new ArrayList<>();
-            int maxQueueSize = ThreadPoolUtil.getMaxQueueSize();
-            int perSize = (int) (maxQueueSize*0.75);
-            for (int i = 0;i < schemas.size()/perSize;i++){
-                slicedList.add(schemas.subList(i*perSize,(i+1)*perSize));
-            }
-            if (schemas.size()%perSize!=0){
-                slicedList.add(schemas.subList(schemas.size()-(schemas.size()%perSize),schemas.size())) ;
-            }
-            for (List<Schema> blockList:slicedList) {
-                for (Schema database : blockList) {
-                    completableFutureList.add(CompletableFuture.runAsync(() -> {
-                        AtlasEntity.AtlasEntityWithExtInfo dbEntity = null;
-                        String dbQualifiedName = getDBQualifiedName(sourceId, database.getFullName());
-                        if (metaDataContext.isKownEntity(dbQualifiedName)) {
-                            dbEntity = metaDataContext.getEntity(dbQualifiedName);
-                        } else {
-                            try {
-                                dbEntity = findDatabase(database.getFullName());
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                            clearRelationshipAttributes(dbEntity);
-                            metaDataContext.putEntity(dbQualifiedName, dbEntity);
+            for (Schema database : schemas) {
+                try {
+                    RequestContext.get();
+                    AtlasEntity.AtlasEntityWithExtInfo dbEntity = null;
+                    String dbQualifiedName = getDBQualifiedName(sourceId, database.getFullName());
+                    if (metaDataContext.isKownEntity(dbQualifiedName)) {
+                        dbEntity = metaDataContext.getEntity(dbQualifiedName);
+                    } else {
+                        try {
+                            dbEntity = findDatabase(database.getFullName());
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                        importTables(dbEntity.getEntity(), taskInstanceId, database.getFullName(), getTables(database), false, instanceGuid, taskInstanceId, null);
-                    }, threadPoolExecutor));
+                        clearRelationshipAttributes(dbEntity);
+                        metaDataContext.putEntity(dbQualifiedName, dbEntity);
+                    }
+                    importTables(dbEntity.getEntity(), taskInstanceId, database.getFullName(),
+                            getTables(database), false, instanceGuid, taskInstanceId, null);
                 }
-                Thread.sleep(100);
+                finally {
+                    // 每处理完一个库清理相关的缓存数据
+                    RequestContext.clear();
+                }
             }
-            CompletableFuture.allOf(completableFutureList.toArray(new CompletableFuture[]{})).join();
         } else {
             LOG.info("No database found");
         }
@@ -703,6 +688,8 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
             }
             throw new AtlasBaseException("获取锁超时：" + tableQualifiedName);
         } finally {
+            // 每处理完一个表清理相关的entities，减少重复处理
+            RequestContext.get().clearEntities();
             try {
                 lock.release();
             } catch (Exception e) {
@@ -773,24 +760,20 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 }
 
                 List<Integer> tablesImportedList = new ArrayList<>(tableNames.size());
-                ThreadPoolExecutor threadPoolExecutor = CollectThreadPoolUtil.getTableCollectThreadPoolExecutor();
-                List<CompletableFuture<Void>> completableFutureList = new ArrayList<>(tableNames.size());
                 for (Table tableName : tableNames) {
-                    completableFutureList.add(CompletableFuture.runAsync(() -> {
+                    this.checkTaskEnable(taskInstanceId);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("导入{}表的元数据", tableName.getFullName());
+                    }
+                    int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError,
+                            instanceGuid, taskInstanceId, definition);
+                    if (imported == 1) {
                         this.checkTaskEnable(taskInstanceId);
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("导入{}表的元数据", tableName.getFullName());
-                        }
-                        int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError, instanceGuid, taskInstanceId, definition);
-                        if (imported == 1) {
-                            this.checkTaskEnable(taskInstanceId);
-                            LOG.info("成功导入表:{}", tableName.getFullName());
-                            syncTaskInstanceDAO.appendLog(taskInstanceId, "成功导入表: " + tableName.getFullName());
-                        }
-                        tablesImportedList.add(imported);
-                    }, threadPoolExecutor));
+                        LOG.info("成功导入表:{}", tableName.getFullName());
+                        syncTaskInstanceDAO.appendLog(taskInstanceId, "成功导入表: " + tableName.getFullName());
+                    }
+                    tablesImportedList.add(imported);
                 }
-                CompletableFuture.allOf(completableFutureList.toArray(new CompletableFuture[]{})).join();
                 tablesImported = tablesImportedList.stream().mapToInt(Integer::intValue).sum();
             } catch (AtlasBaseException e) {
                 throw e;

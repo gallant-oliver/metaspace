@@ -183,4 +183,9 @@ public class RequestContext {
     public boolean isDeletedEntity(String guid) {
         return deletedEntities.containsKey(guid);
     }
+
+    public void clearEntities() {
+        deletedEntities.clear();
+        updatedEntities.clear();
+    }
 }

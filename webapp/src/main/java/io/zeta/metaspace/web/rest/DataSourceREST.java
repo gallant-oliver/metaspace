@@ -34,6 +34,7 @@ import io.zeta.metaspace.utils.AESUtils;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
+import io.zeta.metaspace.web.model.HiveConstant;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.MetaDataService;
 import io.zeta.metaspace.web.service.TenantService;
@@ -278,7 +279,7 @@ public class DataSourceREST {
     @Path("/api")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<DataSourceHead> searchApiDataSources(@QueryParam("limit") int limit,@QueryParam("offset") int offset,@QueryParam("sortby") String sortby,@QueryParam("order") String order,
+    public PageResult<DataSourceHead> searchApiDataSources(@QueryParam("limit") int limit,@QueryParam("offset") int offset,@QueryParam("sortBy") String sortby,@QueryParam("order") String order,
                                                         @QueryParam("sourceName") String sourceName,@QueryParam("sourceType") String sourceType,@QueryParam("createTime") String createTime,
                                                         @QueryParam("updateTime") String updateTime,@QueryParam("updateUserName") String updateUserName,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         PageResult<DataSourceHead> pageResult= dataSourceService.searchNotHiveDataSources(limit,offset,sortby,order,sourceName,sourceType,createTime,updateTime,updateUserName,true,tenantId);
@@ -614,6 +615,26 @@ public class DataSourceREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getDataSourceType(@QueryParam("type") String type){
         List<DataSourceTypeInfo> dataSourceType = dataSourceService.getDataSourceType(type);
+        return ReturnUtil.success(dataSourceType);
+    }
+
+    /**
+     * 获取用户组管理配置权限时数据库搜索的数据源类型
+     * @return
+     */
+    @GET
+    @Path("/database/typeForSearch")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDataSourceTypeForSearch() {
+        List<DataSourceTypeInfo> dataSourceType = dataSourceService.getDataSourceType(null);
+        if (!dataSourceType.stream().filter(dataSourceTypeInfo -> {
+            return HiveConstant.SOURCE_TYPE.equals(dataSourceTypeInfo.getName());
+        }).findAny().isPresent()) {
+            DataSourceTypeInfo hiveInfo = new DataSourceTypeInfo();
+            hiveInfo.setName(HiveConstant.SOURCE_TYPE);
+            dataSourceType.add(hiveInfo);
+        }
         return ReturnUtil.success(dataSourceType);
     }
 
