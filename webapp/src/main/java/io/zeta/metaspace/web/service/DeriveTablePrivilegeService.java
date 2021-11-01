@@ -34,10 +34,8 @@ public class DeriveTablePrivilegeService {
         List<GroupDeriveTableRelation> relationList = this.buildGroupDeriveTableRelation(tenantId,request);
 
         if (PrivilegeType.IMPORTANCE.equals(request.getPrivilegeType())){
-            relationDAO.updateImportancePrivilegeNullByUserGroupId(request.getUserGroupId(),tenantId);
             relationDAO.updateDeriveTableImportancePrivilege(relationList);
         }else if(PrivilegeType.SECURITY.equals(request.getPrivilegeType())){
-            relationDAO.updateSecurityPrivilegeNullByUserGroupId(request.getUserGroupId(),tenantId);
             relationDAO.updateDeriveTableSecurityPrivilege(relationList);
         }else{
             throw new AtlasBaseException("无法识别的权限的类型"+request.getPrivilegeType().name());
