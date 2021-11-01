@@ -476,7 +476,7 @@ public interface BusinessDAO {
             @Result(property = "tables",javaType = List.class,column = "{businessId = businessIdVal,tenantId = tenantId}",many = @Many(select = "queryAllTablesByBusinessId"))
     })
     @Select("<script>" +
-            "select bi.businessid businessId, bi.trusttable trustTable, " +
+            "select count(*)over() total, bi.businessid businessId, bi.trusttable trustTable, " +
             "bi.businessid businessIdVal, bi.name, bi.tenantid tenantId, " +
             "bi.businessstatus businessStatus, bi.technicalstatus technicalStatus, bi.submitter, " +
             "bi.submissiontime submissionTime, bi.ticketnumber ticketNumber, " +
