@@ -111,11 +111,8 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveColumnInfos = new ArrayList<>();
         }
 
-        // 英文名设置为小写
-        sourceInfoDeriveTableInfo.setTableNameEn(sourceInfoDeriveTableInfo.getTableNameEn().toLowerCase());
         // 设置主键id和tableGuid
         sourceInfoDeriveTableInfo.setId(UUID.randomUUID().toString());
-
         TableInfo tableInfo = tableDAO.selectByDbGuidAndTableName(sourceInfoDeriveTableColumnDto.getDbId(), sourceInfoDeriveTableColumnDto.getTableNameEn());
         if(tableInfo != null){
             sourceInfoDeriveTableInfo.setTableGuid(tableInfo.getTableGuid());
@@ -212,8 +209,6 @@ public class SourceInfoDeriveTableInfoService {
         BeanUtils.copyProperties(sourceInfoDeriveTableColumnDto, sourceInfoDeriveTableInfo);
         // 列
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
-        // 表英文名设置为小写
-        sourceInfoDeriveTableInfo.setTableNameEn(sourceInfoDeriveTableInfo.getTableNameEn().toLowerCase());
         TableInfo tableInfo = tableDAO.selectByDbGuidAndTableName(sourceInfoDeriveTableColumnDto.getDbId(), sourceInfoDeriveTableInfo.getTableNameEn());
         if(tableInfo != null){
             sourceInfoDeriveTableInfo.setTableGuid(tableInfo.getTableGuid());
