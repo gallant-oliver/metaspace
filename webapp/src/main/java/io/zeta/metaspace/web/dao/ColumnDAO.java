@@ -53,7 +53,8 @@ public interface ColumnDAO {
 
 
     @Update({" <script>",
-             " update column_info set display_name=#{columnInfo.displayName},display_operator=#{columnInfo.displayNameOperator},display_updatetime=#{columnInfo.displayNameUpdateTime}",
+             " update column_info set column_name = #{columnInfo.columnName}, display_name=#{columnInfo.displayName},display_operator=#{columnInfo.displayNameOperator},display_updatetime=#{columnInfo.displayNameUpdateTime}," +
+             " status = #{columnInfo.status}, type = #{columnInfo.type}, partition_field = #{columnInfo.isPartitionKey}, description = #{columnInfo.description}",
              " where ",
              " column_guid=#{columnInfo.columnId}",
              " </script>"})
