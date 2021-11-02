@@ -83,6 +83,9 @@ public class SourceInfoDeriveColumnInfo implements Serializable {
     @JsonIgnore
     private String tableGuid;
 
+    @JsonIgnore
+    private int sort;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -103,7 +106,8 @@ public class SourceInfoDeriveColumnInfo implements Serializable {
                 Objects.equals(permissionField, that.permissionField) &&
                 Objects.equals(remark, that.remark) &&
                 Objects.equals(tenantId, that.tenantId) &&
-                Objects.equals(tableGuid, that.tableGuid);
+                Objects.equals(tableGuid, that.tableGuid) &&
+                Objects.equals(sort, that.sort);
     }
 
 }

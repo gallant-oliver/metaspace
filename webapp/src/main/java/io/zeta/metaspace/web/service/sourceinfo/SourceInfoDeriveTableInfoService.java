@@ -143,12 +143,13 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto));
         }
 
-        sourceInfoDeriveColumnInfos.forEach(deriveColumnInfo -> {
+        for (SourceInfoDeriveColumnInfo deriveColumnInfo : sourceInfoDeriveColumnInfos) {
+            deriveColumnInfo.setSort(sourceInfoDeriveColumnInfos.indexOf(deriveColumnInfo));
             deriveColumnInfo.setId(UUID.randomUUID().toString());
             deriveColumnInfo.setColumnGuid(UUID.randomUUID().toString());
             deriveColumnInfo.setTableGuid(sourceInfoDeriveTableInfo.getTableGuid());
             deriveColumnInfo.setTenantId(tenantId);
-        });
+        }
 
 
         // 表-字段关系
@@ -212,6 +213,12 @@ public class SourceInfoDeriveTableInfoService {
         BeanUtils.copyProperties(sourceInfoDeriveTableColumnDto, sourceInfoDeriveTableInfo);
         // 列
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
+
+        // 设置字段顺序
+        for (SourceInfoDeriveColumnInfo deriveColumnInfo : sourceInfoDeriveColumnInfos) {
+            deriveColumnInfo.setSort(sourceInfoDeriveColumnInfos.indexOf(deriveColumnInfo));
+        }
+
         // 表英文名设置为小写
         sourceInfoDeriveTableInfo.setTableNameEn(sourceInfoDeriveTableInfo.getTableNameEn().toLowerCase());
         TableInfo tableInfo = tableDAO.selectByDbGuidAndTableName(sourceInfoDeriveTableColumnDto.getDbId(), sourceInfoDeriveTableInfo.getTableNameEn());
