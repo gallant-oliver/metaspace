@@ -1944,6 +1944,9 @@ public class BusinessService implements Approvable {
      */
     private void approveItems(String tenantId, BusinessInfo info, String approveType){
         String approveGroupId = info.getApproveGroupId();
+        if (StringUtils.isEmpty(approveGroupId)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审批组不能为空");
+        }
         ApproveItem approveItem = buildApproveItem(info, approveGroupId, approveType, tenantId);
         businessDao.updateApproveIdAndApproveGroupId(info.getBusinessId(), approveItem.getId());
         approveServiceImp.addApproveItem(approveItem);
