@@ -931,6 +931,25 @@ public interface UserGroupDAO {
             "</script>")
     public List<CategoryPrivilegeV2> getChildCategoriesPrivileges(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("userGroupId")String userGroupId, @Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
 
+    //递归找父节点包含自己
+    @Select("<script>WITH RECURSIVE categoryTree AS " +
+            "(" +
+            "    SELECT * from category " +
+            "    where tenantid=#{tenantId} and guid in " +
+            "    <foreach item='item' index='index' collection='categoryGuid' " +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item} " +
+            "    </foreach>" +
+            "    and categoryType=#{categoryType} " +
+            "    UNION " +
+            "    SELECT category.* from categoryTree " +
+            "    JOIN category on categoryTree.parentCategoryGuid = category.guid where category.tenantid=#{tenantId} " +
+            ") " +
+            "SELECT *,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem FROM categoryTree c left join category_group_relation g on c.guid=g.category_id and g.group_id=#{userGroupId} " +
+            "</script>")
+    public List<CategoryPrivilegeV2> getParentCategoriesPrivileges(@Param("categoryGuid") List<String> categoryGuid, @Param("userGroupId")String userGroupId, @Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
+
+
     //递归找发生变化的子节点包含自己
     @Select("<script>WITH RECURSIVE categoryTree AS " +
             "(" +

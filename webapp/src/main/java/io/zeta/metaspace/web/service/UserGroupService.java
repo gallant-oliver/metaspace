@@ -992,7 +992,7 @@ public class UserGroupService {
             }
         }
 
-        List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getChildCategoriesPrivileges(guids, userGroupId, categoryType, tenantId);
+        List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getParentCategoriesPrivileges(guids, userGroupId, categoryType, tenantId);
         List<String> childIds = childCategoriesPrivileges.stream().map(categoryPrivilegeV2 -> categoryPrivilegeV2.getGuid()).collect(Collectors.toList());
         for (String updateId : updateIds) {
             if (childIds.contains(updateId)) {
@@ -1645,7 +1645,7 @@ public class UserGroupService {
         List<CategoryEntityV2> categoryEntitysByGuids = categoryDAO.queryCategoryEntitysByGuids(categoryIds, tenantId);
         categoryEntitysByGuids.stream().forEach(categoryParent -> {
             if (categoryIds.contains(categoryParent.getParentCategoryGuid())){
-                removeCategoryId.add(categoryParent.getGuid());
+                removeCategoryId.add(categoryParent.getParentCategoryGuid());
             }
         });
 
