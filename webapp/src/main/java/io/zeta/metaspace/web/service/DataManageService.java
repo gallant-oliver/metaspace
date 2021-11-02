@@ -1861,8 +1861,9 @@ public class DataManageService {
         List<String> partitionKeys = EntityUtil.extractPartitionKeyInfo(info.getEntity());
         if (!CollectionUtils.isEmpty(partitionKeys) && partitionKeys.contains(guid)) {
             column.setPartitionKey(true);
+        }else{
+            column.setPartitionKey(false);
         }
-
         return column;
     }
 
