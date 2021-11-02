@@ -60,6 +60,7 @@ public interface DatabaseDAO {
             " db_info AS info " +
             " INNER JOIN database_group_relation dgr ON dgr.database_guid = info.database_guid " +
             " INNER JOIN user_group_relation ugr ON ugr.group_id = dgr.group_id AND ugr.user_id = #{userId} " +
+            " INNER JOIN user_group ug ON ug.id=ugr.group_id AND ug.valid=true and ug.tenant=#{tenantId} " +
             " INNER JOIN source_db AS sd ON info.database_guid = sd.db_guid " +
             " WHERE " +
             " sd.source_id = #{sourceId} " +
