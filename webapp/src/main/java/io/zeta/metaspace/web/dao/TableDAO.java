@@ -270,6 +270,7 @@ public interface TableDAO {
             " select tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description, source.source_id,source.source_name" +
             " from tableinfo as tb INNER JOIN source_db as sd on  tb.databaseguid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
             " WHERE tb.status = 'ACTIVE' AND tb.tablename like concat('%',#{tableName},'%')  AND source.tenantid = #{tenantId}" +
+            " <if test='dbNameList != null and dbNameList.size()>0'>" +
             " UNION" +
             " select tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description,'hive' as source_id,'hive' AS source_name" +
             " from tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid" +
@@ -277,6 +278,7 @@ public interface TableDAO {
             " <foreach item='item' index='index' collection='dbNameList' open='(' separator=',' close=')'>" +
             "   #{item}" +
             " </foreach>" +
+            " </if>" +
             " ) as t ORDER BY t.name" +
             " <if test='limit!= -1'>"+
             " limit #{limit}"+
