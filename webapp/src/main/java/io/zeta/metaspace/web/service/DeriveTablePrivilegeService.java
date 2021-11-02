@@ -62,7 +62,7 @@ public class DeriveTablePrivilegeService {
         relationDAO.deleteRelation(ids);
         return ReturnUtil.success();
     }
-    public Result getDeriveTableRelations(String tenantId,PrivilegeType privilegeType,
+    public Result   getDeriveTableRelations(String tenantId,PrivilegeType privilegeType,
                                           String userGroupId,Boolean registerType,
                                           String tableName,int limit,int offset){
         List<String> importanceTableId = relationDAO.selectTableIdByGroupId(userGroupId,PrivilegeType.IMPORTANCE.name());
