@@ -110,9 +110,10 @@ public class SourceInfoDeriveTableInfoService {
         if(CollectionUtils.isEmpty(sourceInfoDeriveColumnInfos)){
             sourceInfoDeriveColumnInfos = new ArrayList<>();
         }
-
+        
         // 设置主键id和tableGuid
         sourceInfoDeriveTableInfo.setId(UUID.randomUUID().toString());
+
         TableInfo tableInfo = tableDAO.selectByDbGuidAndTableName(sourceInfoDeriveTableColumnDto.getDbId(), sourceInfoDeriveTableColumnDto.getTableNameEn());
         if(tableInfo != null){
             sourceInfoDeriveTableInfo.setTableGuid(tableInfo.getTableGuid());
@@ -140,12 +141,13 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto));
         }
 
-        sourceInfoDeriveColumnInfos.forEach(deriveColumnInfo -> {
+        for (SourceInfoDeriveColumnInfo deriveColumnInfo : sourceInfoDeriveColumnInfos) {
+            deriveColumnInfo.setSort(sourceInfoDeriveColumnInfos.indexOf(deriveColumnInfo));
             deriveColumnInfo.setId(UUID.randomUUID().toString());
             deriveColumnInfo.setColumnGuid(UUID.randomUUID().toString());
             deriveColumnInfo.setTableGuid(sourceInfoDeriveTableInfo.getTableGuid());
             deriveColumnInfo.setTenantId(tenantId);
-        });
+        }
 
 
         // 表-字段关系
@@ -209,6 +211,12 @@ public class SourceInfoDeriveTableInfoService {
         BeanUtils.copyProperties(sourceInfoDeriveTableColumnDto, sourceInfoDeriveTableInfo);
         // 列
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
+
+        // 设置字段顺序
+        for (SourceInfoDeriveColumnInfo deriveColumnInfo : sourceInfoDeriveColumnInfos) {
+            deriveColumnInfo.setSort(sourceInfoDeriveColumnInfos.indexOf(deriveColumnInfo));
+        }
+
         TableInfo tableInfo = tableDAO.selectByDbGuidAndTableName(sourceInfoDeriveTableColumnDto.getDbId(), sourceInfoDeriveTableInfo.getTableNameEn());
         if(tableInfo != null){
             sourceInfoDeriveTableInfo.setTableGuid(tableInfo.getTableGuid());
