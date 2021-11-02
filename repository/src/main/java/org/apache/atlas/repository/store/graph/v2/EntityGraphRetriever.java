@@ -1275,4 +1275,9 @@ public final class EntityGraphRetriever {
             relationship.setAttribute(attribute.getName(), attrValue);
         }
     }
+
+    // 从apache atlas release-2.2.0-rc1合并过来
+    public AtlasEntity toAtlasEntity(String guid, boolean includeReferences) throws AtlasBaseException {
+        return mapVertexToAtlasEntity(getEntityVertex(guid), null, false);
+    }
 }

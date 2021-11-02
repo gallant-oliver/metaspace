@@ -19,6 +19,7 @@
 package org.apache.atlas;
 
 import org.apache.atlas.model.instance.AtlasClassification;
+import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntityWithExtInfo;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.commons.lang.StringUtils;
@@ -34,6 +35,8 @@ public class RequestContext {
 
     private final Map<String, AtlasObjectId>             updatedEntities     = new HashMap<>();
     private final Map<String, AtlasObjectId>             deletedEntities     = new HashMap<>();
+    // 从apache atlas release-2.2.0-rc1合并过来
+    private final Map<String, AtlasEntity>               entityCache          = new HashMap<>();
     private final Map<String, AtlasEntityWithExtInfo>    entityCacheV2       = new HashMap<>();
     private final Map<String, List<AtlasClassification>> addedPropagations   = new HashMap<>();
     private final Map<String, List<AtlasClassification>> removedPropagations = new HashMap<>();
@@ -69,6 +72,8 @@ public class RequestContext {
             instance.entityCacheV2.clear();
             instance.addedPropagations.clear();
             instance.removedPropagations.clear();
+            // 从apache atlas release-2.2.0-rc1合并过来
+            instance.entityCache.clear();
         }
 
         CURRENT_CONTEXT.remove();
@@ -187,5 +192,17 @@ public class RequestContext {
     public void clearEntities() {
         deletedEntities.clear();
         updatedEntities.clear();
+    }
+
+    // 从apache atlas release-2.2.0-rc1合并过来
+    public void cache(AtlasEntity entity) {
+        if (entity != null && entity.getGuid() != null) {
+            entityCache.put(entity.getGuid(), entity);
+        }
+    }
+
+    // 从apache atlas release-2.2.0-rc1合并过来
+    public AtlasEntity getEntity(String guid) {
+        return entityCache.get(guid);
     }
 }

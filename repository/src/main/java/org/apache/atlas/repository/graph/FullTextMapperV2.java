@@ -243,4 +243,29 @@ public class FullTextMapperV2 {
 
         return ret;
     }
+
+    // 从apache atlas release-2.2.0-rc1合并过来
+    public AtlasEntity getAndCacheEntityNew(String guid) throws AtlasBaseException {
+        return getAndCacheEntityNew(guid, true);
+    }
+
+    // 从apache atlas release-2.2.0-rc1合并过来
+    public AtlasEntity  getAndCacheEntityNew(String guid, boolean includeReferences) throws AtlasBaseException {
+        RequestContext context = RequestContext.get();
+        AtlasEntity    entity  = context.getEntity(guid);
+
+        if (entity == null) {
+            entity = entityGraphRetriever.toAtlasEntity(guid, includeReferences);
+
+            if (entity != null) {
+                context.cache(entity);
+
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Cache miss -> GUID = {}", guid);
+                }
+            }
+        }
+
+        return entity;
+    }
 }
