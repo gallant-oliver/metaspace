@@ -1107,8 +1107,10 @@ public class UserGroupService {
         if (category.getRead()==null||!category.getRead()){
             return;
         }
-
         ArrayList<String> categorList = Lists.newArrayList(category.getGuid());
+        if(categorList.size()==0 || null==categorList){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录不能为空");
+        }
         List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getChildCategoriesPrivileges(categorList,userGroupId, category.getType(), tenantId);
         List<String> updateCategory = new ArrayList<>();
         List<String> insertCategory = new ArrayList<>();
