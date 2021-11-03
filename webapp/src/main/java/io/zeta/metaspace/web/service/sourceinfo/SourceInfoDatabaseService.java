@@ -93,6 +93,12 @@ public class SourceInfoDatabaseService implements Approvable {
         if (Boolean.FALSE.equals((ReturnUtil.isSuccess(checkResult))) && SubmitType.SUBMIT_AND_PUBLISH.equals(submitType)) {
             return checkResult;
         }
+        //暂存时新增校验逻辑
+        Result checkResult1 = checkService.saveCheckCreateParam(databaseInfo, tenantId, approveGroupId, submitType);
+        if (Boolean.FALSE.equals((ReturnUtil.isSuccess(checkResult1))) && SubmitType.SUBMIT_ONLY.equals(submitType)) {
+
+            return checkResult1;
+        }
         DatabaseInfoPO dp = this.convertToPO(tenantId,databaseInfo);
         List<DatabaseInfoPO> dpList = new ArrayList<>();
         dpList.add(dp);
