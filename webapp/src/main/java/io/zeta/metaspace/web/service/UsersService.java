@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.service;
 
 import com.google.common.collect.Lists;
+import io.zeta.metaspace.model.dataquality2.WarningGroup;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.*;
@@ -14,6 +15,8 @@ import io.zeta.metaspace.model.user.UserInfoGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.web.service.dataquality.WarningGroupService;
+import io.zeta.metaspace.web.util.ParamUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -41,6 +44,9 @@ public class UsersService {
     private UsersService usersService;
     @Autowired
     private UserGroupService userGroupService;
+
+    @Autowired
+    private WarningGroupService warningGroupService;
     @Autowired
     private CategoryDAO categoryDAO;
     @Autowired
@@ -311,8 +317,11 @@ public class UsersService {
     }
 
     public List<String> getMailsByGroups(String[] toList) {
-        List<String> userIds = userGroupService.getUserIdsByGroups(Arrays.asList(toList));
-        List<String> emails=userDAO.getUsersEmailByIds(userIds);
-        return emails;
+        List<WarningGroup> warningGroups = warningGroupService.getByIds(toList);
+        List<String> userIds = warningGroups.stream().map(WarningGroup::getContacts).collect(Collectors.toList());
+        if (Boolean.TRUE.equals(ParamUtil.isNull(userIds))){
+            return Collections.emptyList();
+        }
+        return userDAO.getUsersEmailByIds(userIds);
     }
 }

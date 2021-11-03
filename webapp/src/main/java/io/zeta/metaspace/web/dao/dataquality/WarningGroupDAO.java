@@ -381,4 +381,13 @@ public interface WarningGroupDAO {
 
     @Select("select id, task_execute_id, error_status ,general_warning_check_status, orange_warning_check_status, red_warning_check_status from data_quality_task_rule_execute where task_execute_id = #{taskExecuteId}")
     List<RuleExecute> getRuleExecutes(@Param("taskExecuteId")String taskExecuteId);
+
+    @Select({"<script>" +
+            " select a.id,a.name,a.type,a.contacts,a.description,a.create_time as createTime,a.update_time as updateTime,b.username as creator,a.delete ",
+            " from warning_group a inner join users b on a.creator=b.userid where a.delete=false and a.id IN "+
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>"+
+            " #{id}"+
+            " </foreach>"+
+            "</script>"})
+    List<WarningGroup> getByIds(@Param("ids") String[] toList);
 }
