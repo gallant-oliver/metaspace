@@ -1493,7 +1493,7 @@ public class BusinessService implements Approvable {
         font.setBold(true);
         cellStyle.setFont(font);
         List<List<String>> dataList = list.stream().map(column -> {
-            List<String> data = Lists.newArrayList(column.getColumnName(), column.getType(), column.getDescription(), column.getTableName(), column.getDescription());
+            List<String> data = Lists.newArrayList(column.getColumnName(), column.getType(), column.getDescription(), column.getTableName(), column.getDatabaseName());
             return data;
         }).collect(Collectors.toList());
         ArrayList<String> attributes = Lists.newArrayList("字段名称", "字段类型", "字段描述", "表名称", "库名称");
