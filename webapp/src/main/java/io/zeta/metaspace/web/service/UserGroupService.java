@@ -1854,8 +1854,4 @@ public class UserGroupService {
     public void removeBusiness(String groupId, String businessId, String tenantId) {
         userGroupDAO.removeBusiness(groupId, businessId);
     }
-
-    public List<String> getUserIdsByGroups(List<String> idList) {
-        return userGroupDAO.getUserIdByUserGroups(idList);
-    }
 }
