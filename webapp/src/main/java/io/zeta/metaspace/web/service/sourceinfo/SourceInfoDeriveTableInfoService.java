@@ -800,6 +800,7 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableColumnVO.setUpdateTime(byId.getUpdateTimeStr());
 
         if(StringUtils.isBlank(byId.getSourceTableGuid())) {
+            sourceInfoDeriveTableColumnVO.setSourceInfoDeriveColumnVOS(new ArrayList<>());
             return sourceInfoDeriveTableColumnVO;
         }
 
