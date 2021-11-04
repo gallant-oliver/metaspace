@@ -70,7 +70,17 @@ public class WarningGroupService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组详情失败");
         }
     }
-
+    public List<WarningGroup> getByIds(String[] toList) throws AtlasBaseException {
+        try {
+            if (toList!=null &&toList.length >0){
+                return warningGroupDAO.getByIds(toList);
+            }
+            return Collections.emptyList();
+        } catch (Exception e) {
+            LOG.error("获取告警组详情失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组详情失败");
+        }
+    }
     public WarningGroup getByName(String name,String id,String tenantId) throws AtlasBaseException {
         return warningGroupDAO.getByName(name,id,tenantId);
     }
