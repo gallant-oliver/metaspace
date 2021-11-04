@@ -455,7 +455,6 @@ public class DataSourceService {
             list.add(dataSourceHead);
             pageResult.setTotalSize(list.size());
             pageResult.setLists(list);
-            pageResult.setLists(list);
             return pageResult;
         }
         DataSourceSearch dataSourceSearch = new DataSourceSearch(sourceName, sourceType, createTime, updateTime, updateUserName);
