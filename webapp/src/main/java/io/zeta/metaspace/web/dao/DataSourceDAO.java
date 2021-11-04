@@ -269,12 +269,6 @@ public interface DataSourceDAO {
             "select count(*)over() totalSize,ds.tenantid tenantId,ds.source_id sourceId,ds.source_name sourceName,ds.source_type sourceType,ds.description,ds.create_time createTime,ds.update_time updateTime,ds.update_user_id updateUserName,ds.manager as manager,ds.oracle_db oracleDb,serviceType,ds.database " +
             " from data_source ds "+
             "where  isapi=true " +
-            "<if test='userId!=null'>" +
-            " and ds.manager=#{userId} " +
-            "</if>" +
-            "<if test='tenantId!=null'>" +
-            " and ds.tenantid=#{tenantId} " +
-            "</if>" +
             "<if test='dataSourceSearch.sourceName!=null'>" +
             "and ds.source_name like concat('%',#{dataSourceSearch.sourceName},'%') ESCAPE '/'" +
             "</if>" +
@@ -303,7 +297,7 @@ public interface DataSourceDAO {
             "offset #{parameters.offset}" +
             "</if>" +
             "</script>")
-    public List<DataSourceHead> searchGlobalApiDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch,@Param("userId") String userId,@Param("tenantId")String tenantId);
+    List<DataSourceHead> searchGlobalApiDataSources(@Param("parameters") Parameters parameters,@Param("dataSourceSearch") DataSourceSearch dataSourceSearch);
 
     //搜索数据源
     @Select("<script> select  count(*)over() as totalSize,a.* from " +
