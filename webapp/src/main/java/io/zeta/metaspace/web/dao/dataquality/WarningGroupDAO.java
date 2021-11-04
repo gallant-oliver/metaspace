@@ -424,7 +424,7 @@ public interface WarningGroupDAO {
                     "    GROUP BY id" +
                     "        )" +
                     "    select count(*)over() total, t3.id, concat(t6.name,'校验') as content, t1.name as title," +
-                    "    t3.create_time, au.receivers" +
+                    "    to_char(t3.create_time, 'yyyy-MM-dd HH:mm:SS') as create_time, au.receivers" +
                     "    from data_quality_task t1" +
                     "    join data_quality_task_execute t2 on t1.id = t2.task_id" +
                     "    join data_quality_task_rule_execute t3 on t2.id = t3.task_execute_id join data_quality_sub_task t4 on (t3.subtask_id = t4.id and t4.delete = false)" +
