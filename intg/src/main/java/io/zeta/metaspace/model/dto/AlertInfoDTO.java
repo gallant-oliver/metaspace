@@ -10,7 +10,7 @@ import lombok.Data;
 public class AlertInfoDTO {
 
     @ApiModelProperty("告警编号")
-    private Long id;
+    private String id;
 
     @ApiModelProperty("告警内容")
     private String content;
@@ -32,6 +32,9 @@ public class AlertInfoDTO {
 
     @ApiModelProperty("告警渠道")
     private String channel = "EMAIL";
+
+    @ApiModelProperty("告警级别")
+    private String alertLevel = "2级";
 
     @JsonIgnore
     private Integer total;

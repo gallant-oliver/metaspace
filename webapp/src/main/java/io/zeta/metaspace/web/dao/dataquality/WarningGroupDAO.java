@@ -413,13 +413,13 @@ public interface WarningGroupDAO {
                     "        <if test='endTime != null'>" +
                     "            and t3.create_time &lt; #{endTime}" +
                     "        </if>" +
+                    "        order by t3.create_time desc" +
                     "        <if test='limit!=null and limit!= -1'>" +
                     "           limit #{limit}" +
                     "        </if>" +
                     "        <if test='offset!=null'>" +
                     "           offset #{offset}" +
                     "        </if>" +
-                    "        order by t3.create_time desc" +
                     "        ) t" +
                     "    GROUP BY id" +
                     "        )" +
@@ -441,13 +441,13 @@ public interface WarningGroupDAO {
                     "        <if test='endTime != null'>" +
                     "            and t3.create_time &lt; #{endTime}" +
                     "        </if>" +
+                    "    order by t3.create_time desc" +
                     "        <if test='limit!=null and limit!= -1'>" +
                     "    limit #{limit}" +
                     "        </if>" +
                     "        <if test='offset!=null'>" +
                     "    offset #{offset}" +
-                    "        </if>" +
-                    "    order by t3.create_time desc",
+                    "        </if>",
             "</script>"})
     List<AlertInfoDTO> getAlerts(@Param("startTime") Timestamp startTime, @Param("endTime") Timestamp endTime,
                                  @Param("keyword") String keyword, @Param("offset") int offset, @Param("limit") int limit);
