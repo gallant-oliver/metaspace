@@ -99,6 +99,7 @@ public interface DatabaseDAO {
             " #{dbName}"+
             " </foreach>" +
             " <if test='hiveList != null and hiveList.size()>0'>" +
+            " UNION " +
             " SELECT db.database_guid AS databaseId,db.database_name AS databaseName,db.db_type AS dbType,'hive' AS instanceGuid,'hive' as sourceId," +
             " 'hive' AS sourceName,'hive' as database" +
             " FROM db_info AS db" +
