@@ -69,9 +69,15 @@ public class MonitorREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public RestReturn<PagedModel> getAlertInfo(@RequestBody AlertRequest request) {
+
         if (StringUtils.isNotBlank(request.getAlertType()) && !"数据质量告警".equals(request.getAlertType())) {
             return new RestReturn<PagedModel>().success(new PagedModel());
         }
+
+        if (StringUtils.isNotBlank(request.getAlertLevel()) && !"2级".equals(request.getAlertLevel())) {
+            return new RestReturn<PagedModel>().success(new PagedModel());
+        }
+
         return new RestReturn<PagedModel>().success(warningGroupService.getAlert(request));
     }
 }

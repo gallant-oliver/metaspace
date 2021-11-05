@@ -10,4 +10,6 @@ public class AlertRequest extends BaseListParamVO {
     // 目前仅支持数据质量告警
     private String alertType;
     private String keyword;
+    // 目前仅支持2级
+    private String alertLevel;
 }
