@@ -421,10 +421,9 @@ public class DataSourceService {
 
     }
 
-    public PageResult<DataSourceHead> searchPublicDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId) throws AtlasBaseException {
+    public PageResult<DataSourceHead> searchPublicDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String tenantId) throws AtlasBaseException {
         try {
-            boolean globalConfig = publicService.isGlobal();
-            PageResult<DataSourceHead> pageResult = getDataSources(limit, offset, sortby, order, sourceName, sourceType, createTime, updateTime, updateUserName, isApi, tenantId, globalConfig);
+            PageResult<DataSourceHead> pageResult = getDataSourcesGlobal(limit, offset, sortby, order, sourceName, sourceType, tenantId);
             return pageResult;
         } catch (Exception e) {
             LOG.error("查询数据源失败", e);
@@ -491,12 +490,107 @@ public class DataSourceService {
         if (Objects.nonNull(dataSourceSearch.getUpdateUserName()))
             dataSourceSearch.setUpdateUserName(dataSourceSearch.getUpdateUserName().replaceAll("%", "/%").replaceAll("_", "/_"));
         String userId = AdminUtils.getUserData().getUserId();
+        List<DataSourceHead> list = isApi ? dataSourceDAO.searchApiDataSources(parameters, dataSourceSearch, userId, tenantId) : dataSourceDAO.searchDataSources(parameters, dataSourceSearch, userId, tenantId);
+        for (DataSourceHead head : list) {
+            if (head.getManager() != null) {
+                String manager = userDAO.getUserName(head.getManager());
+                head.setManager(manager);
+            }
+            if (head.getUpdateUserName() != null) {
+                head.setUpdateUserName(userDAO.getUserName(head.getUpdateUserName()));
+            }
+            String sourceId = head.getSourceId();
+            head.setRely(false);
+            head.setBizTreeId(EntityUtil.generateBusinessId(head.getTenantId(),sourceId,"",""));
+            UserPrivilegeDataSource userPrivilegeDataSource = getUserPrivilegesDataSource(userId, sourceId);
+            if (UserPrivilegeDataSource.MANAGER.getPrivilegeName().equals(userPrivilegeDataSource.getPrivilegeName())) {
+                head.setEditManager(true);
+                head.setPermission(true);
+            } else if ("w".equals(userPrivilegeDataSource.getPrivilege())) {
+                head.setEditManager(false);
+                head.setPermission(true);
+            } else {
+                head.setEditManager(false);
+                head.setPermission(false);
+            }
+            if (head.getOracleDb() == null || head.getOracleDb().length() == 0) {
+                head.setSchema(false);
+            } else {
+                head.setSchema(true);
+            }
+        }
+        pageResult.setCurrentSize(list.size());
+        pageResult.setLists(list);
+        if (list.size() != 0) {
+            pageResult.setTotalSize(list.get(0).getTotalSize());
+        } else {
+            pageResult.setTotalSize(0);
+        }
 
-        List<DataSourceHead> list = null;
-        if(isGlobalConfig){
-            list = dataSourceDAO.searchGlobalApiDataSources(parameters, dataSourceSearch);
+        return pageResult;
+    }
+
+
+    /**
+     * 公共租户
+     * @param limit
+     * @param offset
+     * @param sortby
+     * @param order
+     * @param sourceName
+     * @param sourceType
+     * @param tenantId
+     * @return
+     * @throws AtlasBaseException
+     */
+    private PageResult<DataSourceHead> getDataSourcesGlobal(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String tenantId) throws AtlasBaseException {
+        PageResult<DataSourceHead> pageResult = new PageResult<>();
+        if("hive".equalsIgnoreCase(sourceType)){
+            DataSourceHead dataSourceHead = new DataSourceHead();
+            dataSourceHead.setSourceId("hive");
+            dataSourceHead.setSourceName("hive");
+            dataSourceHead.setSourceType("HIVE");
+            dataSourceHead.setBizTreeId(EntityUtil.generateBusinessId(tenantId,"hive","",""));
+            List<DataSourceHead> list = new ArrayList<>();
+            list.add(dataSourceHead);
+            pageResult.setTotalSize(list.size());
+            pageResult.setLists(list);
+            return pageResult;
+        }
+        DataSourceSearch dataSourceSearch = new DataSourceSearch(sourceName, sourceType, null, null, null);
+        Parameters parameters = new Parameters();
+        parameters.setLimit(limit);
+        parameters.setOffset(offset);
+        if (!StringUtils.isEmpty(sortby)) {
+            if (sortby.equals("sourceName")) {
+                sortby = "source_name";
+            } else if (sortby.equals("sourceType")) {
+                sortby = "source_type";
+            } else if (sortby.equals("createTime")) {
+                sortby = "create_time";
+            } else if (sortby.equals("updateTime")) {
+                sortby = "update_time";
+            } else {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "排序类型错误");
+            }
+        }
+        if (sortby == null) {
+            sortby = "source_name";
+        }
+
+        parameters.setSortby(sortby);
+        parameters.setOrder(order);
+        if (Objects.nonNull(dataSourceSearch.getSourceName()))
+            dataSourceSearch.setSourceName(dataSourceSearch.getSourceName().replaceAll("%", "/%").replaceAll("_", "/_"));
+        if (Objects.nonNull(dataSourceSearch.getSourceType()))
+            dataSourceSearch.setSourceType(dataSourceSearch.getSourceType().replaceAll("%", "/%").replaceAll("_", "/_").toUpperCase());
+        String userId = AdminUtils.getUserData().getUserId();
+
+        List<DataSourceHead> list;
+        if(publicService.isGlobal()){
+            list = dataSourceDAO.searchGlobalApiDataSources(parameters, dataSourceSearch, tenantId);
         }else{
-            list = isApi ? dataSourceDAO.searchApiDataSources(parameters, dataSourceSearch, userId, tenantId) : dataSourceDAO.searchDataSources(parameters, dataSourceSearch, userId, tenantId);
+            list = dataSourceDAO.searchApiDataSourcesGlobal(parameters, dataSourceSearch, userId, tenantId);
         }
 
         for (DataSourceHead head : list) {

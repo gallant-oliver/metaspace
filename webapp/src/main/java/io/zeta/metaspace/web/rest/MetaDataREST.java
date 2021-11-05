@@ -274,7 +274,7 @@ public class MetaDataREST {
                     limit--;
                 }
             }
-            PageResult<DataSourceHead> pageResult = dataSourceService.searchPublicDataSources(limit, offset, null, null, query, sourceType, null, null, null, true, queryTenantIdParam);
+            PageResult<DataSourceHead> pageResult = dataSourceService.searchPublicDataSources(limit, offset, null, null, query, sourceType, queryTenantIdParam);
             List<Tenant> tenants = tenantService.getTenantAll();
             if(isSearchFlag){
                 List<DataSourceHead> list = new ArrayList<>();
