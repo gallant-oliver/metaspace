@@ -62,7 +62,7 @@ public class PagedModel<T> implements Serializable {
         pagedModel.setPageNo(pageNo);
         pagedModel.setPageSize(pageSize);
         pagedModel.setContent(data);
-        pagedModel.setTotalPages(totalElements / pageSize);
+        pagedModel.setTotalPages(totalElements / pageSize + 1);
         pagedModel.setTotalElements(totalElements);
         return pagedModel;
     }
