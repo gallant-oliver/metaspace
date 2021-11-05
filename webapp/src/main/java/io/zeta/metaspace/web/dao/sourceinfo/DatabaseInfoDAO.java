@@ -162,7 +162,7 @@ public interface DatabaseInfoDAO {
             "si.bo_department_name boDepartmentName, si.bo_name boName, si.bo_email boEmail, si.bo_tel boTel, " +
             "si.to_department_name toDepartmentName, si.to_name toName, si.to_email toEmail, si.to_tel toTel, " +
             "si.technical_leader technicalLeader, si.business_leader businessLeader, " +
-            "sirpc.parent_category_id categoryId " +
+            "case when si.category_id is null or si.category_id='' then sirpc.parent_category_id else si.category_id end as categoryId " +
             "FROM " +
             " source_info si " +
             "left join source_info_relation2parent_category sirpc on sirpc.source_info_id = si.id " +
