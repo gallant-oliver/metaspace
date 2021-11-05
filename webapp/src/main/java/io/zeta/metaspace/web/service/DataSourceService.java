@@ -83,7 +83,7 @@ public class DataSourceService {
     @Autowired
     private DataSourceDAO datasourceDAO;
     @Autowired
-    private MetaDataService metadataService;
+    private PublicService publicService;
     @Autowired
     private AtlasEntityStoreV2 atlasEntityStoreV2;
     @Autowired
@@ -420,16 +420,16 @@ public class DataSourceService {
         }
 
     }
+
     public PageResult<DataSourceHead> searchPublicDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId) throws AtlasBaseException {
         try {
-            boolean globalConfig = metadataService.isConfigGloble();
-            PageResult<DataSourceHead> pageResult = getDataSources(limit,  offset,  sortby,  order,  sourceName,  sourceType,  createTime,  updateTime,  updateUserName,  isApi,  tenantId,globalConfig);
+            boolean globalConfig = publicService.isGlobal();
+            PageResult<DataSourceHead> pageResult = getDataSources(limit, offset, sortby, order, sourceName, sourceType, createTime, updateTime, updateUserName, isApi, tenantId, globalConfig);
             return pageResult;
         } catch (Exception e) {
             LOG.error("查询数据源失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源查询失败\n" + e.getMessage());
         }
-
     }
 
     public PageResult<DataSourceHead> searchNotHiveDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId) throws AtlasBaseException {

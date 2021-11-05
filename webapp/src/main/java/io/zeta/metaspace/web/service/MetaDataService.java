@@ -23,17 +23,11 @@ import io.zeta.metaspace.bo.DatabaseInfoBO;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.enums.Status;
-import io.zeta.metaspace.model.global.UserPermissionPO;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
-import io.zeta.metaspace.model.privilege.Module;
-import io.zeta.metaspace.model.privilege.SystemModule;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.role.Role;
-import io.zeta.metaspace.model.role.SystemRole;
-import io.zeta.metaspace.model.security.Tenant;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import io.zeta.metaspace.model.table.Tag;
@@ -149,7 +143,7 @@ public class MetaDataService {
     @Autowired
     private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao;
     @Autowired
-    private UserPermissionDAO userPermissionDAO;
+    private PublicService publicService;
 
 
     private String errorMessage = "";
@@ -695,7 +689,7 @@ public class MetaDataService {
 
     private TableExtInfo getTableExtAttributes(String tenantId,String tableGuid){
         TableExtInfo info = new TableExtInfo();
-        if(isConfigGloble()){
+        if(publicService.isGlobal()){
             LOG.info("当前用户已配置全局权限，忽略重要保密权限");
             info.setImportance(false);
             info.setSecurity(false);
@@ -734,17 +728,6 @@ public class MetaDataService {
         return info;
     }
 
-    /**
-     * 当前账户是否配置全局权限
-     * @return true：已配置全局权限
-     */
-    public boolean isConfigGloble(){
-        User user = AdminUtils.getUserData();
-        UserPermissionPO userPermissionPO = userPermissionDAO.selectListByUsersId(user.getUserId());
-        boolean flag = userPermissionPO != null;
-        LOG.info("当前用户配置全局权限:{}",flag);
-        return flag;
-    }
     public RDBMSTable extractRDBMSTableInfo(AtlasEntity entity, String guid, AtlasEntity.AtlasEntityWithExtInfo info, String tenantId) throws AtlasBaseException {
         RDBMSTable table = new RDBMSTable();
         table.setTableId(guid);
