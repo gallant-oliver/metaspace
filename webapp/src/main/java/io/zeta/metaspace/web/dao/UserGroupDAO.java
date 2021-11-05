@@ -259,6 +259,16 @@ public interface UserGroupDAO {
     )
     public List<UserGroup> getuserGroupByUid(@Param("list") List<String> tenantParamList);
 
+    @Select("<script>" +
+            "select g.*,g.tenant tenantId from user_group g inner join user_group_relation as relation on g.id = relation.group_id where g.valid=true and relation = #{userId}" +
+            " and g.tenant in  "+
+            "<foreach collection='list' item='tid' index='index' separator=',' open='(' close=')'>"+
+            "#{tid}"+
+            "</foreach>"+
+            "</script>"
+    )
+    List<UserGroup> getuserGroupByUidAndUserId(@Param("list") List<String> tenantParamList, @Param("userId") String userId);
+
     @Select("select * from category where categoryType=#{categoryType} and tenantid=#{tenantId}")
     public List<RoleModulesCategories.Category> getAllCategorys(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
 

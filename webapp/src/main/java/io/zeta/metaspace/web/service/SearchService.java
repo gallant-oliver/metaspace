@@ -97,13 +97,15 @@ public class SearchService {
     private HiveMetaStoreBridgeUtils hiveMetaStoreBridgeUtils;
     @Autowired
     private DataSourceDAO dataSourceDAO;
+    @Autowired
+    private PublicService publicService;
 
     public PageResult<Database> queryDatabases(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount,boolean isPublic) {
         PageResult<Database> databasePageResult = null;
         //公共服务，
         if(isPublic){
             //全局权限
-            if(metaDataService.isConfigGloble()){
+            if(publicService.isGlobal()){
                 databasePageResult = getDatabaseData( sourceId,  offset,  limit,  query,  tenantId,  queryCount,true);
             }else{
                 //非全局，只能查看权限下数据
@@ -186,21 +188,21 @@ public class SearchService {
             PageResult<Database> databasePageResult = new PageResult<>();
             List<Database> databaseList = new ArrayList<>();
             //获取当前租户下用户所属用户组
-            //User user = AdminUtils.getUserData();
             List<Tenant> tenants = tenantService.getTenantAll();
             List<String> tenantParamList = tenants.stream().map(Tenant::getTenantId).collect(Collectors.toList());
             List<UserGroup> groups = userGroupDAO.getuserGroupByUid(tenantParamList);
             List<TenantGroup> tenantGroups = new ArrayList<>();
-            TenantGroup tenantGroup = null;
-            List<String> configTenantList = groups.stream().map(UserGroup::getTenantId).distinct().collect(Collectors.toList());
-            for (String v : configTenantList){
-                tenantGroup = new TenantGroup();
-                tenantGroup.setTenantId(v);
-                tenantGroup.setGroupList(groups.stream().filter(t->v.equals(t.getTenantId()))
-                        .map(UserGroup::getId).collect(Collectors.toList()));
-                tenantGroups.add(tenantGroup);
+            if(!publicService.isGlobal()){
+                TenantGroup tenantGroup = null;
+                List<String> configTenantList = groups.stream().map(UserGroup::getTenantId).distinct().collect(Collectors.toList());
+                for (String v : configTenantList){
+                    tenantGroup = new TenantGroup();
+                    tenantGroup.setTenantId(v);
+                    tenantGroup.setGroupList(groups.stream().filter(t->v.equals(t.getTenantId()))
+                            .map(UserGroup::getId).collect(Collectors.toList()));
+                    tenantGroups.add(tenantGroup);
+                }
             }
-            //List<String> groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
 
             for (Tenant item : tenants){
                 String currentTenantId = item.getTenantId();
