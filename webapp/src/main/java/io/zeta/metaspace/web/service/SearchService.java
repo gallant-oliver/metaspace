@@ -275,7 +275,22 @@ public class SearchService {
                 query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
             }
             List<String> tenantParamList = tenants.stream().map(Tenant::getTenantId).collect(Collectors.toList());
-            tableEntityList = tableDAO.selectListByTenantIdListAndTableName(query, tenantParamList, dbList, limit, offset);
+
+            List<TenantGroup> tenantGroups = new ArrayList<>();
+            if(!publicService.isGlobal()){
+                List<UserGroup> groups = userGroupDAO.getuserGroupByUid(tenantParamList);
+                TenantGroup tenantGroup = null;
+                List<String> configTenantList = groups.stream().map(UserGroup::getTenantId).distinct().collect(Collectors.toList());
+                for (String v : configTenantList){
+                    tenantGroup = new TenantGroup();
+                    tenantGroup.setTenantId(v);
+                    tenantGroup.setGroupList(groups.stream().filter(t->v.equals(t.getTenantId()))
+                            .map(UserGroup::getId).collect(Collectors.toList()));
+                    tenantGroups.add(tenantGroup);
+                }
+            }
+
+            tableEntityList = tableDAO.selectListByTenantIdListAndTableName(query, tenantParamList, dbList,tenantGroups, limit, offset);
 
             if (CollectionUtils.isEmpty(tableEntityList)) {
                 return tablePageResult;
