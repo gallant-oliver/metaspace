@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.rest.dataquality;
 
 import io.zeta.metaspace.model.PagedModel;
+import io.zeta.metaspace.model.RestReturn;
 import io.zeta.metaspace.model.dataquality2.RuleStatistics;
 import io.zeta.metaspace.model.dto.AlertRequest;
 import io.zeta.metaspace.web.service.dataquality.RuleService;
@@ -67,10 +68,10 @@ public class MonitorREST {
     @Path("/alertInfo")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PagedModel getAlertInfo(@RequestBody AlertRequest request) {
+    public RestReturn<PagedModel> getAlertInfo(@RequestBody AlertRequest request) {
         if (StringUtils.isNotBlank(request.getAlertType()) && !"数据质量告警".equals(request.getAlertType())) {
-            return new PagedModel();
+            return new RestReturn<PagedModel>().success(new PagedModel());
         }
-        return warningGroupService.getAlert(request);
+        return new RestReturn<PagedModel>().success(warningGroupService.getAlert(request));
     }
 }
