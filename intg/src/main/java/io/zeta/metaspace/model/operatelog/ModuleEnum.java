@@ -37,7 +37,7 @@ public enum ModuleEnum {
     //以下数据资产在安全中心不存在
     TECHNICALEDIT(2,"数据资产","技术数据关联",8,"技术数据关联", "technicaledit", "technicaledit",0, 8),
     TECHNICALADMIN(2,"数据资产","技术目录编辑",9,"技术目录编辑", "technicaladmin", "technicaladmin",0, 9),
-    DATAEDIT(2,"数据资产","数据管理",10,"数据管理","data","dataedit",0, 10),
+//    DATAEDIT(2,"数据资产","数据管理",10,"数据管理","data","dataedit",0, 10),
     BUSINESSADMIN(2,"数据资产","业务目录编辑",11,"业务目录编辑", "businessadmin", "businessadmin",0, 11),
     DATASHARE(2,"数据资产","数据分享",12,"数据分享", "datashare", "datashare",0, 12),
 
