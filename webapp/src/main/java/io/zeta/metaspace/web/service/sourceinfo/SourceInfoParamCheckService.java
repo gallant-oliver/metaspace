@@ -226,7 +226,11 @@ public class SourceInfoParamCheckService {
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                     AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("审核组"));
         }
-        if(databaseInfoDAO.getDatabaseByDbId(databaseInfo.getDatabaseId(),tenantId)){
+
+        // 查询旧的登记状态，是否为‘发布审核通过’或者‘待审核’
+        boolean isApprove = databaseInfoDAO.auditStatusIsApprove(databaseInfo.getId());
+
+        if(!isApprove && databaseInfoDAO.getDatabaseByDbId(databaseInfo.getDatabaseId(),tenantId)){
             return ReturnUtil.error(AtlasErrorCode.INVALID_OBJECT_ID.getErrorCode(),
                     AtlasErrorCode.INVALID_OBJECT_ID.getFormattedErrorMessage(databaseInfo.getDatabaseId()+"已经登记，无法重复登记"));
         }
