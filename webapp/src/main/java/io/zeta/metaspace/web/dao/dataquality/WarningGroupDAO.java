@@ -405,7 +405,8 @@ public interface WarningGroupDAO {
                     "                    left join users on users.userid = ANY(string_to_array(wg.contacts,','))" +
                     "                    where t1.delete=false" +
                     "        <if test='keyword != null and keyword != \"\"'>" +
-                    "            and t1.name like concat('%',#{params.query},'%') ESCAPE '/'" +
+                    "            and (t1.name like concat('%',#{keyword},'%') ESCAPE '/'" +
+                    "                   or concat(t6.name,'校验') like concat('%',#{keyword},'%') ESCAPE '/')" +
                     "        </if>" +
                     "        <if test='startTime != null'>" +
                     "            and t3.create_time &gt; #{startTime}" +
@@ -433,7 +434,8 @@ public interface WarningGroupDAO {
                     "    left join all_user au on au.id = t3.id" +
                     "    where t1.delete=false" +
                     "        <if test='keyword != null and keyword != \"\"'>" +
-                    "    and t1.name like concat('%',#{params.query},'%') ESCAPE '/'" +
+                    "    and (t1.name like concat('%',#{keyword},'%') ESCAPE '/'" +
+                    "              or concat(t6.name,'校验') like concat('%',#{keyword},'%') ESCAPE '/')" +
                     "        </if>" +
                     "        <if test='startTime != null'>" +
                     "            and t3.create_time &gt; #{startTime}" +
