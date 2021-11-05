@@ -738,4 +738,7 @@ public interface DatabaseInfoDAO {
             "WHERE \n" +
             "s.data_source_id=#{sourceId} and db.database_name=#{dbName} and  s.version = 0 \n")
     List<DatabaseInfoBO> getDatabaseInfoByDatabaseName(@Param("dbName") String dbName, @Param("sourceId") String sourceId);
+
+    @Select("select case when count(*) > 0 then true else false end from source_info where id = #{id} and version = 0 and status in ('1', '3')")
+    boolean auditStatusIsApprove(String id);
 }
