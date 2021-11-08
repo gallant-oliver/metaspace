@@ -1109,7 +1109,7 @@ public class UserGroupService {
         }
 
         ArrayList<String> categorList = Lists.newArrayList(category.getGuid());
-        List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getChildCategoriesPrivileges(categorList,userGroupId, category.getType(), tenantId);
+        List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getParentCategoriesPrivileges(categorList, userGroupId, category.getType(), tenantId);
         List<String> updateCategory = new ArrayList<>();
         List<String> insertCategory = new ArrayList<>();
         for (CategoryPrivilegeV2 childCategory:childCategoriesPrivileges){
@@ -1154,7 +1154,7 @@ public class UserGroupService {
         if (parentCategory==null||parentCategory.getRead()==null){
             return;
         }
-        if (parentCategory.getRead()&&!category.getRead()){
+       /* if (parentCategory.getRead()&&!category.getRead()){
             category.setRead(true);
         }
         if (parentCategory.getEditCategory()&&!category.getEditCategory()){
@@ -1162,7 +1162,7 @@ public class UserGroupService {
         }
         if (parentCategory.getEditItem()&&!category.getEditItem()){
             category.setEditItem(true);
-        }
+        }*/
     }
 
     /**
