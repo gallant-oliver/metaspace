@@ -85,7 +85,7 @@ public class ApiREST {
             emails = new ArrayList<>();
         }
         String[] emailsArg = new String[emails.size()];
-        NoticeCenterUtil.sendEmail(null, null, mailRequest.getContent(), emailsArg);
+        NoticeCenterUtil.sendEmail(null, null, mailRequest.getContent(), emails.toArray(emailsArg));
         return ReturnUtil.success();
     }
 }
