@@ -1181,9 +1181,43 @@ public class MetaDataREST {
     @Path("/rdbms/table/{tableId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public RDBMSTable getTableInfoById(@QueryParam("bizTreeId")String bizTreeId,@PathParam("tableId") String tableId,
+    public RDBMSTable getTableInfoById(@PathParam("tableId") String tableId,
+                                       @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") @DefaultValue("") String sourceId) throws AtlasBaseException {
+
+        RDBMSTable table = metadataService.getRDBMSTableInfoById(tableId, tenantId,sourceId);
+        if(StringUtils.isNotBlank(sourceId)){
+            if("hive".equalsIgnoreCase(sourceId)){
+                table.setSourceType("HIVE");
+            }else{
+                DataSourceInfo dataSourceInfo = dataSourceService.getDataSourceInfo(sourceId);
+                if(null != dataSourceInfo){
+                    table.setSourceType(dataSourceInfo.getSourceType().toUpperCase());
+                    table.setSourceName(dataSourceInfo.getSourceName());
+                }
+            }
+        }
+        table.setTenantId(tenantId);
+        table.setSourceId(sourceId);
+        table.setSourceTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),"",""));
+        table.setDbTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),table.getDatabaseId(),""));
+        return table;
+    }
+
+
+    /**
+     * 获取表详情-公共租户
+     *
+     * @param tableId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/public/rdbms/table/{tableId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public RDBMSTable getTableInfoByIdGlobal(@QueryParam("bizTreeId")String bizTreeId,@PathParam("tableId") String tableId,
                                        @HeaderParam("tenantId") String tenantId, @QueryParam("sourceId") @DefaultValue("") String sourceId,
-                                        @QueryParam("currentTenantId")String currentTenantId) throws AtlasBaseException {
+                                       @QueryParam("currentTenantId")String currentTenantId) throws AtlasBaseException {
         if(StringUtils.isNotBlank(currentTenantId)){
             tenantId = currentTenantId;
         }else{
@@ -1195,7 +1229,7 @@ public class MetaDataREST {
             }
         }
 
-        RDBMSTable table = metadataService.getRDBMSTableInfoById(tableId, tenantId,sourceId);
+        RDBMSTable table = metadataService.getRDBMSTableInfoByIdGlobal(tableId, tenantId,sourceId);
         if(StringUtils.isNotBlank(sourceId)){
             if("hive".equalsIgnoreCase(sourceId)){
                 table.setSourceType("HIVE");
