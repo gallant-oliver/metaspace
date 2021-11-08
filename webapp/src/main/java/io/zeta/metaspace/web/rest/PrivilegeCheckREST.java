@@ -33,7 +33,24 @@ public class PrivilegeCheckREST {
     @Path("/metadata/table/{guid}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Table getTableInfoById(@QueryParam("bizTreeId")String bizTreeId,@PathParam("guid") String guid, @HeaderParam("tenantId")String tenantId,
+    public Table getTableInfoById(@PathParam("guid") String guid, @HeaderParam("tenantId")String tenantId,
+                                  @RequestParam("sourceId")@DefaultValue("") String sourceId) throws AtlasBaseException {
+        return metaDataService.getTableInfoById(guid,tenantId, sourceId);
+    }
+
+
+    /**
+     * 获取表详情-公共租户
+     *
+     * @param guid
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/public/metadata/table/{guid}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Table getTableInfoByIdGlobal(@QueryParam("bizTreeId")String bizTreeId,@PathParam("guid") String guid, @HeaderParam("tenantId")String tenantId,
                                   @RequestParam("sourceId")@DefaultValue("") String sourceId,
                                   @QueryParam("currentTenantId")String currentTenantId) throws AtlasBaseException {
         if(StringUtils.isNotBlank(currentTenantId)){
@@ -46,7 +63,7 @@ public class PrivilegeCheckREST {
                 }
             }
         }
-        return metaDataService.getTableInfoById(guid,tenantId, sourceId);
+        return metaDataService.getTableInfoByIdGlobal(guid,tenantId, sourceId);
     }
 
     /**
