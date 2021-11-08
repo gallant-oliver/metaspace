@@ -1,18 +1,18 @@
 /*
  Navicat Premium Data Transfer
 
- Source Server         : 数据管理
+ Source Server         : 单测-postgres
  Source Server Type    : PostgreSQL
- Source Server Version : 100010
- Source Host           : 10.200.64.116:5432
+ Source Server Version : 100005
+ Source Host           : 10.200.200.178:5432
  Source Catalog        : metaspace_test
  Source Schema         : public
 
  Target Server Type    : PostgreSQL
- Target Server Version : 100010
+ Target Server Version : 100005
  File Encoding         : 65001
 
- Date: 23/09/2021 10:05:04
+ Date: 08/11/2021 15:05:08
 */
 
 
@@ -20,7 +20,7 @@
 -- Sequence structure for number_seq
 -- ----------------------------
 DROP SEQUENCE IF EXISTS "public"."number_seq";
-CREATE SEQUENCE "public"."number_seq" 
+CREATE SEQUENCE "public"."number_seq"
 INCREMENT 1
 MINVALUE  1
 MAXVALUE 9223372036854775807
@@ -45,7 +45,10 @@ COMMENT ON COLUMN "public"."annex"."annex_id" IS '主键';
 COMMENT ON COLUMN "public"."annex"."file_name" IS '文件名';
 COMMENT ON COLUMN "public"."annex"."file_type" IS '文件类型';
 COMMENT ON COLUMN "public"."annex"."path" IS '文件地址';
+COMMENT ON COLUMN "public"."annex"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."annex"."modify_time" IS '修改时间';
 COMMENT ON COLUMN "public"."annex"."file_size" IS '文件大小';
+COMMENT ON TABLE "public"."annex" IS '附件信息表';
 
 -- ----------------------------
 -- Table structure for api
@@ -118,6 +121,7 @@ COMMENT ON COLUMN "public"."api"."projectid" IS '项目id';
 COMMENT ON COLUMN "public"."api"."valid" IS '是否删除';
 COMMENT ON COLUMN "public"."api"."mobius_id" IS '云平台id';
 COMMENT ON COLUMN "public"."api"."api_poly_entity" IS '初始策略';
+COMMENT ON TABLE "public"."api" IS '接口信息表';
 
 -- ----------------------------
 -- Table structure for api_audit
@@ -150,7 +154,9 @@ COMMENT ON COLUMN "public"."api_audit"."reason" IS '驳回原因';
 COMMENT ON COLUMN "public"."api_audit"."tenant_id" IS '租户id';
 COMMENT ON COLUMN "public"."api_audit"."applicant_name" IS '申请人名称';
 COMMENT ON COLUMN "public"."api_audit"."updater" IS '更新人 Id';
+COMMENT ON COLUMN "public"."api_audit"."api_version_num" IS 'api版本序列号';
 COMMENT ON COLUMN "public"."api_audit"."api_poly_id" IS 'api策略id';
+COMMENT ON TABLE "public"."api_audit" IS '接口审核记录表';
 
 -- ----------------------------
 -- Table structure for api_category
@@ -176,10 +182,12 @@ COMMENT ON COLUMN "public"."api_category"."name" IS '名字';
 COMMENT ON COLUMN "public"."api_category"."upbrothercategoryguid" IS '同级上层目录';
 COMMENT ON COLUMN "public"."api_category"."downbrothercategoryguid" IS '同级上层目录';
 COMMENT ON COLUMN "public"."api_category"."parentcategoryguid" IS '父目录';
+COMMENT ON COLUMN "public"."api_category"."qualifiedname" IS '多层级目录名称';
 COMMENT ON COLUMN "public"."api_category"."projectid" IS '项目id';
 COMMENT ON COLUMN "public"."api_category"."tenantid" IS '租户';
 COMMENT ON COLUMN "public"."api_category"."level" IS '级别';
 COMMENT ON COLUMN "public"."api_category"."createtime" IS '创建时间';
+COMMENT ON TABLE "public"."api_category" IS '接口目录表';
 
 -- ----------------------------
 -- Table structure for api_group
@@ -212,6 +220,7 @@ COMMENT ON COLUMN "public"."api_group"."updatetime" IS '更新时间时间';
 COMMENT ON COLUMN "public"."api_group"."tenantid" IS '租户id';
 COMMENT ON COLUMN "public"."api_group"."projectid" IS '项目id';
 COMMENT ON COLUMN "public"."api_group"."mobius_id" IS '云平台id';
+COMMENT ON TABLE "public"."api_group" IS '接口分组信息表';
 
 -- ----------------------------
 -- Table structure for api_group_log
@@ -224,6 +233,11 @@ CREATE TABLE "public"."api_group_log" (
   "time" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."api_group_log"."group_id" IS '分组id';
+COMMENT ON COLUMN "public"."api_group_log"."type" IS '操作类型：insert，publish，unpublish，update，uplevel';
+COMMENT ON COLUMN "public"."api_group_log"."userid" IS '操作人id';
+COMMENT ON COLUMN "public"."api_group_log"."time" IS '操作时间';
+COMMENT ON TABLE "public"."api_group_log" IS '接口分组日志信息表';
 
 -- ----------------------------
 -- Table structure for api_log
@@ -240,6 +254,7 @@ COMMENT ON COLUMN "public"."api_log"."apiid" IS 'apiid';
 COMMENT ON COLUMN "public"."api_log"."type" IS '操作类型';
 COMMENT ON COLUMN "public"."api_log"."userid" IS '操作人';
 COMMENT ON COLUMN "public"."api_log"."time" IS '操作时间';
+COMMENT ON TABLE "public"."api_log" IS '接口操作日志表';
 
 -- ----------------------------
 -- Table structure for api_module
@@ -252,6 +267,11 @@ CREATE TABLE "public"."api_module" (
   "prefix_check" bool
 )
 ;
+COMMENT ON COLUMN "public"."api_module"."path" IS '接口url';
+COMMENT ON COLUMN "public"."api_module"."method" IS '接口类型';
+COMMENT ON COLUMN "public"."api_module"."module_id" IS '模块id';
+COMMENT ON COLUMN "public"."api_module"."prefix_check" IS '是否校验';
+COMMENT ON TABLE "public"."api_module" IS '接口模块关联表';
 
 -- ----------------------------
 -- Table structure for api_poly
@@ -274,6 +294,7 @@ COMMENT ON COLUMN "public"."api_poly"."poly" IS '策略详情';
 COMMENT ON COLUMN "public"."api_poly"."status" IS '审核状态';
 COMMENT ON COLUMN "public"."api_poly"."create_time" IS '创建时间';
 COMMENT ON COLUMN "public"."api_poly"."update_time" IS '升级时间';
+COMMENT ON TABLE "public"."api_poly" IS '接口策略信息关联信息';
 
 -- ----------------------------
 -- Table structure for api_relation
@@ -292,6 +313,7 @@ COMMENT ON COLUMN "public"."api_relation"."groupid" IS '分组id';
 COMMENT ON COLUMN "public"."api_relation"."version" IS '关联api版本';
 COMMENT ON COLUMN "public"."api_relation"."update_status" IS '更新状态';
 COMMENT ON COLUMN "public"."api_relation"."update_time" IS '更新时间开始时间';
+COMMENT ON TABLE "public"."api_relation" IS '接口分组关联表';
 
 -- ----------------------------
 -- Table structure for apigroup
@@ -309,6 +331,16 @@ CREATE TABLE "public"."apigroup" (
   "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."apigroup"."guid" IS '分组id';
+COMMENT ON COLUMN "public"."apigroup"."name" IS '分组名字';
+COMMENT ON COLUMN "public"."apigroup"."parentguid" IS '父目录id';
+COMMENT ON COLUMN "public"."apigroup"."description" IS '描述';
+COMMENT ON COLUMN "public"."apigroup"."generator" IS '创建者';
+COMMENT ON COLUMN "public"."apigroup"."generatetime" IS '创建时间';
+COMMENT ON COLUMN "public"."apigroup"."updater" IS '更新人';
+COMMENT ON COLUMN "public"."apigroup"."updatetime" IS '更新时间';
+COMMENT ON COLUMN "public"."apigroup"."tenantid" IS '租户id';
+COMMENT ON TABLE "public"."apigroup" IS '接口分组表';
 
 -- ----------------------------
 -- Table structure for apiinfo
@@ -346,6 +378,36 @@ CREATE TABLE "public"."apiinfo" (
   "pool" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."apiinfo"."guid" IS 'apiid';
+COMMENT ON COLUMN "public"."apiinfo"."name" IS 'api名字';
+COMMENT ON COLUMN "public"."apiinfo"."tableguid" IS '表id';
+COMMENT ON COLUMN "public"."apiinfo"."dbguid" IS '库id';
+COMMENT ON COLUMN "public"."apiinfo"."keeper" IS '创建人';
+COMMENT ON COLUMN "public"."apiinfo"."maxrownumber" IS '最大行数';
+COMMENT ON COLUMN "public"."apiinfo"."fields" IS '返回的字段';
+COMMENT ON COLUMN "public"."apiinfo"."version" IS '版本';
+COMMENT ON COLUMN "public"."apiinfo"."description" IS '描述';
+COMMENT ON COLUMN "public"."apiinfo"."protocol" IS '请求类型';
+COMMENT ON COLUMN "public"."apiinfo"."requestmode" IS '请求方式';
+COMMENT ON COLUMN "public"."apiinfo"."returntype" IS '返回类型';
+COMMENT ON COLUMN "public"."apiinfo"."path" IS '地址';
+COMMENT ON COLUMN "public"."apiinfo"."generatetime" IS '创建时间';
+COMMENT ON COLUMN "public"."apiinfo"."updater" IS '更新人';
+COMMENT ON COLUMN "public"."apiinfo"."updatetime" IS '更新时间';
+COMMENT ON COLUMN "public"."apiinfo"."groupguid" IS '分组id';
+COMMENT ON COLUMN "public"."apiinfo"."star" IS '是否重要';
+COMMENT ON COLUMN "public"."apiinfo"."publish" IS '发布';
+COMMENT ON COLUMN "public"."apiinfo"."used_count" IS '使用count';
+COMMENT ON COLUMN "public"."apiinfo"."manager" IS '管理者';
+COMMENT ON COLUMN "public"."apiinfo"."desensitize" IS '是否敏感';
+COMMENT ON COLUMN "public"."apiinfo"."sourcetype" IS '数据源类型';
+COMMENT ON COLUMN "public"."apiinfo"."schemaname" IS 'schema名字';
+COMMENT ON COLUMN "public"."apiinfo"."tablename" IS '表名字';
+COMMENT ON COLUMN "public"."apiinfo"."dbname" IS '库名字';
+COMMENT ON COLUMN "public"."apiinfo"."sourceid" IS '数据源id';
+COMMENT ON COLUMN "public"."apiinfo"."tenantid" IS '租户id';
+COMMENT ON COLUMN "public"."apiinfo"."pool" IS '资源池';
+COMMENT ON TABLE "public"."apiinfo" IS '接口信息表';
 
 -- ----------------------------
 -- Table structure for approval_group
@@ -363,6 +425,16 @@ CREATE TABLE "public"."approval_group" (
   "valid" bool
 )
 ;
+COMMENT ON COLUMN "public"."approval_group"."id" IS '审批组ID';
+COMMENT ON COLUMN "public"."approval_group"."name" IS '审批组名称';
+COMMENT ON COLUMN "public"."approval_group"."description" IS '描述';
+COMMENT ON COLUMN "public"."approval_group"."creator" IS '创建人';
+COMMENT ON COLUMN "public"."approval_group"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."approval_group"."updater" IS '更新人';
+COMMENT ON COLUMN "public"."approval_group"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."approval_group"."tenantid" IS '租户ID';
+COMMENT ON COLUMN "public"."approval_group"."valid" IS '有效';
+COMMENT ON TABLE "public"."approval_group" IS '审批组信息';
 
 -- ----------------------------
 -- Table structure for approval_group_module_relation
@@ -373,6 +445,9 @@ CREATE TABLE "public"."approval_group_module_relation" (
   "module_id" varchar COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."approval_group_module_relation"."group_id" IS '审批组ID';
+COMMENT ON COLUMN "public"."approval_group_module_relation"."module_id" IS '模块ID';
+COMMENT ON TABLE "public"."approval_group_module_relation" IS '审批组模块关联表';
 
 -- ----------------------------
 -- Table structure for approval_group_relation
@@ -383,6 +458,9 @@ CREATE TABLE "public"."approval_group_relation" (
   "user_id" varchar(40) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."approval_group_relation"."group_id" IS '审批组ID';
+COMMENT ON COLUMN "public"."approval_group_relation"."user_id" IS '用户ID';
+COMMENT ON TABLE "public"."approval_group_relation" IS '审批组用户关系表';
 
 -- ----------------------------
 -- Table structure for approval_item
@@ -406,6 +484,22 @@ CREATE TABLE "public"."approval_item" (
   "tenant_id" varchar COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."approval_item"."id" IS '审批项ID';
+COMMENT ON COLUMN "public"."approval_item"."object_id" IS '送审对象ID';
+COMMENT ON COLUMN "public"."approval_item"."object_name" IS '送审对象名称';
+COMMENT ON COLUMN "public"."approval_item"."business_type" IS '业务类型编码';
+COMMENT ON COLUMN "public"."approval_item"."approve_type" IS '审核类型';
+COMMENT ON COLUMN "public"."approval_item"."status" IS '审核状态';
+COMMENT ON COLUMN "public"."approval_item"."approve_group" IS '审批组';
+COMMENT ON COLUMN "public"."approval_item"."approver" IS '审批人';
+COMMENT ON COLUMN "public"."approval_item"."approve_time" IS '审批时间';
+COMMENT ON COLUMN "public"."approval_item"."submitter" IS '提交人';
+COMMENT ON COLUMN "public"."approval_item"."commit_time" IS '送审时间';
+COMMENT ON COLUMN "public"."approval_item"."reason" IS '驳回原因';
+COMMENT ON COLUMN "public"."approval_item"."module_id" IS '模块ID';
+COMMENT ON COLUMN "public"."approval_item"."version" IS '版本';
+COMMENT ON COLUMN "public"."approval_item"."tenant_id" IS '租户ID';
+COMMENT ON TABLE "public"."approval_item" IS '审批记录表';
 
 -- ----------------------------
 -- Table structure for atom_indicator
@@ -444,6 +538,7 @@ CREATE TABLE "public"."atom_indicator_apply" (
   "audit_status" int4,
   "apply_status" int4,
   "apply_atom_indicator_id" int8,
+  "apply_group_id" varchar(255) COLLATE "pg_catalog"."default",
   "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
   "create_time" timestamp(6),
   "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
@@ -456,6 +551,7 @@ COMMENT ON COLUMN "public"."atom_indicator_apply"."atom_indicator_id" IS '原子
 COMMENT ON COLUMN "public"."atom_indicator_apply"."audit_status" IS '审批状态(1审批通过 2审批不通过 )';
 COMMENT ON COLUMN "public"."atom_indicator_apply"."apply_status" IS '申请状态(1发布申请 2取消发布申请 3发布申请撤销 4取消发布撤销)';
 COMMENT ON COLUMN "public"."atom_indicator_apply"."apply_atom_indicator_id" IS '审批中版本id';
+COMMENT ON COLUMN "public"."atom_indicator_apply"."apply_group_id" IS '审批组id';
 COMMENT ON COLUMN "public"."atom_indicator_apply"."create_user_id" IS '创建人';
 COMMENT ON COLUMN "public"."atom_indicator_apply"."create_time" IS '创建时间';
 COMMENT ON COLUMN "public"."atom_indicator_apply"."update_user_id" IS '更新人';
@@ -470,8 +566,10 @@ DROP TABLE IF EXISTS "public"."atom_indicator_logic";
 CREATE TABLE "public"."atom_indicator_logic" (
   "id" int8 NOT NULL,
   "atom_indicator_id" int8,
+  "dimension_metadata_relation_id" int8,
   "logic_type" int4,
   "indicator_type" varchar(100) COLLATE "pg_catalog"."default",
+  "indicator_measure" int4,
   "source_field" varchar(100) COLLATE "pg_catalog"."default",
   "field_alias" varchar(255) COLLATE "pg_catalog"."default",
   "data_type" varchar(255) COLLATE "pg_catalog"."default",
@@ -485,8 +583,10 @@ CREATE TABLE "public"."atom_indicator_logic" (
 ;
 COMMENT ON COLUMN "public"."atom_indicator_logic"."id" IS '主键id';
 COMMENT ON COLUMN "public"."atom_indicator_logic"."atom_indicator_id" IS '原子指标id';
+COMMENT ON COLUMN "public"."atom_indicator_logic"."dimension_metadata_relation_id" IS '维度映射id';
 COMMENT ON COLUMN "public"."atom_indicator_logic"."logic_type" IS '逻辑配置类型（1基于原子指标配置 2自定义sql）';
 COMMENT ON COLUMN "public"."atom_indicator_logic"."indicator_type" IS '类别（维度 度量）';
+COMMENT ON COLUMN "public"."atom_indicator_logic"."indicator_measure" IS '是否为指标度量(1是 0否)';
 COMMENT ON COLUMN "public"."atom_indicator_logic"."source_field" IS '源表字段';
 COMMENT ON COLUMN "public"."atom_indicator_logic"."field_alias" IS '源表字段别名（另存为）';
 COMMENT ON COLUMN "public"."atom_indicator_logic"."data_type" IS '数据类型';
@@ -526,7 +626,7 @@ CREATE TABLE "public"."atom_indicator_version" (
 ;
 COMMENT ON COLUMN "public"."atom_indicator_version"."id" IS '主键id';
 COMMENT ON COLUMN "public"."atom_indicator_version"."atom_indicator_id" IS '原子指标id';
-COMMENT ON COLUMN "public"."atom_indicator_version"."version_id" IS '原子指标版本号(0暂存版本 普通版本递增)';
+COMMENT ON COLUMN "public"."atom_indicator_version"."version_id" IS '原子指标版本号(0暂存版本 普通版本从1递增)';
 COMMENT ON COLUMN "public"."atom_indicator_version"."atom_indicator_code" IS '原子指标编码';
 COMMENT ON COLUMN "public"."atom_indicator_version"."atom_indicator_name" IS '原子指标名称';
 COMMENT ON COLUMN "public"."atom_indicator_version"."business_indicator_id" IS '业务指标id';
@@ -535,7 +635,7 @@ COMMENT ON COLUMN "public"."atom_indicator_version"."data_source_id" IS '数据�
 COMMENT ON COLUMN "public"."atom_indicator_version"."data_base_id" IS '数据库id';
 COMMENT ON COLUMN "public"."atom_indicator_version"."data_table_id" IS '数据表id';
 COMMENT ON COLUMN "public"."atom_indicator_version"."release_status" IS '发布状态(0未发布，1已发布，2审核中)';
-COMMENT ON COLUMN "public"."atom_indicator_version"."version_type" IS '版本类型(1发布版本 2暂存版本 3暂存)';
+COMMENT ON COLUMN "public"."atom_indicator_version"."version_type" IS '版本类型(1发布版本 2暂存版本 3待审核版本)';
 COMMENT ON COLUMN "public"."atom_indicator_version"."visible" IS '是否可见(0不可见 1可见)';
 COMMENT ON COLUMN "public"."atom_indicator_version"."release_time" IS '发布时间';
 COMMENT ON COLUMN "public"."atom_indicator_version"."create_user_id" IS '创建人';
@@ -551,9 +651,31 @@ COMMENT ON TABLE "public"."atom_indicator_version" IS '原子指标信息版本�
 DROP TABLE IF EXISTS "public"."business2table";
 CREATE TABLE "public"."business2table" (
   "businessid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-  "tableguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
+  "tableguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "relation_type" int2,
+  "source_id" varchar(64) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."business2table"."businessid" IS '业务对象ID';
+COMMENT ON COLUMN "public"."business2table"."tableguid" IS '数据表ID';
+COMMENT ON COLUMN "public"."business2table"."relation_type" IS '关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表';
+COMMENT ON COLUMN "public"."business2table"."source_id" IS '数据源id';
+COMMENT ON TABLE "public"."business2table" IS '业务对象和数据表映射关系表';
+
+-- ----------------------------
+-- Table structure for business_2_group
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."business_2_group";
+CREATE TABLE "public"."business_2_group" (
+  "business_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "group_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "read" bool
+)
+;
+COMMENT ON COLUMN "public"."business_2_group"."business_id" IS '业务对象id';
+COMMENT ON COLUMN "public"."business_2_group"."group_id" IS '可见用户id';
+COMMENT ON COLUMN "public"."business_2_group"."read" IS '查看权限';
+COMMENT ON TABLE "public"."business_2_group" IS '业务对象和用户组权限关系表';
 
 -- ----------------------------
 -- Table structure for business_catalog
@@ -586,6 +708,7 @@ COMMENT ON COLUMN "public"."business_catalog"."role_group" IS '可访问角色�
 COMMENT ON COLUMN "public"."business_catalog"."description" IS '描述';
 COMMENT ON COLUMN "public"."business_catalog"."deleted" IS '是否删除';
 COMMENT ON COLUMN "public"."business_catalog"."tenant_id" IS '租户id';
+COMMENT ON TABLE "public"."business_catalog" IS '业务目录表';
 
 -- ----------------------------
 -- Table structure for business_catalog_log
@@ -612,6 +735,7 @@ COMMENT ON COLUMN "public"."business_catalog_log"."audit_user_id" IS '审批人i
 COMMENT ON COLUMN "public"."business_catalog_log"."audit_pass_time" IS '审批通过时间';
 COMMENT ON COLUMN "public"."business_catalog_log"."description" IS '描述';
 COMMENT ON COLUMN "public"."business_catalog_log"."tenant_id" IS '租户id';
+COMMENT ON TABLE "public"."business_catalog_log" IS '业务目录日志表';
 
 -- ----------------------------
 -- Table structure for business_index_tag_relations
@@ -628,6 +752,36 @@ COMMENT ON COLUMN "public"."business_index_tag_relations"."id" IS '业务指标�
 COMMENT ON COLUMN "public"."business_index_tag_relations"."business_indicator_id" IS '业务指标ID';
 COMMENT ON COLUMN "public"."business_index_tag_relations"."tag_id" IS '标签ID';
 COMMENT ON COLUMN "public"."business_index_tag_relations"."deleted" IS '删除标记（1：启用，0：删除）';
+COMMENT ON TABLE "public"."business_index_tag_relations" IS '业务指标标签关联表';
+
+-- ----------------------------
+-- Table structure for business_indicator_apply
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."business_indicator_apply";
+CREATE TABLE "public"."business_indicator_apply" (
+  "id" int8 NOT NULL,
+  "business_indicator_id" int8,
+  "audit_status" int4,
+  "apply_status" int4,
+  "apply_group_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4
+)
+;
+COMMENT ON COLUMN "public"."business_indicator_apply"."id" IS '主键id';
+COMMENT ON COLUMN "public"."business_indicator_apply"."business_indicator_id" IS '审批中业务指标id';
+COMMENT ON COLUMN "public"."business_indicator_apply"."audit_status" IS '审批状态(1审批通过 2审批不通过 )';
+COMMENT ON COLUMN "public"."business_indicator_apply"."apply_status" IS '申请状态(1发布申请 2取消发布申请 3发布申请撤销 4取消发布撤销)';
+COMMENT ON COLUMN "public"."business_indicator_apply"."apply_group_id" IS '审批组id';
+COMMENT ON COLUMN "public"."business_indicator_apply"."create_user_id" IS '创建人';
+COMMENT ON COLUMN "public"."business_indicator_apply"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."business_indicator_apply"."update_user_id" IS '更新人';
+COMMENT ON COLUMN "public"."business_indicator_apply"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."business_indicator_apply"."deleted" IS '逻辑删除位(0已删除 1未删除)';
+COMMENT ON TABLE "public"."business_indicator_apply" IS '业务指标申请表';
 
 -- ----------------------------
 -- Table structure for business_indicators
@@ -637,14 +791,18 @@ CREATE TABLE "public"."business_indicators" (
   "id" int8 NOT NULL,
   "business_indicator_name" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
   "business_indicator_coding" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-  "indicator_group" int8 NOT NULL,
+  "indicator_group" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
   "business_indicator_cal" varchar(100) COLLATE "pg_catalog"."default",
+  "business_implication" varchar(500) COLLATE "pg_catalog"."default",
+  "business_parent_id" int8,
+  "business_parent_name" varchar(255) COLLATE "pg_catalog"."default",
   "remark" varchar(500) COLLATE "pg_catalog"."default",
   "design_formulas" varchar(500) COLLATE "pg_catalog"."default",
   "statistical_cycle" varchar(100) COLLATE "pg_catalog"."default",
   "refresh_rate" varchar(100) COLLATE "pg_catalog"."default",
   "statistical_dimension" varchar(100) COLLATE "pg_catalog"."default",
   "technical_indicator" int8,
+  "technical_indicator_type" int4,
   "measurement_object" varchar(100) COLLATE "pg_catalog"."default",
   "technical_unit" varchar(100) COLLATE "pg_catalog"."default",
   "data_precision" int4,
@@ -661,20 +819,25 @@ CREATE TABLE "public"."business_indicators" (
   "update_time" timestamp(6),
   "update_user_id" varchar(64) COLLATE "pg_catalog"."default",
   "deleted" int4 NOT NULL DEFAULT 1,
-  "business_implication" varchar(500) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
+  "temporary_relese" int4
 )
 ;
-COMMENT ON COLUMN "public"."business_indicators"."id" IS '业务指标ID，自增';
+COMMENT ON COLUMN "public"."business_indicators"."id" IS '业务指标ID';
 COMMENT ON COLUMN "public"."business_indicators"."business_indicator_name" IS '业务指标名称';
 COMMENT ON COLUMN "public"."business_indicators"."business_indicator_coding" IS '业务指标编码';
 COMMENT ON COLUMN "public"."business_indicators"."indicator_group" IS '业务指标组';
 COMMENT ON COLUMN "public"."business_indicators"."business_indicator_cal" IS '指标口径';
+COMMENT ON COLUMN "public"."business_indicators"."business_implication" IS '指标含义';
+COMMENT ON COLUMN "public"."business_indicators"."business_parent_id" IS '上级指标ID（已经发布的业务指标）';
+COMMENT ON COLUMN "public"."business_indicators"."business_parent_name" IS '上级指标名称（展示：指标名称（指标口径））';
 COMMENT ON COLUMN "public"."business_indicators"."remark" IS '备注';
 COMMENT ON COLUMN "public"."business_indicators"."design_formulas" IS '技术公式';
 COMMENT ON COLUMN "public"."business_indicators"."statistical_cycle" IS '统计周期（当前仅支持每日、每周、每月）';
 COMMENT ON COLUMN "public"."business_indicators"."refresh_rate" IS '刷新频率（每时、12小时、每日、每月）';
 COMMENT ON COLUMN "public"."business_indicators"."statistical_dimension" IS '统计维度。选项为指标维度管理中已配置的维度（忽略业务指标统计维度与技术指标维度不同的情况）';
 COMMENT ON COLUMN "public"."business_indicators"."technical_indicator" IS '技术指标（单选，选项为技术指标中已发布的技术指标）';
+COMMENT ON COLUMN "public"."business_indicators"."technical_indicator_type" IS '技术指标类别（1：原生指标，2：衍生指标，3：复合指标）';
 COMMENT ON COLUMN "public"."business_indicators"."measurement_object" IS '测量对象';
 COMMENT ON COLUMN "public"."business_indicators"."technical_unit" IS '计量单位';
 COMMENT ON COLUMN "public"."business_indicators"."data_precision" IS '数据精度（当前仅支持小数点后0、1、2、3、4位小数）';
@@ -691,7 +854,86 @@ COMMENT ON COLUMN "public"."business_indicators"."create_user_id" IS '创建的�
 COMMENT ON COLUMN "public"."business_indicators"."update_time" IS '修改时间';
 COMMENT ON COLUMN "public"."business_indicators"."update_user_id" IS '修改的用户ID';
 COMMENT ON COLUMN "public"."business_indicators"."deleted" IS '是否启用（1：启用，0：删除）';
-COMMENT ON COLUMN "public"."business_indicators"."business_implication" IS '指标含义';
+COMMENT ON COLUMN "public"."business_indicators"."tenant_id" IS '租户ID';
+COMMENT ON COLUMN "public"."business_indicators"."temporary_relese" IS '是否暂存发布版本（1：标记暂存发布版本，审核失败需要回退到上一发布版本，0/其它不是暂存发布）';
+COMMENT ON TABLE "public"."business_indicators" IS '业务指标表';
+
+-- ----------------------------
+-- Table structure for business_indicators_history
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."business_indicators_history";
+CREATE TABLE "public"."business_indicators_history" (
+  "id" int8 NOT NULL,
+  "business_indicator_name" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "business_indicator_coding" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "indicator_group" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "business_indicator_cal" varchar(100) COLLATE "pg_catalog"."default",
+  "remark" varchar(500) COLLATE "pg_catalog"."default",
+  "design_formulas" varchar(500) COLLATE "pg_catalog"."default",
+  "statistical_cycle" varchar(100) COLLATE "pg_catalog"."default",
+  "refresh_rate" varchar(100) COLLATE "pg_catalog"."default",
+  "statistical_dimension" varchar(255) COLLATE "pg_catalog"."default",
+  "technical_indicator" int8,
+  "measurement_object" varchar(100) COLLATE "pg_catalog"."default",
+  "technical_unit" varchar(100) COLLATE "pg_catalog"."default",
+  "data_precision" int4,
+  "is_secret" int4,
+  "secret_age" int4,
+  "is_important" int4,
+  "source_type" varchar(100) COLLATE "pg_catalog"."default",
+  "data_provider" varchar(100) COLLATE "pg_catalog"."default",
+  "attribute_management_department" varchar(100) COLLATE "pg_catalog"."default",
+  "operations_people" varchar(100) COLLATE "pg_catalog"."default",
+  "state" int4,
+  "create_time" timestamp(6),
+  "create_user_id" varchar(64) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "update_user_id" varchar(64) COLLATE "pg_catalog"."default",
+  "deleted" int4 NOT NULL DEFAULT 1,
+  "business_implication" varchar(500) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "business_parent_id" int8,
+  "business_parent_name" varchar(255) COLLATE "pg_catalog"."default",
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
+  "technical_indicator_type" int4,
+  "business_indicator_id" int8 NOT NULL,
+  "is_temporary" int4
+)
+;
+COMMENT ON COLUMN "public"."business_indicators_history"."id" IS '业务指标历史ID';
+COMMENT ON COLUMN "public"."business_indicators_history"."business_indicator_name" IS '业务指标名称';
+COMMENT ON COLUMN "public"."business_indicators_history"."business_indicator_coding" IS '业务指标编码';
+COMMENT ON COLUMN "public"."business_indicators_history"."indicator_group" IS '业务指标组';
+COMMENT ON COLUMN "public"."business_indicators_history"."business_indicator_cal" IS '指标口径';
+COMMENT ON COLUMN "public"."business_indicators_history"."remark" IS '备注';
+COMMENT ON COLUMN "public"."business_indicators_history"."design_formulas" IS '技术公式';
+COMMENT ON COLUMN "public"."business_indicators_history"."statistical_cycle" IS '统计周期（当前仅支持每日、每周、每月）';
+COMMENT ON COLUMN "public"."business_indicators_history"."refresh_rate" IS '刷新频率（每时、12小时、每日、每月）';
+COMMENT ON COLUMN "public"."business_indicators_history"."statistical_dimension" IS '统计维度。选项为指标维度管理中已配置的维度（忽略业务指标统计维度与技术指标维度不同的情况）';
+COMMENT ON COLUMN "public"."business_indicators_history"."technical_indicator" IS '技术指标（单选，选项为技术指标中已发布的技术指标）';
+COMMENT ON COLUMN "public"."business_indicators_history"."measurement_object" IS '测量对象';
+COMMENT ON COLUMN "public"."business_indicators_history"."technical_unit" IS '计量单位';
+COMMENT ON COLUMN "public"."business_indicators_history"."data_precision" IS '数据精度（当前仅支持小数点后0、1、2、3、4、5、6位小数）';
+COMMENT ON COLUMN "public"."business_indicators_history"."is_secret" IS '是否保密（0：否，1是）';
+COMMENT ON COLUMN "public"."business_indicators_history"."secret_age" IS '保密年限（选择保密时显示）';
+COMMENT ON COLUMN "public"."business_indicators_history"."is_important" IS '是否重要（0：否，1是）';
+COMMENT ON COLUMN "public"."business_indicators_history"."source_type" IS '指标来源类型';
+COMMENT ON COLUMN "public"."business_indicators_history"."data_provider" IS '数据提供方';
+COMMENT ON COLUMN "public"."business_indicators_history"."attribute_management_department" IS '业务归口管理部门';
+COMMENT ON COLUMN "public"."business_indicators_history"."operations_people" IS '运维负责人';
+COMMENT ON COLUMN "public"."business_indicators_history"."state" IS '状态（已成功1，未发布0，审核中2）';
+COMMENT ON COLUMN "public"."business_indicators_history"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."business_indicators_history"."create_user_id" IS '创建的用户ID';
+COMMENT ON COLUMN "public"."business_indicators_history"."update_time" IS '修改时间';
+COMMENT ON COLUMN "public"."business_indicators_history"."update_user_id" IS '修改的用户ID';
+COMMENT ON COLUMN "public"."business_indicators_history"."deleted" IS '是否启用（1：启用，0：删除）';
+COMMENT ON COLUMN "public"."business_indicators_history"."business_implication" IS '指标含义';
+COMMENT ON COLUMN "public"."business_indicators_history"."business_parent_id" IS '上级指标ID（已经发布的业务指标）';
+COMMENT ON COLUMN "public"."business_indicators_history"."business_parent_name" IS '上级指标名称（展示：指标名称（指标口径））';
+COMMENT ON COLUMN "public"."business_indicators_history"."tenant_id" IS '租户ID';
+COMMENT ON COLUMN "public"."business_indicators_history"."technical_indicator_type" IS '技术指标类别（1：原生指标，2：衍生指标，3：复合指标）';
+COMMENT ON COLUMN "public"."business_indicators_history"."business_indicator_id" IS '业务指标ID';
+COMMENT ON COLUMN "public"."business_indicators_history"."is_temporary" IS '是否暂存版本（1：暂存版本，0不是暂存）';
+COMMENT ON TABLE "public"."business_indicators_history" IS '业务指标历史表';
 
 -- ----------------------------
 -- Table structure for business_operation_records
@@ -706,12 +948,13 @@ CREATE TABLE "public"."business_operation_records" (
   "create_user_name" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
-COMMENT ON COLUMN "public"."business_operation_records"."id" IS '业务指标操作记录表';
+COMMENT ON COLUMN "public"."business_operation_records"."id" IS '业务指标操作记录表ID';
 COMMENT ON COLUMN "public"."business_operation_records"."business_indicator_id" IS '业务指标表ID';
 COMMENT ON COLUMN "public"."business_operation_records"."operations_records" IS '操作记录';
 COMMENT ON COLUMN "public"."business_operation_records"."create_user_id" IS '操作人ID（从sso获取的userinfo）';
 COMMENT ON COLUMN "public"."business_operation_records"."create_time" IS '操作时间';
 COMMENT ON COLUMN "public"."business_operation_records"."create_user_name" IS '操作人';
+COMMENT ON TABLE "public"."business_operation_records" IS '业务指标操作记录表';
 
 -- ----------------------------
 -- Table structure for business_relation
@@ -724,6 +967,59 @@ CREATE TABLE "public"."business_relation" (
   "generatetime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
+COMMENT ON COLUMN "public"."business_relation"."categoryguid" IS '目录id';
+COMMENT ON COLUMN "public"."business_relation"."relationshipguid" IS '关联关系id';
+COMMENT ON COLUMN "public"."business_relation"."businessid" IS '业务对象id';
+COMMENT ON COLUMN "public"."business_relation"."generatetime" IS '关联时间';
+COMMENT ON TABLE "public"."business_relation" IS '业务对象关联表';
+
+-- ----------------------------
+-- Table structure for business_tags
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."business_tags";
+CREATE TABLE "public"."business_tags" (
+  "id" int8 NOT NULL,
+  "tag_name" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
+)
+;
+COMMENT ON COLUMN "public"."business_tags"."id" IS '业务标签表ID';
+COMMENT ON COLUMN "public"."business_tags"."tag_name" IS '业务标签名称';
+COMMENT ON COLUMN "public"."business_tags"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."business_tags"."create_user_id" IS '创建的用户ID';
+COMMENT ON COLUMN "public"."business_tags"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."business_tags"."update_user_id" IS '更新的用户ID';
+COMMENT ON COLUMN "public"."business_tags"."deleted" IS '逻辑删除位(0已删除 1未删除)';
+COMMENT ON COLUMN "public"."business_tags"."tenant_id" IS '租户ID';
+COMMENT ON TABLE "public"."business_tags" IS '业务指标标签表';
+
+-- ----------------------------
+-- Table structure for business_unit
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."business_unit";
+CREATE TABLE "public"."business_unit" (
+  "id" int8 NOT NULL,
+  "technical_unit" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamp(6),
+  "create_user_id" varchar(64) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "update_user_id" varchar(64) COLLATE "pg_catalog"."default",
+  "deleted" int4
+)
+;
+COMMENT ON COLUMN "public"."business_unit"."id" IS '业务指标计量单位主键ID';
+COMMENT ON COLUMN "public"."business_unit"."technical_unit" IS '计量单位';
+COMMENT ON COLUMN "public"."business_unit"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."business_unit"."create_user_id" IS '创建的用户ID';
+COMMENT ON COLUMN "public"."business_unit"."update_time" IS '修改时间';
+COMMENT ON COLUMN "public"."business_unit"."update_user_id" IS '修改的用户ID';
+COMMENT ON COLUMN "public"."business_unit"."deleted" IS '是否启用（1：启用，0：删除）';
+COMMENT ON TABLE "public"."business_unit" IS '业务指标计量单位表';
 
 -- ----------------------------
 -- Table structure for businessinfo
@@ -750,9 +1046,47 @@ CREATE TABLE "public"."businessinfo" (
   "submissiontime" varchar COLLATE "pg_catalog"."default",
   "level2categoryid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "trusttable" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default",
+  "publish" bool,
+  "status" varchar(10) COLLATE "pg_catalog"."default",
+  "publish_desc" varchar(256) COLLATE "pg_catalog"."default",
+  "approve_group_id" varchar(64) COLLATE "pg_catalog"."default",
+  "approve_id" varchar(64) COLLATE "pg_catalog"."default",
+  "create_mode" int2,
+  "private_status" varchar(64) COLLATE "pg_catalog"."default",
+  "submitter_read" bool
 )
 ;
+COMMENT ON COLUMN "public"."businessinfo"."businessid" IS '业务对象id';
+COMMENT ON COLUMN "public"."businessinfo"."departmentid" IS '业务部门id';
+COMMENT ON COLUMN "public"."businessinfo"."name" IS '业务对象名称';
+COMMENT ON COLUMN "public"."businessinfo"."module" IS '业务模块';
+COMMENT ON COLUMN "public"."businessinfo"."description" IS '业务描述';
+COMMENT ON COLUMN "public"."businessinfo"."owner" IS '所有者';
+COMMENT ON COLUMN "public"."businessinfo"."manager" IS '管理者';
+COMMENT ON COLUMN "public"."businessinfo"."maintainer" IS '维护者';
+COMMENT ON COLUMN "public"."businessinfo"."dataassets" IS '相关数据资产';
+COMMENT ON COLUMN "public"."businessinfo"."businesslastupdate" IS '业务信息更新人';
+COMMENT ON COLUMN "public"."businessinfo"."businessoperator" IS '业务信息更新时间';
+COMMENT ON COLUMN "public"."businessinfo"."technicallastupdate" IS '技术信息更新人';
+COMMENT ON COLUMN "public"."businessinfo"."technicaloperator" IS '技术信息更新时间';
+COMMENT ON COLUMN "public"."businessinfo"."technicalstatus" IS '技术信息状态';
+COMMENT ON COLUMN "public"."businessinfo"."businessstatus" IS '业务信息状态';
+COMMENT ON COLUMN "public"."businessinfo"."submitter" IS '提交者';
+COMMENT ON COLUMN "public"."businessinfo"."ticketnumber" IS '业务对象标识';
+COMMENT ON COLUMN "public"."businessinfo"."submissiontime" IS '提交时间';
+COMMENT ON COLUMN "public"."businessinfo"."level2categoryid" IS '二级目录';
+COMMENT ON COLUMN "public"."businessinfo"."trusttable" IS '唯一信任表';
+COMMENT ON COLUMN "public"."businessinfo"."tenantid" IS '租户id';
+COMMENT ON COLUMN "public"."businessinfo"."publish" IS '发布开关';
+COMMENT ON COLUMN "public"."businessinfo"."status" IS '业务对象状态：0待发布，1待审批，2审核不通过，3审核通过';
+COMMENT ON COLUMN "public"."businessinfo"."publish_desc" IS '发布说明信息';
+COMMENT ON COLUMN "public"."businessinfo"."approve_group_id" IS '审批组id';
+COMMENT ON COLUMN "public"."businessinfo"."approve_id" IS '审批id';
+COMMENT ON COLUMN "public"."businessinfo"."create_mode" IS '创建方式：0手动添加，1上传文件';
+COMMENT ON COLUMN "public"."businessinfo"."private_status" IS '私密状态';
+COMMENT ON COLUMN "public"."businessinfo"."submitter_read" IS '是否创建人可见';
+COMMENT ON TABLE "public"."businessinfo" IS '业务对象表';
 
 -- ----------------------------
 -- Table structure for category
@@ -776,15 +1110,34 @@ CREATE TABLE "public"."category" (
   "updater" varchar COLLATE "pg_catalog"."default",
   "code" varchar COLLATE "pg_catalog"."default",
   "sort" int2,
-  "private_status" varchar(50) COLLATE "pg_catalog"."default" DEFAULT 'PUBLIC'::character varying
+  "private_status" varchar(50) COLLATE "pg_catalog"."default" DEFAULT 'PUBLIC'::character varying,
+  "publish" bool,
+  "information" text COLLATE "pg_catalog"."default",
+  "approval_id" varchar(64) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."category"."guid" IS '目录id';
+COMMENT ON COLUMN "public"."category"."description" IS '描述';
+COMMENT ON COLUMN "public"."category"."name" IS '名称';
+COMMENT ON COLUMN "public"."category"."upbrothercategoryguid" IS '上一个节点';
+COMMENT ON COLUMN "public"."category"."downbrothercategoryguid" IS '下一个节点';
+COMMENT ON COLUMN "public"."category"."parentcategoryguid" IS '父目录';
+COMMENT ON COLUMN "public"."category"."qualifiedname" IS '限定名';
+COMMENT ON COLUMN "public"."category"."categorytype" IS '目录类型';
+COMMENT ON COLUMN "public"."category"."level" IS '级别';
+COMMENT ON COLUMN "public"."category"."safe" IS '是否安全';
+COMMENT ON COLUMN "public"."category"."tenantid" IS '租户id';
+COMMENT ON COLUMN "public"."category"."createtime" IS '创建时间';
 COMMENT ON COLUMN "public"."category"."updatetime" IS '更新时间';
 COMMENT ON COLUMN "public"."category"."creator" IS '创建人';
 COMMENT ON COLUMN "public"."category"."updater" IS '更新人';
 COMMENT ON COLUMN "public"."category"."code" IS '编码';
 COMMENT ON COLUMN "public"."category"."sort" IS '排序';
 COMMENT ON COLUMN "public"."category"."private_status" IS '私密状态';
+COMMENT ON COLUMN "public"."category"."publish" IS '是否发布： t-已发布  f-未发布';
+COMMENT ON COLUMN "public"."category"."information" IS '审批组说明';
+COMMENT ON COLUMN "public"."category"."approval_id" IS '审批记录id';
+COMMENT ON TABLE "public"."category" IS '目录表';
 
 -- ----------------------------
 -- Table structure for category_group_relation
@@ -798,6 +1151,12 @@ CREATE TABLE "public"."category_group_relation" (
   "edit_item" bool
 )
 ;
+COMMENT ON COLUMN "public"."category_group_relation"."category_id" IS '目录id';
+COMMENT ON COLUMN "public"."category_group_relation"."group_id" IS '用户组id';
+COMMENT ON COLUMN "public"."category_group_relation"."read" IS '读权限';
+COMMENT ON COLUMN "public"."category_group_relation"."edit_category" IS '编辑目录权限';
+COMMENT ON COLUMN "public"."category_group_relation"."edit_item" IS '内容编辑权限';
+COMMENT ON TABLE "public"."category_group_relation" IS '目录关联用户组表';
 
 -- ----------------------------
 -- Table structure for code_annex_type
@@ -822,6 +1181,7 @@ CREATE TABLE "public"."code_source_info_status" (
 ;
 COMMENT ON COLUMN "public"."code_source_info_status"."code" IS '源信息状态码';
 COMMENT ON COLUMN "public"."code_source_info_status"."name" IS '源信息状态名';
+COMMENT ON TABLE "public"."code_source_info_status" IS '源信息字典表';
 
 -- ----------------------------
 -- Table structure for column_info
@@ -850,6 +1210,7 @@ COMMENT ON COLUMN "public"."column_info"."status" IS '字段状态';
 COMMENT ON COLUMN "public"."column_info"."type" IS '字段类型';
 COMMENT ON COLUMN "public"."column_info"."description" IS '字段描述';
 COMMENT ON COLUMN "public"."column_info"."partition_field" IS '是否为分区字段';
+COMMENT ON TABLE "public"."column_info" IS '数据列信息';
 
 -- ----------------------------
 -- Table structure for column_metadata_history
@@ -878,6 +1239,11 @@ COMMENT ON COLUMN "public"."column_metadata_history"."description" IS '描述';
 COMMENT ON COLUMN "public"."column_metadata_history"."version" IS '版本';
 COMMENT ON COLUMN "public"."column_metadata_history"."status" IS '状态';
 COMMENT ON COLUMN "public"."column_metadata_history"."partition_field" IS '是否为分区字段';
+COMMENT ON COLUMN "public"."column_metadata_history"."creator" IS '创建人';
+COMMENT ON COLUMN "public"."column_metadata_history"."updater" IS '更新人';
+COMMENT ON COLUMN "public"."column_metadata_history"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."column_metadata_history"."update_time" IS '更新时间';
+COMMENT ON TABLE "public"."column_metadata_history" IS '数据列信息历史记录';
 
 -- ----------------------------
 -- Table structure for column_tag
@@ -896,6 +1262,7 @@ COMMENT ON COLUMN "public"."column_tag"."name" IS '标签名';
 COMMENT ON COLUMN "public"."column_tag"."tenant_id" IS '创建租户id';
 COMMENT ON COLUMN "public"."column_tag"."create_time" IS '创建时间';
 COMMENT ON COLUMN "public"."column_tag"."modify_time" IS '修改时间';
+COMMENT ON TABLE "public"."column_tag" IS '数据列标签表';
 
 -- ----------------------------
 -- Table structure for column_tag_relation_to_column
@@ -910,6 +1277,97 @@ CREATE TABLE "public"."column_tag_relation_to_column" (
 COMMENT ON COLUMN "public"."column_tag_relation_to_column"."id" IS '关联主键';
 COMMENT ON COLUMN "public"."column_tag_relation_to_column"."column_id" IS '字段id';
 COMMENT ON COLUMN "public"."column_tag_relation_to_column"."tag_id" IS '字段id';
+COMMENT ON TABLE "public"."column_tag_relation_to_column" IS '数据列标签和列关联表';
+
+-- ----------------------------
+-- Table structure for composite_indicator
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."composite_indicator";
+CREATE TABLE "public"."composite_indicator" (
+  "id" int8 NOT NULL,
+  "composite_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
+  "composite_indicator_version_id" int8,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
+)
+;
+COMMENT ON COLUMN "public"."composite_indicator"."id" IS '主键id';
+COMMENT ON COLUMN "public"."composite_indicator"."composite_indicator_code" IS '复合指标编码';
+COMMENT ON COLUMN "public"."composite_indicator"."composite_indicator_version_id" IS '复合指标展示id';
+COMMENT ON COLUMN "public"."composite_indicator"."create_user_id" IS '创建人';
+COMMENT ON COLUMN "public"."composite_indicator"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."composite_indicator"."update_user_id" IS '更新人';
+COMMENT ON COLUMN "public"."composite_indicator"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."composite_indicator"."deleted" IS '逻辑删除位(0已删除 1未删除)';
+COMMENT ON COLUMN "public"."composite_indicator"."tenant_id" IS '租户id';
+COMMENT ON TABLE "public"."composite_indicator" IS '复合指标表';
+
+-- ----------------------------
+-- Table structure for composite_indicator_version
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."composite_indicator_version";
+CREATE TABLE "public"."composite_indicator_version" (
+  "id" int8 NOT NULL,
+  "composite_indicator_id" int8,
+  "version_id" int4,
+  "composite_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
+  "composite_indicator_name" varchar(100) COLLATE "pg_catalog"."default",
+  "business_indicators_id" int8,
+  "remark" varchar(500) COLLATE "pg_catalog"."default",
+  "logic_type" int4,
+  "data_source_id" varchar(100) COLLATE "pg_catalog"."default",
+  "data_base_id" varchar(100) COLLATE "pg_catalog"."default",
+  "dimension_metadata_relation_id" int8[],
+  "expression" jsonb,
+  "composite_indicator_sql" text COLLATE "pg_catalog"."default",
+  "schedule" int4,
+  "schedule_time" varchar(100) COLLATE "pg_catalog"."default",
+  "release_status" int4,
+  "version_type" int4,
+  "visible" int4,
+  "release_time" timestamp(6),
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
+  "dimension_id" int8[],
+  "threshold_setting" int4
+)
+;
+COMMENT ON COLUMN "public"."composite_indicator_version"."id" IS '主键id';
+COMMENT ON COLUMN "public"."composite_indicator_version"."composite_indicator_id" IS '复合指标id';
+COMMENT ON COLUMN "public"."composite_indicator_version"."version_id" IS '复合指标版本号(0暂存版本 普通版本从1递增)';
+COMMENT ON COLUMN "public"."composite_indicator_version"."composite_indicator_code" IS '复合指标编码';
+COMMENT ON COLUMN "public"."composite_indicator_version"."composite_indicator_name" IS '复合指标名称';
+COMMENT ON COLUMN "public"."composite_indicator_version"."business_indicators_id" IS '关联业务指标id';
+COMMENT ON COLUMN "public"."composite_indicator_version"."remark" IS '备注';
+COMMENT ON COLUMN "public"."composite_indicator_version"."logic_type" IS '逻辑配置类型（1基于指标配置 2自定义sql）';
+COMMENT ON COLUMN "public"."composite_indicator_version"."data_source_id" IS '数据源id';
+COMMENT ON COLUMN "public"."composite_indicator_version"."data_base_id" IS '数据库id';
+COMMENT ON COLUMN "public"."composite_indicator_version"."dimension_metadata_relation_id" IS '指标维度映射id';
+COMMENT ON COLUMN "public"."composite_indicator_version"."expression" IS '配置表达式 json格式实例 {"operation": "sum() + 100", "indicators": [{"index": 3, "indicatorId": 123456677771234, "indicatorType": 1}]}';
+COMMENT ON COLUMN "public"."composite_indicator_version"."composite_indicator_sql" IS '自定义sql';
+COMMENT ON COLUMN "public"."composite_indicator_version"."schedule" IS '调度周期(1每日 2每周 3每月)';
+COMMENT ON COLUMN "public"."composite_indicator_version"."schedule_time" IS '调度时间yyyy-MM-dd HH:mm';
+COMMENT ON COLUMN "public"."composite_indicator_version"."release_status" IS '发布状态(0未发布，1已发布，2审核中)';
+COMMENT ON COLUMN "public"."composite_indicator_version"."version_type" IS '版本类型(1发布版本 2暂存版本 3待审核版本)';
+COMMENT ON COLUMN "public"."composite_indicator_version"."visible" IS '是否可见(0不可见 1可见)';
+COMMENT ON COLUMN "public"."composite_indicator_version"."release_time" IS '发布时间';
+COMMENT ON COLUMN "public"."composite_indicator_version"."create_user_id" IS '创建人';
+COMMENT ON COLUMN "public"."composite_indicator_version"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."composite_indicator_version"."update_user_id" IS '更新人';
+COMMENT ON COLUMN "public"."composite_indicator_version"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."composite_indicator_version"."deleted" IS '逻辑删除位(0已删除 1未删除)';
+COMMENT ON COLUMN "public"."composite_indicator_version"."tenant_id" IS '租户id';
+COMMENT ON COLUMN "public"."composite_indicator_version"."dimension_id" IS '指标维度ID';
+COMMENT ON COLUMN "public"."composite_indicator_version"."threshold_setting" IS '阈值设置（0 未设置， 1 已设置）';
+COMMENT ON TABLE "public"."composite_indicator_version" IS '复合指标版本表';
 
 -- ----------------------------
 -- Table structure for connector
@@ -946,6 +1404,7 @@ COMMENT ON COLUMN "public"."connector"."is_deleted" IS '是否已删除';
 COMMENT ON COLUMN "public"."connector"."tasks_max" IS '最大任务数';
 COMMENT ON COLUMN "public"."connector"."db_fetch_size" IS '每次读取的条数';
 COMMENT ON COLUMN "public"."connector"."start_scn" IS '数据库初始日志时间戳';
+COMMENT ON TABLE "public"."connector" IS 'oracle连接表';
 
 -- ----------------------------
 -- Table structure for data_quality_rule
@@ -972,17 +1431,25 @@ CREATE TABLE "public"."data_quality_rule" (
   "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."data_quality_rule"."id" IS 'id';
 COMMENT ON COLUMN "public"."data_quality_rule"."rule_template_id" IS '规则模版id';
+COMMENT ON COLUMN "public"."data_quality_rule"."name" IS '名称';
 COMMENT ON COLUMN "public"."data_quality_rule"."code" IS '规则编码';
 COMMENT ON COLUMN "public"."data_quality_rule"."category_id" IS '分组id';
 COMMENT ON COLUMN "public"."data_quality_rule"."enable" IS '是否开启';
 COMMENT ON COLUMN "public"."data_quality_rule"."description" IS '描述';
 COMMENT ON COLUMN "public"."data_quality_rule"."check_type" IS '0-固定值,1-波动值';
 COMMENT ON COLUMN "public"."data_quality_rule"."check_expression_type" IS '校验表达式的类型,>=、=等的代码值';
+COMMENT ON COLUMN "public"."data_quality_rule"."creator" IS '创建人';
+COMMENT ON COLUMN "public"."data_quality_rule"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."data_quality_rule"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."data_quality_rule"."delete" IS '是否删除';
 COMMENT ON COLUMN "public"."data_quality_rule"."check_threshold_min_value" IS '校验阈值最小值';
 COMMENT ON COLUMN "public"."data_quality_rule"."check_threshold_max_value" IS '校验阈值最大值';
 COMMENT ON COLUMN "public"."data_quality_rule"."scope" IS '作用域';
 COMMENT ON COLUMN "public"."data_quality_rule"."check_threshold_unit" IS '单位';
+COMMENT ON COLUMN "public"."data_quality_rule"."tenantid" IS '租户id';
+COMMENT ON TABLE "public"."data_quality_rule" IS '数据质量规则表';
 
 -- ----------------------------
 -- Table structure for data_quality_rule_template
@@ -1006,10 +1473,22 @@ CREATE TABLE "public"."data_quality_rule_template" (
   "enable" bool
 )
 ;
+COMMENT ON COLUMN "public"."data_quality_rule_template"."name" IS '模板名称';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."scope" IS '范围';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."unit" IS '单位';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."description" IS '描述';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."delete" IS '是否删除';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."id" IS '主键id';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."rule_type" IS '规则类型';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."type" IS '类型';
 COMMENT ON COLUMN "public"."data_quality_rule_template"."tenantid" IS '租户id';
 COMMENT ON COLUMN "public"."data_quality_rule_template"."creator" IS '创建者';
+COMMENT ON COLUMN "public"."data_quality_rule_template"."code" IS '编号';
 COMMENT ON COLUMN "public"."data_quality_rule_template"."sql" IS '自定义规则的sql语句';
 COMMENT ON COLUMN "public"."data_quality_rule_template"."enable" IS '规则状态';
+COMMENT ON TABLE "public"."data_quality_rule_template" IS '数据质量规则模板';
 
 -- ----------------------------
 -- Table structure for data_quality_sub_task
@@ -1027,12 +1506,16 @@ CREATE TABLE "public"."data_quality_sub_task" (
   "config" varchar COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."data_quality_sub_task"."id" IS 'id';
 COMMENT ON COLUMN "public"."data_quality_sub_task"."task_id" IS '所属任务id';
 COMMENT ON COLUMN "public"."data_quality_sub_task"."datasource_type" IS '数据源类型:1-表,2-字段';
 COMMENT ON COLUMN "public"."data_quality_sub_task"."sequence" IS '子任务顺序';
+COMMENT ON COLUMN "public"."data_quality_sub_task"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."data_quality_sub_task"."update_time" IS '更新时间';
 COMMENT ON COLUMN "public"."data_quality_sub_task"."delete" IS '是否删除';
 COMMENT ON COLUMN "public"."data_quality_sub_task"."pool" IS '资源池';
 COMMENT ON COLUMN "public"."data_quality_sub_task"."config" IS 'spark配置';
+COMMENT ON TABLE "public"."data_quality_sub_task" IS '数据质量子任务';
 
 -- ----------------------------
 -- Table structure for data_quality_sub_task_object
@@ -1049,11 +1532,15 @@ CREATE TABLE "public"."data_quality_sub_task_object" (
   "task_id" varchar COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."data_quality_sub_task_object"."id" IS 'id';
 COMMENT ON COLUMN "public"."data_quality_sub_task_object"."subtask_id" IS '所属子任务id';
 COMMENT ON COLUMN "public"."data_quality_sub_task_object"."object_id" IS '表或字段id';
 COMMENT ON COLUMN "public"."data_quality_sub_task_object"."sequence" IS '数据源顺序';
+COMMENT ON COLUMN "public"."data_quality_sub_task_object"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."data_quality_sub_task_object"."update_time" IS '更新时间';
 COMMENT ON COLUMN "public"."data_quality_sub_task_object"."delete" IS '是否删除';
 COMMENT ON COLUMN "public"."data_quality_sub_task_object"."task_id" IS '所属任务id';
+COMMENT ON TABLE "public"."data_quality_sub_task_object" IS '数据质量子任务对象表';
 
 -- ----------------------------
 -- Table structure for data_quality_sub_task_rule
@@ -1083,19 +1570,28 @@ CREATE TABLE "public"."data_quality_sub_task_rule" (
   "check_threshold_unit" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."id" IS 'id';
 COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."subtask_id" IS '所属子任务id';
 COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."ruleid" IS '规则id';
 COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."check_threshold_min_value" IS '校验阈值最小值';
 COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."orange_check_type" IS '橙色校验类型';
 COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."orange_check_expression_type" IS '橙色校验表达式类型';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."red_check_type" IS '红色校验类型';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."red_check_expression_type" IS '红色校验表达式类型';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."red_warning_groupid" IS '红色告警分组编号';
 COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."sequence" IS '规则顺序';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."update_time" IS '更新时间';
 COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."delete" IS '是否删除';
 COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."orange_threshold_min_value" IS ' 橙色告警最小阈值';
 COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."orange_threshold_max_value" IS '橙色告警最大阈值';
 COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."red_threshold_min_value" IS '红色告警最小阈值';
 COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."red_threshold_max_value" IS '红色告警最大阈值';
 COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."check_threshold_max_value" IS '校验阈值最大值';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."check_type" IS '校验类型';
+COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."check_expression_type" IS '校验表达式类型';
 COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."check_threshold_unit" IS '单位';
+COMMENT ON TABLE "public"."data_quality_sub_task_rule" IS '数据质量子任务规则';
 
 -- ----------------------------
 -- Table structure for data_quality_task
@@ -1128,6 +1624,7 @@ CREATE TABLE "public"."data_quality_task" (
   "general_warning_total_count" int8 DEFAULT 0
 )
 ;
+COMMENT ON COLUMN "public"."data_quality_task"."id" IS '主键id';
 COMMENT ON COLUMN "public"."data_quality_task"."name" IS '任务名';
 COMMENT ON COLUMN "public"."data_quality_task"."level" IS '任务级别:1-普通,2-重要,3-非常重要';
 COMMENT ON COLUMN "public"."data_quality_task"."description" IS '任务描述';
@@ -1136,6 +1633,7 @@ COMMENT ON COLUMN "public"."data_quality_task"."enable" IS '是否启用';
 COMMENT ON COLUMN "public"."data_quality_task"."start_time" IS '开始时间';
 COMMENT ON COLUMN "public"."data_quality_task"."end_time" IS '结束时间';
 COMMENT ON COLUMN "public"."data_quality_task"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."data_quality_task"."update_time" IS '更新时间';
 COMMENT ON COLUMN "public"."data_quality_task"."creator" IS '创建人';
 COMMENT ON COLUMN "public"."data_quality_task"."delete" IS '是否删除';
 COMMENT ON COLUMN "public"."data_quality_task"."number" IS '任务ID';
@@ -1145,8 +1643,12 @@ COMMENT ON COLUMN "public"."data_quality_task"."orange_warning_total_count" IS '
 COMMENT ON COLUMN "public"."data_quality_task"."red_warning_total_count" IS '红色告警次数统计';
 COMMENT ON COLUMN "public"."data_quality_task"."error_total_count" IS '执行失败统计次数';
 COMMENT ON COLUMN "public"."data_quality_task"."updater" IS '修改人';
+COMMENT ON COLUMN "public"."data_quality_task"."current_execution_percent" IS '当前进度百分比';
 COMMENT ON COLUMN "public"."data_quality_task"."current_execution_status" IS '执行状态:1-执行中,2-成功,3-失败,0-待执行,4-取消';
+COMMENT ON COLUMN "public"."data_quality_task"."tenantid" IS '租户id';
+COMMENT ON COLUMN "public"."data_quality_task"."pool" IS '资源池';
 COMMENT ON COLUMN "public"."data_quality_task"."general_warning_total_count" IS '普通告警总数统计';
+COMMENT ON TABLE "public"."data_quality_task" IS '数据质量任务';
 
 -- ----------------------------
 -- Table structure for data_quality_task2warning_group
@@ -1158,6 +1660,10 @@ CREATE TABLE "public"."data_quality_task2warning_group" (
   "warning_type" int2 NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."data_quality_task2warning_group"."task_id" IS '任务id';
+COMMENT ON COLUMN "public"."data_quality_task2warning_group"."warning_group_id" IS '告警分组id';
+COMMENT ON COLUMN "public"."data_quality_task2warning_group"."warning_type" IS '告警类型';
+COMMENT ON TABLE "public"."data_quality_task2warning_group" IS '数据质量任务告警分组表';
 
 -- ----------------------------
 -- Table structure for data_quality_task_execute
@@ -1184,11 +1690,13 @@ CREATE TABLE "public"."data_quality_task_execute" (
   "general_warning_count" int4
 )
 ;
+COMMENT ON COLUMN "public"."data_quality_task_execute"."id" IS '主键id';
 COMMENT ON COLUMN "public"."data_quality_task_execute"."task_id" IS '所属任务id';
 COMMENT ON COLUMN "public"."data_quality_task_execute"."percent" IS '执行进度';
 COMMENT ON COLUMN "public"."data_quality_task_execute"."execute_status" IS '执行状态:1-执行中,2-成功,3-失败,0-未执行,4-取消';
 COMMENT ON COLUMN "public"."data_quality_task_execute"."executor" IS '执行者id';
 COMMENT ON COLUMN "public"."data_quality_task_execute"."error_msg" IS '程序执行错误日志';
+COMMENT ON COLUMN "public"."data_quality_task_execute"."execute_time" IS '执行时间';
 COMMENT ON COLUMN "public"."data_quality_task_execute"."closer" IS '告警处理人';
 COMMENT ON COLUMN "public"."data_quality_task_execute"."close_time" IS '告警处理时间';
 COMMENT ON COLUMN "public"."data_quality_task_execute"."cost_time" IS '执行耗时';
@@ -1200,6 +1708,7 @@ COMMENT ON COLUMN "public"."data_quality_task_execute"."number" IS '编号';
 COMMENT ON COLUMN "public"."data_quality_task_execute"."counter" IS '任务执行次数';
 COMMENT ON COLUMN "public"."data_quality_task_execute"."error_status" IS '告警状态: 状态:0-无告警,1-告警中,2-告警已关闭';
 COMMENT ON COLUMN "public"."data_quality_task_execute"."general_warning_count" IS '普通告警数';
+COMMENT ON TABLE "public"."data_quality_task_execute" IS '数据质量任务执行结果';
 
 -- ----------------------------
 -- Table structure for data_quality_task_rule_execute
@@ -1227,6 +1736,8 @@ CREATE TABLE "public"."data_quality_task_rule_execute" (
   "general_warning_check_status" int2
 )
 ;
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."id" IS 'id';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."task_execute_id" IS '任务id';
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."task_id" IS '所属任务id';
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."subtask_id" IS '所属子任务id';
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."subtask_object_id" IS '所属子任务对象id';
@@ -1234,13 +1745,17 @@ COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."subtask_rule_id" IS
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."result" IS '规则执行结果(sql直接结果)';
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."check_status" IS '0-合格,1-不合格,2-失败';
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."waring_send_status" IS '告警状态:1-待发送,2发送中,3发送成功,4发送失败';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."update_time" IS '更新时间';
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."reference_value" IS '计算变化值/变化率中计算值存储';
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."orange_warning_check_status" IS '0-无告警,1-有告警';
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."red_warning_check_status" IS '0-无告警,1-有告警';
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."error_msg" IS '错误信息';
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."warning_status" IS '告警状态: 状态:0-无告警,1-告警中,2-告警已关闭';
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."error_status" IS '告警状态: 状态:0-无告警,1-告警中,2-告警已关闭';
+COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."rule_id" IS '规则id';
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."general_warning_check_status" IS '一般告警：0-无告警,1-有告警，2-已关闭';
+COMMENT ON TABLE "public"."data_quality_task_rule_execute" IS '数据质量子任务执行结果';
 
 -- ----------------------------
 -- Table structure for data_source
@@ -1283,6 +1798,11 @@ COMMENT ON COLUMN "public"."data_source"."database" IS '数据库名';
 COMMENT ON COLUMN "public"."data_source"."jdbc_parameter" IS 'jdbc连接参数';
 COMMENT ON COLUMN "public"."data_source"."create_user_id" IS '数据源创建人id';
 COMMENT ON COLUMN "public"."data_source"."manager" IS '数据源管理者id';
+COMMENT ON COLUMN "public"."data_source"."isapi" IS '是否接口添加';
+COMMENT ON COLUMN "public"."data_source"."oracle_db" IS 'oracel数据库实例';
+COMMENT ON COLUMN "public"."data_source"."servicetype" IS '服务类型';
+COMMENT ON COLUMN "public"."data_source"."tenantid" IS '租户id';
+COMMENT ON TABLE "public"."data_source" IS '数据源表';
 
 -- ----------------------------
 -- Table structure for data_source_api_authorize
@@ -1293,6 +1813,9 @@ CREATE TABLE "public"."data_source_api_authorize" (
   "authorize_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."data_source_api_authorize"."source_id" IS '数据源id';
+COMMENT ON COLUMN "public"."data_source_api_authorize"."authorize_user_id" IS '用户id';
+COMMENT ON TABLE "public"."data_source_api_authorize" IS '数据源api授权表';
 
 -- ----------------------------
 -- Table structure for data_source_authorize
@@ -1305,6 +1828,7 @@ CREATE TABLE "public"."data_source_authorize" (
 ;
 COMMENT ON COLUMN "public"."data_source_authorize"."source_id" IS '数据源id';
 COMMENT ON COLUMN "public"."data_source_authorize"."authorize_user_id" IS '授权人id';
+COMMENT ON TABLE "public"."data_source_authorize" IS '数据源授权表';
 
 -- ----------------------------
 -- Table structure for data_standard
@@ -1324,6 +1848,7 @@ CREATE TABLE "public"."data_standard" (
   "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."data_standard"."id" IS '主键id';
 COMMENT ON COLUMN "public"."data_standard"."number" IS '标准编号';
 COMMENT ON COLUMN "public"."data_standard"."content" IS '标准内容';
 COMMENT ON COLUMN "public"."data_standard"."description" IS '描述';
@@ -1334,6 +1859,7 @@ COMMENT ON COLUMN "public"."data_standard"."version" IS '版本';
 COMMENT ON COLUMN "public"."data_standard"."categoryid" IS '所属组Id';
 COMMENT ON COLUMN "public"."data_standard"."delete" IS '是否删除';
 COMMENT ON COLUMN "public"."data_standard"."tenantid" IS '租户id';
+COMMENT ON TABLE "public"."data_standard" IS '数据标准表';
 
 -- ----------------------------
 -- Table structure for data_standard2data_quality_rule
@@ -1346,6 +1872,11 @@ CREATE TABLE "public"."data_standard2data_quality_rule" (
   "operator" varchar COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."data_standard2data_quality_rule"."number" IS '编号';
+COMMENT ON COLUMN "public"."data_standard2data_quality_rule"."ruleid" IS '规则id';
+COMMENT ON COLUMN "public"."data_standard2data_quality_rule"."createtime" IS '创建时间';
+COMMENT ON COLUMN "public"."data_standard2data_quality_rule"."operator" IS '更新人';
+COMMENT ON TABLE "public"."data_standard2data_quality_rule" IS '数据标准-数据质量规则表';
 
 -- ----------------------------
 -- Table structure for data_standard2table
@@ -1358,6 +1889,11 @@ CREATE TABLE "public"."data_standard2table" (
   "operator" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."data_standard2table"."number" IS '编号';
+COMMENT ON COLUMN "public"."data_standard2table"."tableguid" IS '数据表id';
+COMMENT ON COLUMN "public"."data_standard2table"."createtime" IS '创建时间';
+COMMENT ON COLUMN "public"."data_standard2table"."operator" IS '更新人';
+COMMENT ON TABLE "public"."data_standard2table" IS '数据标准-数据表关联';
 
 -- ----------------------------
 -- Table structure for database_group_relation
@@ -1374,6 +1910,7 @@ COMMENT ON COLUMN "public"."database_group_relation"."id" IS 'id';
 COMMENT ON COLUMN "public"."database_group_relation"."group_id" IS '用户组id';
 COMMENT ON COLUMN "public"."database_group_relation"."source_id" IS '数据源id';
 COMMENT ON COLUMN "public"."database_group_relation"."database_guid" IS '数据库id';
+COMMENT ON TABLE "public"."database_group_relation" IS '数据源数据库和用户组关联表';
 
 -- ----------------------------
 -- Table structure for datasource_group_relation
@@ -1385,6 +1922,10 @@ CREATE TABLE "public"."datasource_group_relation" (
   "privilege_code" varchar(36) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."datasource_group_relation"."source_id" IS '数据源id';
+COMMENT ON COLUMN "public"."datasource_group_relation"."group_id" IS '用户组id';
+COMMENT ON COLUMN "public"."datasource_group_relation"."privilege_code" IS '授权代码';
+COMMENT ON TABLE "public"."datasource_group_relation" IS '数据源和用户组关联表';
 
 -- ----------------------------
 -- Table structure for db_category_relation
@@ -1401,6 +1942,7 @@ COMMENT ON COLUMN "public"."db_category_relation"."id" IS 'id';
 COMMENT ON COLUMN "public"."db_category_relation"."category_id" IS '目录id';
 COMMENT ON COLUMN "public"."db_category_relation"."db_guid" IS '数据库id';
 COMMENT ON COLUMN "public"."db_category_relation"."tenant_id" IS '租户id';
+COMMENT ON TABLE "public"."db_category_relation" IS '数据库和目录关联表';
 
 -- ----------------------------
 -- Table structure for db_info
@@ -1423,6 +1965,134 @@ COMMENT ON COLUMN "public"."db_info"."db_type" IS '数据库类型';
 COMMENT ON COLUMN "public"."db_info"."status" IS '状态:已删除-DELETED;未删除-ACTIVE';
 COMMENT ON COLUMN "public"."db_info"."database_description" IS '数据库描述';
 COMMENT ON COLUMN "public"."db_info"."instance_guid" IS '图数据库中数据源（实例）guid';
+COMMENT ON TABLE "public"."db_info" IS '数据库信息表';
+
+-- ----------------------------
+-- Table structure for derive_indicator
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."derive_indicator";
+CREATE TABLE "public"."derive_indicator" (
+  "id" int8 NOT NULL,
+  "derive_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
+  "derive_indicator_name" varchar(100) COLLATE "pg_catalog"."default",
+  "derive_indicator_version_id" int8,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
+)
+;
+COMMENT ON COLUMN "public"."derive_indicator"."id" IS '主键id';
+COMMENT ON COLUMN "public"."derive_indicator"."derive_indicator_code" IS '衍生指标编码';
+COMMENT ON COLUMN "public"."derive_indicator"."derive_indicator_name" IS '衍生指标名称';
+COMMENT ON COLUMN "public"."derive_indicator"."derive_indicator_version_id" IS '衍生指标展示id';
+COMMENT ON COLUMN "public"."derive_indicator"."create_user_id" IS '创建人';
+COMMENT ON COLUMN "public"."derive_indicator"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."derive_indicator"."update_user_id" IS '更新人';
+COMMENT ON COLUMN "public"."derive_indicator"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."derive_indicator"."deleted" IS '逻辑删除位(0已删除 1未删除)';
+COMMENT ON COLUMN "public"."derive_indicator"."tenant_id" IS '租户id';
+COMMENT ON TABLE "public"."derive_indicator" IS '衍生指标表';
+
+-- ----------------------------
+-- Table structure for derive_indicator_qualifier
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."derive_indicator_qualifier";
+CREATE TABLE "public"."derive_indicator_qualifier" (
+  "id" int8 NOT NULL,
+  "derive_indicator_id" int8,
+  "qualifier_id" int8,
+  "condition_id" int8,
+  "qualifier_field_type" int4,
+  "qualifier_field_id" varchar(100) COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
+)
+;
+COMMENT ON COLUMN "public"."derive_indicator_qualifier"."id" IS '主键id';
+COMMENT ON COLUMN "public"."derive_indicator_qualifier"."derive_indicator_id" IS '衍生指标id';
+COMMENT ON COLUMN "public"."derive_indicator_qualifier"."qualifier_id" IS '修饰词id';
+COMMENT ON COLUMN "public"."derive_indicator_qualifier"."condition_id" IS '条件id';
+COMMENT ON COLUMN "public"."derive_indicator_qualifier"."qualifier_field_type" IS '字段类型';
+COMMENT ON COLUMN "public"."derive_indicator_qualifier"."qualifier_field_id" IS '字段id';
+COMMENT ON COLUMN "public"."derive_indicator_qualifier"."create_user_id" IS '创建人';
+COMMENT ON COLUMN "public"."derive_indicator_qualifier"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."derive_indicator_qualifier"."update_user_id" IS '更新人';
+COMMENT ON COLUMN "public"."derive_indicator_qualifier"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."derive_indicator_qualifier"."deleted" IS '逻辑删除位(0已删除 1未删除)';
+COMMENT ON COLUMN "public"."derive_indicator_qualifier"."tenant_id" IS '租户id';
+
+-- ----------------------------
+-- Table structure for derive_indicator_version
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."derive_indicator_version";
+CREATE TABLE "public"."derive_indicator_version" (
+  "id" int8 NOT NULL,
+  "derive_indicator_id" int8,
+  "version_id" int4,
+  "derive_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
+  "derive_indicator_name" varchar(100) COLLATE "pg_catalog"."default",
+  "business_indicators_id" int8,
+  "remark" varchar(500) COLLATE "pg_catalog"."default",
+  "logic_type" int4,
+  "higher_level_indicator_id" int8,
+  "technical_indicator_type" int4,
+  "dimension_metadata_relation_id" int8[],
+  "time_limit_id" int8,
+  "time_limit_field_type" int4,
+  "time_limit_field_id" varchar(100) COLLATE "pg_catalog"."default",
+  "common_qualifier_id" int8[],
+  "exclusive_qualifier" jsonb,
+  "expression" jsonb,
+  "derive_indicator_sql" text COLLATE "pg_catalog"."default",
+  "release_status" int4,
+  "version_type" int4,
+  "visible" int4,
+  "release_time" timestamp(6),
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
+  "threshold_setting" int4
+)
+;
+COMMENT ON COLUMN "public"."derive_indicator_version"."id" IS '主键id';
+COMMENT ON COLUMN "public"."derive_indicator_version"."derive_indicator_id" IS '衍生指标id';
+COMMENT ON COLUMN "public"."derive_indicator_version"."version_id" IS '衍生指标版本号(0暂存版本 普通版本从1递增)';
+COMMENT ON COLUMN "public"."derive_indicator_version"."derive_indicator_code" IS '衍生指标编码';
+COMMENT ON COLUMN "public"."derive_indicator_version"."derive_indicator_name" IS '衍生指标名称';
+COMMENT ON COLUMN "public"."derive_indicator_version"."business_indicators_id" IS '关联业务指标id';
+COMMENT ON COLUMN "public"."derive_indicator_version"."remark" IS '备注';
+COMMENT ON COLUMN "public"."derive_indicator_version"."logic_type" IS '逻辑配置类型（1基于原子指标配置 2自定义sql）';
+COMMENT ON COLUMN "public"."derive_indicator_version"."higher_level_indicator_id" IS '上级技术指标id';
+COMMENT ON COLUMN "public"."derive_indicator_version"."technical_indicator_type" IS '上级技术指标类别（1：原生指标，2：衍生指标，3：复合指标）';
+COMMENT ON COLUMN "public"."derive_indicator_version"."dimension_metadata_relation_id" IS '指标维度id';
+COMMENT ON COLUMN "public"."derive_indicator_version"."time_limit_id" IS '时间限定id';
+COMMENT ON COLUMN "public"."derive_indicator_version"."time_limit_field_type" IS '时间限定字段类型';
+COMMENT ON COLUMN "public"."derive_indicator_version"."time_limit_field_id" IS '时间限定字段id';
+COMMENT ON COLUMN "public"."derive_indicator_version"."common_qualifier_id" IS '公共修饰词id';
+COMMENT ON COLUMN "public"."derive_indicator_version"."exclusive_qualifier" IS '专属修饰词';
+COMMENT ON COLUMN "public"."derive_indicator_version"."expression" IS '配置表达式 json格式实例 {"indicator": {"index": 3, "indicatorId": 1235678901236}, "operation": "sum() + 100"}';
+COMMENT ON COLUMN "public"."derive_indicator_version"."derive_indicator_sql" IS '自定义sql';
+COMMENT ON COLUMN "public"."derive_indicator_version"."release_status" IS '发布状态(0未发布，1已发布，2审核中)';
+COMMENT ON COLUMN "public"."derive_indicator_version"."version_type" IS '版本类型(1发布版本 2暂存版本 3待审核版本)';
+COMMENT ON COLUMN "public"."derive_indicator_version"."visible" IS '是否可见(0不可见 1可见)';
+COMMENT ON COLUMN "public"."derive_indicator_version"."release_time" IS '发布时间';
+COMMENT ON COLUMN "public"."derive_indicator_version"."create_user_id" IS '创建人';
+COMMENT ON COLUMN "public"."derive_indicator_version"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."derive_indicator_version"."update_user_id" IS '更新人';
+COMMENT ON COLUMN "public"."derive_indicator_version"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."derive_indicator_version"."deleted" IS '逻辑删除位(0已删除 1未删除)';
+COMMENT ON COLUMN "public"."derive_indicator_version"."tenant_id" IS '租户id';
+COMMENT ON TABLE "public"."derive_indicator_version" IS '衍生指标版本表';
 
 -- ----------------------------
 -- Table structure for desensitization_rule
@@ -1450,6 +2120,7 @@ COMMENT ON COLUMN "public"."desensitization_rule"."enable" IS '是否启用';
 COMMENT ON COLUMN "public"."desensitization_rule"."create_time" IS '创建时间';
 COMMENT ON COLUMN "public"."desensitization_rule"."update_time" IS '升级时间';
 COMMENT ON COLUMN "public"."desensitization_rule"."tenant_id" IS '租户 Id';
+COMMENT ON TABLE "public"."desensitization_rule" IS '脱敏规则表';
 
 -- ----------------------------
 -- Table structure for dimension
@@ -1490,6 +2161,32 @@ COMMENT ON COLUMN "public"."dimension"."deleted" IS '逻辑删除位';
 COMMENT ON COLUMN "public"."dimension"."dimension_id" IS '维度id';
 COMMENT ON COLUMN "public"."dimension"."source_id" IS '数据源id';
 COMMENT ON COLUMN "public"."dimension"."database_id" IS '数据库id';
+COMMENT ON TABLE "public"."dimension" IS '维度表';
+
+-- ----------------------------
+-- Table structure for dimension_history
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."dimension_history";
+CREATE TABLE "public"."dimension_history" (
+  "id" int8 NOT NULL,
+  "dimension_id" int8,
+  "content" text COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4
+)
+;
+COMMENT ON COLUMN "public"."dimension_history"."id" IS '主键id';
+COMMENT ON COLUMN "public"."dimension_history"."dimension_id" IS '维度id';
+COMMENT ON COLUMN "public"."dimension_history"."content" IS '修改内容';
+COMMENT ON COLUMN "public"."dimension_history"."create_user_id" IS '创建人';
+COMMENT ON COLUMN "public"."dimension_history"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."dimension_history"."update_user_id" IS '更新人';
+COMMENT ON COLUMN "public"."dimension_history"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."dimension_history"."deleted" IS '逻辑删除位(0已删除 1未删除)';
+COMMENT ON TABLE "public"."dimension_history" IS '原子指标申请表';
 
 -- ----------------------------
 -- Table structure for dimension_metadata_relation
@@ -1505,7 +2202,9 @@ CREATE TABLE "public"."dimension_metadata_relation" (
   "deleted" int4 NOT NULL,
   "table_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
   "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-  "update_user_id" varchar(255) COLLATE "pg_catalog"."default"
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "database_id" varchar(255) COLLATE "pg_catalog"."default",
+  "datasource_id" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."dimension_metadata_relation"."id" IS '主键id';
@@ -1518,6 +2217,30 @@ COMMENT ON COLUMN "public"."dimension_metadata_relation"."deleted" IS '逻辑删
 COMMENT ON COLUMN "public"."dimension_metadata_relation"."table_id" IS '数据表id';
 COMMENT ON COLUMN "public"."dimension_metadata_relation"."create_user_id" IS '创建人id';
 COMMENT ON COLUMN "public"."dimension_metadata_relation"."update_user_id" IS '修改人id';
+COMMENT ON COLUMN "public"."dimension_metadata_relation"."database_id" IS '数据库id';
+COMMENT ON COLUMN "public"."dimension_metadata_relation"."datasource_id" IS '数据源id';
+COMMENT ON TABLE "public"."dimension_metadata_relation" IS '指标维度和元数据关系表';
+
+-- ----------------------------
+-- Table structure for group_table_relation
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."group_table_relation";
+CREATE TABLE "public"."group_table_relation" (
+  "id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "derive_table_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "importance_privilege" bool,
+  "security_privilege" bool,
+  "user_group_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "tenant_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL
+)
+;
+COMMENT ON COLUMN "public"."group_table_relation"."id" IS '主键';
+COMMENT ON COLUMN "public"."group_table_relation"."derive_table_id" IS '衍生表id';
+COMMENT ON COLUMN "public"."group_table_relation"."importance_privilege" IS '重要权限';
+COMMENT ON COLUMN "public"."group_table_relation"."security_privilege" IS '保密权限';
+COMMENT ON COLUMN "public"."group_table_relation"."user_group_id" IS '用户组id';
+COMMENT ON COLUMN "public"."group_table_relation"."tenant_id" IS '租户id';
+COMMENT ON TABLE "public"."group_table_relation" IS '用户组和衍生表关系表';
 
 -- ----------------------------
 -- Table structure for index_atomic_info
@@ -1574,6 +2297,7 @@ COMMENT ON COLUMN "public"."index_atomic_info"."updater" IS '更新人';
 COMMENT ON COLUMN "public"."index_atomic_info"."update_time" IS '更新时间';
 COMMENT ON COLUMN "public"."index_atomic_info"."publisher" IS '发布人';
 COMMENT ON COLUMN "public"."index_atomic_info"."publish_time" IS '发布时间';
+COMMENT ON TABLE "public"."index_atomic_info" IS '原子指标信息表';
 
 -- ----------------------------
 -- Table structure for index_composite_info
@@ -1624,6 +2348,7 @@ COMMENT ON COLUMN "public"."index_composite_info"."updater" IS '更新人';
 COMMENT ON COLUMN "public"."index_composite_info"."update_time" IS '更新时间';
 COMMENT ON COLUMN "public"."index_composite_info"."publisher" IS '发布人';
 COMMENT ON COLUMN "public"."index_composite_info"."publish_time" IS '发布时间';
+COMMENT ON TABLE "public"."index_composite_info" IS '复合指标信息表';
 
 -- ----------------------------
 -- Table structure for index_derive_composite_relation
@@ -1636,6 +2361,7 @@ CREATE TABLE "public"."index_derive_composite_relation" (
 ;
 COMMENT ON COLUMN "public"."index_derive_composite_relation"."derive_index_id" IS '派生指标id';
 COMMENT ON COLUMN "public"."index_derive_composite_relation"."composite_index_id" IS '复合指标id';
+COMMENT ON TABLE "public"."index_derive_composite_relation" IS '派生指标和复合指标关系表';
 
 -- ----------------------------
 -- Table structure for index_derive_info
@@ -1688,6 +2414,7 @@ COMMENT ON COLUMN "public"."index_derive_info"."updater" IS '更新人';
 COMMENT ON COLUMN "public"."index_derive_info"."update_time" IS '更新时间';
 COMMENT ON COLUMN "public"."index_derive_info"."publisher" IS '发布人';
 COMMENT ON COLUMN "public"."index_derive_info"."publish_time" IS '发布时间';
+COMMENT ON TABLE "public"."index_derive_info" IS '派生指标信息表';
 
 -- ----------------------------
 -- Table structure for index_derive_modifier_relation
@@ -1700,6 +2427,175 @@ CREATE TABLE "public"."index_derive_modifier_relation" (
 ;
 COMMENT ON COLUMN "public"."index_derive_modifier_relation"."derive_index_id" IS '派生指标id';
 COMMENT ON COLUMN "public"."index_derive_modifier_relation"."modifier_id" IS '修饰词id';
+COMMENT ON TABLE "public"."index_derive_modifier_relation" IS '派生指标修饰词关系表';
+
+-- ----------------------------
+-- Table structure for indicator_lineage_trace
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."indicator_lineage_trace";
+CREATE TABLE "public"."indicator_lineage_trace" (
+  "id" int8 NOT NULL,
+  "business_type" char(4) COLLATE "pg_catalog"."default",
+  "business_id" int8 NOT NULL,
+  "parent_id" int8
+)
+;
+COMMENT ON COLUMN "public"."indicator_lineage_trace"."id" IS '指标血缘关系主键ID';
+COMMENT ON COLUMN "public"."indicator_lineage_trace"."business_type" IS '指标类型（1：原生指标，2：衍生指标，3：复合指标）';
+COMMENT ON COLUMN "public"."indicator_lineage_trace"."business_id" IS '指标主键ID';
+COMMENT ON COLUMN "public"."indicator_lineage_trace"."parent_id" IS '上级血缘ID';
+COMMENT ON TABLE "public"."indicator_lineage_trace" IS '指标血源关系表';
+
+-- ----------------------------
+-- Table structure for indicator_ref
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."indicator_ref";
+CREATE TABLE "public"."indicator_ref" (
+  "id" int8 NOT NULL,
+  "gvp_id" varchar(64) COLLATE "pg_catalog"."default",
+  "indicator_id" int8,
+  "indicator_type" int4,
+  "indicator_name" varchar(100) COLLATE "pg_catalog"."default",
+  "dashboard" varchar(100) COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4
+)
+;
+COMMENT ON COLUMN "public"."indicator_ref"."id" IS '主键id';
+COMMENT ON COLUMN "public"."indicator_ref"."gvp_id" IS 'gvp的引用id';
+COMMENT ON COLUMN "public"."indicator_ref"."indicator_id" IS '指标id';
+COMMENT ON COLUMN "public"."indicator_ref"."indicator_type" IS '指标类型';
+COMMENT ON COLUMN "public"."indicator_ref"."indicator_name" IS '指标名称';
+COMMENT ON COLUMN "public"."indicator_ref"."dashboard" IS '引用的仪表盘';
+COMMENT ON COLUMN "public"."indicator_ref"."create_user_id" IS '创建人';
+COMMENT ON COLUMN "public"."indicator_ref"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."indicator_ref"."update_user_id" IS '更新人';
+COMMENT ON COLUMN "public"."indicator_ref"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."indicator_ref"."deleted" IS '逻辑删除位(0已删除 1未删除)';
+COMMENT ON TABLE "public"."indicator_ref" IS '指标引用表';
+
+-- ----------------------------
+-- Table structure for indicator_relation
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."indicator_relation";
+CREATE TABLE "public"."indicator_relation" (
+  "id" int8 NOT NULL,
+  "indicator_version_id" int8,
+  "indicator_id" int8,
+  "indicator_type" int4,
+  "indicator_version_type" int4
+)
+;
+COMMENT ON COLUMN "public"."indicator_relation"."id" IS '主键id';
+COMMENT ON COLUMN "public"."indicator_relation"."indicator_version_id" IS '指标版本id';
+COMMENT ON COLUMN "public"."indicator_relation"."indicator_id" IS '指标id';
+COMMENT ON COLUMN "public"."indicator_relation"."indicator_type" IS '指标类型';
+COMMENT ON COLUMN "public"."indicator_relation"."indicator_version_type" IS '指标版本对应指标类型';
+COMMENT ON TABLE "public"."indicator_relation" IS '指标关系表';
+
+-- ----------------------------
+-- Table structure for indicator_status
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."indicator_status";
+CREATE TABLE "public"."indicator_status" (
+  "id" int8 NOT NULL,
+  "indicator_id" int8,
+  "indicator_type" int8,
+  "status" int8,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4
+)
+;
+COMMENT ON COLUMN "public"."indicator_status"."id" IS '主键id';
+COMMENT ON COLUMN "public"."indicator_status"."indicator_id" IS '指标id';
+COMMENT ON COLUMN "public"."indicator_status"."indicator_type" IS '指标类型';
+COMMENT ON COLUMN "public"."indicator_status"."status" IS '状态';
+COMMENT ON COLUMN "public"."indicator_status"."create_user_id" IS '创建用户';
+COMMENT ON COLUMN "public"."indicator_status"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."indicator_status"."update_user_id" IS '更新用户';
+COMMENT ON COLUMN "public"."indicator_status"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."indicator_status"."deleted" IS '逻辑删除位(0已删除 1未删除)';
+COMMENT ON TABLE "public"."indicator_status" IS '指标状态表';
+
+-- ----------------------------
+-- Table structure for indicator_threshold_log
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."indicator_threshold_log";
+CREATE TABLE "public"."indicator_threshold_log" (
+  "indicator_id" int8 NOT NULL,
+  "indicator_type" int2 NOT NULL,
+  "result" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "content" text COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6) NOT NULL,
+  "id" int8 NOT NULL,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4
+)
+;
+COMMENT ON COLUMN "public"."indicator_threshold_log"."indicator_id" IS '指标id';
+COMMENT ON COLUMN "public"."indicator_threshold_log"."indicator_type" IS '指标类型';
+COMMENT ON COLUMN "public"."indicator_threshold_log"."result" IS '阈值检测结果';
+COMMENT ON COLUMN "public"."indicator_threshold_log"."content" IS '检测信息';
+COMMENT ON COLUMN "public"."indicator_threshold_log"."create_time" IS '记录时间';
+COMMENT ON COLUMN "public"."indicator_threshold_log"."id" IS '主键';
+COMMENT ON COLUMN "public"."indicator_threshold_log"."create_user_id" IS '创建人';
+COMMENT ON COLUMN "public"."indicator_threshold_log"."update_user_id" IS '更新人';
+COMMENT ON COLUMN "public"."indicator_threshold_log"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."indicator_threshold_log"."deleted" IS '逻辑删除位(0已删除 1未删除)';
+COMMENT ON TABLE "public"."indicator_threshold_log" IS '指标阈值检测信息表';
+
+-- ----------------------------
+-- Table structure for indicator_threshold_setting
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."indicator_threshold_setting";
+CREATE TABLE "public"."indicator_threshold_setting" (
+  "id" int8 NOT NULL,
+  "indicator_id" int8,
+  "indicator_type" int4,
+  "left_operator" varchar(255) COLLATE "pg_catalog"."default",
+  "left_operate_value" varchar(255) COLLATE "pg_catalog"."default",
+  "warning_group" varchar(255)[] COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
+  "right_operate_value" varchar(255) COLLATE "pg_catalog"."default",
+  "right_operator" varchar(255) COLLATE "pg_catalog"."default",
+  "check_frequency" varchar(255) COLLATE "pg_catalog"."default",
+  "check_time" timestamp(6),
+  "enable" bool,
+  "day_of_check_frequency" int4
+)
+;
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."id" IS '主键id';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."indicator_id" IS '指标id';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."indicator_type" IS '指标类型';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."left_operator" IS '度量左侧操作符';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."left_operate_value" IS '度量左侧比较值';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."warning_group" IS '告警组';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."create_user_id" IS '创建人';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."update_user_id" IS '更新人';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."deleted" IS '逻辑删除位(0已删除 1未删除)';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."tenant_id" IS '租户id';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."right_operate_value" IS '度量右侧比较值';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."right_operator" IS '度量右侧操作符';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."check_frequency" IS '检测频率';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."check_time" IS '检测时间';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."enable" IS '启用状态';
+COMMENT ON COLUMN "public"."indicator_threshold_setting"."day_of_check_frequency" IS '检测频率日期节点';
+COMMENT ON TABLE "public"."indicator_threshold_setting" IS '指标度量设置表';
 
 -- ----------------------------
 -- Table structure for ip_restriction
@@ -1740,6 +2636,10 @@ CREATE TABLE "public"."metadata_subscribe" (
   "create_time" timestamptz(6)
 )
 ;
+COMMENT ON COLUMN "public"."metadata_subscribe"."user_id" IS '用户id';
+COMMENT ON COLUMN "public"."metadata_subscribe"."table_guid" IS '表id';
+COMMENT ON COLUMN "public"."metadata_subscribe"."create_time" IS '创建时间';
+COMMENT ON TABLE "public"."metadata_subscribe" IS '用户及表关联关系信息';
 
 -- ----------------------------
 -- Table structure for module
@@ -1754,6 +2654,7 @@ CREATE TABLE "public"."module" (
 COMMENT ON COLUMN "public"."module"."moduleid" IS '权限id';
 COMMENT ON COLUMN "public"."module"."modulename" IS '权限名';
 COMMENT ON COLUMN "public"."module"."type" IS '模块类型';
+COMMENT ON TABLE "public"."module" IS '模块表';
 
 -- ----------------------------
 -- Table structure for operate_log
@@ -1772,6 +2673,7 @@ CREATE TABLE "public"."operate_log" (
   "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."operate_log"."id" IS '主键id';
 COMMENT ON COLUMN "public"."operate_log"."number" IS '日志序号';
 COMMENT ON COLUMN "public"."operate_log"."userid" IS '用户id';
 COMMENT ON COLUMN "public"."operate_log"."type" IS '操作类型';
@@ -1781,6 +2683,7 @@ COMMENT ON COLUMN "public"."operate_log"."result" IS '操作结果';
 COMMENT ON COLUMN "public"."operate_log"."ip" IS '客户端ip地址';
 COMMENT ON COLUMN "public"."operate_log"."createtime" IS '记录时间';
 COMMENT ON COLUMN "public"."operate_log"."tenantid" IS '租户id';
+COMMENT ON TABLE "public"."operate_log" IS '操作日志表';
 
 -- ----------------------------
 -- Table structure for organization
@@ -1789,7 +2692,7 @@ DROP TABLE IF EXISTS "public"."organization";
 CREATE TABLE "public"."organization" (
   "checked" varchar COLLATE "pg_catalog"."default" NOT NULL,
   "disable" varchar COLLATE "pg_catalog"."default",
-  "id" varchar COLLATE "pg_catalog"."default",
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
   "isopen" bool,
   "isvm" int8,
   "name" text COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
@@ -1801,6 +2704,19 @@ CREATE TABLE "public"."organization" (
   "updatetime" varchar COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."organization"."checked" IS '是否校验';
+COMMENT ON COLUMN "public"."organization"."disable" IS '是否无用';
+COMMENT ON COLUMN "public"."organization"."id" IS '组织架构ID';
+COMMENT ON COLUMN "public"."organization"."isopen" IS '是否公开';
+COMMENT ON COLUMN "public"."organization"."isvm" IS '是否虚拟';
+COMMENT ON COLUMN "public"."organization"."name" IS '组织架构名称';
+COMMENT ON COLUMN "public"."organization"."open" IS '公开状态';
+COMMENT ON COLUMN "public"."organization"."pid" IS '当前组织架构父节点ID';
+COMMENT ON COLUMN "public"."organization"."pkid" IS '主键ID';
+COMMENT ON COLUMN "public"."organization"."ptype" IS '当前组织架构父节点类型';
+COMMENT ON COLUMN "public"."organization"."type" IS '当前组织节点类型';
+COMMENT ON COLUMN "public"."organization"."updatetime" IS '更新时间';
+COMMENT ON TABLE "public"."organization" IS '组织表';
 
 -- ----------------------------
 -- Table structure for privilege
@@ -1821,6 +2737,7 @@ COMMENT ON COLUMN "public"."privilege"."description" IS '方案描述';
 COMMENT ON COLUMN "public"."privilege"."createtime" IS '创建时间';
 COMMENT ON COLUMN "public"."privilege"."edit" IS '是否可编辑';
 COMMENT ON COLUMN "public"."privilege"."delete" IS '是否可删除';
+COMMENT ON TABLE "public"."privilege" IS '方案表';
 
 -- ----------------------------
 -- Table structure for privilege2module
@@ -1831,6 +2748,9 @@ CREATE TABLE "public"."privilege2module" (
   "moduleid" int4 NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."privilege2module"."privilegeid" IS '方案id';
+COMMENT ON COLUMN "public"."privilege2module"."moduleid" IS '功能id';
+COMMENT ON TABLE "public"."privilege2module" IS '方案模块关联表';
 
 -- ----------------------------
 -- Table structure for project
@@ -1847,6 +2767,15 @@ CREATE TABLE "public"."project" (
   "valid" bool NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."project"."id" IS '项目id';
+COMMENT ON COLUMN "public"."project"."name" IS '项目名称';
+COMMENT ON COLUMN "public"."project"."creator" IS '创建人';
+COMMENT ON COLUMN "public"."project"."description" IS '描述';
+COMMENT ON COLUMN "public"."project"."createtime" IS '创建时间';
+COMMENT ON COLUMN "public"."project"."manager" IS '管理人';
+COMMENT ON COLUMN "public"."project"."tenantid" IS '租户';
+COMMENT ON COLUMN "public"."project"."valid" IS '是否有效';
+COMMENT ON TABLE "public"."project" IS '项目表';
 
 -- ----------------------------
 -- Table structure for project_group_relation
@@ -1857,6 +2786,9 @@ CREATE TABLE "public"."project_group_relation" (
   "group_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."project_group_relation"."project_id" IS '项目id';
+COMMENT ON COLUMN "public"."project_group_relation"."group_id" IS '用户组id';
+COMMENT ON TABLE "public"."project_group_relation" IS '项目用户组关联表';
 
 -- ----------------------------
 -- Table structure for qrtz_blob_triggers
@@ -1869,6 +2801,11 @@ CREATE TABLE "public"."qrtz_blob_triggers" (
   "blob_data" bytea
 )
 ;
+COMMENT ON COLUMN "public"."qrtz_blob_triggers"."sched_name" IS '计划任务名';
+COMMENT ON COLUMN "public"."qrtz_blob_triggers"."trigger_name" IS '调度器名称';
+COMMENT ON COLUMN "public"."qrtz_blob_triggers"."trigger_group" IS '调度器所属组';
+COMMENT ON COLUMN "public"."qrtz_blob_triggers"."blob_data" IS '数据集';
+COMMENT ON TABLE "public"."qrtz_blob_triggers" IS '计划调度表';
 
 -- ----------------------------
 -- Table structure for qrtz_calendars
@@ -1880,6 +2817,10 @@ CREATE TABLE "public"."qrtz_calendars" (
   "calendar" bytea NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."qrtz_calendars"."sched_name" IS '计划任务名';
+COMMENT ON COLUMN "public"."qrtz_calendars"."calendar_name" IS '日程名称';
+COMMENT ON COLUMN "public"."qrtz_calendars"."calendar" IS '日程记录';
+COMMENT ON TABLE "public"."qrtz_calendars" IS '计划日程表';
 
 -- ----------------------------
 -- Table structure for qrtz_cron_triggers
@@ -1893,6 +2834,12 @@ CREATE TABLE "public"."qrtz_cron_triggers" (
   "time_zone_id" varchar(80) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
+COMMENT ON COLUMN "public"."qrtz_cron_triggers"."sched_name" IS '计划任务名';
+COMMENT ON COLUMN "public"."qrtz_cron_triggers"."trigger_name" IS '调度器名称';
+COMMENT ON COLUMN "public"."qrtz_cron_triggers"."trigger_group" IS '调度器分组';
+COMMENT ON COLUMN "public"."qrtz_cron_triggers"."cron_expression" IS '执行规则';
+COMMENT ON COLUMN "public"."qrtz_cron_triggers"."time_zone_id" IS '时区';
+COMMENT ON TABLE "public"."qrtz_cron_triggers" IS '计划调度规则表';
 
 -- ----------------------------
 -- Table structure for qrtz_fired_triggers
@@ -1914,6 +2861,20 @@ CREATE TABLE "public"."qrtz_fired_triggers" (
   "requests_recovery" bool
 )
 ;
+COMMENT ON COLUMN "public"."qrtz_fired_triggers"."sched_name" IS '计划任务名';
+COMMENT ON COLUMN "public"."qrtz_fired_triggers"."entry_id" IS '记录id';
+COMMENT ON COLUMN "public"."qrtz_fired_triggers"."trigger_name" IS '调度器名称';
+COMMENT ON COLUMN "public"."qrtz_fired_triggers"."trigger_group" IS '调度器分组';
+COMMENT ON COLUMN "public"."qrtz_fired_triggers"."instance_name" IS '实例名称';
+COMMENT ON COLUMN "public"."qrtz_fired_triggers"."fired_time" IS '触发时间';
+COMMENT ON COLUMN "public"."qrtz_fired_triggers"."sched_time" IS '调度时间';
+COMMENT ON COLUMN "public"."qrtz_fired_triggers"."priority" IS '优先级';
+COMMENT ON COLUMN "public"."qrtz_fired_triggers"."state" IS '状态';
+COMMENT ON COLUMN "public"."qrtz_fired_triggers"."job_name" IS '任务名';
+COMMENT ON COLUMN "public"."qrtz_fired_triggers"."job_group" IS '任务组';
+COMMENT ON COLUMN "public"."qrtz_fired_triggers"."is_nonconcurrent" IS '是否非共点的';
+COMMENT ON COLUMN "public"."qrtz_fired_triggers"."requests_recovery" IS '是否请求恢复';
+COMMENT ON TABLE "public"."qrtz_fired_triggers" IS '计划调度触发表';
 
 -- ----------------------------
 -- Table structure for qrtz_job_details
@@ -1932,6 +2893,17 @@ CREATE TABLE "public"."qrtz_job_details" (
   "job_data" bytea
 )
 ;
+COMMENT ON COLUMN "public"."qrtz_job_details"."sched_name" IS '计划任务名';
+COMMENT ON COLUMN "public"."qrtz_job_details"."job_name" IS '任务名称';
+COMMENT ON COLUMN "public"."qrtz_job_details"."job_group" IS '任务分组';
+COMMENT ON COLUMN "public"."qrtz_job_details"."description" IS '描述';
+COMMENT ON COLUMN "public"."qrtz_job_details"."job_class_name" IS '任务执行类名';
+COMMENT ON COLUMN "public"."qrtz_job_details"."is_durable" IS '是否可持久';
+COMMENT ON COLUMN "public"."qrtz_job_details"."is_nonconcurrent" IS '是否不一致';
+COMMENT ON COLUMN "public"."qrtz_job_details"."is_update_data" IS '是否可修改数据';
+COMMENT ON COLUMN "public"."qrtz_job_details"."requests_recovery" IS '是否可恢复';
+COMMENT ON COLUMN "public"."qrtz_job_details"."job_data" IS '任务数据';
+COMMENT ON TABLE "public"."qrtz_job_details" IS '计划任务详情表';
 
 -- ----------------------------
 -- Table structure for qrtz_locks
@@ -1942,6 +2914,9 @@ CREATE TABLE "public"."qrtz_locks" (
   "lock_name" varchar(40) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
+COMMENT ON COLUMN "public"."qrtz_locks"."sched_name" IS '计划任务名';
+COMMENT ON COLUMN "public"."qrtz_locks"."lock_name" IS '锁名称';
+COMMENT ON TABLE "public"."qrtz_locks" IS '计划调度锁定表';
 
 -- ----------------------------
 -- Table structure for qrtz_paused_trigger_grps
@@ -1952,6 +2927,9 @@ CREATE TABLE "public"."qrtz_paused_trigger_grps" (
   "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
+COMMENT ON COLUMN "public"."qrtz_paused_trigger_grps"."sched_name" IS '计划任务名';
+COMMENT ON COLUMN "public"."qrtz_paused_trigger_grps"."trigger_group" IS '调度器分组';
+COMMENT ON TABLE "public"."qrtz_paused_trigger_grps" IS '计划调度器分组关联表';
 
 -- ----------------------------
 -- Table structure for qrtz_scheduler_state
@@ -1964,6 +2942,11 @@ CREATE TABLE "public"."qrtz_scheduler_state" (
   "checkin_interval" int8 NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."qrtz_scheduler_state"."sched_name" IS '计划任务名';
+COMMENT ON COLUMN "public"."qrtz_scheduler_state"."instance_name" IS '实例名称';
+COMMENT ON COLUMN "public"."qrtz_scheduler_state"."last_checkin_time" IS '最后登记时间';
+COMMENT ON COLUMN "public"."qrtz_scheduler_state"."checkin_interval" IS '登记间隔';
+COMMENT ON TABLE "public"."qrtz_scheduler_state" IS '计划执行时间记录表';
 
 -- ----------------------------
 -- Table structure for qrtz_simple_triggers
@@ -1978,6 +2961,13 @@ CREATE TABLE "public"."qrtz_simple_triggers" (
   "times_triggered" int8 NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."qrtz_simple_triggers"."sched_name" IS '计划任务名';
+COMMENT ON COLUMN "public"."qrtz_simple_triggers"."trigger_name" IS '触发器名';
+COMMENT ON COLUMN "public"."qrtz_simple_triggers"."trigger_group" IS '触发器所属组';
+COMMENT ON COLUMN "public"."qrtz_simple_triggers"."repeat_count" IS '重复次数';
+COMMENT ON COLUMN "public"."qrtz_simple_triggers"."repeat_interval" IS '重复间隔';
+COMMENT ON COLUMN "public"."qrtz_simple_triggers"."times_triggered" IS '触发次数';
+COMMENT ON TABLE "public"."qrtz_simple_triggers" IS '存储SimpleTrigger';
 
 -- ----------------------------
 -- Table structure for qrtz_simprop_triggers
@@ -2000,6 +2990,21 @@ CREATE TABLE "public"."qrtz_simprop_triggers" (
   "bool_prop_2" bool
 )
 ;
+COMMENT ON COLUMN "public"."qrtz_simprop_triggers"."sched_name" IS '计划任务名';
+COMMENT ON COLUMN "public"."qrtz_simprop_triggers"."trigger_name" IS '触发器名称';
+COMMENT ON COLUMN "public"."qrtz_simprop_triggers"."trigger_group" IS '触发器所属组';
+COMMENT ON COLUMN "public"."qrtz_simprop_triggers"."str_prop_1" IS '触发器参数1';
+COMMENT ON COLUMN "public"."qrtz_simprop_triggers"."str_prop_2" IS '触发器参数2';
+COMMENT ON COLUMN "public"."qrtz_simprop_triggers"."str_prop_3" IS '触发器参数3';
+COMMENT ON COLUMN "public"."qrtz_simprop_triggers"."int_prop_1" IS '整形-触发器参数1';
+COMMENT ON COLUMN "public"."qrtz_simprop_triggers"."int_prop_2" IS '整形-触发器参数2';
+COMMENT ON COLUMN "public"."qrtz_simprop_triggers"."long_prop_1" IS 'long-触发器参数1';
+COMMENT ON COLUMN "public"."qrtz_simprop_triggers"."long_prop_2" IS 'long-触发器参数2';
+COMMENT ON COLUMN "public"."qrtz_simprop_triggers"."dec_prop_1" IS '数值型-触发器参数1';
+COMMENT ON COLUMN "public"."qrtz_simprop_triggers"."dec_prop_2" IS '数值型-触发器参数2';
+COMMENT ON COLUMN "public"."qrtz_simprop_triggers"."bool_prop_1" IS '布尔-触发器参数1';
+COMMENT ON COLUMN "public"."qrtz_simprop_triggers"."bool_prop_2" IS '布尔-触发器参数2';
+COMMENT ON TABLE "public"."qrtz_simprop_triggers" IS '存储CalendarIntervalTrigger和DailyTimeIntervalTrigger两种类型的触发器';
 
 -- ----------------------------
 -- Table structure for qrtz_triggers
@@ -2024,6 +3029,23 @@ CREATE TABLE "public"."qrtz_triggers" (
   "job_data" bytea
 )
 ;
+COMMENT ON COLUMN "public"."qrtz_triggers"."sched_name" IS '计划任务名';
+COMMENT ON COLUMN "public"."qrtz_triggers"."trigger_name" IS '触发器名';
+COMMENT ON COLUMN "public"."qrtz_triggers"."trigger_group" IS '触发器所属组';
+COMMENT ON COLUMN "public"."qrtz_triggers"."job_name" IS '任务名';
+COMMENT ON COLUMN "public"."qrtz_triggers"."job_group" IS '任务组';
+COMMENT ON COLUMN "public"."qrtz_triggers"."description" IS '描述信息';
+COMMENT ON COLUMN "public"."qrtz_triggers"."next_fire_time" IS '下次触发事件';
+COMMENT ON COLUMN "public"."qrtz_triggers"."prev_fire_time" IS '上次触发时间';
+COMMENT ON COLUMN "public"."qrtz_triggers"."priority" IS '优先级';
+COMMENT ON COLUMN "public"."qrtz_triggers"."trigger_state" IS '状态';
+COMMENT ON COLUMN "public"."qrtz_triggers"."trigger_type" IS '触发器类型';
+COMMENT ON COLUMN "public"."qrtz_triggers"."start_time" IS '开始时间';
+COMMENT ON COLUMN "public"."qrtz_triggers"."end_time" IS '结束时间';
+COMMENT ON COLUMN "public"."qrtz_triggers"."calendar_name" IS '日程名';
+COMMENT ON COLUMN "public"."qrtz_triggers"."misfire_instr" IS '调度规则';
+COMMENT ON COLUMN "public"."qrtz_triggers"."job_data" IS '任务数据';
+COMMENT ON TABLE "public"."qrtz_triggers" IS '存储定义的trigger';
 
 -- ----------------------------
 -- Table structure for qualifier
@@ -2042,6 +3064,77 @@ CREATE TABLE "public"."qualifier" (
   "typeid" varchar COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."qualifier"."id" IS '主键id';
+COMMENT ON COLUMN "public"."qualifier"."name" IS '修饰词名';
+COMMENT ON COLUMN "public"."qualifier"."mark" IS '备注';
+COMMENT ON COLUMN "public"."qualifier"."creator" IS '创建者';
+COMMENT ON COLUMN "public"."qualifier"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."qualifier"."update_user" IS '更新者';
+COMMENT ON COLUMN "public"."qualifier"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."qualifier"."desc" IS '描述信息';
+COMMENT ON COLUMN "public"."qualifier"."tenantid" IS '租户id';
+COMMENT ON COLUMN "public"."qualifier"."typeid" IS '类型id';
+COMMENT ON TABLE "public"."qualifier" IS '修饰词表';
+
+-- ----------------------------
+-- Table structure for qualifier_ind
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."qualifier_ind";
+CREATE TABLE "public"."qualifier_ind" (
+  "id" int8 NOT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "mark" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "description" varchar(255) COLLATE "pg_catalog"."default",
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamptz(6),
+  "deleted" int2 NOT NULL DEFAULT 1,
+  "content" varchar(1000) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_name" varchar(255) COLLATE "pg_catalog"."default",
+  "update_name" varchar(255) COLLATE "pg_catalog"."default",
+  "content_view" varchar(255) COLLATE "pg_catalog"."default"
+)
+;
+COMMENT ON COLUMN "public"."qualifier_ind"."id" IS '主键id';
+COMMENT ON COLUMN "public"."qualifier_ind"."name" IS '名称';
+COMMENT ON COLUMN "public"."qualifier_ind"."mark" IS '编号';
+COMMENT ON COLUMN "public"."qualifier_ind"."description" IS '描述';
+COMMENT ON COLUMN "public"."qualifier_ind"."tenant_id" IS '租户id';
+COMMENT ON COLUMN "public"."qualifier_ind"."create_user_id" IS '创建者id';
+COMMENT ON COLUMN "public"."qualifier_ind"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."qualifier_ind"."update_user_id" IS '更新人';
+COMMENT ON COLUMN "public"."qualifier_ind"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."qualifier_ind"."deleted" IS '逻辑删除';
+COMMENT ON COLUMN "public"."qualifier_ind"."content" IS '运算规则内容';
+COMMENT ON COLUMN "public"."qualifier_ind"."create_name" IS '创建者名字';
+COMMENT ON COLUMN "public"."qualifier_ind"."update_name" IS '更新者名字';
+COMMENT ON COLUMN "public"."qualifier_ind"."content_view" IS '前端展示修饰词格式';
+
+-- ----------------------------
+-- Table structure for qualifier_ind_log
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."qualifier_ind_log";
+CREATE TABLE "public"."qualifier_ind_log" (
+  "id" int8 NOT NULL,
+  "log_id" int8 NOT NULL,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "change" varchar(2000) COLLATE "pg_catalog"."default" NOT NULL,
+  "log_time" timestamptz(6) NOT NULL,
+  "create_time" timestamptz(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamptz(6),
+  "deleted" int2 DEFAULT 1,
+  "create_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
+)
+;
+COMMENT ON COLUMN "public"."qualifier_ind_log"."id" IS '主键id';
+COMMENT ON COLUMN "public"."qualifier_ind_log"."log_id" IS '时间限定的id';
+COMMENT ON COLUMN "public"."qualifier_ind_log"."create_user_id" IS '创建该记录的用户id';
+COMMENT ON COLUMN "public"."qualifier_ind_log"."change" IS '变更';
+COMMENT ON COLUMN "public"."qualifier_ind_log"."log_time" IS '记录创建时间，也是修改时间';
+COMMENT ON COLUMN "public"."qualifier_ind_log"."create_name" IS '创建者名字';
 
 -- ----------------------------
 -- Table structure for qualifier_type
@@ -2059,6 +3152,16 @@ CREATE TABLE "public"."qualifier_type" (
   "tenantid" varchar COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."qualifier_type"."type_id" IS '修饰词类型ID';
+COMMENT ON COLUMN "public"."qualifier_type"."type_name" IS '修饰词类型名称';
+COMMENT ON COLUMN "public"."qualifier_type"."type_mark" IS '修饰词类型标识';
+COMMENT ON COLUMN "public"."qualifier_type"."creator" IS '创建人';
+COMMENT ON COLUMN "public"."qualifier_type"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."qualifier_type"."update_user" IS '更新人';
+COMMENT ON COLUMN "public"."qualifier_type"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."qualifier_type"."type_desc" IS '修饰词类型目录描述';
+COMMENT ON COLUMN "public"."qualifier_type"."tenantid" IS '租户ID';
+COMMENT ON TABLE "public"."qualifier_type" IS '修饰词类型';
 
 -- ----------------------------
 -- Table structure for report
@@ -2078,6 +3181,18 @@ CREATE TABLE "public"."report" (
   "alert" int2
 )
 ;
+COMMENT ON COLUMN "public"."report"."reportid" IS '报告id';
+COMMENT ON COLUMN "public"."report"."reportname" IS '报告名称';
+COMMENT ON COLUMN "public"."report"."templatename" IS '模板名称';
+COMMENT ON COLUMN "public"."report"."periodcron" IS '生成周期的Cron表达式';
+COMMENT ON COLUMN "public"."report"."orangealerts" IS '橙色告警数';
+COMMENT ON COLUMN "public"."report"."redalerts" IS '红色告警数';
+COMMENT ON COLUMN "public"."report"."source" IS '源库表';
+COMMENT ON COLUMN "public"."report"."buildtype" IS '生成方式，0代表周期生成，1代表生成1次';
+COMMENT ON COLUMN "public"."report"."reportproducedate" IS '报表生成日期';
+COMMENT ON COLUMN "public"."report"."templateid" IS '模板Id';
+COMMENT ON COLUMN "public"."report"."alert" IS '告警提示，1开启，0关闭';
+COMMENT ON TABLE "public"."report" IS '报告表';
 
 -- ----------------------------
 -- Table structure for report2ruletemplate
@@ -2090,6 +3205,11 @@ CREATE TABLE "public"."report2ruletemplate" (
   "create_time" timestamptz(6)
 )
 ;
+COMMENT ON COLUMN "public"."report2ruletemplate"."rule_template_id" IS '规则模板id';
+COMMENT ON COLUMN "public"."report2ruletemplate"."data_quality_execute_id" IS '数据治理执行id';
+COMMENT ON COLUMN "public"."report2ruletemplate"."creator" IS '创建者';
+COMMENT ON COLUMN "public"."report2ruletemplate"."create_time" IS '创建时间';
+COMMENT ON TABLE "public"."report2ruletemplate" IS '报告模板';
 
 -- ----------------------------
 -- Table structure for report_error
@@ -2105,6 +3225,14 @@ CREATE TABLE "public"."report_error" (
   "retrycount" int2
 )
 ;
+COMMENT ON COLUMN "public"."report_error"."errorid" IS '报告错误id';
+COMMENT ON COLUMN "public"."report_error"."templateid" IS '模板id';
+COMMENT ON COLUMN "public"."report_error"."reportid" IS '报告id';
+COMMENT ON COLUMN "public"."report_error"."ruleid" IS '规则id';
+COMMENT ON COLUMN "public"."report_error"."content" IS '内容';
+COMMENT ON COLUMN "public"."report_error"."generatetime" IS '生成时间';
+COMMENT ON COLUMN "public"."report_error"."retrycount" IS '重试次数';
+COMMENT ON TABLE "public"."report_error" IS '报告错误信息';
 
 -- ----------------------------
 -- Table structure for report_userrule
@@ -2128,6 +3256,19 @@ CREATE TABLE "public"."report_userrule" (
   "generatetime" float8
 )
 ;
+COMMENT ON COLUMN "public"."report_userrule"."reportid" IS '报告id';
+COMMENT ON COLUMN "public"."report_userrule"."reportrulevalue" IS '规则值';
+COMMENT ON COLUMN "public"."report_userrule"."reportrulestatus" IS '规则状态';
+COMMENT ON COLUMN "public"."report_userrule"."ruleid" IS '规则id';
+COMMENT ON COLUMN "public"."report_userrule"."ruletype" IS '规则类型';
+COMMENT ON COLUMN "public"."report_userrule"."rulename" IS '规则名';
+COMMENT ON COLUMN "public"."report_userrule"."ruleinfo" IS '规则信息';
+COMMENT ON COLUMN "public"."report_userrule"."rulecolumnname" IS '规则列名';
+COMMENT ON COLUMN "public"."report_userrule"."rulecolumntype" IS '规则列类型';
+COMMENT ON COLUMN "public"."report_userrule"."rulecheckexpression" IS '校验表达式';
+COMMENT ON COLUMN "public"."report_userrule"."templateruleid" IS '模板规则id';
+COMMENT ON COLUMN "public"."report_userrule"."generatetime" IS '生成时间';
+COMMENT ON TABLE "public"."report_userrule" IS '用户规则';
 
 -- ----------------------------
 -- Table structure for report_userrule2threshold
@@ -2138,52 +3279,9 @@ CREATE TABLE "public"."report_userrule2threshold" (
   "ruleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
-
--- ----------------------------
--- Table structure for role
--- ----------------------------
-DROP TABLE IF EXISTS "public"."role";
-CREATE TABLE "public"."role" (
-  "roleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-  "rolename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "privilegeid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "updatetime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "status" int2,
-  "createtime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-  "disable" int2,
-  "delete" int2,
-  "edit" int2,
-  "valid" bool,
-  "creator" varchar COLLATE "pg_catalog"."default",
-  "updater" varchar COLLATE "pg_catalog"."default"
-)
-;
-COMMENT ON COLUMN "public"."role"."roleid" IS '角色id';
-COMMENT ON COLUMN "public"."role"."rolename" IS '角色名';
-COMMENT ON COLUMN "public"."role"."description" IS '角色描述';
-COMMENT ON COLUMN "public"."role"."privilegeid" IS '方案id';
-COMMENT ON COLUMN "public"."role"."updatetime" IS '角色更新时间';
-COMMENT ON COLUMN "public"."role"."status" IS '角色是否启用，0未启用，1已启用';
-COMMENT ON COLUMN "public"."role"."createtime" IS '创建时间';
-COMMENT ON COLUMN "public"."role"."disable" IS '是否可禁用';
-COMMENT ON COLUMN "public"."role"."delete" IS '是否可删除';
-COMMENT ON COLUMN "public"."role"."edit" IS '是否可编辑';
-COMMENT ON COLUMN "public"."role"."valid" IS '角色是否有效';
-COMMENT ON COLUMN "public"."role"."creator" IS '创建者';
-COMMENT ON COLUMN "public"."role"."updater" IS '更新者';
-
--- ----------------------------
--- Table structure for role2category
--- ----------------------------
-DROP TABLE IF EXISTS "public"."role2category";
-CREATE TABLE "public"."role2category" (
-  "roleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-  "categoryid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-  "operation" int2
-)
-;
-COMMENT ON COLUMN "public"."role2category"."operation" IS '是否允许操作，0不允许，1允许';
+COMMENT ON COLUMN "public"."report_userrule2threshold"."thresholdvalue" IS '阈值';
+COMMENT ON COLUMN "public"."report_userrule2threshold"."ruleid" IS '规则id';
+COMMENT ON TABLE "public"."report_userrule2threshold" IS '用户规则阈值记录';
 
 -- ----------------------------
 -- Table structure for rule2buildtype
@@ -2194,6 +3292,9 @@ CREATE TABLE "public"."rule2buildtype" (
   "buildtype" int2 NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."rule2buildtype"."ruleid" IS '规则Id';
+COMMENT ON COLUMN "public"."rule2buildtype"."buildtype" IS '生成方式,0代表周期生成，1代表生成1次';
+COMMENT ON TABLE "public"."rule2buildtype" IS '规则与生成方式表';
 
 -- ----------------------------
 -- Table structure for rule2checktype
@@ -2204,6 +3305,9 @@ CREATE TABLE "public"."rule2checktype" (
   "checktype" int2 NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."rule2checktype"."ruleid" IS '规则Id';
+COMMENT ON COLUMN "public"."rule2checktype"."checktype" IS '规则检测方式，0(固定值)，1（波动值）';
+COMMENT ON TABLE "public"."rule2checktype" IS '规则与检测方式关系表';
 
 -- ----------------------------
 -- Table structure for rule2datatype
@@ -2214,6 +3318,9 @@ CREATE TABLE "public"."rule2datatype" (
   "datatype" int2 NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."rule2datatype"."ruleid" IS '规则Id';
+COMMENT ON COLUMN "public"."rule2datatype"."datatype" IS '允许的数据类型，1数值型2非数值型';
+COMMENT ON TABLE "public"."rule2datatype" IS '规则与数据类型关系表';
 
 -- ----------------------------
 -- Table structure for source_db
@@ -2227,6 +3334,7 @@ CREATE TABLE "public"."source_db" (
 ;
 COMMENT ON COLUMN "public"."source_db"."source_id" IS '数据源id';
 COMMENT ON COLUMN "public"."source_db"."db_guid" IS '数据库id';
+COMMENT ON TABLE "public"."source_db" IS '数据源和数据库关系表';
 
 -- ----------------------------
 -- Table structure for source_info
@@ -2304,7 +3412,7 @@ COMMENT ON COLUMN "public"."source_info"."record_time" IS '信息录入时间';
 COMMENT ON COLUMN "public"."source_info"."create_time" IS '数据创建时间戳';
 COMMENT ON COLUMN "public"."source_info"."modify_time" IS '数据修改时间戳';
 COMMENT ON COLUMN "public"."source_info"."data_source_id" IS '数据源id';
-COMMENT ON TABLE "public"."source_info" IS '用于储存源信息';
+COMMENT ON TABLE "public"."source_info" IS '源信息登记表';
 
 -- ----------------------------
 -- Table structure for source_info_derive_column_info
@@ -2328,7 +3436,8 @@ CREATE TABLE "public"."source_info_derive_column_info" (
   "remark" text COLLATE "pg_catalog"."default",
   "tenant_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
   "table_guid" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-  "permission_field" bool NOT NULL
+  "permission_field" bool NOT NULL,
+  "sort" int4 DEFAULT 0
 )
 ;
 COMMENT ON COLUMN "public"."source_info_derive_column_info"."id" IS '主键id';
@@ -2349,6 +3458,7 @@ COMMENT ON COLUMN "public"."source_info_derive_column_info"."remark" IS '备注'
 COMMENT ON COLUMN "public"."source_info_derive_column_info"."tenant_id" IS '租户id';
 COMMENT ON COLUMN "public"."source_info_derive_column_info"."table_guid" IS '表的guid';
 COMMENT ON COLUMN "public"."source_info_derive_column_info"."permission_field" IS '是否为权限字段';
+COMMENT ON COLUMN "public"."source_info_derive_column_info"."sort" IS '排序';
 COMMENT ON TABLE "public"."source_info_derive_column_info" IS '衍生表对应的字段';
 
 -- ----------------------------
@@ -2398,7 +3508,9 @@ CREATE TABLE "public"."source_info_derive_table_info" (
   "update_time" timestamp(0) NOT NULL,
   "ddl" text COLLATE "pg_catalog"."default",
   "dml" text COLLATE "pg_catalog"."default",
-  "state" int4 NOT NULL
+  "state" int4 NOT NULL,
+  "importance" bool,
+  "security" bool
 )
 ;
 COMMENT ON COLUMN "public"."source_info_derive_table_info"."id" IS '主键id';
@@ -2427,6 +3539,8 @@ COMMENT ON COLUMN "public"."source_info_derive_table_info"."update_time" IS '修
 COMMENT ON COLUMN "public"."source_info_derive_table_info"."ddl" IS '生成的ddl语句';
 COMMENT ON COLUMN "public"."source_info_derive_table_info"."dml" IS '生成的dml语句';
 COMMENT ON COLUMN "public"."source_info_derive_table_info"."state" IS '0：未提交，1：已提交';
+COMMENT ON COLUMN "public"."source_info_derive_table_info"."importance" IS '重要性';
+COMMENT ON COLUMN "public"."source_info_derive_table_info"."security" IS '保密性';
 COMMENT ON TABLE "public"."source_info_derive_table_info" IS '衍生表信息表';
 
 -- ----------------------------
@@ -2442,6 +3556,9 @@ CREATE TABLE "public"."source_info_relation2parent_category" (
 ;
 COMMENT ON COLUMN "public"."source_info_relation2parent_category"."source_info_id" IS '源信息id';
 COMMENT ON COLUMN "public"."source_info_relation2parent_category"."parent_category_id" IS '源信息关联库目录创建前的父级目录id';
+COMMENT ON COLUMN "public"."source_info_relation2parent_category"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."source_info_relation2parent_category"."modify_time" IS '更新时间';
+COMMENT ON TABLE "public"."source_info_relation2parent_category" IS '源信息登记发布成功前与父目录关系表';
 
 -- ----------------------------
 -- Table structure for statistical
@@ -2455,6 +3572,12 @@ CREATE TABLE "public"."statistical" (
   "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."statistical"."statisticalid" IS '主键';
+COMMENT ON COLUMN "public"."statistical"."date" IS '统计日期';
+COMMENT ON COLUMN "public"."statistical"."statistical" IS '统计值';
+COMMENT ON COLUMN "public"."statistical"."statisticaltypeid" IS '统计类型id';
+COMMENT ON COLUMN "public"."statistical"."tenantid" IS '租户id';
+COMMENT ON TABLE "public"."statistical" IS '统计结果表';
 
 -- ----------------------------
 -- Table structure for statisticaltype
@@ -2465,6 +3588,9 @@ CREATE TABLE "public"."statisticaltype" (
   "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
+COMMENT ON COLUMN "public"."statisticaltype"."statisticaltypeid" IS '统计类型id';
+COMMENT ON COLUMN "public"."statisticaltype"."name" IS '统计类型名称';
+COMMENT ON TABLE "public"."statisticaltype" IS '统计类型名';
 
 -- ----------------------------
 -- Table structure for sync_task_definition
@@ -2501,7 +3627,9 @@ COMMENT ON COLUMN "public"."sync_task_definition"."data_source_id" IS '数据源
 COMMENT ON COLUMN "public"."sync_task_definition"."sync_all" IS '是否同步所有数据库';
 COMMENT ON COLUMN "public"."sync_task_definition"."schemas" IS '指定数据库列表';
 COMMENT ON COLUMN "public"."sync_task_definition"."tenant_id" IS '租户';
+COMMENT ON COLUMN "public"."sync_task_definition"."description" IS '描述';
 COMMENT ON COLUMN "public"."sync_task_definition"."category_guid" IS '技术目录guid';
+COMMENT ON TABLE "public"."sync_task_definition" IS '同步任务定义表';
 
 -- ----------------------------
 -- Table structure for sync_task_instance
@@ -2526,6 +3654,7 @@ COMMENT ON COLUMN "public"."sync_task_instance"."start_time" IS '开始时间';
 COMMENT ON COLUMN "public"."sync_task_instance"."update_time" IS '更新时间';
 COMMENT ON COLUMN "public"."sync_task_instance"."log" IS '日志';
 COMMENT ON COLUMN "public"."sync_task_instance"."definition_id" IS '租户';
+COMMENT ON TABLE "public"."sync_task_instance" IS '同步任务实例表';
 
 -- ----------------------------
 -- Table structure for systemrule
@@ -2539,6 +3668,12 @@ CREATE TABLE "public"."systemrule" (
   "rulecheckthresholdunit" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
+COMMENT ON COLUMN "public"."systemrule"."ruleid" IS '主键';
+COMMENT ON COLUMN "public"."systemrule"."rulename" IS '规则名';
+COMMENT ON COLUMN "public"."systemrule"."ruleinfo" IS '规则信息';
+COMMENT ON COLUMN "public"."systemrule"."ruletype" IS '规则类型';
+COMMENT ON COLUMN "public"."systemrule"."rulecheckthresholdunit" IS '规则阈值检测单位';
+COMMENT ON TABLE "public"."systemrule" IS '系统规则信息表';
 
 -- ----------------------------
 -- Table structure for table2owner
@@ -2552,6 +3687,12 @@ CREATE TABLE "public"."table2owner" (
   "pkid" varchar COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."table2owner"."tableguid" IS '数据表id';
+COMMENT ON COLUMN "public"."table2owner"."ownerid" IS '所属人id';
+COMMENT ON COLUMN "public"."table2owner"."keeper" IS '管理员';
+COMMENT ON COLUMN "public"."table2owner"."generatetime" IS '生成时间';
+COMMENT ON COLUMN "public"."table2owner"."pkid" IS 'pkid';
+COMMENT ON TABLE "public"."table2owner" IS '数据表owner';
 
 -- ----------------------------
 -- Table structure for table2tag
@@ -2562,6 +3703,9 @@ CREATE TABLE "public"."table2tag" (
   "tableguid" varchar COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."table2tag"."tagid" IS '标签id';
+COMMENT ON COLUMN "public"."table2tag"."tableguid" IS '表id';
+COMMENT ON TABLE "public"."table2tag" IS '表与标签关系表';
 
 -- ----------------------------
 -- Table structure for table_data_source_relation
@@ -2584,6 +3728,7 @@ COMMENT ON COLUMN "public"."table_data_source_relation"."data_source_id" IS '数
 COMMENT ON COLUMN "public"."table_data_source_relation"."tenant_id" IS '租户id';
 COMMENT ON COLUMN "public"."table_data_source_relation"."create_time" IS '创建时间';
 COMMENT ON COLUMN "public"."table_data_source_relation"."update_time" IS '更新时间';
+COMMENT ON TABLE "public"."table_data_source_relation" IS '数据源和表的关系';
 
 -- ----------------------------
 -- Table structure for table_metadata_history
@@ -2606,6 +3751,21 @@ CREATE TABLE "public"."table_metadata_history" (
   "version" int8 NOT NULL
 )
 ;
+COMMENT ON COLUMN "public"."table_metadata_history"."guid" IS '主键id';
+COMMENT ON COLUMN "public"."table_metadata_history"."name" IS '数据名';
+COMMENT ON COLUMN "public"."table_metadata_history"."creator" IS '创建人';
+COMMENT ON COLUMN "public"."table_metadata_history"."updater" IS '更新人';
+COMMENT ON COLUMN "public"."table_metadata_history"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."table_metadata_history"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."table_metadata_history"."database_name" IS '数据库名';
+COMMENT ON COLUMN "public"."table_metadata_history"."table_type" IS '表类型';
+COMMENT ON COLUMN "public"."table_metadata_history"."partition_table" IS '是否为分块表';
+COMMENT ON COLUMN "public"."table_metadata_history"."table_format" IS '表格式';
+COMMENT ON COLUMN "public"."table_metadata_history"."store_location" IS '物理存储位置';
+COMMENT ON COLUMN "public"."table_metadata_history"."description" IS '描述';
+COMMENT ON COLUMN "public"."table_metadata_history"."status" IS '状态';
+COMMENT ON COLUMN "public"."table_metadata_history"."version" IS '版本';
+COMMENT ON TABLE "public"."table_metadata_history" IS '数据表元数据历史表';
 
 -- ----------------------------
 -- Table structure for table_relation
@@ -2619,6 +3779,12 @@ CREATE TABLE "public"."table_relation" (
   "tenant_id" varchar(64) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."table_relation"."relationshipguid" IS '唯一标识';
+COMMENT ON COLUMN "public"."table_relation"."categoryguid" IS '技术目录Id';
+COMMENT ON COLUMN "public"."table_relation"."tableguid" IS '表guid';
+COMMENT ON COLUMN "public"."table_relation"."generatetime" IS '创建时间';
+COMMENT ON COLUMN "public"."table_relation"."tenant_id" IS '租户id';
+COMMENT ON TABLE "public"."table_relation" IS '表与目录关系表';
 
 -- ----------------------------
 -- Table structure for tableinfo
@@ -2648,7 +3814,28 @@ CREATE TABLE "public"."tableinfo" (
   "owner" varchar(32) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."tableinfo"."tableguid" IS '表id';
+COMMENT ON COLUMN "public"."tableinfo"."tablename" IS '表名';
+COMMENT ON COLUMN "public"."tableinfo"."dbname" IS '数据库名';
+COMMENT ON COLUMN "public"."tableinfo"."status" IS '状态';
+COMMENT ON COLUMN "public"."tableinfo"."createtime" IS '创建时间';
+COMMENT ON COLUMN "public"."tableinfo"."dataowner" IS '数据归属人';
+COMMENT ON COLUMN "public"."tableinfo"."databaseguid" IS '数据库id';
+COMMENT ON COLUMN "public"."tableinfo"."databasestatus" IS '数据库状态';
+COMMENT ON COLUMN "public"."tableinfo"."subordinatesystem" IS '下级系统';
+COMMENT ON COLUMN "public"."tableinfo"."subordinatedatabase" IS '下级数据库';
+COMMENT ON COLUMN "public"."tableinfo"."systemadmin" IS '系统管理员';
+COMMENT ON COLUMN "public"."tableinfo"."datawarehouseadmin" IS '数仓管理员';
+COMMENT ON COLUMN "public"."tableinfo"."datawarehousedescription" IS '数仓描述';
+COMMENT ON COLUMN "public"."tableinfo"."catalogadmin" IS '目录管理员';
+COMMENT ON COLUMN "public"."tableinfo"."display_name" IS '默认名';
+COMMENT ON COLUMN "public"."tableinfo"."display_updatetime" IS '默认更新时间';
+COMMENT ON COLUMN "public"."tableinfo"."display_operator" IS '默认操作人';
 COMMENT ON COLUMN "public"."tableinfo"."description" IS '描述';
+COMMENT ON COLUMN "public"."tableinfo"."source_id" IS '源id';
+COMMENT ON COLUMN "public"."tableinfo"."type" IS '类型';
+COMMENT ON COLUMN "public"."tableinfo"."owner" IS '拥有者';
+COMMENT ON TABLE "public"."tableinfo" IS '数据表信息表';
 
 -- ----------------------------
 -- Table structure for tag
@@ -2660,6 +3847,10 @@ CREATE TABLE "public"."tag" (
   "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."tag"."tagid" IS '标签id';
+COMMENT ON COLUMN "public"."tag"."tagname" IS '标签名';
+COMMENT ON COLUMN "public"."tag"."tenantid" IS '租户id';
+COMMENT ON TABLE "public"."tag" IS '数据表标签表';
 
 -- ----------------------------
 -- Table structure for template
@@ -2681,6 +3872,20 @@ CREATE TABLE "public"."template" (
   "generatetime" float8
 )
 ;
+COMMENT ON COLUMN "public"."template"."templateid" IS '主键id';
+COMMENT ON COLUMN "public"."template"."tableid" IS '表id';
+COMMENT ON COLUMN "public"."template"."buildtype" IS '构建类型';
+COMMENT ON COLUMN "public"."template"."periodcron" IS '分块表达式';
+COMMENT ON COLUMN "public"."template"."starttime" IS '起始时间';
+COMMENT ON COLUMN "public"."template"."templatestatus" IS '模板状态';
+COMMENT ON COLUMN "public"."template"."templatename" IS '模板名';
+COMMENT ON COLUMN "public"."template"."tablerulesnum" IS '表规则值';
+COMMENT ON COLUMN "public"."template"."columnrulesnum" IS '字段规则值';
+COMMENT ON COLUMN "public"."template"."source" IS '源id';
+COMMENT ON COLUMN "public"."template"."finishedpercent" IS '完成百分比';
+COMMENT ON COLUMN "public"."template"."shutdown" IS '是否中止';
+COMMENT ON COLUMN "public"."template"."generatetime" IS '生成时间';
+COMMENT ON TABLE "public"."template" IS '数据表模板表';
 
 -- ----------------------------
 -- Table structure for template2qrtz_job
@@ -2691,6 +3896,9 @@ CREATE TABLE "public"."template2qrtz_job" (
   "qrtz_job" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
+COMMENT ON COLUMN "public"."template2qrtz_job"."templateid" IS '模板id';
+COMMENT ON COLUMN "public"."template2qrtz_job"."qrtz_job" IS '定时任务';
+COMMENT ON TABLE "public"."template2qrtz_job" IS '模板任务表';
 
 -- ----------------------------
 -- Table structure for template_userrule
@@ -2698,7 +3906,7 @@ CREATE TABLE "public"."template2qrtz_job" (
 DROP TABLE IF EXISTS "public"."template_userrule";
 CREATE TABLE "public"."template_userrule" (
   "ruleid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-  "rulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "rulename" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
   "ruleinfo" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "rulecolumnname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
   "rulecolumntype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
@@ -2712,6 +3920,19 @@ CREATE TABLE "public"."template_userrule" (
   "generatetime" float8
 )
 ;
+COMMENT ON COLUMN "public"."template_userrule"."rulename" IS '规则名';
+COMMENT ON COLUMN "public"."template_userrule"."ruleinfo" IS '规则信息';
+COMMENT ON COLUMN "public"."template_userrule"."rulecolumnname" IS '规则栏目名';
+COMMENT ON COLUMN "public"."template_userrule"."rulecolumntype" IS '规则栏目类型';
+COMMENT ON COLUMN "public"."template_userrule"."rulechecktype" IS '规则检测方式';
+COMMENT ON COLUMN "public"."template_userrule"."rulecheckexpression" IS '规则检测表达式';
+COMMENT ON COLUMN "public"."template_userrule"."rulecheckthresholdunit" IS '规则检测预警单位';
+COMMENT ON COLUMN "public"."template_userrule"."templateid" IS '模板id';
+COMMENT ON COLUMN "public"."template_userrule"."datatype" IS '数据类型';
+COMMENT ON COLUMN "public"."template_userrule"."ruletype" IS '规则类型';
+COMMENT ON COLUMN "public"."template_userrule"."systemruleid" IS '系统规则id';
+COMMENT ON COLUMN "public"."template_userrule"."generatetime" IS '生成时间';
+COMMENT ON TABLE "public"."template_userrule" IS '模板用户规则表';
 
 -- ----------------------------
 -- Table structure for template_userrule2threshold
@@ -2722,6 +3943,9 @@ CREATE TABLE "public"."template_userrule2threshold" (
   "ruleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
+COMMENT ON COLUMN "public"."template_userrule2threshold"."thresholdvalue" IS '阈值';
+COMMENT ON COLUMN "public"."template_userrule2threshold"."ruleid" IS '规则id';
+COMMENT ON TABLE "public"."template_userrule2threshold" IS '模板规则阈值';
 
 -- ----------------------------
 -- Table structure for tenant
@@ -2734,6 +3958,35 @@ CREATE TABLE "public"."tenant" (
 ;
 COMMENT ON COLUMN "public"."tenant"."id" IS '租户id';
 COMMENT ON COLUMN "public"."tenant"."name" IS '租户名字';
+COMMENT ON TABLE "public"."tenant" IS '租户表';
+
+-- ----------------------------
+-- Table structure for threshold_setting
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."threshold_setting";
+CREATE TABLE "public"."threshold_setting" (
+  "id" int8 NOT NULL,
+  "indicator_id" int8,
+  "indicator_type" int4,
+  "operator" varchar(255) COLLATE "pg_catalog"."default",
+  "operate_values" jsonb,
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
+)
+;
+COMMENT ON COLUMN "public"."threshold_setting"."id" IS '主键id';
+COMMENT ON COLUMN "public"."threshold_setting"."indicator_id" IS '指标id';
+COMMENT ON COLUMN "public"."threshold_setting"."indicator_type" IS '指标类型';
+COMMENT ON COLUMN "public"."threshold_setting"."operator" IS '比较操作符';
+COMMENT ON COLUMN "public"."threshold_setting"."operate_values" IS '操作值';
+COMMENT ON COLUMN "public"."threshold_setting"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."threshold_setting"."update_user_id" IS '更新人';
+COMMENT ON COLUMN "public"."threshold_setting"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."threshold_setting"."deleted" IS '逻辑删除位(0已删除 1未删除)';
+COMMENT ON TABLE "public"."threshold_setting" IS '指标阈值设置表';
 
 -- ----------------------------
 -- Table structure for time_limit
@@ -2761,6 +4014,96 @@ CREATE TABLE "public"."time_limit" (
   "time_range" int4
 )
 ;
+COMMENT ON COLUMN "public"."time_limit"."id" IS '主键id';
+COMMENT ON COLUMN "public"."time_limit"."name" IS '名称';
+COMMENT ON COLUMN "public"."time_limit"."description" IS '描述';
+COMMENT ON COLUMN "public"."time_limit"."grade" IS '等级';
+COMMENT ON COLUMN "public"."time_limit"."start_time" IS '开始时间';
+COMMENT ON COLUMN "public"."time_limit"."end_time" IS '结束时间';
+COMMENT ON COLUMN "public"."time_limit"."creator" IS '创建者';
+COMMENT ON COLUMN "public"."time_limit"."updater" IS '更新者';
+COMMENT ON COLUMN "public"."time_limit"."state" IS '状态';
+COMMENT ON COLUMN "public"."time_limit"."version" IS '版本';
+COMMENT ON COLUMN "public"."time_limit"."delete" IS '删除标记';
+COMMENT ON COLUMN "public"."time_limit"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."time_limit"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."time_limit"."tenantid" IS '租户id';
+COMMENT ON COLUMN "public"."time_limit"."publisher" IS '发布者';
+COMMENT ON COLUMN "public"."time_limit"."approveid" IS '审批者';
+COMMENT ON COLUMN "public"."time_limit"."mark" IS '编码';
+COMMENT ON COLUMN "public"."time_limit"."time_type" IS '相对时间单位';
+COMMENT ON COLUMN "public"."time_limit"."time_range" IS '对时间范围';
+COMMENT ON TABLE "public"."time_limit" IS '时间限定表';
+
+-- ----------------------------
+-- Table structure for time_limit_ind
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."time_limit_ind";
+CREATE TABLE "public"."time_limit_ind" (
+  "id" int8 NOT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "mark" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "description" varchar(255) COLLATE "pg_catalog"."default",
+  "start_time" date,
+  "end_time" date,
+  "deleted" int2 NOT NULL DEFAULT 1,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamptz(6) NOT NULL,
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamptz(6),
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "time_type" varchar(32) COLLATE "pg_catalog"."default",
+  "time_range" varchar(32) COLLATE "pg_catalog"."default",
+  "create_name" varchar(255) COLLATE "pg_catalog"."default",
+  "update_name" varchar(255) COLLATE "pg_catalog"."default"
+)
+;
+COMMENT ON COLUMN "public"."time_limit_ind"."id" IS '主键id';
+COMMENT ON COLUMN "public"."time_limit_ind"."name" IS '名称';
+COMMENT ON COLUMN "public"."time_limit_ind"."mark" IS '唯一编码';
+COMMENT ON COLUMN "public"."time_limit_ind"."description" IS '描述';
+COMMENT ON COLUMN "public"."time_limit_ind"."start_time" IS '绝对时间开始时间';
+COMMENT ON COLUMN "public"."time_limit_ind"."end_time" IS '绝对时间结束时间';
+COMMENT ON COLUMN "public"."time_limit_ind"."deleted" IS '是否删除';
+COMMENT ON COLUMN "public"."time_limit_ind"."create_user_id" IS '创建者id';
+COMMENT ON COLUMN "public"."time_limit_ind"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."time_limit_ind"."update_user_id" IS '更新者id';
+COMMENT ON COLUMN "public"."time_limit_ind"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."time_limit_ind"."tenant_id" IS '租户id';
+COMMENT ON COLUMN "public"."time_limit_ind"."time_type" IS '相对时间单位：Y年，M月，D日';
+COMMENT ON COLUMN "public"."time_limit_ind"."time_range" IS '相对时间范围：0当前单位，-1过去一单位';
+COMMENT ON COLUMN "public"."time_limit_ind"."create_name" IS '创建者名字';
+COMMENT ON COLUMN "public"."time_limit_ind"."update_name" IS '更新者名字';
+COMMENT ON TABLE "public"."time_limit_ind" IS '时间限定指标';
+
+-- ----------------------------
+-- Table structure for time_limit_ind_log
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."time_limit_ind_log";
+CREATE TABLE "public"."time_limit_ind_log" (
+  "id" int8 NOT NULL,
+  "log_id" int8 NOT NULL,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "change" varchar(2000) COLLATE "pg_catalog"."default" NOT NULL,
+  "log_time" timestamptz(6) NOT NULL,
+  "create_time" timestamptz(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamptz(6),
+  "deleted" int2 DEFAULT 1,
+  "log_name" varchar(255) COLLATE "pg_catalog"."default"
+)
+;
+COMMENT ON COLUMN "public"."time_limit_ind_log"."id" IS '主键id';
+COMMENT ON COLUMN "public"."time_limit_ind_log"."log_id" IS '时间限定的id';
+COMMENT ON COLUMN "public"."time_limit_ind_log"."create_user_id" IS '创建该记录的用户id';
+COMMENT ON COLUMN "public"."time_limit_ind_log"."change" IS '变更';
+COMMENT ON COLUMN "public"."time_limit_ind_log"."log_time" IS '记录创建时间，也是修改时间';
+COMMENT ON COLUMN "public"."time_limit_ind_log"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."time_limit_ind_log"."update_user_id" IS '更新者';
+COMMENT ON COLUMN "public"."time_limit_ind_log"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."time_limit_ind_log"."deleted" IS '是否删除';
+COMMENT ON COLUMN "public"."time_limit_ind_log"."log_name" IS '编辑者名字';
+COMMENT ON TABLE "public"."time_limit_ind_log" IS '时间限定日志表';
 
 -- ----------------------------
 -- Table structure for user2apistar
@@ -2771,16 +4114,9 @@ CREATE TABLE "public"."user2apistar" (
   "userid" varchar COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
-
--- ----------------------------
--- Table structure for user2role
--- ----------------------------
-DROP TABLE IF EXISTS "public"."user2role";
-CREATE TABLE "public"."user2role" (
-  "userid" varchar(225) COLLATE "pg_catalog"."default" NOT NULL,
-  "roleid" varchar(225) COLLATE "pg_catalog"."default" NOT NULL
-)
-;
+COMMENT ON COLUMN "public"."user2apistar"."apiguid" IS 'api主键';
+COMMENT ON COLUMN "public"."user2apistar"."userid" IS '用户id';
+COMMENT ON TABLE "public"."user2apistar" IS '用户api关系表';
 
 -- ----------------------------
 -- Table structure for user_group
@@ -2799,6 +4135,17 @@ CREATE TABLE "public"."user_group" (
   "authorize_time" timestamptz(6)
 )
 ;
+COMMENT ON COLUMN "public"."user_group"."id" IS '主键';
+COMMENT ON COLUMN "public"."user_group"."tenant" IS '租户';
+COMMENT ON COLUMN "public"."user_group"."name" IS '用户组名称';
+COMMENT ON COLUMN "public"."user_group"."creator" IS '创建者';
+COMMENT ON COLUMN "public"."user_group"."description" IS '描述';
+COMMENT ON COLUMN "public"."user_group"."createtime" IS '创建时间';
+COMMENT ON COLUMN "public"."user_group"."updatetime" IS '更新时间';
+COMMENT ON COLUMN "public"."user_group"."valid" IS '是否有效';
+COMMENT ON COLUMN "public"."user_group"."authorize_user" IS '操作者';
+COMMENT ON COLUMN "public"."user_group"."authorize_time" IS '授权时间';
+COMMENT ON TABLE "public"."user_group" IS '用户组';
 
 -- ----------------------------
 -- Table structure for user_group_relation
@@ -2809,6 +4156,28 @@ CREATE TABLE "public"."user_group_relation" (
   "user_id" varchar(40) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."user_group_relation"."group_id" IS '用户组id';
+COMMENT ON COLUMN "public"."user_group_relation"."user_id" IS '用户id';
+COMMENT ON TABLE "public"."user_group_relation" IS '用户和用户组关联表';
+
+-- ----------------------------
+-- Table structure for user_permission
+-- ----------------------------
+DROP TABLE IF EXISTS "public"."user_permission";
+CREATE TABLE "public"."user_permission" (
+  "user_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "username" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "account" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "permissions" bool NOT NULL DEFAULT false,
+  "create_time" timestamp(6) NOT NULL
+)
+;
+COMMENT ON COLUMN "public"."user_permission"."user_id" IS '用户id';
+COMMENT ON COLUMN "public"."user_permission"."username" IS '用户名';
+COMMENT ON COLUMN "public"."user_permission"."account" IS '账号';
+COMMENT ON COLUMN "public"."user_permission"."permissions" IS '是否具有全局权限';
+COMMENT ON COLUMN "public"."user_permission"."create_time" IS '创建时间';
+COMMENT ON TABLE "public"."user_permission" IS '用户权限表';
 
 -- ----------------------------
 -- Table structure for users
@@ -2828,6 +4197,10 @@ COMMENT ON COLUMN "public"."users"."userid" IS '用户id';
 COMMENT ON COLUMN "public"."users"."username" IS '用户名';
 COMMENT ON COLUMN "public"."users"."account" IS '用户账号';
 COMMENT ON COLUMN "public"."users"."roleid" IS '用户角色id';
+COMMENT ON COLUMN "public"."users"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."users"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."users"."valid" IS '有效标记';
+COMMENT ON TABLE "public"."users" IS '用户表';
 
 -- ----------------------------
 -- Table structure for warning_group
@@ -2847,27 +4220,39 @@ CREATE TABLE "public"."warning_group" (
   "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
+COMMENT ON COLUMN "public"."warning_group"."id" IS '主键';
 COMMENT ON COLUMN "public"."warning_group"."name" IS '告警组名称';
 COMMENT ON COLUMN "public"."warning_group"."type" IS '告警类型:0-系统,1-邮件,2-短信,';
 COMMENT ON COLUMN "public"."warning_group"."contacts" IS '联系人';
 COMMENT ON COLUMN "public"."warning_group"."category_id" IS '告警组id，共用规则分组';
 COMMENT ON COLUMN "public"."warning_group"."description" IS '描述';
 COMMENT ON COLUMN "public"."warning_group"."create_time" IS '创建时间';
+COMMENT ON COLUMN "public"."warning_group"."update_time" IS '更新时间';
 COMMENT ON COLUMN "public"."warning_group"."creator" IS '创建者id';
+COMMENT ON COLUMN "public"."warning_group"."delete" IS '删除标记';
+COMMENT ON COLUMN "public"."warning_group"."tenantid" IS '租户id';
+COMMENT ON TABLE "public"."warning_group" IS '告警组';
 
 -- ----------------------------
--- View structure for test_view
+-- View structure for test_tenant_group_user_relation
 -- ----------------------------
-DROP VIEW IF EXISTS "public"."test_view";
-CREATE VIEW "public"."test_view" AS  SELECT tag.tagid,
-    tag.tagname,
-    tag.tenantid
-   FROM tag;
+DROP VIEW IF EXISTS "public"."test_tenant_group_user_relation";
+CREATE VIEW "public"."test_tenant_group_user_relation" AS  SELECT tenant.id AS tenant_id,
+    tenant.name AS tenant_name,
+    user_group.id AS user_group_id,
+    user_group.name AS user_group_name,
+    users.userid AS user_id,
+    users.username AS user_name,
+    users.account AS user_account
+   FROM (((tenant
+     JOIN user_group ON ((((user_group.tenant)::text = (tenant.id)::text) AND (user_group.valid = true))))
+     JOIN user_group_relation ON (((user_group_relation.group_id)::text = (user_group.id)::text)))
+     JOIN users ON ((((users.userid)::text = (user_group_relation.user_id)::text) AND (users.valid = true))));
 
 -- ----------------------------
 -- Alter sequences owned by
 -- ----------------------------
-SELECT setval('"public"."number_seq"', 74, true);
+SELECT setval('"public"."number_seq"', 75, true);
 
 -- ----------------------------
 -- Primary Key structure for table annex
@@ -2950,19 +4335,9 @@ ALTER TABLE "public"."atom_indicator_apply" ADD CONSTRAINT "atom_indicator_apply
 ALTER TABLE "public"."atom_indicator_logic" ADD CONSTRAINT "atom_indicator_logic_pkey" PRIMARY KEY ("id");
 
 -- ----------------------------
--- Uniques structure for table atom_indicator_version
--- ----------------------------
-ALTER TABLE "public"."atom_indicator_version" ADD CONSTRAINT "unique_atom_indicator_version" UNIQUE ("atom_indicator_id", "version_id");
-
--- ----------------------------
 -- Primary Key structure for table atom_indicator_version
 -- ----------------------------
 ALTER TABLE "public"."atom_indicator_version" ADD CONSTRAINT "atom_indicator_version_pkey" PRIMARY KEY ("id");
-
--- ----------------------------
--- Primary Key structure for table business2table
--- ----------------------------
-ALTER TABLE "public"."business2table" ADD CONSTRAINT "business2table_pkey" PRIMARY KEY ("businessid", "tableguid");
 
 -- ----------------------------
 -- Primary Key structure for table business_catalog
@@ -2980,9 +4355,19 @@ ALTER TABLE "public"."business_catalog_log" ADD CONSTRAINT "business_catalog_log
 ALTER TABLE "public"."business_index_tag_relations" ADD CONSTRAINT "business_index_tag_relations_pkey" PRIMARY KEY ("id");
 
 -- ----------------------------
+-- Primary Key structure for table business_indicator_apply
+-- ----------------------------
+ALTER TABLE "public"."business_indicator_apply" ADD CONSTRAINT "business_indicator_apply_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
 -- Primary Key structure for table business_indicators
 -- ----------------------------
 ALTER TABLE "public"."business_indicators" ADD CONSTRAINT "business_indicators_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Primary Key structure for table business_indicators_history
+-- ----------------------------
+ALTER TABLE "public"."business_indicators_history" ADD CONSTRAINT "business_indicators_copy1_pkey" PRIMARY KEY ("id");
 
 -- ----------------------------
 -- Primary Key structure for table business_operation_records
@@ -2993,6 +4378,16 @@ ALTER TABLE "public"."business_operation_records" ADD CONSTRAINT "business_opera
 -- Primary Key structure for table business_relation
 -- ----------------------------
 ALTER TABLE "public"."business_relation" ADD CONSTRAINT "business_relation_pkey" PRIMARY KEY ("relationshipguid");
+
+-- ----------------------------
+-- Primary Key structure for table business_tags
+-- ----------------------------
+ALTER TABLE "public"."business_tags" ADD CONSTRAINT "business_tags_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Primary Key structure for table business_unit
+-- ----------------------------
+ALTER TABLE "public"."business_unit" ADD CONSTRAINT "business_unit_pkey" PRIMARY KEY ("id");
 
 -- ----------------------------
 -- Primary Key structure for table businessinfo
@@ -3028,6 +4423,16 @@ ALTER TABLE "public"."column_info" ADD CONSTRAINT "column_info_pkey" PRIMARY KEY
 -- Primary Key structure for table column_metadata_history
 -- ----------------------------
 ALTER TABLE "public"."column_metadata_history" ADD CONSTRAINT "column_metadata_history_pkey" PRIMARY KEY ("guid", "version");
+
+-- ----------------------------
+-- Primary Key structure for table composite_indicator
+-- ----------------------------
+ALTER TABLE "public"."composite_indicator" ADD CONSTRAINT "composite_indicator_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Primary Key structure for table composite_indicator_version
+-- ----------------------------
+ALTER TABLE "public"."composite_indicator_version" ADD CONSTRAINT "composite_indicator_version_pkey" PRIMARY KEY ("id");
 
 -- ----------------------------
 -- Primary Key structure for table connector
@@ -3085,6 +4490,21 @@ ALTER TABLE "public"."datasource_group_relation" ADD CONSTRAINT "datasource_grou
 ALTER TABLE "public"."db_info" ADD CONSTRAINT "db_info_pkey" PRIMARY KEY ("database_guid");
 
 -- ----------------------------
+-- Primary Key structure for table derive_indicator
+-- ----------------------------
+ALTER TABLE "public"."derive_indicator" ADD CONSTRAINT "derive_indicator_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Primary Key structure for table derive_indicator_qualifier
+-- ----------------------------
+ALTER TABLE "public"."derive_indicator_qualifier" ADD CONSTRAINT "derive_indicator_qualifier_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Primary Key structure for table derive_indicator_version
+-- ----------------------------
+ALTER TABLE "public"."derive_indicator_version" ADD CONSTRAINT "derive_indicator_version_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
 -- Primary Key structure for table desensitization_rule
 -- ----------------------------
 ALTER TABLE "public"."desensitization_rule" ADD CONSTRAINT "desensitization_rule_pkey" PRIMARY KEY ("id");
@@ -3098,6 +4518,26 @@ ALTER TABLE "public"."dimension" ADD CONSTRAINT "increase_dimension_pkey" PRIMAR
 -- Primary Key structure for table dimension_metadata_relation
 -- ----------------------------
 ALTER TABLE "public"."dimension_metadata_relation" ADD CONSTRAINT "dimension_mapping_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Primary Key structure for table group_table_relation
+-- ----------------------------
+ALTER TABLE "public"."group_table_relation" ADD CONSTRAINT "group_table_relation_pkey" PRIMARY KEY ("derive_table_id", "user_group_id", "tenant_id");
+
+-- ----------------------------
+-- Primary Key structure for table indicator_lineage_trace
+-- ----------------------------
+ALTER TABLE "public"."indicator_lineage_trace" ADD CONSTRAINT "indicator_lineage_trace_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Primary Key structure for table indicator_threshold_log
+-- ----------------------------
+ALTER TABLE "public"."indicator_threshold_log" ADD CONSTRAINT "indicator_threshold_log_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Primary Key structure for table indicator_threshold_setting
+-- ----------------------------
+ALTER TABLE "public"."indicator_threshold_setting" ADD CONSTRAINT "threshold_setting_pkey" PRIMARY KEY ("id");
 
 -- ----------------------------
 -- Indexes structure for table ip_restriction
@@ -3129,7 +4569,7 @@ ALTER TABLE "public"."operate_log" ADD CONSTRAINT "operate_log_pkey" PRIMARY KEY
 -- ----------------------------
 -- Primary Key structure for table organization
 -- ----------------------------
-ALTER TABLE "public"."organization" ADD CONSTRAINT "organization_pkey" PRIMARY KEY ("pkid");
+ALTER TABLE "public"."organization" ADD CONSTRAINT "organization_pkey" PRIMARY KEY ("id");
 
 -- ----------------------------
 -- Primary Key structure for table privilege
@@ -3318,6 +4758,16 @@ ALTER TABLE "public"."qrtz_triggers" ADD CONSTRAINT "qrtz_triggers_pkey" PRIMARY
 ALTER TABLE "public"."qualifier" ADD CONSTRAINT "qualifier_pkey" PRIMARY KEY ("id");
 
 -- ----------------------------
+-- Primary Key structure for table qualifier_ind
+-- ----------------------------
+ALTER TABLE "public"."qualifier_ind" ADD CONSTRAINT "qualifier_ind_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Primary Key structure for table qualifier_ind_log
+-- ----------------------------
+ALTER TABLE "public"."qualifier_ind_log" ADD CONSTRAINT "time_limit_log_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
 -- Primary Key structure for table qualifier_type
 -- ----------------------------
 ALTER TABLE "public"."qualifier_type" ADD CONSTRAINT "qualifier_type_pkey" PRIMARY KEY ("type_id");
@@ -3346,16 +4796,6 @@ ALTER TABLE "public"."report_userrule" ADD CONSTRAINT "report_ruleresult_pkey" P
 -- Primary Key structure for table report_userrule2threshold
 -- ----------------------------
 ALTER TABLE "public"."report_userrule2threshold" ADD CONSTRAINT "report_threshold_value_pkey" PRIMARY KEY ("thresholdvalue", "ruleid");
-
--- ----------------------------
--- Primary Key structure for table role
--- ----------------------------
-ALTER TABLE "public"."role" ADD CONSTRAINT "role_pkey" PRIMARY KEY ("roleid");
-
--- ----------------------------
--- Primary Key structure for table role2category
--- ----------------------------
-ALTER TABLE "public"."role2category" ADD CONSTRAINT "role2category_pkey" PRIMARY KEY ("roleid", "categoryid");
 
 -- ----------------------------
 -- Primary Key structure for table rule2buildtype
@@ -3533,14 +4973,19 @@ ALTER TABLE "public"."tenant" ADD CONSTRAINT "tenant_pkey" PRIMARY KEY ("id");
 ALTER TABLE "public"."time_limit" ADD CONSTRAINT "timelimit_pkey" PRIMARY KEY ("id", "version");
 
 -- ----------------------------
+-- Primary Key structure for table time_limit_ind
+-- ----------------------------
+ALTER TABLE "public"."time_limit_ind" ADD CONSTRAINT "time_limit_ind_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
+-- Primary Key structure for table time_limit_ind_log
+-- ----------------------------
+ALTER TABLE "public"."time_limit_ind_log" ADD CONSTRAINT "qualifier_ind_log_copy1_pkey" PRIMARY KEY ("id");
+
+-- ----------------------------
 -- Primary Key structure for table user2apistar
 -- ----------------------------
 ALTER TABLE "public"."user2apistar" ADD CONSTRAINT "user2apistar_pkey" PRIMARY KEY ("apiguid", "userid");
-
--- ----------------------------
--- Primary Key structure for table user2role
--- ----------------------------
-ALTER TABLE "public"."user2role" ADD CONSTRAINT "user2role_pkey" PRIMARY KEY ("userid", "roleid");
 
 -- ----------------------------
 -- Primary Key structure for table users
@@ -3562,6 +5007,11 @@ ALTER TABLE "public"."approval_group_relation" ADD CONSTRAINT "fk2" FOREIGN KEY 
 -- Foreign Keys structure for table approval_item
 -- ----------------------------
 ALTER TABLE "public"."approval_item" ADD CONSTRAINT "fk1" FOREIGN KEY ("approve_group") REFERENCES "public"."approval_group" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- ----------------------------
+-- Foreign Keys structure for table business_indicator_apply
+-- ----------------------------
+ALTER TABLE "public"."business_indicator_apply" ADD CONSTRAINT "business_indicator_apply_fk" FOREIGN KEY ("business_indicator_id") REFERENCES "public"."business_indicators" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 -- ----------------------------
 -- Foreign Keys structure for table qrtz_blob_triggers
@@ -3593,8 +5043,3 @@ ALTER TABLE "public"."qrtz_triggers" ADD CONSTRAINT "qrtz_triggers_sched_name_fk
 -- ----------------------------
 ALTER TABLE "public"."source_info" ADD CONSTRAINT "fk_source_info_status" FOREIGN KEY ("status") REFERENCES "public"."code_source_info_status" ("code") ON DELETE NO ACTION ON UPDATE CASCADE;
 ALTER TABLE "public"."source_info" ADD CONSTRAINT "fk_source_info_tenant_id" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenant" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- ----------------------------
---
--- ----------------------------
-TRUNCATE TABLE category_group_relation;
