@@ -288,6 +288,13 @@ public class TenantService {
                 if (CollectionUtils.isEmpty(list)) {
                     return new ArrayList<>();
                 }
+                Iterator<Tenant> iterator = list.iterator();
+                while (iterator.hasNext()) {
+                    Tenant tenant = iterator.next();
+                    if (StringUtils.isBlank(tenant.getTenantId()) || StringUtils.isBlank(tenant.getProjectName())) {
+                        iterator.remove();
+                    }
+                }
                 tenantsCacheAll.put(cacheKey, list);
                 return list;
             }
