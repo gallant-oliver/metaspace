@@ -222,7 +222,7 @@ public interface SourceInfoDeriveTableInfoDAO {
             "AND tenant_id = #{tenantId} AND  version=-1 LIMIT 1 ")
     SourceInfoDeriveTableInfo getByNameAndDbGuid(@Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
 
-    @Select("select importance,security from source_info_derive_table_info where table_guid=#{tableGuid} AND tenant_id = #{tenantId} ")
+    @Select("select importance,security from source_info_derive_table_info where table_guid=#{tableGuid}")
     List<TableExtInfo> getImportanceInfo( @Param("tableGuid") String tableGuid,@Param("tenantId") String tenantId);
 
     @Select("<script>" +
