@@ -184,8 +184,16 @@ public class MetaDataService {
         if (Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
-        AtlasEntity entity = getEntityById(guid);
-        return getTableType(entity);
+        Map<String, Object> result = new HashMap<>();
+        TableEntity tableEntity = tableDAO.selectById(guid);
+        if(tableEntity == null){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到表");
+        }
+        result.put("schemaId", tableEntity.getDatabaseId());
+        result.put("schemaName", tableEntity.getDbName());
+        result.put("isHiveTable", "hive".equalsIgnoreCase(tableEntity.getDbType()));
+        result.put("isView", "view".equalsIgnoreCase(tableEntity.getTableType()));
+        return result;
     }
 
     public Map<String, Object> getTableType(AtlasEntity entity) {

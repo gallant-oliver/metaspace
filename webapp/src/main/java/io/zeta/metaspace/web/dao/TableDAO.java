@@ -438,4 +438,17 @@ public interface TableDAO {
             " ) AS A" +
             "</script>")
     int selectCountByTenantIdAndDbName(@Param("tenantId") String tenantId, @Param("dbs") List<String> dbs);
+
+    @Select("<script>" +
+            " SELECT" +
+            " db.database_guid AS databaseId," +
+            " db.database_name AS dbName," +
+            " db.db_type AS dbType," +
+            " tb.TYPE AS tableType," +
+            " tb.tableguid AS id," +
+            " tb.tablename AS name " +
+            " FROM tableinfo AS tb INNER JOIN db_info AS db ON tb.databaseguid = db.database_guid" +
+            " WHERE tb.tableguid = #{id} AND tb.status = 'ACTIVE' LIMIT 1" +
+            "</script>")
+    TableEntity selectById(@Param("id") String id);
 }
