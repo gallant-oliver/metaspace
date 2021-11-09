@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.rest;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
+import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
 import io.zeta.metaspace.model.result.PageResult;
@@ -218,6 +219,25 @@ public class PublicREST {
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取api展示列表失败");
+        }
+    }
+
+    /**
+     * 业务对象关联技术信息详情
+     *
+     * @param businessId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{businessId}/{tenantId}/technical")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public TechnologyInfo getBusinessRelatedTables(@PathParam("businessId") String businessId, @PathParam("tenantId") String tenantId) throws AtlasBaseException {
+        try {
+            return businessService.getRelatedTableListGlobal(businessId, tenantId);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "业务对象关联技术信息详情失败");
         }
     }
 }
