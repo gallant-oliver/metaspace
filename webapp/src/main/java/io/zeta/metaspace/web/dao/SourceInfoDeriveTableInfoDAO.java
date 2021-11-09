@@ -213,16 +213,16 @@ public interface SourceInfoDeriveTableInfoDAO {
             "</script>"})
     List<SourceInfoDeriveTableInfo> getDeriveTableByGuid(@Param("sourceId")String sourceId,
                                                          @Param("tableGuid") String tableGuid );
-    @Select("SELECT\n" +
-            "id,importance,security \n" +
-            "FROM\n" +
-            "source_info_derive_table_info\n" +
-            "WHERE\n" +
-            " table_guid = #{tableGuid}\n" +
-            "AND tenant_id = #{tenantId} AND  version=-1 LIMIT 1 ")
+    @Select("SELECT " +
+            "id, importance, security " +
+            "FROM " +
+            "source_info_derive_table_info " +
+            "WHERE " +
+            "table_guid = #{tableGuid} " +
+            "AND version=-1 LIMIT 1")
     SourceInfoDeriveTableInfo getByNameAndDbGuid(@Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId);
 
-    @Select("select importance,security from source_info_derive_table_info where table_guid=#{tableGuid}")
+    @Select("select importance,security from source_info_derive_table_info where table_guid=#{tableGuid} and version=-1")
     List<TableExtInfo> getImportanceInfo( @Param("tableGuid") String tableGuid,@Param("tenantId") String tenantId);
 
     @Select("<script>" +
