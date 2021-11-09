@@ -484,35 +484,40 @@ public class MetaDataService {
             List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
             //table
             Table table = extractTableInfo(entityInfo, guid, tenantId);
-            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableId(),tenantId);
-            if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))) {
-                if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
-                    Boolean importancePrivilege = Boolean.TRUE;
-                    Boolean securityPrivilege = Boolean.TRUE;
-                    List<GroupDeriveTableRelation> relations = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableId(), userGroupIds, tenantId);
-                    GroupDeriveTableRelation relation = new GroupDeriveTableRelation();
-                    boolean ifSecurityNull=relations.stream().allMatch(r-> r.getSecurityPrivilege()==null);
-                    boolean ifImportanceNull=relations.stream().allMatch(r-> r.getImportancePrivilege()==null);
-                    relation.setSecurityPrivilege(ifSecurityNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getSecurityPrivilege));
-                    relation.setImportancePrivilege(ifImportanceNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getImportancePrivilege));
-                    if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
-                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getImportancePrivilege() == null  || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
-                        importancePrivilege = Boolean.FALSE;
+            if(publicService.isGlobal()){
+                table.setImportancePrivilege(false);
+                table.setSecurityPrivilege(false);
+            }else {
+                SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableId(),tenantId);
+                if (sourceInfoDeriveTableInfo != null) {
+                    if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
+                        Boolean importancePrivilege = Boolean.TRUE;
+                        Boolean securityPrivilege = Boolean.TRUE;
+                        List<GroupDeriveTableRelation> relations = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableId(), userGroupIds, tenantId);
+                        GroupDeriveTableRelation relation = new GroupDeriveTableRelation();
+                        boolean ifSecurityNull=relations.stream().allMatch(r-> r.getSecurityPrivilege()==null);
+                        boolean ifImportanceNull=relations.stream().allMatch(r-> r.getImportancePrivilege()==null);
+                        relation.setSecurityPrivilege(ifSecurityNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getSecurityPrivilege));
+                        relation.setImportancePrivilege(ifImportanceNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getImportancePrivilege));
+                        if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
+                                (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getImportancePrivilege() == null  || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
+                            importancePrivilege = Boolean.FALSE;
 
+                        }
+                        if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getSecurity()) &&
+                                (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getSecurityPrivilege() == null  || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
+                            securityPrivilege = Boolean.FALSE;
+                        }
+                        if (sourceInfoDeriveTableInfo.getImportance()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getImportance())){
+                            importancePrivilege = null;                    }
+                        if (sourceInfoDeriveTableInfo.getSecurity()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getSecurity())){
+                            securityPrivilege = null;                    }
+                        table.setImportancePrivilege(importancePrivilege);
+                        table.setSecurityPrivilege(securityPrivilege);
+                    } else {
+                        table.setImportancePrivilege(!sourceInfoDeriveTableInfo.getImportance());
+                        table.setSecurityPrivilege(!sourceInfoDeriveTableInfo.getSecurity());
                     }
-                    if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getSecurity()) &&
-                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getSecurityPrivilege() == null  || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
-                        securityPrivilege = Boolean.FALSE;
-                    }
-                    if (sourceInfoDeriveTableInfo.getImportance()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getImportance())){
-                        importancePrivilege = null;                    }
-                    if (sourceInfoDeriveTableInfo.getSecurity()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getSecurity())){
-                        securityPrivilege = null;                    }
-                    table.setImportancePrivilege(importancePrivilege);
-                    table.setSecurityPrivilege(securityPrivilege);
-                } else {
-                    table.setImportancePrivilege(!sourceInfoDeriveTableInfo.getImportance());
-                    table.setSecurityPrivilege(!sourceInfoDeriveTableInfo.getSecurity());
                 }
             }
             if(StringUtils.isBlank(sourceId)){
@@ -800,7 +805,7 @@ public class MetaDataService {
      * @return
      * @throws AtlasBaseException
      */
-    public RDBMSTable getRDBMSTableInfoByIdGlobal(String guid, String tenantId,String sourceId) throws AtlasBaseException {
+    public RDBMSTable getRDBMSTableInfoByIdGlobal(String guid, String tenantId, String sourceId) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getRDBMSTableInfoById({})", guid);
         }
@@ -818,45 +823,51 @@ public class MetaDataService {
             }
             //获取当前用户的用户组
             User user = AdminUtils.getUserData();
-            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
+            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
             //table
             RDBMSTable table = extractRDBMSTableInfo(entity, guid, info, tenantId);
-            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableId(),tenantId);
-            if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))){
-                if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
-                    Boolean importancePrivilege = Boolean.TRUE;
-                    Boolean securityPrivilege = Boolean.TRUE;
-                    List<GroupDeriveTableRelation> relations = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableId(), userGroupIds, tenantId);
-                    GroupDeriveTableRelation relation = new GroupDeriveTableRelation();
-                    boolean ifSecurityNull=relations.stream().allMatch(r-> r.getSecurityPrivilege()==null);
-                    boolean ifImportanceNull=relations.stream().allMatch(r-> r.getImportancePrivilege()==null);
-                    relation.setSecurityPrivilege(ifSecurityNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getSecurityPrivilege));
-                    relation.setImportancePrivilege(ifImportanceNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getImportancePrivilege));
-                    if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
-                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getImportancePrivilege() == null  || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
-                        importancePrivilege = Boolean.FALSE;
-                    }
-                    if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getSecurity()) &&
-                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getSecurityPrivilege() == null  || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
-                        securityPrivilege = Boolean.FALSE;
-                    }
-                    if (sourceInfoDeriveTableInfo.getImportance()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getImportance())){
-                        importancePrivilege = null;
-                    }
-                    if (sourceInfoDeriveTableInfo.getSecurity()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getSecurity())){
-                        securityPrivilege = null;
-                    }
-                    table.setImportancePrivilege(importancePrivilege);
-                    table.setSecurityPrivilege(securityPrivilege);
+            if (publicService.isGlobal()) {
+                table.setImportancePrivilege(false);
+                table.setSecurityPrivilege(false);
+            } else {
+                SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableId(), tenantId);
+                if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))) {
+                    if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
+                        Boolean importancePrivilege = Boolean.TRUE;
+                        Boolean securityPrivilege = Boolean.TRUE;
+                        List<GroupDeriveTableRelation> relations = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableId(), userGroupIds, tenantId);
+                        GroupDeriveTableRelation relation = new GroupDeriveTableRelation();
+                        boolean ifSecurityNull = relations.stream().allMatch(r -> r.getSecurityPrivilege() == null);
+                        boolean ifImportanceNull = relations.stream().allMatch(r -> r.getImportancePrivilege() == null);
+                        relation.setSecurityPrivilege(ifSecurityNull ? null : relations.stream().anyMatch(GroupDeriveTableRelation::getSecurityPrivilege));
+                        relation.setImportancePrivilege(ifImportanceNull ? null : relations.stream().anyMatch(GroupDeriveTableRelation::getImportancePrivilege));
+                        if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
+                                (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || relation.getImportancePrivilege() == null || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
+                            importancePrivilege = Boolean.FALSE;
+                        }
+                        if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getSecurity()) &&
+                                (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || relation.getSecurityPrivilege() == null || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
+                            securityPrivilege = Boolean.FALSE;
+                        }
+                        if (sourceInfoDeriveTableInfo.getImportance() == null || Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getImportance())) {
+                            importancePrivilege = null;
+                        }
+                        if (sourceInfoDeriveTableInfo.getSecurity() == null || Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getSecurity())) {
+                            securityPrivilege = null;
+                        }
+                        table.setImportancePrivilege(importancePrivilege);
+                        table.setSecurityPrivilege(securityPrivilege);
 
-                }else{
-                    table.setImportancePrivilege(!sourceInfoDeriveTableInfo.getImportance());
-                    table.setSecurityPrivilege(!sourceInfoDeriveTableInfo.getSecurity());
+                    } else {
+                        table.setImportancePrivilege(!sourceInfoDeriveTableInfo.getImportance());
+                        table.setSecurityPrivilege(!sourceInfoDeriveTableInfo.getSecurity());
+                    }
                 }
             }
+
             Table tableAttr = tableDAO.getDbAndTableName(guid);
-            if(tableAttr != null){
-                List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceId == null ? null : sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,tableAttr.getDatabaseId(),tableAttr.getTableName());
+            if (tableAttr != null) {
+                List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceId == null ? null : sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId, sourceId, tableAttr.getDatabaseId(), tableAttr.getTableName());
                 table.setHasDerivetable(CollectionUtils.isNotEmpty(deriveTableInfoList));
             }
 
@@ -874,7 +885,7 @@ public class MetaDataService {
                 }
             });
 
-            TableExtInfo tableExtInfo = getTableExtAttributesGlobal(tenantId,table.getTableId());
+            TableExtInfo tableExtInfo = getTableExtAttributesGlobal(tenantId, table.getTableId());
             table.setImportance(tableExtInfo.isImportance());
             table.setSecurity(tableExtInfo.isSecurity());
             return table;
