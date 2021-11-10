@@ -30,7 +30,13 @@ public class Table implements Serializable {
     private String updateTime;
     private String databaseId;
     private String databaseName;
+    /**
+     * 重要表是否有查看权限
+     */
     private Boolean importancePrivilege;
+    /**
+     * 私密表是否有查看权限
+     */
     private Boolean securityPrivilege;
     private String partitionKey;
     private Boolean partitionTable;

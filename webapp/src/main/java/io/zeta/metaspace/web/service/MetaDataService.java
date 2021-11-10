@@ -29,7 +29,6 @@ import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
-import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
@@ -184,8 +183,16 @@ public class MetaDataService {
         if (Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
-        AtlasEntity entity = getEntityById(guid);
-        return getTableType(entity);
+        Map<String, Object> result = new HashMap<>();
+        TableEntity tableEntity = tableDAO.selectById(guid);
+        if(tableEntity == null){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到表");
+        }
+        result.put("schemaId", tableEntity.getDatabaseId());
+        result.put("schemaName", tableEntity.getDbName());
+        result.put("isHiveTable", "hive".equalsIgnoreCase(tableEntity.getDbType()));
+        result.put("isView", "view".equalsIgnoreCase(tableEntity.getTableType()));
+        return result;
     }
 
     public Map<String, Object> getTableType(AtlasEntity entity) {
@@ -359,7 +366,6 @@ public class MetaDataService {
         return database;
     }
 
-
     public Table getTableInfoById(String guid, String tenantId, String sourceId) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getTableInfoById({})", guid);
@@ -375,52 +381,18 @@ public class MetaDataService {
             if (Objects.isNull(entity)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
-            //查询用户组
-            User user = AdminUtils.getUserData();
-            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
             //table
             Table table = extractTableInfo(entityInfo, guid, tenantId);
-            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableId(),tenantId);
-            if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))) {
-                if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
-                    Boolean importancePrivilege = Boolean.TRUE;
-                    Boolean securityPrivilege = Boolean.TRUE;
-                    List<GroupDeriveTableRelation> relations = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableId(), userGroupIds, tenantId);
-                    GroupDeriveTableRelation relation = new GroupDeriveTableRelation();
-                    boolean ifSecurityNull=relations.stream().allMatch(r-> r.getSecurityPrivilege()==null);
-                    boolean ifImportanceNull=relations.stream().allMatch(r-> r.getImportancePrivilege()==null);
-                    relation.setSecurityPrivilege(ifSecurityNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getSecurityPrivilege));
-                    relation.setImportancePrivilege(ifImportanceNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getImportancePrivilege));
-                    if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
-                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getImportancePrivilege() == null  || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
-                        importancePrivilege = Boolean.FALSE;
-
-                    }
-                    if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getSecurity()) &&
-                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getSecurityPrivilege() == null  || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
-                        securityPrivilege = Boolean.FALSE;
-                    }
-                    if (sourceInfoDeriveTableInfo.getImportance()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getImportance())){
-                        importancePrivilege = null;                    }
-                    if (sourceInfoDeriveTableInfo.getSecurity()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getSecurity())){
-                        securityPrivilege = null;                    }
-                    table.setImportancePrivilege(importancePrivilege);
-                    table.setSecurityPrivilege(securityPrivilege);
-                } else {
-                    table.setImportancePrivilege(!sourceInfoDeriveTableInfo.getImportance());
-                    table.setSecurityPrivilege(!sourceInfoDeriveTableInfo.getSecurity());
-                }
-            }
-            if(StringUtils.isBlank(sourceId)){
-                sourceId="hive";
+            if (StringUtils.isBlank(sourceId)) {
+                sourceId = "hive";
+                table.setSourceId("hive");
+                table.setSourceName("hive");
             }
             Table tableAttr = tableDAO.getDbAndTableName(guid);
-            if(tableAttr != null){
-                List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,tableAttr.getDatabaseId(),tableAttr.getTableName());
+            if (tableAttr != null) {
+                List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId, sourceId, tableAttr.getDatabaseId(), tableAttr.getTableName());
                 table.setHasDerivetable(CollectionUtils.isNotEmpty(deriveTableInfoList));
             }
-
-
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
             if (Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
@@ -435,21 +407,14 @@ public class MetaDataService {
                 }
             });
             DataSourceInfo dataSourceInfo = null;
-            if(StringUtils.isNotBlank(sourceId)&& !"hive".equalsIgnoreCase(sourceId)){
+            if (StringUtils.isNotBlank(sourceId) && !"hive".equalsIgnoreCase(sourceId)) {
                 dataSourceInfo = dataSourceDAO.getDataSourceInfo(sourceId);
-                if(null != dataSourceInfo){
+                if (null != dataSourceInfo) {
                     table.setSourceId(dataSourceInfo.getSourceId());
                     table.setSourceName(dataSourceInfo.getSourceName());
                 }
             }
-            if(null == dataSourceInfo){
-                table.setSourceId("hive");
-                table.setSourceName("hive");
-            }
-            TableExtInfo tableExtInfo = getTableExtAttributes(tenantId,table.getTableId());
-            table.setImportance(tableExtInfo.isImportance());
-            table.setSecurity(tableExtInfo.isSecurity());
-            table.setTenantId(tenantId);
+            getTableExtAttributesHive(tenantId, table);
             return table;
         } catch (AtlasBaseException e) {
             String message = "无效的实体ID";
@@ -463,15 +428,10 @@ public class MetaDataService {
         }
     }
 
-
     public Table getTableInfoByIdGlobal(String guid, String tenantId, String sourceId) throws AtlasBaseException {
-        if (DEBUG_ENABLED) {
-            LOG.debug("==> MetaDataService.getTableInfoById({})", guid);
-        }
         if (Objects.isNull(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常");
         }
-
         try {
             //获取entity
             AtlasEntity.AtlasEntityWithExtInfo entityInfo = getEntityInfoByGuid(guid, false);
@@ -479,57 +439,18 @@ public class MetaDataService {
             if (Objects.isNull(entity)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
-            //查询用户组
-            User user = AdminUtils.getUserData();
-            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
             //table
             Table table = extractTableInfo(entityInfo, guid, tenantId);
-            if(publicService.isGlobal()){
-                table.setImportancePrivilege(false);
-                table.setSecurityPrivilege(false);
-            }else {
-                SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableId(),tenantId);
-                if (sourceInfoDeriveTableInfo != null) {
-                    if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
-                        Boolean importancePrivilege = Boolean.TRUE;
-                        Boolean securityPrivilege = Boolean.TRUE;
-                        List<GroupDeriveTableRelation> relations = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableId(), userGroupIds, tenantId);
-                        GroupDeriveTableRelation relation = new GroupDeriveTableRelation();
-                        boolean ifSecurityNull=relations.stream().allMatch(r-> r.getSecurityPrivilege()==null);
-                        boolean ifImportanceNull=relations.stream().allMatch(r-> r.getImportancePrivilege()==null);
-                        relation.setSecurityPrivilege(ifSecurityNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getSecurityPrivilege));
-                        relation.setImportancePrivilege(ifImportanceNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getImportancePrivilege));
-                        if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
-                                (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getImportancePrivilege() == null  || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
-                            importancePrivilege = Boolean.FALSE;
-
-                        }
-                        if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getSecurity()) &&
-                                (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getSecurityPrivilege() == null  || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
-                            securityPrivilege = Boolean.FALSE;
-                        }
-                        if (sourceInfoDeriveTableInfo.getImportance()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getImportance())){
-                            importancePrivilege = null;                    }
-                        if (sourceInfoDeriveTableInfo.getSecurity()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getSecurity())){
-                            securityPrivilege = null;                    }
-                        table.setImportancePrivilege(importancePrivilege);
-                        table.setSecurityPrivilege(securityPrivilege);
-                    } else {
-                        table.setImportancePrivilege(!sourceInfoDeriveTableInfo.getImportance());
-                        table.setSecurityPrivilege(!sourceInfoDeriveTableInfo.getSecurity());
-                    }
-                }
-            }
-            if(StringUtils.isBlank(sourceId)){
-                sourceId="hive";
+            if (StringUtils.isBlank(sourceId)) {
+                sourceId = "hive";
+                table.setSourceId("hive");
+                table.setSourceName("hive");
             }
             Table tableAttr = tableDAO.getDbAndTableName(guid);
-            if(tableAttr != null){
-                List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,tableAttr.getDatabaseId(),tableAttr.getTableName());
+            if (tableAttr != null) {
+                List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId, sourceId, tableAttr.getDatabaseId(), tableAttr.getTableName());
                 table.setHasDerivetable(CollectionUtils.isNotEmpty(deriveTableInfoList));
             }
-
-
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
             if (Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
@@ -544,24 +465,24 @@ public class MetaDataService {
                 }
             });
             DataSourceInfo dataSourceInfo = null;
-            if(StringUtils.isNotBlank(sourceId)&& !"hive".equalsIgnoreCase(sourceId)){
+            if (StringUtils.isNotBlank(sourceId) && !"hive".equalsIgnoreCase(sourceId)) {
                 dataSourceInfo = dataSourceDAO.getDataSourceInfo(sourceId);
-                if(null != dataSourceInfo){
+                if (null != dataSourceInfo) {
                     table.setSourceId(dataSourceInfo.getSourceId());
                     table.setSourceName(dataSourceInfo.getSourceName());
                 }
             }
-            if(null == dataSourceInfo){
-                table.setSourceId("hive");
-                table.setSourceName("hive");
-            }
-
-            table.setSourceTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),"",""));
-            table.setDbTreeId(EntityUtil.generateBusinessId(tenantId,table.getSourceId(),table.getDatabaseId(),""));
-            TableExtInfo tableExtInfo = getTableExtAttributesGlobal(tenantId,table.getTableId());
-            table.setImportance(tableExtInfo.isImportance());
-            table.setSecurity(tableExtInfo.isSecurity());
+            table.setSourceTreeId(EntityUtil.generateBusinessId(tenantId, table.getSourceId(), "", ""));
+            table.setDbTreeId(EntityUtil.generateBusinessId(tenantId, table.getSourceId(), table.getDatabaseId(), ""));
             table.setTenantId(tenantId);
+            if (publicService.isGlobal()) {
+                table.setImportancePrivilege(false);
+                table.setSecurityPrivilege(false);
+                table.setImportance(false);
+                table.setSecurity(false);
+                return table;
+            }
+            getTableExtAttributesHive(tenantId, table);
             return table;
         } catch (AtlasBaseException e) {
             String message = "无效的实体ID";
@@ -713,7 +634,7 @@ public class MetaDataService {
         return table;
     }
 
-    public RDBMSTable getRDBMSTableInfoById(String guid, String tenantId,String sourceId) throws AtlasBaseException {
+    public RDBMSTable getRDBMSTableInfoById(String guid, String tenantId, String sourceId) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getRDBMSTableInfoById({})", guid);
         }
@@ -729,47 +650,11 @@ public class MetaDataService {
             if (Objects.isNull(entity)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
-            //获取当前用户的用户组
-            User user = AdminUtils.getUserData();
-            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
             //table
             RDBMSTable table = extractRDBMSTableInfo(entity, guid, info, tenantId);
-            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableId(),tenantId);
-             if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))){
-                 if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
-                         Boolean importancePrivilege = Boolean.TRUE;
-                         Boolean securityPrivilege = Boolean.TRUE;
-                         List<GroupDeriveTableRelation> relations = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableId(), userGroupIds, tenantId);
-                         GroupDeriveTableRelation relation = new GroupDeriveTableRelation();
-                         boolean ifSecurityNull=relations.stream().allMatch(r-> r.getSecurityPrivilege()==null);
-                         boolean ifImportanceNull=relations.stream().allMatch(r-> r.getImportancePrivilege()==null);
-                         relation.setSecurityPrivilege(ifSecurityNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getSecurityPrivilege));
-                         relation.setImportancePrivilege(ifImportanceNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getImportancePrivilege));
-                         if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
-                                 (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getImportancePrivilege() == null  || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
-                             importancePrivilege = Boolean.FALSE;
-                         }
-                         if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getSecurity()) &&
-                                 (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getSecurityPrivilege() == null  || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
-                             securityPrivilege = Boolean.FALSE;
-                         }
-                     if (sourceInfoDeriveTableInfo.getImportance()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getImportance())){
-                         importancePrivilege = null;
-                     }
-                     if (sourceInfoDeriveTableInfo.getSecurity()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getSecurity())){
-                         securityPrivilege = null;
-                     }
-                         table.setImportancePrivilege(importancePrivilege);
-                         table.setSecurityPrivilege(securityPrivilege);
-
-                 }else{
-                     table.setImportancePrivilege(!sourceInfoDeriveTableInfo.getImportance());
-                     table.setSecurityPrivilege(!sourceInfoDeriveTableInfo.getSecurity());
-                 }
-            }
             Table tableAttr = tableDAO.getDbAndTableName(guid);
-            if(tableAttr != null){
-                List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceId == null ? null : sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId,sourceId,tableAttr.getDatabaseId(),tableAttr.getTableName());
+            if (tableAttr != null) {
+                List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceId == null ? null : sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId, sourceId, tableAttr.getDatabaseId(), tableAttr.getTableName());
                 table.setHasDerivetable(CollectionUtils.isNotEmpty(deriveTableInfoList));
             }
 
@@ -786,10 +671,7 @@ public class MetaDataService {
                     column.setDisplayName(columnName);
                 }
             });
-
-            TableExtInfo tableExtInfo = getTableExtAttributes(tenantId,table.getTableId());
-            table.setImportance(tableExtInfo.isImportance());
-            table.setSecurity(tableExtInfo.isSecurity());
+            getTableExtAttributes(tenantId, table);
             return table;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
@@ -821,56 +703,14 @@ public class MetaDataService {
             if (Objects.isNull(entity)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未找到数据表信息");
             }
-            //获取当前用户的用户组
-            User user = AdminUtils.getUserData();
-            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
+
             //table
             RDBMSTable table = extractRDBMSTableInfo(entity, guid, info, tenantId);
-            if (publicService.isGlobal()) {
-                table.setImportancePrivilege(false);
-                table.setSecurityPrivilege(false);
-            } else {
-                SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableId(), tenantId);
-                if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))) {
-                    if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
-                        Boolean importancePrivilege = Boolean.TRUE;
-                        Boolean securityPrivilege = Boolean.TRUE;
-                        List<GroupDeriveTableRelation> relations = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableId(), userGroupIds, tenantId);
-                        GroupDeriveTableRelation relation = new GroupDeriveTableRelation();
-                        boolean ifSecurityNull = relations.stream().allMatch(r -> r.getSecurityPrivilege() == null);
-                        boolean ifImportanceNull = relations.stream().allMatch(r -> r.getImportancePrivilege() == null);
-                        relation.setSecurityPrivilege(ifSecurityNull ? null : relations.stream().anyMatch(GroupDeriveTableRelation::getSecurityPrivilege));
-                        relation.setImportancePrivilege(ifImportanceNull ? null : relations.stream().anyMatch(GroupDeriveTableRelation::getImportancePrivilege));
-                        if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
-                                (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || relation.getImportancePrivilege() == null || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
-                            importancePrivilege = Boolean.FALSE;
-                        }
-                        if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getSecurity()) &&
-                                (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || relation.getSecurityPrivilege() == null || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
-                            securityPrivilege = Boolean.FALSE;
-                        }
-                        if (sourceInfoDeriveTableInfo.getImportance() == null || Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getImportance())) {
-                            importancePrivilege = null;
-                        }
-                        if (sourceInfoDeriveTableInfo.getSecurity() == null || Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getSecurity())) {
-                            securityPrivilege = null;
-                        }
-                        table.setImportancePrivilege(importancePrivilege);
-                        table.setSecurityPrivilege(securityPrivilege);
-
-                    } else {
-                        table.setImportancePrivilege(!sourceInfoDeriveTableInfo.getImportance());
-                        table.setSecurityPrivilege(!sourceInfoDeriveTableInfo.getSecurity());
-                    }
-                }
-            }
-
             Table tableAttr = tableDAO.getDbAndTableName(guid);
             if (tableAttr != null) {
                 List<SourceInfoDeriveTableInfo> deriveTableInfoList = sourceId == null ? null : sourceInfoDeriveTableInfoDao.getDeriveTableByIdAndTenantId(tenantId, sourceId, tableAttr.getDatabaseId(), tableAttr.getTableName());
                 table.setHasDerivetable(CollectionUtils.isNotEmpty(deriveTableInfoList));
             }
-
             String tableName = table.getTableName();
             String tableDisplayName = table.getDisplayName();
             if (Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
@@ -884,91 +724,92 @@ public class MetaDataService {
                     column.setDisplayName(columnName);
                 }
             });
-
-            TableExtInfo tableExtInfo = getTableExtAttributesGlobal(tenantId, table.getTableId());
-            table.setImportance(tableExtInfo.isImportance());
-            table.setSecurity(tableExtInfo.isSecurity());
+            if (publicService.isGlobal()) {
+                table.setImportancePrivilege(false);
+                table.setSecurityPrivilege(false);
+                table.setImportance(false);
+                table.setSecurity(false);
+                return table;
+            }
+            getTableExtAttributes(tenantId, table);
             return table;
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到数据库表信息");
         }
     }
 
-    private TableExtInfo getTableExtAttributes(String tenantId,String tableGuid){
-        TableExtInfo info = new TableExtInfo();
+    private void getTableExtAttributes(String tenantId, RDBMSTable table) {
         //查看该表在衍生表的重要保密性
-        List<TableExtInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDAO.getImportanceInfo(tableGuid,tenantId);
-        if(CollectionUtils.isEmpty(deriveTableInfoList)){
+        List<TableExtInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDAO.getImportanceInfo(table.getTableId(), tenantId);
+        if (CollectionUtils.isEmpty(deriveTableInfoList)) {
             LOG.info("该衍生表没有配置重要保密信息");
-            info.setImportance(false);
-            info.setSecurity(false);
-            return info;
+            table.setImportance(false);
+            table.setSecurity(false);
+            table.setImportancePrivilege(true);
+            table.setSecurityPrivilege(true);
+            return;
         }
-        boolean deriveImportance = deriveTableInfoList.stream().anyMatch(v->v.isImportance());
-        boolean deriveSecurity = deriveTableInfoList.stream().anyMatch(v->v.isSecurity());
-
+        boolean deriveImportance = deriveTableInfoList.stream().anyMatch(v -> v.isImportance());
+        boolean deriveSecurity = deriveTableInfoList.stream().anyMatch(v -> v.isSecurity());
+        table.setImportance(deriveImportance);
+        table.setSecurity(deriveSecurity);
+        table.setImportancePrivilege(!deriveImportance);
+        table.setSecurityPrivilege(!deriveSecurity);
         User user = AdminUtils.getUserData();
-        List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId);
-        if(CollectionUtils.isEmpty(groups)){
+        List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+        if (CollectionUtils.isEmpty(groups)) {
             LOG.info("当前用户没有配置用户组，忽略权限");
-            info.setImportance(deriveImportance);
-            info.setSecurity(deriveSecurity);
-            return info;
+            return;
         }
         List<String> groupList = groups.stream().map(UserGroup::getId).collect(Collectors.toList());
-        List<TableExtInfo> list = tableDAO.selectTableInfoByGroups(tableGuid,tenantId,groupList);
-        if(CollectionUtils.isEmpty(list)){
+        List<TableExtInfo> list = tableDAO.selectTableInfoByGroups(table.getTableId(), tenantId, groupList);
+        if (CollectionUtils.isEmpty(list)) {
             LOG.info("当前用户组没有配置表的权限，忽略权限");
-            info.setImportance(deriveImportance);
-            info.setSecurity(deriveSecurity);
-            return info;
+            return;
         }
-
-        info.setImportance(deriveImportance && list.stream().noneMatch(p->p.isImportance()));
-        info.setSecurity(deriveSecurity && list.stream().noneMatch(p->p.isSecurity()));
-        return info;
+        if (deriveImportance) {
+            table.setImportancePrivilege(list.stream().anyMatch(p -> p.isImportance()));
+        }
+        if (deriveSecurity) {
+            table.setSecurityPrivilege(list.stream().anyMatch(p -> p.isSecurity()));
+        }
     }
 
-
-    private TableExtInfo getTableExtAttributesGlobal(String tenantId,String tableGuid){
-        TableExtInfo info = new TableExtInfo();
-        if(publicService.isGlobal()){
-            LOG.info("当前用户已配置全局权限，忽略重要保密权限");
-            info.setImportance(false);
-            info.setSecurity(false);
-            return info;
-        }
+    private void getTableExtAttributesHive(String tenantId, Table table) {
         //查看该表在衍生表的重要保密性
-        List<TableExtInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDAO.getImportanceInfo(tableGuid,tenantId);
-        if(CollectionUtils.isEmpty(deriveTableInfoList)){
+        List<TableExtInfo> deriveTableInfoList = sourceInfoDeriveTableInfoDAO.getImportanceInfo(table.getTableId(), tenantId);
+        if (CollectionUtils.isEmpty(deriveTableInfoList)) {
             LOG.info("该衍生表没有配置重要保密信息");
-            info.setImportance(false);
-            info.setSecurity(false);
-            return info;
+            table.setImportance(false);
+            table.setSecurity(false);
+            table.setImportancePrivilege(true);
+            table.setSecurityPrivilege(true);
+            return;
         }
-        boolean deriveImportance = deriveTableInfoList.stream().anyMatch(v->v.isImportance());
-        boolean deriveSecurity = deriveTableInfoList.stream().anyMatch(v->v.isSecurity());
-
+        boolean deriveImportance = deriveTableInfoList.stream().anyMatch(v -> v.isImportance());
+        boolean deriveSecurity = deriveTableInfoList.stream().anyMatch(v -> v.isSecurity());
+        table.setImportance(deriveImportance);
+        table.setSecurity(deriveSecurity);
+        table.setImportancePrivilege(!deriveImportance);
+        table.setSecurityPrivilege(!deriveSecurity);
         User user = AdminUtils.getUserData();
-        List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId);
-        if(CollectionUtils.isEmpty(groups)){
+        List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+        if (CollectionUtils.isEmpty(groups)) {
             LOG.info("当前用户没有配置用户组，忽略权限");
-            info.setImportance(deriveImportance);
-            info.setSecurity(deriveSecurity);
-            return info;
+            return;
         }
         List<String> groupList = groups.stream().map(UserGroup::getId).collect(Collectors.toList());
-        List<TableExtInfo> list = tableDAO.selectTableInfoByGroups(tableGuid,tenantId,groupList);
-        if(CollectionUtils.isEmpty(list)){
+        List<TableExtInfo> list = tableDAO.selectTableInfoByGroups(table.getTableId(), tenantId, groupList);
+        if (CollectionUtils.isEmpty(list)) {
             LOG.info("当前用户组没有配置表的权限，忽略权限");
-            info.setImportance(deriveImportance);
-            info.setSecurity(deriveSecurity);
-            return info;
+            return;
         }
-
-        info.setImportance(deriveImportance && list.stream().noneMatch(p->p.isImportance()));
-        info.setSecurity(deriveSecurity && list.stream().noneMatch(p->p.isSecurity()));
-        return info;
+        if (deriveImportance) {
+            table.setImportancePrivilege(list.stream().anyMatch(p -> p.isImportance()));
+        }
+        if (deriveSecurity) {
+            table.setSecurityPrivilege(list.stream().anyMatch(p -> p.isSecurity()));
+        }
     }
 
     public RDBMSTable extractRDBMSTableInfo(AtlasEntity entity, String guid, AtlasEntity.AtlasEntityWithExtInfo info, String tenantId) throws AtlasBaseException {
