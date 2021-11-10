@@ -745,16 +745,16 @@ public class MetaDataService {
             LOG.info("该衍生表没有配置重要保密信息");
             table.setImportance(false);
             table.setSecurity(false);
-            table.setImportancePrivilege(false);
-            table.setSecurityPrivilege(false);
+            table.setImportancePrivilege(true);
+            table.setSecurityPrivilege(true);
             return;
         }
         boolean deriveImportance = deriveTableInfoList.stream().anyMatch(v -> v.isImportance());
         boolean deriveSecurity = deriveTableInfoList.stream().anyMatch(v -> v.isSecurity());
         table.setImportance(deriveImportance);
         table.setSecurity(deriveSecurity);
-        table.setImportancePrivilege(deriveImportance);
-        table.setSecurityPrivilege(deriveSecurity);
+        table.setImportancePrivilege(!deriveImportance);
+        table.setSecurityPrivilege(!deriveSecurity);
         User user = AdminUtils.getUserData();
         List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
         if (CollectionUtils.isEmpty(groups)) {
@@ -768,10 +768,10 @@ public class MetaDataService {
             return;
         }
         if (deriveImportance) {
-            table.setImportancePrivilege(!list.stream().anyMatch(p -> p.isImportance()));
+            table.setImportancePrivilege(list.stream().anyMatch(p -> p.isImportance()));
         }
         if (deriveSecurity) {
-            table.setSecurityPrivilege(!list.stream().anyMatch(p -> p.isSecurity()));
+            table.setSecurityPrivilege(list.stream().anyMatch(p -> p.isSecurity()));
         }
     }
 
@@ -782,16 +782,16 @@ public class MetaDataService {
             LOG.info("该衍生表没有配置重要保密信息");
             table.setImportance(false);
             table.setSecurity(false);
-            table.setImportancePrivilege(false);
-            table.setSecurityPrivilege(false);
+            table.setImportancePrivilege(true);
+            table.setSecurityPrivilege(true);
             return;
         }
         boolean deriveImportance = deriveTableInfoList.stream().anyMatch(v -> v.isImportance());
         boolean deriveSecurity = deriveTableInfoList.stream().anyMatch(v -> v.isSecurity());
         table.setImportance(deriveImportance);
         table.setSecurity(deriveSecurity);
-        table.setImportancePrivilege(deriveImportance);
-        table.setSecurityPrivilege(deriveSecurity);
+        table.setImportancePrivilege(!deriveImportance);
+        table.setSecurityPrivilege(!deriveSecurity);
         User user = AdminUtils.getUserData();
         List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
         if (CollectionUtils.isEmpty(groups)) {
@@ -805,10 +805,10 @@ public class MetaDataService {
             return;
         }
         if (deriveImportance) {
-            table.setImportancePrivilege(!list.stream().anyMatch(p -> p.isImportance()));
+            table.setImportancePrivilege(list.stream().anyMatch(p -> p.isImportance()));
         }
         if (deriveSecurity) {
-            table.setSecurityPrivilege(!list.stream().anyMatch(p -> p.isSecurity()));
+            table.setSecurityPrivilege(list.stream().anyMatch(p -> p.isSecurity()));
         }
     }
 
