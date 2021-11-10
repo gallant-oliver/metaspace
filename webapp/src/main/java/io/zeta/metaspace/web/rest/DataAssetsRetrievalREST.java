@@ -33,7 +33,8 @@ public class DataAssetsRetrievalREST {
     @Path("/domains")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BusinessInfo getThemeDomains(RelationQuery relationQuery, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public BusinessInfo getThemeDomains(RelationQuery relationQuery,
+                                        @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             return null;
         } catch (Exception e) {
@@ -53,8 +54,8 @@ public class DataAssetsRetrievalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public BusinessInfo getThemes(@QueryParam("domainId") String domainId,
-                                                      RelationQuery relationQuery,
-                                                      @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+                                  RelationQuery relationQuery,
+                                  @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             return null;
         } catch (Exception e) {
@@ -74,8 +75,8 @@ public class DataAssetsRetrievalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public BusinessInfo getBusinesses(@QueryParam("themeId") String themeId,
-                                                      RelationQuery relationQuery,
-                                                      @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+                                      RelationQuery relationQuery,
+                                      @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             return null;
         } catch (Exception e) {
@@ -95,8 +96,8 @@ public class DataAssetsRetrievalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public BusinessInfo getTables(@QueryParam("businessId") String businessId,
-                                                      RelationQuery relationQuery,
-                                                      @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+                                  RelationQuery relationQuery,
+                                  @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             return null;
         } catch (Exception e) {
@@ -116,8 +117,8 @@ public class DataAssetsRetrievalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public BusinessInfo getColumns(@QueryParam("tableId") String tableId,
-                                                      RelationQuery relationQuery,
-                                                      @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+                                   RelationQuery relationQuery,
+                                   @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             return null;
         } catch (Exception e) {
@@ -137,8 +138,8 @@ public class DataAssetsRetrievalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public BusinessInfo dataPreview(@QueryParam("tableId") String tableId,
-                                                      RelationQuery relationQuery,
-                                                      @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+                                    RelationQuery relationQuery,
+                                    @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             return null;
         } catch (Exception e) {
@@ -158,8 +159,8 @@ public class DataAssetsRetrievalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public BusinessInfo search(@QueryParam("type") int type,
-                                                      @QueryParam("limit") int limit,
-                                                      @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+                               @QueryParam("limit") int limit,
+                               @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             return null;
         } catch (Exception e) {
