@@ -1,10 +1,16 @@
 package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.business.BusinessInfo;
+import io.zeta.metaspace.model.metadata.GuidCount;
 import io.zeta.metaspace.model.metadata.RelationQuery;
+import io.zeta.metaspace.model.result.TableShow;
+import io.zeta.metaspace.web.service.DataAssetsRetrievalService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Singleton;
@@ -20,7 +26,10 @@ import javax.ws.rs.*;
 @Service
 @Path("/dataassets/retrieval")
 public class DataAssetsRetrievalREST {
+    private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.DataAssetsRetrievalREST");
 
+    @Autowired
+    private DataAssetsRetrievalService dataAssetsRetrievalService;
 
     /**
      * 查询主题域（即一级业务目录）信息列表
@@ -137,10 +146,13 @@ public class DataAssetsRetrievalREST {
     @Path("/table/preview")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BusinessInfo dataPreview(@QueryParam("tableId") String tableId,
-                                    RelationQuery relationQuery,
-                                    @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public BusinessInfo dataPreview(GuidCount guidCount) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
         try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.selectRDBMSData(" + guidCount.getGuid() + ", " + guidCount.getCount() + " )");
+            }
+            //TableShow tableShow = .getRDBMSTableShow(guidCount);
             return null;
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取业务对象列表失败");
@@ -159,7 +171,7 @@ public class DataAssetsRetrievalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public BusinessInfo search(@QueryParam("type") int type,
-                               @QueryParam("limit") int limit,
+                               RelationQuery relationQuery,
                                @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             return null;
