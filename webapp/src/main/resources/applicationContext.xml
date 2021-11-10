@@ -63,6 +63,8 @@
 
                 <property name="typeAliasesPackage" value="io.zeta.metaspace.model.metadata"></property>
 
+                <property name="mapperLocations" value="classpath:mapper/**"></property>
+
                 <property name="configuration">
                         <bean class="org.apache.ibatis.session.Configuration">
                                 <property name="mapUnderscoreToCamelCase" value="true"/>
