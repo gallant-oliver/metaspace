@@ -32,12 +32,17 @@ import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.CategoryExport;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
-import io.zeta.metaspace.model.result.*;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
+import io.zeta.metaspace.model.result.CategorycateQueryResult;
+import io.zeta.metaspace.model.result.UserGroupPrivilege;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.service.Approve.Approvable;
 import io.zeta.metaspace.web.service.Approve.ApproveService;
-import io.zeta.metaspace.web.util.*;
+import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.CategoryUtil;
+import io.zeta.metaspace.web.util.ExportDataPathUtils;
+import io.zeta.metaspace.web.util.PoiExcelUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryDeleteReturn;
@@ -1181,6 +1186,15 @@ public class BusinessCatalogueService implements Approvable {
                         delete=false;
                         edit=false;
                     }
+                    //如果当前目录有子目录，则不能删除当前目录
+                    List<CategorycateQueryResult> sonCateList = userGroupDAO.getCanotDeleteChrildCategory(guid);
+                    if (sonCateList.size() > 0) {
+                        delete = false;
+                    }
+                    //如果当前目录挂载有业务对象，则不能删除当前目录
+                    if (count > 0) {
+                        delete = false;
+                    }
                     CategoryPrivilege.Privilege privilege=new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
                     result.setPrivilege(privilege);
                     valuesList.add(result);
@@ -1310,9 +1324,25 @@ public class BusinessCatalogueService implements Approvable {
      * @throws Exception
      */
     @Transactional(rollbackFor = Exception.class)
-    public CategoryDeleteReturn deleteCategory(String guid, String tenantId, int type) throws Exception {
+    public CategoryDeleteReturn deleteCategory(String guid, String tenantId, int type, List<String> categoryGuids) throws Exception {
+        List<String> tempcateList = new ArrayList<>(categoryGuids);
+        tempcateList = tempcateList.stream().filter(e -> !guid.equals(e)).collect(Collectors.toList());
         List<String> categoryIds = categoryDao.queryChildrenCategoryId(guid, tenantId);
-        categoryIds.add(guid);
+        //目录校验，当前目录有子目录，则不允许删除
+        String name = categoryDao.getCategoryNameById(guid, tenantId);
+        String categorys = StringUtils.join(tempcateList.toArray(), ",");
+        for (String id : categoryIds) {
+            if (!categorys.contains(id)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录[" + name + "]下存在子目录，不允许删除");
+            }
+        }
+        //当前目录挂载有业务对象，则不允许删除
+        int count = businessDAO.getBusinessCountByCategoryId(guid, tenantId, AdminUtils.getUserData().getUserId());
+        if (count > 0) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录[" + name + "]下存在" + count + "个业务对象，不允许删除");
+        }
+        categoryIds = new ArrayList<>();
+        categoryIds.add(guid);//只删除当前目录
         int item = 0;
         if (type == 1) {
             List<String> businessIds = relationDao.getBusinessIdsByCategoryGuid(categoryIds);
