@@ -137,7 +137,7 @@ public class AdapterUtils {
                     dataSourceInfo.getUserName(),dataSourceInfo.getPassword(),dataSourceInfo.getDatabase(),dataSourceInfo.getServiceType());
             dataSourceId = String.join("-",connectionConfigList);
         }
-        synchronized (dataSourceId) {
+        synchronized (dataSourceId.intern()) {
             if (StringUtils.isNotEmpty(dataSourceId) && adapterSourceMap.containsKey(dataSourceId)) {
                 adapterSource = adapterSourceMap.get(dataSourceId);
                 if (adapterSource != null) {
@@ -149,7 +149,7 @@ public class AdapterUtils {
                     }
                 }
             }
-            log.info("创建数据源 {}", dataSourceInfo);
+            log.info("创建数据源 {}", String.join(dataSourceInfo.getIp(),":", dataSourceInfo.getPort(), dataSourceInfo.getDatabase()));
             adapterSource = getAdapter(dataSourceInfo.getSourceType()).getNewAdapterSource(dataSourceInfo, DataSourcePoolConfig.getDefaultDataSourcePool());
             if (StringUtils.isNotEmpty(dataSourceId)) {
                 adapterSourceMap.put(dataSourceId, adapterSource);
