@@ -137,20 +137,23 @@ public class AdapterUtils {
                     dataSourceInfo.getUserName(),dataSourceInfo.getPassword(),dataSourceInfo.getDatabase(),dataSourceInfo.getServiceType());
             dataSourceId = String.join("-",connectionConfigList);
         }
-        if (StringUtils.isNotEmpty(dataSourceId) && adapterSourceMap.containsKey(dataSourceId)) {
-            adapterSource = adapterSourceMap.get(dataSourceId);
-            if (adapterSource != null) {
-                if (judgeNotReload(adapterSource.getDataSourceInfo(), dataSourceInfo)) {
-                    return adapterSource;
-                } else {
-                    log.info("数据源重新加载 " + dataSourceId + "新配置 :" + dataSourceInfo.toString());
-                    adapterSource.closeDataSource();
+        synchronized (dataSourceId) {
+            if (StringUtils.isNotEmpty(dataSourceId) && adapterSourceMap.containsKey(dataSourceId)) {
+                adapterSource = adapterSourceMap.get(dataSourceId);
+                if (adapterSource != null) {
+                    if (judgeNotReload(adapterSource.getDataSourceInfo(), dataSourceInfo)) {
+                        return adapterSource;
+                    } else {
+                        log.info("数据源重新加载 " + dataSourceId + "新配置 :" + dataSourceInfo.toString());
+                        adapterSource.closeDataSource();
+                    }
                 }
             }
-        }
-        adapterSource = getAdapter(dataSourceInfo.getSourceType()).getNewAdapterSource(dataSourceInfo, DataSourcePoolConfig.getDefaultDataSourcePool());
-        if (StringUtils.isNotEmpty(dataSourceId)) {
-            adapterSourceMap.put(dataSourceId, adapterSource);
+            log.info("创建数据源 {}", dataSourceInfo);
+            adapterSource = getAdapter(dataSourceInfo.getSourceType()).getNewAdapterSource(dataSourceInfo, DataSourcePoolConfig.getDefaultDataSourcePool());
+            if (StringUtils.isNotEmpty(dataSourceId)) {
+                adapterSourceMap.put(dataSourceId, adapterSource);
+            }
         }
         return adapterSource;
     }
