@@ -39,7 +39,7 @@ public class DataAssetsRetrievalService {
     private int TENANT_ASSETS_BUSINESS_MODULE = 138;
 
     //当前租户是否是公共租户
-    private boolean isPublicTenant(String tenantId) throws AtlasException {
+    public boolean isPublicTenant(String tenantId) throws AtlasException {
         initTenantTagCache();
 
         String cacheKey = AdminUtils.getSSOTicket() + tenantId;
@@ -64,7 +64,7 @@ public class DataAssetsRetrievalService {
     }
 
     //当前租户是否是公共租户
-    private boolean isGlobalUser() {
+    public boolean isGlobalUser() {
         return publicService.isGlobal();
     }
 

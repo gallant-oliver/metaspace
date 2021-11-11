@@ -1,10 +1,11 @@
 package io.zeta.metaspace.web.rest;
 
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.metadata.GuidCount;
 import io.zeta.metaspace.model.metadata.RelationQuery;
-import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.web.service.DataAssetsRetrievalService;
+import io.zeta.metaspace.web.service.DataAssetsRetrievalService2;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.utils.AtlasPerfTracer;
@@ -31,6 +32,8 @@ public class DataAssetsRetrievalREST {
     @Autowired
     private DataAssetsRetrievalService dataAssetsRetrievalService;
 
+    @Autowired
+    private DataAssetsRetrievalService2 dataAssetsRetrievalService2;
     /**
      * 查询主题域（即一级业务目录）信息列表
      *
@@ -42,12 +45,13 @@ public class DataAssetsRetrievalREST {
     @Path("/domains")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BusinessInfo getThemeDomains(RelationQuery relationQuery,
-                                        @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public Result getThemeDomains(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
+//            PageResult<DomainInfo> result = dataAssetsRetrievalService2.getThemeDomains(offset, limit, tenantId);
+//            return ReturnUtil.success(result);
             return null;
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取业务对象列表失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取主题域列表失败");
         }
     }
 
@@ -62,7 +66,7 @@ public class DataAssetsRetrievalREST {
     @Path("/{domainId}/themes")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BusinessInfo getThemes(@QueryParam("domainId") String domainId,
+    public BusinessInfo getThemes(@PathParam("domainId") String domainId,
                                   RelationQuery relationQuery,
                                   @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
