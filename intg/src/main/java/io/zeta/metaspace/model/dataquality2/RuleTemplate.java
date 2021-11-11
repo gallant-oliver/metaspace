@@ -18,12 +18,14 @@ package io.zeta.metaspace.model.dataquality2;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.zeta.metaspace.model.datastandard.DataStandard;
 import lombok.Data;
 
 import java.sql.Timestamp;
 
-/*
- * @description
+/**
+ * 规则实体
+ *
  * @author sunhaoning
  * @date 2019/7/30 14:06
  */
@@ -46,4 +48,12 @@ public class RuleTemplate {
     private String code;
     private String sql;
     private String type;
+    /**
+     * 参照数据标准ID: {@link DataStandard#getId()}
+     */
+    private String dataStandardId;
+    /**
+     * 参照数据标准: {@link DataStandard#getName()}
+     */
+    private String dataStandardName;
 }
