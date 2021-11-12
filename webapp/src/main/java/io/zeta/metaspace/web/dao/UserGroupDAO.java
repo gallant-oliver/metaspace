@@ -1408,6 +1408,13 @@ public interface UserGroupDAO {
             "</script>")
     public List<CategorycateQueryResult> getAllCategory(@Param("groupIdList") List<String> groupIdList,@Param("categoryType") int categoryType,@Param("tenantId")String tenantId,@Param("creator")String creator);
 
+
+    @Select("<script>" +
+            " SELECT * FROM category c" +
+            " WHERE parentcategoryguid = #{guid}" +
+            "</script>")
+    public List<CategorycateQueryResult> getCanotDeleteChrildCategory(@Param("guid") String guid);
+
     @Select("<script>" +
             " SELECT c.* FROM category c left join approval_item ai on ai.id=c.approval_id  WHERE  c.private_status = 'PUBLIC' AND c.categorytype = #{categoryType}" +
             " <if test='groupIdList != null and groupIdList.size() > 0'>"+
