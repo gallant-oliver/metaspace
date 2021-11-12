@@ -54,6 +54,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -428,6 +429,7 @@ public class BusinessREST {
     @Path("/categories/batch")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Transactional(rollbackFor = Exception.class)
     public Result deleteCategory(List<String> categoryGuids, @HeaderParam("tenantId") String tenantId) throws Exception {
         AtlasPerfTracer perf = null;
         CategoryDeleteReturn deleteReturn = null;
@@ -439,7 +441,7 @@ public class BusinessREST {
                 if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                     perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.deleteCategory(" + categoryGuid + ")");
                 }
-                deleteReturn = businessCatalogueService.deleteCategory(categoryGuid, tenantId, CATEGORY_TYPE);
+                deleteReturn = businessCatalogueService.deleteCategory(categoryGuid, tenantId, CATEGORY_TYPE, categoryGuids);
                 item += deleteReturn.getItem();
                 categorys += deleteReturn.getCategory();
             }
