@@ -22,6 +22,7 @@ public class DataSourcePoolConfig {
             dataSourcePool.setCachePrepStmts(conf.getString("dataSourcePool.cachePrepStmts", "true"));
             dataSourcePool.setPrepStmtCacheSize(conf.getString("dataSourcePool.prepStmtCacheSize", "250"));
             dataSourcePool.setPrepStmtCacheSqlLimit(conf.getString("dataSourcePool.prepStmtCacheSqlLimit", "2048"));
+            dataSourcePool.setMinIdleSize(conf.getInt("dataSourcePool.minIdleSize", 10));
             defaultDataSourcePool = dataSourcePool;
         } catch (Exception e) {
             log.info("加载连接池配置失败:" + e.getMessage());
