@@ -1186,7 +1186,7 @@ public class BusinessCatalogueService implements Approvable {
                         delete=false;
                         edit=false;
                     }
-                    //如果当前目录有子目录，则不能删除当前目录
+                /*    //如果当前目录有子目录，则不能删除当前目录
                     List<CategorycateQueryResult> sonCateList = userGroupDAO.getCanotDeleteChrildCategory(guid);
                     if (sonCateList.size() > 0) {
                         delete = false;
@@ -1195,6 +1195,7 @@ public class BusinessCatalogueService implements Approvable {
                     if (count > 0) {
                         delete = false;
                     }
+                 */
                     CategoryPrivilege.Privilege privilege=new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
                     result.setPrivilege(privilege);
                     valuesList.add(result);
