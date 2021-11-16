@@ -29,7 +29,6 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.DataManageService;
-import io.zeta.metaspace.web.service.DataQualityService;
 import io.zeta.metaspace.web.service.DataStandardService;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
@@ -73,26 +72,18 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 @Service
 @Path("/datastandard")
 public class DataStandardREST {
-
-    @Context
-    private HttpServletRequest request;
-
-    @Context
-    private HttpServletResponse response;
-    
-    @Autowired
-    private DataStandardService dataStandardService;
-    
-    @Autowired
-    private DataQualityService dataQualityService;
-    
-    @Autowired
-    private DataManageService dataManageService;
     
     private static final int MAX_EXCEL_FILE_SIZE = 10 * 1024 * 1024;
-    
     private static final int CATEGORY_TYPE = 3;
     
+    @Context
+    private HttpServletRequest request;
+    @Context
+    private HttpServletResponse response;
+    @Autowired
+    private DataStandardService dataStandardService;
+    @Autowired
+    private DataManageService dataManageService;
     
     /**
      * 新增数据标准
@@ -103,9 +94,9 @@ public class DataStandardREST {
     @OperateType(INSERT)
     @Valid
     public void insert(DataStandard dataStandard, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), dataStandard.getContent());
-        List<DataStandard> oldList = dataStandardService.getByNumber(dataStandard.getNumber(), tenantId);
-        if (!oldList.isEmpty()) {
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), dataStandard.getName());
+        Long count = dataStandardService.getByNumber(dataStandard.getNumber(), tenantId);
+        if (count > 0) {
             throw new AtlasBaseException(AtlasErrorCode.STANDARD_NUMBER_ALREADY_EXISTS);
         }
         dataStandardService.insert(dataStandard, tenantId);
@@ -120,7 +111,7 @@ public class DataStandardREST {
     @OperateType(UPDATE)
     @Valid
     public void update(DataStandard dataStandard, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), dataStandard.getContent());
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), dataStandard.getName());
         dataStandardService.update(dataStandard, tenantId);
     }
     
@@ -166,7 +157,8 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
-    public void deleteByNumber(@PathParam("number") String number, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public void deleteByNumber(@PathParam("number") String number,
+                               @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), number);
         dataStandardService.deleteByNumber(number, tenantId);
     }
@@ -178,15 +170,21 @@ public class DataStandardREST {
     @Path("/search")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<DataStandard> search(DataStandardQuery parameters, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public PageResult<DataStandard> search(@HeaderParam("tenantId") String tenantId,
+                                           DataStandardQuery parameters) throws AtlasBaseException {
         return dataStandardService.search(parameters, tenantId);
     }
     
+    /**
+     * 历史版本分页查询
+     */
     @POST
     @Path("/history/{number}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<DataStandard> history(@PathParam("number") String number, Parameters parameters, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public PageResult<DataStandard> history(@HeaderParam("tenantId") String tenantId,
+                                            @PathParam("number") String number,
+                                            Parameters parameters) throws AtlasBaseException {
         return dataStandardService.history(number, parameters, tenantId);
     }
     

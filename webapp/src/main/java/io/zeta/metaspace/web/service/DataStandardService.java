@@ -14,38 +14,31 @@ package io.zeta.metaspace.web.service;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
-
-import io.zeta.metaspace.model.datastandard.CategoryAndDataStandard;
-import io.zeta.metaspace.model.datastandard.DataStandAndRule;
-import io.zeta.metaspace.model.datastandard.DataStandAndTable;
-import io.zeta.metaspace.model.datastandard.DataStandToRule;
-import io.zeta.metaspace.model.datastandard.DataStandToTable;
-import io.zeta.metaspace.model.datastandard.DataStandard;
-import io.zeta.metaspace.model.datastandard.DataStandardHead;
-import io.zeta.metaspace.model.datastandard.DataStandardQuery;
+import io.zeta.metaspace.model.datastandard.*;
+import io.zeta.metaspace.model.enums.DataStandardDataType;
+import io.zeta.metaspace.model.enums.DataStandardLevel;
+import io.zeta.metaspace.model.enums.DataStandardType;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.DataStandardDAO;
-import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -58,37 +51,82 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
-@Transactional(rollbackFor=Exception.class)
+@Transactional(rollbackFor = Exception.class)
 public class DataStandardService {
-
+    
     private static final Logger LOG = LoggerFactory.getLogger(DataStandardService.class);
-
+    
+    /**
+     * 编码校验规则:只允许英文、数字、下划线、中划线
+     */
+    private static final String NUMBER_REGEX = "^[0-9a-zA-Z_-]{1,200}$";
+    /**
+     * 名称校验规则:只允许中文、英文、数字、下划线、中划线
+     */
+    private static final String NAME_REGEX = "^[\\u4e00-\\u9fa5a-zA-Z0-9_-]{1,200}$";
+    /**
+     * 数据长度校验规则: 正整数
+     */
+    private static final String DATA_LENGTH_REGEX = "^[1-9]\\d*$";
+    
     @Autowired
-    DataStandardDAO dataStandardDAO;
+    private DataStandardDAO dataStandardDAO;
     @Autowired
-    DataManageService dataManageService;
+    private DataManageService dataManageService;
     @Autowired
-    TableDAO tableDAO;
+    private TenantService tenantService;
     @Autowired
-    TenantService tenantService;
-    @Autowired
-    CategoryDAO categoryDAO;
-
-    public int insert(DataStandard dataStandard,String tenantId) throws AtlasBaseException {
-        String regexp = "^[0-9A-Z_]{1,}$";
-        if(!dataStandard.getNumber().matches(regexp)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编号内容格式错误，请输入大写英文字母或数字或下划线");
-        }
+    private CategoryDAO categoryDAO;
+    
+    public int insert(DataStandard dataStandard, String tenantId) throws AtlasBaseException {
+        verifyDataStandard(dataStandard);
+        
         dataStandard.setId(UUID.randomUUID().toString());
         dataStandard.setCreateTime(DateUtils.currentTimestamp());
         dataStandard.setUpdateTime(DateUtils.currentTimestamp());
         dataStandard.setOperator(AdminUtils.getUserData().getUserId());
-        dataStandard.setVersion(1);
+        
         dataStandard.setDelete(false);
-        return dataStandardDAO.insert(dataStandard,tenantId);
+        return dataStandardDAO.insert(dataStandard, tenantId);
     }
-
-    public void batchInsert(String categoryId, List<DataStandard> dataList,String tenantId) throws AtlasBaseException {
+    
+    
+    private void verifyDataStandard(DataStandard dataStandard) {
+        Objects.requireNonNull(dataStandard.getNumber(), "数据标准编号必填!");
+        Assert.isTrue(Pattern.matches(NUMBER_REGEX, dataStandard.getNumber()),
+                "编号内容格式错误，只允许英文、数字、下划线、中划线");
+        
+        Objects.requireNonNull(dataStandard.getName(), "数据标准名称必填!");
+        Assert.isTrue(Pattern.matches(NAME_REGEX, dataStandard.getName()),
+                "名称内容格式错误，只允许中文、英文、数字、下划线、中划线");
+        
+        Objects.requireNonNull(dataStandard.getStandardType(), "数据标准类型必填!");
+        Assert.notNull(DataStandardType.valueOf(dataStandard.getStandardType()),
+                String.format("数据标准类型枚举值无效:%s", dataStandard.getStandardType()));
+        
+        if (Objects.nonNull(dataStandard.getDataLength())) {
+            Assert.isTrue(Pattern.matches(DATA_LENGTH_REGEX, dataStandard.getDataLength().toString()),
+                    "数据长度格式错误，只允许正整数");
+        }
+        
+        if (Objects.nonNull(dataStandard.getDataType())) {
+            Assert.notNull(DataStandardDataType.parse(dataStandard.getDataType()),
+                    String.format("数据标准数据类型值无效:%s", dataStandard.getDataType()));
+        }
+        
+        if (Objects.nonNull(dataStandard.getStandardLevel())) {
+            Assert.notNull(DataStandardLevel.valueOf(dataStandard.getStandardLevel()),
+                    String.format("数据标准标准层级枚举值无效:%s", dataStandard.getStandardLevel()));
+        }
+        
+        if (dataStandard.isAllowableValueFlag()) {
+            Assert.isTrue(StringUtils.isNotEmpty(dataStandard.getAllowableValue()), "允许有值时,允许值不能为空!");
+        } else {
+            Assert.isTrue(StringUtils.isEmpty(dataStandard.getAllowableValue()), "不允许有值时,允许值只能为空!");
+        }
+    }
+    
+    public void batchInsert(String categoryId, List<DataStandard> dataList, String tenantId) throws AtlasBaseException {
         int startIndex = 0;
         int endIndex = 0;
         List<DataStandard> subList = null;
@@ -101,41 +139,37 @@ public class DataStandardService {
             dataStandard.setCategoryId(categoryId);
             dataStandard.setDelete(false);
             endIndex++;
-            if(endIndex%500==0) {
+            if (endIndex % 500 == 0) {
                 subList = dataList.subList(startIndex, endIndex);
-                dataStandardDAO.batchInsert(subList,tenantId);
+                dataStandardDAO.batchInsert(subList, tenantId);
                 startIndex = endIndex;
             }
         }
         subList = dataList.subList(startIndex, endIndex);
-        dataStandardDAO.batchInsert(subList,tenantId);
+        dataStandardDAO.batchInsert(subList, tenantId);
     }
-
-    public DataStandard getById(String id,String tenantId) throws AtlasBaseException {
+    
+    public DataStandard getById(String id, String tenantId) throws AtlasBaseException {
         DataStandard dataStandard = dataStandardDAO.getById(id);
-        String path = CategoryRelationUtils.getPath(dataStandard.getCategoryId(),tenantId);
+        String path = CategoryRelationUtils.getPath(dataStandard.getCategoryId(), tenantId);
         dataStandard.setPath(path);
         return dataStandard;
     }
-
-    public List<DataStandard> getByNumber(String number,String tenantId) throws AtlasBaseException {
-        try {
-            return dataStandardDAO.getByNumber(number,tenantId);
-        } catch (Exception e) {
-            LOG.error("获取标准失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取标准失败");
-        }
+    
+    public Long getByNumber(String number, String tenantId) throws AtlasBaseException {
+        return dataStandardDAO.getCountByNumber(number, tenantId);
     }
-    @Transactional(rollbackFor=Exception.class)
-    public void deleteByNumber(String number,String tenantId) throws AtlasBaseException {
+    
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteByNumber(String number, String tenantId) throws AtlasBaseException {
         try {
-            dataStandardDAO.deleteStandard2RuleByRuleId(number,tenantId);
+            dataStandardDAO.deleteStandard2RuleByRuleId(number, tenantId);
             List<String> database = tenantService.getDatabase(tenantId);
-            if (database!=null&&database.size()!=0){
-                dataStandardDAO.deleteStandard2TableByNumber(number,database);
+            if (database != null && database.size() != 0) {
+                dataStandardDAO.deleteStandard2TableByNumber(number, database);
             }
-
-            dataStandardDAO.deleteByNumber(number,tenantId);
+            
+            dataStandardDAO.deleteByNumber(number, tenantId);
         } catch (Exception e) {
             LOG.error("删除失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "删除失败");
@@ -150,99 +184,105 @@ public class DataStandardService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "批量删除失败");
         }
     }
-
+    
     /**
      * 更新也是插入, 版本号+1, 创建时间用最早版本的
+     * 2021-11-15 fix: 版本号=0的是当前版本,历史版本为非零正整数
      */
-    public int update(DataStandard dataStandard,String tenantId) throws AtlasBaseException {
-        DataStandard old = getById(dataStandard.getId(),tenantId);
+    @Transactional(rollbackFor = Exception.class)
+    public void update(DataStandard dataStandard, String tenantId) throws AtlasBaseException {
+        verifyDataStandard(dataStandard);
+        
+        DataStandard old = dataStandardDAO.getById(dataStandard.getId());
+        Assert.notNull(old, "无效的数据标准ID");
+        Assert.isTrue(old.getVersion() == 0, String.format("历史数据无法编辑,id:%s", old.getId()));
+        Assert.isTrue(Objects.equals(old.getNumber(), dataStandard.getNumber()), "数据标准编码不能修改!");
+        
+        // 查询最大历史版本号
+        int maxHistoryVersion = dataStandardDAO.getMaxHistoryVersion(dataStandard.getNumber());
+        
         dataStandard.setId(UUID.randomUUID().toString());
         dataStandard.setNumber(old.getNumber());
+        dataStandard.setCategoryId(old.getCategoryId());
         dataStandard.setCreateTime(old.getCreateTime());
         dataStandard.setUpdateTime(DateUtils.currentTimestamp());
         dataStandard.setOperator(AdminUtils.getUserData().getUserId());
-        dataStandard.setCategoryId(old.getCategoryId());
         dataStandard.setDelete(false);
-        return dataStandardDAO.update(dataStandard,tenantId);
+        
+        // 更新当前版本数据的版本号 version=maxHistoryVersion+1;
+        dataStandardDAO.updateVersion(old.getId(), (maxHistoryVersion + 1));
+        // 插入当前版本数据
+        dataStandardDAO.insert(dataStandard, tenantId);
     }
-
-    public PageResult<DataStandard> queryPageByCatetoryId(String categoryId, Parameters parameters,String tenantId) throws AtlasBaseException {
-        List<DataStandard> list = queryByCatetoryId(categoryId, parameters,tenantId);
+    
+    public PageResult<DataStandard> queryPageByCatetoryId(String categoryId, Parameters parameters, String tenantId) throws AtlasBaseException {
+        List<DataStandard> list = queryByCatetoryId(categoryId, parameters, tenantId);
+        
         PageResult<DataStandard> pageResult = new PageResult<>();
-        long totalSize = 0;
-        if (list.size()!=0){
-            totalSize = list.get(0).getTotal();
-        }
-        pageResult.setTotalSize(totalSize);
+        pageResult.setTotalSize(CollectionUtils.isNotEmpty(list) ? list.get(0).getTotal() : 0);
         pageResult.setCurrentSize(list.size());
         pageResult.setLists(list);
         return pageResult;
     }
-
-    public List<DataStandard> queryByCatetoryId(String categoryId, Parameters parameters,String tenantId) throws AtlasBaseException {
-        String path = CategoryRelationUtils.getPath(categoryId,tenantId);
-        List<DataStandard> list = dataStandardDAO.queryByCatetoryId(categoryId, parameters,tenantId)
+    
+    public List<DataStandard> queryByCatetoryId(String categoryId, Parameters parameters, String tenantId) throws AtlasBaseException {
+        String path = CategoryRelationUtils.getPath(categoryId, tenantId);
+        return dataStandardDAO.queryByCatetoryId(categoryId, parameters, tenantId)
                 .stream()
-                .map(dataStandard -> {
-                    dataStandard.setPath(path);
-                    return dataStandard;
-                }).collect(Collectors.toList());
-        return list;
+                .peek(dataStandard -> dataStandard.setPath(path))
+                .collect(Collectors.toList());
     }
-
-    public PageResult<DataStandard> search(DataStandardQuery parameters,String tenantId) {
-        List<DataStandard> list = dataStandardDAO.search(parameters,tenantId)
+    
+    public PageResult<DataStandard> search(DataStandardQuery parameters, String tenantId) {
+        List<DataStandard> list = dataStandardDAO.search(parameters, tenantId)
                 .stream()
-                .map(dataStandard -> {
+                .peek(dataStandard ->
+                        // TODO 循环查询,待优化
+                        dataStandard.setPath(CategoryRelationUtils.getPath(dataStandard.getCategoryId(), tenantId)))
+                .collect(Collectors.toList());
+        
+        return getDataStandardPageResult(list);
+    }
+    
+    public PageResult<DataStandard> history(String number, Parameters parameters, String tenantId) {
+        List<DataStandard> list = dataStandardDAO.queryHistoryData(number, parameters, tenantId);
+        
+        if (CollectionUtils.isNotEmpty(list)) {
+            // 处理version=0的数据,set version = maxHistoryVersion+1
+            int maxHistoryVersion = list.stream().mapToInt(DataStandard::getVersion).max().orElse(-1);
+            list = list.stream()
+                    .peek(value -> {
+                        if (value.getVersion() == 0) {
+                            value.setVersion(maxHistoryVersion + 1);
+                        }
+                    })
+                    .collect(Collectors.toList());
+        }
+        
+        return getDataStandardPageResult(list);
+    }
+    
+    private PageResult<DataStandard> getDataStandardPageResult(List<DataStandard> list) {
+        PageResult<DataStandard> pageResult = new PageResult<>();
+        pageResult.setTotalSize(list.size() > 0 ? list.get(0).getTotal() : 0);
+        pageResult.setCurrentSize(list.size());
+        pageResult.setLists(list);
+        return pageResult;
+    }
+    
+    public List<DataStandard> queryByIds(List<String> ids, String tenantId) {
+        
+        return dataStandardDAO.queryByIds(ids)
+                .stream()
+                .peek(dataStandard -> {
                     String path = null;
                     try {
-                        path = CategoryRelationUtils.getPath(dataStandard.getCategoryId(),tenantId);
+                        path = CategoryRelationUtils.getPath(dataStandard.getCategoryId(), tenantId);
                     } catch (AtlasBaseException e) {
                         LOG.error(e.getMessage(), e);
                     }
                     dataStandard.setPath(path);
-                    return dataStandard;
                 }).collect(Collectors.toList());
-
-        PageResult<DataStandard> pageResult = new PageResult<>();
-        long totalSize = 0;
-        if (list.size()!=0){
-            totalSize = list.get(0).getTotal();
-        }
-        pageResult.setTotalSize(totalSize);
-        pageResult.setCurrentSize(list.size());
-        pageResult.setLists(list);
-        return pageResult;
-    }
-
-    public PageResult<DataStandard> history(String number, Parameters parameters,String tenantId) {
-        List<DataStandard> list = dataStandardDAO.history(number, parameters.getLimit(), parameters.getOffset(), parameters.getQuery(),tenantId);
-        PageResult<DataStandard> pageResult = new PageResult<>();
-        long totalSize = 0;
-        if (list.size()!=0){
-            totalSize = list.get(0).getTotal();
-        }
-        pageResult.setTotalSize(totalSize);
-        pageResult.setCurrentSize(list.size());
-        pageResult.setLists(list);
-        return pageResult;
-    }
-
-    public List<DataStandard> queryByIds(List<String> ids,String tenantId) {
-        List<DataStandard> list = dataStandardDAO.queryByIds(ids)
-                .stream()
-                .map(dataStandard -> {
-                    String path = null;
-                    try {
-                        path = CategoryRelationUtils.getPath(dataStandard.getCategoryId(),tenantId);
-                    } catch (AtlasBaseException e) {
-                        LOG.error(e.getMessage(), e);
-                    }
-                    dataStandard.setPath(path);
-                    return dataStandard;
-                }).collect(Collectors.toList());
-
-        return list;
     }
 
     public List<DataStandard> queryByNumberList(List<String> numberList,String tenantId) {
@@ -278,12 +318,12 @@ public class DataStandardService {
         List<List<String>> dataList = list.stream().map(standard -> {
             String createTime = DateUtils.formatDateTime(standard.getCreateTime().getTime());
             String updateTime = DateUtils.formatDateTime(standard.getUpdateTime().getTime());
-            List<String> data = Lists.newArrayList(standard.getNumber(), standard.getContent(), standard.getDescription(), standard.getPath(), standard.getOperator(), createTime, updateTime);
+            List<String> data = Lists.newArrayList(standard.getNumber(), standard.getName(), standard.getDescription(), standard.getPath(), standard.getOperator(), createTime, updateTime);
             return data;
         }).collect(Collectors.toList());
 
         Workbook workbook = new XSSFWorkbook();
-        PoiExcelUtils.createSheet(workbook, "数据标准", Lists.newArrayList("标准编号", "标准内容", "标准描述", "标准路径", "标准编辑人", "标准创建时间", "标准修改时间"), dataList);
+        PoiExcelUtils.createSheet(workbook, "数据标准", Lists.newArrayList("标准编号", "标准名称", "标准描述", "标准路径", "标准编辑人", "标准创建时间", "标准修改时间"), dataList);
         return workbook;
     }
 
@@ -340,7 +380,7 @@ public class DataStandardService {
                 if(Objects.isNull(contentCell)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "标准内容不能为空");
                 }
-                data.setContent(contentCell.getStringCellValue());
+                data.setName(contentCell.getStringCellValue());
 
                 Cell discriptionCell = row.getCell(2);
                 if(Objects.isNull(discriptionCell)) {
