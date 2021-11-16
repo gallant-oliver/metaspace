@@ -57,15 +57,16 @@ public interface DataStandardDAO {
     public void deleteByNumberList(@Param("numberList") List<String> numberList, @Param("tenantId") String tenantId);
     
     @Select({" <script>",
-            " select a.id,a.number,a.content,a.description,a.createtime,a.updatetime,b.username as operator,a.version,a.categoryid,a.delete ",
-            " from data_standard a ",
-            " inner join users b on a.operator=b.userid ",
-            " where a.delete=false and a.id in ",
+            " select b.id,b.number,b.name,b.description,b.createtime,b.updatetime,",
+            " c.username as operator,b.version,b.categoryid,b.standard_type,b.data_type,b.data_length,",
+            " b.allowable_value_flag,b.allowable_value,b.standard_level ",
+            " from data_standard b inner join users c on b.operator=c.userid ",
+            " where b.delete=false and b.version=0 and b.id in ",
             " <foreach collection='ids' item='id' index='index' open='(' close=')' separator=','>",
             " #{id}",
             " </foreach>",
             " </script>"})
-    public List<DataStandard> queryByIds(@Param("ids") List<String> ids);
+    List<DataStandard> queryByIds(@Param("ids") List<String> ids);
     
     @Select({" <script>",
             " select a.id,a.number,a.content,a.description,a.createtime,a.updatetime,b.username as operator,a.version,a.categoryid,a.delete ",

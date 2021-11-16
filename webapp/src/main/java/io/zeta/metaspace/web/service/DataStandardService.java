@@ -56,6 +56,10 @@ public class DataStandardService {
     
     private static final Logger LOG = LoggerFactory.getLogger(DataStandardService.class);
     
+    private static final List<String> EXPORT_FILE_TITLES =
+            Lists.newArrayList("标准编号", "标准名称", "标准类型", "数据类型", "数据长度",
+                    "是否有允许值", "允许值", "标准层级", "标准描述", "标准路径", "标准编辑人", "标准创建时间", "标准修改时间");
+    
     /**
      * 编码校验规则:只允许英文、数字、下划线、中划线
      */
@@ -270,11 +274,11 @@ public class DataStandardService {
         return pageResult;
     }
     
-    public List<DataStandard> queryByIds(List<String> ids, String tenantId) {
-        
-        return dataStandardDAO.queryByIds(ids)
+    
+    public List<DataStandard> queryByNumberList(List<String> numberList,String tenantId) {
+        List<DataStandard> list = dataStandardDAO.queryByNumberList(numberList,tenantId)
                 .stream()
-                .peek(dataStandard -> {
+                .map(dataStandard -> {
                     String path = null;
                     try {
                         path = CategoryRelationUtils.getPath(dataStandard.getCategoryId(), tenantId);
@@ -282,57 +286,83 @@ public class DataStandardService {
                         LOG.error(e.getMessage(), e);
                     }
                     dataStandard.setPath(path);
-                }).collect(Collectors.toList());
-    }
-
-    public List<DataStandard> queryByNumberList(List<String> numberList,String tenantId) {
-        List<DataStandard> list = dataStandardDAO.queryByNumberList(numberList,tenantId)
-                .stream()
-                .map(dataStandard -> {
-                    String path = null;
-                    try {
-                        path = CategoryRelationUtils.getPath(dataStandard.getCategoryId(),tenantId);
-                    } catch (AtlasBaseException e) {
-                        LOG.error(e.getMessage(), e);
-                    }
-                    dataStandard.setPath(path);
                     return dataStandard;
                 }).collect(Collectors.toList());
-
+        
         return list;
     }
-
-    public File exportExcel(String categoryId,String tenantId) throws Exception {
-        List<DataStandard> data = queryByCatetoryId(categoryId, null,tenantId);
+    
+    /**
+     * 导出指定目录下所有数据标准
+     */
+    public File exportExcel(String categoryId, String tenantId) throws Exception {
+        List<DataStandard> data = queryByCatetoryId(categoryId, null, tenantId);
         Workbook workbook = data2workbook(data);
         return workbook2file(workbook);
     }
-
-    public File exportExcel(List<String> ids,String tenantId) throws IOException {
-        List<DataStandard> data = queryByIds(ids,tenantId);
+    
+    /**
+     * 导出指定数据标准
+     */
+    public File exportExcel(List<String> ids, String tenantId) throws IOException {
+        List<DataStandard> data = queryByIds(ids, tenantId);
         Workbook workbook = data2workbook(data);
         return workbook2file(workbook);
     }
-
+    
+    private List<DataStandard> queryByIds(List<String> ids, String tenantId) {
+        return dataStandardDAO.queryByIds(ids)
+                .stream()
+                .peek(dataStandard -> {
+                    String path = null;
+                    try {
+                        // TODO 循环查询 待优化
+                        path = CategoryRelationUtils.getPath(dataStandard.getCategoryId(), tenantId);
+                    } catch (AtlasBaseException e) {
+                        LOG.error("导出所选数据标准异常:", e);
+                    }
+                    dataStandard.setPath(path);
+                }).collect(Collectors.toList());
+    }
+    
     private Workbook data2workbook(List<DataStandard> list) {
-        List<List<String>> dataList = list.stream().map(standard -> {
-            String createTime = DateUtils.formatDateTime(standard.getCreateTime().getTime());
-            String updateTime = DateUtils.formatDateTime(standard.getUpdateTime().getTime());
-            List<String> data = Lists.newArrayList(standard.getNumber(), standard.getName(), standard.getDescription(), standard.getPath(), standard.getOperator(), createTime, updateTime);
-            return data;
-        }).collect(Collectors.toList());
-
+        List<List<String>> dataList = list.stream()
+                .map(value -> {
+                    String standardType = Objects.isNull(value.getStandardType())
+                            ? StringUtils.EMPTY
+                            : DataStandardType.valueOf(value.getStandardType()).getDesc();
+                    String standardLevel = Objects.isNull(value.getStandardLevel())
+                            ? StringUtils.EMPTY
+                            : DataStandardLevel.valueOf(value.getStandardLevel()).getDesc();
+                    String createTime = DateUtils.formatDateTime(value.getCreateTime().getTime());
+                    String updateTime = DateUtils.formatDateTime(value.getUpdateTime().getTime());
+                    return Lists.newArrayList(
+                            value.getNumber(),
+                            value.getName(),
+                            standardType,
+                            value.getDataType(),
+                            Objects.toString(value.getDataLength(), StringUtils.EMPTY),
+                            String.valueOf(value.isAllowableValueFlag()),
+                            value.getAllowableValue(),
+                            standardLevel,
+                            value.getDescription(),
+                            value.getPath(),
+                            value.getOperator(),
+                            createTime,
+                            updateTime
+                    );
+                }).collect(Collectors.toList());
+        
         Workbook workbook = new XSSFWorkbook();
-        PoiExcelUtils.createSheet(workbook, "数据标准", Lists.newArrayList("标准编号", "标准名称", "标准描述", "标准路径", "标准编辑人", "标准创建时间", "标准修改时间"), dataList);
+        PoiExcelUtils.createSheet(workbook, "数据标准", EXPORT_FILE_TITLES, dataList);
         return workbook;
     }
 
     private File workbook2file(Workbook workbook) throws IOException {
-        File tmpFile = File.createTempFile("DataStandardExport", ".xlsx");
+        File tmpFile = File.createTempFile(String.format("DataStandardExport_%s", System.currentTimeMillis()), ".xlsx");
         try (FileOutputStream output = new FileOutputStream(tmpFile)) {
             workbook.write(output);
             output.flush();
-            output.close();
         }
         return tmpFile;
     }

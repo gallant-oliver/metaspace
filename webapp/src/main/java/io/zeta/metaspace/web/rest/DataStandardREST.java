@@ -37,10 +37,13 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -50,10 +53,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.HashMap;
@@ -198,60 +198,62 @@ public class DataStandardREST {
         String fileName = TemplateEnum.DATA_STANDARD_TEMPLATE.getFileName();
         InputStream inputStream = PoiExcelUtils.getTemplateInputStream(TemplateEnum.DATA_STANDARD_TEMPLATE);
         response.setContentType("application/force-download");
-        response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
+        response.addHeader("Content-Disposition", "attachment;fileName=".concat(fileName));
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
     }
-
-    public static String filename(String filePath) throws UnsupportedEncodingException {
+    
+    private static String filename(String filePath) throws UnsupportedEncodingException {
         String filename = filePath.substring(filePath.lastIndexOf("/") + 1);
         filename = URLEncoder.encode(filename, "UTF-8");
         return filename;
     }
-
+    
     @POST
     @Path("/export/selected")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public DownloadUri getDownloadURL(List<String> ids) throws Exception {
-        String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/datastandard/export/selected";
+        String url = MetaspaceConfig.getMetaspaceUrl().concat("/api/metaspace/datastandard/export/selected");
         return ExportDataPathUtils.generateURL(url, ids);
     }
-
+    
     @GET
     @Path("/export/selected/{downloadId}")
     @Valid
     @OperateType(UPDATE)
-    public void exportSelected(@PathParam("downloadId") String downloadId,@QueryParam("tenantId") String tenantId) throws Exception {
+    public void exportSelected(@PathParam("downloadId") String downloadId, @QueryParam("tenantId") String tenantId) throws Exception {
         List<String> ids = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
-        File exportExcel = dataStandardService.exportExcel(ids,tenantId);
+        Assert.isTrue(CollectionUtils.isNotEmpty(ids), "所选数据标准ID集合为空,导出失败!");
+        File exportExcel = dataStandardService.exportExcel(ids, tenantId);
         try {
-            String filePath = exportExcel.getAbsolutePath();
-            String fileName = filename(filePath);
-            InputStream inputStream = new FileInputStream(filePath);
-            response.setContentType("application/force-download");
-            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
-            IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  fileName);
+            String fileName = buildExportResponse(exportExcel);
+            HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), fileName);
         } finally {
             exportExcel.delete();
         }
     }
-
+    
     @GET
     @Path("/export/category/{categoryId}")
     @Valid
-    public void exportCategoryId(@PathParam("categoryId") String categoryId,@QueryParam("tenantId") String tenantId) throws Exception {
-        File exportExcel = dataStandardService.exportExcel(categoryId,tenantId);
+    public void exportCategoryId(@PathParam("categoryId") String categoryId, @QueryParam("tenantId") String tenantId) throws Exception {
+        Assert.isTrue(StringUtils.isNotBlank(categoryId), "目录ID无效,导出失败!");
+        File exportExcel = dataStandardService.exportExcel(categoryId, tenantId);
         try {
-            String filePath = exportExcel.getAbsolutePath();
-            String fileName = filename(filePath);
-            InputStream inputStream = new FileInputStream(filePath);
-            response.setContentType("application/force-download");
-            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
-            IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+            buildExportResponse(exportExcel);
         } finally {
             exportExcel.delete();
         }
+    }
+    
+    private String buildExportResponse(File exportExcel) throws IOException {
+        String filePath = exportExcel.getAbsolutePath();
+        String fileName = filename(filePath);
+        InputStream inputStream = new FileInputStream(filePath);
+        response.setContentType("application/force-download");
+        response.addHeader("Content-Disposition", "attachment;fileName=".concat(fileName));
+        IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+        return fileName;
     }
     
     @POST
@@ -446,12 +448,7 @@ public class DataStandardREST {
             exportExcel = dataManageService.exportExcel(ids, CATEGORY_TYPE,tenantId);
         }
         try {
-            String filePath = exportExcel.getAbsolutePath();
-            String fileName = filename(filePath);
-            InputStream inputStream = new FileInputStream(filePath);
-            response.setContentType("application/force-download");
-            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
-            IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+            buildExportResponse(exportExcel);
         } finally {
             exportExcel.delete();
         }

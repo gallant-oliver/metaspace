@@ -16,26 +16,29 @@ public enum DataStandardLevel {
     /**
      * 贴源层
      */
-    Source_layer(1),
+    Source_layer(1, "贴源层"),
     /**
      * 基础层
      */
-    Base_layer(2),
+    Base_layer(2, "基础层"),
     /**
      * 通用层
      */
-    Common_layer(4),
+    Common_layer(4, "通用层"),
     /**
      * 应用层
      */
-    Application_layer(5),
+    Application_layer(5, "应用层"),
     ;
     
     @Getter
     private int code;
+    @Getter
+    private String desc;
     
-    DataStandardLevel(int code) {
+    DataStandardLevel(int code, String desc) {
         this.code = code;
+        this.desc = desc;
     }
     
     public static DataStandardLevel valueOf(int code) {

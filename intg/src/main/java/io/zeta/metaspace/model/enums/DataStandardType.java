@@ -16,18 +16,21 @@ public enum DataStandardType {
     /**
      * 数据标准
      */
-    DATA_STANDARD(1),
+    DATA_STANDARD(1, "数据标准"),
     /**
      * 命名标准
      */
-    NAMING_STANDARD(2),
+    NAMING_STANDARD(2, "命名标准"),
     ;
     
     @Getter
     private int code;
+    @Getter
+    private String desc;
     
-    DataStandardType(int code) {
+    DataStandardType(int code, String desc) {
         this.code = code;
+        this.desc = desc;
     }
     
     public static DataStandardType valueOf(int code) {
