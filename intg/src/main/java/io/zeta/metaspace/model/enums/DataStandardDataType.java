@@ -1,6 +1,8 @@
 package io.zeta.metaspace.model.enums;
 
 import lombok.Getter;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
 
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -14,15 +16,12 @@ import java.util.stream.Stream;
  */
 public enum DataStandardDataType {
     STRING("STRING", "字符串"),
-    INT("INT", "整数"),
-    BIGINT("BIGINT", "大整数"),
-    FLOAT("FLOAT", "单精度浮点数"),
-    DOUBLE("DOUBLE", "双精度浮点数"),
-    DECIMAL("DECIMAL", "高精度浮点数"),
+    DOUBLE("DOUBLE", "双精度"),
+    BIGINT("BIGINT", "长整型"),
     BOOLEAN("BOOLEAN", "布尔值"),
-    TIMESTAMP("TIMESTAMP", "时间戳"),
-    DATE("DATE", "日期"),
-    TIME("TIME", "时间"),
+    DECIMAL("DECIMAL", "高精度"),
+    DATE("DATE", "日期类型"),
+    TIMESTAMP("TIMESTAMP", "时间戳类型"),
     ;
     
     @Getter
@@ -35,10 +34,17 @@ public enum DataStandardDataType {
         this.desc = desc;
     }
     
-    public static DataStandardDataType parse(String code) {
+    public static DataStandardDataType parseByCode(String code) {
         return Stream.of(DataStandardDataType.values())
                 .filter(obj -> Objects.equals(code, obj.getCode()))
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据标准数据类型枚举值无效!"));
+    }
+    
+    public static DataStandardDataType parseByDesc(String desc) {
+        return Stream.of(DataStandardDataType.values())
+                .filter(obj -> Objects.equals(desc, obj.getDesc()))
+                .findFirst()
+                .orElseThrow(() -> new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据标准数据类型值无效!"));
     }
 }

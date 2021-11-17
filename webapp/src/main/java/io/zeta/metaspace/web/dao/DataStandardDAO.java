@@ -4,6 +4,7 @@ import io.zeta.metaspace.model.datastandard.*;
 import io.zeta.metaspace.model.metadata.Parameters;
 import org.apache.ibatis.annotations.*;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface DataStandardDAO {
@@ -19,6 +20,21 @@ public interface DataStandardDAO {
             " #{dataStandard.allowableValue},#{dataStandard.standardLevel},#{dataStandard.dataType})"
     )
     int insert(@Param("dataStandard") DataStandard dataStandard, @Param("tenantId") String tenantId);
+    
+    @Insert({"<script>",
+            "insert into data_standard ",
+            "(id,number,description,createtime,updatetime,operator,categoryid,delete,tenantid,",
+            " name,standard_type,data_length,allowable_value_flag,allowable_value,standard_level,data_type) ",
+            "values ",
+            " <foreach collection='dataList' item='dataStandard' index='index' separator=','>",
+            "(#{dataStandard.id},#{dataStandard.number},#{dataStandard.description},",
+            " #{dataStandard.createTime},#{dataStandard.updateTime},#{dataStandard.operator},",
+            " #{dataStandard.categoryId},#{dataStandard.delete},#{tenantId},#{dataStandard.name},",
+            " #{dataStandard.standardType},#{dataStandard.dataLength},#{dataStandard.allowableValueFlag},",
+            " #{dataStandard.allowableValue},#{dataStandard.standardLevel},#{dataStandard.dataType})",
+            " </foreach>",
+            " </script>"})
+    int batchInsert(@Param("dataList") List<DataStandard> dataList, @Param("tenantId") String tenantId);
     
     /**
      * 根据ID更新版本号
@@ -69,15 +85,22 @@ public interface DataStandardDAO {
     List<DataStandard> queryByIds(@Param("ids") List<String> ids);
     
     @Select({" <script>",
-            " select a.id,a.number,a.content,a.description,a.createtime,a.updatetime,b.username as operator,a.version,a.categoryid,a.delete ",
-            " from data_standard a ",
-            " inner join users b on a.operator=b.userid ",
-            " where a.delete=false and tenantid=#{tenantId} and a.number in ",
+            " select number from data_standard ",
+            " where delete=false and version=0 and tenantid=#{tenantId} and number in ",
             " <foreach collection='numberList' item='number' index='index' open='(' close=')' separator=','>",
             " #{number}",
             " </foreach>",
             " </script>"})
-    List<DataStandard> queryByNumberList(@Param("numberList") List<String> numberList, @Param("tenantId") String tenantId);
+    List<String> queryNumberByNumbers(@Param("numberList") Collection<String> numberList, @Param("tenantId") String tenantId);
+    
+    @Select({" <script>",
+            " select name from data_standard ",
+            " where delete=false and version=0 and tenantid=#{tenantId} and name in ",
+            " <foreach collection='nameList' item='name' index='index' open='(' close=')' separator=','>",
+            " #{name}",
+            " </foreach>",
+            " </script>"})
+    List<String> queryNameByNumbers(@Param("nameList") Collection<String> nameList, @Param("tenantId") String tenantId);
     
     @Select({"<script>",
             " select count(1)over() total,b.id,b.number,b.name,b.description,b.createtime,b.updatetime,",
@@ -130,15 +153,7 @@ public interface DataStandardDAO {
             " </if>",
             " </script>"})
     List<DataStandard> search(@Param("params") DataStandardQuery params, @Param("tenantId") String tenantId);
-
-
-    @Insert({"<script>",
-             "insert into data_standard(id,number,content,description,createtime,updatetime,operator,version,categoryid,delete,tenantid) values ",
-             " <foreach collection='dataList' item='data' index='index' separator=','>",
-             " ( #{data.id},#{data.number},#{data.content},#{data.description},#{data.createTime},#{data.updateTime},#{data.operator},#{data.version},#{data.categoryId},#{data.delete},#{tenantId} )",
-             " </foreach>",
-             " </script>"})
-    int batchInsert(@Param("dataList") List<DataStandard> dataList,@Param("tenantId") String tenantId);
+    
     
     @Select({"<script>",
             " select count(1)over() total,b.id,b.number,b.name,b.description,b.createtime,b.updatetime,",

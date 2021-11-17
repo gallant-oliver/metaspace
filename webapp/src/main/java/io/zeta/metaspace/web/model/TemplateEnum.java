@@ -8,9 +8,9 @@ public enum TemplateEnum {
     DATA_STANDARD_TEMPLATE("data_standard_template.xlsx",
             new String[][]{
                     {"标准编号", "标准名称", "标准类型", "数据类型", "数据长度", "是否有允许值", "允许值", "标准层级", "标准描述"},
-                    {"只允许英文、数字、下划线、中划线", "只允许中文、英文、数字、下划线、中划线", "枚举值:\n1-数据标准\n2-命名标准",
+                    {"只允许英文、数字、下划线、中划线", "只允许中文、英文、数字、下划线、中划线", "枚举值:\n数据标准\n命名标准",
                             "枚举值:\nSTRING\nDOUBLE\nBIGINT\nBOOLEAN\nDECIMAL\nDATE\nTIMESTAMP",
-                            "只允许正整数", "布尔型: true 或 false", "多个值以;分割", "枚举值:\n1-贴源层\n2-基础层\n4-通用层\n5-应用层", ""}
+                            "只允许正整数", "布尔型: true 或 false", "多个值以;分割", "枚举值:\n贴源层\n基础层\n通用层\n应用层", ""}
             }),
     BUSINESS_TEMPLATE("business_template.xlsx",
             new String[][]{{"业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产"}}),

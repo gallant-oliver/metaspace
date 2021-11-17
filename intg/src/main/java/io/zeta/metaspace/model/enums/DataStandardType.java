@@ -1,6 +1,8 @@
 package io.zeta.metaspace.model.enums;
 
 import lombok.Getter;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
 
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -33,10 +35,17 @@ public enum DataStandardType {
         this.desc = desc;
     }
     
-    public static DataStandardType valueOf(int code) {
+    public static DataStandardType parseByCode(int code) {
         return Stream.of(DataStandardType.values())
                 .filter(obj -> Objects.equals(code, obj.getCode()))
                 .findFirst()
-                .orElse(null);
+                .orElseThrow(() -> new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据标准类型枚举值无效!"));
+    }
+    
+    public static DataStandardType parseByDesc(String desc) {
+        return Stream.of(DataStandardType.values())
+                .filter(obj -> Objects.equals(desc, obj.getDesc()))
+                .findFirst()
+                .orElseThrow(() -> new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据标准类型值无效!"));
     }
 }

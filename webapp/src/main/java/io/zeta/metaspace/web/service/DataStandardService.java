@@ -31,6 +31,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
@@ -43,12 +44,13 @@ import org.springframework.util.Assert;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static io.zeta.metaspace.web.util.ExportDataPathUtils.EXCEL_FORMAT_XLSX;
 
 @Service
 @Transactional(rollbackFor = Exception.class)
@@ -103,24 +105,21 @@ public class DataStandardService {
         Objects.requireNonNull(dataStandard.getName(), "数据标准名称必填!");
         Assert.isTrue(Pattern.matches(NAME_REGEX, dataStandard.getName()),
                 "名称内容格式错误，只允许中文、英文、数字、下划线、中划线");
-        
+    
         Objects.requireNonNull(dataStandard.getStandardType(), "数据标准类型必填!");
-        Assert.notNull(DataStandardType.valueOf(dataStandard.getStandardType()),
-                String.format("数据标准类型枚举值无效:%s", dataStandard.getStandardType()));
+        DataStandardType.parseByCode(dataStandard.getStandardType());
         
         if (Objects.nonNull(dataStandard.getDataLength())) {
             Assert.isTrue(Pattern.matches(DATA_LENGTH_REGEX, dataStandard.getDataLength().toString()),
                     "数据长度格式错误，只允许正整数");
         }
-        
+    
         if (Objects.nonNull(dataStandard.getDataType())) {
-            Assert.notNull(DataStandardDataType.parse(dataStandard.getDataType()),
-                    String.format("数据标准数据类型值无效:%s", dataStandard.getDataType()));
+            DataStandardDataType.parseByCode(dataStandard.getDataType());
         }
         
         if (Objects.nonNull(dataStandard.getStandardLevel())) {
-            Assert.notNull(DataStandardLevel.valueOf(dataStandard.getStandardLevel()),
-                    String.format("数据标准标准层级枚举值无效:%s", dataStandard.getStandardLevel()));
+            DataStandardLevel.parseByCode(dataStandard.getStandardLevel());
         }
         
         if (dataStandard.isAllowableValueFlag()) {
@@ -130,16 +129,16 @@ public class DataStandardService {
         }
     }
     
-    public void batchInsert(String categoryId, List<DataStandard> dataList, String tenantId) throws AtlasBaseException {
+    private void batchInsert(String categoryId, List<DataStandard> dataList, String tenantId) throws AtlasBaseException {
         int startIndex = 0;
         int endIndex = 0;
-        List<DataStandard> subList = null;
+        List<DataStandard> subList;
         for (DataStandard dataStandard : dataList) {
             dataStandard.setId(UUID.randomUUID().toString());
             dataStandard.setCreateTime(DateUtils.currentTimestamp());
             dataStandard.setUpdateTime(DateUtils.currentTimestamp());
             dataStandard.setOperator(AdminUtils.getUserData().getUserId());
-            dataStandard.setVersion(1);
+            dataStandard.setVersion(0);
             dataStandard.setCategoryId(categoryId);
             dataStandard.setDelete(false);
             endIndex++;
@@ -274,24 +273,6 @@ public class DataStandardService {
         return pageResult;
     }
     
-    
-    public List<DataStandard> queryByNumberList(List<String> numberList,String tenantId) {
-        List<DataStandard> list = dataStandardDAO.queryByNumberList(numberList,tenantId)
-                .stream()
-                .map(dataStandard -> {
-                    String path = null;
-                    try {
-                        path = CategoryRelationUtils.getPath(dataStandard.getCategoryId(), tenantId);
-                    } catch (AtlasBaseException e) {
-                        LOG.error(e.getMessage(), e);
-                    }
-                    dataStandard.setPath(path);
-                    return dataStandard;
-                }).collect(Collectors.toList());
-        
-        return list;
-    }
-    
     /**
      * 导出指定目录下所有数据标准
      */
@@ -308,6 +289,15 @@ public class DataStandardService {
         List<DataStandard> data = queryByIds(ids, tenantId);
         Workbook workbook = data2workbook(data);
         return workbook2file(workbook);
+    }
+    
+    private File workbook2file(Workbook workbook) throws IOException {
+        File tmpFile = File.createTempFile(String.format("DataStandardExport_%s", System.currentTimeMillis()), EXCEL_FORMAT_XLSX);
+        try (FileOutputStream output = new FileOutputStream(tmpFile)) {
+            workbook.write(output);
+            output.flush();
+        }
+        return tmpFile;
     }
     
     private List<DataStandard> queryByIds(List<String> ids, String tenantId) {
@@ -330,10 +320,10 @@ public class DataStandardService {
                 .map(value -> {
                     String standardType = Objects.isNull(value.getStandardType())
                             ? StringUtils.EMPTY
-                            : DataStandardType.valueOf(value.getStandardType()).getDesc();
+                            : DataStandardType.parseByCode(value.getStandardType()).getDesc();
                     String standardLevel = Objects.isNull(value.getStandardLevel())
                             ? StringUtils.EMPTY
-                            : DataStandardLevel.valueOf(value.getStandardLevel()).getDesc();
+                            : DataStandardLevel.parseByCode(value.getStandardLevel()).getDesc();
                     String createTime = DateUtils.formatDateTime(value.getCreateTime().getTime());
                     String updateTime = DateUtils.formatDateTime(value.getUpdateTime().getTime());
                     return Lists.newArrayList(
@@ -352,95 +342,145 @@ public class DataStandardService {
                             updateTime
                     );
                 }).collect(Collectors.toList());
-        
+    
         Workbook workbook = new XSSFWorkbook();
         PoiExcelUtils.createSheet(workbook, "数据标准", EXPORT_FILE_TITLES, dataList);
         return workbook;
     }
-
-    private File workbook2file(Workbook workbook) throws IOException {
-        File tmpFile = File.createTempFile(String.format("DataStandardExport_%s", System.currentTimeMillis()), ".xlsx");
-        try (FileOutputStream output = new FileOutputStream(tmpFile)) {
-            workbook.write(output);
-            output.flush();
-        }
-        return tmpFile;
-    }
-
-    public void importDataStandard(String categoryId, File fileInputStream,String tenantId) throws Exception {
+    
+    @Transactional(rollbackFor = Exception.class)
+    public void importDataStandard(String categoryId, File fileInputStream, String tenantId)
+            throws IOException, InvalidFormatException {
         List<DataStandard> dataList = file2Data(fileInputStream);
-        if(dataList.isEmpty()){
+        if (dataList.isEmpty()) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "上传数据为空");
         }
-        List<String> numberList = dataList.stream().map(DataStandard::getNumber).collect(Collectors.toList());
-        List<String> sameList = new ArrayList<>();
-        for (String number: numberList){
-            if (sameList.contains(number)){
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "标准编号为: "+ number +"在文件中重复，请修改后上传。");
+        
+        // 文件内唯一性校验
+        Set<String> numberSet = dataList.stream()
+                .collect(Collectors.toMap(DataStandard::getNumber, DataStandard::getNumber
+                        , (o, n) -> {
+                            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,
+                                    String.format("标准编号为:%s在文件中重复，请修改后上传。", o));
+                        })).keySet();
+        Set<String> nameSet = dataList.stream()
+                .collect(Collectors.toMap(DataStandard::getName, DataStandard::getName
+                        , (o, n) -> {
+                            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,
+                                    String.format("标准名称为:%s在文件中重复，请修改后上传。", o));
+                        })).keySet();
+        
+        // 数据库唯一性校验
+        if (CollectionUtils.isNotEmpty(numberSet)) {
+            List<String> existList = dataStandardDAO.queryNumberByNumbers(numberSet, tenantId);
+            if (CollectionUtils.isNotEmpty(existList)) {
+                List<String> showList = existList.subList(0, Math.min(existList.size(), 5));
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,
+                        String.format("标准编号为:%s已存在，请修改后上传。", Joiner.on("、").join(showList)));
             }
         }
-        List<String> existDataStandard = queryByNumberList(numberList,tenantId).stream().map(DataStandard::getNumber).collect(Collectors.toList());
-        if (!existDataStandard.isEmpty()) {
-            List<String> showList = existDataStandard.subList(0, Math.min(existDataStandard.size(), 5));
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "标准编号为: " + Joiner.on("、").join(showList) + "已存在，请修改后上传。");
-        }
-        batchInsert(categoryId, dataList,tenantId);
-    }
-
-    private List<DataStandard> file2Data(File file) throws Exception {
-        try {
-            List<DataStandard> dataList = new ArrayList<>();
-            Workbook workbook = WorkbookFactory.create(file);
-            Sheet sheet = workbook.getSheetAt(0);
-            int rowNum = sheet.getLastRowNum() + 1;
-            String regexp = "^[A-Z0-9]+$";
-            for (int i = 1; i < rowNum; i++) {
-                Row row = sheet.getRow(i);
-                DataStandard data = new DataStandard();
-                Cell numberCell = row.getCell(0);
-                if(Objects.isNull(numberCell)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "标准编号不能为空");
-                }
-                data.setNumber(numberCell.getStringCellValue());
-
-                if(!data.getNumber().matches(regexp)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "编号内容格式错误，请输入大写英文字母或数字");
-                }
-                Cell contentCell = row.getCell(1);
-                if(Objects.isNull(contentCell)) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "标准内容不能为空");
-                }
-                data.setName(contentCell.getStringCellValue());
-
-                Cell discriptionCell = row.getCell(2);
-                if(Objects.isNull(discriptionCell)) {
-                    data.setDescription("");
-                } else {
-                    data.setDescription(discriptionCell.getStringCellValue());
-                }
-                dataList.add(data);
+        
+        if (CollectionUtils.isNotEmpty(nameSet)) {
+            List<String> existList = dataStandardDAO.queryNameByNumbers(nameSet, tenantId);
+            if (CollectionUtils.isNotEmpty(existList)) {
+                List<String> showList = existList.subList(0, Math.min(existList.size(), 5));
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,
+                        String.format("标准名称为:%s已存在，请修改后上传。", Joiner.on("、").join(showList)));
             }
-            return dataList;
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
-            LOG.error("数据转换失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+        
+        batchInsert(categoryId, dataList, tenantId);
+    }
+    
+    private List<DataStandard> file2Data(File file) throws IOException, InvalidFormatException {
+        List<DataStandard> dataList = new ArrayList<>();
+        Workbook workbook = WorkbookFactory.create(file);
+        Sheet sheet = workbook.getSheetAt(0);
+        int rowNum = sheet.getLastRowNum() + 1;
+        for (int i = 1; i < rowNum; i++) {
+            Row row = sheet.getRow(i);
+            DataStandard standard = new DataStandard();
+            
+            // 解析顺序不能修改
+            int j = 0;
+            Cell numberCell = row.getCell(j++);
+            Cell nameCell = row.getCell(j++);
+            Cell typeCell = row.getCell(j++);
+            Cell dataTypeCell = row.getCell(j++);
+            Cell dateLengthCell = row.getCell(j++);
+            Cell isAllowValueFlagCell = row.getCell(j++);
+            Cell allowValueCell = row.getCell(j++);
+            Cell levelCell = row.getCell(j++);
+            Cell discriptionCell = row.getCell(j);
+            
+            isTrueThenElseException(numberCell, Objects::nonNull, "标准编号不能为空",
+                    v -> standard.setNumber(v.getStringCellValue()));
+            isTrueThenElseException(nameCell, Objects::nonNull, "标准名称不能为空",
+                    v -> standard.setName(v.getStringCellValue()));
+            isTrueThenElseException(typeCell, Objects::nonNull, "标准类型不能为空",
+                    v -> standard.setStandardType(DataStandardType.parseByDesc(typeCell.getStringCellValue()).getCode()));
+            isTrueThen(dataTypeCell,
+                    v -> standard.setDataType(v.getStringCellValue()));
+            isTrueThenElseException(dateLengthCell, v -> v.getNumericCellValue() <= Integer.MAX_VALUE,
+                    "标准数据长度最大值为2147483647",
+                    v -> standard.setDataLength((int) v.getNumericCellValue()));
+            isTrueThenElseException(isAllowValueFlagCell, Objects::nonNull, "是否有允许值不能为空",
+                    v -> standard.setAllowableValueFlag(v.getBooleanCellValue()));
+            isTrueThen(allowValueCell, v -> standard.setAllowableValue(v.getStringCellValue()));
+            isTrueThen(levelCell,
+                    v -> standard.setStandardLevel(DataStandardLevel.parseByDesc(v.getStringCellValue()).getCode()));
+            isTrueThen(discriptionCell, v -> standard.setDescription(v.getStringCellValue()));
+            
+            // 校验数据
+            verifyDataStandard(standard);
+            
+            dataList.add(standard);
+        }
+        return dataList;
+    }
+    
+    /**
+     * 对指定对象进行指定的逻辑判断,为true做出指定的动作,为false抛出异常
+     *
+     * @param t            待处理的对象
+     * @param predicate    指定的逻辑判断
+     * @param errorMessage 异常信息
+     * @param thenConsumer 为true指定的动作
+     */
+    private static <T> void isTrueThenElseException(T t, Predicate<T> predicate, String errorMessage, Consumer<T> thenConsumer) {
+        Objects.requireNonNull(thenConsumer);
+        if (predicate.test(t)) {
+            thenConsumer.accept(t);
+        } else {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, errorMessage);
         }
     }
-
-    public List<CategoryPrivilege> getCategory(Integer categoryType,String tenantId) throws AtlasBaseException {
-        List<CategoryPrivilege> result = dataManageService.getAllByUserGroup(categoryType,tenantId);
+    
+    /**
+     * 对指定对象进行指定的逻辑判断,为true做出指定的动作
+     *
+     * @param t            待处理的对象
+     * @param thenConsumer 为true指定的动作
+     */
+    private static <T> void isTrueThen(T t, Consumer<T> thenConsumer) {
+        Objects.requireNonNull(thenConsumer);
+        if (Objects.nonNull(t)) {
+            thenConsumer.accept(t);
+        }
+    }
+    
+    public List<CategoryPrivilege> getCategory(Integer categoryType, String tenantId) throws AtlasBaseException {
+        List<CategoryPrivilege> result = dataManageService.getAllByUserGroup(categoryType, tenantId);
         for (CategoryPrivilege category : result) {
             String parentGuid = category.getParentCategoryGuid();
             CategoryPrivilege.Privilege privilege = null;
             String parentPattern = "^Standard-([0-9])+$";
-            if(parentGuid == null) {
-                privilege = new CategoryPrivilege.Privilege(false, false, false, true, true, true, true, true, true,false);
+            if (parentGuid == null) {
+                privilege = new CategoryPrivilege.Privilege(false, false, false, true, true, true, true, true, true, false);
             } else {
-                privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
+                privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
             }
-            if (category.getGuid().matches(parentPattern)){
+            if (category.getGuid().matches(parentPattern)) {
                 privilege.setEdit(false);
                 privilege.setDelete(false);
             }

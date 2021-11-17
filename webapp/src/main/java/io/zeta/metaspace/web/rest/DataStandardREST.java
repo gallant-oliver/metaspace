@@ -38,7 +38,6 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -265,25 +264,20 @@ public class DataStandardREST {
                                        @FormDataParam("file") InputStream fileInputStream,
                                        @FormDataParam("file") FormDataContentDisposition contentDispositionHeader,
                                        @HeaderParam("tenantId") String tenantId) throws Exception {
+        String fileName = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), fileName);
+    
         File file = null;
-        String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), name);
-        if (!(name.endsWith(ExportDataPathUtils.fileFormat1) || name.endsWith(ExportDataPathUtils.fileFormat2))) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
-        }
-        
-        file = new File(name);
-        FileUtils.copyInputStreamToFile(fileInputStream, file);
-        if (file.length() > MAX_EXCEL_FILE_SIZE) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
-        }
         try {
-            dataStandardService.importDataStandard(categoryId, file,tenantId);
+            file = ExportDataPathUtils.fileCheck(fileName, fileInputStream);
+            dataStandardService.importDataStandard(categoryId, file, tenantId);
             return Response.ok().build();
+        } catch (AtlasBaseException | IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"导入文件错误");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入文件错误");
         } finally {
-            if(Objects.nonNull(file) && file.exists()) {
+            if (Objects.nonNull(file) && file.exists()) {
                 file.delete();
             }
         }
