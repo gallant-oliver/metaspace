@@ -35,7 +35,7 @@ public interface DatabaseDAO {
     void deleteDbCategoryRelationByList(@Param("categoryIds") List<String> categoryId);
 
     @Select("<script>" +
-            " SELECT " +
+            " SELECT DISTINCT " +
             " info.database_guid as databaseId, " +
             " info.database_name as databaseName " +
             " FROM " +
