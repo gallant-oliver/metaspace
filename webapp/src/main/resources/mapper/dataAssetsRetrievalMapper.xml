@@ -2,9 +2,180 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="io.zeta.metaspace.web.dao.BusinessDAO">
+<mapper namespace="io.zeta.metaspace.web.dao.DataAssetsRetrievalDAO">
     <select id="test" resultType="int">
         SELECT COUNT(*) FROM businessinfo
+    </select>
+
+
+    <select id="getDemainCategory" resultType="io.zeta.metaspace.model.dataassets.DomainInfo">
+        select c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as tenantName from category c
+        left join tenant t on c.tenantid=t.id
+        where c.level=1 and c.categorytype=1 order by c.tenantid
+    </select>
+
+    <select id="getThemeNumber" resultType="int">
+        select count(*) from category
+        where parentcategoryguid=#{guid}
+    </select>
+
+    <select id="getDemainCategoryByNotPublicUser" resultType="io.zeta.metaspace.model.dataassets.DomainInfo">
+        select * from (
+        select c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as tenantName,c.private_status from
+        category c
+        left join tenant t on c.tenantid=t.id
+        where c.level=1 and c.categorytype=1 and c.private_status='PUBLIC'
+        <if test='tenantId != null'>
+            and c.tenantid=#{tenantId}
+        </if>
+        <if test='groupIdList != null and groupIdList.size() > 0'>
+            union
+            SELECT DISTINCT c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as
+            tenantName,c.private_status from
+            category c
+            left join tenant t on c.tenantid=t.id
+            INNER JOIN category_group_relation as relation on c.guid = relation.category_id
+            WHERE c.level=1 and c.private_status = 'PRIVATE' AND c.categorytype =1
+            <if test='tenantId != null'>
+                AND c.tenantid=#{tenantId}
+            </if>
+            AND
+            relation.group_id in
+            <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>
+                #{item}
+            </foreach>
+        </if>
+        union
+        SELECT DISTINCT c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as
+        tenantName,c.private_status
+        from category c
+        left join tenant t on c.tenantid=t.id
+        WHERE c.level=1 and c.private_status = 'PRIVATE' AND c.categorytype =1 and c.creator=#{userId}
+        <if test='tenantId != null'>
+            AND c.tenantid=#{tenantId}
+        </if>
+        ) temp order by temp.tenantId
+    </select>
+
+    <select id="getThemeByUserGroup" resultType="io.zeta.metaspace.model.dataassets.DomainInfo">
+        select c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as tenantName,c.private_status from
+        category c
+        left join tenant t on c.tenantid=t.id
+        where c.parentcategoryguid=#{guid} and c.private_status='PUBLIC'
+        <if test='tenantId != null'>
+            and c.tenantid=#{tenantId}
+        </if>
+        <if test='groupIdList != null and groupIdList.size() > 0'>
+            union
+            SELECT DISTINCT c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as
+            tenantName,c.private_status from
+            category c
+            left join tenant t on c.tenantid=t.id
+            INNER JOIN category_group_relation as relation on c.guid = relation.category_id
+            WHERE c.parentcategoryguid=#{guid}
+            <if test='tenantId != null'>
+                AND c.tenantid=#{tenantId}
+            </if>
+            AND
+            relation.group_id in
+            <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>
+                #{item}
+            </foreach>
+        </if>
+        union
+        SELECT DISTINCT c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as
+        tenantName,c.private_status
+        from category c
+        left join tenant t on c.tenantid=t.id
+        WHERE c.parentcategoryguid=#{guid} and c.creator=#{userId}
+        <if test='tenantId != null'>
+            AND c.tenantid=#{tenantId}
+        </if>
+    </select>
+
+    <select id="getThemeCategory" resultType="io.zeta.metaspace.model.dataassets.ThemeInfo">
+        select guid as themeId, name as themeName from category
+        where parentcategoryguid=#{guid}
+    </select>
+
+    <select id="getBusinessId" resultType="java.lang.String">
+        SELECT businessid FROM business_relation where categoryguid =#{guid}
+    </select>
+
+    <select id="getTableNumber" resultType="int">
+        SELECT COUNT(tableguid) FROM business2table
+        <if test='businessList != null and businessList.size() > 0'>
+            where businessid in
+            <foreach item='item' index='index' collection='businessList' separator=',' open='(' close=')'>
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+
+    <select id="getBusinessCountByCategoryId" resultType="int">
+        SELECT COUNT(tableguid) FROM business2table
+        <if test='businessList != null and businessList.size() > 0'>
+            where businessid in
+            <foreach item='item' index='index' collection='businessList' separator=',' open='(' close=')'>
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="queryBusinessIdByUsergroup" resultType="java.lang.String">
+        select bi.businessid
+        from businessinfo bi
+        join business_relation br on bi.businessid = br.businessid
+        where br.categoryguid=#{categoryGuid}
+        <if test='tenantId != null'>
+            and bi.tenantid=#{tenantId}
+        </if>
+        and
+        (bi.private_status='PUBLIC' or (bi.submitter=#{userId} and bi.submitter_read=true)
+        or
+        (select count(*) from business_2_group b2g
+        join user_group_relation ugr on ugr.group_id = b2g.group_id and ugr.user_id=#{userId}
+        where b2g.business_id=bi.businessid and b2g.read=true)>0
+        )
+    </select>
+
+    <select id="queryBusiness" resultType="io.zeta.metaspace.model.dataassets.BussinessObject">
+        select count(*)over()
+        total, bi.businessid,bi.name,bi.owner,bi.manager,bi.maintainer,bi.businesslastupdate, u.username as businessoperator,'0' as status,bi.tenantid
+        from businessinfo bi
+        join business_relation br on bi.businessid = br.businessid
+        left join users u on bi.businessoperator=u.userid
+        where br.categoryguid=#{categoryGuid}
+        order by bi.businesslastupdate desc
+        limit #{limit}  offset #{offset}
+    </select>
+
+
+    <select id="queryBusinessByUsergroup" resultType="io.zeta.metaspace.model.dataassets.BussinessObject">
+        select count(*)over()
+        total,bi.businessid,bi.name,bi.owner,bi.manager,bi.maintainer,bi.businesslastupdate,u.username as
+        businessoperator,'0' as status,bi.tenantid
+        from businessinfo bi
+        join business_relation br on bi.businessid = br.businessid
+        left join users u on bi.businessoperator=u.userid
+        where br.categoryguid=#{categoryGuid}
+        <if test='tenantId != null'>
+            and bi.tenantid=#{tenantId}
+        </if>
+        and
+        (bi.private_status='PUBLIC' or (bi.submitter=#{userId} and bi.submitter_read=true)
+        or
+        (select count(*) from business_2_group b2g
+        join user_group_relation ugr on ugr.group_id = b2g.group_id and ugr.user_id=#{userId}
+        where b2g.business_id=bi.businessid and b2g.read=true)>0
+        )
+        order by bi.businesslastupdate desc
+        limit #{limit} offset #{offset}
+    </select>
+
+    <select id="queryCategoryInfo" resultType="org.apache.atlas.model.metadata.CategoryEntityV2">
+        select  guid,name,description,qualifiedname from category where guid = #{guid}
     </select>
 
 </mapper>
