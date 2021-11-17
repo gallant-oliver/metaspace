@@ -937,9 +937,51 @@ public interface UserGroupDAO {
             "    SELECT category.* from categoryTree " +
             "    JOIN category on categoryTree.guid = category.parentCategoryGuid where category.tenantid=#{tenantId} " +
             ") " +
-            "SELECT *,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem FROM categoryTree c left join category_group_relation g on c.guid=g.category_id and g.group_id=#{userGroupId} " +
+            "SELECT *,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem FROM categoryTree c inner join category_group_relation g on c.guid=g.category_id and g.group_id=#{userGroupId} " +
             "</script>")
     public List<CategoryPrivilegeV2> getChildCategoriesPrivileges(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("userGroupId")String userGroupId, @Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
+
+    //递归找父节点包含自己
+    @Select("<script>WITH RECURSIVE categoryTree AS " +
+            "(" +
+            "    SELECT * from category " +
+            "    where tenantid=#{tenantId} and guid in " +
+            "    <foreach item='item' index='index' collection='categoryGuid' " +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item} " +
+            "    </foreach>" +
+            "    and categoryType=#{categoryType} " +
+            "    UNION " +
+            "    SELECT category.* from categoryTree " +
+            "    JOIN category on categoryTree.parentCategoryGuid = category.guid where category.tenantid=#{tenantId} " +
+            ") " +
+            "SELECT *,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem FROM categoryTree c left join category_group_relation g on c.guid=g.category_id and g.group_id=#{userGroupId} " +
+            "</script>")
+    public List<CategoryPrivilegeV2> getParentCategoriesPrivileges(@Param("categoryGuid") List<String> categoryGuid, @Param("userGroupId")String userGroupId, @Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
+
+    //递归找同一用户组下子节点包含自己
+    @Select("<script>WITH RECURSIVE categoryTree AS " +
+            "(" +
+            "    SELECT * from category " +
+            "    where tenantid=#{tenantId} and guid in " +
+            "    <foreach item='item' index='index' collection='parentCategoryGuid' " +
+            "    open='(' separator=',' close=')'>" +
+            "    #{item} " +
+            "    </foreach>" +
+            "    and categoryType=#{categoryType} " +
+            "    UNION " +
+            "    SELECT category.* from categoryTree " +
+            "    JOIN category on categoryTree.guid = category.parentCategoryGuid where category.tenantid=#{tenantId} " +
+            ") " +
+            "SELECT *,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem FROM categoryTree c inner join category_group_relation g on c.guid=g.category_id and g.group_id=#{userGroupId} " +
+            "</script>")
+    public List<CategoryPrivilegeV2> getChildCategoriesPrivilegesInSameGroup(@Param("parentCategoryGuid") List<String> parentCategoryGuid, @Param("userGroupId") String userGroupId, @Param("categoryType") int categoryType, @Param("tenantId") String tenantId);
+
+    //获取当前目录在当前用户组的权限
+    @Select("<script>" +
+            "SELECT c.*,g.category_id guid,g.read,g.edit_category editCategory,g.edit_item editItem FROM category c left join category_group_relation g on c.guid=g.category_id and g.group_id=#{userGroupId} where c.guid=#{categoryGuid}" +
+            "</script>")
+    public List<CategoryPrivilegeV2> getCurrentCategoriesPrivileges(@Param("categoryGuid") String categoryGuid, @Param("userGroupId") String userGroupId);
 
     //递归找发生变化的子节点包含自己
     @Select("<script>WITH RECURSIVE categoryTree AS " +
