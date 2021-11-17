@@ -1,5 +1,6 @@
 package io.zeta.metaspace.model.dataassets;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 /**
@@ -25,5 +26,9 @@ public class DomainInfo {
 
     //租户名称
     private String tenantName;
+
+    //目录公开私密状态
+    @JsonIgnore
+    private String privateStatus;
 
 }

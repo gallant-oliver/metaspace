@@ -17,4 +17,6 @@ public class ThemeInfo {
     private Integer bussinessObjectNum;
     //业务对象数量
     private Integer tableNum;
+    //租户id
+    private String tenantId;
 }
