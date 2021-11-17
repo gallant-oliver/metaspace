@@ -59,9 +59,24 @@ public class DataAssetsRetrievalService {
     // 租户资产业务目录模块id
     private int TENANT_ASSETS_BUSINESS_MODULE = 50;
 
+    /**
+     * 初始化租户标签缓存
+     */
+    static {
+        try {
+            if (tenantTagCache == null) {
+                // 缓存失效时间（分钟）
+                int expireTime = ApplicationProperties.get().getInt(USER_CACHE_EXPIRE, 30);
+                tenantTagCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(expireTime, TimeUnit.MINUTES).build();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
     //当前租户是否是公共租户
     private boolean isPublicTenant(String tenantId) throws AtlasException {
-        initTenantTagCache();
 
         String cacheKey = AdminUtils.getSSOTicket() + tenantId;
 
@@ -89,22 +104,11 @@ public class DataAssetsRetrievalService {
         return publicService.isGlobal();
     }
 
-    /**
-     * 初始化租户标签缓存
-    */
-    private void initTenantTagCache() throws AtlasException {
-        if (tenantTagCache == null) {
-            // 缓存失效时间（分钟）
-            int expireTime = ApplicationProperties.get().getInt(USER_CACHE_EXPIRE, 30);
-            tenantTagCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(expireTime, TimeUnit.MINUTES).build();
-        }
-    }
-
 
     public List<DomainInfo> getThemeDomains(String tenantId) throws AtlasException {
         List<DomainInfo> domainList;
-        boolean isPublicTenant = isPublicTenant(tenantId);
-        boolean isPublicUser = isGlobalUser();
+        Boolean isPublicTenant = isPublicTenant(tenantId);
+        Boolean isPublicUser = isGlobalUser();
         String userId = AdminUtils.getUserData().getUserId();
         List<String> userGroupIds = null;
         if (isPublicTenant) {
@@ -162,8 +166,8 @@ public class DataAssetsRetrievalService {
     public List<ThemeInfo> getThemes(String guid, String tenantId) throws AtlasException {
         List<ThemeInfo> themeList = new ArrayList<>();
         List<DomainInfo> domainList;
-        boolean isPublicTenant = isPublicTenant(tenantId);
-        boolean isPublicUser = isGlobalUser();
+        Boolean isPublicTenant = isPublicTenant(tenantId);
+        Boolean isPublicUser = isGlobalUser();
         String userId = AdminUtils.getUserData().getUserId();
         List<String> userGroupIds = null;
         if (isPublicTenant) {
@@ -226,13 +230,13 @@ public class DataAssetsRetrievalService {
         BussinessObjectList bussinessObjectList = new BussinessObjectList();
         List<BussinessObject> objectList;
         PageResult<BussinessObject> pageResult = new PageResult<>();
-        boolean isPublicTenant = isPublicTenant(tenantId);
-        boolean isPublicUser = isGlobalUser();
+        Boolean isPublicTenant = isPublicTenant(tenantId);
+        Boolean isPublicUser = isGlobalUser();
         String userId = AdminUtils.getUserData().getUserId();
         int total = 0;
         if (isPublicTenant && isPublicUser) {
             objectList = dataAssetsRetrievalDAO.queryBusiness(guid, limit, offset);
-            if (objectList.size() != 0) {
+            if (!CollectionUtils.isEmpty(objectList)) {
                 total = objectList.get(0).getTotal();
             }
         } else {
@@ -240,7 +244,7 @@ public class DataAssetsRetrievalService {
                 tenantId = null;
             }
             objectList = dataAssetsRetrievalDAO.queryBusinessByUsergroup(tenantId, guid, userId, limit, offset);
-            if (objectList.size() != 0) {
+            if (!CollectionUtils.isEmpty(objectList)) {
                 total = objectList.get(0).getTotal();
             }
 
