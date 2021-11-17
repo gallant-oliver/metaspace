@@ -259,6 +259,16 @@ public interface UserGroupDAO {
     )
     public List<UserGroup> getuserGroupByUid(@Param("list") List<String> tenantParamList);
 
+    @Select("<script>" +
+            "select g.*,g.tenant tenantId from user_group g inner join user_group_relation as relation on g.id = relation.group_id where g.valid=true and relation = #{userId}" +
+            " and g.tenant in  "+
+            "<foreach collection='list' item='tid' index='index' separator=',' open='(' close=')'>"+
+            "#{tid}"+
+            "</foreach>"+
+            "</script>"
+    )
+    List<UserGroup> getuserGroupByUidAndUserId(@Param("list") List<String> tenantParamList, @Param("userId") String userId);
+
     @Select("select * from category where categoryType=#{categoryType} and tenantid=#{tenantId}")
     public List<RoleModulesCategories.Category> getAllCategorys(@Param("categoryType") int categoryType,@Param("tenantId")String tenantId);
 
@@ -1439,6 +1449,13 @@ public interface UserGroupDAO {
             " WHERE c.tenantid = #{tenantId} AND c.private_status = 'PRIVATE' AND c.categorytype =#{categoryType} and c.creator=#{creator}"+
             "</script>")
     public List<CategorycateQueryResult> getAllCategory(@Param("groupIdList") List<String> groupIdList,@Param("categoryType") int categoryType,@Param("tenantId")String tenantId,@Param("creator")String creator);
+
+
+    @Select("<script>" +
+            " SELECT * FROM category c" +
+            " WHERE parentcategoryguid = #{guid}" +
+            "</script>")
+    public List<CategorycateQueryResult> getCanotDeleteChrildCategory(@Param("guid") String guid);
 
     @Select("<script>" +
             " SELECT c.* FROM category c left join approval_item ai on ai.id=c.approval_id  WHERE  c.private_status = 'PUBLIC' AND c.categorytype = #{categoryType}" +

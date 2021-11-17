@@ -288,6 +288,13 @@ public class TenantService {
                 if (CollectionUtils.isEmpty(list)) {
                     return new ArrayList<>();
                 }
+                Iterator<Tenant> iterator = list.iterator();
+                while (iterator.hasNext()) {
+                    Tenant tenant = iterator.next();
+                    if (StringUtils.isBlank(tenant.getTenantId()) || StringUtils.isBlank(tenant.getProjectName())) {
+                        iterator.remove();
+                    }
+                }
                 tenantsCacheAll.put(cacheKey, list);
                 return list;
             }
@@ -532,24 +539,24 @@ public class TenantService {
      * @return
      */
     public List<String> getDatabase(String tenantId) throws AtlasBaseException {
-        String msgDesc=null;
+        String msgDesc = null;
         String cacheKey = tenantId;
         List<String> dbs = databaseCache.getIfPresent("privilege:" + cacheKey);
-        if (dbs!=null) {
+        if (dbs != null) {
             return dbs;
         }
         Gson gson = new Gson();
-        Map<String, String> hashMap = new HashMap<String, String>(5){
+        Map<String, String> hashMap = new HashMap<String, String>() {
             private static final long serialVersionUID = 1L;
             {
                 put(TICKET_KEY, AdminUtils.getSSOTicket());
                 put("tenant-id", tenantId);
-                put("internal-id", conf.getString(SECURITY_INTERNAL_ID,SECURITY_INTERNAL_ID_DEFAULT_VALUE));
+                put("internal-id", conf.getString(SECURITY_INTERNAL_ID, SECURITY_INTERNAL_ID_DEFAULT_VALUE));
                 put("user-email", AdminUtils.getUserName());
-                put("User-Agent","Chrome");
+                put("User-Agent", "Chrome");
             }
         };
-        Map<String, String> query = new HashMap<String, String>(1){
+        Map<String, String> query = new HashMap<String, String>() {
             private static final long serialVersionUID = 1L;
             {
                 put("withTables", "false");
@@ -558,37 +565,33 @@ public class TenantService {
         try {
             int retryCount = 0;
             int retries = 3;
-            while(retryCount < retries) {
+            while (retryCount < retries) {
                 SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
                 String string = OKHttpClient.doGet(SECURITY_HOST + URI_DBS, query, hashMap);
                 Map map = gson.fromJson(string, HashMap.class);
-                if(map.containsKey("message")){
-                    msgDesc=(String)map.get("message");
+                if (map.containsKey("message")) {
+                    msgDesc = (String) map.get("message");
                     retryCount++;
                     continue;
                 }
                 Object data = map.get("dbList");
-                if(null != data){
-                    List<Map<String,Object>> databaseList = gson.fromJson(gson.toJson(data), new TypeToken<List<Map<String, Object>>>() {
+                if (null != data) {
+                    List<Map<String, Object>> databaseList = gson.fromJson(gson.toJson(data), new TypeToken<List<Map<String, Object>>>() {
                     }.getType());
-                    dbs = databaseList.stream().map(database->(String)database.get("dbName")).collect(Collectors.toList());
+                    dbs = databaseList.stream().map(database -> (String) database.get("dbName")).collect(Collectors.toList());
                     databaseCache.put(cacheKey, dbs);
-                }else{
-                    dbs = new ArrayList<>();
+                    return dbs;
+                } else {
+                    return new ArrayList<>();
                 }
-                break;
             }
-            if(retryCount == retries && null == dbs && msgDesc != null){
+            if (retryCount == retries && null == dbs && msgDesc != null) {
                 throw new RuntimeException(msgDesc);
             }
-        }catch (AtlasBaseException e){
-            LOG.error("租户ID："+tenantId);
-            throw new AtlasBaseException(e.getAtlasErrorCode(),e,"从安全中心获取当前用户的hive库权限错误:"+e.getMessage());
-        }catch (Exception e){
-            LOG.error("租户ID："+tenantId);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取当前用户的hive库权限错误:"+e.getMessage());
+        } catch (Exception e) {
+            LOG.error("租户ID：" + tenantId + "从安全中心获取当前用户的hive库权限错误:" + e);
         }
-        return dbs;
+        return new ArrayList<>();
     }
 
     public AtlasBaseException getAtlasBaseException(Object status,Object msgDesc,String message){

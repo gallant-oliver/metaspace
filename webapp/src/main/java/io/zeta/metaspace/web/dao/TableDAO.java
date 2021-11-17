@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.dao;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
+import io.zeta.metaspace.model.usergroup.TenantGroup;
 import io.zeta.metaspace.model.usergroup.TenantHive;
 import io.zeta.metaspace.model.table.TableSource;
 import org.apache.ibatis.annotations.*;
@@ -270,6 +271,7 @@ public interface TableDAO {
             " select tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description, source.source_id,source.source_name" +
             " from tableinfo as tb INNER JOIN source_db as sd on  tb.databaseguid = sd.db_guid INNER JOIN data_source as source on source.source_id = sd.source_id" +
             " WHERE tb.status = 'ACTIVE' AND tb.tablename like concat('%',#{tableName},'%')  AND source.tenantid = #{tenantId}" +
+            " <if test='dbNameList != null and dbNameList.size()>0'>" +
             " UNION" +
             " select tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description,'hive' as source_id,'hive' AS source_name" +
             " from tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid" +
@@ -277,6 +279,7 @@ public interface TableDAO {
             " <foreach item='item' index='index' collection='dbNameList' open='(' separator=',' close=')'>" +
             "   #{item}" +
             " </foreach>" +
+            " </if>" +
             " ) as t ORDER BY t.name" +
             " <if test='limit!= -1'>"+
             " limit #{limit}"+
@@ -293,10 +296,26 @@ public interface TableDAO {
             "<if test = \"tableName !=null and tableName !=''\">" +
             " AND tb.tablename like concat('%',#{tableName},'%') " +
             "</if>" +
-            "   AND source.tenantid in " +
-            " <foreach item='item' index='index' collection='tenantList' open='(' separator=',' close=')'>" +
-            "   #{item}" +
+
+            " <if test='tenantGroupList != null and tenantGroupList.size() > 0'>" +
+            " AND ( " +
+            " <foreach collection='tenantGroupList' item='item' separator=' OR '>" +
+            "  ( source.tenantid=#{item.tenantId} " +
+            " <if test='item.groupList != null and item.groupList.size() > 0'>" +
+            " and tb.databaseguid in (select database_guid from database_group_relation where "+
+            " group_id in "+
+            " <foreach collection='item.groupList' item='id' separator=',' open='(' close=')'>" +
+            "  #{id}" +
+            " </foreach> " +
+            " ) </if>" +
+            " ) "+
             " </foreach>" +
+            " ) </if>" +
+
+//            "   AND source.tenantid in " +
+//            " <foreach item='item' index='index' collection='tenantList' open='(' separator=',' close=')'>" +
+//            "   #{item}" +
+//            " </foreach>" +
             " UNION" +
             " select te.id as tenantId,tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description,'hive' as source_id,'hive' AS source_name" +
             " from tableinfo as tb INNER JOIN db_info as db on tb.databaseguid = db.database_guid" +
@@ -309,6 +328,22 @@ public interface TableDAO {
             " </if>" +
 
             " WHERE  tb.status = 'ACTIVE' AND tb.databasestatus = 'ACTIVE' AND db.db_type = 'HIVE'  " +
+
+            " <if test='tenantGroupList != null and tenantGroupList.size() > 0'>" +
+            " AND ( " +
+            " <foreach collection='tenantGroupList' item='item' separator=' OR '>" +
+            "  ( te.id=#{item.tenantId} " +
+            " <if test='item.groupList != null and item.groupList.size() > 0'>" +
+            " and tb.databaseguid in (select database_guid from database_group_relation where "+
+            " group_id in "+
+            " <foreach collection='item.groupList' item='id' separator=',' open='(' close=')'>" +
+            "  #{id}" +
+            " </foreach> " +
+            " ) </if>" +
+            " ) "+
+            " </foreach>" +
+            " ) </if>" +
+
             "<if test = \"tableName !=null and tableName !=''\">" +
             " AND tb.tablename like concat('%',#{tableName},'%') " +
             "</if>" +
@@ -322,7 +357,9 @@ public interface TableDAO {
             " </if>"+
             " offset #{offset}"+
             "</script>")
-    List<TableEntity> selectListByTenantIdListAndTableName(@Param("tableName") String tableName, @Param("tenantList") List<String> tenants, @Param("dbNameList") List<TenantHive> dbNameList, @Param("limit") Long limit, @Param("offset") Long offset);
+    List<TableEntity> selectListByTenantIdListAndTableName(@Param("tableName") String tableName, @Param("tenantList") List<String> tenants,
+                                                           @Param("dbNameList") List<TenantHive> dbNameList, @Param("tenantGroupList") List<TenantGroup> tenantGroups,
+                                                           @Param("limit") Long limit, @Param("offset") Long offset);
 
     @Select("<script>" +
             " SELECT count(*) over() as total, tb.tableguid AS id,tb.tablename AS name,tb.databaseguid AS databaseId,tb.dbname as dbName,tb.status,tb.description, source.source_id,source.source_name" +
@@ -364,10 +401,10 @@ public interface TableDAO {
     String selectTypeByGuid(@Param("guid") String guid);
 
     @Select({"<script>",
-            "select importance_privilege,security_privilege from group_table_relation where tenant_id=#{tenantId} and derive_table_id=#{guid} " +
+            "select importance_privilege as importance,security_privilege as security from group_table_relation where tenant_id=#{tenantId} and derive_table_id=#{guid} " +
             " and  user_group_id in ",
-            "<foreach item='guid' index='index' collection='groupList' separator=',' open='(' close=')'>",
-            "#{guid}",
+            "<foreach item='item' index='index' collection='groupList' separator=',' open='(' close=')'>",
+            "#{item}",
             "</foreach>",
             "</script>"})
     List<TableExtInfo> selectTableInfoByGroups(@Param("guid") String tableGuid,@Param("tenantId")String tenantId,@Param("groupList")List<String> groups);
@@ -401,4 +438,17 @@ public interface TableDAO {
             " ) AS A" +
             "</script>")
     int selectCountByTenantIdAndDbName(@Param("tenantId") String tenantId, @Param("dbs") List<String> dbs);
+
+    @Select("<script>" +
+            " SELECT" +
+            " db.database_guid AS databaseId," +
+            " db.database_name AS dbName," +
+            " db.db_type AS dbType," +
+            " tb.TYPE AS tableType," +
+            " tb.tableguid AS id," +
+            " tb.tablename AS name " +
+            " FROM tableinfo AS tb INNER JOIN db_info AS db ON tb.databaseguid = db.database_guid" +
+            " WHERE tb.tableguid = #{id} AND tb.status = 'ACTIVE' LIMIT 1" +
+            "</script>")
+    TableEntity selectById(@Param("id") String id);
 }

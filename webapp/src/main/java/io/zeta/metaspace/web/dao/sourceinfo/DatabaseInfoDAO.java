@@ -162,10 +162,10 @@ public interface DatabaseInfoDAO {
             "si.bo_department_name boDepartmentName, si.bo_name boName, si.bo_email boEmail, si.bo_tel boTel, " +
             "si.to_department_name toDepartmentName, si.to_name toName, si.to_email toEmail, si.to_tel toTel, " +
             "si.technical_leader technicalLeader, si.business_leader businessLeader, " +
-            "sirpc.parent_category_id categoryId " +
+            "case when si.category_id is null or si.category_id='' then sirpc.parent_category_id else si.category_id end as categoryId " +
             "FROM " +
             " source_info si " +
-            "inner join source_info_relation2parent_category sirpc on sirpc.source_info_id = si.id " +
+            "left join source_info_relation2parent_category sirpc on sirpc.source_info_id = si.id " +
             "WHERE\n" +
             " si.id IN " +
             "<foreach collection='ids' item='id' separator=',' open='(' close=')'>" +
@@ -634,6 +634,22 @@ public interface DatabaseInfoDAO {
             " ) te"+
 
             " WHERE db.database_name=te.db_name and db.status = 'ACTIVE' AND db.db_type = 'HIVE' " +
+
+            " <if test='tenantGroupList != null and tenantGroupList.size() > 0'>" +
+            " AND ( " +
+            " <foreach collection='tenantGroupList' item='item' separator=' OR '>" +
+            "  ( te.id=#{item.tenantId} " +
+            " <if test='item.groupList != null and item.groupList.size() > 0'>" +
+            " and db.database_guid in (select database_guid from database_group_relation where "+
+            " group_id in "+
+            " <foreach collection='item.groupList' item='id' separator=',' open='(' close=')'>" +
+            "  #{id}" +
+            " </foreach> " +
+            " ) </if>" +
+            " ) "+
+            " </foreach>" +
+            " ) </if>" +
+
             "<if test = \"dbName !=null and dbName !=''\">" +
             " AND db.database_name like concat('%',#{dbName},'%')  " +
             "</if>" +
@@ -738,4 +754,7 @@ public interface DatabaseInfoDAO {
             "WHERE \n" +
             "s.data_source_id=#{sourceId} and db.database_name=#{dbName} and  s.version = 0 \n")
     List<DatabaseInfoBO> getDatabaseInfoByDatabaseName(@Param("dbName") String dbName, @Param("sourceId") String sourceId);
+
+    @Select("select case when count(*) > 0 then true else false end from source_info where id = #{id} and version = 0 and status in ('1', '3')")
+    boolean auditStatusIsApprove(String id);
 }

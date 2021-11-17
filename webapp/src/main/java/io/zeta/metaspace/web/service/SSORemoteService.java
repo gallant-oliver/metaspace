@@ -5,12 +5,9 @@ import io.zeta.metaspace.model.privilege.SSOAccount;
 import io.zeta.metaspace.utils.GsonUtils;
 import io.zeta.metaspace.utils.OKHttpClient;
 import org.apache.atlas.ApplicationProperties;
-import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -28,20 +25,16 @@ import java.util.Map;
 public class SSORemoteService {
     private static Configuration conf;
     private static final Logger log = LoggerFactory.getLogger(SSORemoteService.class);
-    private final static String SSO_PREFIX_URL;
-    private final static String SSO_ALL_ACCOUNTS = "/api/v5/accounts";
-    private final static String SSO_MATCH_QUERY = "/api/v6/queryVagueUserInfo";
+    private final static String SSO_PREFIX_ALL_URL;
+    private final static String SSO_PREFIX_LIKE_URL;
     //重试次数
     private final static int times = 2;
 
     static {
         try {
             conf = ApplicationProperties.get();
-            SSO_PREFIX_URL = conf.getString("sso.prefix.url");
-            log.info("SSO url: {}",SSO_PREFIX_URL);
-            if (StringUtils.isBlank(SSO_PREFIX_URL)) {
-                throw new RuntimeException(new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "sso.prefix.url未正确配置"));
-            }
+            SSO_PREFIX_ALL_URL = conf.getString("sso.prefix.all.url");
+            SSO_PREFIX_LIKE_URL = conf.getString("sso.prefix.like.url");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -59,8 +52,8 @@ public class SSORemoteService {
         queryParamMap.put("currentPage",currentPage+"");
         queryParamMap.put("pageSize",pageSize+"");
         Map<String,String> headerMap = new HashMap<>();
-        String responseStr = OKHttpClient.doGet(SSO_PREFIX_URL+SSO_ALL_ACCOUNTS,queryParamMap,headerMap,times);
-        log.info("sso query {} ok.",SSO_ALL_ACCOUNTS);
+        String responseStr = OKHttpClient.doGet(SSO_PREFIX_ALL_URL,queryParamMap,headerMap,times);
+        log.info("sso query {} ok.",SSO_PREFIX_ALL_URL);
 
         Map<String, Object> resultMap = GsonUtils.getInstance()
                 .fromJson(responseStr, new TypeToken<Map<String, Object>>() {}.getType());
@@ -88,8 +81,7 @@ public class SSORemoteService {
         Map<String,String> headerMap = new HashMap<>();
         headerMap.put("Content-Type","application/json");
         makeHeaderInfo(headerMap);
-        String responseStr = OKHttpClient.doGet(SSO_PREFIX_URL+SSO_MATCH_QUERY,queryParamMap,headerMap,times);
-        log.info("sso query {} ok.",SSO_MATCH_QUERY);
+        String responseStr = OKHttpClient.doGet(SSO_PREFIX_LIKE_URL,queryParamMap,headerMap,times);
 
         Map<String, Object> resultMap = GsonUtils.getInstance()
                 .fromJson(responseStr, new TypeToken<Map<String, Object>>() {}.getType());

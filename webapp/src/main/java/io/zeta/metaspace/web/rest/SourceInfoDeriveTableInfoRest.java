@@ -75,7 +75,6 @@ public class SourceInfoDeriveTableInfoRest {
                                                      @ApiParam(value = "请求头-租户Id", type = "String", required = true) @HeaderParam(value = "tenantId") String tenantId,
                                                      SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto) {
         try {
-            sourceInfoDeriveTableColumnDto.setTableNameEn(sourceInfoDeriveTableColumnDto.getTableNameEn().toLowerCase());
             Result result = sourceInfoDeriveTableInfoService.checkAddOrEditDeriveTableEntity(sourceInfoDeriveTableColumnDto, tenantId);
             if (!result.getCode().equals("200")) {
                 return result;
@@ -107,7 +106,6 @@ public class SourceInfoDeriveTableInfoRest {
                                                      @ApiParam(value = "请求头-租户Id", required = true) @HeaderParam(value = "tenantId") String tenantId,
                                                      SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto) {
         try {
-            sourceInfoDeriveTableColumnDto.setTableNameEn(sourceInfoDeriveTableColumnDto.getTableNameEn().toLowerCase());
             Result result = sourceInfoDeriveTableInfoService.checkAddOrEditDeriveTableEntity(sourceInfoDeriveTableColumnDto, tenantId);
             if (!result.getCode().equals("200")) {
                 return result;

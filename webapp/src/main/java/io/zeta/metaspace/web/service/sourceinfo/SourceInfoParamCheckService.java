@@ -105,6 +105,41 @@ public class SourceInfoParamCheckService {
         return ReturnUtil.success();
     }
 
+    //暂存校验
+    public Result saveCheckCreateParam(DatabaseInfo databaseInfo, String tenantId, String approveGroupId, SubmitType submitType){
+        //校验数据合法性
+        if (databaseInfo == null){
+            return ReturnUtil.error(AtlasErrorCode.INVALID_PARAMETERS.getErrorCode(),
+                    AtlasErrorCode.INVALID_PARAMETERS.getFormattedErrorMessage());        }
+        //校验数据库是否存在
+        if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getDatabaseId()))){
+            return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                    AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("数据库id"));
+        }
+        if (databaseDAO.getDatabaseById(databaseInfo.getDatabaseId()) == 0){
+            return ReturnUtil.error(AtlasErrorCode.INVALID_OBJECT_ID.getErrorCode(),
+                    AtlasErrorCode.INVALID_OBJECT_ID.getFormattedErrorMessage(databaseInfo.getDatabaseId()));
+        }
+        if(databaseInfoDAO.getDatabaseByDbId(databaseInfo.getDatabaseId(),tenantId)){
+            return ReturnUtil.error(AtlasErrorCode.INVALID_OBJECT_ID.getErrorCode(),
+                    AtlasErrorCode.INVALID_OBJECT_ID.getFormattedErrorMessage(databaseInfo.getDatabaseId()+"已经登记，无法重复登记"));
+        }
+        if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getDataSourceId()))) {
+            return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                    AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("数据源id"));
+        }
+        //校验目录
+        if (Boolean.TRUE.equals(ParamUtil.isNull(databaseInfo.getCategoryId()))){
+            return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                    AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("所属层级目录id"));
+        }
+        if (categoryDAO.getCategoryCountById(databaseInfo.getCategoryId(),tenantId) == 0){
+            return ReturnUtil.error(AtlasErrorCode.INVALID_OBJECT_ID.getErrorCode(),
+                    AtlasErrorCode.INVALID_OBJECT_ID.getFormattedErrorMessage(databaseInfo.getCategoryId()));
+        }
+        return ReturnUtil.success();
+    }
+
     public Result checkCreateListParam(List<DatabaseInfo> databaseInfos, String tenantId){
         for (DatabaseInfo databaseInfo:databaseInfos) {
             //校验数据合法性
@@ -191,7 +226,11 @@ public class SourceInfoParamCheckService {
             return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                     AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("审核组"));
         }
-        if(databaseInfoDAO.getDatabaseByDbId(databaseInfo.getDatabaseId(),tenantId)){
+
+        // 查询旧的登记状态，是否为‘发布审核通过’或者‘待审核’
+        boolean isApprove = databaseInfoDAO.auditStatusIsApprove(databaseInfo.getId());
+
+        if(!isApprove && databaseInfoDAO.getDatabaseByDbId(databaseInfo.getDatabaseId(),tenantId)){
             return ReturnUtil.error(AtlasErrorCode.INVALID_OBJECT_ID.getErrorCode(),
                     AtlasErrorCode.INVALID_OBJECT_ID.getFormattedErrorMessage(databaseInfo.getDatabaseId()+"已经登记，无法重复登记"));
         }

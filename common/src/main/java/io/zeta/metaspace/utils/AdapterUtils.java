@@ -116,27 +116,44 @@ public class AdapterUtils {
     public static AdapterSource getAdapterSource(DataSourceInfo dataSourceInfo) {
         AdapterSource adapterSource = null;
         String dataSourceId = dataSourceInfo.getSourceId();
+        String dataSourceType = dataSourceInfo.getSourceType();
+        //mysql数据源建立链接时，如果没有设置编码，默认为utf8
+        if("MYSQL".equalsIgnoreCase(dataSourceType)){
+            String param = dataSourceInfo.getJdbcParameter();
+            if(StringUtils.isBlank(param)){
+                    param = "characterEncoding=utf8";
+                    dataSourceInfo.setJdbcParameter(param);
+            }else{
+                if(!param.contains("characterEncoding")){
+                    param += "&characterEncoding=utf8";
+                    dataSourceInfo.setJdbcParameter(param);
+                }
+            }
+        }
         //根据配置信息，生成与之对应的id便于使用一个连接池， 防止后期没有传该参数导致连接数大量增长
         if(StringUtils.isBlank(dataSourceId)){
             log.info("数据源配置没有sourceId信息,使用配置生成");
             List<String> connectionConfigList = Arrays.asList(dataSourceInfo.getIp(),dataSourceInfo.getPort(),
-                    dataSourceInfo.getUserName(),dataSourceInfo.getPassword(),dataSourceInfo.getDatabase(),dataSourceInfo.getServiceType());
+                    dataSourceInfo.getUserName(),dataSourceInfo.getDatabase(),dataSourceInfo.getServiceType());
             dataSourceId = String.join("-",connectionConfigList);
         }
-        if (StringUtils.isNotEmpty(dataSourceId) && adapterSourceMap.containsKey(dataSourceId)) {
-            adapterSource = adapterSourceMap.get(dataSourceId);
-            if (adapterSource != null) {
-                if (judgeNotReload(adapterSource.getDataSourceInfo(), dataSourceInfo)) {
-                    return adapterSource;
-                } else {
-                    log.info("数据源重新加载 " + dataSourceId + "新配置 :" + dataSourceInfo.toString());
-                    adapterSource.closeDataSource();
+        synchronized (dataSourceId.intern()) {
+            if (StringUtils.isNotEmpty(dataSourceId) && adapterSourceMap.containsKey(dataSourceId)) {
+                adapterSource = adapterSourceMap.get(dataSourceId);
+                if (adapterSource != null) {
+                    if (judgeNotReload(adapterSource.getDataSourceInfo(), dataSourceInfo)) {
+                        return adapterSource;
+                    } else {
+                        log.info("数据源重新加载 " + dataSourceId + "新配置 :" + dataSourceInfo.toString());
+                        adapterSource.closeDataSource();
+                    }
                 }
             }
-        }
-        adapterSource = getAdapter(dataSourceInfo.getSourceType()).getNewAdapterSource(dataSourceInfo, DataSourcePoolConfig.getDefaultDataSourcePool());
-        if (StringUtils.isNotEmpty(dataSourceId)) {
-            adapterSourceMap.put(dataSourceId, adapterSource);
+            log.info("创建数据源 {}", dataSourceId);
+            adapterSource = getAdapter(dataSourceInfo.getSourceType()).getNewAdapterSource(dataSourceInfo, DataSourcePoolConfig.getDefaultDataSourcePool());
+            if (StringUtils.isNotEmpty(dataSourceId)) {
+                adapterSourceMap.put(dataSourceId, adapterSource);
+            }
         }
         return adapterSource;
     }

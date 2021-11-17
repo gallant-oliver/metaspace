@@ -64,6 +64,6 @@ public interface SourceInfoDAO {
     @Select("SELECT category_id FROM source_info WHERE tenant_id = #{tenantId} AND version = 0 and category_id is not null and category_id != ''")
     List<String> selectCategoryListByTenantId(@Param("tenantId") String tenantId);
 
-    @Select("SELECT category_id,count(*) as count FROM source_info si INNER JOIN tableinfo on si.database_id = tableinfo.databaseguid WHERE tenant_id = #{tenantId} AND version = 0 and category_id is not null and category_id != '' GROUP BY category_id")
+    @Select("SELECT category_id,count(*) as count FROM source_info si INNER JOIN tableinfo on si.database_id = tableinfo.databaseguid WHERE tenant_id = #{tenantId} AND version = 0 and tableinfo.status = 'ACTIVE' and category_id is not null and category_id != '' GROUP BY category_id")
     List<SourceInfo> selectCategoryListAndCount(@Param("tenantId") String tenantId);
 }

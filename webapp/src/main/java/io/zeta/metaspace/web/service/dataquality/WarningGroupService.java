@@ -13,8 +13,11 @@
 package io.zeta.metaspace.web.service.dataquality;
 
 import com.google.gson.reflect.TypeToken;
+import io.zeta.metaspace.model.PagedModel;
 import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.datasource.DataSource;
+import io.zeta.metaspace.model.dto.AlertInfoDTO;
+import io.zeta.metaspace.model.dto.AlertRequest;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
@@ -26,12 +29,17 @@ import io.zeta.metaspace.web.util.BeansUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -70,7 +78,17 @@ public class WarningGroupService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组详情失败");
         }
     }
-
+    public List<WarningGroup> getByIds(String[] toList) throws AtlasBaseException {
+        try {
+            if (toList!=null &&toList.length >0){
+                return warningGroupDAO.getByIds(toList);
+            }
+            return Collections.emptyList();
+        } catch (Exception e) {
+            LOG.error("获取告警组详情失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组详情失败");
+        }
+    }
     public WarningGroup getByName(String name,String id,String tenantId) throws AtlasBaseException {
         return warningGroupDAO.getByName(name,id,tenantId);
     }
@@ -395,6 +413,30 @@ public class WarningGroupService {
 
         List<WarnInformation> errors = warningGroupDAO.getErrors(parameters, errorType, tenantId);
         return getDetails(parameters, errors, error -> error.getWarnNo());
+    }
+
+    public PagedModel<AlertInfoDTO> getAlert(AlertRequest request){
+        DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            Timestamp startDate = null;
+            Timestamp realEndDate = null;
+            if (StringUtils.isNotBlank(request.getStartTime())) {
+                startDate = new Timestamp(format.parse(request.getStartTime()).getTime());
+            }
+            // 选择的结束日期需包含在内，应该要加一天
+            if (StringUtils.isNotBlank(request.getEndTime())) {
+                Date endDate = format.parse(request.getEndTime());
+                realEndDate = new Timestamp(endDate.getTime() + 86400000);
+            }
+            List<AlertInfoDTO> alerts = warningGroupDAO.getAlerts(startDate, realEndDate, request.getKeyword(),
+                    request.getOffset(), request.getPageSize());
+            if (CollectionUtils.isEmpty(alerts)) {
+                return new PagedModel<>();
+            }
+            return PagedModel.pageInfo(alerts, alerts.get(0).getTotal(), request.getPageNo(), request.getPageSize());
+        } catch (ParseException e) {
+            throw new AtlasBaseException("时间格式不正确");
+        }
     }
 
 

@@ -141,7 +141,7 @@ public interface GroupDeriveTableRelationDAO {
             "   AND( ( (gtr.importance_privilege = false OR gtr.importance_privilege is null )  AND  gtr.user_group_id = #{userGroupId}   )" +
             "  OR ( " +
             "<if test='importantList != null and importantList.size() != 0'>" +
-            "gtr.derive_table_id NOT IN " +
+            "ti.tableguid  NOT IN " +
             " <foreach item='id' index='ids' collection='importantList' separator=',' open='(' close=')'>" +
             "#{id}" +
             "</foreach>" +
@@ -156,7 +156,7 @@ public interface GroupDeriveTableRelationDAO {
             "   AND( ( (gtr.security_privilege = false OR gtr.security_privilege is null )  AND  gtr.user_group_id = #{userGroupId}   )" +
             "  OR ( " +
             "<if test='securityList != null and securityList.size() != 0'>" +
-            "gtr.derive_table_id NOT IN " +
+            "ti.tableguid NOT IN " +
             " <foreach item='id' index='ids' collection='securityList' separator=',' open='(' close=')'>" +
             "#{id}" +
             "</foreach>" +

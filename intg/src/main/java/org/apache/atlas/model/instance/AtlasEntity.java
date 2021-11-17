@@ -170,6 +170,16 @@ public class AtlasEntity extends AtlasStruct implements Serializable {
         }
     }
 
+    // 从apache atlas release-2.2.0-rc1合并过来
+    public AtlasEntity(AtlasEntityHeader header) {
+        super(header.getTypeName(), header.getAttributes());
+
+        setGuid(header.getGuid());
+        setStatus(header.getStatus());
+        setClassifications(header.getClassifications());
+        setMeanings(header.getMeanings());
+    }
+
     public AtlasEntity(AtlasEntity other) {
         super(other);
 
