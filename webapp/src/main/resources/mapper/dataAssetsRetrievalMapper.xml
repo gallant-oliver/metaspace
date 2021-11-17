@@ -142,7 +142,7 @@
 
     <select id="queryBusiness" resultType="io.zeta.metaspace.model.dataassets.BussinessObject">
         select count(*)over()
-        total, bi.businessid,bi.name,bi.owner,bi.manager,bi.maintainer,bi.businesslastupdate, u.username as businessoperator,'0' as status
+        total, bi.businessid,bi.name,bi.owner,bi.manager,bi.maintainer,bi.businesslastupdate, u.username as businessoperator,'0' as status,bi.tenantid
         from businessinfo bi
         join business_relation br on bi.businessid = br.businessid
         left join users u on bi.businessoperator=u.userid
@@ -155,8 +155,7 @@
     <select id="queryBusinessByUsergroup" resultType="io.zeta.metaspace.model.dataassets.BussinessObject">
         select count(*)over()
         total,bi.businessid,bi.name,bi.owner,bi.manager,bi.maintainer,bi.businesslastupdate,u.username as
-        businessoperator,'0' as
-        status
+        businessoperator,'0' as status,bi.tenantid
         from businessinfo bi
         join business_relation br on bi.businessid = br.businessid
         left join users u on bi.businessoperator=u.userid

@@ -26,6 +26,8 @@ public class BussinessObject {
     private String businessoperator;
     //有效状态
     private String status;//0-有效 1-无效
+    //租户id
+    private String tenantId;
     @JsonIgnore
     private int total; //业务对象数量
 
