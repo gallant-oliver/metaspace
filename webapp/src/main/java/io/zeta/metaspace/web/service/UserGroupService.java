@@ -1115,21 +1115,19 @@ public class UserGroupService {
         }
         List<String> removeCategoryId = new ArrayList<>();
         List<String> categorIdList = Lists.newArrayList(category.getGuid());
-        if (categorIdList.size() == 0 || null == categorIdList) {
+        if (CollectionUtils.isEmpty(categorIdList)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录不能为空");
         }
-
         List<CategoryEntityV2> categoryEntitysByGuids = categoryDAO.queryCategoryEntitysByGuids(categorIdList, tenantId);
         categoryEntitysByGuids.stream().forEach(categoryParent -> {
             if (categorIdList.contains(categoryParent.getParentCategoryGuid())) {
                 removeCategoryId.add(categoryParent.getParentCategoryGuid());
             }
         });
-
         categorIdList.removeAll(removeCategoryId);
-        List<String> categorList = categorIdList;
+
         for (String userGroupId : userGroupIdList) {
-            List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getParentCategoriesPrivileges(categorList, userGroupId, category.getType(), tenantId);
+            List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getParentCategoriesPrivileges(categorIdList, userGroupId, category.getType(), tenantId);
             for (CategoryPrivilegeV2 childCategory : childCategoriesPrivileges) {
                 List<String> updateCategory = new ArrayList<>();
                 List<String> insertCategory = new ArrayList<>();
@@ -1142,7 +1140,7 @@ public class UserGroupService {
                 // 1-贴源层、2-基础层、4-通用层、5-应用层不需要分配权限
                 updateCategory.removeAll(DEFAULT_CATEGORY_GUID);
                 insertCategory.removeAll(DEFAULT_CATEGORY_GUID);
-                categorList.removeAll(DEFAULT_CATEGORY_GUID);
+                //categorList.removeAll(DEFAULT_CATEGORY_GUID);
 
                 CategoryPrivilegeV2 categoryPrivilege = new CategoryPrivilegeV2(category);
                 if (updateCategory.size() != 0) {
