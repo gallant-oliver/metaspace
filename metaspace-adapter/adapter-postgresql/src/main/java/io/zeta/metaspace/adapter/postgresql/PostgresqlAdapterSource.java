@@ -14,14 +14,13 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang.StringUtils;
 
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
-
-import javax.sql.DataSource;
 
 @Slf4j
 public class PostgresqlAdapterSource extends AbstractAdapterSource {
@@ -59,6 +58,7 @@ public class PostgresqlAdapterSource extends AbstractAdapterSource {
             jdbcConfig.setIdleTimeout(dataSourcePool != null ? dataSourcePool.getIdleTimeout() : 60000);
             jdbcConfig.setConnectionTimeout(dataSourcePool != null ? dataSourcePool.getConnectionTimeout() : 60000);
             jdbcConfig.setValidationTimeout(dataSourcePool != null ? dataSourcePool.getValidationTimeout() : 3000);
+            jdbcConfig.setMinimumIdle(dataSourcePool != null ? dataSourcePool.getMinIdleSize() : 10);
             return new HikariDataSource(jdbcConfig);
         } catch (Exception e) {
             throw new AdapterBaseException(e);

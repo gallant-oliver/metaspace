@@ -1,12 +1,11 @@
 package io.zeta.metaspace.web.rest;
 
-import io.zeta.metaspace.model.business.BusinessInfo;
-import io.zeta.metaspace.model.dataassets.ColumnInfo;
-import io.zeta.metaspace.model.dataassets.DataAssets;
-import io.zeta.metaspace.model.dataassets.TableInfo;
+import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.dataassets.*;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.web.service.DataAssetsRetrievalService;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.utils.AtlasPerfTracer;
@@ -45,12 +44,12 @@ public class DataAssetsRetrievalREST {
     @Path("/domains")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BusinessInfo getThemeDomains(//RelationQuery relationQuery,
-                                        @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public Result getThemeDomains(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            return null;
+            List<DomainInfo> result = dataAssetsRetrievalService.getThemeDomains(tenantId);
+            return ReturnUtil.success(result);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取业务对象列表失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取主题域列表失败:" + e.getMessage());
         }
     }
 
@@ -65,13 +64,13 @@ public class DataAssetsRetrievalREST {
     @Path("/{domainId}/themes")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BusinessInfo getThemes(@QueryParam("domainId") String domainId,
-                                  //RelationQuery relationQuery,
-                                  @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public Result getThemes(@PathParam("domainId") String domainId,
+                            @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            return null;
+            List<ThemeInfo> result = dataAssetsRetrievalService.getThemes(domainId, tenantId);
+            return ReturnUtil.success(result);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取业务对象列表失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取主题列表失败:" + e.getMessage());
         }
     }
 
@@ -86,13 +85,14 @@ public class DataAssetsRetrievalREST {
     @Path("/{themeId}/businesses")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public BusinessInfo getBusinesses(@QueryParam("themeId") String themeId,
-                                      //RelationQuery relationQuery,
-                                      @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public Result getBusinesses(@PathParam("themeId") String themeId, @DefaultValue("-1") @QueryParam("limit") int limit,
+                                @DefaultValue("0") @QueryParam("offset") int offset,
+                                @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            return null;
+            BussinessObjectList result = dataAssetsRetrievalService.getBusinesses(themeId, tenantId, limit, offset);
+            return ReturnUtil.success(result);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取业务对象列表失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取业务对象列表失败:" + e.getMessage());
         }
     }
 
