@@ -40,7 +40,8 @@ public interface DataAssetsRetrievalDAO {
                                   @Param("tenantId")String tenantId);
 
     DataAssets searchTableById(@Param("tableId")String tableId,
-                               @Param("tenantId")String tenantId);
+                               @Param("tenantId")String tenantId,
+                               @Param("businessId")String businessId);
 
     List<TableInfo> getTableInfos(@Param("businessId")String businessId,
                                   @Param("tenantId")String tenantId,

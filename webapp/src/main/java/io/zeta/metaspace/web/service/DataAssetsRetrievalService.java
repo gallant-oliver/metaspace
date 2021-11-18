@@ -166,7 +166,7 @@ public class DataAssetsRetrievalService {
         return path;
     }
 
-    public DataAssets getDataAssetsById(String id, int type, String tenantId) {
+    public DataAssets getDataAssetsById(String id, int type, String tenantId, String businessId) {
         DataAssets result;
         // 搜索类型：1业务对象；2数据表
         switch (type) {
@@ -174,7 +174,7 @@ public class DataAssetsRetrievalService {
                 result = dataAssetsRetrievalDAO.searchBusinessById(id, tenantId);
                 break;
             case 2:
-                result = dataAssetsRetrievalDAO.searchTableById(id,tenantId);
+                result = dataAssetsRetrievalDAO.searchTableById(id, tenantId, businessId);
                 break;
             default:
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据资产类别错误: " + type);
