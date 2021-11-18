@@ -62,7 +62,7 @@
 
                 <property name="typeAliasesPackage" value="io.zeta.metaspace.model.metadata"></property>
 
-                <property name="mapperLocations" value="classpath:mapper/*.xml"></property>
+                <property name="mapperLocations" value="classpath:mapper/**/*.xml"></property>
 
                 <property name="configuration">
                         <bean class="org.apache.ibatis.session.Configuration">
