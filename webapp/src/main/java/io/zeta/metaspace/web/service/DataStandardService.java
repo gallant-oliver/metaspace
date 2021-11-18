@@ -25,6 +25,7 @@ import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.DataStandardDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.ObjectUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -45,8 +46,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -101,32 +100,27 @@ public class DataStandardService {
         Objects.requireNonNull(dataStandard.getNumber(), "数据标准编号必填!");
         Assert.isTrue(Pattern.matches(NUMBER_REGEX, dataStandard.getNumber()),
                 "编号内容格式错误，只允许英文、数字、下划线、中划线");
-        
+    
         Objects.requireNonNull(dataStandard.getName(), "数据标准名称必填!");
         Assert.isTrue(Pattern.matches(NAME_REGEX, dataStandard.getName()),
                 "名称内容格式错误，只允许中文、英文、数字、下划线、中划线");
     
         Objects.requireNonNull(dataStandard.getStandardType(), "数据标准类型必填!");
         DataStandardType.parseByCode(dataStandard.getStandardType());
-        
-        if (Objects.nonNull(dataStandard.getDataLength())) {
-            Assert.isTrue(Pattern.matches(DATA_LENGTH_REGEX, dataStandard.getDataLength().toString()),
-                    "数据长度格式错误，只允许正整数");
-        }
     
-        if (Objects.nonNull(dataStandard.getDataType())) {
-            DataStandardDataType.parseByCode(dataStandard.getDataType());
-        }
-        
-        if (Objects.nonNull(dataStandard.getStandardLevel())) {
-            DataStandardLevel.parseByCode(dataStandard.getStandardLevel());
-        }
-        
-        if (dataStandard.isAllowableValueFlag()) {
-            Assert.isTrue(StringUtils.isNotEmpty(dataStandard.getAllowableValue()), "允许有值时,允许值不能为空!");
-        } else {
-            Assert.isTrue(StringUtils.isEmpty(dataStandard.getAllowableValue()), "不允许有值时,允许值只能为空!");
-        }
+        ObjectUtils.isTrueThen(dataStandard.getDataLength(), Objects::nonNull,
+                v -> Assert.isTrue(Pattern.matches(DATA_LENGTH_REGEX, dataStandard.getDataLength().toString()),
+                        "数据长度格式错误，只允许正整数"));
+    
+        ObjectUtils.isTrueThen(dataStandard.getDataType(), Objects::nonNull, DataStandardDataType::parseByCode);
+    
+        ObjectUtils.isTrueThen(dataStandard.getStandardLevel(), Objects::nonNull, DataStandardLevel::parseByCode);
+    
+        ObjectUtils.isTrueThenElseThen(dataStandard.isAllowableValueFlag(), v -> v,
+                v -> Assert.isTrue(StringUtils.isNotEmpty(dataStandard.getAllowableValue()),
+                        "允许有值时,允许值不能为空!"),
+                v -> Assert.isTrue(StringUtils.isEmpty(dataStandard.getAllowableValue()),
+                        "不允许有值时,允许值只能为空!"));
     }
     
     private void batchInsert(String categoryId, List<DataStandard> dataList, String tenantId) throws AtlasBaseException {
@@ -412,61 +406,31 @@ public class DataStandardService {
             Cell allowValueCell = row.getCell(j++);
             Cell levelCell = row.getCell(j++);
             Cell discriptionCell = row.getCell(j);
-            
-            isTrueThenElseException(numberCell, Objects::nonNull, "标准编号不能为空",
+    
+            ObjectUtils.isTrueThenElseException(numberCell, Objects::nonNull, "标准编号不能为空",
                     v -> standard.setNumber(v.getStringCellValue()));
-            isTrueThenElseException(nameCell, Objects::nonNull, "标准名称不能为空",
+            ObjectUtils.isTrueThenElseException(nameCell, Objects::nonNull, "标准名称不能为空",
                     v -> standard.setName(v.getStringCellValue()));
-            isTrueThenElseException(typeCell, Objects::nonNull, "标准类型不能为空",
+            ObjectUtils.isTrueThenElseException(typeCell, Objects::nonNull, "标准类型不能为空",
                     v -> standard.setStandardType(DataStandardType.parseByDesc(typeCell.getStringCellValue()).getCode()));
-            isTrueThen(dataTypeCell,
+            ObjectUtils.isTrueThen(dataTypeCell, Objects::nonNull,
                     v -> standard.setDataType(v.getStringCellValue()));
-            isTrueThenElseException(dateLengthCell, v -> v.getNumericCellValue() <= Integer.MAX_VALUE,
+            ObjectUtils.isTrueThenElseException(dateLengthCell, v -> v.getNumericCellValue() <= Integer.MAX_VALUE,
                     "标准数据长度最大值为2147483647",
                     v -> standard.setDataLength((int) v.getNumericCellValue()));
-            isTrueThenElseException(isAllowValueFlagCell, Objects::nonNull, "是否有允许值不能为空",
+            ObjectUtils.isTrueThenElseException(isAllowValueFlagCell, Objects::nonNull, "是否有允许值不能为空",
                     v -> standard.setAllowableValueFlag(v.getBooleanCellValue()));
-            isTrueThen(allowValueCell, v -> standard.setAllowableValue(v.getStringCellValue()));
-            isTrueThen(levelCell,
+            ObjectUtils.isTrueThen(allowValueCell, Objects::nonNull, v -> standard.setAllowableValue(v.getStringCellValue()));
+            ObjectUtils.isTrueThen(levelCell, Objects::nonNull,
                     v -> standard.setStandardLevel(DataStandardLevel.parseByDesc(v.getStringCellValue()).getCode()));
-            isTrueThen(discriptionCell, v -> standard.setDescription(v.getStringCellValue()));
-            
+            ObjectUtils.isTrueThen(discriptionCell, Objects::nonNull, v -> standard.setDescription(v.getStringCellValue()));
+    
             // 校验数据
             verifyDataStandard(standard);
-            
+    
             dataList.add(standard);
         }
         return dataList;
-    }
-    
-    /**
-     * 对指定对象进行指定的逻辑判断,为true做出指定的动作,为false抛出异常
-     *
-     * @param t            待处理的对象
-     * @param predicate    指定的逻辑判断
-     * @param errorMessage 异常信息
-     * @param thenConsumer 为true指定的动作
-     */
-    private static <T> void isTrueThenElseException(T t, Predicate<T> predicate, String errorMessage, Consumer<T> thenConsumer) {
-        Objects.requireNonNull(thenConsumer);
-        if (predicate.test(t)) {
-            thenConsumer.accept(t);
-        } else {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, errorMessage);
-        }
-    }
-    
-    /**
-     * 对指定对象进行指定的逻辑判断,为true做出指定的动作
-     *
-     * @param t            待处理的对象
-     * @param thenConsumer 为true指定的动作
-     */
-    private static <T> void isTrueThen(T t, Consumer<T> thenConsumer) {
-        Objects.requireNonNull(thenConsumer);
-        if (Objects.nonNull(t)) {
-            thenConsumer.accept(t);
-        }
     }
     
     public List<CategoryPrivilege> getCategory(Integer categoryType, String tenantId) throws AtlasBaseException {
