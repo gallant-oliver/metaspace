@@ -230,7 +230,7 @@ public class DataAssetsRetrievalREST {
     public DataAssets getDataAssetsById(@PathParam("id") String id,
                                         @QueryParam("type") int type,
                                         @QueryParam("businessId") String businessId,
-                                        @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+                                        @QueryParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
