@@ -57,6 +57,9 @@ public class MysqlAdapterSource extends AbstractAdapterSource {
             jdbcConfig.setIdleTimeout(dataSourcePool != null ? dataSourcePool.getIdleTimeout() : 60000);
             jdbcConfig.setConnectionTimeout(dataSourcePool != null ? dataSourcePool.getConnectionTimeout() : 60000);
             jdbcConfig.setValidationTimeout(dataSourcePool != null ? dataSourcePool.getValidationTimeout() : 3000);
+            jdbcConfig.setMinimumIdle(dataSourcePool != null ? dataSourcePool.getMinIdleSize() : 10);
+
+            jdbcConfig.addDataSourceProperty("remarksReporting", true);
             return new HikariDataSource(jdbcConfig);
         } catch (Exception e) {
             throw new AdapterBaseException(e);

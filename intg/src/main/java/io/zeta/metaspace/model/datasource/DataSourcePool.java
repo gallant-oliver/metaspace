@@ -14,4 +14,5 @@ public class DataSourcePool {
     private String prepStmtCacheSqlLimit;
     private String keyUser;
     private String keyTabPath;
+    private int minIdleSize;
 }

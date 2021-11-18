@@ -192,7 +192,9 @@ public class AuthorizeREST {
     public Result addPrivileges(UpdateCategory category, @HeaderParam("tenantId")String tenantId,@PathParam("type") int type) throws AtlasBaseException {
         try{
             HttpRequestContext.get().auditLog(ModuleEnum.AUTHORIZATION.getAlias(), "分配权限");
-            userGroupService.addUserGroupPrivilege(category,tenantId,type);
+//            userGroupService.addUserGroupPrivilege(category,tenantId,type);
+            category.setType(type);
+            userGroupService.addPrivileges(category, category.getUserGroupIds(), tenantId);
             return ReturnUtil.success();
         }catch (Exception e){
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e, "分配用户组权限失败");

@@ -13,28 +13,20 @@
 
 package io.zeta.metaspace.web.rest;
 
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
-
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
+import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
-import io.zeta.metaspace.model.result.CategoryGroupAndUser;
-import io.zeta.metaspace.model.result.CategoryGroupPrivilege;
-import io.zeta.metaspace.model.result.CategoryPrivilegeV2;
-import io.zeta.metaspace.model.result.CategoryUpdate;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.result.UpdateCategory;
+import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.share.ProjectHeader;
 import io.zeta.metaspace.model.usergroup.*;
 import io.zeta.metaspace.model.usergroup.result.*;
-import io.zeta.metaspace.model.datasource.SourceAndPrivilege;
-import io.zeta.metaspace.model.datasource.DataSourceIdAndName;
 import io.zeta.metaspace.web.service.UserGroupService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -43,23 +35,16 @@ import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Singleton;
+import javax.ws.rs.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import javax.inject.Singleton;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 /**
  * @author lixiang03
@@ -604,8 +589,9 @@ public class UserGroupREST {
         try{
             UserGroup userGroup = userGroupService.getUserGroupByID(id);
             HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "新增用户组："+userGroup.getName()+"目录权限");
-
-            userGroupService.addPrivileges(category,id,tenantId);
+            List<String> groupList = new ArrayList<>();
+            groupList.add(id);
+            userGroupService.addPrivileges(category, groupList, tenantId);
             return ReturnUtil.success();
         }catch (Exception e){
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"分配用户组权限失败");
