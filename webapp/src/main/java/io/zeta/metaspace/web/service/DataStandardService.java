@@ -459,7 +459,7 @@ public class DataStandardService {
 
     public void deleteCategory(String categoryGuid,String tenantId) throws AtlasBaseException {
         try {
-            if(dataStandardDAO.countByByCatetoryId(categoryGuid,tenantId) > 0) {
+            if (dataStandardDAO.countByByCategoryId(categoryGuid, tenantId) > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前下还存在标准，请清空标准后，再删除目录");
             }
             int childrenNum = categoryDAO.queryChildrenNum(categoryGuid,tenantId);
@@ -483,15 +483,14 @@ public class DataStandardService {
             dataStandAndTable.setCreateTime(DateUtils.currentTimestamp());
             dataStandardDAO.deleteByTableId(dataStandAndTable.getTableGuid());
             for (String number : dataStandAndTable.getNumbers()){
-                String content = dataStandardDAO.getContentByNumber(number,tenantId);
-                if (content==null){
+                if (dataStandardDAO.getCountByNumber(number, tenantId) == 0) {
                     LOG.error("数据标准不存在或已删除");
                     continue;
                 }
                 try{
                     dataStandardDAO.assignTableToStandard(number,dataStandAndTable);
                 }catch (Exception e) {
-                    LOG.error("表"+ tableName +" 依赖标准 " + content + " 失败,错误信息:" + e.getMessage(), e);
+                    LOG.error("表{}依赖标准{}失败,错误信息:", tableName, number, e);
                 }
             }
         } catch (Exception e) {
@@ -507,15 +506,14 @@ public class DataStandardService {
             dataStandAndRule.setCreateTime(DateUtils.currentTimestamp());
             dataStandardDAO.deleteByRuleId(dataStandAndRule.getRuleId());
             for (String number : dataStandAndRule.getNumbers()){
-                String content = dataStandardDAO.getContentByNumber(number,tenantId);
-                if (content==null){
+                if (dataStandardDAO.getCountByNumber(number, tenantId) == 0) {
                     LOG.error("数据标准不存在或已删除");
                     continue;
                 }
                 try{
                     dataStandardDAO.assignRuleToStandard(number,dataStandAndRule);
                 }catch (Exception e) {
-                    LOG.error("质量规则"+ ruleName +" 依赖标准 " + content + " 失败,错误信息:" + e.getMessage(), e);
+                    LOG.error("质量规则 {} 依赖标准 {} 失败,错误信息:", ruleName, number, e);
                 }
 
             }
