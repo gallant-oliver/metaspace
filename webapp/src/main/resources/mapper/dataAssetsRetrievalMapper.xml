@@ -28,24 +28,12 @@
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
         WHERE 1=1
-        <if test="name!='' and name !=null">AND bi.name like concat('%',#{name},'%') ESCAPE '/'
+        <if test="name!='' and name !=null">
+            AND bi.name like concat('%',#{name},'%') ESCAPE '/'
         </if>
-            <choose>
-                <when test="isPublic==true">
-                    <if test="isGlobal==false">
-                        AND
-                        (
-                        bi.private_status='PUBLIC' OR (bi.submitter=#{userId} AND bi.submitter_read=true)
-                        OR
-                        (SELECT count(*) FROM business_2_group b2g
-                        JOIN user_group_relation ugr ON ugr.group_id = b2g.group_id AND ugr.user_id=#{userId}
-                        WHERE b2g.business_id=bi.businessid AND b2g.read=true
-                        )>0
-                        )
-                    </if>
-                </when>
-                <otherwise>
-                    AND bi.tenantid=#{tenantId}
+        <choose>
+            <when test="isPublic==true">
+                <if test="isGlobal==false">
                     AND
                     (
                     bi.private_status='PUBLIC' OR (bi.submitter=#{userId} AND bi.submitter_read=true)
@@ -55,12 +43,25 @@
                     WHERE b2g.business_id=bi.businessid AND b2g.read=true
                     )>0
                     )
-                </otherwise>
-            </choose>
+                </if>
+            </when>
+            <otherwise>
+                AND bi.tenantid=#{tenantId}
+                AND
+                (
+                bi.private_status='PUBLIC' OR (bi.submitter=#{userId} AND bi.submitter_read=true)
+                OR
+                (SELECT count(*) FROM business_2_group b2g
+                JOIN user_group_relation ugr ON ugr.group_id = b2g.group_id AND ugr.user_id=#{userId}
+                WHERE b2g.business_id=bi.businessid AND b2g.read=true
+                )>0
+                )
+            </otherwise>
+        </choose>
         union
         SELECT ti.tableguid id, ti.tablename as name, ti.description,
-        2 as type, br.categoryguid businessCategoryGuid, si.category_id technicalCategoryGuid,
-        bi.tenantid tenantId, ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName, bi.tenantid
+        2 as type, br.categoryguid businessCategoryGuid, si.category_id technicalCategoryGuid, bi.tenantid tenantId,
+        ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName, bi.tenantid
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
         JOIN business2table b2t ON b2t.businessid=br.businessid
@@ -68,24 +69,11 @@
         LEFT JOIN source_info si ON si.database_id=ti.databaseguid AND si.data_source_id=b2t.source_id AND si.version=0
         WHERE 1=1
         <if test="name!='' and name !=null">
-                AND ti.tablename like concat('%',#{name},'%') ESCAPE '/'
-            </if>
-            <choose>
-                <when test="isPublic==true">
-                    <if test="isGlobal==false">
-                        AND
-                        (
-                        bi.private_status='PUBLIC' OR (bi.submitter=#{userId} AND bi.submitter_read=true)
-                        OR
-                        (SELECT count(*) FROM business_2_group b2g
-                        JOIN user_group_relation ugr ON ugr.group_id = b2g.group_id AND ugr.user_id=#{userId}
-                        WHERE b2g.business_id=bi.businessid AND b2g.read=true
-                        )>0
-                        )
-                    </if>
-                </when>
-                <otherwise>
-                    AND bi.tenantid=#{tenantId}
+            AND ti.tablename like concat('%',#{name},'%') ESCAPE '/'
+        </if>
+        <choose>
+            <when test="isPublic==true">
+                <if test="isGlobal==false">
                     AND
                     (
                     bi.private_status='PUBLIC' OR (bi.submitter=#{userId} AND bi.submitter_read=true)
@@ -95,8 +83,21 @@
                     WHERE b2g.business_id=bi.businessid AND b2g.read=true
                     )>0
                     )
-                </otherwise>
-            </choose>
+                </if>
+            </when>
+            <otherwise>
+                AND bi.tenantid=#{tenantId}
+                AND
+                (
+                bi.private_status='PUBLIC' OR (bi.submitter=#{userId} AND bi.submitter_read=true)
+                OR
+                (SELECT count(*) FROM business_2_group b2g
+                JOIN user_group_relation ugr ON ugr.group_id = b2g.group_id AND ugr.user_id=#{userId}
+                WHERE b2g.business_id=bi.businessid AND b2g.read=true
+                )>0
+                )
+            </otherwise>
+        </choose>
         )t
         ORDER BY name
         limit #{limit}
@@ -147,7 +148,7 @@
 
     <select id="searchTables" resultMap="dataAssetsInfo">
         SELECT count(*)over() total, ti.tableguid id, ti.tablename as name, ti.description,
-        2 as type, br.categoryguid businessCategoryGuid, si.category_id technicalCategoryGuid, bi.tenantid tenantId tenantId,
+        2 as type, br.categoryguid businessCategoryGuid, si.category_id technicalCategoryGuid, bi.tenantid tenantId,
         ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName, bi.tenantid
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
@@ -205,7 +206,7 @@
         JOIN business2table b2t ON b2t.tableguid=ti.tableguid
         JOIN business_relation br ON br.businessid=b2t.businessid
         LEFT JOIN source_info si ON si.database_id=ti.databaseguid AND si.data_source_id=b2t.source_id AND si.version=0
-        WHERE ti.tableguid=#{tableId} AND ti.status='ACTIVE'
+        WHERE ti.tableguid=#{tableId} AND ti.status='ACTIVE' AND br.businessid=#{businessId}
     </select>
 
     <resultMap id="tableInfo" type="io.zeta.metaspace.model.dataassets.TableInfo">
