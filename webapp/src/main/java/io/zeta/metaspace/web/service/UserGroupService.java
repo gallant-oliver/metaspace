@@ -1108,22 +1108,31 @@ public class UserGroupService {
      * @throws SQLException
      */
     @Transactional(rollbackFor=Exception.class)
-    public void addPrivileges(UpdateCategory category, List<String> userGroupIdList, String tenantId) throws AtlasBaseException {
+    public void addPrivileges(UpdateCategory category, List<String> userGroupIdList, String tenantId) throws SQLException, AtlasBaseException {
         //权限校验
         if (category.getRead() == null || !category.getRead()) {
             return;
         }
-        ArrayList<String> categorIdList = Lists.newArrayList(category.getGuid());
+        List<String> removeCategoryId = new ArrayList<>();
+        List<String> categorIdList = Lists.newArrayList(category.getGuid());
         if (categorIdList.size() == 0 || null == categorIdList) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录不能为空");
         }
 
+        List<CategoryEntityV2> categoryEntitysByGuids = categoryDAO.queryCategoryEntitysByGuids(categorIdList, tenantId);
+        categoryEntitysByGuids.stream().forEach(categoryParent -> {
+            if (categorIdList.contains(categoryParent.getParentCategoryGuid())) {
+                removeCategoryId.add(categoryParent.getParentCategoryGuid());
+            }
+        });
+
+        categorIdList.removeAll(removeCategoryId);
+        List<String> categorList = categorIdList;
         for (String userGroupId : userGroupIdList) {
-            ArrayList<String> categorList = Lists.newArrayList(category.getGuid());
             List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getParentCategoriesPrivileges(categorList, userGroupId, category.getType(), tenantId);
-            List<String> updateCategory = new ArrayList<>();
-            List<String> insertCategory = new ArrayList<>();
             for (CategoryPrivilegeV2 childCategory : childCategoriesPrivileges) {
+                List<String> updateCategory = new ArrayList<>();
+                List<String> insertCategory = new ArrayList<>();
                 if (childCategory.getRead() == null) {
                     insertCategory.add(childCategory.getGuid());
                 } else {
@@ -1145,9 +1154,9 @@ public class UserGroupService {
                 Timestamp currentTime = new Timestamp(System.currentTimeMillis());
                 userGroupDAO.updateCategory(userGroupId, currentTime, AdminUtils.getUserData().getUserId());
 
-                if (categorList.size() != 0) {
+                /* if (categorList.size() != 0) {
                     userGroupDAO.updateCategoryPrivileges(categorList, userGroupId, categoryPrivilege);
-                }
+                }*/
             }
         }
     }
