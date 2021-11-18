@@ -18,37 +18,28 @@ import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datasource.*;
-import io.zeta.metaspace.model.dto.indices.*;
-import io.zeta.metaspace.model.metadata.Database;
+import io.zeta.metaspace.model.dto.indices.ColumnDTO;
+import io.zeta.metaspace.model.dto.indices.DataBaseDTO;
+import io.zeta.metaspace.model.dto.indices.OptionalDataSourceDTO;
+import io.zeta.metaspace.model.dto.indices.TableDTO;
 import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.metadata.TableEntity;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.APIIdAndName;
-import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserIdAndName;
-import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AESUtils;
-import io.zeta.metaspace.web.dao.TableDAO;
-import io.zeta.metaspace.web.dao.UserGroupDAO;
-import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.model.HiveConstant;
 import io.zeta.metaspace.web.service.DataSourceService;
-import io.zeta.metaspace.web.service.MetaDataService;
-import io.zeta.metaspace.web.service.TenantService;
-import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.ibatis.annotations.Param;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -67,7 +58,6 @@ import java.net.URLDecoder;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
@@ -332,7 +322,7 @@ public class DataSourceREST {
         File file = null;
         try {
             String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-            if(!(name.endsWith(ExportDataPathUtils.fileFormat1) || name.endsWith(ExportDataPathUtils.fileFormat2))) {
+            if (!(name.endsWith(ExportDataPathUtils.EXCEL_FORMAT_XLSX) || name.endsWith(ExportDataPathUtils.EXCEL_FORMAT_XLS))) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
             }
 
