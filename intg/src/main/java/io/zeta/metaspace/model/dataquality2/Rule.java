@@ -25,9 +25,9 @@ public class Rule {
     private String id;
     private String ruleTemplateId;
     /**
-     * 参照数据标准ID: {@link DataStandard#getId()}
+     * 参照数据标准ID: {@link DataStandard#getNumber()}
      */
-    private String dataStandardId;
+    private String dataStandardCode;
     private String name;
     private String code;
     private Integer scope;
