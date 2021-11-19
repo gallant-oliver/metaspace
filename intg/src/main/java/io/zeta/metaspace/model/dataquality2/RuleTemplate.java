@@ -49,9 +49,9 @@ public class RuleTemplate {
     private String sql;
     private String type;
     /**
-     * 参照数据标准ID: {@link DataStandard#getId()}
+     * 参照数据标准ID: {@link DataStandard#getNumber()} ()}
      */
-    private String dataStandardId;
+    private String dataStandardCode;
     /**
      * 参照数据标准: {@link DataStandard#getName()}
      */
