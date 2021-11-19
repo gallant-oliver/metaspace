@@ -11,10 +11,6 @@
         <result column="businessId" jdbcType="VARCHAR" property="businessId"/>
         <result column="businessName" jdbcType="VARCHAR" property="businessName"/>
         <result column="tenantid" jdbcType="VARCHAR" property="tenantId"/>
-        <association property="businessPath" column="{guid=businessCategoryGuid, tenantId=tenantId}" notNullColumn="guid"
-                     select="io.zeta.metaspace.web.dao.CategoryDAO.queryPathByGuid" />
-        <association property="technicalPath" column="{guid=technicalCategoryGuid, tenantId=tenantId}" notNullColumn="guid"
-                     select="io.zeta.metaspace.web.dao.CategoryDAO.queryPathByGuid" />
         <collection property="tags" column="{tableGuid=tableGuid, tenantId=tenantId}" notNullColumn="tableGuid"
                     select="io.zeta.metaspace.web.dao.TableTagDAO.getTable2Tag" />
     </resultMap>
@@ -23,14 +19,20 @@
         SELECT count(*)over() total, t.* FROM
         (
         SELECT bi.businessid id, bi.name, bi.description,
-        1 as type, br.categoryguid businessCategoryGuid, null technicalCategoryGuid, bi.tenantid tenantId,
+        1 as type,
+        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS
+        (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
+        FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid
+        UNION ALL
+        SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
+        FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
+        SELECT  PATH FROM T WHERE guid=br.categoryguid
+        ORDER BY PATH) businessPath,
+        null technicalPath,
         null tableGuid, null businessId, null businessName, bi.tenantid
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
         WHERE 1=1
-        <if test="name!='' and name !=null">
-            AND bi.name like concat('%',#{name},'%') ESCAPE '/'
-        </if>
         <choose>
             <when test="isPublic==true">
                 <if test="isGlobal==false">
@@ -60,7 +62,23 @@
         </choose>
         union
         SELECT ti.tableguid id, ti.tablename as name, ti.description,
-        2 as type, br.categoryguid businessCategoryGuid, si.category_id technicalCategoryGuid, bi.tenantid tenantId,
+        2 as type,
+        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS
+        (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
+        FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid
+        UNION ALL
+        SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
+        FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
+        SELECT  PATH FROM T WHERE guid=br.categoryguid
+        ORDER BY PATH) businessPath,
+        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS
+        (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
+        FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid
+        UNION ALL
+        SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
+        FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
+        SELECT  PATH FROM T WHERE guid=si.category_id
+        ORDER BY PATH) technicalPath,
         ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName, bi.tenantid
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
@@ -68,9 +86,6 @@
         JOIN tableinfo ti ON ti.tableguid=b2t.tableguid AND ti.status='ACTIVE'
         LEFT JOIN source_info si ON si.database_id=ti.databaseguid AND si.data_source_id=b2t.source_id AND si.version=0
         WHERE 1=1
-        <if test="name!='' and name !=null">
-            AND ti.tablename like concat('%',#{name},'%') ESCAPE '/'
-        </if>
         <choose>
             <when test="isPublic==true">
                 <if test="isGlobal==false">
@@ -99,21 +114,36 @@
             </otherwise>
         </choose>
         )t
+        WHERE 1=1
+        <if test="query!='' and query !=null">
+            AND ((CAST(t.businessPath AS VARCHAR) like concat('%',#{query},'%') ESCAPE '/')
+                 OR (CAST(t.technicalPath AS VARCHAR) like concat('%',#{query},'%') ESCAPE '/')
+                 OR(t.name like concat('%',#{query},'%') ESCAPE '/')
+                 OR (t.description like concat('%',#{query},'%') ESCAPE '/')
+                 OR (t.businessName like concat('%',#{query},'%') ESCAPE '/')
+                )
+        </if>
         ORDER BY name
         limit #{limit}
         offset #{offset}
     </select>
 
     <select id="searchBusinesses" resultMap="dataAssetsInfo">
-        SELECT count(*)over() total, bi.businessid id, bi.name, bi.description,
-        1 as type, br.categoryguid businessCategoryGuid, null technicalCategoryGuid, bi.tenantid tenantId,
+        SELECT count(*)over() total, t.* FROM
+        (SELECT bi.businessid id, bi.name, bi.description,
+        1 as type,
+        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS
+        (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
+        FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid
+        UNION ALL
+        SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
+        FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
+        SELECT PATH FROM T WHERE guid=br.categoryguid
+        ORDER BY PATH) businessPath,
         null tableGuid, bi.tenantid
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
         WHERE 1=1
-        <if test="name!='' and name !=null">
-            AND bi.name like concat('%',#{name},'%') ESCAPE '/'
-        </if>
         <choose>
             <when test="isPublic==true">
                 <if test="isGlobal==false">
@@ -141,14 +171,39 @@
                 )
             </otherwise>
         </choose>
+        )t
+        WHERE 1=1
+        <if test="query!='' and query !=null">
+            AND ((CAST(t.businessPath AS VARCHAR) like concat('%',#{query},'%') ESCAPE '/')
+            OR(t.name like concat('%',#{query},'%') ESCAPE '/')
+            OR (t.description like concat('%',#{query},'%') ESCAPE '/')
+            )
+        </if>
         ORDER BY name
         limit #{limit}
         offset #{offset}
     </select>
 
     <select id="searchTables" resultMap="dataAssetsInfo">
-        SELECT count(*)over() total, ti.tableguid id, ti.tablename as name, ti.description,
-        2 as type, br.categoryguid businessCategoryGuid, si.category_id technicalCategoryGuid, bi.tenantid tenantId,
+        SELECT count(*)over() total, t.* FROM
+        (SELECT ti.tableguid id, ti.tablename as name, ti.description,
+        2 as type,
+        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS
+        (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
+        FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid
+        UNION ALL
+        SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
+        FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
+        SELECT  PATH FROM T WHERE guid=br.categoryguid
+        ORDER BY PATH) businessPath,
+        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS
+        (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
+        FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid
+        UNION ALL
+        SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
+        FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
+        SELECT  PATH FROM T WHERE guid=si.category_id
+        ORDER BY PATH) technicalPath,
         ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName, bi.tenantid
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
@@ -156,9 +211,6 @@
         JOIN tableinfo ti ON ti.tableguid=b2t.tableguid AND ti.status='ACTIVE'
         LEFT JOIN source_info si ON si.database_id=ti.databaseguid AND si.data_source_id=b2t.source_id AND si.version=0
         WHERE 1=1
-        <if test="name!='' and name !=null">
-            AND ti.tablename like concat('%',#{name},'%') ESCAPE '/'
-        </if>
         <choose>
             <when test="isPublic==true">
                 <if test="isGlobal==false">
@@ -186,6 +238,16 @@
                 )
             </otherwise>
         </choose>
+        )t
+        WHERE 1=1
+        <if test="query!='' and query !=null">
+            AND ((CAST(t.businessPath AS VARCHAR) like concat('%',#{query},'%') ESCAPE '/')
+            OR (CAST(t.technicalPath AS VARCHAR) like concat('%',#{query},'%') ESCAPE '/')
+            OR(t.name like concat('%',#{query},'%') ESCAPE '/')
+            OR (t.description like concat('%',#{query},'%') ESCAPE '/')
+            OR (t.businessName like concat('%',#{query},'%') ESCAPE '/')
+            )
+        </if>
         ORDER BY name
         limit #{limit}
         offset #{offset}
@@ -193,7 +255,16 @@
 
     <select id="searchBusinessById" resultMap="dataAssetsInfo">
         SELECT bi.businessid id, bi.name, bi.description,
-        0 as type, br.categoryguid businessCategoryGuid, null technicalCategoryGuid, bi.tenantid tenantId, null tableGuid
+        1 as type,
+       (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS
+       (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
+        FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid
+        UNION ALL
+        SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
+        FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
+        SELECT  PATH FROM T WHERE guid=br.categoryguid
+        ORDER BY PATH) businessPath,
+        bi.tenantid, null tableGuid
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
         WHERE bi.businessid=#{businessId}
@@ -201,10 +272,28 @@
 
     <select id="searchTableById" resultMap="dataAssetsInfo">
         SELECT ti.tableguid id, ti.tablename as name, ti.description,
-        1 as type, br.categoryguid businessCategoryGuid, si.category_id technicalCategoryGuid, #{tenantId} tenantId, ti.tableguid tableGuid
+        2 as type,
+       (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS
+       (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
+        FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId}
+        UNION ALL
+        SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
+        FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=#{tenantId})
+        SELECT  PATH FROM T WHERE guid=br.categoryguid
+        ORDER BY PATH) businessPath,
+       (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS
+       (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
+        FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId}
+        UNION ALL
+        SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
+        FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=#{tenantId})
+        SELECT  PATH FROM T WHERE guid=si.category_id
+        ORDER BY PATH) technicalPath,
+        #{tenantId} tenantid, ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName
         FROM tableinfo ti
         JOIN business2table b2t ON b2t.tableguid=ti.tableguid
         JOIN business_relation br ON br.businessid=b2t.businessid
+        JOIN businessinfo bi ON bi.businessid=br.businessid
         LEFT JOIN source_info si ON si.database_id=ti.databaseguid AND si.data_source_id=b2t.source_id AND si.version=0
         WHERE ti.tableguid=#{tableId} AND ti.status='ACTIVE' AND br.businessid=#{businessId}
     </select>

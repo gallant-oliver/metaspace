@@ -197,14 +197,14 @@ public class DataAssetsRetrievalREST {
     public PageResult<DataAssets> search(@QueryParam("limit") int limit,
                                          @QueryParam("offset") int offset,
                                          @QueryParam("type") int type,
-                                         @QueryParam("name") String name,
+                                         @QueryParam("query") String query,
                                          @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "DataAssetsRetrievalREST.search(" + type + " [搜索类型：0全部；1业务对象；2数据表] )");
             }
-            return dataAssetsRetrievalService.search(type, offset, limit, tenantId, name);
+            return dataAssetsRetrievalService.search(type, offset, limit, tenantId, query);
         }
         catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据失败");

@@ -25,7 +25,7 @@ public class DataAssets {
     private String name;
 
     /**
-     * 资产类型（0业务对象；1数据表）
+     * 资产类型（1业务对象；2数据表；3主题）
      */
     private int type;
 
