@@ -719,13 +719,23 @@ public class UserGroupService {
             search = search.replaceAll("%", "/%").replaceAll("_", "/_");
         }
         List<SourceAndPrivilege> lists = userGroupDAO.getSourceBySearch(groupId, offset, limit, search);
-        if (lists == null || lists.size() == 0) {
+        Long totalSize = lists.get(0).getTotalSize();
+        //查询有权限的数据源，默认hive数据源有权限
+        SourceAndPrivilege hive = new SourceAndPrivilege();
+        hive.setPrivilegeCode("r");
+        hive.setSourceId("hive");
+        hive.setSourceName("hive");
+        hive.setSourceType("HIVE");
+        lists.add(hive);
+
+        /*if (lists == null || lists.size() == 0) {
             return commonResult;
         }
+        */
 
         commonResult.setLists(lists);
         commonResult.setCurrentSize(lists.size());
-        commonResult.setTotalSize(lists.get(0).getTotalSize());
+        commonResult.setTotalSize(totalSize + 1);
         return commonResult;
     }
 
