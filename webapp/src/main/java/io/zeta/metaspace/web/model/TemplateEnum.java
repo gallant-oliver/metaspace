@@ -7,8 +7,8 @@ public enum TemplateEnum {
     CATEGORY_TEMPLATE("category_template.xlsx", new String[][]{{"目录名字", "目录描述"}}),
     DATA_STANDARD_TEMPLATE("data_standard_template.xlsx",
             new String[][]{
-                    {"标准编号", "标准名称", "标准类型", "数据类型", "数据长度", "是否有允许值", "允许值", "标准层级", "标准描述"},
-                    {"只允许英文、数字、下划线、中划线", "只允许中文、英文、数字、下划线、中划线", "枚举值:\n数据标准\n命名标准",
+                    {"注释（本列不需要填写数据）", "标准编号", "标准名称", "标准类型", "数据类型", "数据长度", "是否有允许值", "允许值", "标准层级", "标准描述"},
+                    {"填写规则（本行不要删除）", "只允许英文、数字、下划线、中划线", "只允许中文、英文、数字、下划线、中划线", "枚举值:\n数据标准\n命名标准",
                             "枚举值:\nSTRING\nDOUBLE\nBIGINT\nBOOLEAN\nDECIMAL\nDATE\nTIMESTAMP",
                             "只允许正整数", "布尔型: true 或 false", "多个值以;分割", "枚举值:\n贴源层\n基础层\n通用层\n应用层", ""}
             }),

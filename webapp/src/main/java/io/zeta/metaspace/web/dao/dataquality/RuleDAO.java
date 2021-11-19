@@ -18,13 +18,13 @@ public interface RuleDAO {
     @Insert(" insert into data_quality_rule_template " +
             " ( " +
             "  id,name,code,rule_type,description,creator,create_time,update_time,delete," +
-            "  scope,tenantId,sql,type,enable,data_standard_id" +
+            "  scope,tenantId,sql,type,enable,data_standard_code" +
             "  ) " +
             " values" +
             " (" +
             "  #{rule.id},#{rule.name},#{rule.code},#{rule.categoryId},#{rule.description},#{rule.creator}," +
             "  #{rule.createTime},#{rule.updateTime},#{rule.delete},2,#{tenantId},#{rule.sql},32,#{rule.enable}," +
-            "  #{rule.dataStandardId}" +
+            "  #{rule.dataStandardCode}" +
             " )")
     int insert(@Param("rule") Rule rule, @Param("tenantId") String tenantId);
     
@@ -33,7 +33,7 @@ public interface RuleDAO {
     
     @Update(" update data_quality_rule_template set " +
             " name=#{name},code=#{code},rule_type=#{categoryId},description=#{description}," +
-            " update_time=#{updateTime},sql=#{sql},enable=#{enable},data_standard_id=#{dataStandardId}" +
+            " update_time=#{updateTime},sql=#{sql},enable=#{enable},data_standard_code=#{dataStandardCode}" +
             " where id=#{id}")
     int update(Rule rule);
     
