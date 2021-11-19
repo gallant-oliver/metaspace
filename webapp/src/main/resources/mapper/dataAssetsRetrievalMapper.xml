@@ -148,7 +148,10 @@
         left join users u on bi.businessoperator=u.userid
         where br.categoryguid=#{categoryGuid}
         order by bi.businesslastupdate desc
-        limit #{limit}  offset #{offset}
+        <if test='limit!= -1'>
+            limit #{limit}
+        </if>
+        offset #{offset}
     </select>
 
 
@@ -171,7 +174,10 @@
         where b2g.business_id=bi.businessid and b2g.read=true)>0
         )
         order by bi.businesslastupdate desc
-        limit #{limit} offset #{offset}
+        <if test='limit!= -1'>
+            limit #{limit}
+        </if>
+        offset #{offset}
     </select>
 
     <select id="queryCategoryInfo" resultType="org.apache.atlas.model.metadata.CategoryEntityV2">

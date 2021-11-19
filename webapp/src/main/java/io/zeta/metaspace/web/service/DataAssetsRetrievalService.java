@@ -226,8 +226,7 @@ public class DataAssetsRetrievalService {
     }
 
 
-    public BussinessObjectList getBusinesses(String guid, String tenantId, int limit, int offset) throws AtlasException {
-        BussinessObjectList bussinessObjectList = new BussinessObjectList();
+    public PageResult getBusinesses(String guid, String tenantId, int limit, int offset) throws AtlasException {
         List<BussinessObject> objectList;
         PageResult<BussinessObject> pageResult = new PageResult<>();
         Boolean isPublicTenant = isPublicTenant(tenantId);
@@ -249,16 +248,22 @@ public class DataAssetsRetrievalService {
             }
 
         }
+
+        pageResult.setLists(objectList);
+        pageResult.setCurrentSize(objectList.size());
+        pageResult.setTotalSize(total);
+
+        return pageResult;
+    }
+
+    public BussinessObjectList getThemeDetail(String guid) throws AtlasException {
+        BussinessObjectList bussinessObjectList = new BussinessObjectList();
+
         CategoryEntityV2 categoryEntityV2 = dataAssetsRetrievalDAO.queryCategoryInfo(guid);
         bussinessObjectList.setThemeId(guid);
         bussinessObjectList.setThemeName(categoryEntityV2.getName());
         bussinessObjectList.setDescription(categoryEntityV2.getDescription());
         bussinessObjectList.setPath(categoryEntityV2.getQualifiedName().replaceAll("\\.", "\\/"));
-
-        pageResult.setLists(objectList);
-        pageResult.setCurrentSize(objectList.size());
-        pageResult.setTotalSize(total);
-        bussinessObjectList.setObjectPageResult(pageResult);
 
         return bussinessObjectList;
     }

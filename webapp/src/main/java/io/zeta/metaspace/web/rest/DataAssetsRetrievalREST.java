@@ -2,11 +2,11 @@ package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.BusinessInfo;
-import io.zeta.metaspace.model.dataassets.BussinessObjectList;
 import io.zeta.metaspace.model.dataassets.DomainInfo;
 import io.zeta.metaspace.model.dataassets.ThemeInfo;
 import io.zeta.metaspace.model.metadata.GuidCount;
 import io.zeta.metaspace.model.metadata.RelationQuery;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.DataAssetsRetrievalService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -91,7 +91,7 @@ public class DataAssetsRetrievalREST {
                                 @DefaultValue("0") @QueryParam("offset") int offset,
                                 @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            BussinessObjectList result = dataAssetsRetrievalService.getBusinesses(themeId, tenantId, limit, offset);
+            PageResult result = dataAssetsRetrievalService.getBusinesses(themeId, tenantId, limit, offset);
             return ReturnUtil.success(result);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取业务对象列表失败:" + e.getMessage());
