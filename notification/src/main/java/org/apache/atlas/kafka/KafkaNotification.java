@@ -214,9 +214,9 @@ public class KafkaNotification extends AbstractNotification implements Service {
         for (String message : messages) {
             ProducerRecord record = new ProducerRecord(topic, message);
 
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Sending message for topic {}: {}", topic, message);
-            }
+//            if (LOG.isDebugEnabled()) {
+            LOG.info("Sending message for topic {}: {}", topic, message);
+//            }
 
             Future future = p.send(record);
 
