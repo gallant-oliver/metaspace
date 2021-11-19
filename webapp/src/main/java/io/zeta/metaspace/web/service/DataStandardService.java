@@ -243,19 +243,6 @@ public class DataStandardService {
     
     public PageResult<DataStandard> history(String number, Parameters parameters, String tenantId) {
         List<DataStandard> list = dataStandardDAO.queryHistoryData(number, parameters, tenantId);
-        
-        if (CollectionUtils.isNotEmpty(list)) {
-            // 处理version=0的数据,set version = maxHistoryVersion+1
-            int maxHistoryVersion = list.stream().mapToInt(DataStandard::getVersion).max().orElse(-1);
-            list = list.stream()
-                    .peek(value -> {
-                        if (value.getVersion() == 0) {
-                            value.setVersion(maxHistoryVersion + 1);
-                        }
-                    })
-                    .collect(Collectors.toList());
-        }
-        
         return getDataStandardPageResult(list);
     }
     
