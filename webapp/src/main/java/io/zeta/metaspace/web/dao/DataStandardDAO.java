@@ -153,10 +153,13 @@ public interface DataStandardDAO {
     List<DataStandard> search(@Param("params") DataStandardQuery params, @Param("tenantId") String tenantId);
     
     
-    @Select({"<script>",
+    @Select({
+            "<script>",
+            "WITH tmp AS (SELECT MAX(version) + 1 AS max_version FROM data_standard WHERE number = #{number} AND delete = FALSE) ",
             " select count(1)over() total,b.id,b.number,b.name,b.description,b.createtime,b.updatetime,",
-            " u.username as operator,b.version,b.categoryid,b.standard_type,b.data_type,b.data_length,",
-            " b.allowable_value_flag,b.allowable_value,b.standard_level ",
+            " u.username as operator,b.categoryid,b.standard_type,b.data_type,b.data_length,",
+            " b.allowable_value_flag,b.allowable_value,b.standard_level,",
+            " CASE WHEN b.version = 0 THEN (SELECT max_version FROM tmp) ELSE b.version END AS version ",
             " from data_standard b inner join users u on b.operator=u.userid ",
             " where b.delete=false and b.number=#{number} and b.tenantId=#{tenantId}",
             " <if test=\"params.query != null and params.query!=''\">",
