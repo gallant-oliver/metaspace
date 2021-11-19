@@ -719,6 +719,30 @@ public class UserGroupService {
             search = search.replaceAll("%", "/%").replaceAll("_", "/_");
         }
         List<SourceAndPrivilege> lists = userGroupDAO.getSourceBySearch(groupId, offset, limit, search);
+
+        if (lists == null || lists.size() == 0) {
+            return commonResult;
+        }
+
+        commonResult.setLists(lists);
+        commonResult.setCurrentSize(lists.size());
+        commonResult.setTotalSize(lists.get(0).getTotalSize());
+        return commonResult;
+    }
+
+    /**
+     * 获取权限数据源(包含hive数据源）
+     *
+     * @param groupId
+     * @param offset
+     * @param limit
+     * @param search
+     * @return
+     * @throws AtlasBaseException
+     */
+    public PageResult<SourceAndPrivilege> getSearchDataSource(String groupId, int offset, int limit, String search) {
+        PageResult<SourceAndPrivilege> commonResult = new PageResult<>();
+        List<SourceAndPrivilege> lists = userGroupDAO.getSourceBySearch(groupId, offset, limit, null);
         Long totalSize = lists.get(0).getTotalSize();
         //查询有权限的数据源，默认hive数据源有权限
         SourceAndPrivilege hive = new SourceAndPrivilege();
@@ -727,11 +751,6 @@ public class UserGroupService {
         hive.setSourceName("hive");
         hive.setSourceType("HIVE");
         lists.add(hive);
-
-        /*if (lists == null || lists.size() == 0) {
-            return commonResult;
-        }
-        */
 
         commonResult.setLists(lists);
         commonResult.setCurrentSize(lists.size());
