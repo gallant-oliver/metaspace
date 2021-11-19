@@ -1,8 +1,6 @@
 package io.zeta.metaspace.web.dao;
 
-import io.zeta.metaspace.model.dataassets.BussinessObject;
-import io.zeta.metaspace.model.dataassets.DomainInfo;
-import io.zeta.metaspace.model.dataassets.ThemeInfo;
+import io.zeta.metaspace.model.dataassets.*;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.ibatis.annotations.Param;
 
@@ -14,13 +12,51 @@ import java.util.List;
  * @Description
  */
 public interface DataAssetsRetrievalDAO {
+    List<DataAssets> searchAll(@Param("tenantId")String tenantId,
+                               @Param("userId")String userId,
+                               @Param("isPublic")boolean isPublic,
+                               @Param("isGlobal")boolean isGlobal,
+                               @Param("offset")int offset,
+                               @Param("limit")int limit,
+                               @Param("query")String query);
 
+    List<DataAssets> searchBusinesses(@Param("tenantId")String tenantId,
+                                      @Param("userId")String userId,
+                                      @Param("isPublic")boolean isPublic,
+                                      @Param("isGlobal")boolean isGlobal,
+                                      @Param("offset")int offset,
+                                      @Param("limit")int limit,
+                                      @Param("query")String query);
 
-    List<DomainInfo> getDemainCategory();
+    List<DataAssets> searchTables(@Param("tenantId")String tenantId,
+                                  @Param("userId")String userId,
+                                  @Param("isPublic")boolean isPublic,
+                                  @Param("isGlobal")boolean isGlobal,
+                                  @Param("offset")int offset,
+                                  @Param("limit")int limit,
+                                  @Param("query")String query);
+
+    DataAssets searchBusinessById(@Param("businessId")String businessId,
+                                  @Param("tenantId")String tenantId);
+
+    DataAssets searchTableById(@Param("tableId")String tableId,
+                               @Param("tenantId")String tenantId,
+                               @Param("businessId")String businessId);
+
+    List<TableInfo> getTableInfos(@Param("businessId")String businessId,
+                                  @Param("tenantId")String tenantId,
+                                  @Param("offset")int offset,
+                                  @Param("limit")int limit);
+
+    List<ColumnInfo> getDeriveColumnInfo(@Param("columnIds")List<String> columnIds,
+                                         @Param("tenantId")String tenantId,
+                                         @Param("tableId")String tableId);
+
+    List<DomainInfo> getDomainCategory();
 
     int getThemeNumber(@Param("guid") String guid);
 
-    List<DomainInfo> getDemainCategoryByNotPublicUser(@Param("groupIdList") List<String> groupIdList,
+    List<DomainInfo> getDomainCategoryByNotPublicUser(@Param("groupIdList") List<String> groupIdList,
                                                       @Param("userId") String userId,
                                                       @Param("tenantId") String tenantId);
 
@@ -35,7 +71,7 @@ public interface DataAssetsRetrievalDAO {
 
     int getTableNumber(@Param("businessList") List<String> businessList);
 
-    List<String> queryBusinessIdByUsergroup(@Param("categoryGuid") String categoryGuid,
+    List<String> queryBusinessIdByUserGroup(@Param("categoryGuid") String categoryGuid,
                                             @Param("tenantId") String tenantId,
                                             @Param("userId") String userId);
 
@@ -43,7 +79,7 @@ public interface DataAssetsRetrievalDAO {
                                         @Param("limit") int limit,
                                         @Param("offset") int offset);
 
-    List<BussinessObject> queryBusinessByUsergroup(@Param("tenantId") String tenantId,
+    List<BussinessObject> queryBusinessByUserGroup(@Param("tenantId") String tenantId,
                                                    @Param("categoryGuid") String categoryGuid,
                                                    @Param("userId") String userId, @Param("limit") int limit,
                                                    @Param("offset") int offset);

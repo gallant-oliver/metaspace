@@ -56,7 +56,7 @@
         </bean>
 
         <!--3 会话工厂bean sqlSessionFactoryBean -->
-        <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">   
 
                 <property name="dataSource" ref="datasource"></property>
 
