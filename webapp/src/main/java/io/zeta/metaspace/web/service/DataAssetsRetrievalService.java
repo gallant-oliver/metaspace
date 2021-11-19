@@ -111,7 +111,7 @@ public class DataAssetsRetrievalService {
         return publicService.isGlobal();
     }
 
-    public PageResult<DataAssets> search(int type, int offset, int limit, String tenantId, String name) throws AtlasException {
+    public PageResult<DataAssets> search(int type, int offset, int limit, String tenantId, String query) throws AtlasException {
         PageResult<DataAssets> pageResult = new PageResult<>();
 
         String userId = AdminUtils.getUserData().getUserId();
@@ -127,13 +127,13 @@ public class DataAssetsRetrievalService {
         // 搜索类型：0全部；1业务对象；2数据表
         switch (type){
             case 1:
-                list = dataAssetsRetrievalDAO.searchBusinesses(tenantId, userId, isPublic, isGlobal, offset, limit, name);
+                list = dataAssetsRetrievalDAO.searchBusinesses(tenantId, userId, isPublic, isGlobal, offset, limit, query);
                 break;
             case 2:
-                list = dataAssetsRetrievalDAO.searchTables(tenantId, userId, isPublic, isGlobal, offset, limit, name);
+                list = dataAssetsRetrievalDAO.searchTables(tenantId, userId, isPublic, isGlobal, offset, limit, query);
                 break;
             default:
-                list = dataAssetsRetrievalDAO.searchAll(tenantId, userId, isPublic, isGlobal, offset, limit, name);
+                list = dataAssetsRetrievalDAO.searchAll(tenantId, userId, isPublic, isGlobal, offset, limit, query);
         }
 
         Long totalSize = 0L;
@@ -168,7 +168,7 @@ public class DataAssetsRetrievalService {
 
     public DataAssets getDataAssetsById(String id, int type, String tenantId, String businessId) {
         DataAssets result;
-        // 搜索类型：1业务对象；2数据表
+        // 搜索类型：1业务对象；2数据表；3主题
         switch (type) {
             case 1:
                 result = dataAssetsRetrievalDAO.searchBusinessById(id, tenantId);
@@ -176,18 +176,18 @@ public class DataAssetsRetrievalService {
             case 2:
                 result = dataAssetsRetrievalDAO.searchTableById(id, tenantId, businessId);
                 break;
+            case 3:
+                result = null;
+                break;
             default:
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据资产类别错误: " + type);
         }
 
-        if (result != null) {
+        if (result != null && type != 3) {
             String businessPath = result.getBusinessPath();
             String technicalPath = result.getTechnicalPath();
             result.setBusinessPath(formatPath(businessPath));
             result.setTechnicalPath(formatPath(technicalPath));
-        }
-        else {
-            result = new DataAssets();
         }
 
         return result;
