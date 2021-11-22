@@ -316,6 +316,33 @@ public class UserGroupREST {
     }
 
     /**
+     * 获取权限数据源（包含hive数据源）
+     *
+     * @param groupId
+     * @param offset
+     * @param limit
+     * @param search
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{id}/query/datasource")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getSearchDataSource(
+            @PathParam("id") String groupId,
+            @DefaultValue("0") @QueryParam("offset") int offset,
+            @DefaultValue("10") @QueryParam("limit") int limit,
+            @QueryParam("search") String search) throws AtlasBaseException {
+        try {
+            PageResult<SourceAndPrivilege> pageResult = userGroupService.getSearchDataSource(groupId, offset, limit, search);
+            return ReturnUtil.success(pageResult);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "用户组数据源列表及搜索失败");
+        }
+    }
+
+    /**
      * 无权限数据源
      * @param tenantId
      * @param groupId

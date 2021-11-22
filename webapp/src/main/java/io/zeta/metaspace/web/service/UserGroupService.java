@@ -719,6 +719,7 @@ public class UserGroupService {
             search = search.replaceAll("%", "/%").replaceAll("_", "/_");
         }
         List<SourceAndPrivilege> lists = userGroupDAO.getSourceBySearch(groupId, offset, limit, search);
+
         if (lists == null || lists.size() == 0) {
             return commonResult;
         }
@@ -726,6 +727,34 @@ public class UserGroupService {
         commonResult.setLists(lists);
         commonResult.setCurrentSize(lists.size());
         commonResult.setTotalSize(lists.get(0).getTotalSize());
+        return commonResult;
+    }
+
+    /**
+     * 获取权限数据源(包含hive数据源）
+     *
+     * @param groupId
+     * @param offset
+     * @param limit
+     * @param search
+     * @return
+     * @throws AtlasBaseException
+     */
+    public PageResult<SourceAndPrivilege> getSearchDataSource(String groupId, int offset, int limit, String search) {
+        PageResult<SourceAndPrivilege> commonResult = new PageResult<>();
+        List<SourceAndPrivilege> lists = userGroupDAO.getSourceBySearch(groupId, offset, limit, null);
+        Long totalSize = lists.get(0).getTotalSize();
+        //查询有权限的数据源，默认hive数据源有权限
+        SourceAndPrivilege hive = new SourceAndPrivilege();
+        hive.setPrivilegeCode("r");
+        hive.setSourceId("hive");
+        hive.setSourceName("hive");
+        hive.setSourceType("HIVE");
+        lists.add(hive);
+
+        commonResult.setLists(lists);
+        commonResult.setCurrentSize(lists.size());
+        commonResult.setTotalSize(totalSize + 1);
         return commonResult;
     }
 
@@ -1108,22 +1137,29 @@ public class UserGroupService {
      * @throws SQLException
      */
     @Transactional(rollbackFor=Exception.class)
-    public void addPrivileges(UpdateCategory category, List<String> userGroupIdList, String tenantId) throws AtlasBaseException {
+    public void addPrivileges(UpdateCategory category, List<String> userGroupIdList, String tenantId) throws SQLException, AtlasBaseException {
         //权限校验
         if (category.getRead() == null || !category.getRead()) {
             return;
         }
-        ArrayList<String> categorIdList = Lists.newArrayList(category.getGuid());
-        if (categorIdList.size() == 0 || null == categorIdList) {
+        List<String> removeCategoryId = new ArrayList<>();
+        List<String> categorIdList = Lists.newArrayList(category.getGuid());
+        if (CollectionUtils.isEmpty(categorIdList)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录不能为空");
         }
+        List<CategoryEntityV2> categoryEntitysByGuids = categoryDAO.queryCategoryEntitysByGuids(categorIdList, tenantId);
+        categoryEntitysByGuids.stream().forEach(categoryParent -> {
+            if (categorIdList.contains(categoryParent.getParentCategoryGuid())) {
+                removeCategoryId.add(categoryParent.getParentCategoryGuid());
+            }
+        });
+        categorIdList.removeAll(removeCategoryId);
 
         for (String userGroupId : userGroupIdList) {
-            ArrayList<String> categorList = Lists.newArrayList(category.getGuid());
-            List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getParentCategoriesPrivileges(categorList, userGroupId, category.getType(), tenantId);
-            List<String> updateCategory = new ArrayList<>();
-            List<String> insertCategory = new ArrayList<>();
+            List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getParentCategoriesPrivileges(categorIdList, userGroupId, category.getType(), tenantId);
             for (CategoryPrivilegeV2 childCategory : childCategoriesPrivileges) {
+                List<String> updateCategory = new ArrayList<>();
+                List<String> insertCategory = new ArrayList<>();
                 if (childCategory.getRead() == null) {
                     insertCategory.add(childCategory.getGuid());
                 } else {
@@ -1133,7 +1169,7 @@ public class UserGroupService {
                 // 1-贴源层、2-基础层、4-通用层、5-应用层不需要分配权限
                 updateCategory.removeAll(DEFAULT_CATEGORY_GUID);
                 insertCategory.removeAll(DEFAULT_CATEGORY_GUID);
-                categorList.removeAll(DEFAULT_CATEGORY_GUID);
+                //categorList.removeAll(DEFAULT_CATEGORY_GUID);
 
                 CategoryPrivilegeV2 categoryPrivilege = new CategoryPrivilegeV2(category);
                 if (updateCategory.size() != 0) {
@@ -1145,9 +1181,9 @@ public class UserGroupService {
                 Timestamp currentTime = new Timestamp(System.currentTimeMillis());
                 userGroupDAO.updateCategory(userGroupId, currentTime, AdminUtils.getUserData().getUserId());
 
-                if (categorList.size() != 0) {
+                /* if (categorList.size() != 0) {
                     userGroupDAO.updateCategoryPrivileges(categorList, userGroupId, categoryPrivilege);
-                }
+                }*/
             }
         }
     }
