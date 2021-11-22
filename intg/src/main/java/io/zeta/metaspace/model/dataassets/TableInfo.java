@@ -69,6 +69,16 @@ public class TableInfo {
     private String tenantId;
 
     /**
+     * 当前表为重要表，是否有查看权限
+     */
+    private Boolean importantPrivilege;
+
+    /**
+     * 当前表为保密表，是否有查看权限
+     */
+    private Boolean secretPrivilege;
+
+    /**
      * 数据总数，分页使用
      */
     @JsonIgnore

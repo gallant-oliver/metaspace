@@ -29,7 +29,8 @@
         SELECT  PATH FROM T WHERE guid=br.categoryguid
         ORDER BY PATH) businessPath,
         null technicalPath,
-        null tableGuid, null businessId, null businessName, bi.tenantid
+        null tableGuid, null businessId, null businessName, bi.tenantid,
+        null important, null secret
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
         WHERE 1=1
@@ -79,12 +80,15 @@
         FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
         SELECT  PATH FROM T WHERE guid=si.category_id
         ORDER BY PATH) technicalPath,
-        ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName, bi.tenantid
+        ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName, bi.tenantid,
+        CASE WHEN sidti.importance IS null THEN false ELSE sidti.importance END AS important,
+        CASE WHEN sidti.security IS null THEN false ELSE sidti.security END AS secret
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
         JOIN business2table b2t ON b2t.businessid=br.businessid
         JOIN tableinfo ti ON ti.tableguid=b2t.tableguid AND ti.status='ACTIVE'
         LEFT JOIN source_info si ON si.database_id=ti.databaseguid AND si.data_source_id=b2t.source_id AND si.version=0
+        LEFT JOIN source_info_derive_table_info sidti ON sidti.table_guid=ti.tableguid AND sidti.version=-1
         WHERE 1=1
         <choose>
             <when test="isPublic==true">
@@ -204,12 +208,15 @@
         FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
         SELECT  PATH FROM T WHERE guid=si.category_id
         ORDER BY PATH) technicalPath,
-        ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName, bi.tenantid
+        ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName, bi.tenantid,
+        CASE WHEN sidti.importance IS null THEN false ELSE sidti.importance END AS important,
+        CASE WHEN sidti.security IS null THEN false ELSE sidti.security END AS secret
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
         JOIN business2table b2t ON b2t.businessid=br.businessid
         JOIN tableinfo ti ON ti.tableguid=b2t.tableguid AND ti.status='ACTIVE'
         LEFT JOIN source_info si ON si.database_id=ti.databaseguid AND si.data_source_id=b2t.source_id AND si.version=0
+        LEFT JOIN source_info_derive_table_info sidti ON sidti.table_guid=ti.tableguid AND sidti.version=-1
         WHERE 1=1
         <choose>
             <when test="isPublic==true">
@@ -289,12 +296,15 @@
         FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=#{tenantId})
         SELECT  PATH FROM T WHERE guid=si.category_id
         ORDER BY PATH) technicalPath,
-        #{tenantId} tenantid, ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName
+        #{tenantId} tenantid, ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName,
+        CASE WHEN sidti.importance IS null THEN false ELSE sidti.importance END AS important,
+        CASE WHEN sidti.security IS null THEN false ELSE sidti.security END AS secret
         FROM tableinfo ti
         JOIN business2table b2t ON b2t.tableguid=ti.tableguid
         JOIN business_relation br ON br.businessid=b2t.businessid
         JOIN businessinfo bi ON bi.businessid=br.businessid
         LEFT JOIN source_info si ON si.database_id=ti.databaseguid AND si.data_source_id=b2t.source_id AND si.version=0
+        LEFT JOIN source_info_derive_table_info sidti ON sidti.table_guid=ti.tableguid AND sidti.version=-1
         WHERE ti.tableguid=#{tableId} AND ti.status='ACTIVE' AND br.businessid=#{businessId}
     </select>
 
@@ -302,9 +312,7 @@
         <result column="tableguid" jdbcType="VARCHAR" property="tableId"/>
         <result column="table_name_zh" jdbcType="VARCHAR" property="tableNameZh"/>
         <result column="tablename" jdbcType="VARCHAR" property="tableNameEn"/>
-        <result column="security" jdbcType="BOOLEAN" property="secret"/>
         <!--<result column="secret_period" jdbcType="VARCHAR" property="period"/>-->
-        <result column="importance" jdbcType="BOOLEAN" property="important"/>
         <result column="username" jdbcType="VARCHAR" property="creator"/>
         <result column="update_frequency" jdbcType="VARCHAR" property="updateFrequency"/>
         <association property="category" column="{guid=categoryGuid, tenantId=tenantId}" notNullColumn="guid"
@@ -313,8 +321,10 @@
                     select="io.zeta.metaspace.web.dao.TableTagDAO.getTable2Tag" />
     </resultMap>
     <select id="getTableInfos" resultMap="tableInfo">
-        SELECT count(*)over() total, ti.tableguid, sidti.table_name_zh, ti.tablename, sidti.security, sidti.importance, u.username,
-        sidti.update_frequency , sidti.category_id categoryGuid, #{tenantId} tenantId, ti.tableguid tableGuid
+        SELECT count(*)over() total, ti.tableguid, sidti.table_name_zh, ti.tablename,
+        CASE WHEN sidti.importance IS null THEN false ELSE sidti.importance END AS important,
+        CASE WHEN sidti.security IS null THEN false ELSE sidti.security END AS secret,
+        u.username, sidti.update_frequency , sidti.category_id categoryGuid, #{tenantId} tenantId, ti.tableguid tableGuid
         FROM business2table b2t
         JOIN tableinfo ti ON ti.tableguid=b2t.tableguid AND ti.status='ACTIVE'
         LEFT JOIN source_info_derive_table_info sidti ON sidti.table_guid=ti.tableguid AND sidti.version = -1
@@ -348,6 +358,24 @@
             FROM source_info_derive_table_column_relation sidtcr
             JOIN source_info_derive_table_info sidti ON sidtcr.table_id=sidti.id AND sidti.table_guid=#{tableId} AND sidti.version=-1
         )
+    </select>
+
+    <select id="getTablePrivileges" resultType="io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation">
+        SELECT
+        gtr.derive_table_id AS deriveTableId,
+        gtr.user_group_id AS userGroupId,
+        gtr.security_privilege AS securityPrivilege,
+        gtr.importance_privilege AS importancePrivilege
+        FROM group_table_relation gtr
+        JOIN user_group ug ON ug.id=gtr.user_group_id
+        JOIN user_group_relation ugr ON ugr.group_id=ug.id AND ugr.user_id=#{userId}
+        WHERE gtr.derive_table_id in
+        <foreach item="tableId" index="index" collection="tableIds" open="(" close=")" separator=",">
+            #{tableId}
+        </foreach>
+        <if test="isPublic==false">
+            ug.tenant=#{tenantId}
+        </if>
     </select>
 
     <select id="getDomainCategory" resultType="io.zeta.metaspace.model.dataassets.DomainInfo">
