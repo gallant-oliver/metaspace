@@ -394,7 +394,7 @@ public class DataStandardService {
             Cell allowValueCell = row.getCell(j++);
             Cell levelCell = row.getCell(j++);
             Cell discriptionCell = row.getCell(j);
-        
+    
             ObjectUtils.isTrueThenElseException(numberCell, Objects::nonNull, "标准编号不能为空",
                     v -> standard.setNumber(v.getStringCellValue()));
             ObjectUtils.isTrueThenElseException(nameCell, Objects::nonNull, "标准名称不能为空",
@@ -403,33 +403,36 @@ public class DataStandardService {
                     v -> standard.setStandardType(DataStandardType.parseByDesc(typeCell.getStringCellValue()).getCode()));
             ObjectUtils.isTrueThen(dataTypeCell, Objects::nonNull,
                     v -> standard.setDataType(v.getStringCellValue()));
-        
-            Assert.isTrue(dataLengthCell.getCellTypeEnum() == CellType.STRING,
-                    "数据长度列单元格格式默认为文本,请勿修改");
-            Assert.isTrue(isAllowValueFlagCell.getCellTypeEnum() == CellType.STRING,
-                    "是否允许有值列单元格格式默认为文本,请勿修改");
-        
-            String dataLength = dataLengthCell.getStringCellValue();
-            ObjectUtils.isTrueThen(dataLength, StringUtils::isNotBlank,
-                    v -> Assert.isTrue(Pattern.matches(DATA_LENGTH_REGEX, v), "数据长度列格式错误，只允许正整数"));
-            ObjectUtils.isTrueThenElseException(dataLength, v -> Long.parseLong(v) <= Integer.MAX_VALUE,
-                    "标准数据长度最大值为2147483647",
-                    v -> standard.setDataLength(Integer.parseInt(v)));
-        
-            String allowableValueFlag = isAllowValueFlagCell.getStringCellValue();
-            ObjectUtils.isTrueThenElseException(allowableValueFlag,
-                    v -> Boolean.FALSE.toString().equalsIgnoreCase(v) || Boolean.TRUE.toString().equalsIgnoreCase(v),
-                    "是否允许有值列格式错误,只允许布尔值:true或false",
-                    v -> standard.setAllowableValueFlag(Boolean.parseBoolean(v)));
-        
+    
+            ObjectUtils.isTrueThen(dataLengthCell, Objects::nonNull, cell -> {
+                Assert.isTrue(cell.getCellTypeEnum() == CellType.STRING,
+                        "数据长度列单元格格式默认为文本,请勿修改");
+                String dataLength = cell.getStringCellValue();
+                ObjectUtils.isTrueThen(dataLength, StringUtils::isNotBlank,
+                        v -> Assert.isTrue(Pattern.matches(DATA_LENGTH_REGEX, v), "数据长度列格式错误，只允许正整数"));
+                ObjectUtils.isTrueThenElseException(dataLength, v -> Long.parseLong(v) <= Integer.MAX_VALUE,
+                        "标准数据长度最大值为2147483647",
+                        v -> standard.setDataLength(Integer.parseInt(v)));
+            });
+    
+            ObjectUtils.isTrueThen(isAllowValueFlagCell, Objects::nonNull, cell -> {
+                Assert.isTrue(isAllowValueFlagCell.getCellTypeEnum() == CellType.STRING,
+                        "是否允许有值列单元格格式默认为文本,请勿修改");
+                String allowableValueFlag = isAllowValueFlagCell.getStringCellValue();
+                ObjectUtils.isTrueThenElseException(allowableValueFlag,
+                        v -> Boolean.FALSE.toString().equalsIgnoreCase(v) || Boolean.TRUE.toString().equalsIgnoreCase(v),
+                        "是否允许有值列格式错误,只允许布尔值:true或false",
+                        v -> standard.setAllowableValueFlag(Boolean.parseBoolean(v)));
+            });
+    
             ObjectUtils.isTrueThen(allowValueCell, Objects::nonNull, v -> standard.setAllowableValue(v.getStringCellValue()));
             ObjectUtils.isTrueThen(levelCell, Objects::nonNull,
                     v -> standard.setStandardLevel(DataStandardLevel.parseByDesc(v.getStringCellValue()).getCode()));
             ObjectUtils.isTrueThen(discriptionCell, Objects::nonNull, v -> standard.setDescription(v.getStringCellValue()));
-        
+    
             // 校验数据
             verifyDataStandard(standard);
-        
+    
             dataList.add(standard);
         }
         return dataList;
