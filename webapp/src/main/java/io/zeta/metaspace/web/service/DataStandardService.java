@@ -99,11 +99,11 @@ public class DataStandardService {
     private void verifyDataStandard(DataStandard dataStandard) {
         Objects.requireNonNull(dataStandard.getNumber(), "数据标准编号必填!");
         Assert.isTrue(Pattern.matches(NUMBER_REGEX, dataStandard.getNumber()),
-                "编号内容格式错误，只允许英文、数字、下划线、中划线");
+                "编号内容格式错误，只允许英文、数字、下划线、中划线,最大长度200");
     
         Objects.requireNonNull(dataStandard.getName(), "数据标准名称必填!");
         Assert.isTrue(Pattern.matches(NAME_REGEX, dataStandard.getName()),
-                "名称内容格式错误，只允许中文、英文、数字、下划线、中划线");
+                "名称内容格式错误，只允许中文、英文、数字、下划线、中划线,最大长度200");
     
         Objects.requireNonNull(dataStandard.getStandardType(), "数据标准类型必填!");
         DataStandardType.parseByCode(dataStandard.getStandardType());
@@ -112,7 +112,7 @@ public class DataStandardService {
                 v -> Assert.isTrue(Pattern.matches(DATA_LENGTH_REGEX, dataStandard.getDataLength().toString()),
                         "数据长度格式错误，只允许正整数"));
     
-        ObjectUtils.isTrueThen(dataStandard.getDataType(), Objects::nonNull, DataStandardDataType::parseByCode);
+        ObjectUtils.isTrueThen(dataStandard.getDataType(), StringUtils::isNotEmpty, DataStandardDataType::parseByCode);
     
         ObjectUtils.isTrueThen(dataStandard.getStandardLevel(), Objects::nonNull, DataStandardLevel::parseByCode);
     
