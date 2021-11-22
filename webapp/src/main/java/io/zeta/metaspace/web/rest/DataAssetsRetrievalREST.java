@@ -120,7 +120,7 @@ public class DataAssetsRetrievalREST {
             }
             return dataAssetsRetrievalService.getTableInfoByBusinessId(businessId, belongTenantId, tenantId, limit, offset);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "字段信息查询失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "表信息查询失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -175,7 +175,7 @@ public class DataAssetsRetrievalREST {
 
             return dataAssetsRetrievalService.dataPreview(tableId, count);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询预览数据失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -204,7 +204,7 @@ public class DataAssetsRetrievalREST {
             }
             return dataAssetsRetrievalService.search(type, offset, limit, tenantId, query);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据资产失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -237,7 +237,7 @@ public class DataAssetsRetrievalREST {
             }
             return dataAssetsRetrievalService.getDataAssetsById(id, type, belongTenantId, tenantId, businessId);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据资产失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
