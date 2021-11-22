@@ -12,7 +12,7 @@
         <result column="businessName" jdbcType="VARCHAR" property="businessName"/>
         <result column="tenantid" jdbcType="VARCHAR" property="tenantId"/>
         <collection property="tags" column="{tableGuid=tableGuid, tenantId=tenantId}" notNullColumn="tableGuid"
-                    select="io.zeta.metaspace.web.dao.TableTagDAO.getTable2Tag" />
+                    select="io.zeta.metaspace.web.dao.TableTagDAO.getTable2Tag"/>
     </resultMap>
 
     <select id="searchAll" resultMap="dataAssetsInfo">
@@ -20,13 +20,13 @@
         (
         SELECT bi.businessid id, bi.name, bi.description,
         1 as type,
-        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS
+        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS
         (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
         FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid
         UNION ALL
         SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
         FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
-        SELECT  PATH FROM T WHERE guid=br.categoryguid
+        SELECT PATH FROM T WHERE guid=br.categoryguid
         ORDER BY PATH) businessPath,
         null technicalPath,
         null tableGuid, null businessId, null businessName, bi.tenantid
@@ -63,21 +63,21 @@
         union
         SELECT ti.tableguid id, ti.tablename as name, ti.description,
         2 as type,
-        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS
+        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS
         (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
         FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid
         UNION ALL
         SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
         FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
-        SELECT  PATH FROM T WHERE guid=br.categoryguid
+        SELECT PATH FROM T WHERE guid=br.categoryguid
         ORDER BY PATH) businessPath,
-        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS
+        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS
         (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
         FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid
         UNION ALL
         SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
         FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
-        SELECT  PATH FROM T WHERE guid=si.category_id
+        SELECT PATH FROM T WHERE guid=si.category_id
         ORDER BY PATH) technicalPath,
         ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName, bi.tenantid
         FROM businessinfo bi
@@ -117,11 +117,11 @@
         WHERE 1=1
         <if test="query!='' and query !=null">
             AND ((CAST(t.businessPath AS VARCHAR) like concat('%',#{query},'%') ESCAPE '/')
-                 OR (CAST(t.technicalPath AS VARCHAR) like concat('%',#{query},'%') ESCAPE '/')
-                 OR(t.name like concat('%',#{query},'%') ESCAPE '/')
-                 OR (t.description like concat('%',#{query},'%') ESCAPE '/')
-                 OR (t.businessName like concat('%',#{query},'%') ESCAPE '/')
-                )
+            OR (CAST(t.technicalPath AS VARCHAR) like concat('%',#{query},'%') ESCAPE '/')
+            OR(t.name like concat('%',#{query},'%') ESCAPE '/')
+            OR (t.description like concat('%',#{query},'%') ESCAPE '/')
+            OR (t.businessName like concat('%',#{query},'%') ESCAPE '/')
+            )
         </if>
         ORDER BY name
         limit #{limit}
@@ -188,21 +188,21 @@
         SELECT count(*)over() total, t.* FROM
         (SELECT ti.tableguid id, ti.tablename as name, ti.description,
         2 as type,
-        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS
+        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS
         (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
         FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid
         UNION ALL
         SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
         FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
-        SELECT  PATH FROM T WHERE guid=br.categoryguid
+        SELECT PATH FROM T WHERE guid=br.categoryguid
         ORDER BY PATH) businessPath,
-        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS
+        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS
         (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
         FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid
         UNION ALL
         SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
         FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
-        SELECT  PATH FROM T WHERE guid=si.category_id
+        SELECT PATH FROM T WHERE guid=si.category_id
         ORDER BY PATH) technicalPath,
         ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName, bi.tenantid
         FROM businessinfo bi
@@ -308,9 +308,9 @@
         <result column="username" jdbcType="VARCHAR" property="creator"/>
         <result column="update_frequency" jdbcType="VARCHAR" property="updateFrequency"/>
         <association property="category" column="{guid=categoryGuid, tenantId=tenantId}" notNullColumn="guid"
-                     select="io.zeta.metaspace.web.dao.CategoryDAO.queryPathByGuid" />
+                     select="io.zeta.metaspace.web.dao.CategoryDAO.queryPathByGuid"/>
         <collection property="tags" column="{tableGuid=tableGuid, tenantId=tenantId}" notNullColumn="tableGuid"
-                    select="io.zeta.metaspace.web.dao.TableTagDAO.getTable2Tag" />
+                    select="io.zeta.metaspace.web.dao.TableTagDAO.getTable2Tag"/>
     </resultMap>
     <select id="getTableInfos" resultMap="tableInfo">
         SELECT count(*)over() total, ti.tableguid, sidti.table_name_zh, ti.tablename, sidti.security, sidti.importance, u.username,
@@ -332,21 +332,23 @@
         <result column="important" jdbcType="BOOLEAN" property="important"/>
         <result column="remark" jdbcType="VARCHAR" property="remark"/>
         <collection property="tags" column="{tenantId=tenantId, columnId=cid}" notNullColumn="cid"
-                     select="io.zeta.metaspace.web.dao.ColumnTagDAO.getTagListByColumnId" />
+                    select="io.zeta.metaspace.web.dao.ColumnTagDAO.getTagListByColumnId"/>
     </resultMap>
     <select id="getDeriveColumnInfo" resultMap="columnInfo">
-        SELECT ci.column_guid, ci.column_guid cid, sidci.column_name_zh, sidci.secret, sidci.secret_period, sidci.important, sidci.remark, #{tenantId} tenantId
+        SELECT ci.column_guid, ci.column_guid cid, sidci.column_name_zh, sidci.secret, sidci.secret_period,
+        sidci.important, sidci.remark, #{tenantId} tenantId
         FROM column_info ci
         LEFT JOIN source_info_derive_column_info sidci ON sidci.column_name_en=ci.column_name
         WHERE ci.column_guid in
         <foreach item="columnId" index="index" collection="columnIds" open="(" close=")" separator=",">
-        #{columnId}
+            #{columnId}
         </foreach>
         AND sidci.column_guid in
         (
-            SELECT column_guid
-            FROM source_info_derive_table_column_relation sidtcr
-            JOIN source_info_derive_table_info sidti ON sidtcr.table_id=sidti.id AND sidti.table_guid=#{tableId} AND sidti.version=-1
+        SELECT column_guid
+        FROM source_info_derive_table_column_relation sidtcr
+        JOIN source_info_derive_table_info sidti ON sidtcr.table_id=sidti.id AND sidti.table_guid=#{tableId} AND
+        sidti.version=-1
         )
     </select>
 
@@ -486,11 +488,14 @@
         select count(*)over()
         total, bi.businessid,bi.name,bi.owner,bi.manager,bi.maintainer,bi.businesslastupdate, u.username as businessoperator,'0' as status,bi.tenantid
         from businessinfo bi
-                 join business_relation br on bi.businessid = br.businessid
-                 left join users u on bi.businessoperator=u.userid
+        join business_relation br on bi.businessid = br.businessid
+        left join users u on bi.businessoperator=u.userid
         where br.categoryguid=#{categoryGuid}
         order by bi.businesslastupdate desc
-            limit #{limit}  offset #{offset}
+        <if test='limit!= -1'>
+            limit #{limit}
+        </if>
+        offset #{offset}
     </select>
 
 
@@ -513,7 +518,10 @@
         where b2g.business_id=bi.businessid and b2g.read=true)>0
         )
         order by bi.businesslastupdate desc
-        limit #{limit} offset #{offset}
+        <if test='limit!= -1'>
+            limit #{limit}
+        </if>
+        offset #{offset}
     </select>
 
     <select id="queryCategoryInfo" resultType="org.apache.atlas.model.metadata.CategoryEntityV2">

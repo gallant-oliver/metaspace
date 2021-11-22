@@ -4,7 +4,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import io.zeta.metaspace.model.dataassets.*;
 import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
-import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.metadata.GuidCount;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
@@ -125,7 +125,7 @@ public class DataAssetsRetrievalService {
         List<DataAssets> list;
 
         // 搜索类型：0全部；1业务对象；2数据表
-        switch (type){
+        switch (type) {
             case 1:
                 list = dataAssetsRetrievalDAO.searchBusinesses(tenantId, userId, isPublic, isGlobal, offset, limit, query);
                 break;
@@ -140,7 +140,7 @@ public class DataAssetsRetrievalService {
         if (list.size() != 0) {
             totalSize = Long.valueOf(list.get(0).getTotal());
 
-            for (DataAssets dataAssets: list) {
+            for (DataAssets dataAssets : list) {
                 String businessPath = dataAssets.getBusinessPath();
                 String technicalPath = dataAssets.getTechnicalPath();
                 dataAssets.setBusinessPath(formatPath(businessPath));
@@ -155,10 +155,10 @@ public class DataAssetsRetrievalService {
     }
 
     /**
-    * 规范路径（目录路径、技术路径等）
-    */
+     * 规范路径（目录路径、技术路径等）
+     */
     private String formatPath(String path) {
-        if(!StringUtils.isEmpty(path)) {
+        if (!StringUtils.isEmpty(path)) {
             path = path.substring(1, path.length() - 1);
             path = path.replace(",", "/").replace("\"", "");
         }
@@ -177,7 +177,7 @@ public class DataAssetsRetrievalService {
                 result = dataAssetsRetrievalDAO.searchTableById(id, tenantId, businessId);
                 break;
             case 3:
-                result = null;
+                result = getThemeDetail(id);
                 break;
             default:
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据资产类别错误: " + type);
@@ -426,8 +426,7 @@ public class DataAssetsRetrievalService {
         return themeList;
     }
 
-    public BussinessObjectList getBusinesses(String guid, String tenantId, int limit, int offset) throws AtlasException {
-        BussinessObjectList bussinessObjectList = new BussinessObjectList();
+    public PageResult getBusinesses(String guid, String tenantId, int limit, int offset) throws AtlasException {
         List<BussinessObject> objectList;
         PageResult<BussinessObject> pageResult = new PageResult<>();
         Boolean isPublicTenant = isPublicTenant(tenantId);
@@ -449,17 +448,20 @@ public class DataAssetsRetrievalService {
             }
 
         }
-        CategoryEntityV2 categoryEntityV2 = dataAssetsRetrievalDAO.queryCategoryInfo(guid);
-        bussinessObjectList.setThemeId(guid);
-        bussinessObjectList.setThemeName(categoryEntityV2.getName());
-        bussinessObjectList.setDescription(categoryEntityV2.getDescription());
-        bussinessObjectList.setPath(categoryEntityV2.getQualifiedName().replaceAll("\\.", "\\/"));
-
         pageResult.setLists(objectList);
         pageResult.setCurrentSize(objectList.size());
         pageResult.setTotalSize(total);
-        bussinessObjectList.setObjectPageResult(pageResult);
+        return pageResult;
+    }
 
-        return bussinessObjectList;
+    public DataAssets getThemeDetail(String guid) {
+        DataAssets theme = new DataAssets();
+        CategoryEntityV2 categoryEntityV2 = dataAssetsRetrievalDAO.queryCategoryInfo(guid);
+        theme.setId(guid);
+        theme.setName(categoryEntityV2.getName());
+        theme.setBusinessPath(categoryEntityV2.getQualifiedName().replaceAll("\\.", "\\/"));
+        theme.setDescription(categoryEntityV2.getDescription());
+        theme.setType(3);
+        return theme;
     }
 }
