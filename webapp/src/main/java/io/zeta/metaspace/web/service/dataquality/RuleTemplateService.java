@@ -22,11 +22,11 @@ import io.zeta.metaspace.web.dao.dataquality.RuleTemplateDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -46,16 +46,17 @@ public class RuleTemplateService {
 
     public PageResult<RuleTemplate> getRuleTemplate(String ruleType, RuleParameters parameters,String tenantId) throws AtlasBaseException {
         try {
-            PageResult pageResult = new PageResult();
-            List<RuleTemplate> ruleTemplateList = ruleTemplateDAO.getRuleTemplateByCategoryId(ruleType, parameters,tenantId);
+            List<RuleTemplate> ruleTemplateList = ruleTemplateDAO.getRuleTemplateByCategoryId(ruleType, parameters, tenantId);
             updateRuleType(ruleTemplateList);
+    
+            PageResult<RuleTemplate> pageResult = new PageResult<>();
             pageResult.setLists(ruleTemplateList);
             pageResult.setCurrentSize(ruleTemplateList.size());
-            if(null != ruleTemplateList && ruleTemplateList.size()>0) {
-                pageResult.setTotalSize(ruleTemplateList.get(0).getTotal());
-            } else {
-                pageResult.setTotalSize(0);
-            }
+            pageResult.setTotalSize(
+                    CollectionUtils.isNotEmpty(ruleTemplateList)
+                            ? ruleTemplateList.get(0).getTotal()
+                            : 0
+            );
             return pageResult;
         } catch (Exception e) {
             LOG.error("获取规则模板失败", e);
@@ -65,7 +66,6 @@ public class RuleTemplateService {
 
     public PageResult<RuleTemplate> search(RuleParameters parameters,String tenantId) throws AtlasBaseException {
         try {
-            PageResult pageResult = new PageResult<RuleTemplate>();
             String query = parameters.getQuery();
             if (Objects.nonNull(query)) {
                 parameters.setQuery(query.replaceAll("_", "/_").replaceAll("%", "/%"));
@@ -78,21 +78,19 @@ public class RuleTemplateService {
                 lists = new ArrayList<>();
             }
             updateRuleType(lists);
-            long totalCount = 0;
-            if (lists.size()!=0){
-                totalCount = lists.get(0).getTotal();
-            }
+    
+            PageResult<RuleTemplate> pageResult = new PageResult<>();
             pageResult.setLists(lists);
             pageResult.setCurrentSize(lists.size());
-            pageResult.setTotalSize(totalCount);
+            pageResult.setTotalSize(CollectionUtils.isNotEmpty(lists) ? lists.get(0).getTotal() : 0);
             return pageResult;
         } catch (Exception e) {
             LOG.error("搜索失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
-
-    public void updateRuleType(List<RuleTemplate> lists) throws AtlasBaseException {
+    
+    private void updateRuleType(List<RuleTemplate> lists) throws AtlasBaseException {
         try {
             Map<String, String> ruleTemplateCategoryMap = new HashMap();
             RuleTemplateType.all().stream().forEach(ruleTemplateType -> {

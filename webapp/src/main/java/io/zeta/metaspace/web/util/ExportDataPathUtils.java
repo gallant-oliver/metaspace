@@ -35,9 +35,12 @@ import java.util.UUID;
  * @date 2019/9/18 13:47
  */
 public class ExportDataPathUtils {
-    public static String SEPARATOR = ",";
+    public static final String SEPARATOR = ",";
+    public static final String EXCEL_FORMAT_XLSX = ".xlsx";
+    public static final String EXCEL_FORMAT_XLS = ".xls";
+    public static final int MAX_EXCEL_FILE_SIZE = 10 * 1024 * 1024;
     public static String tmpFilePath;
-
+    
     static {
         tmpFilePath = System.getProperty("java.io.tmpdir");
         if (tmpFilePath.endsWith(String.valueOf(File.separatorChar))) {
@@ -46,11 +49,7 @@ public class ExportDataPathUtils {
             tmpFilePath = tmpFilePath + File.separatorChar + "metaspace";
         }
     }
-
-    public static String fileFormat1 = ".xlsx";
-    public static String fileFormat2 = ".xls";
-    public static final int MAX_EXCEL_FILE_SIZE = 10 * 1024 * 1024;
-
+    
     public static DownloadUri generateURL(String address, List<String> ids) throws AtlasBaseException {
         String downloadId = UUID.randomUUID().toString();
         String downURL = address + "/" + downloadId;
@@ -121,7 +120,7 @@ public class ExportDataPathUtils {
     }
 
     public static File fileCheck(String name, InputStream fileInputStream) throws AtlasBaseException, IOException {
-        if (!(name.endsWith(fileFormat1) || name.endsWith(fileFormat2))) {
+        if (!(name.endsWith(EXCEL_FORMAT_XLSX) || name.endsWith(EXCEL_FORMAT_XLS))) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
         }
 
@@ -134,7 +133,7 @@ public class ExportDataPathUtils {
     }
 
     public static File fileCheckUuid(String name, InputStream fileInputStream) throws AtlasBaseException, IOException {
-        if (!(name.endsWith(fileFormat1) || name.endsWith(fileFormat2))) {
+        if (!(name.endsWith(EXCEL_FORMAT_XLSX) || name.endsWith(EXCEL_FORMAT_XLS))) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
         }
         String filePath = tmpFilePath + File.separatorChar + UUIDUtils.alphaUUID() + File.separatorChar;

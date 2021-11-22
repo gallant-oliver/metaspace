@@ -14,130 +14,76 @@ package io.zeta.metaspace.model.datastandard;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.zeta.metaspace.model.enums.DataStandardDataType;
+import io.zeta.metaspace.model.enums.DataStandardLevel;
+import io.zeta.metaspace.model.enums.DataStandardType;
+import lombok.Data;
 import org.hibernate.validator.constraints.NotBlank;
 
 import java.sql.Timestamp;
 
-
+/**
+ * 数据质量-数据标准
+ *
+ * @author 周磊
+ * @date 2021/11/15 11:59
+ */
+@Data
 public class DataStandard {
-
+    
     private String id;
+    /**
+     * 数据标准编码
+     */
     @NotBlank
-    //@Pattern(regexp = "^[A-Z0-9]+$", message = "编号内容格式错误，请输入大写英文字母或数字")
     private String number;
+    /**
+     * 数据标准名称
+     */
     @NotBlank
-    private String content;
+    private String name;
+    /**
+     * 数据标准类型 {@link DataStandardType}
+     */
+    private Integer standardType;
+    /**
+     * 数据类型 {@link DataStandardDataType} 标准类型为数据标准时有效
+     */
+    private String dataType;
+    /**
+     * 数据长度,非0正整数
+     */
+    private Integer dataLength;
+    /**
+     * 是否有允许值,默认false
+     */
+    private boolean allowableValueFlag = false;
+    /**
+     * 允许值,allowableValueFlag=true时有效,多个值时用';'分割
+     */
+    private String allowableValue;
+    /**
+     * 标准层级 {@link DataStandardLevel}
+     */
+    private Integer standardLevel;
+    /**
+     * 描述
+     */
     private String description;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp updateTime;
     private String operator;
+    /**
+     * 版本号: 默认当前版本为0,历史版本号均为非0正整数
+     */
     private Integer version;
     private String categoryId;
-    boolean delete;
+    private boolean delete;
     private String path;
     @JsonIgnore
     private int total;
-
-    public int getTotal() {
-        return total;
-    }
-
-    public void setTotal(int total) {
-        this.total = total;
-    }
-
-    public DataStandard() {
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getNumber() {
-        return number;
-    }
-
-    public void setNumber(String number) {
-        this.number = number;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Timestamp getCreateTime() {
-        return createTime;
-    }
-
-    public void setCreateTime(Timestamp createTime) {
-        this.createTime = createTime;
-    }
-
-    public Timestamp getUpdateTime() {
-        return updateTime;
-    }
-
-    public void setUpdateTime(Timestamp updateTime) {
-        this.updateTime = updateTime;
-    }
-
-    public String getOperator() {
-        return operator;
-    }
-
-    public void setOperator(String operator) {
-        this.operator = operator;
-    }
-
-    public Integer getVersion() {
-        return version;
-    }
-
-    public void setVersion(Integer version) {
-        this.version = version;
-    }
-
-    public String getCategoryId() {
-        return categoryId;
-    }
-
-    public void setCategoryId(String categoryId) {
-        this.categoryId = categoryId;
-    }
-
-    public boolean isDelete() {
-        return delete;
-    }
-
-    public void setDelete(boolean delete) {
-        this.delete = delete;
-    }
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
-
-
+    
+    
 }

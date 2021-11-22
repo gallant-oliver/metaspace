@@ -24,17 +24,10 @@ import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.inject.Singleton;
+import javax.ws.rs.*;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import javax.inject.Singleton;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
 
 
 /**
@@ -62,21 +55,24 @@ public class RuleTemplateREST {
             return ruleTemplateCategory;
         }).collect(Collectors.toList());
     }
-
+    
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Path("/{ruleType}/rules")
-    public PageResult<RuleTemplate> getRuleTemplate(@PathParam("ruleType")String categoryId, RuleParameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-         return ruleTemplateService.getRuleTemplate(categoryId, parameters,tenantId);
+    public PageResult<RuleTemplate> getRuleTemplate(@HeaderParam("tenantId") String tenantId,
+                                                    @PathParam("ruleType") String categoryId,
+                                                    RuleParameters parameters) throws AtlasBaseException {
+        return ruleTemplateService.getRuleTemplate(categoryId, parameters, tenantId);
     }
-
+    
     @POST
     @Path("/search")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<RuleTemplate> search(RuleParameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        return ruleTemplateService.search(parameters,tenantId);
+    public PageResult<RuleTemplate> search(@HeaderParam("tenantId") String tenantId,
+                                           RuleParameters parameters) throws AtlasBaseException {
+        return ruleTemplateService.search(parameters, tenantId);
     }
 
     @POST
