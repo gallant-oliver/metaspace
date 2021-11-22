@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.dataassets.*;
+import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.ibatis.annotations.Param;
 
@@ -51,6 +52,12 @@ public interface DataAssetsRetrievalDAO {
     List<ColumnInfo> getDeriveColumnInfo(@Param("columnIds")List<String> columnIds,
                                          @Param("tenantId")String tenantId,
                                          @Param("tableId")String tableId);
+
+    List<GroupDeriveTableRelation> getTablePrivileges(@Param("tenantId")String tenantId,
+                                                      @Param("tableIds")List<String> tableIds,
+                                                      @Param("isPublic")boolean isPublic,
+                                                      @Param("isGlobal")boolean isGlobal,
+                                                      @Param("userId")String userId);
 
     List<DomainInfo> getDomainCategory();
 
