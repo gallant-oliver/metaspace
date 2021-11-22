@@ -287,7 +287,7 @@ public class DataAssetsRetrievalService {
                 List<String> tableIds = list.stream().filter(t -> t.getImportant()).map(TableInfo::getTableId).collect(Collectors.toList());
                 // 获取数据表用户组权限（重要表或保密表）
                 if (!CollectionUtils.isEmpty(tableIds)) {
-                    privileges = dataAssetsRetrievalDAO.getTablePrivileges(tenantId, tableIds, isPublic, isGlobal, AdminUtils.getUserData().getUserId());
+                    privileges = dataAssetsRetrievalDAO.getTablePrivileges(belongTenantId, tableIds, isPublic, isGlobal, AdminUtils.getUserData().getUserId());
                 }
             }
 
