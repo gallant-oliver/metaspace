@@ -18,7 +18,7 @@ public interface DataAssetsRetrievalDAO {
                                @Param("isGlobal")boolean isGlobal,
                                @Param("offset")int offset,
                                @Param("limit")int limit,
-                               @Param("name")String name);
+                               @Param("query")String query);
 
     List<DataAssets> searchBusinesses(@Param("tenantId")String tenantId,
                                       @Param("userId")String userId,
@@ -26,7 +26,7 @@ public interface DataAssetsRetrievalDAO {
                                       @Param("isGlobal")boolean isGlobal,
                                       @Param("offset")int offset,
                                       @Param("limit")int limit,
-                                      @Param("name")String name);
+                                      @Param("query")String query);
 
     List<DataAssets> searchTables(@Param("tenantId")String tenantId,
                                   @Param("userId")String userId,
@@ -34,7 +34,7 @@ public interface DataAssetsRetrievalDAO {
                                   @Param("isGlobal")boolean isGlobal,
                                   @Param("offset")int offset,
                                   @Param("limit")int limit,
-                                  @Param("name")String name);
+                                  @Param("query")String query);
 
     DataAssets searchBusinessById(@Param("businessId")String businessId,
                                   @Param("tenantId")String tenantId);
