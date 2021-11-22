@@ -99,7 +99,8 @@ public class DataAssetsRetrievalREST {
     /**
      * 查询业务对象下数据表
      *
-     * @param
+     * @param belongTenantId 所属租户id
+     * @param tenantId 当前租户id
      * @return
      * @throws AtlasBaseException
      */
@@ -110,15 +111,16 @@ public class DataAssetsRetrievalREST {
     public PageResult<TableInfo> getTableInfos(@PathParam("businessId") String businessId,
                                                @QueryParam("limit") int limit,
                                                @QueryParam("offset") int offset,
-                                               @QueryParam("tenantId") String tenantId) throws AtlasBaseException {
+                                               @QueryParam("belongTenantId") String belongTenantId,
+                                               @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "DataAssetsRetrievalREST.getTableInfos(" + businessId + " )");
             }
-            return dataAssetsRetrievalService.getTableInfoByBusinessId(businessId, tenantId, limit, offset);
+            return dataAssetsRetrievalService.getTableInfoByBusinessId(businessId, belongTenantId, tenantId, limit, offset);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "字段信息查询失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "表信息查询失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -127,7 +129,8 @@ public class DataAssetsRetrievalREST {
     /**
      * 查询数据表字段信息
      *
-     * @param
+     * @param belongTenantId 所属租户id
+     * @param tenantId 当前租户id
      * @return
      * @throws AtlasBaseException
      */
@@ -136,13 +139,14 @@ public class DataAssetsRetrievalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public List<ColumnInfo> getColumnInfos(@PathParam("tableId") String tableId,
-                                           @QueryParam("tenantId") String tenantId) throws AtlasBaseException {
+                                           @QueryParam("belongTenantId") String belongTenantId,
+                                           @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "DataAssetsRetrievalREST.getColumnInfos(" + tableId + " )");
             }
-            return dataAssetsRetrievalService.getColumnInfoByTableId(tableId, tenantId);
+            return dataAssetsRetrievalService.getColumnInfoByTableId(tableId, belongTenantId, tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "字段信息查询失败");
         } finally {
@@ -171,7 +175,7 @@ public class DataAssetsRetrievalREST {
 
             return dataAssetsRetrievalService.dataPreview(tableId, count);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询预览数据失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -200,7 +204,7 @@ public class DataAssetsRetrievalREST {
             }
             return dataAssetsRetrievalService.search(type, offset, limit, tenantId, query);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据资产失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }
@@ -212,6 +216,8 @@ public class DataAssetsRetrievalREST {
      * @param id         数据资产id
      * @param type       搜索类型：1业务对象；2数据表
      * @param businessId 所属业务对象id（当type=2，即资产类型为数据表时需要传参）
+     * @param belongTenantId 所属租户id
+     * @param tenantId 当前租户id
      * @return
      * @throws AtlasBaseException
      */
@@ -222,15 +228,16 @@ public class DataAssetsRetrievalREST {
     public DataAssets getDataAssetsById(@PathParam("id") String id,
                                         @QueryParam("type") int type,
                                         @QueryParam("businessId") String businessId,
-                                        @QueryParam("tenantId") String tenantId) throws AtlasBaseException {
+                                        @QueryParam("belongTenantId") String belongTenantId,
+                                        @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "DataAssetsRetrievalREST.search(" + type + " [类型：1业务对象；2数据表] )");
             }
-            return dataAssetsRetrievalService.getDataAssetsById(id, type, tenantId, businessId);
+            return dataAssetsRetrievalService.getDataAssetsById(id, type, belongTenantId, tenantId, businessId);
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据资产失败");
         } finally {
             AtlasPerfTracer.log(perf);
         }

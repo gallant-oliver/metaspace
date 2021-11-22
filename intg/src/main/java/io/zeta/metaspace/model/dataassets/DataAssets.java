@@ -65,6 +65,26 @@ public class DataAssets {
     private List<Tag> tags;
 
     /**
+     * 是否为重要表（数据表信息展示）
+     */
+    private Boolean important;
+
+    /**
+     * 是否为为保密表（数据表信息展示）
+     */
+    private Boolean secret;
+
+    /**
+     * 如当前为数据表，且为重要表，是否有查看权限（数据表信息展示）
+     */
+    private Boolean importantPrivilege;
+
+    /**
+     * 如当前为数据表，且为保密表，是否有查看权限（数据表信息展示）
+     */
+    private Boolean secretPrivilege;
+
+    /**
      * 数据总数，分页使用
      */
     @JsonIgnore
