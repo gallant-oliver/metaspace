@@ -31,6 +31,9 @@ COMMENT ON COLUMN public.user_permission.create_time
 
 delete from  public.category  where  categorytype='1';
 
+--删除指标业务目录历史数据
+delete from "public".category where  categorytype='5';
+
 --新增字段
 
 ALTER TABLE public.category ADD COLUMN publish bool;
@@ -129,3 +132,6 @@ COMMENT ON COLUMN "public"."group_table_relation"."tenant_id" IS '租户id';
 -- Primary Key structure for table group_table_relation
 -- ----------------------------
 ALTER TABLE "public"."group_table_relation"   ADD CONSTRAINT "group_table_relation_pkey" PRIMARY KEY ("derive_table_id","user_group_id","tenant_id");
+
+
+
