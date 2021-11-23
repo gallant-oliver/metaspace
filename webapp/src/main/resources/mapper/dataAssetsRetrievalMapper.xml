@@ -120,9 +120,7 @@
         )t
         WHERE 1=1
         <if test="query!='' and query !=null">
-            AND ((CAST(t.businessPath AS VARCHAR) like concat('%',#{query},'%') ESCAPE '/')
-            OR (CAST(t.technicalPath AS VARCHAR) like concat('%',#{query},'%') ESCAPE '/')
-            OR(t.name like concat('%',#{query},'%') ESCAPE '/')
+            AND ((t.name like concat('%',#{query},'%') ESCAPE '/')
             OR (t.description like concat('%',#{query},'%') ESCAPE '/')
             OR (t.businessName like concat('%',#{query},'%') ESCAPE '/')
             )
@@ -178,8 +176,7 @@
         )t
         WHERE 1=1
         <if test="query!='' and query !=null">
-            AND ((CAST(t.businessPath AS VARCHAR) like concat('%',#{query},'%') ESCAPE '/')
-            OR(t.name like concat('%',#{query},'%') ESCAPE '/')
+            AND ((t.name like concat('%',#{query},'%') ESCAPE '/')
             OR (t.description like concat('%',#{query},'%') ESCAPE '/')
             )
         </if>
@@ -248,9 +245,7 @@
         )t
         WHERE 1=1
         <if test="query!='' and query !=null">
-            AND ((CAST(t.businessPath AS VARCHAR) like concat('%',#{query},'%') ESCAPE '/')
-            OR (CAST(t.technicalPath AS VARCHAR) like concat('%',#{query},'%') ESCAPE '/')
-            OR(t.name like concat('%',#{query},'%') ESCAPE '/')
+            AND ((t.name like concat('%',#{query},'%') ESCAPE '/')
             OR (t.description like concat('%',#{query},'%') ESCAPE '/')
             OR (t.businessName like concat('%',#{query},'%') ESCAPE '/')
             )
