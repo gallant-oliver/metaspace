@@ -65,6 +65,9 @@ public interface DataStandardDAO {
     @Select({" select count(1) from data_standard where delete=false and version=0 and number = #{number} and tenantid=#{tenantId}"})
     Long getCountByNumber(@Param("number") String number, @Param("tenantId") String tenantId);
     
+    @Select({" select count(1) from data_standard where delete=false and version=0 and name = #{name} and tenantid=#{tenantId}"})
+    Long getCountByName(@Param("name") String name, @Param("tenantId") String tenantId);
+    
     @Update("update data_standard set delete=true where number=#{number} and delete=false and tenantid=#{tenantId}")
     void deleteByNumber(@Param("number") String number, @Param("tenantId") String tenantId);
     
@@ -104,7 +107,7 @@ public interface DataStandardDAO {
             " #{name}",
             " </foreach>",
             " </script>"})
-    List<String> queryNameByNumbers(@Param("nameList") Collection<String> nameList, @Param("tenantId") String tenantId);
+    List<String> queryNameByNames(@Param("nameList") Collection<String> nameList, @Param("tenantId") String tenantId);
     
     @Select({"<script>",
             " select count(1)over() total,b.id,b.number,b.name,b.description,b.createtime,b.updatetime,",
