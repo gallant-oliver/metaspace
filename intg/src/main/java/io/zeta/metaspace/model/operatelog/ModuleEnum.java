@@ -90,8 +90,9 @@ public enum ModuleEnum {
     INDEXALL(10,"租户资产","指标目录",51,"指标目录", "indexAll", "indexAll",1, 51),
     METADATAALL(10,"租户资产","元数据管理",52,"元数据管理", "metadataAll", "metadataAll",1, 52),
     //公共租户-权限管理
-    USERALL(11,"权限管理","用户管理",53,"用户管理", "userAll", "userAll",1, 53);
-
+    USERALL(11,"权限管理","用户管理",53,"用户管理", "userAll", "userAll",1, 53),
+    //数据资产检索
+    DATAASSERTSEARCH(12,"数据资产检索","数据资产检索",56, "数据资产检索", "dataAssertSearch", "dataAssertSearch",1,56);
     private int id;
     private String name;
     private String alias;
