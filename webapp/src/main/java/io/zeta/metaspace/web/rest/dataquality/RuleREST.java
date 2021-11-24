@@ -43,9 +43,11 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -64,6 +66,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.DELETE;
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
@@ -79,6 +82,7 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 public class RuleREST {
     
     private static final Integer CATEGORY_RULE = 4;
+    private static final String regex = "^[\\s\\S]{1,128}$";
     
     @Context
     private HttpServletRequest request;
@@ -90,7 +94,7 @@ public class RuleREST {
     private DataStandardService dataStandardService;
     @Autowired
     private DataManageService dataManageService;
-
+    
     /**
      * 添加规则
      */
@@ -98,8 +102,9 @@ public class RuleREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public void insert(Rule rule, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public void insert(Rule rule, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), rule.getName());
+        verifyRule(rule);
         List<Rule> oldList = ruleService.getByCode(rule.getCode(), tenantId);
         if (CollectionUtils.isNotEmpty(oldList)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "规则编号已存在");
@@ -110,16 +115,24 @@ public class RuleREST {
         }
         ruleService.insert(rule, tenantId);
     }
-
+    
+    private void verifyRule(Rule rule) {
+        Assert.isTrue(StringUtils.isNotBlank(rule.getCode()), "规则编号不能为空字符串");
+        Assert.isTrue(StringUtils.isNotBlank(rule.getName()), "规则名字不能为空字符串");
+        Assert.isTrue(Pattern.matches(regex, rule.getCode()), "规则编号最大长度128");
+        Assert.isTrue(Pattern.matches(regex, rule.getName()), "规则名字最大长度128");
+    }
+    
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public void update(Rule rule,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public void update(Rule rule, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), rule.getName());
-        ruleService.update(rule,tenantId);
+        verifyRule(rule);
+        ruleService.update(rule, tenantId);
     }
-
+    
     @DELETE
     @Path("/batch")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
