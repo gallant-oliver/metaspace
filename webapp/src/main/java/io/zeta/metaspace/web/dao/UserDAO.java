@@ -3,12 +3,8 @@ package io.zeta.metaspace.web.dao;
 import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
-import org.apache.atlas.model.metadata.CategoryEntityV2;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.*;
+
 import java.sql.Timestamp;
 import java.util.List;
 
@@ -143,4 +139,7 @@ public interface UserDAO {
 
     @Select("SELECT userid,username FROM users WHERE valid = TRUE")
     List<User> getAllUserByValid();
+
+    @Select("SELECT count(tablename) FROM pg_tables WHERE tablename NOT LIKE 'pg%' AND tablename NOT LIKE 'sql_%'")
+    int selectDatabaseCount();
 }
