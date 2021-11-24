@@ -24,13 +24,14 @@ import io.zeta.metaspace.model.operatelog.OperateResultEnum;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
-import io.zeta.metaspace.model.role.Role;
-import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.ApiModuleDAO;
 import io.zeta.metaspace.web.dao.UserGroupDAO;
-import io.zeta.metaspace.web.service.*;
+import io.zeta.metaspace.web.service.OperateLogService;
+import io.zeta.metaspace.web.service.TenantService;
+import io.zeta.metaspace.web.service.UserGroupService;
+import io.zeta.metaspace.web.service.UsersService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.FilterUtils;
 import org.aopalliance.intercept.MethodInterceptor;
@@ -83,7 +84,9 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
         String type = request.getMethod();
         if (FilterUtils.isSkipUrl(requestURL)) {
             return invocation.proceed();
-        } else{
+        } else if(FilterUtils.isHealthCheck(requestURL)){
+            return invocation.proceed();
+        }else{
             String prefix = requestURL.replaceFirst(".*/api/metaspace/", "").replaceAll("/.*", "");
             String userId = "";
             String username = "";
