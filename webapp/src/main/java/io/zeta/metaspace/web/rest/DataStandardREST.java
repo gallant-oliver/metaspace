@@ -31,6 +31,7 @@ import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataStandardService;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
+import io.zeta.metaspace.web.util.ObjectUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -94,10 +95,18 @@ public class DataStandardREST {
     @Valid
     public void insert(DataStandard dataStandard, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), dataStandard.getName());
-        Long count = dataStandardService.getByNumber(dataStandard.getNumber(), tenantId);
-        if (count > 0) {
-            throw new AtlasBaseException(AtlasErrorCode.STANDARD_NUMBER_ALREADY_EXISTS);
-        }
+    
+        ObjectUtils.isTrueThen(dataStandard.getNumber(),
+                v -> dataStandardService.verifyNumberExist(v, tenantId),
+                v -> {
+                    throw new AtlasBaseException(AtlasErrorCode.STANDARD_NUMBER_ALREADY_EXISTS);
+                });
+        ObjectUtils.isTrueThen(dataStandard.getName(),
+                v -> dataStandardService.verifyNameExist(v, tenantId),
+                v -> {
+                    throw new AtlasBaseException(AtlasErrorCode.STANDARD_NAME_ALREADY_EXISTS);
+                });
+    
         dataStandardService.insert(dataStandard, tenantId);
     }
     
