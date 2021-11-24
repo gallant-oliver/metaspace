@@ -153,8 +153,24 @@ public class DataStandardService {
         return dataStandard;
     }
     
-    public Long getByNumber(String number, String tenantId) throws AtlasBaseException {
-        return dataStandardDAO.getCountByNumber(number, tenantId);
+    /**
+     * 校验标准编码是否存在
+     *
+     * @return true-编码已存在 false-编码不存在
+     */
+    public boolean verifyNumberExist(String number, String tenantId) {
+        Assert.isTrue(StringUtils.isNotBlank(number), "标准编码不能为空字符串");
+        return dataStandardDAO.getCountByNumber(number, tenantId) > 0;
+    }
+    
+    /**
+     * 校验标准名称是否存在
+     *
+     * @return true-编码已存在 false-编码不存在
+     */
+    public boolean verifyNameExist(String name, String tenantId) {
+        Assert.isTrue(StringUtils.isNotBlank(name), "标准名称不能为空字符串");
+        return dataStandardDAO.getCountByName(name, tenantId) > 0;
     }
     
     @Transactional(rollbackFor = Exception.class)
@@ -189,15 +205,18 @@ public class DataStandardService {
     @Transactional(rollbackFor = Exception.class)
     public void update(DataStandard dataStandard, String tenantId) throws AtlasBaseException {
         verifyDataStandard(dataStandard);
-        
+    
         DataStandard old = dataStandardDAO.getById(dataStandard.getId());
         Assert.notNull(old, "无效的数据标准ID");
         Assert.isTrue(old.getVersion() == 0, String.format("历史数据无法编辑,id:%s", old.getId()));
         Assert.isTrue(Objects.equals(old.getNumber(), dataStandard.getNumber()), "数据标准编码不能修改!");
-        
+        Assert.isTrue(Objects.equals(old.getName(), dataStandard.getName())
+                        || Boolean.FALSE == verifyNameExist(dataStandard.getName(), tenantId),
+                "修改后的数据标准名称已经存在!");
+    
         // 查询最大历史版本号
         int maxHistoryVersion = dataStandardDAO.getMaxHistoryVersion(dataStandard.getNumber());
-        
+    
         dataStandard.setId(UUID.randomUUID().toString());
         dataStandard.setNumber(old.getNumber());
         dataStandard.setCategoryId(old.getCategoryId());
@@ -362,7 +381,7 @@ public class DataStandardService {
         }
         
         if (CollectionUtils.isNotEmpty(nameSet)) {
-            List<String> existList = dataStandardDAO.queryNameByNumbers(nameSet, tenantId);
+            List<String> existList = dataStandardDAO.queryNameByNames(nameSet, tenantId);
             if (CollectionUtils.isNotEmpty(existList)) {
                 List<String> showList = existList.subList(0, Math.min(existList.size(), 5));
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,
