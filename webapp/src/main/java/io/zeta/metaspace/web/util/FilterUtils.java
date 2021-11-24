@@ -47,6 +47,19 @@ public class FilterUtils {
     public static boolean isDataService(String requestURL){
         return requestURL.contains("/api/metaspace/dataservice");
     }
+
+    /**
+     * 健康检查接口，不做sso认证
+     * @param requestURL
+     * @return
+     */
+    public static Boolean isHealthCheck(String requestURL){
+        String result = StringUtils.substring(requestURL, requestURL.indexOf("api/metaspace"), requestURL.length());
+        if("api/metaspace/health/check".equals(result)){
+            return true;
+        }
+        return false;
+    }
     
     private static String replaceWithCase(String src,String search,String replace,Boolean ignoreCase){
         return StringUtils.replacePattern(src,ignoreCase?"(?i)"+search : search,replace);
