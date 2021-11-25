@@ -247,7 +247,8 @@ public class DataAssetsRetrievalService {
                 }
                 break;
             case 3:
-                result = getThemeDetail(id);
+                boolean publicTenant = isPublicTenant(tenantId);
+                result = getThemeDetail(id, publicTenant);
                 break;
             default:
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据资产类别错误: " + type);
@@ -558,12 +559,17 @@ public class DataAssetsRetrievalService {
         return pageResult;
     }
 
-    public DataAssets getThemeDetail(String guid) {
+    public DataAssets getThemeDetail(String guid, boolean isPublic) {
         DataAssets theme = new DataAssets();
         CategoryEntityV2 categoryEntityV2 = dataAssetsRetrievalDAO.queryCategoryInfo(guid);
+
+        String path = categoryEntityV2.getQualifiedName().replaceAll("\\.", "\\/");
+        if (isPublic) {
+            path = categoryEntityV2.getTenantName() + "/" + path;
+        }
         theme.setId(guid);
         theme.setName(categoryEntityV2.getName());
-        theme.setBusinessPath(categoryEntityV2.getQualifiedName().replaceAll("\\.", "\\/"));
+        theme.setBusinessPath(path);
         theme.setDescription(categoryEntityV2.getDescription());
         theme.setType(3);
         return theme;

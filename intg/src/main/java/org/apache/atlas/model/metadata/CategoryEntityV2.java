@@ -72,6 +72,16 @@ public class CategoryEntityV2 {
      */
     private String tenantid;
 
+    private String tenantName;
+
+    public String getTenantName() {
+        return tenantName;
+    }
+
+    public void setTenantName(String tenantName) {
+        this.tenantName = tenantName;
+    }
+
     public String getApprovalId() {
         return approvalId;
     }
