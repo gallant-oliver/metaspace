@@ -163,8 +163,8 @@ public class DataAssetsRetrievalService {
             for (DataAssets dataAssets: list) {
                 String businessPath = dataAssets.getBusinessPath();
                 String technicalPath = dataAssets.getTechnicalPath();
-                dataAssets.setBusinessPath(formatPath(businessPath));
-                dataAssets.setTechnicalPath(formatPath(technicalPath));
+                dataAssets.setBusinessPath(formatPath(businessPath, dataAssets.getTenantName(), isPublic));
+                dataAssets.setTechnicalPath(formatPath(technicalPath, null, isPublic));
 
                 if (dataAssets.getType() == 2) {
                     // 是否有当前表查看权限（为重要表时）
@@ -191,16 +191,25 @@ public class DataAssetsRetrievalService {
     /**
      * 规范路径（目录路径、技术路径等）
      */
-    private String formatPath(String path) {
+    private String formatPath(String path, String tenantName, boolean isPublic) {
         if (!StringUtils.isEmpty(path)) {
             path = path.substring(1, path.length() - 1);
             path = path.replace(",", "/").replace("\"", "");
+            if (!StringUtils.isEmpty(tenantName) && isPublic) {
+                path = tenantName + "/" + path;
+            }
         }
 
         return path;
     }
 
     public DataAssets getDataAssetsById(String id, int type, String belongTenantId, String tenantId, String businessId) {
+        // 是否公共租户
+        boolean isPublic = isPublicTenant(tenantId);
+
+        // 当前用户是否有全局权限
+        boolean isGlobal = isGlobalUser();
+
         DataAssets result;
         // 搜索类型：1业务对象；2数据表；3主题
         switch (type) {
@@ -211,11 +220,6 @@ public class DataAssetsRetrievalService {
                 // 表需要判断是否有保密表和重要表权限
                 result = dataAssetsRetrievalDAO.searchTableById(id, belongTenantId, businessId);
 
-                // 是否公共租户
-                boolean isPublic = isPublicTenant(tenantId);
-
-                // 当前用户是否有全局权限
-                boolean isGlobal = isGlobalUser();
                 List<GroupDeriveTableRelation> privileges = null;
                 if (result != null && result.getSecret()) {
                     if (!isPublic || !isGlobal) {
@@ -252,8 +256,8 @@ public class DataAssetsRetrievalService {
         if (result != null && type != 3) {
             String businessPath = result.getBusinessPath();
             String technicalPath = result.getTechnicalPath();
-            result.setBusinessPath(formatPath(businessPath));
-            result.setTechnicalPath(formatPath(technicalPath));
+            result.setBusinessPath(formatPath(businessPath, result.getTenantName(), isPublic));
+            result.setTechnicalPath(formatPath(technicalPath, null, isPublic));
         }
 
         return result;
@@ -311,7 +315,7 @@ public class DataAssetsRetrievalService {
                     }
                 }
 
-                tableInfo.setCategory(formatPath(tableInfo.getCategory()));
+                tableInfo.setCategory(formatPath(tableInfo.getCategory(), null, isPublic));
                 tableInfo.setTenantId(tenantId);
             }
         }

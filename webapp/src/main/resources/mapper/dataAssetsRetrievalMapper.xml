@@ -16,7 +16,7 @@
     </resultMap>
 
     <select id="searchAll" resultMap="dataAssetsInfo">
-        SELECT count(*)over() total, t.* FROM
+        SELECT count(*)over() total, t.*, te.name tenantName FROM
         (
         SELECT bi.businessid id, bi.name, bi.description,
         1 as type,
@@ -118,6 +118,7 @@
             </otherwise>
         </choose>
         )t
+        LEFT JOIN tenant te ON te.id=t.tenantid
         WHERE 1=1
         <if test="query!='' and query !=null">
             AND ((t.name like concat('%',#{query},'%') ESCAPE '/')
@@ -131,7 +132,7 @@
     </select>
 
     <select id="searchBusinesses" resultMap="dataAssetsInfo">
-        SELECT count(*)over() total, t.* FROM
+        SELECT count(*)over() total, t.*, te.name tenantName FROM
         (SELECT bi.businessid id, bi.name, bi.description,
         1 as type,
         (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS
@@ -174,6 +175,7 @@
             </otherwise>
         </choose>
         )t
+        LEFT JOIN tenant te ON te.id=t.tenantid
         WHERE 1=1
         <if test="query!='' and query !=null">
             AND ((t.name like concat('%',#{query},'%') ESCAPE '/')
@@ -186,7 +188,7 @@
     </select>
 
     <select id="searchTables" resultMap="dataAssetsInfo">
-        SELECT count(*)over() total, t.* FROM
+        SELECT count(*)over() total, t.*, te.name tenantName FROM
         (SELECT ti.tableguid id, ti.tablename as name, ti.description,
         2 as type,
         (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS
@@ -243,6 +245,7 @@
             </otherwise>
         </choose>
         )t
+        LEFT JOIN tenant te ON te.id=t.tenantid
         WHERE 1=1
         <if test="query!='' and query !=null">
             AND ((t.name like concat('%',#{query},'%') ESCAPE '/')
@@ -266,9 +269,10 @@
         FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
         SELECT  PATH FROM T WHERE guid=br.categoryguid
         ORDER BY PATH) businessPath,
-        bi.tenantid, null tableGuid
+        bi.tenantid, null tableGuid, te.name tenantName
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
+        LEFT JOIN tenant te ON te.id=bi.tenantid
         WHERE bi.businessid=#{businessId}
     </select>
 
@@ -293,13 +297,15 @@
         ORDER BY PATH) technicalPath,
         #{tenantId} tenantid, ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName,
         CASE WHEN sidti.importance IS null THEN false ELSE sidti.importance END AS important,
-        CASE WHEN sidti.security IS null THEN false ELSE sidti.security END AS secret
+        CASE WHEN sidti.security IS null THEN false ELSE sidti.security END AS secret,
+        te.name tenantName
         FROM tableinfo ti
         JOIN business2table b2t ON b2t.tableguid=ti.tableguid
         JOIN business_relation br ON br.businessid=b2t.businessid
         JOIN businessinfo bi ON bi.businessid=br.businessid
         LEFT JOIN source_info si ON si.database_id=ti.databaseguid AND si.data_source_id=b2t.source_id AND si.version=0
         LEFT JOIN source_info_derive_table_info sidti ON sidti.table_guid=ti.tableguid AND sidti.version=-1
+        LEFT JOIN tenant te ON te.id=bi.tenantid
         WHERE ti.tableguid=#{tableId} AND ti.status='ACTIVE' AND br.businessid=#{businessId}
     </select>
 
