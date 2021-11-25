@@ -548,7 +548,9 @@
     </select>
 
     <select id="queryCategoryInfo" resultType="org.apache.atlas.model.metadata.CategoryEntityV2">
-        select  guid,name,description,qualifiedname from category where guid = #{guid}
+        select  c.guid,c.name,c.description,c.qualifiedname,t.name as tenantName from category c
+        left join tenant t on c.tenantid=t.id
+        where c.guid = #{guid}
     </select>
 
 </mapper>
