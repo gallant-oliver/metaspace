@@ -367,8 +367,8 @@
         SELECT
         gtr.derive_table_id AS deriveTableId,
         gtr.user_group_id AS userGroupId,
-        gtr.security_privilege AS securityPrivilege,
-        gtr.importance_privilege AS importancePrivilege
+        CASE WHEN gtr.security_privilege IS null THEN false ELSE gtr.security_privilege END AS securityPrivilege,
+        CASE WHEN gtr.importance_privilege IS null THEN false ELSE gtr.importance_privilege END AS importancePrivilege
         FROM group_table_relation gtr
         JOIN user_group ug ON ug.id=gtr.user_group_id
         JOIN user_group_relation ugr ON ugr.group_id=ug.id AND ugr.user_id=#{userId}
@@ -377,7 +377,7 @@
             #{tableId}
         </foreach>
         <if test="isPublic==false">
-            ug.tenant=#{tenantId}
+            AND ug.tenant=#{tenantId}
         </if>
     </select>
 
