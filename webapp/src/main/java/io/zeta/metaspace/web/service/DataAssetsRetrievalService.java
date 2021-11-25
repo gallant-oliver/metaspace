@@ -396,9 +396,14 @@ public class DataAssetsRetrievalService {
         }
 
         String dataTypeAttribute = "data_type";
+        String hiveDataTypeAttribute = "type";
         if (attributes.containsKey(dataTypeAttribute) && Objects.nonNull(attributes.get(dataTypeAttribute))) {
             column.setType(attributes.get(dataTypeAttribute).toString());
-        } else {
+        }
+        else if (attributes.containsKey(hiveDataTypeAttribute) && Objects.nonNull(attributes.get(hiveDataTypeAttribute))) {
+            column.setType(attributes.get(hiveDataTypeAttribute).toString());
+        }
+        else {
             column.setType("");
         }
 

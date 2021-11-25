@@ -349,18 +349,18 @@
         SELECT ci.column_guid, ci.column_guid cid, sidci.column_name_zh, sidci.secret, sidci.secret_period,
         sidci.important, sidci.remark, #{tenantId} tenantId
         FROM column_info ci
-        LEFT JOIN source_info_derive_column_info sidci ON sidci.column_name_en=ci.column_name
+        LEFT JOIN source_info_derive_column_info sidci ON sidci.column_name_en=ci.column_name AND sidci.column_guid in
+            (
+            SELECT column_guid
+            FROM source_info_derive_table_column_relation sidtcr
+            JOIN source_info_derive_table_info sidti ON sidtcr.table_id=sidti.id AND sidti.table_guid=#{tableId} AND
+            sidti.version=-1
+            )
         WHERE ci.column_guid in
         <foreach item="columnId" index="index" collection="columnIds" open="(" close=")" separator=",">
             #{columnId}
         </foreach>
-        AND sidci.column_guid in
-        (
-        SELECT column_guid
-        FROM source_info_derive_table_column_relation sidtcr
-        JOIN source_info_derive_table_info sidti ON sidtcr.table_id=sidti.id AND sidti.table_guid=#{tableId} AND
-        sidti.version=-1
-        )
+
     </select>
 
     <select id="getTablePrivileges" resultType="io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation">
