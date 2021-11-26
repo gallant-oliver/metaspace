@@ -18,6 +18,8 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.business.*;
 import io.zeta.metaspace.model.dataassets.BussinessObject;
+import io.zeta.metaspace.model.dataassets.DataAssets;
+import io.zeta.metaspace.model.dataassets.TableInfo;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableHeader;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
@@ -767,4 +769,51 @@ public interface BusinessDAO {
                                                    @Param("categoryGuid") String categoryGuid,
                                                    @Param("userId") String userId, @Param("limit") int limit,
                                                    @Param("offset") int offset);
+
+    /**
+     * 数据资产检索-搜索（业务对象、业务对象挂载数据表等）
+     */
+    List<DataAssets> searchAll(@Param("tenantId") String tenantId,
+                               @Param("userId") String userId,
+                               @Param("isPublic") boolean isPublic,
+                               @Param("isGlobal") boolean isGlobal,
+                               @Param("offset") int offset,
+                               @Param("limit") int limit,
+                               @Param("query") String query);
+
+    /**
+     * 数据资产检索-搜索（业务对象）
+     */
+    List<DataAssets> searchBusinesses(@Param("tenantId") String tenantId,
+                                      @Param("userId") String userId,
+                                      @Param("isPublic") boolean isPublic,
+                                      @Param("isGlobal") boolean isGlobal,
+                                      @Param("offset") int offset,
+                                      @Param("limit") int limit,
+                                      @Param("query") String query);
+
+    /**
+     * 数据资产检索-搜索（业务对象挂载数据表）
+     */
+    List<DataAssets> searchTables(@Param("tenantId") String tenantId,
+                                  @Param("userId") String userId,
+                                  @Param("isPublic") boolean isPublic,
+                                  @Param("isGlobal") boolean isGlobal,
+                                  @Param("offset") int offset,
+                                  @Param("limit") int limit,
+                                  @Param("query") String query);
+
+    /**
+     * 数据资产检索-根据id查询业务对象
+     */
+    DataAssets searchBusinessById(@Param("businessId") String businessId,
+                                  @Param("tenantId") String tenantId);
+
+    /**
+     * 数据资产检索-业务对象下挂载的数据表
+     */
+    List<TableInfo> getTableInfos(@Param("businessId") String businessId,
+                                  @Param("tenantId") String tenantId,
+                                  @Param("offset") int offset,
+                                  @Param("limit") int limit);
 }

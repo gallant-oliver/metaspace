@@ -55,6 +55,12 @@ public class DataAssets {
     private String tenantId;
 
     /**
+     * 所属租户
+     */
+    @JsonIgnore
+    private String tenantName;
+
+    /**
      * 描述
      */
     private String description;
