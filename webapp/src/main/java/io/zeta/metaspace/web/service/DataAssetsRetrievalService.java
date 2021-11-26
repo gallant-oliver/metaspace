@@ -10,9 +10,7 @@ import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
-import io.zeta.metaspace.web.dao.BusinessDAO;
-import io.zeta.metaspace.web.dao.DataAssetsRetrievalDAO;
-import io.zeta.metaspace.web.dao.UserGroupDAO;
+import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
@@ -65,10 +63,16 @@ public class DataAssetsRetrievalService {
     private DataAssetsRetrievalDAO dataAssetsRetrievalDAO;
 
     @Autowired
-    UserGroupDAO userGroupDAO;
+    private UserGroupDAO userGroupDAO;
 
     @Autowired
-    BusinessDAO businessDAO;
+    private BusinessDAO businessDAO;
+
+    @Autowired
+    private TableDAO tableDAO;
+
+    @Autowired
+    private ColumnDAO columnDAO;
 
     /**
      * 初始化租户标签缓存
@@ -129,13 +133,13 @@ public class DataAssetsRetrievalService {
         // 搜索类型：0全部；1业务对象；2数据表
         switch (type) {
             case 1:
-                list = dataAssetsRetrievalDAO.searchBusinesses(tenantId, userId, isPublic, isGlobal, offset, limit, query);
+                list = businessDAO.searchBusinesses(tenantId, userId, isPublic, isGlobal, offset, limit, query);
                 break;
             case 2:
-                list = dataAssetsRetrievalDAO.searchTables(tenantId, userId, isPublic, isGlobal, offset, limit, query);
+                list = businessDAO.searchTables(tenantId, userId, isPublic, isGlobal, offset, limit, query);
                 break;
             default:
-                list = dataAssetsRetrievalDAO.searchAll(tenantId, userId, isPublic, isGlobal, offset, limit, query);
+                list = businessDAO.searchAll(tenantId, userId, isPublic, isGlobal, offset, limit, query);
         }
 
         Long totalSize = 0L;
@@ -151,7 +155,7 @@ public class DataAssetsRetrievalService {
                     List<String> tableIds = list.stream().filter(t -> t.getType() == 2 && t.getImportant()).map(DataAssets::getId).collect(Collectors.toList());
                     // 获取数据表用户组权限（重要表或保密表）
                     if (!CollectionUtils.isEmpty(tableIds)) {
-                        privileges = dataAssetsRetrievalDAO.getTablePrivileges(tenantId, tableIds, isPublic, isGlobal, userId);
+                        privileges = tableDAO.getTablePrivileges(tenantId, tableIds, isPublic, isGlobal, userId);
                     }
                 }
 
@@ -214,16 +218,16 @@ public class DataAssetsRetrievalService {
         // 搜索类型：1业务对象；2数据表；3主题
         switch (type) {
             case 1:
-                result = dataAssetsRetrievalDAO.searchBusinessById(id, belongTenantId);
+                result = businessDAO.searchBusinessById(id, belongTenantId);
                 break;
             case 2:
                 // 表需要判断是否有保密表和重要表权限
-                result = dataAssetsRetrievalDAO.searchTableById(id, belongTenantId, businessId);
+                result = tableDAO.searchTableById(id, belongTenantId, businessId);
 
                 List<GroupDeriveTableRelation> privileges = null;
                 if (result != null && result.getSecret()) {
                     if (!isPublic || !isGlobal) {
-                        privileges = dataAssetsRetrievalDAO.getTablePrivileges(belongTenantId, Lists.newArrayList(result.getId()), isPublic, isGlobal, AdminUtils.getUserData().getUserId());
+                        privileges = tableDAO.getTablePrivileges(belongTenantId, Lists.newArrayList(result.getId()), isPublic, isGlobal, AdminUtils.getUserData().getUserId());
                     }
                 }
 
@@ -274,7 +278,7 @@ public class DataAssetsRetrievalService {
     public PageResult<TableInfo> getTableInfoByBusinessId(String businessId, String belongTenantId, String tenantId, int limit, int offset) {
         PageResult<TableInfo> pageResult = new PageResult<>();
 
-        List<TableInfo> list = dataAssetsRetrievalDAO.getTableInfos(businessId, belongTenantId, offset, limit);
+        List<TableInfo> list = businessDAO.getTableInfos(businessId, belongTenantId, offset, limit);
 
         Long totalSize = 0L;
         if (!CollectionUtils.isEmpty(list)) {
@@ -291,7 +295,7 @@ public class DataAssetsRetrievalService {
                 List<String> tableIds = list.stream().filter(t -> t.getImportant()).map(TableInfo::getTableId).collect(Collectors.toList());
                 // 获取数据表用户组权限（重要表或保密表）
                 if (!CollectionUtils.isEmpty(tableIds)) {
-                    privileges = dataAssetsRetrievalDAO.getTablePrivileges(belongTenantId, tableIds, isPublic, isGlobal, AdminUtils.getUserData().getUserId());
+                    privileges = tableDAO.getTablePrivileges(belongTenantId, tableIds, isPublic, isGlobal, AdminUtils.getUserData().getUserId());
                 }
             }
 
@@ -316,7 +320,6 @@ public class DataAssetsRetrievalService {
                 }
 
                 tableInfo.setCategory(formatPath(tableInfo.getCategory(), null, isPublic));
-                tableInfo.setTenantId(tenantId);
             }
         }
         pageResult.setTotalSize(totalSize);
@@ -338,7 +341,7 @@ public class DataAssetsRetrievalService {
                 List<String> columnIds = columns.stream().map(c -> c.getColumnId()).collect(Collectors.toList());
 
                 // 查询字段关联的衍生表信息及字段标签等
-                List<ColumnInfo> deriveColumnInfos = dataAssetsRetrievalDAO.getDeriveColumnInfo(columnIds, belongTenantId, tableId);
+                List<ColumnInfo> deriveColumnInfos = columnDAO.getDeriveColumnInfo(columnIds, belongTenantId, tableId);
                 if (!CollectionUtils.isEmpty(deriveColumnInfos)) {
                     Map<String, ColumnInfo> m = deriveColumnInfos.stream().collect(Collectors.toMap(ColumnInfo::getColumnId, Function.identity(), (key1, key2) -> key2));
                     for (ColumnInfo column1 : columns) {
