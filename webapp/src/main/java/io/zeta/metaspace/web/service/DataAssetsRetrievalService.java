@@ -10,9 +10,7 @@ import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
-import io.zeta.metaspace.web.dao.BusinessDAO;
-import io.zeta.metaspace.web.dao.DataAssetsRetrievalDAO;
-import io.zeta.metaspace.web.dao.UserGroupDAO;
+import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
@@ -69,6 +67,13 @@ public class DataAssetsRetrievalService {
 
     @Autowired
     BusinessDAO businessDAO;
+
+    @Autowired
+    CategoryDAO categoryDAO;
+
+    @Autowired
+    RelationDAO relationDAO;
+
 
     /**
      * 初始化租户标签缓存
@@ -419,15 +424,15 @@ public class DataAssetsRetrievalService {
             userGroupIds = userGroupDAO.getuserGroupByUsersId(userId, tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
         }
         if (isPublicTenant && isPublicUser) {
-            domainList = dataAssetsRetrievalDAO.getDomainCategory();
+            domainList = categoryDAO.getDomainCategory();
             for (DomainInfo domain : domainList) {
-                domain.setThemeNum(dataAssetsRetrievalDAO.getThemeNumber(domain.getDomainId()));
+                domain.setThemeNum(categoryDAO.getThemeNumber(domain.getDomainId()));
             }
         } else {
             if (isPublicTenant) {
                 tenantId = null;
             }
-            domainList = dataAssetsRetrievalDAO.getDomainCategoryByNotPublicUser(userGroupIds, userId, tenantId);
+            domainList = categoryDAO.getDomainCategoryByNotPublicUser(userGroupIds, userId, tenantId);
             Iterator<DomainInfo> iterator = domainList.iterator();
             while (iterator.hasNext()) {
                 DomainInfo domainInfo = iterator.next();
@@ -442,7 +447,7 @@ public class DataAssetsRetrievalService {
                 }
             }
             for (DomainInfo domain : domainList) {
-                List<DomainInfo> themeList = dataAssetsRetrievalDAO.getThemeByUserGroup(domain.getDomainId(), userGroupIds, userId, tenantId);
+                List<DomainInfo> themeList = categoryDAO.getThemeByUserGroup(domain.getDomainId(), userGroupIds, userId, tenantId);
                 Iterator<DomainInfo> iterator2 = themeList.iterator();
                 while (iterator2.hasNext()) {
                     DomainInfo domainInfo = iterator2.next();
@@ -478,22 +483,22 @@ public class DataAssetsRetrievalService {
             userGroupIds = userGroupDAO.getuserGroupByUsersId(userId, tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
         }
         if (isPublicTenant && isPublicUser) {
-            themeList = dataAssetsRetrievalDAO.getThemeCategory(guid);
+            themeList = categoryDAO.getThemeCategory(guid);
             for (ThemeInfo theme : themeList) {
-                List<String> businessList = dataAssetsRetrievalDAO.getBusinessId(theme.getThemeId());
+                List<String> businessList = relationDAO.getBusinessId(theme.getThemeId());
                 if (CollectionUtils.isEmpty(businessList)) {
                     theme.setBussinessObjectNum(0);
                     theme.setTableNum(0);
                 } else {
                     theme.setBussinessObjectNum(businessList.size());
-                    theme.setTableNum(dataAssetsRetrievalDAO.getTableNumber(businessList));
+                    theme.setTableNum(businessDAO.getTableNumber(businessList));
                 }
             }
         } else {
             if (isPublicTenant) {
                 tenantId = null;
             }
-            domainList = dataAssetsRetrievalDAO.getThemeByUserGroup(guid, userGroupIds, userId, tenantId);
+            domainList = categoryDAO.getThemeByUserGroup(guid, userGroupIds, userId, tenantId);
             Iterator<DomainInfo> iterator = domainList.iterator();
             while (iterator.hasNext()) {
                 DomainInfo domainInfo = iterator.next();
@@ -512,14 +517,13 @@ public class DataAssetsRetrievalService {
                 String themeId = domain.getDomainId();
                 theme.setThemeId(themeId);
                 theme.setThemeName(domain.getDomainName());
-
-                List<String> businessList = dataAssetsRetrievalDAO.queryBusinessIdByUserGroup(themeId, tenantId, userId);
+                List<String> businessList = businessDAO.queryBusinessIdByUserGroup(themeId, tenantId, userId);
                 if (CollectionUtils.isEmpty(businessList)) {
                     theme.setBussinessObjectNum(0);
                     theme.setTableNum(0);
                 } else {
                     theme.setBussinessObjectNum(businessList.size());
-                    theme.setTableNum(dataAssetsRetrievalDAO.getTableNumber(businessList));
+                    theme.setTableNum(businessDAO.getTableNumber(businessList));
                 }
                 themeList.add(theme);
             }
@@ -535,7 +539,7 @@ public class DataAssetsRetrievalService {
         String userId = AdminUtils.getUserData().getUserId();
         int total = 0;
         if (isPublicTenant && isPublicUser) {
-            objectList = dataAssetsRetrievalDAO.queryBusiness(guid, limit, offset);
+            objectList = businessDAO.queryBusiness(guid, limit, offset);
             if (!CollectionUtils.isEmpty(objectList)) {
                 total = objectList.get(0).getTotal();
             }
@@ -543,7 +547,7 @@ public class DataAssetsRetrievalService {
             if (isPublicTenant) {
                 tenantId = null;
             }
-            objectList = dataAssetsRetrievalDAO.queryBusinessByUserGroup(tenantId, guid, userId, limit, offset);
+            objectList = businessDAO.queryBusinessByUserGroup(tenantId, guid, userId, limit, offset);
             if (!CollectionUtils.isEmpty(objectList)) {
                 total = objectList.get(0).getTotal();
             }
@@ -557,7 +561,7 @@ public class DataAssetsRetrievalService {
 
     public DataAssets getThemeDetail(String guid, boolean isPublic) {
         DataAssets theme = new DataAssets();
-        CategoryEntityV2 categoryEntityV2 = dataAssetsRetrievalDAO.queryCategoryInfo(guid);
+        CategoryEntityV2 categoryEntityV2 = categoryDAO.queryCategoryInfo(guid);
 
         String path = categoryEntityV2.getQualifiedName().replaceAll("\\.", "\\/");
         if (isPublic) {

@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.business.*;
+import io.zeta.metaspace.model.dataassets.BussinessObject;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableHeader;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
@@ -751,4 +752,19 @@ public interface BusinessDAO {
 
     @Update("update business2table set tableguid=#{newTableGuid} where tableguid=#{oldTableGuid}")
     void updateBusiness2TableByTableGuid(@Param("newTableGuid")String newTableGuid, @Param("oldTableGuid")String oldTableGuid);
+
+    int getTableNumber(@Param("businessList") List<String> businessList);
+
+    List<String> queryBusinessIdByUserGroup(@Param("categoryGuid") String categoryGuid,
+                                            @Param("tenantId") String tenantId,
+                                            @Param("userId") String userId);
+
+    List<BussinessObject> queryBusiness(@Param("categoryGuid") String categoryGuid,
+                                        @Param("limit") int limit,
+                                        @Param("offset") int offset);
+
+    List<BussinessObject> queryBusinessByUserGroup(@Param("tenantId") String tenantId,
+                                                   @Param("categoryGuid") String categoryGuid,
+                                                   @Param("userId") String userId, @Param("limit") int limit,
+                                                   @Param("offset") int offset);
 }
