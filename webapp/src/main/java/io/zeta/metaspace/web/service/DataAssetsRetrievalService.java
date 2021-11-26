@@ -130,6 +130,10 @@ public class DataAssetsRetrievalService {
 
         List<DataAssets> list;
 
+        if (!StringUtils.isEmpty(query)) {
+            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+        }
+
         // 搜索类型：0全部；1业务对象；2数据表
         switch (type) {
             case 1:
@@ -320,6 +324,7 @@ public class DataAssetsRetrievalService {
                 }
 
                 tableInfo.setCategory(formatPath(tableInfo.getCategory(), null, isPublic));
+                tableInfo.setTenantId(belongTenantId);
             }
         }
         pageResult.setTotalSize(totalSize);
