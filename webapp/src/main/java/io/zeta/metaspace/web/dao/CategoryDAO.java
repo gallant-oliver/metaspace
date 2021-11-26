@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.dataassets.DomainInfo;
+import io.zeta.metaspace.model.dataassets.ThemeInfo;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -545,4 +547,22 @@ public interface CategoryDAO {
             " </foreach>" +
             " </if>"+
             "</script>")
-    Set<CategoryEntityV2> selectListByStatus(@Param("creator") String creator, @Param("groupIdList") List<String> groupIdList, @Param("categoryType") Integer categoryType);}
+    Set<CategoryEntityV2> selectListByStatus(@Param("creator") String creator, @Param("groupIdList") List<String> groupIdList, @Param("categoryType") Integer categoryType);
+
+    List<DomainInfo> getDomainCategory();
+
+    int getThemeNumber(@Param("guid") String guid);
+
+    List<DomainInfo> getDomainCategoryByNotPublicUser(@Param("groupIdList") List<String> groupIdList,
+                                                      @Param("userId") String userId,
+                                                      @Param("tenantId") String tenantId);
+
+    List<DomainInfo> getThemeByUserGroup(@Param("guid") String guid,
+                                         @Param("groupIdList") List<String> groupIdList,
+                                         @Param("userId") String userId,
+                                         @Param("tenantId") String tenantId);
+
+    List<ThemeInfo> getThemeCategory(@Param("guid") String guid);
+
+    CategoryEntityV2 queryCategoryInfo(@Param("guid") String guid);
+}

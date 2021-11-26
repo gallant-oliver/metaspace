@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.zeta.metaspace.web.dao.ColumnDAO">
+    <resultMap id="columnInfo" type="io.zeta.metaspace.model.dataassets.ColumnInfo">
+        <result column="column_guid" jdbcType="VARCHAR" property="columnId"/>
+        <result column="column_name_zh" jdbcType="VARCHAR" property="columnNameZh"/>
+        <result column="secret" jdbcType="BOOLEAN" property="secret"/>
+        <result column="secret_period" jdbcType="VARCHAR" property="period"/>
+        <result column="important" jdbcType="BOOLEAN" property="important"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+        <collection property="tags" column="{tenantId=tenantId, columnId=cid}" notNullColumn="cid"
+                    select="io.zeta.metaspace.web.dao.ColumnTagDAO.getTagListByColumnId"/>
+    </resultMap>
+    <select id="getDeriveColumnInfo" resultMap="columnInfo">
+        SELECT ci.column_guid, ci.column_guid cid, sidci.column_name_zh, sidci.secret, sidci.secret_period,
+        sidci.important, sidci.remark, #{tenantId} tenantId
+        FROM column_info ci
+        LEFT JOIN source_info_derive_column_info sidci ON sidci.column_name_en=ci.column_name AND sidci.column_guid in
+        (
+        SELECT column_guid
+        FROM source_info_derive_table_column_relation sidtcr
+        JOIN source_info_derive_table_info sidti ON sidtcr.table_id=sidti.id AND sidti.table_guid=#{tableId} AND
+        sidti.version=-1
+        )
+        WHERE ci.column_guid in
+        <foreach item="columnId" index="index" collection="columnIds" open="(" close=")" separator=",">
+            #{columnId}
+        </foreach>
+    </select>
+</mapper>
