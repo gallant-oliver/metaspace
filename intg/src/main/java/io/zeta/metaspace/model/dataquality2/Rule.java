@@ -14,15 +14,20 @@ package io.zeta.metaspace.model.dataquality2;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.zeta.metaspace.model.datastandard.DataStandard;
 import lombok.Data;
 
 import java.sql.Timestamp;
 
 @Data
 public class Rule {
-
+    
     private String id;
     private String ruleTemplateId;
+    /**
+     * 参照数据标准ID: {@link DataStandard#getNumber()}
+     */
+    private String dataStandardCode;
     private String name;
     private String code;
     private Integer scope;
@@ -45,7 +50,6 @@ public class Rule {
     @JsonIgnore
     private int total;
     private int type;
-
     private Integer ruleType;
     private String ruleTypeName;
 

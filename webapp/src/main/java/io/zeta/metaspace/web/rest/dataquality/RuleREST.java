@@ -13,10 +13,6 @@
 package io.zeta.metaspace.web.rest.dataquality;
 
 
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.DELETE;
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
-
 import com.google.common.base.Joiner;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
@@ -35,7 +31,6 @@ import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
-import io.zeta.metaspace.model.share.APIIdAndName;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataStandardService;
@@ -45,19 +40,22 @@ import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.metadata.CategoryEntityV2;
-import org.apache.atlas.model.metadata.CategoryInfoV2;
-import org.apache.atlas.model.metadata.ImportCategory;
-import org.apache.atlas.model.metadata.MoveCategory;
-import org.apache.atlas.model.metadata.SortCategory;
+import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.web.util.Servlets;
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
+import javax.inject.Singleton;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
+import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -68,25 +66,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
-import javax.inject.Singleton;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.DELETE;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 
 /**
@@ -96,58 +80,59 @@ import javax.ws.rs.core.Response;
 @Service
 @Path("/dataquality/rule")
 public class RuleREST {
-
+    
+    private static final Integer CATEGORY_RULE = 4;
+    private static final String regex = "^[\\s\\S]{1,128}$";
+    
     @Context
     private HttpServletRequest request;
-
     @Context
     private HttpServletResponse response;
-
     @Autowired
     private RuleService ruleService;
     @Autowired
     private DataStandardService dataStandardService;
-
-
     @Autowired
     private DataManageService dataManageService;
-
-    private static final Integer CATEGORY_RULE = 4;
-
-
-    private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
-
+    
     /**
      * 添加规则
-     * @param rule
-     * @throws AtlasBaseException
      */
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    public void insert(Rule rule, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public void insert(Rule rule, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), rule.getName());
-        List<Rule> oldList = ruleService.getByCode(rule.getCode(),tenantId);
-        if (!oldList.isEmpty()) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"规则编号已存在");
+        verifyRule(rule);
+        List<Rule> oldList = ruleService.getByCode(rule.getCode(), tenantId);
+        if (CollectionUtils.isNotEmpty(oldList)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "规则编号已存在");
         }
-        List<Rule> oldListByName = ruleService.getByName(rule.getName(),tenantId);
-        if (!oldListByName.isEmpty()) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"规则名字已存在");
+        List<Rule> oldListByName = ruleService.getByName(rule.getName(), tenantId);
+        if (CollectionUtils.isNotEmpty(oldListByName)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "规则名字已存在");
         }
-        ruleService.insert(rule,tenantId);
+        ruleService.insert(rule, tenantId);
     }
-
+    
+    private void verifyRule(Rule rule) {
+        Assert.isTrue(StringUtils.isNotBlank(rule.getCode()), "规则编号不能为空字符串");
+        Assert.isTrue(StringUtils.isNotBlank(rule.getName()), "规则名字不能为空字符串");
+        Assert.isTrue(Pattern.matches(regex, rule.getCode()), "规则编号最大长度128");
+        Assert.isTrue(Pattern.matches(regex, rule.getName()), "规则名字最大长度128");
+    }
+    
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public void update(Rule rule,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public void update(Rule rule, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), rule.getName());
-        ruleService.update(rule,tenantId);
+        verifyRule(rule);
+        ruleService.update(rule, tenantId);
     }
-
+    
     @DELETE
     @Path("/batch")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -459,17 +444,21 @@ public class RuleREST {
         File file = null;
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-            HttpRequestContext.get().auditLog(ModuleEnum.RULEMANAGE.getAlias(),  name);
-            file = ExportDataPathUtils.fileCheck(name,fileInputStream);
+            HttpRequestContext.get().auditLog(ModuleEnum.RULEMANAGE.getAlias(), name);
+            file = ExportDataPathUtils.fileCheck(name, fileInputStream);
             String upload;
-            if (all){
-                upload = dataManageService.uploadAllCategory(file,CATEGORY_RULE,tenantId);
-            }else{
-                upload = dataManageService.uploadCategory(categoryId,direction,file,CATEGORY_RULE,tenantId);
+            if (all) {
+                upload = dataManageService.uploadAllCategory(file, CATEGORY_RULE, tenantId);
+            } else {
+                upload = dataManageService.uploadCategory(categoryId, direction, file, CATEGORY_RULE, tenantId);
             }
-            HashMap<String, String> map = new HashMap<String, String>() {{
-                put("upload", upload);
-            }};
+            HashMap<String, String> map = new HashMap<String, String>() {
+                private static final long serialVersionUID = 2618267072797185578L;
+        
+                {
+                    put("upload", upload);
+                }
+            };
             return ReturnUtil.success(map);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");

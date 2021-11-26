@@ -14,51 +14,61 @@ import java.sql.Timestamp;
 import java.util.List;
 
 public interface RuleDAO {
-
-    @Insert(" insert into data_quality_rule_template(id,name,code,rule_type,description,creator,create_time,update_time,delete,scope,tenantId,sql,type,enable) " +
-            " values(#{rule.id},#{rule.name},#{rule.code},#{rule.categoryId},#{rule.description},#{rule.creator},#{rule.createTime},#{rule.updateTime},#{rule.delete},2,#{tenantId},#{rule.sql},32,#{rule.enable})")
-    public int insert(@Param("rule") Rule rule,@Param("tenantId")String tenantId);
-
+    
+    @Insert(" insert into data_quality_rule_template " +
+            " ( " +
+            "  id,name,code,rule_type,description,creator,create_time,update_time,delete," +
+            "  scope,tenantId,sql,type,enable,data_standard_code" +
+            "  ) " +
+            " values" +
+            " (" +
+            "  #{rule.id},#{rule.name},#{rule.code},#{rule.categoryId},#{rule.description},#{rule.creator}," +
+            "  #{rule.createTime},#{rule.updateTime},#{rule.delete},2,#{tenantId},#{rule.sql},32,#{rule.enable}," +
+            "  #{rule.dataStandardCode}" +
+            " )")
+    int insert(@Param("rule") Rule rule, @Param("tenantId") String tenantId);
+    
     @Select("select unit from data_quality_rule_template where id=#{ruleTemplateId}")
-    public String getRuleTemplateUnit(@Param("ruleTemplateId")String ruleTemplateId);
-
+    public String getRuleTemplateUnit(@Param("ruleTemplateId") String ruleTemplateId);
+    
     @Update(" update data_quality_rule_template set " +
-            " name=#{name},code=#{code},rule_type=#{categoryId},description=#{description},update_time=#{updateTime},sql=#{sql},enable=#{enable} " +
+            " name=#{name},code=#{code},rule_type=#{categoryId},description=#{description}," +
+            " update_time=#{updateTime},sql=#{sql},enable=#{enable},data_standard_code=#{dataStandardCode}" +
             " where id=#{id}")
-    public int update(Rule rule);
-
-    @Select({" select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete,a.check_threshold_unit as unit" ,
-             " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and id=#{id}"})
+    int update(Rule rule);
+    
+    @Select({" select a.id,a.rule_template_id as ruleTemplateId,a.name,a.code,a.category_id as categoryId,a.enable,a.description,a.check_type as checkType,a.check_expression_type as checkExpressionType,a.check_threshold_min_value as checkThresholdMinValue,a.check_threshold_max_value as checkThresholdMaxValue,b.username as creator,a.create_time as createTime,a.update_time as updateTime,a.delete,a.check_threshold_unit as unit",
+            " from data_quality_rule a inner join users b on a.creator=b.userid where a.delete=false and id=#{id}"})
     public Rule getById(@Param("id") String id);
-
-    @Select({" select a.id " ,
-             " from data_quality_rule_template a where a.delete=false and a.code = #{code} and a.tenantid=#{tenantId}"})
-    public List<Rule> getByCode(@Param("code") String code,@Param("tenantId") String tenantId);
-
-    @Select({" select a.id " ,
-             " from data_quality_rule_template a where a.delete=false and a.code = #{code} and a.tenantid=#{tenantId} and a.id!=#{id}"})
-    public List<Rule> getByCodeV2(@Param("id") String id,@Param("code") String code,@Param("tenantId") String tenantId);
-
-    @Select({" select a.id " ,
-             " from data_quality_rule_template a where a.delete=false and a.name = #{name} and a.tenantid=#{tenantId}"})
-    public List<Rule> getByName(@Param("name") String name,@Param("tenantId") String tenantId);
-
-    @Select({" select a.id " ,
-             " from data_quality_rule_template a where a.delete=false and a.name = #{name} and a.tenantid=#{tenantId} and a.id!=#{id}"})
-    public List<Rule> getByNameV2(@Param("id") String id,@Param("name") String name,@Param("tenantId") String tenantId);
-
+    
+    @Select({" select a.id ",
+            " from data_quality_rule_template a where a.delete=false and a.code = #{code} and a.tenantid=#{tenantId}"})
+    public List<Rule> getByCode(@Param("code") String code, @Param("tenantId") String tenantId);
+    
+    @Select({" select a.id ",
+            " from data_quality_rule_template a where a.delete=false and a.code = #{code} and a.tenantid=#{tenantId} and a.id!=#{id}"})
+    public List<Rule> getByCodeV2(@Param("id") String id, @Param("code") String code, @Param("tenantId") String tenantId);
+    
+    @Select({" select a.id ",
+            " from data_quality_rule_template a where a.delete=false and a.name = #{name} and a.tenantid=#{tenantId}"})
+    public List<Rule> getByName(@Param("name") String name, @Param("tenantId") String tenantId);
+    
+    @Select({" select a.id ",
+            " from data_quality_rule_template a where a.delete=false and a.name = #{name} and a.tenantid=#{tenantId} and a.id!=#{id}"})
+    public List<Rule> getByNameV2(@Param("id") String id, @Param("name") String name, @Param("tenantId") String tenantId);
+    
     @Select("select enable from data_quality_rule_template where id=#{id}")
     public Boolean getEnableStatusById(@Param("id") String id);
-
+    
     @Select("update data_quality_rule_template set delete=true where id=#{id}")
     public void deleteById(@Param("id") String id);
-
+    
     @Insert({" <script>",
-             " update data_quality_rule_template set delete=true where id in ",
-             " <foreach collection='idList' item='id' index='index' open='(' close=')' separator=','>",
-             " #{id}",
-             " </foreach>",
-             " </script>"})
+            " update data_quality_rule_template set delete=true where id in ",
+            " <foreach collection='idList' item='id' index='index' open='(' close=')' separator=','>",
+            " #{id}",
+            " </foreach>",
+            " </script>"})
     public void deleteByIdList(@Param("idList") List<String> idList);
 
 

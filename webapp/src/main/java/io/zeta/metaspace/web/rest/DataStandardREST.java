@@ -19,60 +19,50 @@ import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Result;
-import io.zeta.metaspace.model.datastandard.CategoryAndDataStandard;
-import io.zeta.metaspace.model.datastandard.DataStandToRule;
-import io.zeta.metaspace.model.datastandard.DataStandToTable;
-import io.zeta.metaspace.model.datastandard.DataStandard;
-import io.zeta.metaspace.model.datastandard.DataStandardQuery;
+import io.zeta.metaspace.model.datastandard.*;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.DataManageService;
-import io.zeta.metaspace.web.service.DataQualityService;
 import io.zeta.metaspace.web.service.DataStandardService;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
+import io.zeta.metaspace.web.util.ObjectUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.atlas.model.metadata.CategoryEntityV2;
-import org.apache.atlas.model.metadata.CategoryInfoV2;
-import org.apache.atlas.model.metadata.ImportCategory;
-import org.apache.atlas.model.metadata.MoveCategory;
-import org.apache.atlas.model.metadata.SortCategory;
+import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.web.util.Servlets;
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.DELETE;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 
 /**
@@ -82,105 +72,133 @@ import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
 @Service
 @Path("/datastandard")
 public class DataStandardREST {
-
+    
+    private static final int MAX_EXCEL_FILE_SIZE = 10 * 1024 * 1024;
+    private static final int CATEGORY_TYPE = 3;
+    
     @Context
     private HttpServletRequest request;
-
     @Context
     private HttpServletResponse response;
-
     @Autowired
     private DataStandardService dataStandardService;
-
-    @Autowired
-    private DataQualityService dataQualityService;
-
     @Autowired
     private DataManageService dataManageService;
-
-    private static final int MAX_EXCEL_FILE_SIZE = 10*1024*1024;
-
-    private  static final int CATEGORY_TYPE=3;
-
-
-
+    
+    /**
+     * 新增数据标准
+     */
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     @Valid
-    public void insert(DataStandard dataStandard,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), dataStandard.getContent());
-        List<DataStandard> oldList = dataStandardService.getByNumber(dataStandard.getNumber(),tenantId);
-        if (!oldList.isEmpty()) {
-            throw new AtlasBaseException(AtlasErrorCode.STANDARD_NUMBER_ALREADY_EXISTS);
-        }
-        dataStandardService.insert(dataStandard,tenantId);
+    public void insert(DataStandard dataStandard, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), dataStandard.getName());
+    
+        ObjectUtils.isTrueThen(dataStandard.getNumber(),
+                v -> dataStandardService.verifyNumberExist(v, tenantId),
+                v -> {
+                    throw new AtlasBaseException(AtlasErrorCode.STANDARD_NUMBER_ALREADY_EXISTS);
+                });
+        ObjectUtils.isTrueThen(dataStandard.getName(),
+                v -> dataStandardService.verifyNameExist(v, tenantId),
+                v -> {
+                    throw new AtlasBaseException(AtlasErrorCode.STANDARD_NAME_ALREADY_EXISTS);
+                });
+    
+        dataStandardService.insert(dataStandard, tenantId);
     }
-
+    
+    /**
+     * 编辑数据标准
+     */
     @PUT
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     @Valid
-    public void update(DataStandard dataStandard,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), dataStandard.getContent());
-        dataStandardService.update(dataStandard,tenantId);
+    public void update(DataStandard dataStandard, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), dataStandard.getName());
+        dataStandardService.update(dataStandard, tenantId);
     }
-
+    
+    /**
+     * 批量删除数据标准
+     */
     @DELETE
     @Path("/batch")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
-    public void deleteByNumberList(List<String> numberList,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  Joiner.on("、").join(numberList));
-        dataStandardService.deleteByNumberList(numberList,tenantId);
+    public void deleteByNumberList(List<String> numberList, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), Joiner.on("、").join(numberList));
+        dataStandardService.deleteByNumberList(numberList, tenantId);
     }
-
+    
     @GET
     @Path("/{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public DataStandard getById(@PathParam("id") String id,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        return dataStandardService.getById(id,tenantId);
+    public DataStandard getById(@PathParam("id") String id, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return dataStandardService.getById(id, tenantId);
     }
-
+    
+    /**
+     * 分页查询指定目录下的数据标准
+     */
     @POST
     @Path("/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<DataStandard> queryByCatetoryId(@PathParam("categoryId") String categoryId, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        return dataStandardService.queryPageByCatetoryId(categoryId, parameters,tenantId);
+    public PageResult<DataStandard> pagedByCategoryId(@HeaderParam("tenantId") String tenantId,
+                                                      @PathParam("categoryId") String categoryId,
+                                                      Parameters parameters) throws AtlasBaseException {
+        return dataStandardService.queryPageByCatetoryId(categoryId, parameters, tenantId);
     }
-
+    
+    /**
+     * 根据标准编码删除数据标准
+     */
     @DELETE
     @Path("/{number}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(DELETE)
-    public void deleteByNumber(@PathParam("number") String number,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public void deleteByNumber(@PathParam("number") String number,
+                               @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), number);
-        dataStandardService.deleteByNumber(number,tenantId);
+        dataStandardService.deleteByNumber(number, tenantId);
     }
-
-
+    
+    /**
+     * 模糊分页查询数据标准
+     */
     @POST
     @Path("/search")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<DataStandard> search(DataStandardQuery parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        return dataStandardService.search(parameters,tenantId);
+    public PageResult<DataStandard> search(@HeaderParam("tenantId") String tenantId,
+                                           DataStandardQuery parameters) throws AtlasBaseException {
+        return dataStandardService.search(parameters, tenantId);
     }
-
+    
+    /**
+     * 历史版本分页查询
+     */
     @POST
     @Path("/history/{number}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult<DataStandard> history(@PathParam("number") String number, Parameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
-        return dataStandardService.history(number, parameters,tenantId);
+    public PageResult<DataStandard> history(@HeaderParam("tenantId") String tenantId,
+                                            @PathParam("number") String number,
+                                            Parameters parameters) throws AtlasBaseException {
+        return dataStandardService.history(number, parameters, tenantId);
     }
-
+    
+    /**
+     * 模板获取
+     */
     @GET
     @Path("/download/template")
     @Valid
@@ -188,62 +206,64 @@ public class DataStandardREST {
         String fileName = TemplateEnum.DATA_STANDARD_TEMPLATE.getFileName();
         InputStream inputStream = PoiExcelUtils.getTemplateInputStream(TemplateEnum.DATA_STANDARD_TEMPLATE);
         response.setContentType("application/force-download");
-        response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
+        response.addHeader("Content-Disposition", "attachment;fileName=".concat(fileName));
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
     }
-
-    public static String filename(String filePath) throws UnsupportedEncodingException {
+    
+    private static String filename(String filePath) throws UnsupportedEncodingException {
         String filename = filePath.substring(filePath.lastIndexOf("/") + 1);
         filename = URLEncoder.encode(filename, "UTF-8");
         return filename;
     }
-
+    
     @POST
     @Path("/export/selected")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public DownloadUri getDownloadURL(List<String> ids) throws Exception {
-        String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/datastandard/export/selected";
+        String url = MetaspaceConfig.getMetaspaceUrl().concat("/api/metaspace/datastandard/export/selected");
         return ExportDataPathUtils.generateURL(url, ids);
     }
-
+    
     @GET
     @Path("/export/selected/{downloadId}")
     @Valid
     @OperateType(UPDATE)
-    public void exportSelected(@PathParam("downloadId") String downloadId,@QueryParam("tenantId") String tenantId) throws Exception {
+    public void exportSelected(@PathParam("downloadId") String downloadId, @QueryParam("tenantId") String tenantId) throws Exception {
         List<String> ids = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
-        File exportExcel = dataStandardService.exportExcel(ids,tenantId);
+        Assert.isTrue(CollectionUtils.isNotEmpty(ids), "所选数据标准ID集合为空,导出失败!");
+        File exportExcel = dataStandardService.exportExcel(ids, tenantId);
         try {
-            String filePath = exportExcel.getAbsolutePath();
-            String fileName = filename(filePath);
-            InputStream inputStream = new FileInputStream(filePath);
-            response.setContentType("application/force-download");
-            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
-            IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  fileName);
+            String fileName = buildExportResponse(exportExcel);
+            HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), fileName);
         } finally {
             exportExcel.delete();
         }
     }
-
+    
     @GET
     @Path("/export/category/{categoryId}")
     @Valid
-    public void exportCategoryId(@PathParam("categoryId") String categoryId,@QueryParam("tenantId") String tenantId) throws Exception {
-        File exportExcel = dataStandardService.exportExcel(categoryId,tenantId);
+    public void exportCategoryId(@PathParam("categoryId") String categoryId, @QueryParam("tenantId") String tenantId) throws Exception {
+        Assert.isTrue(StringUtils.isNotBlank(categoryId), "目录ID无效,导出失败!");
+        File exportExcel = dataStandardService.exportExcel(categoryId, tenantId);
         try {
-            String filePath = exportExcel.getAbsolutePath();
-            String fileName = filename(filePath);
-            InputStream inputStream = new FileInputStream(filePath);
-            response.setContentType("application/force-download");
-            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
-            IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+            buildExportResponse(exportExcel);
         } finally {
             exportExcel.delete();
         }
     }
-
+    
+    private String buildExportResponse(File exportExcel) throws IOException {
+        String filePath = exportExcel.getAbsolutePath();
+        String fileName = filename(filePath);
+        InputStream inputStream = new FileInputStream(filePath);
+        response.setContentType("application/force-download");
+        response.addHeader("Content-Disposition", "attachment;fileName=".concat(fileName));
+        IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+        return fileName;
+    }
+    
     @POST
     @Path("/import/{categoryId}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
@@ -251,26 +271,22 @@ public class DataStandardREST {
     @OperateType(UPDATE)
     public Response importDataStandard(@PathParam("categoryId") String categoryId,
                                        @FormDataParam("file") InputStream fileInputStream,
-                                       @FormDataParam("file") FormDataContentDisposition contentDispositionHeader,@HeaderParam("tenantId")String tenantId) throws Exception {
+                                       @FormDataParam("file") FormDataContentDisposition contentDispositionHeader,
+                                       @HeaderParam("tenantId") String tenantId) throws Exception {
+        String fileName = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), fileName);
+    
         File file = null;
-        String name =URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-        HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  name);
-        if(!(name.endsWith(ExportDataPathUtils.fileFormat1) || name.endsWith(ExportDataPathUtils.fileFormat2))) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件格式错误");
-        }
-
-        file = new File(name);
-        FileUtils.copyInputStreamToFile(fileInputStream, file);
-        if(file.length() > MAX_EXCEL_FILE_SIZE) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件大小不能超过10M");
-        }
         try {
-            dataStandardService.importDataStandard(categoryId, file,tenantId);
+            file = ExportDataPathUtils.fileCheck(fileName, fileInputStream);
+            dataStandardService.importDataStandard(categoryId, file, tenantId);
             return Response.ok().build();
+        } catch (AtlasBaseException | IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"导入文件错误");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入文件错误");
         } finally {
-            if(Objects.nonNull(file) && file.exists()) {
+            if (Objects.nonNull(file) && file.exists()) {
                 file.delete();
             }
         }
@@ -435,12 +451,7 @@ public class DataStandardREST {
             exportExcel = dataManageService.exportExcel(ids, CATEGORY_TYPE,tenantId);
         }
         try {
-            String filePath = exportExcel.getAbsolutePath();
-            String fileName = filename(filePath);
-            InputStream inputStream = new FileInputStream(filePath);
-            response.setContentType("application/force-download");
-            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
-            IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+            buildExportResponse(exportExcel);
         } finally {
             exportExcel.delete();
         }
@@ -465,17 +476,21 @@ public class DataStandardREST {
         File file = null;
         try {
             String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
-            HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(),  name);
-            file = ExportDataPathUtils.fileCheck(name,fileInputStream);
+            HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), name);
+            file = ExportDataPathUtils.fileCheck(name, fileInputStream);
             String upload;
-            if (all){
-                upload = dataManageService.uploadAllCategory(file,CATEGORY_TYPE,tenantId);
-            }else{
-                upload = dataManageService.uploadCategory(categoryId,direction,file,CATEGORY_TYPE,tenantId);
+            if (all) {
+                upload = dataManageService.uploadAllCategory(file, CATEGORY_TYPE, tenantId);
+            } else {
+                upload = dataManageService.uploadCategory(categoryId, direction, file, CATEGORY_TYPE, tenantId);
             }
-            HashMap<String, String> map = new HashMap<String, String>() {{
-                put("upload", upload);
-            }};
+            HashMap<String, String> map = new HashMap<String, String>() {
+                private static final long serialVersionUID = 7196218586038548425L;
+        
+                {
+                    put("upload", upload);
+                }
+            };
             return ReturnUtil.success(map);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"导入失败");
