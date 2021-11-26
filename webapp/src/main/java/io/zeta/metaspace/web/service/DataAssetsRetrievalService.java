@@ -60,9 +60,6 @@ public class DataAssetsRetrievalService {
     private int TENANT_ASSETS_BUSINESS_MODULE = 50;
 
     @Autowired
-    private DataAssetsRetrievalDAO dataAssetsRetrievalDAO;
-
-    @Autowired
     private UserGroupDAO userGroupDAO;
 
     @Autowired
