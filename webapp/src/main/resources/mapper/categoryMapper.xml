@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.zeta.metaspace.web.dao.CategoryDAO">
+
+    <select id="getDomainCategory" resultType="io.zeta.metaspace.model.dataassets.DomainInfo">
+        select c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as tenantName from category c
+        left join tenant t on c.tenantid=t.id
+        where c.level=1 and c.categorytype=1 order by c.tenantid
+    </select>
+
+    <select id="getThemeNumber" resultType="int">
+        select count(*) from category
+        where parentcategoryguid=#{guid}
+    </select>
+
+    <select id="getDomainCategoryByNotPublicUser" resultType="io.zeta.metaspace.model.dataassets.DomainInfo">
+        select * from (
+        select c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as tenantName,c.private_status from
+        category c left join tenant t on c.tenantid=t.id
+        where c.level=1 and c.categorytype=1 and c.private_status='PUBLIC'
+        <if test='tenantId != null'>
+            and c.tenantid=#{tenantId}
+        </if>
+        <if test='groupIdList != null and groupIdList.size() > 0'>
+            union
+            SELECT DISTINCT c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as
+            tenantName,c.private_status from
+            category c
+            left join tenant t on c.tenantid=t.id
+            INNER JOIN category_group_relation as relation on c.guid = relation.category_id
+            WHERE c.level=1 and c.private_status = 'PRIVATE' AND c.categorytype =1
+            <if test='tenantId != null'>
+                AND c.tenantid=#{tenantId}
+            </if>
+            AND
+            relation.group_id in
+            <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>
+                #{item}
+            </foreach>
+        </if>
+        union
+        SELECT DISTINCT c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as
+        tenantName,c.private_status
+        from category c
+        left join tenant t on c.tenantid=t.id
+        WHERE c.level=1 and c.private_status = 'PRIVATE' AND c.categorytype =1 and c.creator=#{userId}
+        <if test='tenantId != null'>
+            AND c.tenantid=#{tenantId}
+        </if>
+        ) temp order by temp.tenantId
+    </select>
+
+    <select id="getThemeByUserGroup" resultType="io.zeta.metaspace.model.dataassets.DomainInfo">
+        select c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as tenantName,c.private_status from
+        category c left join tenant t on c.tenantid=t.id
+        where c.parentcategoryguid=#{guid} and c.private_status='PUBLIC'
+        <if test='tenantId != null'>
+            and c.tenantid=#{tenantId}
+        </if>
+        <if test='groupIdList != null and groupIdList.size() > 0'>
+            union
+            SELECT DISTINCT c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as
+            tenantName,c.private_status from
+            category c left join tenant t on c.tenantid=t.id
+            INNER JOIN category_group_relation as relation on c.guid = relation.category_id
+            WHERE c.parentcategoryguid=#{guid}
+            <if test='tenantId != null'>
+                AND c.tenantid=#{tenantId}
+            </if>
+            AND
+            relation.group_id in
+            <foreach item='item' index='index' collection='groupIdList' separator=',' open='(' close=')'>
+                #{item}
+            </foreach>
+        </if>
+        union
+        SELECT DISTINCT c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as
+        tenantName,c.private_status
+        from category c left join tenant t on c.tenantid=t.id
+        WHERE c.parentcategoryguid=#{guid} and c.creator=#{userId}
+        <if test='tenantId != null'>
+            AND c.tenantid=#{tenantId}
+        </if>
+    </select>
+
+    <select id="getThemeCategory" resultType="io.zeta.metaspace.model.dataassets.ThemeInfo">
+        select guid as themeId, name as themeName from category
+        where parentcategoryguid=#{guid}
+    </select>
+
+    <select id="queryCategoryInfo" resultType="org.apache.atlas.model.metadata.CategoryEntityV2">
+        select  c.guid,c.name,c.description,c.qualifiedname,t.name as tenantName from category c
+        left join tenant t on c.tenantid=t.id
+        where c.guid = #{guid}
+    </select>
+
+</mapper>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.zeta.metaspace.web.dao.TableDAO">
+    <select id="searchTableById" resultMap="io.zeta.metaspace.web.dao.BusinessDAO.dataAssetsInfo">
+        SELECT ti.tableguid id, ti.tablename as name, ti.description,
+        2 as type,
+        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS
+        (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
+        FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId}
+        UNION ALL
+        SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
+        FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=#{tenantId})
+        SELECT  PATH FROM T WHERE guid=br.categoryguid
+        ORDER BY PATH) businessPath,
+        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS
+        (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
+        FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId}
+        UNION ALL
+        SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
+        FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=#{tenantId})
+        SELECT  PATH FROM T WHERE guid=si.category_id
+        ORDER BY PATH) technicalPath,
+        #{tenantId} tenantid, ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName,
+        CASE WHEN sidti.importance IS null THEN false ELSE sidti.importance END AS important,
+        CASE WHEN sidti.security IS null THEN false ELSE sidti.security END AS secret,
+        te.name tenantName
+        FROM tableinfo ti
+        JOIN business2table b2t ON b2t.tableguid=ti.tableguid
+        JOIN business_relation br ON br.businessid=b2t.businessid
+        JOIN businessinfo bi ON bi.businessid=br.businessid
+        LEFT JOIN source_info si ON si.database_id=ti.databaseguid AND si.data_source_id=b2t.source_id AND si.version=0
+        LEFT JOIN source_info_derive_table_info sidti ON sidti.table_guid=ti.tableguid AND sidti.version=-1
+        LEFT JOIN tenant te ON te.id=bi.tenantid
+        WHERE ti.tableguid=#{tableId} AND ti.status='ACTIVE' AND br.businessid=#{businessId}
+    </select>
+
+    <select id="getTablePrivileges" resultType="io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation">
+        SELECT
+        gtr.derive_table_id AS deriveTableId,
+        gtr.user_group_id AS userGroupId,
+        CASE WHEN gtr.security_privilege IS null THEN false ELSE gtr.security_privilege END AS securityPrivilege,
+        CASE WHEN gtr.importance_privilege IS null THEN false ELSE gtr.importance_privilege END AS importancePrivilege
+        FROM group_table_relation gtr
+        JOIN user_group ug ON ug.id=gtr.user_group_id
+        JOIN user_group_relation ugr ON ugr.group_id=ug.id AND ugr.user_id=#{userId}
+        WHERE gtr.derive_table_id in
+        <foreach item="tableId" index="index" collection="tableIds" open="(" close=")" separator=",">
+            #{tableId}
+        </foreach>
+        <if test="isPublic==false">
+            AND ug.tenant=#{tenantId}
+        </if>
+    </select>
+</mapper>

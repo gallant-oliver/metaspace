@@ -20,7 +20,10 @@ package io.zeta.metaspace.web.dao;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
 import org.apache.atlas.model.metadata.RelationEntityV2;
-import org.apache.ibatis.annotations.*;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -604,4 +607,6 @@ public interface RelationDAO {
             ")" +
             "SELECT guid from categoryTree where parentcategoryguid is null or parentcategoryguid =''</script>")
     public String getTopGuidByGuid(@Param("guid") String guid, @Param("tenantId") String tenantId);
+
+    List<String> getBusinessId(@Param("guid") String guid);
 }

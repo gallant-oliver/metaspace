@@ -1,8 +1,10 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.dataassets.DataAssets;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
+import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import io.zeta.metaspace.model.usergroup.TenantGroup;
 import io.zeta.metaspace.model.usergroup.TenantHive;
 import io.zeta.metaspace.model.table.TableSource;
@@ -451,4 +453,21 @@ public interface TableDAO {
             " WHERE tb.tableguid = #{id} AND tb.status = 'ACTIVE' LIMIT 1" +
             "</script>")
     TableEntity selectById(@Param("id") String id);
+
+
+    /**
+     * 数据资产检索-根据id查询数据表
+     */
+    DataAssets searchTableById(@Param("tableId")String tableId,
+                               @Param("tenantId")String tenantId,
+                               @Param("businessId")String businessId);
+
+    /**
+     * 数据资产检索-查询重要表、保密表权限
+     */
+    List<GroupDeriveTableRelation> getTablePrivileges(@Param("tenantId")String tenantId,
+                                                      @Param("tableIds")List<String> tableIds,
+                                                      @Param("isPublic")boolean isPublic,
+                                                      @Param("isGlobal")boolean isGlobal,
+                                                      @Param("userId")String userId);
 }
