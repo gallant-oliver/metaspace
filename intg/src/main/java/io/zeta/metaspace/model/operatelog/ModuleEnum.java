@@ -50,6 +50,11 @@ public enum ModuleEnum {
     TIMELIMIT(3,"指标设计","指标管理",15,"时间限定", "timelimit", "timelimit",1, 15),
 //    APPROVALMANAGE(3,"规范定义","审批中心",19,"审批管理", "approvalmanage", "approvalmanage",1, 19),
 
+    //以下指标设计在安全中心不存在
+    ATOMICINDEX(3,"指标设计","原子指标",57,"原子指标", "atomicindex", "atomicindex",1, 57),
+    DERIVEINDEX(3,"指标设计","衍生指标",58,"衍生指标", "deriveindex", "deriveindex",1, 58),
+    COMPLEXINDEX(3,"指标设计","复合指标",59,"复合指标", "complexindex", "complexindex",1, 59),
+
     //审批管理
     APPROVERMANAGE(9,"审批管理","审批人管理",17,"审批人管理", "approvermanage", "approvermanage",1, 17),
     STATUS(9,"审批管理","审批状况",45,"审批状况", "status", "status",1, 17),
