@@ -82,15 +82,15 @@ import java.util.zip.ZipOutputStream;
 
 @Service
 public class TaskManageService {
-
+    
     private static final Logger LOG = LoggerFactory.getLogger(TaskManageService.class);
-    public static String JOB_GROUP_NAME = "METASPACE_JOBGROUP";
-    public static String TRIGGER_NAME = "METASPACE_TRIGGER";
-    public static String TRIGGER_GROUP_NAME = "METASPACE_TRIGGERGROUP";
+    private static final String JOB_GROUP_NAME = "METASPACE_JOBGROUP";
+    private static final String TRIGGER_NAME = "METASPACE_TRIGGER";
+    private static final String TRIGGER_GROUP_NAME = "METASPACE_TRIGGERGROUP";
     private static String engine;
     private static Configuration conf;
     private static Cache<String, List<String>> errorDataCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(30, TimeUnit.MINUTES).build();
-
+    
     static {
         try {
             conf = ApplicationProperties.get();
@@ -244,7 +244,7 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组列表失败");
         }
     }
-
+    
     public List<TaskWarningHeader.WarningGroupHeader> getAllWarningGroup(String tenantId) throws AtlasBaseException {
         try {
             return taskManageDAO.getAllWarningGroup(tenantId);
@@ -253,20 +253,18 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组列表失败");
         }
     }
-
-    public void addTask(TaskInfo taskInfo, String tenantId) throws AtlasBaseException {
-        Timestamp currentTime = DateUtils.currentTimestamp();
-        addDataQualityTask(currentTime, taskInfo, tenantId);
-    }
-
+    
     @Transactional(rollbackFor = Exception.class)
-    public void addDataQualityTask(Timestamp currentTime, TaskInfo taskInfo, String tenantId) throws AtlasBaseException {
+    public void addDataQualityTask(TaskInfo taskInfo, String tenantId) throws AtlasBaseException {
         try {
+            Timestamp currentTime = DateUtils.currentTimestamp();
             DataQualityTask dataQualityTask = new DataQualityTask();
+            
             List<String> dataQualityTaskByName = taskManageDAO.getDataQualityTaskByName(taskInfo.getTaskName(), tenantId);
             if (dataQualityTaskByName != null && dataQualityTaskByName.size() > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务名称已经存在");
             }
+            
             //id
             String guid = UUID.randomUUID().toString();
             dataQualityTask.setId(guid);
@@ -598,11 +596,10 @@ public class TaskManageService {
             LOG.error("获取任务信息失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取任务信息失败");
         }
-
+    
     }
-
-
-    public void startTask(String taskId) throws AtlasBaseException {
+    
+    public void enableTask(String taskId) throws AtlasBaseException {
         try {
             String qrtzName = taskManageDAO.getQrtzJobByTaskId(taskId);
             if (Objects.isNull(qrtzName) || qrtzName.trim().length() == 0) {
@@ -619,7 +616,7 @@ public class TaskManageService {
                 } else {
                     addQuartzJob(taskId, qrtzName);
                 }
-
+                
             }
             //设置任务状态为【启用】
             taskManageDAO.updateTaskEnableStatus(taskId, true);
@@ -628,8 +625,8 @@ public class TaskManageService {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "开启任务失败");
         }
     }
-
-    public void stopTask(String taskId) throws AtlasBaseException {
+    
+    public void disableTask(String taskId) throws AtlasBaseException {
         try {
             String jobName = taskManageDAO.getQrtzJobByTaskId(taskId);
             String jobGroupName = JOB_GROUP_NAME + jobName;
@@ -648,7 +645,7 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务正在执行中");
         }
         try {
-            String jobName = taskManageDAO.getJobName(taskId);
+            String jobName = taskManageDAO.getQrtzJobByTaskId(taskId);
             String jobGroupName = JOB_GROUP_NAME + System.currentTimeMillis();
             quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class);
             long waitTime = 0L;
@@ -658,6 +655,7 @@ public class TaskManageService {
                 waitTime += step;
                 Thread.sleep(step);
                 if (QuartzJob.STATE_MAP.containsKey(taskId)) {
+                    // TODO
                     break;
                 }
                 if (waitTime > taskStartExpire) {
@@ -698,7 +696,6 @@ public class TaskManageService {
             }
         }
     }
-
 
     public void addQuartzJob(String taskId) throws AtlasBaseException {
         long currentTime = System.currentTimeMillis();
