@@ -100,18 +100,18 @@ public class QuartzJob implements Job {
     private static Configuration conf;
     private static String engine;
     public final static String hiveId = "hive";
-
-
+    
+    
     static {
         try {
             conf = ApplicationProperties.get();
         } catch (Exception e) {
-
+        
         }
     }
-
-    public String initExecuteInfo(String taskId) {
-
+    
+    private String initExecuteInfo(String taskId) {
+        
         String userId = taskManageDAO.getTaskUpdater(taskId);
         DataQualityTaskExecute taskExecute = new DataQualityTaskExecute();
         String id = UUID.randomUUID().toString();
@@ -132,13 +132,14 @@ public class QuartzJob implements Job {
         taskExecute.setCounter(Objects.isNull(counter) ? 1 : ++counter);
         taskManageDAO.initTaskExecuteInfo(taskExecute);
         taskManageDAO.updateTaskExecutionCount(taskId);
+        // TODO update了个寂寞
         taskManageDAO.updateTaskExecuteStatus(taskId, 1);
         taskManageDAO.updateTaskStatus(taskId, 1);
         return id;
-
+        
     }
-
-    public boolean canceled(String taskId, String taskExecuteId) {
+    
+    private boolean canceled(String taskId, String taskExecuteId) {
         if (STATE_MAP.get(taskId)) {
             taskManageDAO.updateTaskExecuteStatus(taskExecuteId, 4);
             taskManageDAO.updateTaskStatus(taskId, 4);
@@ -148,7 +149,7 @@ public class QuartzJob implements Job {
         }
         return false;
     }
-
+    
     @Override
     public void execute(JobExecutionContext jobExecutionContext) {
         String taskId = "";
@@ -197,8 +198,8 @@ public class QuartzJob implements Job {
             STATE_MAP.remove(taskId);
         }
     }
-
-    public void completeTaskInformation(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList) throws AtlasBaseException {
+    
+    private void completeTaskInformation(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList) throws AtlasBaseException {
         try {
             for (AtomicTaskExecution taskExecution : taskList) {
                 taskExecution.setTaskId(taskId);
@@ -240,15 +241,15 @@ public class QuartzJob implements Job {
                 } else {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的任务类型");
                 }
-
+                
             }
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
     }
-
-
-    public void executeAtomicTaskList(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList, String tenantId) throws Exception {
+    
+    
+    private void executeAtomicTaskList(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList, String tenantId) throws Exception {
         engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf, String::valueOf);
         LOG.info("query engine:" + engine);
         int totalStep = taskList.size();
@@ -309,7 +310,7 @@ public class QuartzJob implements Job {
         }
         taskManageDAO.updateDataTaskCostTime(taskExecuteId, System.currentTimeMillis() - startTime);
     }
-
+    
     private void error(String taskId, AtomicTaskExecution task, Exception e) {
         taskManageDAO.updateTaskExecutionErrorMsg(task.getTaskExecuteId(), e.toString());
         taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
@@ -317,8 +318,8 @@ public class QuartzJob implements Job {
         taskManageDAO.updateTaskExecuteErrorStatus(task.getTaskExecuteId(), WarningStatus.WARNING.code);
         taskManageDAO.updateRuleExecuteErrorStatus(task.getId(), WarningStatus.WARNING.code);
     }
-
-    public void recordExecutionInfo(AtomicTaskExecution task, String errorMsg, String tenantId) {
+    
+    private void recordExecutionInfo(AtomicTaskExecution task, String errorMsg, String tenantId) {
         String dbName = task.getDbName();
         String tableName = task.getTableName();
         String objectName = task.getObjectName();
@@ -348,18 +349,18 @@ public class QuartzJob implements Job {
         } else {
             logInfoStatus = "INFO";
         }
-
+        
         StringJoiner logJoiner = new StringJoiner(" ");
         logJoiner.add(currentTime);
         logJoiner.add(logInfoStatus);
         logJoiner.add(source);
         logJoiner.add(checkMsg);
         logJoiner.add(Objects.isNull(errorMsg) ? "SUCCESS" : errorMsg);
-
+        
         taskManageDAO.updateRuleExecuteErrorMsg(task.getId(), logJoiner.toString());
     }
-
-    public void runJob(AtomicTaskExecution task) throws Exception {
+    
+    private void runJob(AtomicTaskExecution task) throws Exception {
         try {
             TaskType jobType = TaskType.getTaskByCode(task.getTaskType());
             Measure measure = null;
@@ -434,7 +435,7 @@ public class QuartzJob implements Job {
             throw e;
         }
     }
-
+    
     /**
      * 其他规则校验
      * <p>
@@ -445,7 +446,7 @@ public class QuartzJob implements Job {
      * @param task
      * @return
      */
-    public long otherRuleCheck(AtomicTaskExecution task, Measure measure) throws Exception {
+    private long otherRuleCheck(AtomicTaskExecution task, Measure measure) throws Exception {
         Long errorCount = 0L;
         try {
             MeasureLivyResult result = null;
@@ -567,7 +568,7 @@ public class QuartzJob implements Job {
 
         return measure;
     }
-
+    
     /**
      * 一致性生成Measure
      *
@@ -575,13 +576,13 @@ public class QuartzJob implements Job {
      * @param timestamp
      * @return
      */
-    public Measure buildMeasure(AtomicTaskExecution task, Long timestamp) {
+    private Measure buildMeasure(AtomicTaskExecution task, Long timestamp) {
         List<ConsistencyParam> consistencyParams = task.getConsistencyParams();
         if (consistencyParams == null || consistencyParams.isEmpty() || consistencyParams.size() < 2) {
             throw new AtlasBaseException("一致性校验的数据源必须大于一个");
         }
-
-
+        
+        
         ConsistencyParam standard = null;
         List<ConsistencyParam> contrasts = new ArrayList<>();
         Map<String, MeasureDataSource> dataSourceMap = new HashMap<>();
