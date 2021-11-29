@@ -20,8 +20,9 @@ public enum BusinessType {
      */
 
     ATOMIC_INDEX("1","原子指标"),
-    DERIVE_INDEX("2","派生指标"),
+    DERIVE_INDEX("2","衍生指标"),
     COMPOSITE_INDEX("3","复合指标"),
+    TIME_LIMIT("8","时间限定"),
     DATABASE_INFO_REGISTER("4","数据库登记"),
     BUSINESSCATALOGUE("5","业务目录"),
     BUSINESS_OBJECT("6","业务对象"),

@@ -1,5 +1,6 @@
 package io.zeta.metaspace.model.operatelog;
 
+import com.sun.org.apache.xpath.internal.operations.Mod;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.security.RoleResource;
 import io.zeta.metaspace.model.user.UserInfo;
@@ -201,6 +202,12 @@ public enum ModuleEnum {
         result.add(ModuleEnum.DATABASEREGISTER);
         result.add(ModuleEnum.BUSINESSCATALOGUE);
         result.add(ModuleEnum.BUSINESS);
+        result.add(ModuleEnum.BUSINESSINDEX);
+        result.add(ModuleEnum.ATOMICINDEX);
+        result.add(ModuleEnum.DERIVEINDEX);
+        result.add(ModuleEnum.COMPLEXINDEX);
+        result.add(ModuleEnum.INDEXALL);
+        result.add(ModuleEnum.TIMELIMIT);
         return result;
     }
 
