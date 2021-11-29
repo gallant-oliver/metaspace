@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.dao;
 
+import io.zeta.metaspace.model.dataassets.ColumnInfo;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.TableHeader;
@@ -162,4 +163,12 @@ public interface ColumnDAO {
             " ORDER BY columnName" +
             "</script>")
     List<Column> selectListByGuidOrLike(@Param("tableGuid") String tableGuid, @Param("columnName") String columnName, @Param("type") String type, @Param("description") String description);
+
+
+    /**
+     * 数据资产检索-查询数据表字段衍生登记信息和标签
+     */
+    List<ColumnInfo> getDeriveColumnInfo(@Param("columnIds")List<String> columnIds,
+                                         @Param("tenantId")String tenantId,
+                                         @Param("tableId")String tableId);
 }
