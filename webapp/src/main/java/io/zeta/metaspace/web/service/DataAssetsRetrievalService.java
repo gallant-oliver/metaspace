@@ -60,9 +60,6 @@ public class DataAssetsRetrievalService {
     private int TENANT_ASSETS_BUSINESS_MODULE = 50;
 
     @Autowired
-    private DataAssetsRetrievalDAO dataAssetsRetrievalDAO;
-
-    @Autowired
     private UserGroupDAO userGroupDAO;
 
     @Autowired
@@ -136,6 +133,10 @@ public class DataAssetsRetrievalService {
         boolean isGlobal = isGlobalUser();
 
         List<DataAssets> list;
+
+        if (!StringUtils.isEmpty(query)) {
+            query = query.replaceAll("%", "/%").replaceAll("_", "/_");
+        }
 
         // 搜索类型：0全部；1业务对象；2数据表
         switch (type) {
@@ -328,6 +329,7 @@ public class DataAssetsRetrievalService {
                 }
 
                 tableInfo.setCategory(formatPath(tableInfo.getCategory(), null, isPublic));
+                tableInfo.setTenantId(belongTenantId);
             }
         }
         pageResult.setTotalSize(totalSize);

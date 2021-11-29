@@ -61,7 +61,7 @@
                 )
             </otherwise>
         </choose>
-        union
+        UNION ALL
         SELECT ti.tableguid id, ti.tablename as name, ti.description,
         2 as type,
         (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS
@@ -126,7 +126,7 @@
             OR (t.businessName like concat('%',#{query},'%') ESCAPE '/')
             )
         </if>
-        ORDER BY name
+        ORDER BY t.id, t.businessId
         limit #{limit}
         offset #{offset}
     </select>
@@ -182,7 +182,7 @@
             OR (t.description like concat('%',#{query},'%') ESCAPE '/')
             )
         </if>
-        ORDER BY name
+        ORDER BY t.id
         limit #{limit}
         offset #{offset}
     </select>
@@ -253,7 +253,7 @@
             OR (t.businessName like concat('%',#{query},'%') ESCAPE '/')
             )
         </if>
-        ORDER BY name
+        ORDER BY t.id, t.businessId
         limit #{limit}
         offset #{offset}
     </select>
