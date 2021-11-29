@@ -303,9 +303,10 @@
     </select>
 
     <select id="getTableNumber" resultType="int">
-        SELECT COUNT(tableguid) FROM business2table
+        SELECT COUNT(b2t.tableguid) FROM business2table b2t
+        join tableInfo ti on ti.tableguid=b2t.tableguid and ti.status='ACTIVE'
         <if test='businessList != null and businessList.size() > 0'>
-            where businessid in
+            where b2t.businessid in
             <foreach item='item' index='index' collection='businessList' separator=',' open='(' close=')'>
                 #{item}
             </foreach>
