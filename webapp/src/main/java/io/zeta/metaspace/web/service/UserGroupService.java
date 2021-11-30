@@ -743,7 +743,7 @@ public class UserGroupService {
     public PageResult<SourceAndPrivilege> getSearchDataSource(String groupId, int offset, int limit, String search) {
         PageResult<SourceAndPrivilege> commonResult = new PageResult<>();
         List<SourceAndPrivilege> lists = userGroupDAO.getSourceBySearch(groupId, offset, limit, null);
-        Long totalSize = 0l;
+        Long totalSize = 0L;
         if (CollectionUtils.isNotEmpty(lists)) {
             totalSize = lists.get(0).getTotalSize();
         }
