@@ -27,8 +27,6 @@ import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.web.typeHandler.ApiPolyEntityTypeHandler;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.ibatis.annotations.*;
-import org.apache.ibatis.type.EnumOrdinalTypeHandler;
-import org.apache.ibatis.type.JdbcType;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -506,6 +504,14 @@ public interface DataShareDAO {
     @Insert("insert into api_category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,level,tenantid,createtime,projectid)" +
             "values(#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.level},#{tenantId},#{category.createTime},#{projectId})")
     public int add(@Param("category") CategoryEntityV2 category, @Param("projectId") String projectId, @Param("tenantId") String tenantId);
+
+    @Insert("<script>" +
+            "insert into api_category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,level,tenantid,createtime,projectid)values " +
+            "<foreach item='category' index='index' collection='categorys' separator='),(' open='(' close=')'>" +
+            "#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.level},#{tenantId},#{category.createTime},#{projectId}" +
+            "</foreach>" +
+            " </script>")
+    public int addAll(@Param("categorys") List<CategoryEntityV2> categorys, @Param("projectId") String projectId, @Param("tenantId") String tenantId);
 
     @Update("update api_category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid} and tenantid=#{tenantId}")
     public int updateDownBrotherCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid,@Param("tenantId")String tenantId);

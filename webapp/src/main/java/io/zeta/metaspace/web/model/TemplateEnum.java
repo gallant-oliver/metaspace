@@ -17,7 +17,9 @@ public enum TemplateEnum {
     INDEX_FIELD_TEMPLATE("index_field_template.xlsx",
             new String[][]{{"注释", "编码", "名称", "父指标域编码", "描述"},
                     {"填写规则（不要删除）", "请输入英文和数字，不区分大小写", "请输入中文、英文或数字", "二级指标域请输入其父指标域的编码；一级指标域不用填写", "请输入描述，不超过200个字符"},
-                    {"范例（不要删除）", "XS001", "销售域", "父指标域编码", "描述"}});
+                    {"范例（不要删除）", "XS001", "销售域", "父指标域编码", "描述"}}),
+
+    API_CATEGORY_TEMPLATE("api_category_template.xlsx", new String[][]{{"目录名字"}});
     
     private String fileName;
     private String[][] content;
