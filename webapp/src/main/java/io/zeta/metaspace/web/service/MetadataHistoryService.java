@@ -22,7 +22,6 @@ import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.ColumnMetadata;
 import io.zeta.metaspace.model.metadata.TableMetadata;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
-import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.BusinessDAO;
 import io.zeta.metaspace.web.dao.MetadataHistoryDAO;
@@ -156,7 +155,7 @@ public class MetadataHistoryService {
                     metadataDAO.addTableMetadata(tableMetadata);
                     int version = metadataDAO.getTableVersion(tableGuid);
                     columnMetadataList.forEach(columnMetadata -> columnMetadata.setVersion(version));
-                    if (columnMetadataList.size() > 0) {
+                    if (CollectionUtils.isNotEmpty(columnMetadataList)) {
                         metadataDAO.addColumnMetadata(columnMetadataList);
                     }
 

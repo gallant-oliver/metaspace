@@ -18,7 +18,7 @@ public class ThreadPoolUtil {
     public static final int CORE_POOL_SIZE = 20;
 
     /** 线程池最大线程数 */
-    public static final int MAX_POOL_SIZE = 100;
+    public static final int MAX_POOL_SIZE = 50;
 
     /** 空闲线程回收时间 */
     public static final int KEEP_ALIVE_TIME = 1000;
@@ -30,13 +30,29 @@ public class ThreadPoolUtil {
      * 线程池拒绝策略
      */
     public static final RejectedExecutionHandler handler = new ThreadPoolExecutor.CallerRunsPolicy();
+
     /** 业务请求异步处理线程池 */
     private static final ThreadPoolExecutor processExecutor = new ThreadPoolExecutor(
             CORE_POOL_SIZE, MAX_POOL_SIZE, KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
             new LinkedBlockingQueue<Runnable>(BLOCKING_QUEUE_SIZE),handler);
 
+    /**
+     * 元数据采集专用线程池
+      */
+    private static final ThreadPoolExecutor metadataExecutor = new ThreadPoolExecutor(
+            10, 20, KEEP_ALIVE_TIME, TimeUnit.MILLISECONDS,
+            new LinkedBlockingQueue<Runnable>(BLOCKING_QUEUE_SIZE),handler);
+
     public static ThreadPoolExecutor getThreadPoolExecutor() {
         return processExecutor;
+    }
+
+    /**
+     * 元数据采集专用线程池
+     * @return
+     */
+    public static ThreadPoolExecutor getThreadPoolExecutorMetadata() {
+        return metadataExecutor;
     }
 
     public static int getMaxQueueSize() {
