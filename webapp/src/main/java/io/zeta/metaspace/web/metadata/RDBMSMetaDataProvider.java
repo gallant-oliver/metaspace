@@ -15,6 +15,7 @@ import io.zeta.metaspace.model.sync.SyncTaskInstance;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
+import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.KafkaConnectorDAO;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
 import io.zeta.metaspace.web.service.DataManageService;
@@ -52,6 +53,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -336,7 +338,10 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     protected int importTable(AtlasEntity dbEntity, String instanceId, String databaseName, Table tableName, final boolean failOnError,
                               String instanceGuid, String taskInstanceId, SyncTaskDefinition definition) {
         try {
-            registerTable(dbEntity, instanceId, databaseName, tableName, instanceGuid, taskInstanceId, definition);
+            ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutorMetadata();
+            threadPoolExecutor.execute(()->{
+                registerTable(dbEntity, instanceId, databaseName, tableName, instanceGuid, taskInstanceId, definition);
+            });
             return 1;
         } catch (Exception e) {
             LOG.error("Import failed for {} {}", getTableTypeName(), tableName, e);
@@ -643,17 +648,11 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     }
 
     protected AtlasEntity.AtlasEntityWithExtInfo registerTable(AtlasEntity dbEntity, String instanceId, String databaseName,
-                                                               Table tableName, String instanceGuid, String taskInstanceId, SyncTaskDefinition definition) throws Exception {
+                                                               Table tableName, String instanceGuid, String taskInstanceId, SyncTaskDefinition definition) {
 
         String tableQualifiedName = AdapterUtils.getTableQualifiedName(dataSourceInfo, databaseName, tableName.getName());
-       // String tableQualifiedName = getTableQualifiedName(instanceId, databaseName, tableName.getName());
-
-        syncTaskInstanceDAO.appendLog(taskInstanceId, "开始查找实体：" + tableQualifiedName);
         AtlasEntity.AtlasEntityWithExtInfo ret = findEntity(getTableTypeName(), tableQualifiedName);
-        syncTaskInstanceDAO.appendLog(taskInstanceId, "查找实体完成：" + tableQualifiedName);
-
         InterProcessMutex lock = zkLockUtils.getInterProcessMutex(tableQualifiedName);
-
         try {
             LOG.debug("尝试拿锁 : " + Thread.currentThread().getName() + " " + tableQualifiedName);
             if (lock.acquire(LOCK_TIME_OUT_TIME, TimeUnit.MINUTES)) {
@@ -662,15 +661,11 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 checkTaskEnable(taskInstanceId);
                 AtlasEntity.AtlasEntityWithExtInfo tableEntity;
                 if (ret == null) {
-                    syncTaskInstanceDAO.appendLog(taskInstanceId, "实体为空，开始生成实体：" + tableQualifiedName);
                     tableEntity = toTableEntity(dbEntity, instanceId, databaseName, tableName, null, instanceGuid, definition);
-                    syncTaskInstanceDAO.appendLog(taskInstanceId, "生成实体结束：" + tableQualifiedName);
                     ret = registerEntity(tableEntity, definition);
                 } else {
-                    syncTaskInstanceDAO.appendLog(taskInstanceId, "实体不为空：" + tableQualifiedName);
                     LOG.debug("Table {}.{} is already registered with id {}. Updating entity.", databaseName, tableName, ret.getEntity().getGuid());
                     ret = toTableEntity(dbEntity, instanceId, databaseName, tableName, ret, instanceGuid, definition);
-                    syncTaskInstanceDAO.appendLog(taskInstanceId, "生成实体结束：" + tableQualifiedName);
                     entitiesStore.createOrUpdate(new AtlasEntityStream(ret, definition), false);
                     AtlasRelatedObjectId atlasRelatedObjectId = new AtlasRelatedObjectId();
                     atlasRelatedObjectId.setDisplayText(String.valueOf(dbEntity.getAttribute(ATTRIBUTE_NAME)));
@@ -680,7 +675,10 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 return ret;
             }
             throw new AtlasBaseException("获取锁超时：" + tableQualifiedName);
-        } finally {
+        } catch (Exception e){
+            LOG.error("registerTable exception is {}", e);
+            return null;
+        }finally {
             // 每处理完一个表清理相关的entities，减少重复处理
             RequestContext.get().clearEntities();
             try {
