@@ -110,11 +110,12 @@ public class QuartzJob implements Job {
         }
     }
     
-    private String initExecuteInfo(String taskId) {
-        
+    private String initExecuteInfo(String taskId, String taskExecuteId) {
         String userId = taskManageDAO.getTaskUpdater(taskId);
         DataQualityTaskExecute taskExecute = new DataQualityTaskExecute();
-        String id = UUID.randomUUID().toString();
+        String id = StringUtils.isEmpty(taskExecuteId)
+                ? UUID.randomUUID().toString()
+                : taskExecuteId;
         taskExecute.setId(id);
         taskExecute.setTaskId(taskId);
         taskExecute.setPercent(0F);
@@ -162,11 +163,15 @@ public class QuartzJob implements Job {
                 //任务正在运行中，跳过本次执行
                 return;
             }
-            taskExecuteId = initExecuteInfo(taskId);
+    
+            taskExecuteId = (String) jobExecutionContext.getJobDetail()
+                    .getJobDataMap()
+                    .getOrDefault("executor", StringUtils.EMPTY);
+            taskExecuteId = initExecuteInfo(taskId, taskExecuteId);
             STATE_MAP.put(taskId, false);
             EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
             String tenantId = taskInfo.getTenantId();
-
+    
             if (canceled(taskId, taskExecuteId)) {
                 return;
             }

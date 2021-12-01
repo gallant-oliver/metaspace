@@ -32,6 +32,7 @@ import io.zeta.metaspace.model.dataquality.TaskType;
 import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.datasource.DataSourceHead;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
+import io.zeta.metaspace.model.dto.dataquality.TaskDTO;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.ColumnParameters;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -87,6 +88,7 @@ public class TaskManageService {
     private static final String JOB_GROUP_NAME = "METASPACE_JOBGROUP";
     private static final String TRIGGER_NAME = "METASPACE_TRIGGER";
     private static final String TRIGGER_GROUP_NAME = "METASPACE_TRIGGERGROUP";
+    private static final int errorDataSize = 2000;
     private static String engine;
     private static Configuration conf;
     private static Cache<String, List<String>> errorDataCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(30, TimeUnit.MINUTES).build();
@@ -98,21 +100,20 @@ public class TaskManageService {
             LOG.error(e.toString());
         }
     }
-
-    private static int errorDataSize = 2000;
-
+    
     @Autowired
-    TaskManageDAO taskManageDAO;
+    private TaskManageDAO taskManageDAO;
+    
     @Autowired
-    RuleService ruleService;
+    private RuleService ruleService;
     @Autowired
-    QuartzManager quartzManager;
+    private QuartzManager quartzManager;
     @Autowired
-    UsersService usersService;
+    private UsersService usersService;
     @Autowired
-    MetaspaceGremlinQueryService metaspaceEntityService;
+    private MetaspaceGremlinQueryService metaspaceEntityService;
     @Autowired
-    BusinessService businessService;
+    private BusinessService businessService;
     @Autowired
     private TenantService tenantService;
     @Autowired
@@ -148,12 +149,24 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取任务列表失败");
         }
     }
-
+    
+    
+    public List<TaskDTO> listEnableTasks(String tenantId) {
+        return taskManageDAO.queryEnableTasks(tenantId)
+                .stream()
+                .filter(Objects::nonNull)
+                .map(task -> TaskDTO.builder()
+                        .taskId(task.getId())
+                        .taskName(task.getName())
+                        .build())
+                .collect(Collectors.toList());
+    }
+    
     public PageResult getTableList(String dbName, Parameters parameters) throws AtlasBaseException {
         try {
             String databaseId = taskManageDAO.getDbIdByDbName(dbName);
             PageResult<Table> pageResult = metaspaceEntityService.getTableByDB(databaseId, true, parameters.getOffset(), parameters.getLimit());
-
+            
             List<Table> tableList = pageResult.getLists();
             if (Objects.nonNull(tableList) && tableList.size() > 0) {
                 Table tmpTable = taskManageDAO.getDbAndTableName(tableList.get(0).getTableId());
@@ -638,16 +651,20 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭模板失败");
         }
     }
-
-
-    public void startTaskNow(String taskId) throws AtlasBaseException {
+    
+    public String startTaskNow(String taskId) throws AtlasBaseException {
         if (QuartzJob.STATE_MAP.containsKey(taskId)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务正在执行中");
         }
         try {
             String jobName = taskManageDAO.getQrtzJobByTaskId(taskId);
             String jobGroupName = JOB_GROUP_NAME + System.currentTimeMillis();
-            quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class);
+            String executeId = UUID.randomUUID().toString();
+            quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class, new HashMap<String, Object>() {
+                {
+                    put("executeId", executeId);
+                }
+            });
             long waitTime = 0L;
             long taskStartExpire = conf.getLong("task_start_expire", 10) * 1000;
             long step = 50;
@@ -655,13 +672,13 @@ public class TaskManageService {
                 waitTime += step;
                 Thread.sleep(step);
                 if (QuartzJob.STATE_MAP.containsKey(taskId)) {
-                    // TODO
                     break;
                 }
                 if (waitTime > taskStartExpire) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "启动任务超时,请重新尝试");
                 }
             }
+            return executeId;
         } catch (AtlasBaseException e) {
             LOG.error("启动任务失败", e);
             throw e;
@@ -723,7 +740,7 @@ public class TaskManageService {
                 }
                 quartzManager.addCronJobWithTimeRange(jobName, jobGroupName, triggerName, triggerGroupName, QuartzJob.class, cron, level, startTime, endTime);
             } else {
-                quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class);
+                quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class, Collections.emptyMap());
             }
 
         } catch (AtlasBaseException e) {
@@ -1326,5 +1343,6 @@ public class TaskManageService {
             }
         }
     }
-
+    
+    
 }

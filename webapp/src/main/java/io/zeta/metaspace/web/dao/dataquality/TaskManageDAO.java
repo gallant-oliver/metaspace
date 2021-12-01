@@ -34,55 +34,51 @@ import java.util.List;
  * @date 2019/7/24 9:53
  */
 public interface TaskManageDAO {
-
-
+    
+    
     /**
      * 获取任务列表
+     *
      * @param my
      * @param creator
      * @param params
      * @return
      */
     @Select({"<script>",
-             " select count(*)over() total,data_quality_task.id,data_quality_task.enable,'TID-'||number as taskId,name as taskName,description,current_execution_status as executeStatus,",
-             " current_execution_percent as percent,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,",
-             " error_total_count as ruleErrorTotalCount,start_time as startTime,end_time as endTime,level as taskLevel,users.username as creator",
-             " from data_quality_task join users on users.userid=data_quality_task.creator",
-             " where ",
-             " delete=false and data_quality_task.tenantId=#{tenantId}",
-             " and (data_quality_task.name like concat('%',#{params.query},'%') ESCAPE '/' or 'TID-'||data_quality_task.number like concat('%',#{params.query},'%') ESCAPE '/')",
-             " <if test='my==0'>",
-             " and data_quality_task.creator=#{creator}",
-             " </if>",
-             " order by data_quality_task.create_time desc",
-             " <if test='params.limit!=null and params.limit!= -1'>",
-             " limit #{params.limit}",
-             " </if>",
-             " <if test='params.offset!=null'>",
-             " offset #{params.offset}",
-             " </if>",
-             " </script>"})
-    public List<TaskHeader> getTaskList(@Param("my") Integer my, @Param("creator") String creator, @Param("params") Parameters params,@Param("tenantId") String tenantId) throws SQLException;
-
-    /**
-     * 任务总数
-     * @param my
-     * @param creator
-     * @param params
-     * @return
-     */
-
+            " select count(*)over() total,data_quality_task.id,data_quality_task.enable,'TID-'||number as taskId,name as taskName,description,current_execution_status as executeStatus,",
+            " current_execution_percent as percent,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,",
+            " error_total_count as ruleErrorTotalCount,start_time as startTime,end_time as endTime,level as taskLevel,users.username as creator",
+            " from data_quality_task join users on users.userid=data_quality_task.creator",
+            " where ",
+            " delete=false and data_quality_task.tenantId=#{tenantId}",
+            " and (data_quality_task.name like concat('%',#{params.query},'%') ESCAPE '/' or 'TID-'||data_quality_task.number like concat('%',#{params.query},'%') ESCAPE '/')",
+            " <if test='my==0'>",
+            " and data_quality_task.creator=#{creator}",
+            " </if>",
+            " order by data_quality_task.create_time desc",
+            " <if test='params.limit!=null and params.limit!= -1'>",
+            " limit #{params.limit}",
+            " </if>",
+            " <if test='params.offset!=null'>",
+            " offset #{params.offset}",
+            " </if>",
+            " </script>"})
+    public List<TaskHeader> getTaskList(@Param("my") Integer my, @Param("creator") String creator, @Param("params") Parameters params, @Param("tenantId") String tenantId) throws SQLException;
+    
+    List<DataQualityTask> queryEnableTasks(@Param("tenantId") String tenantId);
+    
     /**
      * 删除任务
+     *
      * @param taskIdList
      * @return
      */
     @Update({" <script>",
-             " update data_quality_task set delete=true where id in",
-             " <foreach item='taskId' index='index' collection='taskIdList' separator=',' open='(' close=')'>" ,
-             " #{taskId}",
-             " </foreach>",
-             " </script>"})
+            " update data_quality_task set delete=true where id in",
+            " <foreach item='taskId' index='index' collection='taskIdList' separator=',' open='(' close=')'>",
+            " #{taskId}",
+            " </foreach>",
+            " </script>"})
     public int deleteTaskList(@Param("taskIdList")List<String> taskIdList);
 
     /**
@@ -927,28 +923,29 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({" <script>",
-             " select c.id as ruleExecutionId,c.task_execute_id as executionId,c.subtask_id as subtaskId,c.subtask_rule_id as subTaskRuleId,c.subtask_object_id as objectId, c.result, c.check_status as checkStatus,c.orange_warning_check_status as orangeCheckStatus, c.red_warning_check_status as redCheckStatus,c.update_time as createTime,",
-             " d.name as ruleName,d.scope,d.type as taskType,d.description,d.check_type as checkType, d.check_expression_type as checkExpression,d.check_threshold_min_value as checkMinValue,d.check_threshold_max_value as checkMaxValue,d.orange_check_type as orangeWarningCheckType,d.orange_check_expression_type as orangeWarningcheckExpression,",
-             " d.orange_threshold_min_value as orangeWarningMinValue,d.orange_threshold_max_value as orangeWarningMaxValue,d.red_check_type as redWarningCheckType,d.red_check_expression_type as redWarningcheckExpression,d.red_threshold_min_value as redWarningMinValue,d.red_threshold_max_value as redWarningMaxValue,d.check_threshold_unit as checkThresholdUnit",
-             " from (select * from data_quality_task_rule_execute as rule_execute where task_execute_id=#{ruleExecutionId} and subtask_id=#{subTaskId}) c",
-             " join",
-             " (select a.*,b.* from (select data_quality_sub_task_rule.*,data_quality_rule_template.name,data_quality_rule_template.description,data_quality_rule_template.scope,data_quality_rule_template.type from data_quality_sub_task_rule join data_quality_rule_template on data_quality_sub_task_rule.ruleid=data_quality_rule_template.id where data_quality_rule_template.tenantid=#{tenantId}) a",
-             " join",
-             " (select subtask_id,object_id from data_quality_sub_task_object where task_id=(select task_id from data_quality_task_execute where id=#{ruleExecutionId})) b",
-             " on a.subtask_id = b.subtask_id) d",
-             " on d.id=c.subtask_rule_id and d.object_id=c.subtask_object_id",
-             " </script>"})
-    List<TaskRuleExecutionRecord> getTaskRuleExecutionRecords(@Param("ruleExecutionId")String ruleExecutionId,@Param("subTaskId")String subTaskId,@Param("tenantId")String tenantId);
-
+            " select c.id as ruleExecutionId,c.task_execute_id as executionId,c.subtask_id as subtaskId,c.subtask_rule_id as subTaskRuleId,c.subtask_object_id as objectId, c.result, c.check_status as checkStatus,c.orange_warning_check_status as orangeCheckStatus, c.red_warning_check_status as redCheckStatus,c.update_time as createTime,",
+            " d.name as ruleName,d.scope,d.type as taskType,d.description,d.check_type as checkType, d.check_expression_type as checkExpression,d.check_threshold_min_value as checkMinValue,d.check_threshold_max_value as checkMaxValue,d.orange_check_type as orangeWarningCheckType,d.orange_check_expression_type as orangeWarningcheckExpression,",
+            " d.orange_threshold_min_value as orangeWarningMinValue,d.orange_threshold_max_value as orangeWarningMaxValue,d.red_check_type as redWarningCheckType,d.red_check_expression_type as redWarningcheckExpression,d.red_threshold_min_value as redWarningMinValue,d.red_threshold_max_value as redWarningMaxValue,d.check_threshold_unit as checkThresholdUnit",
+            " from (select * from data_quality_task_rule_execute as rule_execute where task_execute_id=#{ruleExecutionId} and subtask_id=#{subTaskId}) c",
+            " join",
+            " (select a.*,b.* from (select data_quality_sub_task_rule.*,data_quality_rule_template.name,data_quality_rule_template.description,data_quality_rule_template.scope,data_quality_rule_template.type from data_quality_sub_task_rule join data_quality_rule_template on data_quality_sub_task_rule.ruleid=data_quality_rule_template.id where data_quality_rule_template.tenantid=#{tenantId}) a",
+            " join",
+            " (select subtask_id,object_id from data_quality_sub_task_object where task_id=(select task_id from data_quality_task_execute where id=#{ruleExecutionId})) b",
+            " on a.subtask_id = b.subtask_id) d",
+            " on d.id=c.subtask_rule_id and d.object_id=c.subtask_object_id",
+            " </script>"})
+    List<TaskRuleExecutionRecord> getTaskRuleExecutionRecords(@Param("ruleExecutionId") String ruleExecutionId, @Param("subTaskId") String subTaskId, @Param("tenantId") String tenantId);
+    
     /**
      * 获取执行任务的子任务id
+     *
      * @param id
      * @return
      */
     @Select("select distinct subtask_id from data_quality_task_rule_execute where id=#{id}")
-    public List<String> getSubTaskId(@Param("id")String id);
-
-    @Results(id="base", value ={
+    public List<String> getSubTaskId(@Param("id") String id);
+    
+    @Results(id = "base", value = {
             @Result(property = "schemas", column = "schemas", typeHandler = ListStringTypeHandler.class)
     })
     @Select("SELECT d.id, d.name, d.schemas, " +
@@ -957,5 +954,6 @@ public interface TaskManageDAO {
             "join data_source db on db.source_id = d.data_source_id " +
             "WHERE d.tenant_id = #{tenantId} and d.data_source_id = #{sourceId} " +
             "order by d.id")
-    List<SyncTaskDefinition> getTaskSchemas(@Param("tenantId")String tenantId, @Param("sourceId")String sourceId);
+    List<SyncTaskDefinition> getTaskSchemas(@Param("tenantId") String tenantId, @Param("sourceId") String sourceId);
+    
 }
