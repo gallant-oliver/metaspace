@@ -53,8 +53,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.web.metadata.BaseFields.*;
@@ -339,9 +341,10 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                               String instanceGuid, String taskInstanceId, SyncTaskDefinition definition) {
         try {
             ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutorMetadata();
-            threadPoolExecutor.execute(()->{
+            ArrayList<CompletableFuture> completableFutures = new ArrayList<>();
+            completableFutures.add(CompletableFuture.runAsync(() -> {
                 registerTable(dbEntity, instanceId, databaseName, tableName, instanceGuid, taskInstanceId, definition);
-            });
+            }, threadPoolExecutor));
             return 1;
         } catch (Exception e) {
             LOG.error("Import failed for {} {}", getTableTypeName(), tableName, e);
@@ -738,9 +741,8 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
      * @throws Exception
      */
     private int importTables(AtlasEntity dbEntity, String instanceId, String databaseName, Collection<Table> tableNames,
-                             final boolean failOnError, String instanceGuid,String taskInstanceId, SyncTaskDefinition definition) {
+                             final boolean failOnError, String instanceGuid, String taskInstanceId, SyncTaskDefinition definition) {
         int tablesImported = 0;
-
         if (!CollectionUtils.isEmpty(tableNames)) {
             LOG.info("Found {} tables to import in database {}", tableNames.size(), databaseName);
 
@@ -750,22 +752,26 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                     deleteTableEntity(instanceGuid, databaseName, tableNames);
                 }
 
-                List<Integer> tablesImportedList = new ArrayList<>(tableNames.size());
+                List<AtomicInteger> tablesImportedList = new ArrayList<>(tableNames.size());
                 for (Table tableName : tableNames) {
-                    this.checkTaskEnable(taskInstanceId);
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("导入{}表的元数据", tableName.getFullName());
-                    }
-                    int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError,
-                            instanceGuid, taskInstanceId, definition);
-                    if (imported == 1) {
+                    ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutorMetadata();
+                    ArrayList<CompletableFuture> completableFutures = new ArrayList<>();
+                    completableFutures.add(CompletableFuture.runAsync(() -> {
                         this.checkTaskEnable(taskInstanceId);
-                        LOG.info("成功导入表:{}", tableName.getFullName());
-                        syncTaskInstanceDAO.appendLog(taskInstanceId, "成功导入表: " + tableName.getFullName());
-                    }
-                    tablesImportedList.add(imported);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("导入{}表的元数据", tableName.getFullName());
+                        }
+                        int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError,
+                                instanceGuid, taskInstanceId, definition);
+                        if (imported == 1) {
+                            this.checkTaskEnable(taskInstanceId);
+                            LOG.info("成功导入表:{}", tableName.getFullName());
+                            syncTaskInstanceDAO.appendLog(taskInstanceId, "成功导入表: " + tableName.getFullName());
+                        }
+                        tablesImportedList.add(new AtomicInteger(imported));
+                    }, threadPoolExecutor));
                 }
-                tablesImported = tablesImportedList.stream().mapToInt(Integer::intValue).sum();
+                tablesImported = tablesImportedList.stream().mapToInt(AtomicInteger::intValue).sum();
             } catch (AtlasBaseException e) {
                 throw e;
             } catch (Exception e) {

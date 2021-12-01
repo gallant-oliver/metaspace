@@ -47,6 +47,10 @@ public class ThreadPoolUtil {
         return processExecutor;
     }
 
+    /**
+     * 元数据采集专用线程池
+     * @return
+     */
     public static ThreadPoolExecutor getThreadPoolExecutorMetadata() {
         return metadataExecutor;
     }
