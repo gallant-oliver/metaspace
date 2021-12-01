@@ -17,6 +17,7 @@ import com.google.common.base.Joiner;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
@@ -32,6 +33,7 @@ import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
+import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.share.*;
@@ -62,8 +64,11 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -917,7 +922,7 @@ public class ApiManagerREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result importCategory(@PathParam("upload") String upload, @HeaderParam("tenantId") String tenantId, String projectId) throws Exception {
+    public Result importCategory(@PathParam("upload") String upload, @HeaderParam("tenantId") String tenantId, @QueryParam("projectId") String projectId) throws Exception {
         File file = null;
         try {
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
@@ -936,10 +941,65 @@ public class ApiManagerREST {
     @Path("/excel/template")
     @Valid
     public void downloadApiCategoryTemplate() throws Exception {
-        String fileName = TemplateEnum.CATEGORY_TEMPLATE.getFileName();
+        String fileName = TemplateEnum.API_CATEGORY_TEMPLATE.getFileName();
         InputStream inputStream = PoiExcelUtils.getTemplateInputStream(TemplateEnum.API_CATEGORY_TEMPLATE);
         response.setContentType("application/force-download");
         response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+    }
+
+    /**
+     * 导出目录
+     *
+     * @param ids
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("/export/selected")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDownloadURL(List<String> ids) throws Exception {
+        String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/datashare/api/export/selected";
+        //全局导出
+        if (ids == null || ids.size() == 0) {
+            DownloadUri uri = new DownloadUri();
+            String downURL = url + "/" + "all";
+            uri.setDownloadUri(downURL);
+            return ReturnUtil.success(uri);
+        }
+        DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
+        return ReturnUtil.success(downloadUri);
+    }
+
+    @GET
+    @Path("/export/selected/{downloadId}")
+    @Valid
+    public void exportSelected(@PathParam("downloadId") String downloadId, @QueryParam("projectId") String projectId, @QueryParam("tenantId") String tenantId) throws Exception {
+        File exportExcel;
+        //全局导出
+        String all = "all";
+        if (all.equals(downloadId)) {
+            exportExcel = shareService.allExportExcel(projectId, tenantId);
+        } else {
+            List<String> ids = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
+            exportExcel = shareService.exportExcel(ids);
+        }
+        try {
+            String filePath = exportExcel.getAbsolutePath();
+            String fileName = filename(filePath);
+            InputStream inputStream = new FileInputStream(filePath);
+            response.setContentType("application/force-download");
+            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
+            IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+        } finally {
+            exportExcel.delete();
+        }
+    }
+
+    public static String filename(String filePath) throws UnsupportedEncodingException {
+        String filename = filePath.substring(filePath.lastIndexOf(File.separatorChar) + 1);
+        filename = URLEncoder.encode(filename, "UTF-8");
+        return filename;
     }
 }

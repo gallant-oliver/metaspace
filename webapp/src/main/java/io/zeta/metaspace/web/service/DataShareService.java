@@ -76,6 +76,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,6 +87,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -3107,20 +3110,29 @@ public class DataShareService {
         for (int i = 1; i < rowNum; i++) {
             Row row = sheet.getRow(i);
             CategoryExport category = new CategoryExport();
-            Cell nameCell = row.getCell(0);
-            if (Objects.isNull(nameCell)) {
+            Cell nameCell = null;
+            try {
+                nameCell = row.getCell(0);
+            } catch (NullPointerException e) {
                 continue;
-//                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名称不能为空");
             }
-            if (names.contains(nameCell.getStringCellValue())) {
+            String name = nameCell.getStringCellValue();
+            if (StringUtils.isBlank(name)) {
+                continue;
+            }
+            if (names.contains(name)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中存在相同目录名");
             }
-            category.setName(nameCell.getStringCellValue());
-
+            //目录名校验：仅支持中文、英文、数字、下划线“_”和“-”
+            String pattern = "^[\\u4E00-\\u9FA5A-Za-z0-9_\\-]+$";
+            if (!name.matches(pattern)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名仅支持中文、英文、数字、下划线“_”和“-”");
+            }
+            category.setName(name);
             String guid = UUID.randomUUID().toString();
             category.setGuid(guid);
             categoryExports.add(category);
-            names.add(nameCell.getStringCellValue());
+            names.add(name);
         }
         return categoryExports;
     }
@@ -3175,7 +3187,6 @@ public class DataShareService {
         Map<String, CategoryEntityV2> newCategorys = new HashMap<>();
 
         //是否是导入一级目录
-        String downGuid = null;
         String upGuid = shareDAO.queryLastCategory(projectId, tenantId);
         CategoryEntityV2 upChild = shareDAO.queryByGuid(upGuid, tenantId);
         if (upChild == null) {
@@ -3207,12 +3218,41 @@ public class DataShareService {
         if (upGuid != null) {
             shareDAO.updateDownBrotherCategoryGuid(upGuid, upChild.getDownBrotherCategoryGuid(), tenantId);
         }
-        if (downGuid != null) {
-            shareDAO.updateUpBrotherCategoryGuid(downGuid, upId, tenantId);
-        }
         ArrayList<CategoryEntityV2> categoryEntityV2s = new ArrayList<>(newCategorys.values());
         shareDAO.addAll(categoryEntityV2s, projectId, tenantId);
+    }
 
+    /**
+     * 目录转化为文件
+     *
+     * @param ids
+     * @return
+     * @throws IOException
+     * @throws AtlasBaseException
+     */
+    public File exportExcel(List<String> ids) throws IOException, AtlasBaseException {
+        List<String> data = shareDAO.queryNamesByIds(ids);
+        return data2excel(data);
+    }
+
+    public File allExportExcel(String projectId, String tenantId) throws IOException, AtlasBaseException {
+        List<String> data = shareDAO.getCategoryByProject(projectId, tenantId).stream().map(category -> category.getName()).collect(Collectors.toList());
+        return data2excel(data);
+    }
+
+    private File data2excel(List<String> list) throws IOException {
+        List<List<String>> dataList = list.stream().map(categoryExport -> {
+            List<String> data = Lists.newArrayList(categoryExport);
+            return data;
+        }).collect(Collectors.toList());
+        Workbook workbook = new XSSFWorkbook();
+        PoiExcelUtils.createSheet(workbook, "目录", Lists.newArrayList("目录名字"), dataList);
+        File tmpFile = File.createTempFile("ApiCategoryExport", ".xlsx");
+        try (FileOutputStream output = new FileOutputStream(tmpFile)) {
+            workbook.write(output);
+            output.flush();
+        }
+        return tmpFile;
     }
 }
 

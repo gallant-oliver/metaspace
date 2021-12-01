@@ -513,6 +513,14 @@ public interface DataShareDAO {
             " </script>")
     public int addAll(@Param("categorys") List<CategoryEntityV2> categorys, @Param("projectId") String projectId, @Param("tenantId") String tenantId);
 
+    @Select("<script" +
+            "select name from api_category where guid in " +
+            " <foreach collection='ids' item='id' index='index'  separator=',' open='(' close=')'>" +
+            "  #{id}" +
+            " </foreach>" +
+            "</script>")
+    public List<String> queryNamesByIds(@Param("ids") List<String> ids);
+
     @Update("update api_category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid} and tenantid=#{tenantId}")
     public int updateDownBrotherCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid,@Param("tenantId")String tenantId);
 
