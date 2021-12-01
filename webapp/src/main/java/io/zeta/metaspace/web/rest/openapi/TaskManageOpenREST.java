@@ -7,20 +7,27 @@ import io.zeta.metaspace.model.dto.dataquality.TasksDTO;
 import io.zeta.metaspace.model.enums.TaskExecuteStatus;
 import io.zeta.metaspace.web.service.dataquality.TaskExecuteService;
 import io.zeta.metaspace.web.service.dataquality.TaskManageService;
+import io.zeta.metaspace.web.util.ObjectUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import javax.inject.Singleton;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static io.zeta.metaspace.web.model.CommonConstant.HEADER_TENANT_ID;
@@ -40,6 +47,8 @@ import static io.zeta.metaspace.web.model.CommonConstant.HEADER_TENANT_ID;
 @Path("/open-api/task-manage")
 public class TaskManageOpenREST {
     
+    @Context
+    private HttpServletResponse response;
     @Autowired
     private TaskManageService taskManageService;
     @Autowired
@@ -135,9 +144,27 @@ public class TaskManageOpenREST {
     }
     
     @GET
-    @Path("/log/download/{instanceId}")
+    @Path("/log/download/{executionId}")
     public void downloadLog(@HeaderParam(HEADER_TENANT_ID) String tenantId,
-                            @PathParam("instanceId") String instanceId) {
-        
+                            @PathParam("executionId") String executionId) {
+        File logFile = null;
+        try {
+            logFile = taskExecuteService.createExecutionLog(executionId);
+            response.setContentType("application/force-download");
+            response.addHeader("Content-Disposition", "attachment;fileName=".concat(logFile.getName()));
+            IOUtils.copyBytes(new FileInputStream(logFile.getAbsolutePath()),
+                    response.getOutputStream(), 4096, true);
+        } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("日志文件下载异常:", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "日志文件下载异常");
+        } finally {
+            ObjectUtils.isTrueThen(
+                    logFile,
+                    v -> Objects.nonNull(v) && v.exists(),
+                    v -> log.debug("成功删除日志文件：{}", v.delete())
+            );
+        }
     }
 }
