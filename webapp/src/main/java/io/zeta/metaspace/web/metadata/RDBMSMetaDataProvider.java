@@ -1,25 +1,21 @@
 package io.zeta.metaspace.web.metadata;
 
 import com.google.common.collect.Lists;
-import edu.npu.fastexcel.ExcelException;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.model.TableSchema;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
-
 import io.zeta.metaspace.model.kafkaconnector.KafkaConnector;
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
-import io.zeta.metaspace.model.metadata.TableEntity;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerColumn;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerForeignKey;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerIndex;
 import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerTable;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.sync.SyncTaskInstance;
-import io.zeta.metaspace.utils.*;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.AdapterUtils;
-import io.zeta.metaspace.utils.CollectThreadPoolUtil;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
+import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.KafkaConnectorDAO;
 import io.zeta.metaspace.web.dao.SyncTaskInstanceDAO;
 import io.zeta.metaspace.web.service.DataManageService;
@@ -40,7 +36,6 @@ import org.apache.atlas.type.AtlasEntityType;
 import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.slf4j.Logger;
@@ -61,6 +56,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.web.metadata.BaseFields.*;
@@ -134,55 +130,68 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     public void importDatabases(String taskInstanceId, TableSchema tableSchema) throws Exception {
         LOG.info("import metadata start at {}", new Date());
         syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.RUN, "开始初始化数据库并拉取元数据");
-
         init(tableSchema);
         metaDataContext = new MetaDataContext();
 
         String sourceId = tableSchema.getInstance();
         checkTaskEnable(taskInstanceId);
         syncTaskInstanceDAO.appendLog(taskInstanceId, "初始化成功，导入数据源和数据库");
-        //根据数据源id获取图数据库中的数据源，如果有，则更新，如果没有，则创建
-        AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(tableSchema.isAll(), tableSchema.getDefinition(), taskInstanceId);
-        checkTaskEnable(taskInstanceId);
-        syncTaskInstanceDAO.appendLog(taskInstanceId, "导入数据源和数据库成功，开始导入表");
 
-        String instanceGuid = atlasEntityWithExtInfo.getEntity().getGuid();
-        List<Schema> schemas = new ArrayList<>(metaDataInfo.getSchemas());
-        if (!CollectionUtils.isEmpty(schemas) && !tableSchema.isAllDatabase()) {
-            LOG.info("Found {} databases", schemas.size());
-
-            for (Schema database : schemas) {
-                try {
-                    RequestContext.get();
-                    AtlasEntity.AtlasEntityWithExtInfo dbEntity = null;
-                    String dbQualifiedName = getDBQualifiedName(sourceId, database.getFullName());
-                    if (metaDataContext.isKownEntity(dbQualifiedName)) {
-                        dbEntity = metaDataContext.getEntity(dbQualifiedName);
-                    } else {
+        String instanceQualifiedName = AdapterUtils.getInstanceQualifiedName(dataSourceInfo);
+        InterProcessMutex lock = zkLockUtils.getInterProcessMutex(instanceQualifiedName);
+        try {
+            LOG.debug("尝试拿锁 : " + Thread.currentThread().getName() + " " + instanceQualifiedName);
+            if (lock.acquire(LOCK_TIME_OUT_TIME, TimeUnit.MINUTES)) {
+                LOG.debug("拿锁成功 : " + Thread.currentThread().getName() + " " + instanceQualifiedName);
+                //根据数据源id获取图数据库中的数据源，如果有，则更新，如果没有，则创建
+                AtlasEntity.AtlasEntityWithExtInfo atlasEntityWithExtInfo = registerInstance(tableSchema.isAll(), tableSchema.getDefinition(), taskInstanceId);
+                checkTaskEnable(taskInstanceId);
+                syncTaskInstanceDAO.appendLog(taskInstanceId, "导入数据源和数据库成功，开始导入表");
+                String instanceGuid = atlasEntityWithExtInfo.getEntity().getGuid();
+                List<Schema> schemas = new ArrayList<>(metaDataInfo.getSchemas());
+                if (!CollectionUtils.isEmpty(schemas) && !tableSchema.isAllDatabase()) {
+                    LOG.info("Found {} databases", schemas.size());
+                    for (Schema database : schemas) {
                         try {
-                            dbEntity = findDatabase(database.getFullName());
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                            RequestContext.get();
+                            AtlasEntity.AtlasEntityWithExtInfo dbEntity = null;
+                            String dbQualifiedName = getDBQualifiedName(sourceId, database.getFullName());
+                            if (metaDataContext.isKownEntity(dbQualifiedName)) {
+                                dbEntity = metaDataContext.getEntity(dbQualifiedName);
+                            } else {
+                                try {
+                                    dbEntity = findDatabase(database.getFullName());
+                                } catch (Exception e) {
+                                    LOG.error("findDatabase exception is {}",  e);
+                                }
+                                clearRelationshipAttributes(dbEntity);
+                                metaDataContext.putEntity(dbQualifiedName, dbEntity);
+                            }
+                            importTables(dbEntity.getEntity(), taskInstanceId, database.getFullName(),
+                                    getTables(database), false, instanceGuid, taskInstanceId, null);
                         }
-                        clearRelationshipAttributes(dbEntity);
-                        metaDataContext.putEntity(dbQualifiedName, dbEntity);
+                        finally {
+                            // 每处理完一个库清理相关的缓存数据
+                            RequestContext.clear();
+                        }
                     }
-                    importTables(dbEntity.getEntity(), taskInstanceId, database.getFullName(),
-                            getTables(database), false, instanceGuid, taskInstanceId, null);
+                } else {
+                    LOG.info("No database found");
                 }
-                finally {
-                    // 每处理完一个库清理相关的缓存数据
-                    RequestContext.clear();
-                }
+                checkTaskEnable(taskInstanceId);
+                // createKafkaConnector(databases);
+                syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
+                LOG.info("import metadata end at {}", new Date());
+                return;
             }
-        } else {
-            LOG.info("No database found");
+            throw new AtlasBaseException("获取锁超时：" + instanceQualifiedName);
+        } finally {
+            try {
+                lock.release();
+            } catch (Exception e) {
+                LOG.error("lock release error", e);
+            }
         }
-        checkTaskEnable(taskInstanceId);
-       // createKafkaConnector(databases);
-        syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
-        LOG.info("import metadata end at {}", new Date());
-
     }
     protected String getDBQualifiedName(String instanceId, String dbName) {
         return String.format("%s.%s@%s", instanceId, dbName, clusterName);
@@ -243,49 +252,32 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     }
 
     protected AtlasEntity.AtlasEntityWithExtInfo registerInstance(boolean allDatabase, SyncTaskDefinition definition, String taskInstanceId) throws Exception {
-
         AtlasEntity.AtlasEntityWithExtInfo ret;
         String instanceQualifiedName = AdapterUtils.getInstanceQualifiedName(dataSourceInfo);
-
-        InterProcessMutex lock = zkLockUtils.getInterProcessMutex(instanceQualifiedName);
-
-        try {
-            LOG.debug("尝试拿锁 : " + Thread.currentThread().getName() + " " + instanceQualifiedName);
-            if (lock.acquire(LOCK_TIME_OUT_TIME, TimeUnit.MINUTES)) {
-                LOG.debug("拿锁成功 : " + Thread.currentThread().getName() + " " + instanceQualifiedName);
-                if (metaDataContext.isKownEntity(instanceQualifiedName)) {
-                    ret = metaDataContext.getEntity(instanceQualifiedName);
-                } else {
-                    ret = findInstance();
-                    if (null != ret) {
-                        clearRelationshipAttributes(ret);
-                        metaDataContext.putEntity(instanceQualifiedName, ret);
-                    }
-                }
-                if (null != definition) {
-                    checkTaskEnable(taskInstanceId);
-                }
-                AtlasEntity.AtlasEntityWithExtInfo instanceEntity;
-                if (ret == null) {
-                    instanceEntity = toInstanceEntity(null, allDatabase);
-                    ret = registerEntity(instanceEntity, definition);
-                    isSource = false;
-                } else {
-                    LOG.info("Instance {} is already registered - id={}. Updating it.", instanceQualifiedName, ret.getEntity().getGuid());
-                    ret = toInstanceEntity(ret, allDatabase);
-                    entitiesStore.createOrUpdate(new AtlasEntityStream(ret, definition), false);
-                    isSource = true;
-                }
-                return ret;
-            }
-            throw new AtlasBaseException("获取锁超时：" + instanceQualifiedName);
-        } finally {
-            try {
-                lock.release();
-            } catch (Exception e) {
-                LOG.error("lock release error", e);
+        if (metaDataContext.isKownEntity(instanceQualifiedName)) {
+            ret = metaDataContext.getEntity(instanceQualifiedName);
+        } else {
+            ret = findInstance();
+            if (null != ret) {
+                clearRelationshipAttributes(ret);
+                metaDataContext.putEntity(instanceQualifiedName, ret);
             }
         }
+        if (null != definition) {
+            checkTaskEnable(taskInstanceId);
+        }
+        AtlasEntity.AtlasEntityWithExtInfo instanceEntity;
+        if (ret == null) {
+            instanceEntity = toInstanceEntity(null, allDatabase);
+            ret = registerEntity(instanceEntity, definition);
+            isSource = false;
+        } else {
+            LOG.info("Instance {} is already registered - id={}. Updating it.", instanceQualifiedName, ret.getEntity().getGuid());
+            ret = toInstanceEntity(ret, allDatabase);
+            entitiesStore.createOrUpdate(new AtlasEntityStream(ret, definition), false);
+            isSource = true;
+        }
+        return ret;
     }
 
     protected AtlasEntity.AtlasEntityWithExtInfo toInstanceEntity(AtlasEntity.AtlasEntityWithExtInfo instanceEntity, boolean allDatabase) {
@@ -348,7 +340,11 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     protected int importTable(AtlasEntity dbEntity, String instanceId, String databaseName, Table tableName, final boolean failOnError,
                               String instanceGuid, String taskInstanceId, SyncTaskDefinition definition) {
         try {
-            registerTable(dbEntity, instanceId, databaseName, tableName, instanceGuid, taskInstanceId, definition);
+            ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutorMetadata();
+            ArrayList<CompletableFuture> completableFutures = new ArrayList<>();
+            completableFutures.add(CompletableFuture.runAsync(() -> {
+                registerTable(dbEntity, instanceId, databaseName, tableName, instanceGuid, taskInstanceId, definition);
+            }, threadPoolExecutor));
             return 1;
         } catch (Exception e) {
             LOG.error("Import failed for {} {}", getTableTypeName(), tableName, e);
@@ -655,15 +651,11 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     }
 
     protected AtlasEntity.AtlasEntityWithExtInfo registerTable(AtlasEntity dbEntity, String instanceId, String databaseName,
-                                                               Table tableName, String instanceGuid, String taskInstanceId, SyncTaskDefinition definition) throws Exception {
+                                                               Table tableName, String instanceGuid, String taskInstanceId, SyncTaskDefinition definition) {
 
         String tableQualifiedName = AdapterUtils.getTableQualifiedName(dataSourceInfo, databaseName, tableName.getName());
-       // String tableQualifiedName = getTableQualifiedName(instanceId, databaseName, tableName.getName());
-
         AtlasEntity.AtlasEntityWithExtInfo ret = findEntity(getTableTypeName(), tableQualifiedName);
-
         InterProcessMutex lock = zkLockUtils.getInterProcessMutex(tableQualifiedName);
-
         try {
             LOG.debug("尝试拿锁 : " + Thread.currentThread().getName() + " " + tableQualifiedName);
             if (lock.acquire(LOCK_TIME_OUT_TIME, TimeUnit.MINUTES)) {
@@ -677,7 +669,6 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 } else {
                     LOG.debug("Table {}.{} is already registered with id {}. Updating entity.", databaseName, tableName, ret.getEntity().getGuid());
                     ret = toTableEntity(dbEntity, instanceId, databaseName, tableName, ret, instanceGuid, definition);
-
                     entitiesStore.createOrUpdate(new AtlasEntityStream(ret, definition), false);
                     AtlasRelatedObjectId atlasRelatedObjectId = new AtlasRelatedObjectId();
                     atlasRelatedObjectId.setDisplayText(String.valueOf(dbEntity.getAttribute(ATTRIBUTE_NAME)));
@@ -687,7 +678,10 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 return ret;
             }
             throw new AtlasBaseException("获取锁超时：" + tableQualifiedName);
-        } finally {
+        } catch (Exception e){
+            LOG.error("registerTable exception is {}", e);
+            return null;
+        }finally {
             // 每处理完一个表清理相关的entities，减少重复处理
             RequestContext.get().clearEntities();
             try {
@@ -747,9 +741,8 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
      * @throws Exception
      */
     private int importTables(AtlasEntity dbEntity, String instanceId, String databaseName, Collection<Table> tableNames,
-                             final boolean failOnError, String instanceGuid,String taskInstanceId, SyncTaskDefinition definition) {
+                             final boolean failOnError, String instanceGuid, String taskInstanceId, SyncTaskDefinition definition) {
         int tablesImported = 0;
-
         if (!CollectionUtils.isEmpty(tableNames)) {
             LOG.info("Found {} tables to import in database {}", tableNames.size(), databaseName);
 
@@ -759,22 +752,26 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                     deleteTableEntity(instanceGuid, databaseName, tableNames);
                 }
 
-                List<Integer> tablesImportedList = new ArrayList<>(tableNames.size());
+                List<AtomicInteger> tablesImportedList = new ArrayList<>(tableNames.size());
                 for (Table tableName : tableNames) {
-                    this.checkTaskEnable(taskInstanceId);
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("导入{}表的元数据", tableName.getFullName());
-                    }
-                    int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError,
-                            instanceGuid, taskInstanceId, definition);
-                    if (imported == 1) {
+                    ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutorMetadata();
+                    ArrayList<CompletableFuture> completableFutures = new ArrayList<>();
+                    completableFutures.add(CompletableFuture.runAsync(() -> {
                         this.checkTaskEnable(taskInstanceId);
-                        LOG.info("成功导入表:{}", tableName.getFullName());
-                        syncTaskInstanceDAO.appendLog(taskInstanceId, "成功导入表: " + tableName.getFullName());
-                    }
-                    tablesImportedList.add(imported);
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("导入{}表的元数据", tableName.getFullName());
+                        }
+                        int imported = importTable(dbEntity, instanceId, databaseName, tableName, failOnError,
+                                instanceGuid, taskInstanceId, definition);
+                        if (imported == 1) {
+                            this.checkTaskEnable(taskInstanceId);
+                            LOG.info("成功导入表:{}", tableName.getFullName());
+                            syncTaskInstanceDAO.appendLog(taskInstanceId, "成功导入表: " + tableName.getFullName());
+                        }
+                        tablesImportedList.add(new AtomicInteger(imported));
+                    }, threadPoolExecutor));
                 }
-                tablesImported = tablesImportedList.stream().mapToInt(Integer::intValue).sum();
+                tablesImported = tablesImportedList.stream().mapToInt(AtomicInteger::intValue).sum();
             } catch (AtlasBaseException e) {
                 throw e;
             } catch (Exception e) {
@@ -816,24 +813,15 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
      * @throws Exception
      */
     protected AtlasEntity.AtlasEntityWithExtInfo registerEntity(AtlasEntity.AtlasEntityWithExtInfo entity, SyncTaskDefinition definition) throws Exception {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("creating {} entity: {}", entity.getEntity().getTypeName(), entity);
-        }
-
         AtlasEntity.AtlasEntityWithExtInfo ret = null;
         EntityMutationResponse response = atlasEntityStore.createOrUpdate(new AtlasEntityStream(entity, definition), false);
         List<AtlasEntityHeader> createdEntities = response.getEntitiesByOperation(EntityMutations.EntityOperation.CREATE);
-
         if (CollectionUtils.isNotEmpty(createdEntities)) {
             for (AtlasEntityHeader createdEntity : createdEntities) {
                 if (ret == null) {
                     ret = atlasEntityStore.getById(createdEntity.getGuid());
-                    dataManageService.addEntity(Arrays.asList(ret.getEntity()),definition, null);
+//                    dataManageService.addEntity(Arrays.asList(ret.getEntity()),definition, null);
                      LOG.info("Created {} entity: name={}, guid={}", ret.getEntity().getTypeName(), ret.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), ret.getEntity().getGuid());
-
-                   /* dataManageService.addEntity(Arrays.asList(ret.getEntity()), definition);
-                    LOG.debug("Created {} entity: name={}, guid={}", ret.getEntity().getTypeName(), ret.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), ret.getEntity().getGuid());
-*/
                 } else if (ret.getEntity(createdEntity.getGuid()) == null) {
                     AtlasEntity.AtlasEntityWithExtInfo newEntity = atlasEntityStore.getById(createdEntity.getGuid());
 
@@ -844,12 +832,8 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                             ret.addReferredEntity(entry.getKey(), entry.getValue());
                         }
                     }
-                    dataManageService.addEntity(Arrays.asList(newEntity.getEntity()), definition, null);
+//                    dataManageService.addEntity(Arrays.asList(newEntity.getEntity()), definition, null);
                     LOG.info("Created {} entity: name={}, guid={}", newEntity.getEntity().getTypeName(), newEntity.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), newEntity.getEntity().getGuid());
-
-                   /* dataManageService.addEntity(Arrays.asList(newEntity.getEntity()), definition);
-                    LOG.debug("Created {} entity: name={}, guid={}", newEntity.getEntity().getTypeName(), newEntity.getEntity().getAttribute(ATTRIBUTE_QUALIFIED_NAME), newEntity.getEntity().getGuid());
-*/
                 }
             }
         }
