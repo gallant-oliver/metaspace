@@ -75,6 +75,9 @@ public class SourceInfoFileService {
             "数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","业务Owner手机号",
             "数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","技术Owner手机号",
             "技术负责人","业务负责人"};
+
+    private final String emptyFields = "数据库业务Owner姓名, 数据库业务Owner部门名称, 数据库业务Owner电子邮箱, 业务Owner手机号,数据库技术Owner姓名, 数据库技术Owner部门名称, 数据库技术Owner电子邮箱, 技术Owner手机号";
+
     private Map<String,String> categoryMap  = new HashMap<String,String>(){{
         put("贴源层","1");
         put("基础层","2");
@@ -201,10 +204,12 @@ public class SourceInfoFileService {
             String[] array = excelDataList.get(i);
             for(String fieldName : validFields){
                 String v = getElementOrDefault(array,MapUtils.getIntValue(map,fieldName,-1));
-                if(StringUtils.isBlank(v)){
-                    String errMsg = "列名["+fieldName+"]的值为空";
-                    results.add(setAnalyticResult(errMsg,array, map));
-                    break;
+                if (!emptyFields.contains(fieldName)) {
+                    if (StringUtils.isBlank(v)) {
+                        String errMsg = "列名[" + fieldName + "]的值为空";
+                        results.add(setAnalyticResult(errMsg, array, map));
+                        break;
+                    }
                 }
                 if("数据库类型".equals(fieldName) && StringUtils.isNotBlank(v)
                         && "oracle".equalsIgnoreCase(v) && StringUtils.isBlank(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库实例",-1))) ){
@@ -734,24 +739,24 @@ public class SourceInfoFileService {
             databaseInfo.setBoName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner姓名",-1)));
             databaseInfo.setBoDepartmentName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner部门名称",-1)));
             String bizMobile = getElementOrDefault(array,MapUtils.getIntValue(map,"业务Owner手机号",-1));
-            if(!isMobile(bizMobile)){
+            if (StringUtils.isNoneBlank(bizMobile) && !isMobile(bizMobile)) {
                 return new Result("400","业务Owner手机号输入格式错误");
             }
             databaseInfo.setBoTel(bizMobile);
             String bizEmail = getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner电子邮箱",-1));
-            if(!isEmail(bizEmail)){
+            if (StringUtils.isNoneBlank(bizEmail) && !isEmail(bizEmail)) {
                 return new Result("400","数据库业务Owner电子邮箱输入格式错误");
             }
             databaseInfo.setBoEmail(bizEmail);
             databaseInfo.setToName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner姓名",-1)));
             databaseInfo.setToDepartmentName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner部门名称",-1)));
             String techMobile = getElementOrDefault(array,MapUtils.getIntValue(map,"技术Owner手机号",-1));
-            if(!isMobile(techMobile)){
+            if (StringUtils.isNoneBlank(techMobile) && !isMobile(techMobile)) {
                 return new Result("400","技术Owner手机号输入格式错误");
             }
             databaseInfo.setToTel(techMobile);
             String techEmail = getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner电子邮箱",-1));
-            if(!isEmail(techEmail)){
+            if (StringUtils.isNoneBlank(techEmail) && !isEmail(techEmail)) {
                 return new Result("400","数据库技术Owner电子邮箱输入格式错误");
             }
             databaseInfo.setToEmail(techEmail);
