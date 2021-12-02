@@ -178,8 +178,6 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 } else {
                     LOG.info("No database found");
                 }
-                checkTaskEnable(taskInstanceId);
-                // createKafkaConnector(databases);
                 syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.SUCCESS, "导入结束");
                 LOG.info("import metadata end at {}", new Date());
                 return;
@@ -340,11 +338,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     protected int importTable(AtlasEntity dbEntity, String instanceId, String databaseName, Table tableName, final boolean failOnError,
                               String instanceGuid, String taskInstanceId, SyncTaskDefinition definition) {
         try {
-            ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutorMetadata();
-            ArrayList<CompletableFuture> completableFutures = new ArrayList<>();
-            completableFutures.add(CompletableFuture.runAsync(() -> {
-                registerTable(dbEntity, instanceId, databaseName, tableName, instanceGuid, taskInstanceId, definition);
-            }, threadPoolExecutor));
+            registerTable(dbEntity, instanceId, databaseName, tableName, instanceGuid, taskInstanceId, definition);
             return 1;
         } catch (Exception e) {
             LOG.error("Import failed for {} {}", getTableTypeName(), tableName, e);
@@ -753,9 +747,9 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                 }
 
                 List<AtomicInteger> tablesImportedList = new ArrayList<>(tableNames.size());
+                List<CompletableFuture> completableFutures = new ArrayList<>();
                 for (Table tableName : tableNames) {
                     ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutorMetadata();
-                    ArrayList<CompletableFuture> completableFutures = new ArrayList<>();
                     completableFutures.add(CompletableFuture.runAsync(() -> {
                         this.checkTaskEnable(taskInstanceId);
                         if (LOG.isDebugEnabled()) {
@@ -771,6 +765,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                         tablesImportedList.add(new AtomicInteger(imported));
                     }, threadPoolExecutor));
                 }
+                CompletableFuture.allOf(completableFutures.toArray(new CompletableFuture[]{})).join();
                 tablesImported = tablesImportedList.stream().mapToInt(AtomicInteger::intValue).sum();
             } catch (AtlasBaseException e) {
                 throw e;
