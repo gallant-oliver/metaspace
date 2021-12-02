@@ -662,7 +662,7 @@ public class TaskManageService {
             String executeId = UUID.randomUUID().toString();
             quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class, new HashMap<String, Object>() {
                 {
-                    put("executeId", executeId);
+                    put(QuartzJob.EXECUTE_ID, executeId);
                 }
             });
             long waitTime = 0L;

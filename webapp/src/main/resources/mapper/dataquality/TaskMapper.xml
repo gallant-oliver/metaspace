@@ -35,7 +35,7 @@
             parameterType="java.lang.String">
         select id, name
         from data_quality_task t
-        where t.tenantid = #{tenantid}
+        where t.tenantid = #{tenantId}
           and t.enable = true
           and t.delete = false
     </select>

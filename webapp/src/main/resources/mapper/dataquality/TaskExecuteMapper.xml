@@ -27,7 +27,7 @@
             parameterType="java.lang.String">
         select task_id
         from data_quality_task_execute
-        where id = #{instanceId}
+        where id = #{id}
         limit 1
     </select>
 
@@ -36,7 +36,7 @@
             parameterType="java.lang.String">
         select execute_status
         from data_quality_task_execute
-        where id = #{instanceId}
+        where id = #{id}
         limit 1
     </select>
 

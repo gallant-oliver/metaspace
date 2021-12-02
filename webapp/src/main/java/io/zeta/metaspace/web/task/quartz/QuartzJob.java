@@ -31,7 +31,6 @@ import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.measure.*;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.GsonUtils;
-import io.zeta.metaspace.web.dao.DataSourceDAO;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
@@ -76,31 +75,27 @@ import static io.zeta.metaspace.model.dataquality.RuleCheckType.FLU;
 
 
 public class QuartzJob implements Job {
-
     private static final Logger LOG = LoggerFactory.getLogger(QuartzJob.class);
+    
     @Autowired
-    QuartzManager quartzManager;
+    private QuartzManager quartzManager;
     @Autowired
-    TaskManageDAO taskManageDAO;
+    private TaskManageDAO taskManageDAO;
     @Autowired
-    DataSourceDAO dataSourceDAO;
+    private DataSourceService dataSourceService;
     @Autowired
-    DataSourceService dataSourceService;
-    @Autowired
-    LivyTaskSubmitHelper livyTaskSubmitHelper;
+    private LivyTaskSubmitHelper livyTaskSubmitHelper;
     @Autowired
     private IndexCounter indexCounter;
-
+    
     private final int RETRY = 3;
-
-    Map<String, Float> columnType2Result = new HashMap<>();
-
-    public static final Map<String, Boolean> STATE_MAP = new HashMap<>();
-
+    private Map<String, Float> columnType2Result = new HashMap<>();
     private static Configuration conf;
     private static String engine;
-    public final static String hiveId = "hive";
     
+    public static final Map<String, Boolean> STATE_MAP = new HashMap<>();
+    public static final String hiveId = "hive";
+    public static final String EXECUTE_ID = "executeId";
     
     static {
         try {
@@ -166,7 +161,7 @@ public class QuartzJob implements Job {
     
             taskExecuteId = (String) jobExecutionContext.getJobDetail()
                     .getJobDataMap()
-                    .getOrDefault("executor", StringUtils.EMPTY);
+                    .getOrDefault(EXECUTE_ID, StringUtils.EMPTY);
             taskExecuteId = initExecuteInfo(taskId, taskExecuteId);
             STATE_MAP.put(taskId, false);
             EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
