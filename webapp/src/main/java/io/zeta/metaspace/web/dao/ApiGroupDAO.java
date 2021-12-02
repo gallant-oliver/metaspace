@@ -13,18 +13,10 @@
 
 package io.zeta.metaspace.web.dao;
 
-import io.zeta.metaspace.model.apigroup.ApiCategory;
-import io.zeta.metaspace.model.apigroup.ApiGroupInfo;
-import io.zeta.metaspace.model.apigroup.ApiGroupLog;
-import io.zeta.metaspace.model.apigroup.ApiGroupV2;
-import io.zeta.metaspace.model.apigroup.ApiVersion;
+import io.zeta.metaspace.model.apigroup.*;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.share.ApiInfoV2;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.*;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;

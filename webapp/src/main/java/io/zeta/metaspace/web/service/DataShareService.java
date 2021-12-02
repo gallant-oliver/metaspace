@@ -3236,8 +3236,32 @@ public class DataShareService {
     }
 
     public File allExportExcel(String projectId, String tenantId) throws IOException, AtlasBaseException {
-        List<String> data = shareDAO.getCategoryByProject(projectId, tenantId).stream().map(category -> category.getName()).collect(Collectors.toList());
-        return data2excel(data);
+        if (StringUtils.isBlank(projectId)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "项目id不能为空");
+        }
+        List<CategoryPrivilege> data = shareDAO.getCategoryByProject(projectId, tenantId);
+        //目录排序
+        String lastName = "";
+        String firstId = "";
+        Map<String, CategoryPrivilege> cateMap = new HashMap<>();
+        List<String> cateNameList = new ArrayList<>();
+        for (CategoryPrivilege cate : data) {
+            if (StringUtils.isBlank(cate.getUpBrotherCategoryGuid())) {
+                String first = cate.getName();
+                cateNameList.add(first);
+                firstId = cate.getGuid();
+                continue;
+            }
+            if (StringUtils.isBlank(cate.getDownBrotherCategoryGuid())) {
+                lastName = cate.getName();
+                continue;
+            }
+            cateMap.put(cate.getUpBrotherCategoryGuid(), cate);
+        }
+        getNextCateName(firstId, cateMap, cateNameList);
+        cateNameList.add(lastName);
+
+        return data2excel(cateNameList);
     }
 
     private File data2excel(List<String> list) throws IOException {
@@ -3253,6 +3277,19 @@ public class DataShareService {
             output.flush();
         }
         return tmpFile;
+    }
+
+    /**
+     * @Author fanjiajia
+     * @Description 递归获取下面的目录
+     **/
+    private void getNextCateName(String guid, Map<String, CategoryPrivilege> cateMap, List<String> cateNameList) {
+        CategoryPrivilege cate = cateMap.get(guid);
+        if (null == cate)
+            return;
+        cateNameList.add(cate.getName());
+        guid = cate.getGuid();
+        getNextCateName(guid, cateMap, cateNameList);
     }
 }
 

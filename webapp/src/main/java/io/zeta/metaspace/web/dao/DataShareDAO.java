@@ -513,16 +513,17 @@ public interface DataShareDAO {
             " </script>")
     public int addAll(@Param("categorys") List<CategoryEntityV2> categorys, @Param("projectId") String projectId, @Param("tenantId") String tenantId);
 
-    @Select("<script" +
-            "select name from api_category where guid in " +
-            " <foreach collection='ids' item='id' index='index'  separator=',' open='(' close=')'>" +
-            "  #{id}" +
+    @Select("<script>" +
+            "select name from api_category where guid in  " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
             " </foreach>" +
             "</script>")
     public List<String> queryNamesByIds(@Param("ids") List<String> ids);
 
+
     @Update("update api_category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid} and tenantid=#{tenantId}")
-    public int updateDownBrotherCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid,@Param("tenantId")String tenantId);
+    public int updateDownBrotherCategoryGuid(@Param("guid") String guid, @Param("downBrotherCategoryGuid") String downBrothCatalogGuid, @Param("tenantId") String tenantId);
 
     @Update("update api_category set name=#{category.name},description=#{category.description},qualifiedName=#{category.qualifiedName} where guid=#{category.guid} and tenantid=#{tenantId}")
     public int updateCategoryInfo(@Param("category") CategoryEntity category, @Param("tenantId")String tenantId);
