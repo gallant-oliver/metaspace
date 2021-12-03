@@ -405,11 +405,11 @@ public class BusinessREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     public CategoryPrivilege createCategory(BussinessCatalogueInput bussinessCatalogueInput, @HeaderParam("tenantId") String tenantId) throws Exception {
-        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), bussinessCatalogueInput.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESSCATALOGUE.getAlias(), "新增目录：" + bussinessCatalogueInput.getName());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessCatalogueREST.createCategory()");
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.createCategory()");
             }
             return businessCatalogueService.createCategory(bussinessCatalogueInput,tenantId);
         } catch (CannotCreateTransactionException e) {
@@ -432,7 +432,9 @@ public class BusinessREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Transactional(rollbackFor = Exception.class)
+    @OperateType(DELETE)
     public Result deleteCategory(List<String> categoryGuids, @HeaderParam("tenantId") String tenantId) throws Exception {
+        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESSCATALOGUE.getAlias(), "删除目录" + categoryGuids.toString());
         AtlasPerfTracer perf = null;
         CategoryDeleteReturn deleteReturn = null;
         int item = 0;
@@ -471,7 +473,9 @@ public class BusinessREST {
     @Path("/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public String updateCategory(@PathParam("categoryId") String categoryGuid, BussinessCatalogueInput categoryInfo, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESSCATALOGUE.getAlias(), "修改目录：" + categoryInfo.getName());
         AtlasPerfTracer perf = null;
         int type=categoryInfo.getCategoryType();
         try {
@@ -861,7 +865,7 @@ public class BusinessREST {
     @Path("/import/{path}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(UPDATE)
+    @OperateType(INSERT)
     public Result importCategory(@PathParam("path") String path, ImportCategory importCategory, @HeaderParam("tenantId") String tenantId) throws Exception {
         File file = null;
         try {
@@ -875,7 +879,7 @@ public class BusinessREST {
                 name = businessCatalogueService.getCategoryNameById(categoryId, tenantId);
             }
 
-            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "导入目录:" + name + "," + importCategory.getDirection());
+            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESSCATALOGUE.getAlias(), "导入目录:" + name + "," + importCategory.getDirection());
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + path);
             List<CategoryPrivilege> categoryPrivileges = null;
             if (importCategory.isAll()) {

@@ -226,6 +226,29 @@ public interface DataShareDAO {
     public List<ApiHead> getTableRelatedDataServiceAPI(@Param("tableList")List<String> tableList, @Param("limit")int limit,@Param("offset") int offset,@Param("tenantId")String tenantId,
                                                        @Param("up")boolean up,@Param("down")boolean down,@Param("isNew")boolean isNew);
 
+    @Select({" <script>",
+            " select count(1)over() total,api.guid id,api.name,api.tableGuid,api.status,users.username as creator,",
+            " tableInfo.tableName, tableInfo.display_name as tableDisplayName,api.version ",
+            " from api join tableInfo on tableInfo.tableGuid=#{tableGuid} join users on users.userId=api.creator ",
+            " <if test='isNew'>",
+            " join ( select guid,max(version_num) max from api where valid=true and status!='draft' and status!='audit' ",
+            " group by guid) v on v.guid=api.guid and v.max=api.version_num ",
+            " </if>",
+            " where ",
+            " api.sourceid =#{sourceid} and  api.schemaname=#{schemaname} and api.tablename=#{tablename}",
+            " and api.tenantid=#{tenantId} and api.status!='draft' and api.status!='audit' AND api.valid = true ",
+            " <if test='!up'>",
+            " and api.status!='up'",
+            " </if>",
+            " <if test='!down'>",
+            " and api.status!='down'",
+            " </if>",
+            " order by api.createtime desc",
+            " </script>"})
+    public ApiHead getTableRelatedDataServiceAPIByTableName(@Param("sourceid") String sourceid, @Param("schemaname") String schemaname, @Param("tablename") String tablename, @Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId,
+                                                            @Param("up") boolean up, @Param("down") boolean down, @Param("isNew") boolean isNew);
+
+
     @Select("select count(1) from apiInfo where manager=#{manager} and guid=#{guid}")
     public int countUserAPI(@Param("manager")String keeper, @Param("guid")String apiGuid);
 
