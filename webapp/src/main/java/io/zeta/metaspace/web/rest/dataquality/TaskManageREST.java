@@ -37,7 +37,10 @@ import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Queue;
-import io.zeta.metaspace.web.service.*;
+import io.zeta.metaspace.web.service.BusinessService;
+import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.service.DataShareService;
+import io.zeta.metaspace.web.service.SearchService;
 import io.zeta.metaspace.web.service.dataquality.RuleTemplateService;
 import io.zeta.metaspace.web.service.dataquality.TaskManageService;
 import io.zeta.metaspace.web.task.util.LivyTaskSubmitHelper;
@@ -52,7 +55,6 @@ import org.springframework.stereotype.Service;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
@@ -62,7 +64,9 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.DELETE;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.UPDATE;
 
 @Singleton
 @Service
@@ -303,7 +307,7 @@ public class TaskManageREST {
     @OperateType(INSERT)
     public void addTask(TaskInfo taskInfo,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), taskInfo.getTaskName());
-        taskManageService.addTask(taskInfo,tenantId);
+        taskManageService.addDataQualityTask(taskInfo, tenantId);
     }
 
     @GET
@@ -329,9 +333,10 @@ public class TaskManageREST {
         HttpRequestContext.get().auditLog(ModuleEnum.DATAQUALITY.getAlias(), taskInfo.getName());
         taskManageService.updateTask(taskInfo);
     }
-
+    
     /**
-     * 开启任务
+     * 开启任务(激活任务)
+     *
      * @param taskId
      * @throws AtlasBaseException
      */
@@ -339,12 +344,13 @@ public class TaskManageREST {
     @Path("/{taskId}/enable")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void startTask(@PathParam("taskId")String taskId) throws AtlasBaseException {
-        taskManageService.startTask(taskId);
+    public void enableTask(@PathParam("taskId") String taskId) throws AtlasBaseException {
+        taskManageService.enableTask(taskId);
     }
-
+    
     /**
-     * 关闭任务
+     * 关闭任务(使任务不可用)
+     *
      * @param taskId
      * @throws AtlasBaseException
      */
@@ -352,8 +358,8 @@ public class TaskManageREST {
     @Path("/{taskId}/disable")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public void stopTask(@PathParam("taskId")String taskId) throws AtlasBaseException {
-        taskManageService.stopTask(taskId);
+    public void disableTask(@PathParam("taskId") String taskId) throws AtlasBaseException {
+        taskManageService.disableTask(taskId);
     }
 
     /**
@@ -372,6 +378,7 @@ public class TaskManageREST {
 
     /**
      * 立即执行任务
+     *
      * @param taskId
      * @throws AtlasBaseException
      */
@@ -382,9 +389,10 @@ public class TaskManageREST {
     public void startTaskNow(@PathParam("taskId")String taskId) throws AtlasBaseException {
         taskManageService.startTaskNow(taskId);
     }
-
+    
     /**
-     * 立即关闭任务
+     * 立即终止任务
+     *
      * @param taskId
      * @throws AtlasBaseException
      */

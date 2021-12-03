@@ -376,14 +376,20 @@ public class MetaDataTaskService {
             if (definition == null) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务不存在");
             }
-
+    
             HttpRequestContext.get().auditLog(ModuleEnum.METADATACOLLECTION.getAlias(), "手动启动采集任务定义: " + definition.getName());
-
+    
             String now = LocalDateTime.now().toString();
             String jobName = buildJobName(definitionId + now);
             String jobGroupName = buildJobGroupName(definitionId);
             List<String> schemas = definition.getSchemas();
-            quartzManager.addSimpleJob(jobName, jobGroupName, SyncTaskJob.class, AdminUtils.getUserName());
+            quartzManager.addSimpleJob(jobName, jobGroupName, SyncTaskJob.class,
+                    new HashMap<String, Object>(2) {
+                        {
+                            put("executor", AdminUtils.getUserName());
+                            put("isSimple", true);
+                        }
+                    });
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "手动触发失败");
         }
