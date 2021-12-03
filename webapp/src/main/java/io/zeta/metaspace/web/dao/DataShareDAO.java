@@ -27,8 +27,6 @@ import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.web.typeHandler.ApiPolyEntityTypeHandler;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.ibatis.annotations.*;
-import org.apache.ibatis.type.EnumOrdinalTypeHandler;
-import org.apache.ibatis.type.JdbcType;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -507,8 +505,25 @@ public interface DataShareDAO {
             "values(#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.level},#{tenantId},#{category.createTime},#{projectId})")
     public int add(@Param("category") CategoryEntityV2 category, @Param("projectId") String projectId, @Param("tenantId") String tenantId);
 
+    @Insert("<script>" +
+            "insert into api_category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,level,tenantid,createtime,projectid)values " +
+            "<foreach item='category' index='index' collection='categorys' separator='),(' open='(' close=')'>" +
+            "#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.level},#{tenantId},#{category.createTime},#{projectId}" +
+            "</foreach>" +
+            " </script>")
+    public int addAll(@Param("categorys") List<CategoryEntityV2> categorys, @Param("projectId") String projectId, @Param("tenantId") String tenantId);
+
+    @Select("<script>" +
+            "select name from api_category where guid in  " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public List<String> queryNamesByIds(@Param("ids") List<String> ids);
+
+
     @Update("update api_category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid} and tenantid=#{tenantId}")
-    public int updateDownBrotherCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid,@Param("tenantId")String tenantId);
+    public int updateDownBrotherCategoryGuid(@Param("guid") String guid, @Param("downBrotherCategoryGuid") String downBrothCatalogGuid, @Param("tenantId") String tenantId);
 
     @Update("update api_category set name=#{category.name},description=#{category.description},qualifiedName=#{category.qualifiedName} where guid=#{category.guid} and tenantid=#{tenantId}")
     public int updateCategoryInfo(@Param("category") CategoryEntity category, @Param("tenantId")String tenantId);

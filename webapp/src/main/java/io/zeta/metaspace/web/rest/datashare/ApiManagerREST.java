@@ -14,6 +14,8 @@
 package io.zeta.metaspace.web.rest.datashare;
 
 import com.google.common.base.Joiner;
+import com.sun.jersey.core.header.FormDataContentDisposition;
+import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
@@ -33,8 +35,11 @@ import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.share.*;
+import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.ExportDataPathUtils;
+import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -43,6 +48,7 @@ import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,11 +56,18 @@ import org.springframework.stereotype.Service;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import javax.ws.rs.core.MediaType;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
@@ -87,6 +100,9 @@ public class ApiManagerREST {
     private IpRestrictionService ipRestrictionService;
 
     private static int CATEGORY_TYPE = 2;
+
+    @Context
+    private HttpServletResponse response;
 
     /**
      * 创建API
@@ -857,5 +873,130 @@ public class ApiManagerREST {
 
         return ipRestrictionService.getIpRestrictionList(parameters, enable, type, tenantId);
 
+    }
+
+    /**
+     * 上传文件并校验
+     *
+     * @param fileInputStream
+     * @param contentDispositionHeader
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("/import")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result uploadCategory(@HeaderParam("tenantId") String tenantId, @FormDataParam("file") InputStream fileInputStream,
+                                 @FormDataParam("file") FormDataContentDisposition contentDispositionHeader,
+                                 @FormDataParam("projectId") String projectId) {
+        File file = null;
+        try {
+            String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            file = ExportDataPathUtils.fileCheck(name, fileInputStream);
+            String upload = shareService.uploadApiCategory(file, projectId, tenantId);
+            HashMap<String, String> map = new HashMap<String, String>() {{
+                put("upload", upload);
+            }};
+            return ReturnUtil.success(map);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导入失败:" + e.getMessage());
+        } finally {
+            if (Objects.nonNull(file) && file.exists()) {
+                file.delete();
+            }
+        }
+    }
+
+    /**
+     * 根据文件导入目录
+     *
+     * @param upload
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("/import/{upload}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
+    public Result importCategory(@PathParam("upload") String upload, @HeaderParam("tenantId") String tenantId, @QueryParam("projectId") String projectId) throws Exception {
+        File file = null;
+        try {
+            file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
+            shareService.importCategory(file, projectId, tenantId);
+            return ReturnUtil.success("success");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败:" + e.getMessage());
+        } finally {
+            if (Objects.nonNull(file) && file.exists()) {
+                file.delete();
+            }
+        }
+    }
+
+    @GET
+    @Path("/excel/template")
+    @Valid
+    public void downloadApiCategoryTemplate() throws Exception {
+        String fileName = TemplateEnum.API_CATEGORY_TEMPLATE.getFileName();
+        InputStream inputStream = PoiExcelUtils.getTemplateInputStream(TemplateEnum.API_CATEGORY_TEMPLATE);
+        response.setContentType("application/force-download");
+        response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
+        IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+    }
+
+    /*
+     * 导出目录
+     *
+     * @param ids
+     * @return
+     * @throws Exception
+    @POST
+    @Path("/export/selected")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDownloadURL(List<String> ids) throws Exception {
+        String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/datashare/api/export/selected";
+        //全局导出
+        if (ids == null || ids.size() == 0) {
+            DownloadUri uri = new DownloadUri();
+            String downURL = url + "/" + "all";
+            uri.setDownloadUri(downURL);
+            return ReturnUtil.success(uri);
+        }
+        DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
+        return ReturnUtil.success(downloadUri);
+    }
+   */
+    @GET
+    @Path("/export/selected/{downloadId}")
+    @Valid
+    public void exportSelected(@PathParam("downloadId") String downloadId, @QueryParam("projectId") String projectId, @QueryParam("tenantId") String tenantId) throws Exception {
+        File exportExcel;
+        //全局导出
+        String all = "all";
+        if (all.equals(downloadId)) {
+            exportExcel = shareService.allExportExcel(projectId, tenantId);
+        } else {
+            List<String> ids = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
+            exportExcel = shareService.exportExcel(ids);
+        }
+        try {
+            String filePath = exportExcel.getAbsolutePath();
+            String fileName = filename(filePath);
+            InputStream inputStream = new FileInputStream(filePath);
+            response.setContentType("application/force-download");
+            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
+            IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+        } finally {
+            exportExcel.delete();
+        }
+    }
+
+    public static String filename(String filePath) throws UnsupportedEncodingException {
+        String filename = filePath.substring(filePath.lastIndexOf(File.separatorChar) + 1);
+        filename = URLEncoder.encode(filename, "UTF-8");
+        return filename;
     }
 }

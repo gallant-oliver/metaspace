@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.dataassets.ThemeInfo;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.DataOwner;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
+import io.zeta.metaspace.model.result.CategorycateQueryResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.CategoryGuidPath;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
@@ -565,4 +566,6 @@ public interface CategoryDAO {
     List<ThemeInfo> getThemeCategory(@Param("guid") String guid);
 
     CategoryEntityV2 queryCategoryInfo(@Param("guid") String guid);
+
+    CategorycateQueryResult queryCategoryPrivilege(@Param("guid") String guid);
 }
