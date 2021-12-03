@@ -27,6 +27,7 @@ import io.zeta.metaspace.model.approve.ApproveItem;
 import io.zeta.metaspace.model.approve.ApproveOperate;
 import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.business.BussinessCatalogueInput;
+import io.zeta.metaspace.model.dto.CategoryPrivilegeDTO;
 import io.zeta.metaspace.model.enums.BusinessType;
 import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.enums.Status;
@@ -1378,6 +1379,64 @@ public class BusinessCatalogueService implements Approvable {
         }
         int lastSort = categoryDao.getMaxSortByParentGuid(parentId, tenantId);
         categoryDao.updateCategoryGuid(categoryId, parentId, null, null, tenantId,lastSort);
+    }
+
+    public CategoryPrivilegeDTO getCategoriesPrivilege(String guid, String tenantId) throws AtlasBaseException {
+        try {
+            String userId = AdminUtils.getUserData().getUserId();
+            boolean edit = false;
+            boolean delete = false;
+            String status1 = String.valueOf(Status.AUDITING.getIntValue());
+            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(userId, tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+            CategorycateQueryResult categories = categoryDao.queryCategoryPrivilege(guid);
+            CategoryPrivilegeDTO categoryPrivilegeDTO = new CategoryPrivilegeDTO();
+            categoryPrivilegeDTO.setGuid(guid);
+            categoryPrivilegeDTO.setName(categories.getName());
+
+            String privateStatus = categories.getPrivateStatus();
+            String status = categories.getStatus();
+            if (CategoryPrivateStatus.PUBLIC.name().equals(privateStatus)) {
+                if (String.valueOf(Status.REJECT.getIntValue()).equals(status) || String.valueOf(Status.ACTIVE.getIntValue()).equals(status)) {
+                    edit = true;
+                }
+                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
+                categoryPrivilegeDTO.setPrivilege(privilege);
+                UserGroupPrivilege userGroupPrivilege = getCataPrivilege(userGroupIds, guid);
+                if (null != userGroupPrivilege) {
+                    categoryPrivilegeDTO.setEditCategory(userGroupPrivilege.getEditCategory());
+                    categoryPrivilegeDTO.setEditItem(userGroupPrivilege.getEditItem());
+                    categoryPrivilegeDTO.setRead(userGroupPrivilege.getRead());
+                }
+            } else {
+                UserGroupPrivilege userGroupPrivilege = getCataPrivilege(userGroupIds, guid);
+                if (null != userGroupPrivilege) {
+                    categoryPrivilegeDTO.setEditCategory(userGroupPrivilege.getEditCategory());
+                    categoryPrivilegeDTO.setEditItem(userGroupPrivilege.getEditItem());
+                    categoryPrivilegeDTO.setRead(userGroupPrivilege.getRead());
+                    if (userGroupPrivilege.getEditCategory()) {
+                        delete = true;
+                        edit = true;
+                    } else {
+                        edit = true;
+                    }
+                } else {
+                    delete = true;
+                    edit = true;
+                }
+                if (status1.equals(status)) {
+                    delete = false;
+                    edit = false;
+                }
+                CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
+                categoryPrivilegeDTO.setPrivilege(privilege);
+            }
+            return categoryPrivilegeDTO;
+        } catch (MyBatisSystemException e) {
+            LOG.error("数据库服务异常", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常:" + e.getMessage());
+        } catch (AtlasBaseException e) {
+            throw e;
+        }
     }
 
 }
