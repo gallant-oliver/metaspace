@@ -17,7 +17,6 @@ import com.google.common.base.Joiner;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
-import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
@@ -33,7 +32,6 @@ import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
-import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.share.*;
@@ -948,13 +946,12 @@ public class ApiManagerREST {
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
     }
 
-    /**
+    /*
      * 导出目录
      *
      * @param ids
      * @return
      * @throws Exception
-     */
     @POST
     @Path("/export/selected")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
@@ -971,7 +968,7 @@ public class ApiManagerREST {
         DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
         return ReturnUtil.success(downloadUri);
     }
-
+   */
     @GET
     @Path("/export/selected/{downloadId}")
     @Valid
