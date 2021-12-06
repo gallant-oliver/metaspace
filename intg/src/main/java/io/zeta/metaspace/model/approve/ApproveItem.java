@@ -1,6 +1,8 @@
 package io.zeta.metaspace.model.approve;
 
 
+import io.swagger.annotations.ApiModelProperty;
+import io.zeta.metaspace.model.enums.SourceSystem;
 import lombok.Data;
 import java.sql.Timestamp;
 import org.apache.htrace.shaded.fasterxml.jackson.annotation.JsonFormat;
@@ -74,7 +76,8 @@ public class ApproveItem {
       */
      @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
      private Timestamp approveTime;
-
+     @ApiModelProperty("来源系统")
+     private SourceSystem sourceSystem = SourceSystem.METASPACE;
      private int totalSize;
 
 

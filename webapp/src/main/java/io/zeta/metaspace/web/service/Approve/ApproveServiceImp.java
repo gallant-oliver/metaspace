@@ -80,6 +80,7 @@ public class ApproveServiceImp implements ApproveService{
         List<ApproveItem> approveItems = approveDao.getApproveItems(tenantId, paras, groups);
        for(ApproveItem item:approveItems){
            item.setBusinessTypeText(BusinessType.getTextByCode(item.getBusinessType()));
+           item.setSourceSystem(BusinessType.getSystem(item.getBusinessType()));
        }
         if (approveItems == null || approveItems.size() == 0) {
             return result;
