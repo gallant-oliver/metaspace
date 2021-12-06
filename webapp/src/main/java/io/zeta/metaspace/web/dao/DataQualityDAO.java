@@ -32,8 +32,6 @@ import org.apache.ibatis.annotations.Update;
 import java.sql.SQLException;
 import java.util.List;
 
-import javax.ws.rs.DELETE;
-
 /*
  * @description
  * @author sunhaoning
@@ -49,7 +47,7 @@ public interface DataQualityDAO {
      */
     @Insert("insert into template(templateId,tableId,buildType,periodCron,templateName,tableRulesNum,columnRulesNum,source,generateTime,tenantid)" +
             "values(#{template.templateId},#{template.tableId},#{template.buildType},#{template.periodCron},#{template.templateName},#{template.tableRulesNum},#{template.columnRulesNum},#{template.source},#{template.generateTime},#{tenantId})")
-    public int insertTemplate(@Param("template") Template template,@Param("tenantId") String tenantId) throws SQLException;
+    public int insertTemplate(@Param("templates") Template template, @Param("tenantId") String tenantId) throws SQLException;
 
     /**
      * 添加模板规则

@@ -137,4 +137,11 @@ public interface IpRestrictionDAO {
             " </script>"})
     List<ApiPolyInfo> getApiPolyInfoList(@Param("id") String id, @Param("userId") String userId, @Param("tenantId") String tenantId, @Param("param") Parameters parameters, @Param("status") String status, @Param("effectiveTime") long effectiveTime);
 
+    @Select("<script>" +
+            "select name from ip_restriction where id in " +
+            "<foreach collection='ids' item='id' index='index' separator=',' open='(' close=')'>" +
+            "#{id}" +
+            "</foreach>" +
+            "</script>")
+    List<String> getIpRestrictionNames(@Param("ids")List<String> ids);
 }

@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.dataassets.*;
 import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.metadata.GuidCount;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
@@ -57,7 +58,7 @@ public class DataAssetsRetrievalService {
     private SearchService searchService;
 
     // 租户资产-业务目录模块id
-    private int TENANT_ASSETS_BUSINESS_MODULE = 50;
+    private int TENANT_ASSETS_BUSINESS_MODULE = ModuleEnum.BUSINESSALL.getId();
 
     @Autowired
     private UserGroupDAO userGroupDAO;
@@ -259,8 +260,7 @@ public class DataAssetsRetrievalService {
                 }
                 break;
             case 3:
-                boolean publicTenant = isPublicTenant(tenantId);
-                result = getThemeDetail(id, publicTenant);
+                result = getThemeDetail(id, isPublic);
                 break;
             default:
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据资产类别错误: " + type);

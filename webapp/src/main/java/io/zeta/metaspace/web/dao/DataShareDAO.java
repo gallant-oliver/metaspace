@@ -817,4 +817,5 @@ public interface DataShareDAO {
             "where tableinfo.status = 'ACTIVE' and tableinfo.source_id = #{sourceId} and tableinfo.dbname = #{database} and tableinfo.tablename = #{tableName}")
     List<String> getUserColumns(@Param("sourceId") String sourceId, @Param("database") String database, @Param("tableName") String tableName);
 
+    List<ApiInfoV2> getApiDisplayInfos(@Param("ids")List<String> ids);
 }

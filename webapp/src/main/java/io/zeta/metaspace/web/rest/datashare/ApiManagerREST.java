@@ -17,6 +17,7 @@ import com.google.common.base.Joiner;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
@@ -32,6 +33,7 @@ import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
+import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.share.*;
@@ -47,6 +49,7 @@ import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.slf4j.Logger;
@@ -61,10 +64,7 @@ import javax.validation.Valid;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.*;
@@ -101,6 +101,8 @@ public class ApiManagerREST {
 
     private static int CATEGORY_TYPE = 2;
 
+    @Context
+    private HttpServletRequest request;
     @Context
     private HttpServletResponse response;
 
@@ -873,6 +875,54 @@ public class ApiManagerREST {
 
         return ipRestrictionService.getIpRestrictionList(parameters, enable, type, tenantId);
 
+    }
+
+    /**
+     * 导出api信息（word）
+     *
+     * @param
+     * @return
+     * @throws Exception
+     */
+    @GET
+    @Path("/export/apiInfo/selected/{downloadId}")
+    public void exportApiInfos(@PathParam("downloadId") String downloadId, @HeaderParam("tenantId") String tenantId) throws Exception {
+        List<String> ids = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
+        if (CollectionUtils.isEmpty(ids)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "id列表为空");
+        }
+        File f = shareService.exportApiInfos(ids);
+        try {
+            String filePath = f.getAbsolutePath();
+            String fileName = filename(filePath);
+            InputStream inputStream = new FileInputStream(filePath);
+            response.setContentType("application/force-download");
+            response.addHeader("Content-Disposition", "attachment;fileName=".concat(fileName));
+            IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
+        }
+        catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导出api详情失败");
+        }
+        finally {
+            f.delete();
+        }
+    }
+
+    /**
+     * 导出api信息
+     *
+     * @param ids
+     * @return
+     * @throws Exception
+     */
+    @POST
+    @Path("/export/apiInfo/selected")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getDownloadURL(List<String> ids) {
+        String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/datashare/api/export/selected";
+        DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
+        return ReturnUtil.success(downloadUri);
     }
 
     /**
