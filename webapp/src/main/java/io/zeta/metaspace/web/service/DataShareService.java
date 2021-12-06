@@ -21,6 +21,8 @@ import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
+import freemarker.template.Template;
+import freemarker.template.TemplateException;
 import io.swagger.models.*;
 import io.swagger.models.parameters.BodyParameter;
 import io.swagger.models.parameters.Parameter;
@@ -78,24 +80,31 @@ import org.apache.tinkerpop.shaded.minlog.Log;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.util.matcher.IpAddressMatcher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer;
 import schemacrawler.schema.Schema;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.*;
 import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static io.zeta.metaspace.web.util.ExportDataPathUtils.EXCEL_FORMAT_XLSX;
 
 /*
  * @description
@@ -150,6 +159,11 @@ public class DataShareService {
     Map<String, CompletableFuture> taskMap = new HashMap<>();
 
     ExecutorService pool = Executors.newFixedThreadPool(100);
+
+    @Autowired
+    private FreeMarkerConfigurer freeMarkerConfigurer;
+
+    private final String API_TEMPLATE_FILE = "apiDemo.ftl";
 
     static {
         try {
@@ -3053,6 +3067,111 @@ public class DataShareService {
         List<String> confList = Arrays.stream(MetaspaceConfig.getDataSourceApiType()).map(String::toUpperCase).collect(Collectors.toList());
         List<DataSourceTypeInfo> typeNames = Arrays.stream(DataSourceType.values()).filter(e -> confList.contains(e.getName())).map(dataSourceType -> new DataSourceTypeInfo(dataSourceType.getName(), dataSourceType.isBuildIn())).collect(Collectors.toList());
         return typeNames;
+    }
+
+    public File exportApiInfos(List<String> ids) throws IOException, TemplateException {
+        List<ApiInfoV2> apiInfos = shareDAO.getApiDisplayInfos(ids);
+        List<ApiInfoDetailDTO> detailInfos = new ArrayList<>();
+
+        for (ApiInfoV2 apiInfo : apiInfos) {
+            handleParams(apiInfo);
+            ApiInfoDetailDTO detailInfo = new ApiInfoDetailDTO();
+            BeanUtils.copyProperties(apiInfo, detailInfo);
+
+            String sourceType = detailInfo.getSourceType();
+            if ("HIVE".equals(sourceType)) {
+                detailInfo.setSourceName("资源池：" + detailInfo.getSourceName());
+            }
+            else {
+                detailInfo.setSourceName("数据源：" + detailInfo.getSourceName());
+            }
+
+            ApiPolyEntity apiPolyEntity = apiInfo.getApiPolyEntity();
+            if (Objects.nonNull(apiPolyEntity)) {
+                ApiIpRestriction ipRestriction = apiPolyEntity.getIpRestriction();
+                if (Objects.nonNull(ipRestriction) && CollectionUtils.isNotEmpty(ipRestriction.getIpRestrictionIds())) {
+                    ipRestriction.setIpRestrictionNames(ipRestrictionDAO.getIpRestrictionNames(ipRestriction.getIpRestrictionIds()));
+                }
+                detailInfo.setApiIpRestriction(ipRestriction);
+
+                List<ApiDesensitization> rules = apiPolyEntity.getDesensitization();
+                List<ApiInfoV2.FieldV2> returnParams = apiInfo.getReturnParam();
+
+                if (CollectionUtils.isNotEmpty(returnParams)) {
+                    List<ApiInfoV2.FieldV2> params = apiInfo.getParam();
+                    Map<String, ApiInfoV2.FieldV2> paramsMap = new HashMap<>();
+                    if (CollectionUtils.isNotEmpty(params)) {
+                        paramsMap = params.stream().collect(Collectors.toMap(ApiInfoV2.FieldV2 :: getColumnName, Function.identity(), (key1, key2) -> key2));
+                    }
+
+                    List<ApiInfoDetailDTO.ApiColumnInfoDetail> apiColumnInfoDetails = new ArrayList<>();
+                    Map<String, String> ruleMap = new HashMap<>();
+                    if (CollectionUtils.isNotEmpty(rules)) {
+                        ruleMap = rules.stream().collect(Collectors.toMap(ApiDesensitization :: getField, ApiDesensitization :: getRuleName, (key1, key2) -> key2));
+                    }
+                    for (ApiInfoV2.FieldV2 returnParam : returnParams) {
+                        ApiInfoDetailDTO.ApiColumnInfoDetail apiColumnInfoDetail = new ApiInfoDetailDTO.ApiColumnInfoDetail();
+                        apiColumnInfoDetail.setName(returnParam.getName() + "(" + returnParam.getColumnName() + ")");
+                        ApiInfoV2.FieldV2 param = paramsMap.get(returnParam.getColumnName());
+                        apiColumnInfoDetail.setFilter(param == null ? "否" : "是");
+                        apiColumnInfoDetail.setNeed(param != null && param.isFill() ? "是" : "否");
+                        apiColumnInfoDetail.setDefaultValue(param != null && StringUtils.isNotEmpty(param.getDefaultValue()) ? param.getDefaultValue() : "暂无");
+                        String rule = ruleMap.get(returnParam.getColumnName());
+                        apiColumnInfoDetail.setRule(StringUtils.isEmpty(rule) ? "暂无" : rule);
+
+                        apiColumnInfoDetails.add(apiColumnInfoDetail);
+                    }
+
+                    detailInfo.setColumns(apiColumnInfoDetails);
+                }
+            }
+
+            detailInfos.add(detailInfo);
+        }
+
+       return fillHtmlTemplateData(detailInfos);
+    }
+
+    private ApiInfoV2 handleParams(ApiInfoV2 apiInfo) throws AtlasBaseException {
+        try {
+            Gson gson = new Gson();
+            Object param = apiInfo.getParams();
+            Object returnParam = apiInfo.getReturnParams();
+            Object sortParam = apiInfo.getSortParams();
+            Object apiPoly = apiInfo.getApiPoly();
+
+            Type typeParam = new TypeToken<List<ApiInfoV2.FieldV2>>(){}.getType();
+            List<ApiInfoV2.FieldV2> params = gson.fromJson(param == null ? null : param.toString(), typeParam);
+            List<ApiInfoV2.FieldV2> returnParams = gson.fromJson(returnParam == null ? null : returnParam.toString(), typeParam);
+            List<ApiInfoV2.FieldV2> sortParams = gson.fromJson(sortParam == null ? null : sortParam.toString(), typeParam);
+
+            Type apiPolyType = new TypeToken<ApiPolyEntity>(){}.getType();
+            ApiPolyEntity apiPolyEntity = gson.fromJson(apiPoly == null ? null : apiPoly.toString(), apiPolyType);
+
+            apiInfo.setParam(params);
+            apiInfo.setReturnParam(returnParams);
+            apiInfo.setSortParam(sortParams);
+            apiInfo.setApiPolyEntity(apiPolyEntity);
+            return apiInfo;
+        } catch (Exception e) {
+            LOG.error("获取数据失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+        }
+    }
+
+    private File fillHtmlTemplateData(List<ApiInfoDetailDTO> list) throws IOException, TemplateException {
+        File tmpFile = File.createTempFile(String.format("ApiInfoExport_%s", System.currentTimeMillis()), ".doc");
+
+        freemarker.template.Configuration cfg = freeMarkerConfigurer.getConfiguration();
+
+        Template t = cfg.getTemplate(API_TEMPLATE_FILE);
+        Writer out = new OutputStreamWriter(new FileOutputStream(tmpFile), "UTF-8");
+
+        Map<String, List<ApiInfoDetailDTO>> m = new HashMap<>();
+        m.put("list", list);
+        t.process(m, out);
+
+        return tmpFile;
     }
 }
 

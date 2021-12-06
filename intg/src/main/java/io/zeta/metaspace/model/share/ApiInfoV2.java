@@ -14,8 +14,11 @@
 package io.zeta.metaspace.model.share;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.zeta.metaspace.model.apigroup.ApiGroupInfo;
 import lombok.Data;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONObject;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -61,6 +64,15 @@ public class ApiInfoV2 {
     private String projectId;
     private List<ApiGroupInfo> apiGroup;
 
+    @JsonIgnore
+    private Object apiPoly;
+    @JsonIgnore
+    private Object params;
+    @JsonIgnore
+    private Object returnParams;
+    @JsonIgnore
+    private Object sortParams;
+
 
     @Data
     public static class FieldV2 {
@@ -83,6 +95,10 @@ public class ApiInfoV2 {
         private String order;
         private Object value;
 
+        /**
+         * 字段脱敏规则
+         */
+        private String rule;
     }
 
 }
