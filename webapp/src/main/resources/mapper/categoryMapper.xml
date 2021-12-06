@@ -100,4 +100,10 @@
         where c.guid = #{guid}
     </select>
 
+    <select id="queryCategoryPrivilege" resultType="io.zeta.metaspace.model.result.CategorycateQueryResult">
+        select  c.guid,c.name,c.private_status,c.publish,case  when ai.status is null then '0' else ai.status end FROM category c
+                left join approval_item ai on ai.id=c.approval_id
+             WHERE c.guid = #{guid}
+    </select>
+
 </mapper>

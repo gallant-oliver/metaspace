@@ -53,6 +53,7 @@ import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.OKHttpClient;
+import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
@@ -82,6 +83,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
+
 import javax.mail.Message;
 import javax.mail.Session;
 import javax.mail.Transport;
@@ -94,6 +96,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -1911,45 +1914,40 @@ public class DataManageService {
         return "";
     }
 
-    public void addOrUpdateDb(Database dbInfo, SyncTaskDefinition definition){
-        if(StringUtils.isBlank(dbInfo.getInstanceId()) || "UNKOWN".equalsIgnoreCase(dbInfo.getInstanceId())){
+    public void addOrUpdateDb(Database dbInfo, SyncTaskDefinition definition) {
+        if (StringUtils.isBlank(dbInfo.getInstanceId()) || "UNKOWN".equalsIgnoreCase(dbInfo.getInstanceId())) {
             return;
         }
-        String var = dbInfo.getInstanceId().intern();
-        synchronized (var){
-            dbDAO.deleteIfExitDbByName(dbInfo.getDatabaseId(), dbInfo.getInstanceId(), dbInfo.getDatabaseName());
-            Database db = dbDAO.getDb(dbInfo.getDatabaseId());
-            if(null != db){
-                dbDAO.updateDb(dbInfo);
-            }else{
-                dbDAO.insertDb(dbInfo);
+        dbDAO.deleteIfExitDbByName(dbInfo.getDatabaseId(), dbInfo.getInstanceId(), dbInfo.getDatabaseName());
+        Database db = dbDAO.getDb(dbInfo.getDatabaseId());
+        if (null != db) {
+            dbDAO.updateDb(dbInfo);
+        } else {
+            dbDAO.insertDb(dbInfo);
+        }
+        if (null != definition && "ACTIVE".equalsIgnoreCase(dbInfo.getStatus())) {
+            String dataSourceId = definition.getDataSourceId();
+            DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(dataSourceId);
+            if (dataSourceInfo == null || dbInfo == null) {
+                return;
             }
-            if(null != definition&&"ACTIVE".equalsIgnoreCase(dbInfo.getStatus())){
-                String dataSourceId = definition.getDataSourceId();
-                DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(dataSourceId);
-                if(dataSourceInfo == null || dbInfo == null){
-                    return;
-                }
-                String sourceDbRelationId = dbDAO.getSourceDbRelationId(dbInfo.getDatabaseId(), dataSourceInfo.getSourceId());
-                if(null == sourceDbRelationId){
-                    dbDAO.insertSourceDbRelation(UUID.randomUUID().toString(), dbInfo.getDatabaseId(), dataSourceInfo.getSourceId());
-                }
+            String sourceDbRelationId = dbDAO.getSourceDbRelationId(dbInfo.getDatabaseId(), dataSourceInfo.getSourceId());
+            if (null == sourceDbRelationId) {
+                dbDAO.insertSourceDbRelation(UUID.randomUUID().toString(), dbInfo.getDatabaseId(), dataSourceInfo.getSourceId());
             }
         }
     }
 
     public void addOrUpdateTable(TableInfo tableInfo, SyncTaskDefinition definition) throws Exception {
         String tableGuid = tableInfo.getTableGuid();
-        synchronized (tableGuid) {
-            if ("ACTIVE".equalsIgnoreCase(tableInfo.getStatus())) {
-                tableDAO.deleteIfExist(tableGuid, tableInfo.getDatabaseGuid(), tableInfo.getTableName());
-            }
-            TableInfo table = tableDAO.getTableInfoByTableguid(tableGuid);
-            if (null != table) {
-                ProxyUtil.getProxy(DataManageService.class).updateTable(tableInfo);
-            } else {
-                ProxyUtil.getProxy(DataManageService.class).addTable(tableInfo);
-            }
+        if ("ACTIVE".equalsIgnoreCase(tableInfo.getStatus())) {
+            tableDAO.deleteIfExist(tableGuid, tableInfo.getDatabaseGuid(), tableInfo.getTableName());
+        }
+        TableInfo table = tableDAO.getTableInfoByTableguid(tableGuid);
+        if (null != table) {
+            ProxyUtil.getProxy(DataManageService.class).updateTable(tableInfo);
+        } else {
+            ProxyUtil.getProxy(DataManageService.class).addTable(tableInfo);
         }
     }
 
@@ -2165,7 +2163,10 @@ public class DataManageService {
                     TableInfo tableInfo = getTableInfo(entity);
                     addOrUpdateTable(tableInfo,definition);
                     if (enableEmail) {
-                        sendMetadataChangedMail(entity.getGuid());
+                        ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
+                        threadPoolExecutor.execute(()->{
+                            sendMetadataChangedMail(entity.getGuid());
+                        });
                     }
                     break;
                 case "hive_column":
@@ -2254,6 +2255,11 @@ public class DataManageService {
         return categoryDao.getCategoryNameById(guid, tenantId);
     }
 
+    /**
+     * 异步调用
+     * @param tableGuid
+     * @throws AtlasBaseException
+     */
     public void sendMetadataChangedMail(String tableGuid) throws AtlasBaseException {
         try {
             Table info = tableDAO.getDbAndTableName(tableGuid);
@@ -2261,11 +2267,8 @@ public class DataManageService {
             String subject = "元数据变更提醒";
             List<String> emails = userDAO.getUsersEmail(tableGuid);
             sendMail(emails, subject, sendMessage);
-        } catch (AtlasBaseException e) {
-            throw e;
-        } catch (Exception e) {
+        }catch (Exception e) {
             LOG.error("发送邮件失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "发送邮件失败");
         }
     }
 

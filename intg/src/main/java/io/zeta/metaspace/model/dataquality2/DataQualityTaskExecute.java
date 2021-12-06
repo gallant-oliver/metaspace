@@ -17,14 +17,16 @@
 package io.zeta.metaspace.model.dataquality2;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import lombok.Data;
 
 import java.sql.Timestamp;
 
-/*
+/**
  * @description
  * @author sunhaoning
  * @date 2019/7/26 10:43
  */
+@Data
 public class DataQualityTaskExecute {
     private String id;
     private String taskId;
@@ -45,140 +47,4 @@ public class DataQualityTaskExecute {
     private Integer errorStatus;
     private String number;
     private Integer counter;
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public String getTaskId() {
-        return taskId;
-    }
-
-    public void setTaskId(String taskId) {
-        this.taskId = taskId;
-    }
-
-    public Float getPercent() {
-        return percent;
-    }
-
-    public void setPercent(Float percent) {
-        this.percent = percent;
-    }
-
-    public Integer getExecuteStatus() {
-        return executeStatus;
-    }
-
-    public void setExecuteStatus(Integer executeStatus) {
-        this.executeStatus = executeStatus;
-    }
-
-    public String getExecutor() {
-        return executor;
-    }
-
-    public void setExecutor(String executor) {
-        this.executor = executor;
-    }
-
-    public Timestamp getExecuteTime() {
-        return executeTime;
-    }
-
-    public void setExecuteTime(Timestamp executeTime) {
-        this.executeTime = executeTime;
-    }
-
-    public String getCloser() {
-        return closer;
-    }
-
-    public void setCloser(String closer) {
-        this.closer = closer;
-    }
-
-    public Timestamp getCloseTime() {
-        return closeTime;
-    }
-
-    public void setCloseTime(Timestamp closeTime) {
-        this.closeTime = closeTime;
-    }
-
-    public Integer getCostTime() {
-        return costTime;
-    }
-
-    public void setCostTime(Integer costTime) {
-        this.costTime = costTime;
-    }
-
-    public Integer getOrangeWarningCount() {
-        return orangeWarningCount;
-    }
-
-    public void setOrangeWarningCount(Integer orangeWarningCount) {
-        this.orangeWarningCount = orangeWarningCount;
-    }
-
-    public Integer getGeneralWarningCount() {
-        return generalWarningCount;
-    }
-
-    public void setGeneralWarningCount(Integer generalWarningCount) {
-        this.generalWarningCount = generalWarningCount;
-    }
-
-    public Integer getRedWarningCount() {
-        return redWarningCount;
-    }
-
-    public void setRedWarningCount(Integer redWarningCount) {
-        this.redWarningCount = redWarningCount;
-    }
-
-    public Integer getRuleErrorCount() {
-        return ruleErrorCount;
-    }
-
-    public void setRuleErrorCount(Integer ruleErrorCount) {
-        this.ruleErrorCount = ruleErrorCount;
-    }
-
-    public Integer getWarningStatus() {
-        return warningStatus;
-    }
-
-    public void setWarningStatus(Integer warningStatus) {
-        this.warningStatus = warningStatus;
-    }
-
-    public Integer getErrorStatus() {
-        return errorStatus;
-    }
-
-    public void setErrorStatus(Integer errorStatus) {
-        this.errorStatus = errorStatus;
-    }
-
-    public String getNumber() {
-        return number;
-    }
-
-    public void setNumber(String number) {
-        this.number = number;
-    }
-
-    public Integer getCounter() {
-        return counter;
-    }
-
-    public void setCounter(Integer counter) {
-        this.counter = counter;
-    }
 }

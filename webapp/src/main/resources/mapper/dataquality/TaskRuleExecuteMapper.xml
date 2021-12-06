@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.zeta.metaspace.web.dao.dataquality.TaskRuleExecuteDAO">
+
+    <select id="queryExecutionLogByExecutionId"
+            resultType="java.lang.String"
+            parameterType="java.lang.String">
+        select error_msg
+        from data_quality_task_rule_execute
+        where task_execute_id = #{executionId}
+    </select>
+
+</mapper>

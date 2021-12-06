@@ -31,7 +31,6 @@ import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.measure.*;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.GsonUtils;
-import io.zeta.metaspace.web.dao.DataSourceDAO;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
@@ -76,45 +75,42 @@ import static io.zeta.metaspace.model.dataquality.RuleCheckType.FLU;
 
 
 public class QuartzJob implements Job {
-
     private static final Logger LOG = LoggerFactory.getLogger(QuartzJob.class);
+    
     @Autowired
-    QuartzManager quartzManager;
+    private QuartzManager quartzManager;
     @Autowired
-    TaskManageDAO taskManageDAO;
+    private TaskManageDAO taskManageDAO;
     @Autowired
-    DataSourceDAO dataSourceDAO;
+    private DataSourceService dataSourceService;
     @Autowired
-    DataSourceService dataSourceService;
-    @Autowired
-    LivyTaskSubmitHelper livyTaskSubmitHelper;
+    private LivyTaskSubmitHelper livyTaskSubmitHelper;
     @Autowired
     private IndexCounter indexCounter;
-
+    
     private final int RETRY = 3;
-
-    Map<String, Float> columnType2Result = new HashMap<>();
-
-    public static final Map<String, Boolean> STATE_MAP = new HashMap<>();
-
+    private Map<String, Float> columnType2Result = new HashMap<>();
     private static Configuration conf;
     private static String engine;
-    public final static String hiveId = "hive";
-
-
+    
+    public static final Map<String, Boolean> STATE_MAP = new HashMap<>();
+    public static final String hiveId = "hive";
+    public static final String EXECUTE_ID = "executeId";
+    
     static {
         try {
             conf = ApplicationProperties.get();
         } catch (Exception e) {
-
+        
         }
     }
-
-    public String initExecuteInfo(String taskId) {
-
+    
+    private String initExecuteInfo(String taskId, String taskExecuteId) {
         String userId = taskManageDAO.getTaskUpdater(taskId);
         DataQualityTaskExecute taskExecute = new DataQualityTaskExecute();
-        String id = UUID.randomUUID().toString();
+        String id = StringUtils.isEmpty(taskExecuteId)
+                ? UUID.randomUUID().toString()
+                : taskExecuteId;
         taskExecute.setId(id);
         taskExecute.setTaskId(taskId);
         taskExecute.setPercent(0F);
@@ -132,13 +128,14 @@ public class QuartzJob implements Job {
         taskExecute.setCounter(Objects.isNull(counter) ? 1 : ++counter);
         taskManageDAO.initTaskExecuteInfo(taskExecute);
         taskManageDAO.updateTaskExecutionCount(taskId);
+        // TODO update了个寂寞
         taskManageDAO.updateTaskExecuteStatus(taskId, 1);
         taskManageDAO.updateTaskStatus(taskId, 1);
         return id;
-
+        
     }
-
-    public boolean canceled(String taskId, String taskExecuteId) {
+    
+    private boolean canceled(String taskId, String taskExecuteId) {
         if (STATE_MAP.get(taskId)) {
             taskManageDAO.updateTaskExecuteStatus(taskExecuteId, 4);
             taskManageDAO.updateTaskStatus(taskId, 4);
@@ -148,7 +145,7 @@ public class QuartzJob implements Job {
         }
         return false;
     }
-
+    
     @Override
     public void execute(JobExecutionContext jobExecutionContext) {
         String taskId = "";
@@ -161,11 +158,15 @@ public class QuartzJob implements Job {
                 //任务正在运行中，跳过本次执行
                 return;
             }
-            taskExecuteId = initExecuteInfo(taskId);
+    
+            taskExecuteId = (String) jobExecutionContext.getJobDetail()
+                    .getJobDataMap()
+                    .getOrDefault(EXECUTE_ID, StringUtils.EMPTY);
+            taskExecuteId = initExecuteInfo(taskId, taskExecuteId);
             STATE_MAP.put(taskId, false);
             EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
             String tenantId = taskInfo.getTenantId();
-
+    
             if (canceled(taskId, taskExecuteId)) {
                 return;
             }
@@ -197,8 +198,8 @@ public class QuartzJob implements Job {
             STATE_MAP.remove(taskId);
         }
     }
-
-    public void completeTaskInformation(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList) throws AtlasBaseException {
+    
+    private void completeTaskInformation(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList) throws AtlasBaseException {
         try {
             for (AtomicTaskExecution taskExecution : taskList) {
                 taskExecution.setTaskId(taskId);
@@ -240,15 +241,15 @@ public class QuartzJob implements Job {
                 } else {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的任务类型");
                 }
-
+                
             }
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
     }
-
-
-    public void executeAtomicTaskList(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList, String tenantId) throws Exception {
+    
+    
+    private void executeAtomicTaskList(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList, String tenantId) throws Exception {
         engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf, String::valueOf);
         LOG.info("query engine:" + engine);
         int totalStep = taskList.size();
@@ -309,7 +310,7 @@ public class QuartzJob implements Job {
         }
         taskManageDAO.updateDataTaskCostTime(taskExecuteId, System.currentTimeMillis() - startTime);
     }
-
+    
     private void error(String taskId, AtomicTaskExecution task, Exception e) {
         taskManageDAO.updateTaskExecutionErrorMsg(task.getTaskExecuteId(), e.toString());
         taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
@@ -317,8 +318,8 @@ public class QuartzJob implements Job {
         taskManageDAO.updateTaskExecuteErrorStatus(task.getTaskExecuteId(), WarningStatus.WARNING.code);
         taskManageDAO.updateRuleExecuteErrorStatus(task.getId(), WarningStatus.WARNING.code);
     }
-
-    public void recordExecutionInfo(AtomicTaskExecution task, String errorMsg, String tenantId) {
+    
+    private void recordExecutionInfo(AtomicTaskExecution task, String errorMsg, String tenantId) {
         String dbName = task.getDbName();
         String tableName = task.getTableName();
         String objectName = task.getObjectName();
@@ -348,18 +349,18 @@ public class QuartzJob implements Job {
         } else {
             logInfoStatus = "INFO";
         }
-
+        
         StringJoiner logJoiner = new StringJoiner(" ");
         logJoiner.add(currentTime);
         logJoiner.add(logInfoStatus);
         logJoiner.add(source);
         logJoiner.add(checkMsg);
         logJoiner.add(Objects.isNull(errorMsg) ? "SUCCESS" : errorMsg);
-
+        
         taskManageDAO.updateRuleExecuteErrorMsg(task.getId(), logJoiner.toString());
     }
-
-    public void runJob(AtomicTaskExecution task) throws Exception {
+    
+    private void runJob(AtomicTaskExecution task) throws Exception {
         try {
             TaskType jobType = TaskType.getTaskByCode(task.getTaskType());
             Measure measure = null;
@@ -434,7 +435,7 @@ public class QuartzJob implements Job {
             throw e;
         }
     }
-
+    
     /**
      * 其他规则校验
      * <p>
@@ -445,7 +446,7 @@ public class QuartzJob implements Job {
      * @param task
      * @return
      */
-    public long otherRuleCheck(AtomicTaskExecution task, Measure measure) throws Exception {
+    private long otherRuleCheck(AtomicTaskExecution task, Measure measure) throws Exception {
         Long errorCount = 0L;
         try {
             MeasureLivyResult result = null;
@@ -567,7 +568,7 @@ public class QuartzJob implements Job {
 
         return measure;
     }
-
+    
     /**
      * 一致性生成Measure
      *
@@ -575,13 +576,13 @@ public class QuartzJob implements Job {
      * @param timestamp
      * @return
      */
-    public Measure buildMeasure(AtomicTaskExecution task, Long timestamp) {
+    private Measure buildMeasure(AtomicTaskExecution task, Long timestamp) {
         List<ConsistencyParam> consistencyParams = task.getConsistencyParams();
         if (consistencyParams == null || consistencyParams.isEmpty() || consistencyParams.size() < 2) {
             throw new AtlasBaseException("一致性校验的数据源必须大于一个");
         }
-
-
+        
+        
         ConsistencyParam standard = null;
         List<ConsistencyParam> contrasts = new ArrayList<>();
         Map<String, MeasureDataSource> dataSourceMap = new HashMap<>();

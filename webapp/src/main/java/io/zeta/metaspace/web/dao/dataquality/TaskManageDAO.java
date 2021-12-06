@@ -34,55 +34,51 @@ import java.util.List;
  * @date 2019/7/24 9:53
  */
 public interface TaskManageDAO {
-
-
+    
+    
     /**
      * 获取任务列表
+     *
      * @param my
      * @param creator
      * @param params
      * @return
      */
     @Select({"<script>",
-             " select count(*)over() total,data_quality_task.id,data_quality_task.enable,'TID-'||number as taskId,name as taskName,description,current_execution_status as executeStatus,",
-             " current_execution_percent as percent,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,",
-             " error_total_count as ruleErrorTotalCount,start_time as startTime,end_time as endTime,level as taskLevel,users.username as creator",
-             " from data_quality_task join users on users.userid=data_quality_task.creator",
-             " where ",
-             " delete=false and data_quality_task.tenantId=#{tenantId}",
-             " and (data_quality_task.name like concat('%',#{params.query},'%') ESCAPE '/' or 'TID-'||data_quality_task.number like concat('%',#{params.query},'%') ESCAPE '/')",
-             " <if test='my==0'>",
-             " and data_quality_task.creator=#{creator}",
-             " </if>",
-             " order by data_quality_task.create_time desc",
-             " <if test='params.limit!=null and params.limit!= -1'>",
-             " limit #{params.limit}",
-             " </if>",
-             " <if test='params.offset!=null'>",
-             " offset #{params.offset}",
-             " </if>",
-             " </script>"})
-    public List<TaskHeader> getTaskList(@Param("my") Integer my, @Param("creator") String creator, @Param("params") Parameters params,@Param("tenantId") String tenantId) throws SQLException;
-
-    /**
-     * 任务总数
-     * @param my
-     * @param creator
-     * @param params
-     * @return
-     */
-
+            " select count(*)over() total,data_quality_task.id,data_quality_task.enable,'TID-'||number as taskId,name as taskName,description,current_execution_status as executeStatus,",
+            " current_execution_percent as percent,orange_warning_total_count as orangeWarningTotalCount,red_warning_total_count as redWarningTotalCount,",
+            " error_total_count as ruleErrorTotalCount,start_time as startTime,end_time as endTime,level as taskLevel,users.username as creator",
+            " from data_quality_task join users on users.userid=data_quality_task.creator",
+            " where ",
+            " delete=false and data_quality_task.tenantId=#{tenantId}",
+            " and (data_quality_task.name like concat('%',#{params.query},'%') ESCAPE '/' or 'TID-'||data_quality_task.number like concat('%',#{params.query},'%') ESCAPE '/')",
+            " <if test='my==0'>",
+            " and data_quality_task.creator=#{creator}",
+            " </if>",
+            " order by data_quality_task.create_time desc",
+            " <if test='params.limit!=null and params.limit!= -1'>",
+            " limit #{params.limit}",
+            " </if>",
+            " <if test='params.offset!=null'>",
+            " offset #{params.offset}",
+            " </if>",
+            " </script>"})
+    public List<TaskHeader> getTaskList(@Param("my") Integer my, @Param("creator") String creator, @Param("params") Parameters params, @Param("tenantId") String tenantId) throws SQLException;
+    
+    List<DataQualityTask> queryEnableTasks(@Param("tenantId") String tenantId);
+    
     /**
      * 删除任务
+     *
      * @param taskIdList
      * @return
      */
     @Update({" <script>",
-             " update data_quality_task set delete=true where id in",
-             " <foreach item='taskId' index='index' collection='taskIdList' separator=',' open='(' close=')'>" ,
-             " #{taskId}",
-             " </foreach>",
-             " </script>"})
+            " update data_quality_task set delete=true where id in",
+            " <foreach item='taskId' index='index' collection='taskIdList' separator=',' open='(' close=')'>",
+            " #{taskId}",
+            " </foreach>",
+            " </script>"})
     public int deleteTaskList(@Param("taskIdList")List<String> taskIdList);
 
     /**
@@ -292,86 +288,94 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({"select data_quality_rule_template.name as ruleName,data_quality_rule_template.id as ruleId,rule_type as categoryId,",
-             " data_quality_sub_task_rule.id as subTaskRuleId,data_quality_sub_task_rule.check_type as checkType,data_quality_sub_task_rule.check_expression_type as checkExpression,",
-             " data_quality_sub_task_rule.check_threshold_min_value as checkThresholdMinValue,data_quality_sub_task_rule.check_threshold_max_value as checkThresholdMaxValue,",
-             " orange_check_type as orangeWarningCheckType,orange_check_expression_type as orangeWarningCheckExpression,orange_threshold_min_value as orangeWarningCheckThresholdMinValue,",
-             " orange_threshold_max_value as orangeWarningCheckThresholdMaxValue,red_check_type as redWarningCheckType,red_check_expression_type as redWarningCheckExpression,",
-             " red_threshold_min_value as redWarningCheckThresholdMinValue,red_threshold_max_value as redWarningCheckThresholdMaxValue",
-             " from data_quality_sub_task_rule join data_quality_rule_template on data_quality_rule_template.id=data_quality_sub_task_rule.ruleId where data_quality_sub_task_rule.subtask_id=#{subTaskId} and data_quality_rule_template.tenantid=#{tenantId}",
+            " data_quality_sub_task_rule.id as subTaskRuleId,data_quality_sub_task_rule.check_type as checkType,data_quality_sub_task_rule.check_expression_type as checkExpression,",
+            " data_quality_sub_task_rule.check_threshold_min_value as checkThresholdMinValue,data_quality_sub_task_rule.check_threshold_max_value as checkThresholdMaxValue,",
+            " orange_check_type as orangeWarningCheckType,orange_check_expression_type as orangeWarningCheckExpression,orange_threshold_min_value as orangeWarningCheckThresholdMinValue,",
+            " orange_threshold_max_value as orangeWarningCheckThresholdMaxValue,red_check_type as redWarningCheckType,red_check_expression_type as redWarningCheckExpression,",
+            " red_threshold_min_value as redWarningCheckThresholdMinValue,red_threshold_max_value as redWarningCheckThresholdMaxValue",
+            " from data_quality_sub_task_rule join data_quality_rule_template on data_quality_rule_template.id=data_quality_sub_task_rule.ruleId where data_quality_sub_task_rule.subtask_id=#{subTaskId} and data_quality_rule_template.tenantid=#{tenantId}",
     })
-    public List<EditionTaskInfo.SubTaskRule> getSubTaskRule(@Param("subTaskId")String subTaskId,@Param("tenantId")String tenantId);
-
+    public List<EditionTaskInfo.SubTaskRule> getSubTaskRule(@Param("subTaskId") String subTaskId, @Param("tenantId") String tenantId);
+    
     /**
      * 任务详情-告警组信息
+     *
      * @param taskId
      * @param type
      * @return
      */
     @Select("select warning_group.id as warningGroupId,warning_group.name as warningGroupName from data_quality_task2warning_group join warning_group on warning_group.id=data_quality_task2warning_group.warning_group_id where task_id=#{taskId} and data_quality_task2warning_group.warning_type=#{warningType}")
-    public List<EditionTaskInfo.WarningGroup> getWarningGroup(@Param("taskId")String taskId,@Param("warningType")Integer type);
-
-
+    public List<EditionTaskInfo.WarningGroup> getWarningGroup(@Param("taskId") String taskId, @Param("warningType") Integer type);
+    
+    
     /**
      * 获取任务基本信息
+     *
      * @param id
      * @return
      */
     @Select("select id, name, 'TID-'||number as taskId, level, description, enable, users.username as creator, data_quality_task.create_time as createTime,cron_expression as cronExpression,pool from data_quality_task join users on users.userid=data_quality_task.creator where id=#{id}")
-    public DataQualityBasicInfo getTaskBasicInfo(@Param("id")String id);
-
+    public DataQualityBasicInfo getTaskBasicInfo(@Param("id") String id);
+    
     /**
-     * 根据任务名获取任务Id
-     * @param id
-     * @return
+     * 根据taskId获取quartz任务名
+     *
+     * @param id 任务ID
+     * @return quartz任务名
      */
     @Select("select qrtz_job from data_quality_task where id=#{id}")
-    public String getQrtzJobByTaskId(@Param("id")String id);
-
+    public String getQrtzJobByTaskId(@Param("id") String id);
+    
+    /**
+     * 添加quartz名称
+     *
+     * @param id   任务ID
+     * @param name quartz任务名
+     * @return 变更记录个数
+     */
+    @Update("update data_quality_task set qrtz_job=#{qrtzName} where id=#{id}")
+    public int updateTaskQrtzName(@Param("id") String id, @Param("qrtzName") String name);
+    
     /**
      * 根据taskId查询模板定时周期
+     *
      * @param id
      * @return
      */
     @Select("select cron_expression as cronExpression,start_time as startTime,end_time as endTime,level from data_quality_task where id=#{id}")
-    public DataQualityTask getQrtzInfoByTemplateId(@Param("id")String id);
-
+    public DataQualityTask getQrtzInfoByTemplateId(@Param("id") String id);
+    
     /**
      * 更新任务启用状态
+     *
      * @param id
      * @param enable
      * @return
      */
     @Update("update data_quality_task set enable=#{status} where id=#{id}")
-    public int updateTaskEnableStatus(@Param("id")String id, @Param("status")boolean enable);
-
-    /**
-     * 添加quartz名称
-     * @param id
-     * @param name
-     * @return
-     */
-    @Update("update data_quality_task set qrtz_job=#{qrtzName} where id=#{id}")
-    public int updateTaskQrtzName(@Param("id")String id, @Param("qrtzName")String name);
-
+    public int updateTaskEnableStatus(@Param("id") String id, @Param("status") boolean enable);
+    
+    
     /**
      * 获取任务对象与规则对应关系
+     *
      * @param taskId
      * @return
      */
     @Select({" <script>",
-             " select relation.subTaskRuleId,relation.subtask_id as subTaskId,relation.rule_template_id as ruleTemplateId,relation.object_id as objectId,relation.ruleid,",
-             " data_quality_rule_template.type as taskType,data_quality_rule_template.scope,data_quality_rule_template.sql as sql from data_quality_rule_template ",
-             " join",
-             " (select template_rule.ruleid,template_rule.subtask_id,template_rule.rule_template_id,obj.object_id,template_rule.subTaskRuleId from" ,
-             " (select id as subTaskRuleId,subtask_id,ruleid,ruleid as rule_template_id from data_quality_sub_task_rule where subtask_id in ",
-             " (select id from data_quality_sub_task where task_id=#{taskId})) template_rule",
-             " join",
-             " (select object_id,subtask_id from data_quality_sub_task_object where subtask_id in",
-             " (select id from data_quality_sub_task where task_id=#{taskId})) obj",
-             " on template_rule.subtask_id=obj.subtask_id) relation",
-             " on relation.rule_template_id=data_quality_rule_template.id " +
-             " where data_quality_rule_template.tenantid=#{tenantId}",
-             " </script>"})
+            " select relation.subTaskRuleId,relation.subtask_id as subTaskId,relation.rule_template_id as ruleTemplateId,relation.object_id as objectId,relation.ruleid,",
+            " data_quality_rule_template.type as taskType,data_quality_rule_template.scope,data_quality_rule_template.sql as sql from data_quality_rule_template ",
+            " join",
+            " (select template_rule.ruleid,template_rule.subtask_id,template_rule.rule_template_id,obj.object_id,template_rule.subTaskRuleId from",
+            " (select id as subTaskRuleId,subtask_id,ruleid,ruleid as rule_template_id from data_quality_sub_task_rule where subtask_id in ",
+            " (select id from data_quality_sub_task where task_id=#{taskId})) template_rule",
+            " join",
+            " (select object_id,subtask_id from data_quality_sub_task_object where subtask_id in",
+            " (select id from data_quality_sub_task where task_id=#{taskId})) obj",
+            " on template_rule.subtask_id=obj.subtask_id) relation",
+            " on relation.rule_template_id=data_quality_rule_template.id " +
+                    " where data_quality_rule_template.tenantid=#{tenantId}",
+            " </script>"})
     public List<AtomicTaskExecution> getObjectWithRuleRelation(@Param("taskId")String taskId,@Param("tenantId")String tenantId);
 
     /**
@@ -836,15 +840,8 @@ public interface TaskManageDAO {
      */
     @Update("update data_quality_task set name=#{taskInfo.name},level=#{taskInfo.level},description=#{taskInfo.description},cron_expression=#{taskInfo.cronExpression},start_time=#{taskInfo.startTime},end_time=#{taskInfo.endTime},update_time=#{taskInfo.updateTime},updater=#{taskInfo.updater} where id=#{taskInfo.id}")
     public int updateTaskInfo(@Param("taskInfo")DataQualityTask taskInfo);
-
-    /**
-     * 根据taskId获取quartz任务名
-     * @param taskId
-     * @return
-     */
-    @Select("select qrtz_job from data_quality_task where id=#{taskId}")
-    public String getJobName(@Param("taskId")String taskId);
-
+    
+    
     @Select("select count(*) from report2ruleTemplate where data_quality_execute_id=#{executionId}")
     public int getFilingStatus(@Param("executionId")String executionId);
 
@@ -926,28 +923,29 @@ public interface TaskManageDAO {
      * @return
      */
     @Select({" <script>",
-             " select c.id as ruleExecutionId,c.task_execute_id as executionId,c.subtask_id as subtaskId,c.subtask_rule_id as subTaskRuleId,c.subtask_object_id as objectId, c.result, c.check_status as checkStatus,c.orange_warning_check_status as orangeCheckStatus, c.red_warning_check_status as redCheckStatus,c.update_time as createTime,",
-             " d.name as ruleName,d.scope,d.type as taskType,d.description,d.check_type as checkType, d.check_expression_type as checkExpression,d.check_threshold_min_value as checkMinValue,d.check_threshold_max_value as checkMaxValue,d.orange_check_type as orangeWarningCheckType,d.orange_check_expression_type as orangeWarningcheckExpression,",
-             " d.orange_threshold_min_value as orangeWarningMinValue,d.orange_threshold_max_value as orangeWarningMaxValue,d.red_check_type as redWarningCheckType,d.red_check_expression_type as redWarningcheckExpression,d.red_threshold_min_value as redWarningMinValue,d.red_threshold_max_value as redWarningMaxValue,d.check_threshold_unit as checkThresholdUnit",
-             " from (select * from data_quality_task_rule_execute as rule_execute where task_execute_id=#{ruleExecutionId} and subtask_id=#{subTaskId}) c",
-             " join",
-             " (select a.*,b.* from (select data_quality_sub_task_rule.*,data_quality_rule_template.name,data_quality_rule_template.description,data_quality_rule_template.scope,data_quality_rule_template.type from data_quality_sub_task_rule join data_quality_rule_template on data_quality_sub_task_rule.ruleid=data_quality_rule_template.id where data_quality_rule_template.tenantid=#{tenantId}) a",
-             " join",
-             " (select subtask_id,object_id from data_quality_sub_task_object where task_id=(select task_id from data_quality_task_execute where id=#{ruleExecutionId})) b",
-             " on a.subtask_id = b.subtask_id) d",
-             " on d.id=c.subtask_rule_id and d.object_id=c.subtask_object_id",
-             " </script>"})
-    List<TaskRuleExecutionRecord> getTaskRuleExecutionRecords(@Param("ruleExecutionId")String ruleExecutionId,@Param("subTaskId")String subTaskId,@Param("tenantId")String tenantId);
-
+            " select c.id as ruleExecutionId,c.task_execute_id as executionId,c.subtask_id as subtaskId,c.subtask_rule_id as subTaskRuleId,c.subtask_object_id as objectId, c.result, c.check_status as checkStatus,c.orange_warning_check_status as orangeCheckStatus, c.red_warning_check_status as redCheckStatus,c.update_time as createTime,",
+            " d.name as ruleName,d.scope,d.type as taskType,d.description,d.check_type as checkType, d.check_expression_type as checkExpression,d.check_threshold_min_value as checkMinValue,d.check_threshold_max_value as checkMaxValue,d.orange_check_type as orangeWarningCheckType,d.orange_check_expression_type as orangeWarningcheckExpression,",
+            " d.orange_threshold_min_value as orangeWarningMinValue,d.orange_threshold_max_value as orangeWarningMaxValue,d.red_check_type as redWarningCheckType,d.red_check_expression_type as redWarningcheckExpression,d.red_threshold_min_value as redWarningMinValue,d.red_threshold_max_value as redWarningMaxValue,d.check_threshold_unit as checkThresholdUnit",
+            " from (select * from data_quality_task_rule_execute as rule_execute where task_execute_id=#{ruleExecutionId} and subtask_id=#{subTaskId}) c",
+            " join",
+            " (select a.*,b.* from (select data_quality_sub_task_rule.*,data_quality_rule_template.name,data_quality_rule_template.description,data_quality_rule_template.scope,data_quality_rule_template.type from data_quality_sub_task_rule join data_quality_rule_template on data_quality_sub_task_rule.ruleid=data_quality_rule_template.id where data_quality_rule_template.tenantid=#{tenantId}) a",
+            " join",
+            " (select subtask_id,object_id from data_quality_sub_task_object where task_id=(select task_id from data_quality_task_execute where id=#{ruleExecutionId})) b",
+            " on a.subtask_id = b.subtask_id) d",
+            " on d.id=c.subtask_rule_id and d.object_id=c.subtask_object_id",
+            " </script>"})
+    List<TaskRuleExecutionRecord> getTaskRuleExecutionRecords(@Param("ruleExecutionId") String ruleExecutionId, @Param("subTaskId") String subTaskId, @Param("tenantId") String tenantId);
+    
     /**
      * 获取执行任务的子任务id
+     *
      * @param id
      * @return
      */
     @Select("select distinct subtask_id from data_quality_task_rule_execute where id=#{id}")
-    public List<String> getSubTaskId(@Param("id")String id);
-
-    @Results(id="base", value ={
+    public List<String> getSubTaskId(@Param("id") String id);
+    
+    @Results(id = "base", value = {
             @Result(property = "schemas", column = "schemas", typeHandler = ListStringTypeHandler.class)
     })
     @Select("SELECT d.id, d.name, d.schemas, " +
@@ -956,5 +954,6 @@ public interface TaskManageDAO {
             "join data_source db on db.source_id = d.data_source_id " +
             "WHERE d.tenant_id = #{tenantId} and d.data_source_id = #{sourceId} " +
             "order by d.id")
-    List<SyncTaskDefinition> getTaskSchemas(@Param("tenantId")String tenantId, @Param("sourceId")String sourceId);
+    List<SyncTaskDefinition> getTaskSchemas(@Param("tenantId") String tenantId, @Param("sourceId") String sourceId);
+    
 }

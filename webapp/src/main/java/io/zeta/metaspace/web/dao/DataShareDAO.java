@@ -27,8 +27,6 @@ import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.web.typeHandler.ApiPolyEntityTypeHandler;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.ibatis.annotations.*;
-import org.apache.ibatis.type.EnumOrdinalTypeHandler;
-import org.apache.ibatis.type.JdbcType;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -227,6 +225,29 @@ public interface DataShareDAO {
              " </script>"})
     public List<ApiHead> getTableRelatedDataServiceAPI(@Param("tableList")List<String> tableList, @Param("limit")int limit,@Param("offset") int offset,@Param("tenantId")String tenantId,
                                                        @Param("up")boolean up,@Param("down")boolean down,@Param("isNew")boolean isNew);
+
+    @Select({" <script>",
+            " select count(1)over() total,api.guid id,api.name,api.tableGuid,api.status,users.username as creator,",
+            " tableInfo.tableName, tableInfo.display_name as tableDisplayName,api.version ",
+            " from api join tableInfo on tableInfo.tableGuid=#{tableGuid} join users on users.userId=api.creator ",
+            " <if test='isNew'>",
+            " join ( select guid,max(version_num) max from api where valid=true and status!='draft' and status!='audit' ",
+            " group by guid) v on v.guid=api.guid and v.max=api.version_num ",
+            " </if>",
+            " where ",
+            " api.sourceid =#{sourceid} and  api.schemaname=#{schemaname} and api.tablename=#{tablename}",
+            " and api.tenantid=#{tenantId} and api.status!='draft' and api.status!='audit' AND api.valid = true ",
+            " <if test='!up'>",
+            " and api.status!='up'",
+            " </if>",
+            " <if test='!down'>",
+            " and api.status!='down'",
+            " </if>",
+            " order by api.createtime desc",
+            " </script>"})
+    public ApiHead getTableRelatedDataServiceAPIByTableName(@Param("sourceid") String sourceid, @Param("schemaname") String schemaname, @Param("tablename") String tablename, @Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId,
+                                                            @Param("up") boolean up, @Param("down") boolean down, @Param("isNew") boolean isNew);
+
 
     @Select("select count(1) from apiInfo where manager=#{manager} and guid=#{guid}")
     public int countUserAPI(@Param("manager")String keeper, @Param("guid")String apiGuid);
@@ -507,8 +528,25 @@ public interface DataShareDAO {
             "values(#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.level},#{tenantId},#{category.createTime},#{projectId})")
     public int add(@Param("category") CategoryEntityV2 category, @Param("projectId") String projectId, @Param("tenantId") String tenantId);
 
+    @Insert("<script>" +
+            "insert into api_category(guid,name,description,upBrotherCategoryGuid,downBrotherCategoryGuid,parentCategoryGuid,qualifiedName,level,tenantid,createtime,projectid)values " +
+            "<foreach item='category' index='index' collection='categorys' separator='),(' open='(' close=')'>" +
+            "#{category.guid},#{category.name},#{category.description},#{category.upBrotherCategoryGuid},#{category.downBrotherCategoryGuid},#{category.parentCategoryGuid},#{category.qualifiedName},#{category.level},#{tenantId},#{category.createTime},#{projectId}" +
+            "</foreach>" +
+            " </script>")
+    public int addAll(@Param("categorys") List<CategoryEntityV2> categorys, @Param("projectId") String projectId, @Param("tenantId") String tenantId);
+
+    @Select("<script>" +
+            "select name from api_category where guid in  " +
+            " <foreach item='id' index='index' collection='ids' separator=',' open='(' close=')'>" +
+            " #{id}" +
+            " </foreach>" +
+            "</script>")
+    public List<String> queryNamesByIds(@Param("ids") List<String> ids);
+
+
     @Update("update api_category set downBrotherCategoryGuid=#{downBrotherCategoryGuid} where guid=#{guid} and tenantid=#{tenantId}")
-    public int updateDownBrotherCategoryGuid(@Param("guid")String guid, @Param("downBrotherCategoryGuid")String downBrothCatalogGuid,@Param("tenantId")String tenantId);
+    public int updateDownBrotherCategoryGuid(@Param("guid") String guid, @Param("downBrotherCategoryGuid") String downBrothCatalogGuid, @Param("tenantId") String tenantId);
 
     @Update("update api_category set name=#{category.name},description=#{category.description},qualifiedName=#{category.qualifiedName} where guid=#{category.guid} and tenantid=#{tenantId}")
     public int updateCategoryInfo(@Param("category") CategoryEntity category, @Param("tenantId")String tenantId);

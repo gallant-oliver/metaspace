@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.zeta.metaspace.web.dao.dataquality.TaskManageDAO">
+    <resultMap id="BaseResultMap" type="io.zeta.metaspace.model.dataquality2.DataQualityTask">
+        <id column="id" jdbcType="VARCHAR" property="id"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="level" jdbcType="INTEGER" property="level"/>
+        <result column="description" jdbcType="VARCHAR" property="description"/>
+        <result column="cron_expression" jdbcType="VARCHAR" property="cronExpression"/>
+        <result column="enable" jdbcType="BIT" property="enable"/>
+        <result column="start_time" jdbcType="TIMESTAMP" property="startTime"/>
+        <result column="end_time" jdbcType="TIMESTAMP" property="endTime"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="creator" jdbcType="VARCHAR" property="creator"/>
+        <result column="delete" jdbcType="BIT" property="delete"/>
+        <!--<result column="number" jdbcType="BIGINT" property="number"/>-->
+        <!--<result column="qrtz_job" jdbcType="VARCHAR" property="qrtzJob"/>-->
+        <result column="execution_count" jdbcType="BIGINT" property="executionCount"/>
+        <result column="orange_warning_total_count" jdbcType="BIGINT" property="orangeWarningTotalCount"/>
+        <result column="red_warning_total_count" jdbcType="BIGINT" property="redWarningTotalCount"/>
+        <result column="error_total_count" jdbcType="BIGINT" property="errorTotalCount"/>
+        <result column="updater" jdbcType="VARCHAR" property="updater"/>
+        <!--<result column="current_execution_percent" jdbcType="REAL" property="currentExecutionPercent"/>-->
+        <!--<result column="current_execution_status" jdbcType="SMALLINT" property="currentExecutionStatus"/>-->
+        <!--<result column="tenantid" jdbcType="VARCHAR" property="tenantid"/>-->
+        <result column="pool" jdbcType="VARCHAR" property="pool"/>
+        <result column="general_warning_total_count" jdbcType="BIGINT" property="generalWarningTotalCount"/>
+    </resultMap>
+
+    <!--查询指定租户下已激活的任务-->
+    <select id="queryEnableTasks"
+            resultMap="BaseResultMap"
+            parameterType="java.lang.String">
+        select id, name
+        from data_quality_task t
+        where t.tenantid = #{tenantId}
+          and t.enable = true
+          and t.delete = false
+    </select>
+
+
+</mapper>
