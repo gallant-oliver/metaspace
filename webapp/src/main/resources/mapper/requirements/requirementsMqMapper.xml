@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.zeta.metaspace.web.dao.requirements.RequirementsMqMapper">
+  <resultMap id="BaseResultMap" type="io.zeta.metaspace.model.po.requirements.RequirementsMqPO">
+    <id column="guid" jdbcType="VARCHAR" property="guid" />
+    <result column="requirements_id" jdbcType="VARCHAR" property="requirementsId" />
+    <result column="mq_name_en" jdbcType="VARCHAR" property="mqNameEn" />
+    <result column="mq_name_ch" jdbcType="VARCHAR" property="mqNameCh" />
+    <result column="format" jdbcType="VARCHAR" property="format" />
+    <result column="status" jdbcType="SMALLINT" property="status" />
+    <result column="description" jdbcType="VARCHAR" property="description" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    guid, requirements_id, mq_name_en, mq_name_ch, format, status, description, create_time, 
+    update_time, creator
+  </sql>
+
+  <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from "public"."requirements_mq"
+    where guid = #{guid,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+    delete from "public"."requirements_mq"
+    where guid = #{guid,jdbcType=VARCHAR}
+  </delete>
+
+  <insert id="insert" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsMqPO">
+    insert into "public"."requirements_mq" (guid, requirements_id, mq_name_en, 
+      mq_name_ch, format, status, 
+      description, create_time, update_time, 
+      creator)
+    values (#{guid,jdbcType=VARCHAR}, #{requirementsId,jdbcType=VARCHAR}, #{mqNameEn,jdbcType=VARCHAR},
+      #{mqNameCh,jdbcType=VARCHAR}, #{format,jdbcType=VARCHAR}, #{status,jdbcType=SMALLINT}, 
+      #{description,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}, #{updateTime,jdbcType=TIMESTAMP}, 
+      #{creator,jdbcType=VARCHAR})
+  </insert>
+
+  <insert id="insertSelective" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsMqPO">
+    insert into "public"."requirements_mq"
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="guid != null">
+        guid,
+      </if>
+      <if test="requirementsId != null">
+        requirements_id,
+      </if>
+      <if test="mqNameEn != null">
+        mq_name_en,
+      </if>
+      <if test="mqNameCh != null">
+        mq_name_ch,
+      </if>
+      <if test="format != null">
+        format,
+      </if>
+      <if test="status != null">
+        status,
+      </if>
+      <if test="description != null">
+        description,
+      </if>
+      <if test="createTime != null">
+        create_time,
+      </if>
+      <if test="updateTime != null">
+        update_time,
+      </if>
+      <if test="creator != null">
+        creator,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="guid != null">
+        #{guid,jdbcType=VARCHAR},
+      </if>
+      <if test="requirementsId != null">
+        #{requirementsId,jdbcType=VARCHAR},
+      </if>
+      <if test="mqNameEn != null">
+        #{mqNameEn,jdbcType=VARCHAR},
+      </if>
+      <if test="mqNameCh != null">
+        #{mqNameCh,jdbcType=VARCHAR},
+      </if>
+      <if test="format != null">
+        #{format,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null">
+        #{status,jdbcType=SMALLINT},
+      </if>
+      <if test="description != null">
+        #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateTime != null">
+        #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="creator != null">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+
+  <update id="updateByPrimaryKeySelective" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsMqPO">
+    update "public"."requirements_mq"
+    <set>
+      <if test="requirementsId != null">
+        requirements_id = #{requirementsId,jdbcType=VARCHAR},
+      </if>
+      <if test="mqNameEn != null">
+        mq_name_en = #{mqNameEn,jdbcType=VARCHAR},
+      </if>
+      <if test="mqNameCh != null">
+        mq_name_ch = #{mqNameCh,jdbcType=VARCHAR},
+      </if>
+      <if test="format != null">
+        format = #{format,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null">
+        status = #{status,jdbcType=SMALLINT},
+      </if>
+      <if test="description != null">
+        description = #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        create_time = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateTime != null">
+        update_time = #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="creator != null">
+        creator = #{creator,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where guid = #{guid,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsMqPO">
+    update "public"."requirements_mq"
+    set requirements_id = #{requirementsId,jdbcType=VARCHAR},
+      mq_name_en = #{mqNameEn,jdbcType=VARCHAR},
+      mq_name_ch = #{mqNameCh,jdbcType=VARCHAR},
+      format = #{format,jdbcType=VARCHAR},
+      status = #{status,jdbcType=SMALLINT},
+      description = #{description,jdbcType=VARCHAR},
+      create_time = #{createTime,jdbcType=TIMESTAMP},
+      update_time = #{updateTime,jdbcType=TIMESTAMP},
+      creator = #{creator,jdbcType=VARCHAR}
+    where guid = #{guid,jdbcType=VARCHAR}
+  </update>
+</mapper>

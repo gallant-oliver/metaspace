@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.zeta.metaspace.web.dao.requirements.RequirementsDatabaseMapper">
+  <resultMap id="BaseResultMap" type="io.zeta.metaspace.model.po.requirements.RequirementsDatabasePO">
+    <id column="guid" jdbcType="VARCHAR" property="guid" />
+    <result column="requirements_id" jdbcType="VARCHAR" property="requirementsId" />
+    <result column="middle_type" jdbcType="VARCHAR" property="middleType" />
+    <result column="database" jdbcType="VARCHAR" property="database" />
+    <result column="table_name_en" jdbcType="VARCHAR" property="tableNameEn" />
+    <result column="table_name_ch" jdbcType="VARCHAR" property="tableNameCh" />
+    <result column="status" jdbcType="SMALLINT" property="status" />
+    <result column="description" jdbcType="VARCHAR" property="description" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    guid, requirements_id, middle_type, database, table_name_en, table_name_ch, status, 
+    description, create_time, update_time, creator
+  </sql>
+
+  <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from "public"."requirements_database"
+    where guid = #{guid,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+    delete from "public"."requirements_database"
+    where guid = #{guid,jdbcType=VARCHAR}
+  </delete>
+
+  <insert id="insert" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsDatabasePO">
+    insert into "public"."requirements_database" (guid, requirements_id, middle_type, 
+      database, table_name_en, table_name_ch, 
+      status, description, create_time, 
+      update_time, creator)
+    values (#{guid,jdbcType=VARCHAR}, #{requirementsId,jdbcType=VARCHAR}, #{middleType,jdbcType=VARCHAR}, 
+      #{database,jdbcType=VARCHAR}, #{tableNameEn,jdbcType=VARCHAR}, #{tableNameCh,jdbcType=VARCHAR}, 
+      #{status,jdbcType=SMALLINT}, #{description,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}, 
+      #{updateTime,jdbcType=TIMESTAMP}, #{creator,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsDatabasePO">
+    insert into "public"."requirements_database"
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="guid != null">
+        guid,
+      </if>
+      <if test="requirementsId != null">
+        requirements_id,
+      </if>
+      <if test="middleType != null">
+        middle_type,
+      </if>
+      <if test="database != null">
+        database,
+      </if>
+      <if test="tableNameEn != null">
+        table_name_en,
+      </if>
+      <if test="tableNameCh != null">
+        table_name_ch,
+      </if>
+      <if test="status != null">
+        status,
+      </if>
+      <if test="description != null">
+        description,
+      </if>
+      <if test="createTime != null">
+        create_time,
+      </if>
+      <if test="updateTime != null">
+        update_time,
+      </if>
+      <if test="creator != null">
+        creator,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="guid != null">
+        #{guid,jdbcType=VARCHAR},
+      </if>
+      <if test="requirementsId != null">
+        #{requirementsId,jdbcType=VARCHAR},
+      </if>
+      <if test="middleType != null">
+        #{middleType,jdbcType=VARCHAR},
+      </if>
+      <if test="database != null">
+        #{database,jdbcType=VARCHAR},
+      </if>
+      <if test="tableNameEn != null">
+        #{tableNameEn,jdbcType=VARCHAR},
+      </if>
+      <if test="tableNameCh != null">
+        #{tableNameCh,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null">
+        #{status,jdbcType=SMALLINT},
+      </if>
+      <if test="description != null">
+        #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateTime != null">
+        #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="creator != null">
+        #{creator,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+
+  <update id="updateByPrimaryKeySelective" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsDatabasePO">
+    update "public"."requirements_database"
+    <set>
+      <if test="requirementsId != null">
+        requirements_id = #{requirementsId,jdbcType=VARCHAR},
+      </if>
+      <if test="middleType != null">
+        middle_type = #{middleType,jdbcType=VARCHAR},
+      </if>
+      <if test="database != null">
+        database = #{database,jdbcType=VARCHAR},
+      </if>
+      <if test="tableNameEn != null">
+        table_name_en = #{tableNameEn,jdbcType=VARCHAR},
+      </if>
+      <if test="tableNameCh != null">
+        table_name_ch = #{tableNameCh,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null">
+        status = #{status,jdbcType=SMALLINT},
+      </if>
+      <if test="description != null">
+        description = #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        create_time = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateTime != null">
+        update_time = #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="creator != null">
+        creator = #{creator,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where guid = #{guid,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsDatabasePO">
+    update "public"."requirements_database"
+    set requirements_id = #{requirementsId,jdbcType=VARCHAR},
+      middle_type = #{middleType,jdbcType=VARCHAR},
+      database = #{database,jdbcType=VARCHAR},
+      table_name_en = #{tableNameEn,jdbcType=VARCHAR},
+      table_name_ch = #{tableNameCh,jdbcType=VARCHAR},
+      status = #{status,jdbcType=SMALLINT},
+      description = #{description,jdbcType=VARCHAR},
+      create_time = #{createTime,jdbcType=TIMESTAMP},
+      update_time = #{updateTime,jdbcType=TIMESTAMP},
+      creator = #{creator,jdbcType=VARCHAR}
+    where guid = #{guid,jdbcType=VARCHAR}
+  </update>
+</mapper>
