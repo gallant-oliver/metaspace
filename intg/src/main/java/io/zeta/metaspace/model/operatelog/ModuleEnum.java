@@ -198,7 +198,6 @@ public enum ModuleEnum {
      */
     public static List<ModuleEnum> getApproveModuleEnum(){
         List<ModuleEnum> result = new LinkedList<>();
-        result.add(ModuleEnum.NORMDESIGN);
         result.add(ModuleEnum.DATABASEREGISTER);
         result.add(ModuleEnum.BUSINESSCATALOGUE);
         result.add(ModuleEnum.BUSINESS);
@@ -207,7 +206,6 @@ public enum ModuleEnum {
         result.add(ModuleEnum.DERIVEINDEX);
         result.add(ModuleEnum.COMPLEXINDEX);
         result.add(ModuleEnum.INDEXALL);
-        result.add(ModuleEnum.TIMELIMIT);
         return result;
     }
 
