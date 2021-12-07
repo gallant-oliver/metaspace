@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.zeta.metaspace.web.dao.requirements.RequirementsColumnMapper">
+  <resultMap id="BaseResultMap" type="io.zeta.metaspace.model.po.requirements.RequirementsColumnPO">
+    <id column="guid" jdbcType="VARCHAR" property="guid" />
+    <result column="requirements_id" jdbcType="VARCHAR" property="requirementsId" />
+    <result column="table_id" jdbcType="VARCHAR" property="tableId" />
+    <result column="column_id" jdbcType="VARCHAR" property="columnId" />
+    <result column="operator" jdbcType="VARCHAR" property="operator" />
+    <result column="sample_data" jdbcType="VARCHAR" property="sampleData" />
+    <result column="description" jdbcType="VARCHAR" property="description" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="delete" jdbcType="SMALLINT" property="delete" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    guid, requirements_id, table_id, column_id, operator, sample_data, description, create_time, 
+    update_time, delete
+  </sql>
+
+  <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from "public"."requirements_column"
+    where guid = #{guid,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+    delete from "public"."requirements_column"
+    where guid = #{guid,jdbcType=VARCHAR}
+  </delete>
+
+  <insert id="insert" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsColumnPO">
+    insert into "public"."requirements_column" (guid, requirements_id, table_id, 
+      column_id, operator, sample_data, 
+      description, create_time, update_time, 
+      delete)
+    values (#{guid,jdbcType=VARCHAR}, #{requirementsId,jdbcType=VARCHAR}, #{tableId,jdbcType=VARCHAR}, 
+      #{columnId,jdbcType=VARCHAR}, #{operator,jdbcType=VARCHAR}, #{sampleData,jdbcType=VARCHAR}, 
+      #{description,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}, #{updateTime,jdbcType=TIMESTAMP}, 
+      #{delete,jdbcType=SMALLINT})
+  </insert>
+  <insert id="insertSelective" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsColumnPO">
+    insert into "public"."requirements_column"
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="guid != null">
+        guid,
+      </if>
+      <if test="requirementsId != null">
+        requirements_id,
+      </if>
+      <if test="tableId != null">
+        table_id,
+      </if>
+      <if test="columnId != null">
+        column_id,
+      </if>
+      <if test="operator != null">
+        operator,
+      </if>
+      <if test="sampleData != null">
+        sample_data,
+      </if>
+      <if test="description != null">
+        description,
+      </if>
+      <if test="createTime != null">
+        create_time,
+      </if>
+      <if test="updateTime != null">
+        update_time,
+      </if>
+      <if test="delete != null">
+        delete,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="guid != null">
+        #{guid,jdbcType=VARCHAR},
+      </if>
+      <if test="requirementsId != null">
+        #{requirementsId,jdbcType=VARCHAR},
+      </if>
+      <if test="tableId != null">
+        #{tableId,jdbcType=VARCHAR},
+      </if>
+      <if test="columnId != null">
+        #{columnId,jdbcType=VARCHAR},
+      </if>
+      <if test="operator != null">
+        #{operator,jdbcType=VARCHAR},
+      </if>
+      <if test="sampleData != null">
+        #{sampleData,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null">
+        #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateTime != null">
+        #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="delete != null">
+        #{delete,jdbcType=SMALLINT},
+      </if>
+    </trim>
+  </insert>
+
+  <update id="updateByPrimaryKeySelective" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsColumnPO">
+    update "public"."requirements_column"
+    <set>
+      <if test="requirementsId != null">
+        requirements_id = #{requirementsId,jdbcType=VARCHAR},
+      </if>
+      <if test="tableId != null">
+        table_id = #{tableId,jdbcType=VARCHAR},
+      </if>
+      <if test="columnId != null">
+        column_id = #{columnId,jdbcType=VARCHAR},
+      </if>
+      <if test="operator != null">
+        operator = #{operator,jdbcType=VARCHAR},
+      </if>
+      <if test="sampleData != null">
+        sample_data = #{sampleData,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null">
+        description = #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        create_time = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateTime != null">
+        update_time = #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="delete != null">
+        delete = #{delete,jdbcType=SMALLINT},
+      </if>
+    </set>
+    where guid = #{guid,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsColumnPO">
+    update "public"."requirements_column"
+    set requirements_id = #{requirementsId,jdbcType=VARCHAR},
+      table_id = #{tableId,jdbcType=VARCHAR},
+      column_id = #{columnId,jdbcType=VARCHAR},
+      operator = #{operator,jdbcType=VARCHAR},
+      sample_data = #{sampleData,jdbcType=VARCHAR},
+      description = #{description,jdbcType=VARCHAR},
+      create_time = #{createTime,jdbcType=TIMESTAMP},
+      update_time = #{updateTime,jdbcType=TIMESTAMP},
+      delete = #{delete,jdbcType=SMALLINT}
+    where guid = #{guid,jdbcType=VARCHAR}
+  </update>
+</mapper>

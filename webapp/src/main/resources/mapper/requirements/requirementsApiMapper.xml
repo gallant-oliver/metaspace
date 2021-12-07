@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.zeta.metaspace.web.dao.requirements.RequirementsApiMapper">
+  <resultMap id="BaseResultMap" type="io.zeta.metaspace.model.po.requirements.RequirementsApiPO">
+    <id column="guid" jdbcType="VARCHAR" property="guid" />
+    <result column="requirements_id" jdbcType="VARCHAR" property="requirementsId" />
+    <result column="project_id" jdbcType="VARCHAR" property="projectId" />
+    <result column="category_id" jdbcType="VARCHAR" property="categoryId" />
+    <result column="api_id" jdbcType="VARCHAR" property="apiId" />
+    <result column="description" jdbcType="VARCHAR" property="description" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    guid, requirements_id, project_id, category_id, api_id, description, create_time, 
+    update_time
+  </sql>
+
+  <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from "public"."requirements_api"
+    where guid = #{guid,jdbcType=VARCHAR}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+    delete from "public"."requirements_api"
+    where guid = #{guid,jdbcType=VARCHAR}
+  </delete>
+
+  <insert id="insert" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsApiPO">
+    insert into "public"."requirements_api" (guid, requirements_id, project_id, 
+      category_id, api_id, description, 
+      create_time, update_time)
+    values (#{guid,jdbcType=VARCHAR}, #{requirementsId,jdbcType=VARCHAR}, #{projectId,jdbcType=VARCHAR}, 
+      #{categoryId,jdbcType=VARCHAR}, #{apiId,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, 
+      #{createTime,jdbcType=TIMESTAMP}, #{updateTime,jdbcType=TIMESTAMP})
+  </insert>
+  <insert id="insertSelective" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsApiPO">
+    insert into "public"."requirements_api"
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="guid != null">
+        guid,
+      </if>
+      <if test="requirementsId != null">
+        requirements_id,
+      </if>
+      <if test="projectId != null">
+        project_id,
+      </if>
+      <if test="categoryId != null">
+        category_id,
+      </if>
+      <if test="apiId != null">
+        api_id,
+      </if>
+      <if test="description != null">
+        description,
+      </if>
+      <if test="createTime != null">
+        create_time,
+      </if>
+      <if test="updateTime != null">
+        update_time,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="guid != null">
+        #{guid,jdbcType=VARCHAR},
+      </if>
+      <if test="requirementsId != null">
+        #{requirementsId,jdbcType=VARCHAR},
+      </if>
+      <if test="projectId != null">
+        #{projectId,jdbcType=VARCHAR},
+      </if>
+      <if test="categoryId != null">
+        #{categoryId,jdbcType=VARCHAR},
+      </if>
+      <if test="apiId != null">
+        #{apiId,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null">
+        #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateTime != null">
+        #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+
+  <update id="updateByPrimaryKeySelective" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsApiPO">
+    update "public"."requirements_api"
+    <set>
+      <if test="requirementsId != null">
+        requirements_id = #{requirementsId,jdbcType=VARCHAR},
+      </if>
+      <if test="projectId != null">
+        project_id = #{projectId,jdbcType=VARCHAR},
+      </if>
+      <if test="categoryId != null">
+        category_id = #{categoryId,jdbcType=VARCHAR},
+      </if>
+      <if test="apiId != null">
+        api_id = #{apiId,jdbcType=VARCHAR},
+      </if>
+      <if test="description != null">
+        description = #{description,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        create_time = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateTime != null">
+        update_time = #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where guid = #{guid,jdbcType=VARCHAR}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsApiPO">
+    update "public"."requirements_api"
+    set requirements_id = #{requirementsId,jdbcType=VARCHAR},
+      project_id = #{projectId,jdbcType=VARCHAR},
+      category_id = #{categoryId,jdbcType=VARCHAR},
+      api_id = #{apiId,jdbcType=VARCHAR},
+      description = #{description,jdbcType=VARCHAR},
+      create_time = #{createTime,jdbcType=TIMESTAMP},
+      update_time = #{updateTime,jdbcType=TIMESTAMP}
+    where guid = #{guid,jdbcType=VARCHAR}
+  </update>
+</mapper>

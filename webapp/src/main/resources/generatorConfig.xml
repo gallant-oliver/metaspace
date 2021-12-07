@@ -76,7 +76,7 @@
                 value=""/> -->
         </javaClientGenerator>
 
-        <table schema="public" tableName="apiinfo" domainObjectName="ApiInfo" delimitIdentifiers="true">
+        <table schema="public" tableName="requirements_result" domainObjectName="RequirementsResult" delimitIdentifiers="true">
             <!-- 参考 javaModelGenerator 的 constructorBased属性 -->
             <property name="constructorBased" value="false" />
             <generatedKey column="id" sqlStatement="JDBC"/>
