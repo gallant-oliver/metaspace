@@ -96,8 +96,7 @@ public class ApiInfoDetailDTO {
     /**
      * 更新时间
      */
-    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
-    private Timestamp updateTime;
+    private String updateTime;
 
     /**
      * 数据源类型
@@ -112,8 +111,7 @@ public class ApiInfoDetailDTO {
     /**
      * 创建时间
      */
-    @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
-    private Timestamp createTime;
+    private String createTime;
 
     /**
      * 发布状态

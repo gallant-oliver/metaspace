@@ -79,7 +79,6 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.apache.tinkerpop.shaded.minlog.Log;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,7 +88,6 @@ import org.springframework.security.web.util.matcher.IpAddressMatcher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer;
-import schemacrawler.schema.Schema;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
@@ -97,8 +95,8 @@ import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -167,6 +165,8 @@ public class DataShareService {
     private FreeMarkerConfigurer freeMarkerConfigurer;
 
     private final String API_TEMPLATE_FILE = "apiDemo.ftl";
+
+    private DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
     static {
         try {
@@ -3080,7 +3080,14 @@ public class DataShareService {
             handleParams(apiInfo);
             ApiInfoDetailDTO detailInfo = new ApiInfoDetailDTO();
             BeanUtils.copyProperties(apiInfo, detailInfo);
+            
+            Timestamp createTime = apiInfo.getCreateTime();
+            Timestamp updateTime = apiInfo.getUpdateTime();
+            detailInfo.setCreateTime(createTime != null ? dateFormat.format(createTime) : "");
+            detailInfo.setUpdateTime(updateTime != null ? dateFormat.format(updateTime) : "");
 
+            String status = apiInfo.getStatus();
+            detailInfo.setStatus(ApiStatusEnum.getApiStatusEnum(status).getStr());
             String sourceType = detailInfo.getSourceType();
             if ("HIVE".equals(sourceType)) {
                 detailInfo.setSourceName("资源池：" + detailInfo.getSourceName());
