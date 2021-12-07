@@ -886,7 +886,7 @@ public class ApiManagerREST {
      */
     @GET
     @Path("/export/apiInfo/selected/{downloadId}")
-    public void exportApiInfos(@PathParam("downloadId") String downloadId, @HeaderParam("tenantId") String tenantId) throws Exception {
+    public void exportApiInfos(@PathParam("downloadId") String downloadId, @QueryParam("tenantId") String tenantId) throws Exception {
         List<String> ids = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
         if (CollectionUtils.isEmpty(ids)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "id列表为空");
@@ -920,7 +920,7 @@ public class ApiManagerREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getDownloadURL(List<String> ids) {
-        String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/datashare/api/export/selected";
+        String url = MetaspaceConfig.getMetaspaceUrl() + "/api/metaspace/datashare/api/export/apiInfo/selected";
         DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
         return ReturnUtil.success(downloadUri);
     }
