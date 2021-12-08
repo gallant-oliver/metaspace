@@ -17,6 +17,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Data
@@ -33,6 +34,10 @@ public class PageResult<E> implements Serializable {
         this.totalSize = totalSize;
         this.lists = lists;
         this.currentSize = CollectionUtils.isEmpty(lists) ? 0 : lists.size();
+    }
+    
+    public static <E> PageResult<E> empty(Class<E> eClass) {
+        return new PageResult<>(0, Collections.emptyList());
     }
     
 }

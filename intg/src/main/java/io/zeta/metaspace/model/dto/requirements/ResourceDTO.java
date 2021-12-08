@@ -2,7 +2,10 @@ package io.zeta.metaspace.model.dto.requirements;
 
 import io.zeta.metaspace.model.enums.ResourceState;
 import io.zeta.metaspace.model.enums.ResourceType;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 需求管理 - 资源
@@ -12,6 +15,9 @@ import lombok.Data;
  * @date 2021-12-07
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ResourceDTO {
     /**
      * 资源所属的需求ID
