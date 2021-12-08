@@ -43,8 +43,8 @@ import io.zeta.metaspace.model.desensitization.DesensitizationRule;
 import io.zeta.metaspace.model.ip.restriction.ApiIpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
-import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -104,8 +104,6 @@ import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static io.zeta.metaspace.web.util.ExportDataPathUtils.EXCEL_FORMAT_XLSX;
 
 /*
  * @description
@@ -2290,18 +2288,19 @@ public class DataShareService {
         }
         try {
             String name = info.getName();
+            String guid = info.getGuid();
             if (Objects.isNull(name)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名不能为空");
             }
             StringBuffer qualifiedName = new StringBuffer();
             qualifiedName.append(name);
-            int count = shareDAO.querySameNameCategory(name, projectId, tenantId, tenantId);
+            int count = shareDAO.querySameNameCategory(name, projectId, tenantId, guid);
             if (count > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
             }
             CategoryEntity entity = new CategoryEntity();
-            entity.setGuid(info.getGuid());
-            entity.setName(info.getName());
+            entity.setGuid(guid);
+            entity.setName(name);
             entity.setQualifiedName(qualifiedName.toString());
             entity.setDescription(info.getDescription());
             shareDAO.updateCategoryInfo(entity, tenantId);
