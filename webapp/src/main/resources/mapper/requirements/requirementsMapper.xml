@@ -25,37 +25,59 @@
   </resultMap>
 
   <sql id="Base_Column_List">
-    guid, name, num, resource_type, version, agreement, "request mode", aiming_field, 
-    file_name, file_path, description, business_id, table_id, source_id, tenant_id, creator, 
-    status, create_time, update_time, delete
+    guid, name, num, resource_type, version, agreement, "request mode", aiming_field,
+    file_name, file_path, description, business_id, table_id, source_id, tenant_id, creator,
+    status, create_time, update_time,
+    delete
   </sql>
 
   <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
-    select 
-    <include refid="Base_Column_List" />
+    select
+    <include refid="Base_Column_List"/>
     from "public"."requirements"
     where guid = #{guid,jdbcType=VARCHAR}
   </select>
+
+
+  <select id="pagedAlreadyFeedbackRequirements"
+          resultType="io.zeta.metaspace.model.po.requirements.RequirementsPO">
+    SELECT COUNT(1) OVER () total,
+    guid,
+    version
+    FROM requirements
+    WHERE table_id = #{tableId}
+    AND status = 4
+    AND delete = false
+    <if test='params != null'>
+      ORDER BY create_time DESC
+      <if test='params.limit != null and params.limit != -1 and params.offset != null '>
+        LIMIT #{params.limit} OFFSET #{offset}
+      </if>
+    </if>
+  </select>
+
+
   <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
-    delete from "public"."requirements"
+    delete
+    from "public"."requirements"
     where guid = #{guid,jdbcType=VARCHAR}
   </delete>
 
   <insert id="insert" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsPO">
-    insert into "public"."requirements" (guid, name, num, 
-      resource_type, version, agreement, 
-      "request mode", aiming_field, file_name, 
-      file_path, description, business_id, 
-      table_id, source_id, tenant_id, 
-      creator, status, create_time, 
-      update_time, delete)
-    values (#{guid,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, #{num,jdbcType=VARCHAR}, 
-      #{resourceType,jdbcType=SMALLINT}, #{version,jdbcType=VARCHAR}, #{agreement,jdbcType=VARCHAR}, 
-      #{requestMode,jdbcType=VARCHAR}, #{aimingField,jdbcType=VARCHAR}, #{fileName,jdbcType=VARCHAR}, 
-      #{filePath,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, #{businessId,jdbcType=VARCHAR}, 
-      #{tableId,jdbcType=VARCHAR}, #{sourceId,jdbcType=VARCHAR}, #{tenantId,jdbcType=VARCHAR}, 
-      #{creator,jdbcType=VARCHAR}, #{status,jdbcType=SMALLINT}, #{createTime,jdbcType=TIMESTAMP}, 
-      #{updateTime,jdbcType=TIMESTAMP}, #{delete,jdbcType=SMALLINT})
+    insert into "public"."requirements" (guid, name, num,
+                                         resource_type, version, agreement,
+                                         "request mode", aiming_field, file_name,
+                                         file_path, description, business_id,
+                                         table_id, source_id, tenant_id,
+                                         creator, status, create_time,
+                                         update_time, delete)
+    values (#{guid,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, #{num,jdbcType=VARCHAR},
+            #{resourceType,jdbcType=SMALLINT}, #{version,jdbcType=VARCHAR}, #{agreement,jdbcType=VARCHAR},
+            #{requestMode,jdbcType=VARCHAR}, #{aimingField,jdbcType=VARCHAR}, #{fileName,jdbcType=VARCHAR},
+            #{filePath,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, #{businessId,jdbcType=VARCHAR},
+            #{tableId,jdbcType=VARCHAR}, #{sourceId,jdbcType=VARCHAR}, #{tenantId,jdbcType=VARCHAR},
+            #{creator,jdbcType=VARCHAR}, #{status,jdbcType=SMALLINT}, #{createTime,jdbcType=TIMESTAMP},
+            #{updateTime,jdbcType=TIMESTAMP}, #{delete,jdbcType=SMALLINT})
   </insert>
   <insert id="insertSelective" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsPO">
     insert into "public"."requirements"
