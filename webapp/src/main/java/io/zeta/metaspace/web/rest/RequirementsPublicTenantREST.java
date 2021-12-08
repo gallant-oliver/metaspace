@@ -20,7 +20,7 @@ import static io.zeta.metaspace.web.model.CommonConstant.HEADER_TENANT_ID;
  */
 @Singleton
 @Service
-@Path("public-tenant/requirements")
+@Path("public/tenant/requirements")
 @Consumes(Servlets.JSON_MEDIA_TYPE)
 @Produces(Servlets.JSON_MEDIA_TYPE)
 public class RequirementsPublicTenantREST {
@@ -29,7 +29,7 @@ public class RequirementsPublicTenantREST {
     private RequirementsPublicTenantService publicTenantService;
     
     @GET
-    @Path("/paged-resource")
+    @Path("/paged/resource")
     public PageResult<ResourceDTO> pagedResource(@HeaderParam(HEADER_TENANT_ID) String tenantId,
                                                  @QueryParam("tableId") String tableId,
                                                  Parameters parameters) {
