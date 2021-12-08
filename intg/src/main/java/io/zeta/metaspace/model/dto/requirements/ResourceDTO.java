@@ -20,6 +20,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ResourceDTO {
     /**
+     * 资源ID
+     */
+    private String resourceId;
+    /**
      * 资源所属的需求ID
      */
     private String requirementId;

@@ -15,6 +15,10 @@ import lombok.Data;
 @Data
 public class ResourcePO {
     /**
+     * 资源ID
+     */
+    private String resourceId;
+    /**
      * 资源所属的需求ID
      */
     private String requirementId;
@@ -27,10 +31,6 @@ public class ResourcePO {
      */
     private Integer type;
     /**
-     * 数据表名
-     */
-    private String dataTableName;
-    /**
      * 版本
      */
     private String version;
@@ -42,4 +42,6 @@ public class ResourcePO {
      * 创建人账号名称
      */
     private String creator;
+    
+    private long total;
 }

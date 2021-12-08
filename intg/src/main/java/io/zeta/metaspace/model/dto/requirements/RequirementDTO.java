@@ -15,7 +15,26 @@ import java.util.List;
  */
 @Data
 public class RequirementDTO {
+    /**
+     * 需求ID
+     */
     private String guid;
+    /**
+     * 业务对象ID
+     */
+    private String businessId;
+    /**
+     * 需求关联的数据表ID
+     */
+    private String tableId;
+    /**
+     * 数据源ID
+     */
+    private String sourceId;
+    /**
+     * 需求关联的数据表所在的租户的ID
+     */
+    private String tenantId;
     /**
      * 需求名称
      */
