@@ -430,6 +430,7 @@ public class DataAssetsRetrievalService {
 
     public List<DomainInfo> getThemeDomains(String tenantId) throws AtlasException {
         List<DomainInfo> domainList;
+        List<DomainInfo> resultList = new ArrayList<>();
         Boolean isPublicTenant = isPublicTenant(tenantId);
         Boolean isPublicUser = isGlobalUser();
         String userId = AdminUtils.getUserData().getUserId();
@@ -442,7 +443,13 @@ public class DataAssetsRetrievalService {
         if (isPublicTenant && isPublicUser) {
             domainList = categoryDAO.getDomainCategory();
             for (DomainInfo domain : domainList) {
-                domain.setThemeNum(categoryDAO.getThemeNumber(domain.getDomainId()));
+                //过滤没有二级目录的一级目录
+                int num = categoryDAO.getThemeNumber(domain.getDomainId());
+                if (0 == num) {
+                    continue;
+                }
+                domain.setThemeNum(num);
+                resultList.add(domain);
             }
         } else {
             if (isPublicTenant) {
@@ -477,12 +484,17 @@ public class DataAssetsRetrievalService {
                         }
                     }
                 }
-                domain.setThemeNum(themeList.size());
+                //过滤没有二级目录的一级目录
+                int num = themeList.size();
+                if (0 == num) {
+                    continue;
+                }
+                domain.setThemeNum(num);
+                resultList.add(domain);
             }
         }
 
-
-        return domainList;
+        return resultList;
     }
 
 
