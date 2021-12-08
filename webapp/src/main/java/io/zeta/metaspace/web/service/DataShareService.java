@@ -3252,6 +3252,10 @@ public class DataShareService {
             if (!name.matches(pattern)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名仅支持中文、英文、数字、下划线“_”和“-”");
             }
+            //目录长度校验
+            if (name.length() > 32) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名长度需小于33个字符");
+            }
             category.setName(name);
             String guid = UUID.randomUUID().toString();
             category.setGuid(guid);
