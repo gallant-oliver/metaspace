@@ -38,14 +38,16 @@ public class RequirementsPO {
     private String tenantId;
 
     private String creator;
-
+    
     private Integer status;
-
+    
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp createTime;
-
+    
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp updateTime;
-
+    
     private Integer delete;
+    
+    private Long total;
 }
