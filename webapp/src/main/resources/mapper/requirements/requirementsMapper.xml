@@ -271,4 +271,13 @@
       delete = #{delete,jdbcType=SMALLINT}
     where guid = #{guid,jdbcType=VARCHAR}
   </update>
+
+  <delete id="deleteByPrimaryKey" parameterType="java.util.List">
+    update "public"."requirements"
+    set delete = #{delete,jdbcType=SMALLINT}
+    where guid = #{guid,jdbcType=VARCHAR}
+    <foreach item='id' index='index' collection='guids' separator=',' open='(' close=')'>
+      #{id}
+    </foreach>
+  </delete>
 </mapper>
