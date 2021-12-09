@@ -1,6 +1,9 @@
 package io.zeta.metaspace.model.dto.requirements;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 需求管理 - 需求下发信息
@@ -10,6 +13,9 @@ import lombok.Data;
  * @date 2021-12-08
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class RequirementIssuedDTO {
     /**
      * 下发租户: 需求关联的数据表所属的租户
