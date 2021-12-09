@@ -30,6 +30,10 @@ public class PageResult<E> implements Serializable {
     public PageResult() {
     }
     
+    public PageResult(List<E> lists) {
+        this.lists = lists;
+    }
+    
     public PageResult(long totalSize, List<E> lists) {
         this.totalSize = totalSize;
         this.lists = lists;
