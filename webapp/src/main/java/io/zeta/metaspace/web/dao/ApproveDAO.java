@@ -49,8 +49,8 @@ public interface ApproveDAO {
             " #{stat}" +
             " </foreach>" +
             "</if>" +
-            "<if test=\"paras.startTime != null and paras.endTime != null and paras.startTime!= '' and paras.endTime!= '' \">"+
-            " and a.approve_time between #{paras.startTime} and #{paras.endTime} "+
+            "<if test=\"paras.startTimeParam != null and paras.endTimeParam != null \">"+
+            " and a.approve_time between #{paras.startTimeParam} and #{paras.endTimeParam} "+
             "</if>"+
             "<if test=\"paras.userId!=null and paras.userId!=''\">"+
             " and a.submitter = #{paras.userId} " +

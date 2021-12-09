@@ -35,6 +35,10 @@ public class ApproveParas {
         return new Timestamp(Long.parseLong(this.endTime));
     }
 
+    private Timestamp startTimeParam;
+
+    private Timestamp endTimeParam;
+
     private String startTime;
 
     private String endTime;
