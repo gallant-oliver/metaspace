@@ -55,19 +55,23 @@ public class ApproveServiceImp implements ApproveService{
             paras.setUserId(userId);
         }else if("2".equals(paras.getReferer())){   //待审批
             groups = approveDao.selectApproveGroupByUserId(userId, tenantId);
+            //用户不属于任何审批组，无匹配审批项目
+            if(CollectionUtils.isEmpty(groups)){
+                return result;
+            }
             List<String> status = new LinkedList<>();
             status.add(ApproveStatus.WAITING.getCode());
             paras.setApproveStatus(status);
         }else{  //已审批
             groups = approveDao.selectApproveGroupByUserId(userId, tenantId);
+            //用户不属于任何审批组，无匹配审批项目
+            if(CollectionUtils.isEmpty(groups)){
+                return result;
+            }
             List<String> status = new LinkedList<>();
             status.add(ApproveStatus.FINISH.getCode()); //审批通过
             status.add(ApproveStatus.REJECTED.getCode()); //驳回
             paras.setApproveStatus(status);
-        }
-        //用户不属于任何审批组，无匹配审批项目
-        if(CollectionUtils.isEmpty(groups)){
-            return result;
         }
         if(StringUtils.isBlank(paras.getOrder()) || !Arrays.asList("ASC","DESC").contains(paras.getOrder().toUpperCase())){
             paras.setOrder("ASC");
