@@ -93,16 +93,16 @@
         select count(guid)
         from requirements
         where delete = 0
-          and tenant_id = #{}
-          and name = #{}
+          and tenant_id = #{tenantId}
+          and name = #{name}
     </select>
 
     <select id="countRequirementByNum" resultType="java.lang.Long">
         select count(guid)
         from requirements
         where delete = 0
-          and tenant_id = #{}
-          and num = #{}
+          and tenant_id = #{tenantId}
+          and num = #{num}
     </select>
 
     <select id="getRequirementById"
