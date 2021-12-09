@@ -10,8 +10,12 @@ import lombok.Data;
 @Data
 public class ApiCateDTO {
 
-    //API id
+    /**
+     * API id
+     */
     private String id;
-    //API名称
+    /**
+     * API名称
+     */
     private String name;
 }

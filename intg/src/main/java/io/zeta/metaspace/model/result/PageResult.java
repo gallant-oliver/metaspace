@@ -12,52 +12,32 @@
 // ======================================================================
 package io.zeta.metaspace.model.result;
 
+import lombok.Data;
+import org.springframework.util.CollectionUtils;
+
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
+@Data
 public class PageResult<E> implements Serializable {
     private long totalSize;
     private long currentSize;
     private List<E> lists = new ArrayList<>();
     private long offset;
-
-    public PageResult(){
-
+    
+    public PageResult() {
     }
-
-    public PageResult(List<E> lists){
-        this.lists = lists;
-    }
-    public long getTotalSize() {
-        return totalSize;
-    }
-
-    public void setTotalSize(long totalSize) {
+    
+    public PageResult(long totalSize, List<E> lists) {
         this.totalSize = totalSize;
-    }
-
-    public long getCurrentSize() {
-        return currentSize;
-    }
-
-    public void setCurrentSize(long currentSize) {
-        this.currentSize = currentSize;
-    }
-
-    public List<E> getLists() {
-        return lists;
-    }
-
-    public void setLists(List<E> lists) {
         this.lists = lists;
+        this.currentSize = CollectionUtils.isEmpty(lists) ? 0 : lists.size();
     }
-
-    public long getOffset() {
-        return offset;
+    
+    public static <E> PageResult<E> empty(Class<E> eClass) {
+        return new PageResult<>(0, Collections.emptyList());
     }
-
-    public void setOffset(long offset) {
-        this.offset = offset;
-    }
+    
 }

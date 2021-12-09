@@ -307,7 +307,7 @@ public class SourceInfoDatabaseREST {
     /**
      * 源信息文件解析
      * @param tenantId 租户 id
-     * @param annexParam 附件 
+     * @param annexParam 附件
      * @return
      */
     @POST

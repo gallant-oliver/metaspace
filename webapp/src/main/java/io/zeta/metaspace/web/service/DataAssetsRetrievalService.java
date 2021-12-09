@@ -276,12 +276,12 @@ public class DataAssetsRetrievalService {
         return result;
     }
 
-    public TableShow dataPreview(String tableId, int count) {
+    public TableShow dataPreview(String tableId, int count) throws Exception {
         GuidCount gc = new GuidCount();
         gc.setGuid(tableId);
         gc.setCount(count);
 
-        return searchService.getRDBMSTableShow(gc);
+        return searchService.getTableShow(gc, false);
     }
 
     public PageResult<TableInfo> getTableInfoByBusinessId(String businessId, String belongTenantId, String tenantId, int limit, int offset) {

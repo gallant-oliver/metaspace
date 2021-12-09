@@ -14,6 +14,7 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.FilterUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,10 +65,10 @@ public class ApproveServiceImp implements ApproveService{
             status.add(ApproveStatus.REJECTED.getCode()); //驳回
             paras.setApproveStatus(status);
         }
-        if(groups!=null && groups.size() ==0 ){
+        //用户不属于任何审批组，无匹配审批项目
+        if(CollectionUtils.isEmpty(groups)){
             return result;
-        }   //用户不属于任何审批组，无匹配审批项目
-
+        }
         if(StringUtils.isBlank(paras.getOrder()) || !Arrays.asList("ASC","DESC").contains(paras.getOrder().toUpperCase())){
             paras.setOrder("ASC");
         }
@@ -82,7 +83,7 @@ public class ApproveServiceImp implements ApproveService{
            item.setBusinessTypeText(BusinessType.getTextByCode(item.getBusinessType()));
            item.setSourceSystem(BusinessType.getSystem(item.getBusinessType()));
        }
-        if (approveItems == null || approveItems.size() == 0) {
+        if (CollectionUtils.isEmpty(approveItems)) {
             return result;
         }
         result.setLists(approveItems);

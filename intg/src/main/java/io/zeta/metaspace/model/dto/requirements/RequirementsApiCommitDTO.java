@@ -5,28 +5,27 @@ import lombok.Data;
 /**
  * @author fanjiajia
  * @Description
- * @date 2021/12/8 14:35
+ * @date 2021/12/9 15:36
  */
 @Data
-public class DealDetailDTO {
-
+public class RequirementsApiCommitDTO {
     /**
-     * 结果： 同意  拒绝
+     * api项目Id
      */
-    private String result;
+    private String projectId;
 
     /**
-     * 用户组
+     * 目录id
      */
-    private String group;
+    private String categoryId;
 
     /**
-     * 用户
+     * api id
      */
-    private String user;
+    private String apiId;
 
     /**
-     * 处理说明
+     * 描述
      */
     private String description;
 }
