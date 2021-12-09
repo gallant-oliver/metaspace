@@ -55,6 +55,16 @@
           and delete = 0
     </delete>
 
+    <delete id="batchDeleteByPrimaryKey" parameterType="java.util.Collection">
+        update requirements_column
+        set delete = 1
+        where guid in
+        <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+        and delete = 0
+    </delete>
+
     <insert id="insert" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsColumnPO">
         insert into "public"."requirements_column" (guid, requirements_id, table_id,
                                                     column_id, operator, sample_data,
@@ -66,7 +76,7 @@
                 #{delete,jdbcType=SMALLINT})
     </insert>
 
-    <insert id="batchInsert" parameterType="java.util.List">
+    <insert id="batchInsert" parameterType="java.util.Collection">
         insert into "public"."requirements_column"
         (
         guid,
@@ -130,6 +140,7 @@
         </set>
         where guid = #{guid,jdbcType=VARCHAR}
     </update>
+
     <update id="updateByPrimaryKey" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsColumnPO">
         update "public"."requirements_column"
         set requirements_id = #{requirementsId,jdbcType=VARCHAR},
@@ -142,5 +153,21 @@
             update_time     = #{updateTime,jdbcType=TIMESTAMP},
             delete          = #{delete,jdbcType=SMALLINT}
         where guid = #{guid,jdbcType=VARCHAR}
+    </update>
+
+    <update id="batchUpdate" parameterType="java.util.Collection">
+        <foreach collection="list" item="item" index="index" separator=";">
+            update requirements_column
+            set
+            requirements_id = #{item.requirementsId,jdbcType=VARCHAR},
+            table_id = #{item.tableId,jdbcType=VARCHAR},
+            column_id = #{item.columnId,jdbcType=VARCHAR},
+            operator = #{item.operator,jdbcType=VARCHAR},
+            sample_data = #{item.sampleData,jdbcType=VARCHAR},
+            description = #{item.description,jdbcType=VARCHAR},
+            update_time = #{item.updateTime,jdbcType=TIMESTAMP}
+            where guid = #{item.guid,jdbcType=VARCHAR}
+        </foreach>
+
     </update>
 </mapper>

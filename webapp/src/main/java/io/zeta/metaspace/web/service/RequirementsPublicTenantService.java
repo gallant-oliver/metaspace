@@ -1,20 +1,24 @@
 package io.zeta.metaspace.web.service;
 
-import io.zeta.metaspace.model.dto.requirements.FilterConditionDTO;
-import io.zeta.metaspace.model.dto.requirements.RequirementDTO;
-import io.zeta.metaspace.model.dto.requirements.ResourceDTO;
+import io.zeta.metaspace.model.dto.requirements.*;
 import io.zeta.metaspace.model.enums.ResourceState;
 import io.zeta.metaspace.model.enums.ResourceType;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.po.requirements.RequirementIssuedPO;
 import io.zeta.metaspace.model.po.requirements.RequirementsPO;
 import io.zeta.metaspace.model.po.requirements.ResourcePO;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.security.SecuritySearch;
+import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.utils.DateUtils;
+import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.dao.requirements.RequirementsMapper;
+import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
@@ -23,10 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,9 +38,15 @@ public class RequirementsPublicTenantService {
     private RequirementsMapper requirementsMapper;
     @Autowired
     private TableDAO tableDAO;
+    @Autowired
+    private ColumnDAO columnDAO;
+    @Autowired
+    private SourceInfoDAO sourceInfoDAO;
     
     @Autowired
     private RequirementColumnService columnService;
+    @Autowired
+    private TenantService tenantService;
     
     
     /**
@@ -153,5 +160,49 @@ public class RequirementsPublicTenantService {
         return requirementsMapper.countRequirementByName(num, tenantId) > 0;
     }
     
+    /**
+     * 根据数据表ID查询数据表的所有列.
+     */
+    public List<RequirementColumnDTO> queryColumnsByTableId(String tableId) {
+        return columnDAO.getColumnInfoListByTableGuid(tableId)
+                .stream()
+                .map(v -> RequirementColumnDTO.builder()
+                        .columnId(v.getColumnId())
+                        .columnName(v.getColumnName())
+                        .build())
+                .collect(Collectors.toList());
+    }
     
+    public RequirementIssuedDTO queryIssuedInfo(String tableId, String sourceId) {
+        RequirementIssuedPO po =
+                Optional.ofNullable(sourceInfoDAO.queryIssuedInfo(tableId, sourceId))
+                        .orElseThrow(() -> new AtlasBaseException(
+                                String.format("数据表ID %s,数据源ID %s 无效,查询数据为空.",
+                                        tableId,
+                                        sourceId)));
+        
+        RequirementIssuedDTO dot = RequirementIssuedDTO.builder()
+                .technicalCatalog(CategoryRelationUtils.getPath(po.getCategoryId(), po.getTenantId()))
+                .tenantPermission(isOwnerHasTenantPermission(po.getTenantId(), po.getBusinessOwner()))
+                .build();
+        BeanUtils.copyProperties(po, dot);
+        return dot;
+    }
+    
+    /**
+     * 判断业务负责人是否有租户权限
+     */
+    private boolean isOwnerHasTenantPermission(String tenantId, String businessOwner) {
+        SecuritySearch search = new SecuritySearch();
+        search.setTenantId(tenantId);
+        search.setUserName(businessOwner);
+        
+        List<UserAndModule> userInfos = tenantService.getUserAndModule(0, -1, search).getLists();
+        
+        if (CollectionUtils.isEmpty(userInfos)) {
+            return false;
+        }
+        
+        return userInfos.parallelStream().anyMatch(v -> Objects.equals(v.getUserName(), businessOwner));
+    }
 }
