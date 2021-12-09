@@ -104,12 +104,12 @@ public class RequirementsService {
 
         if (resourceType == ResourceType.API.getCode()) {
             RequirementsApiCommitDTO apiInput = commitInput.getApi();
-            String projectId = apiInput.getProjectId();
-            String categoryId = apiInput.getCategoryId();
-            String apiId = apiInput.getApiId();
             if (null == apiInput) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API入参为空");
             }
+            String projectId = apiInput.getProjectId();
+            String categoryId = apiInput.getCategoryId();
+            String apiId = apiInput.getApiId();
             if (StringUtils.isBlank(projectId)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "项目id为空");
             }
@@ -132,14 +132,14 @@ public class RequirementsService {
         String userId = AdminUtils.getUserData().getUserId();
         if (resourceType == ResourceType.TABLE.getCode()) {
             RequirementsDatabaseCommitDTO databaseInput = commitInput.getDatabase();
+            if (null == databaseInput) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "中间库入参不能为空");
+            }
             String middleType = databaseInput.getMiddleType();
             String database = databaseInput.getDatabase();
             String tableNameEn = databaseInput.getTableNameEn();
             String tableNameCh = databaseInput.getTableNameCh();
             Integer status = databaseInput.getStatus();
-            if (null == databaseInput) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "中间库入参不能为空");
-            }
             if (StringUtils.isBlank(middleType)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "中间库类型不能为空");
             }
@@ -176,13 +176,13 @@ public class RequirementsService {
 
         if (resourceType == ResourceType.MESSAGE_QUEUE.getCode()) {
             RequirementsMqCommitDTO mqInput = commitInput.getMq();
+            if (null == mqInput) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "消息队列入参不能为空");
+            }
             String mqNameEn = mqInput.getMqNameEn();
             String mqNameCh = mqInput.getMqNameCh();
             String format = mqInput.getFormat();
             Integer status = mqInput.getStatus();
-            if (null == mqInput) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "消息队列入参不能为空");
-            }
             if (StringUtils.isBlank(mqNameEn)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "消息队列英文名称不能为空");
             }
