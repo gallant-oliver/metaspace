@@ -66,6 +66,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -572,7 +573,8 @@ public class BusinessCatalogueService implements Approvable {
 
             Cell guidCell = row.getCell(0);
             if (Objects.isNull(guidCell)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "guid不能为空");
+                //过滤异常数据行，手写目录文件导致存在不可见字符
+                continue;
             }
             category.setGuid(guidCell.getStringCellValue());
 
@@ -584,46 +586,46 @@ public class BusinessCatalogueService implements Approvable {
 
             Cell discriptionCell = row.getCell(2);
             if (Objects.isNull(discriptionCell)) {
-                category.setDescription("");
+                category.setDescription(null);
             } else {
                 category.setDescription(discriptionCell.getStringCellValue());
             }
-            /*
-            Cell upCell = row.getCell(3);
-            if (Objects.isNull(upCell) || upCell.getStringCellValue().length() == 0) {
-                category.setUpBrotherCategoryGuid(null);
-            } else {
-                category.setUpBrotherCategoryGuid(upCell.getStringCellValue());
-            }
-
-            Cell downCell = row.getCell(4);
-            if (Objects.isNull(downCell) || downCell.getStringCellValue().length() == 0) {
-                category.setDownBrotherCategoryGuid(null);
-            } else {
-                category.setDownBrotherCategoryGuid(downCell.getStringCellValue());
-            }
-             */
 
             Cell parentCell = row.getCell(5);
+            String parentCateId = null;
             if (Objects.isNull(parentCell) || parentCell.getStringCellValue().length() == 0) {
                 category.setParentCategoryGuid(null);
             } else {
-                category.setParentCategoryGuid(parentCell.getStringCellValue());
+                parentCateId = parentCell.getStringCellValue();
+                category.setParentCategoryGuid(parentCateId);
             }
 
             Cell qualifiedNameCell = row.getCell(6);
             if (Objects.isNull(qualifiedNameCell)) {
-                category.setQualifiedName(null);
-            } else {
-                category.setQualifiedName(qualifiedNameCell.getStringCellValue());
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录全名称不能为空");
             }
+            category.setQualifiedName(qualifiedNameCell.getStringCellValue());
+
 
             Cell levelNameCell = row.getCell(7);
             if (Objects.isNull(levelNameCell)) {
-                category.setLevel(0);
-            } else {
-                category.setLevel(Integer.parseInt(levelNameCell.getStringCellValue()));
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录层级不能为空");
             }
+            Integer level = Integer.parseInt(levelNameCell.getStringCellValue());
+            if (0 == level) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录层级不能为零");
+            }
+            category.setLevel(level);
+
+
+            //新增校验：如果是一级目录，则父目录id为空
+            if (1 == level && StringUtils.isNotBlank(parentCateId)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "一级目录的父目录id需为空");
+            }
+            if (1 < level && StringUtils.isBlank(parentCateId)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "二级及以上目录的父目录id不能为空");
+            }
+
             Cell sortCell = row.getCell(8);
             if (Objects.isNull(sortCell)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "sort不能为空");
@@ -660,7 +662,79 @@ public class BusinessCatalogueService implements Approvable {
                 }
             }
         }
+
+        //校验：不能存在父子目录死循环的情况
+        for (CategoryEntityV2 cate : categories) {
+            String guid = cate.getGuid();
+            String name = cate.getName();
+            String parentGuid = cate.getParentCategoryGuid();
+            //父目录是否存在
+            Boolean exist = false;
+            if (StringUtils.isNotBlank(parentGuid)) {
+                for (CategoryEntityV2 cate2 : categories) {
+                    String sguid = cate2.getGuid();
+                    String pGuid = cate2.getParentCategoryGuid();
+                    if (StringUtils.isNotBlank(pGuid) && sguid.equals(parentGuid) && pGuid.equals(guid)) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在死循环的父子目录:" + name);
+                    }
+                    if (sguid.equals(parentGuid)) {
+                        exist = true;
+                    }
+                }
+                if (!exist) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录[" + name + "]的父目录不存在");
+                }
+            }
+        }
+
+        //校验：同级目录名不能相同
+        List<CategoryEntityV2> distinctList = categories.stream().collect(Collectors.collectingAndThen(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(distinctByKeyFunction()))), ArrayList::new));
+        if (distinctList.size() != categories.size()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "同级目录，目录名称不能重复");
+        }
+
+        //全名称正确性校验
+        try {
+            Map<String, CategoryEntityV2> catesMap = categories.stream().collect(Collectors.toMap(CategoryEntityV2::getGuid, cate -> cate));
+            Set<String> set = catesMap.keySet();
+            for (String id : set) {
+                CategoryEntityV2 currentCate = catesMap.get(id);
+                String name = currentCate.getName();
+                String qualifiedName = currentCate.getQualifiedName();
+                String fullName = null;
+                //获取当前目录全名称
+                fullName = getQualifiedName(id, catesMap, fullName);
+                if (!qualifiedName.equals(fullName)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录[" + name + "]全名称错误");
+                }
+            }
+        } catch (IllegalStateException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录id不能重复");
+        }
+
+
         return categories;
+    }
+
+    //获取当前目录的全名称
+    private String getQualifiedName(String guid, Map<String, CategoryEntityV2> catesMap, String cateFullName) {
+        String name = catesMap.get(guid).getName();
+        String parentId = catesMap.get(guid).getParentCategoryGuid();
+        if (StringUtils.isBlank(cateFullName)) {
+            cateFullName = name;
+        } else {
+            cateFullName = name + "." + cateFullName;
+        }
+        if (StringUtils.isBlank(parentId)) {
+            return cateFullName;
+        } else {
+            return getQualifiedName(parentId, catesMap, cateFullName);
+        }
+    }
+
+    //去重函数：级别+目录名称
+    public static Function<CategoryEntityV2, String> distinctByKeyFunction() {
+        return (CategoryEntityV2 cate) -> cate.getLevel() + "-" + cate.getName();
     }
 
     public String uploadCategory(String categoryId, String direction, File fileInputStream, int type, String tenantId) throws Exception {
