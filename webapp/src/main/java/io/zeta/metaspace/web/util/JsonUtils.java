@@ -8,9 +8,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
-import com.gridsum.scrm.ronghotels.exception.UnCheckedException;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.atlas.exception.AtlasBaseException;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
@@ -72,7 +72,7 @@ public class JsonUtils {
             return objectMapper.writeValueAsString(object);
         } catch (JsonProcessingException e) {
             log.error("get json by jackson error:", e);
-            throw new UnCheckedException("get json by jackson error:".concat(e.getMessage()));
+            throw new AtlasBaseException("get json by jackson error:".concat(e.getMessage()));
         }
     }
 }
