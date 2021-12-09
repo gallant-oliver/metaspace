@@ -131,4 +131,16 @@
       update_time = #{updateTime,jdbcType=TIMESTAMP}
     where guid = #{guid,jdbcType=VARCHAR}
   </update>
+
+  <insert id="batchInsert" parameterType="java.util.List">
+    insert into requirements_result (guid, requirements_id, type,
+                                                group_id, user_id, description,
+                                                create_time, update_time)
+    values
+    <foreach collection="records" index="index" item="record" separator=",">
+     (#{record.guid,jdbcType=VARCHAR}, #{record.requirementsId,jdbcType=VARCHAR}, #{record.type,jdbcType=SMALLINT},
+            #{record.groupId,jdbcType=VARCHAR}, #{record.userId,jdbcType=VARCHAR}, #{record.description,jdbcType=VARCHAR},
+            #{record.createTime,jdbcType=TIMESTAMP}, #{record.updateTime,jdbcType=TIMESTAMP})
+    </foreach>
+  </insert>
 </mapper>

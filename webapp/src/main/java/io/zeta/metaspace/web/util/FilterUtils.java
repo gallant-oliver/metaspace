@@ -58,6 +58,9 @@ public class FilterUtils {
         if("api/metaspace/health/check".equals(result)){
             return true;
         }
+        if("api/metaspace/health/check/password".equals(result)){
+            return true;
+        }
         return false;
     }
     

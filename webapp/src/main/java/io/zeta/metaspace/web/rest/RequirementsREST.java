@@ -1,8 +1,9 @@
 package io.zeta.metaspace.web.rest;
 
-import com.sun.org.apache.regexp.internal.RE;
 import io.zeta.metaspace.model.Result;
-import io.zeta.metaspace.model.dto.RequirementsResultDTO;
+import io.zeta.metaspace.model.dto.requirements.FeedbackResultDTO;
+import io.zeta.metaspace.model.dto.requirements.RequirementDTO;
+import io.zeta.metaspace.model.dto.requirements.RequirementsHandleDTO;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.web.service.RequirementsService;
 import io.zeta.metaspace.web.util.ReturnUtil;
@@ -11,23 +12,22 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.RestController;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
-import java.util.List;
 
 /**
- *
+ * 需求管理 - 普通租户
  */
 @Path("requirements")
 @Singleton
 @Service
-@RestController
 public class RequirementsREST {
+
 
     @Autowired
     private RequirementsService requirementsService;
+
 
     @POST
     @Path("test")
@@ -36,45 +36,7 @@ public class RequirementsREST {
     public void test() {
     }
 
-    /**
-     * 需求下发
-     *
-     * @param
-     * @throws
-     */
-    @PUT
-    @Path("/grant/{guid}")
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public Result grant(@PathParam("guid") String guid) {
-        try {
-            requirementsService.grant(guid);
-            return ReturnUtil.success();
-        }
-        catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"需求下发失败");
-        }
-    }
 
-    /**
-     * 删除需求
-     *
-     * @param
-     * @throws
-     */
-    @DELETE
-    @Path("")
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public Result delete(List<String> guids) {
-        try {
-            requirementsService.deleteRequirements(guids);
-            return ReturnUtil.success();
-        }
-        catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"需求下发失败");
-        }
-    }
 
     /**
      * 需求详情
@@ -83,11 +45,17 @@ public class RequirementsREST {
      * @throws
      */
     @GET
-    @Path("/detail")
+    @Path("/{requirementId}/detail")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public void detail() {
-
+    public Result detail(@PathParam("requirementId") String requirementId) {
+        try {
+            RequirementDTO requirement = requirementsService.getRequirementById(requirementId);
+            return ReturnUtil.success(requirement);
+        }
+        catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"需求下发失败");
+        }
     }
 
     /**
@@ -120,7 +88,7 @@ public class RequirementsREST {
     @Path("/handle")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public Result handle(RequirementsResultDTO resultDTO, ) {
+    public Result handle(RequirementsHandleDTO resultDTO) {
         try {
             requirementsService.handle(resultDTO);
             return ReturnUtil.success();
@@ -130,10 +98,23 @@ public class RequirementsREST {
         }
     }
 
-    @POST
-    @Path("test")
+    /**
+     * 反馈结果
+     *
+     * @param
+     * @throws
+     */
+    @GET
+    @Path("/{requirementId}/feedback")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public void test() {
+    public Result feedback(@PathParam("requirementId") String requirementId, @QueryParam("resourceType") Integer resourceType) {
+        try {
+            FeedbackResultDTO result = requirementsService.getFeedbackResult(requirementId, resourceType);
+            return ReturnUtil.success(result);
+        }
+        catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"需求下发失败");
+        }
     }
 }
