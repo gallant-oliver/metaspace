@@ -32,7 +32,7 @@ public class ResourceDTO {
      */
     private String name;
     /**
-     * 资源类型 {@link ResourceType#getDesc()}
+     * 资源类型 {@link ResourceType#getCode()}
      */
     private ResourceType type;
     /**
@@ -44,7 +44,7 @@ public class ResourceDTO {
      */
     private String version;
     /**
-     * 状态 {@link ResourceState#getDesc()}
+     * 状态 {@link ResourceState#getCode()}
      */
     private ResourceState state;
     /**

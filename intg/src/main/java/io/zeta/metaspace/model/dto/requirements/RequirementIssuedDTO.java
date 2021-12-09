@@ -10,7 +10,7 @@ import lombok.Data;
  * @date 2021-12-08
  */
 @Data
-public class RequirementIssuedInfoDTO {
+public class RequirementIssuedDTO {
     /**
      * 下发租户: 需求关联的数据表所属的租户
      */

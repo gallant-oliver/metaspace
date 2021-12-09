@@ -1,5 +1,6 @@
 package io.zeta.metaspace.model.po.requirements;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.zeta.metaspace.model.dto.requirements.ResourceDTO;
 import io.zeta.metaspace.model.enums.ResourceState;
 import io.zeta.metaspace.model.enums.ResourceType;
@@ -43,5 +44,6 @@ public class ResourcePO {
      */
     private String creator;
     
+    @JsonIgnore
     private long total;
 }

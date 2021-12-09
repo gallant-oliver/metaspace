@@ -44,7 +44,7 @@ public class RequirementDTO {
      */
     private String num;
     /**
-     * 资源类型 {@link ResourceType#getDesc()}
+     * 资源类型 {@link ResourceType#getCode()}
      */
     private ResourceType resourceType;
     private String version;
