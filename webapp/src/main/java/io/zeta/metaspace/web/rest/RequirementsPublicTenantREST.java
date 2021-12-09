@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.rest;
 
+import io.zeta.metaspace.model.dto.requirements.RequirementDTO;
 import io.zeta.metaspace.model.dto.requirements.ResourceDTO;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
@@ -12,8 +13,6 @@ import org.springframework.util.Assert;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
-
-import static io.zeta.metaspace.web.model.CommonConstant.HEADER_TENANT_ID;
 
 /**
  * 需求管理 - 公共租户
@@ -30,10 +29,24 @@ public class RequirementsPublicTenantREST {
     
     @GET
     @Path("/paged/resource")
-    public PageResult<ResourceDTO> pagedResource(@HeaderParam(HEADER_TENANT_ID) String tenantId,
-                                                 @QueryParam("tableId") String tableId,
+    public PageResult<ResourceDTO> pagedResource(@QueryParam("tableId") String tableId,
                                                  Parameters parameters) {
         Assert.isTrue(StringUtils.isNotBlank(tableId), "数据表ID无效!");
         return publicTenantService.pagedResource(tableId, parameters);
     }
+    
+    @POST
+    @Path("/create/resource")
+    public void createdResource(RequirementDTO requirementDTO) {
+        Assert.notNull(requirementDTO, "需求对象为空");
+        publicTenantService.createdResource(requirementDTO);
+    }
+    
+    @PUT
+    @Path("/edit/resource")
+    public void editedResource(RequirementDTO requirementDTO) {
+        Assert.notNull(requirementDTO, "需求对象为空");
+        publicTenantService.editedResource(requirementDTO);
+    }
+    
 }

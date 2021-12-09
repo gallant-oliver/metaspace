@@ -20,6 +20,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ResourceDTO {
     /**
+     * 资源ID
+     */
+    private String resourceId;
+    /**
      * 资源所属的需求ID
      */
     private String requirementId;
@@ -28,7 +32,7 @@ public class ResourceDTO {
      */
     private String name;
     /**
-     * 资源类型 {@link ResourceType#getDesc()}
+     * 资源类型 {@link ResourceType#getCode()}
      */
     private ResourceType type;
     /**
@@ -40,7 +44,7 @@ public class ResourceDTO {
      */
     private String version;
     /**
-     * 状态 {@link ResourceState#getDesc()}
+     * 状态 {@link ResourceState#getCode()}
      */
     private ResourceState state;
     /**
