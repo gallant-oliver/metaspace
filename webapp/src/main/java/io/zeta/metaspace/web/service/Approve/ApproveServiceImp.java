@@ -81,7 +81,8 @@ public class ApproveServiceImp implements ApproveService{
             sortByField = sortByField.split(" ")[0];
             paras.setSortBy(sortByField);
         }
-
+        paras.setStartTimeParam(paras.getStartTime());
+        paras.setEndTimeParam(paras.getEndTime());
         List<ApproveItem> approveItems = approveDao.getApproveItems(tenantId, paras, groups);
        for(ApproveItem item:approveItems){
            item.setBusinessTypeText(BusinessType.getTextByCode(item.getBusinessType()));
