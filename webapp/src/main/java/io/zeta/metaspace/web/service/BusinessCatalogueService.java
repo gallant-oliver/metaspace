@@ -66,6 +66,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
@@ -585,7 +586,7 @@ public class BusinessCatalogueService implements Approvable {
 
             Cell discriptionCell = row.getCell(2);
             if (Objects.isNull(discriptionCell)) {
-                category.setDescription("");
+                category.setDescription(null);
             } else {
                 category.setDescription(discriptionCell.getStringCellValue());
             }
@@ -597,24 +598,26 @@ public class BusinessCatalogueService implements Approvable {
             } else {
                 parentCateId = parentCell.getStringCellValue();
                 category.setParentCategoryGuid(parentCateId);
-
             }
 
             Cell qualifiedNameCell = row.getCell(6);
             if (Objects.isNull(qualifiedNameCell)) {
-                category.setQualifiedName(null);
-            } else {
-                category.setQualifiedName(qualifiedNameCell.getStringCellValue());
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录全名称不能为空");
             }
+            category.setQualifiedName(qualifiedNameCell.getStringCellValue());
+
 
             Cell levelNameCell = row.getCell(7);
-            Integer level = 0;
             if (Objects.isNull(levelNameCell)) {
-                category.setLevel(0);
-            } else {
-                level = Integer.parseInt(levelNameCell.getStringCellValue());
-                category.setLevel(level);
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录层级不能为空");
             }
+            Integer level = Integer.parseInt(levelNameCell.getStringCellValue());
+            if (0 == level) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录层级不能为零");
+            }
+            category.setLevel(level);
+
+
             //新增校验：如果是一级目录，则父目录id为空
             if (1 == level && StringUtils.isNotBlank(parentCateId)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "一级目录的父目录id需为空");
@@ -671,8 +674,8 @@ public class BusinessCatalogueService implements Approvable {
                 for (CategoryEntityV2 cate2 : categories) {
                     String sguid = cate2.getGuid();
                     String pGuid = cate2.getParentCategoryGuid();
-                    if (sguid.equals(parentGuid) && pGuid.equals(guid)) {
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在死循环的父子目录");
+                    if (StringUtils.isNotBlank(pGuid) && sguid.equals(parentGuid) && pGuid.equals(guid)) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在死循环的父子目录:" + name);
                     }
                     if (sguid.equals(parentGuid)) {
                         exist = true;
@@ -684,42 +687,54 @@ public class BusinessCatalogueService implements Approvable {
             }
         }
 
-        //全名称正确性校验
-        Map<String, CategoryEntityV2> catesMap = categories.stream().collect(Collectors.toMap(CategoryEntityV2::getGuid, cate -> cate));
-        Set<String> set = catesMap.keySet();
-        for (String id : set) {
-            CategoryEntityV2 currentCate = catesMap.get(id);
-            int level = currentCate.getLevel();
-            String name = currentCate.getName();
-            String qualifiedName = currentCate.getQualifiedName();
-            String fullName = null;
-            if (0 == level) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录层级不能为零");
-            }
-            //获取当前目录全名称
-            getQualifiedName(id, catesMap, fullName);
-            if (!qualifiedName.equals(fullName)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录[" + name + "]全名称错误");
-            }
+        //校验：同级目录名不能相同
+        List<CategoryEntityV2> distinctList = categories.stream().collect(Collectors.collectingAndThen(Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(distinctByKeyFunction()))), ArrayList::new));
+        if (distinctList.size() != categories.size()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "同级目录，目录名称不能重复");
         }
+
+        //全名称正确性校验
+        try {
+            Map<String, CategoryEntityV2> catesMap = categories.stream().collect(Collectors.toMap(CategoryEntityV2::getGuid, cate -> cate));
+            Set<String> set = catesMap.keySet();
+            for (String id : set) {
+                CategoryEntityV2 currentCate = catesMap.get(id);
+                String name = currentCate.getName();
+                String qualifiedName = currentCate.getQualifiedName();
+                String fullName = null;
+                //获取当前目录全名称
+                fullName = getQualifiedName(id, catesMap, fullName);
+                if (!qualifiedName.equals(fullName)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录[" + name + "]全名称错误");
+                }
+            }
+        } catch (IllegalStateException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录id不能重复");
+        }
+
 
         return categories;
     }
 
     //获取当前目录的全名称
-    private void getQualifiedName(String guid, Map<String, CategoryEntityV2> catesMap, String cateFullName) {
+    private String getQualifiedName(String guid, Map<String, CategoryEntityV2> catesMap, String cateFullName) {
         String name = catesMap.get(guid).getName();
         String parentId = catesMap.get(guid).getParentCategoryGuid();
         if (StringUtils.isBlank(cateFullName)) {
             cateFullName = name;
         } else {
-            cateFullName = cateFullName + "." + name;
+            cateFullName = name + "." + cateFullName;
         }
         if (StringUtils.isBlank(parentId)) {
-            return;
+            return cateFullName;
         } else {
-            getQualifiedName(parentId, catesMap, cateFullName);
+            return getQualifiedName(parentId, catesMap, cateFullName);
         }
+    }
+
+    //去重函数：级别+目录名称
+    public static Function<CategoryEntityV2, String> distinctByKeyFunction() {
+        return (CategoryEntityV2 cate) -> cate.getLevel() + "-" + cate.getName();
     }
 
     public String uploadCategory(String categoryId, String direction, File fileInputStream, int type, String tenantId) throws Exception {
