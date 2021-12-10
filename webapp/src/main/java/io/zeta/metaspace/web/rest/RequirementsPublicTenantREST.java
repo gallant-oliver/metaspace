@@ -1,9 +1,12 @@
 package io.zeta.metaspace.web.rest;
 
+import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.dto.requirements.FeedbackDetailBaseDTO;
 import io.zeta.metaspace.model.dto.requirements.ResourceDTO;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.RequirementsPublicTenantService;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,4 +39,14 @@ public class RequirementsPublicTenantREST {
         Assert.isTrue(StringUtils.isNotBlank(tableId), "数据表ID无效!");
         return publicTenantService.pagedResource(tableId, parameters);
     }
+
+    @GET
+    @Path("/feedback/detail/base")
+    public Result getDetailBase(@HeaderParam(HEADER_TENANT_ID) String tenantId,
+                                @QueryParam("id") String id, @QueryParam("type") Integer type) {
+        FeedbackDetailBaseDTO result = publicTenantService.getDetailBase(id, type);
+        return ReturnUtil.success(result);
+    }
+
+
 }
