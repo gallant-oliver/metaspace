@@ -20,6 +20,8 @@ public interface RequirementsColumnMapper {
     int updateByPrimaryKeySelective(RequirementsColumnPO record);
     
     int updateByPrimaryKey(RequirementsColumnPO record);
+
+    List<RequirementsColumnPO> selectByRequirementId(@Param("requirementId")String requirementId);
     
     void batchUpdate(@Param("list") Collection<RequirementsColumnPO> toInsertSet);
     

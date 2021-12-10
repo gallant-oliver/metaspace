@@ -32,6 +32,12 @@
     status, create_time, update_time,
     delete
   </sql>
+    <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List"/>
+    from "public"."requirements"
+    where guid = #{guid,jdbcType=VARCHAR}
+    </select>
 
     <select id="pagedResources"
             resultType="io.zeta.metaspace.model.po.requirements.ResourcePO">
@@ -397,4 +403,22 @@
             update_time   = #{updateTime,jdbcType=TIMESTAMP}
         where guid = #{guid,jdbcType=VARCHAR}
     </update>
+
+  <delete id="deleteByGuids" parameterType="java.util.List">
+    update "public"."requirements"
+    set delete = 1
+    where guid in
+    <foreach item='id' index='index' collection='guids' separator=',' open='(' close=')'>
+      #{id}
+    </foreach>
+  </delete>
+
+  <update id="batchUpdateStatusByIds">
+    update requirements
+    set status = #{status,jdbcType=SMALLINT}
+    where guid in
+    <foreach item='id' index='index' collection='guids' separator=',' open='(' close=')'>
+      #{id}
+    </foreach>
+  </update>
 </mapper>

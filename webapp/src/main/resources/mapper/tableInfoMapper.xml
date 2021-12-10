@@ -53,4 +53,13 @@
             AND ug.tenant=#{tenantId}
         </if>
     </select>
+
+    <select id="getTableImportanceInfo" resultType="io.zeta.metaspace.model.metadata.TableExtInfo">
+        SELECT
+        CASE WHEN si.importance IS null THEN false ELSE si.importance END AS importance,
+        CASE WHEN si.security IS null THEN false ELSE si.security END AS security
+        FROM tableinfo t
+        LEFT JOIN source_info_derive_table_info si ON si.table_guid=t.tableguid and si.version=-1
+        WHERE t.tableguid=#{tableId}
+    </select>
 </mapper>

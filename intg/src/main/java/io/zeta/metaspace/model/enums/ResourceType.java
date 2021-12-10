@@ -19,12 +19,16 @@ public enum ResourceType {
     TABLE(2, "中间库"),
     MESSAGE_QUEUE(3, "消息队列"),
     ;
-    
-    @Getter
+
     @JsonValue
     private int code;
     @Getter
     private String desc;
+
+    @JsonValue
+    public int getCode() {
+        return code;
+    }
     
     ResourceType(int code, String desc) {
         this.code = code;
