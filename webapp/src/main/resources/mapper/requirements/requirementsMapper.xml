@@ -8,7 +8,7 @@
     <result column="resource_type" jdbcType="SMALLINT" property="resourceType" />
     <result column="version" jdbcType="VARCHAR" property="version" />
     <result column="agreement" jdbcType="VARCHAR" property="agreement" />
-    <result column="request mode" jdbcType="VARCHAR" property="requestMode" />
+    <result column="request_mode" jdbcType="VARCHAR" property="requestMode" />
     <result column="aiming_field" jdbcType="VARCHAR" property="aimingField" />
     <result column="file_name" jdbcType="VARCHAR" property="fileName" />
     <result column="file_path" jdbcType="VARCHAR" property="filePath" />
@@ -22,10 +22,12 @@
     <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
     <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
     <result column="delete" jdbcType="SMALLINT" property="delete" />
+    <result column="total" jdbcType="INTEGER" property="total" />
+    <result column="business_category_id" jdbcType="VARCHAR" property="businessCategoryId" />
   </resultMap>
 
   <sql id="Base_Column_List">
-    guid, name, num, resource_type, version, agreement, "request mode", aiming_field,
+    guid, name, num, resource_type, version, agreement, request_mode, aiming_field,
     file_name, file_path, description, business_id, table_id, source_id, tenant_id, creator,
     status, create_time, update_time,
     delete
@@ -38,6 +40,31 @@
     where guid = #{guid,jdbcType=VARCHAR}
   </select>
 
+  <select id = "selectListByCreatorPage" resultMap="BaseResultMap">
+    select count(*)over() total,br.categoryguid as business_category_id,
+    <include refid="Base_Column_List"/>
+    from requirements left join business_relation as br on requirements.business_id = br.businessid
+    where creator = #{creator}
+    <if test="param.status != null and param.status == 1">
+        and param.status = 1
+    </if>
+    <if test="param.status != null and param.status == 2">
+      and param.status in (2,3)
+    </if>
+    <if test="param.status != null and param.status == 3">
+      and param.status in (4,-1)
+    </if>
+    <if test="param.type != null">
+      and resource_type = #{param.type}
+    </if>
+    <if test="param.query != null  and param.query != ''">
+      and name like concat('%',#{param.query},'%')
+    </if>
+    order by create_time desc
+    <if test="param.limit != null and param.limit != -1 ">
+      limit #{param.limit} offset #{param.offset}
+    </if>
+  </select>
 
   <select id="pagedAlreadyFeedbackRequirements"
           resultType="io.zeta.metaspace.model.po.requirements.RequirementsPO">

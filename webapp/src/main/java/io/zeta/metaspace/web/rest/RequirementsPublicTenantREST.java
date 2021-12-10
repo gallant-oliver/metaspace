@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.rest;
 
+import io.zeta.metaspace.model.dto.requirements.RequireListParam;
 import io.zeta.metaspace.model.dto.requirements.ResourceDTO;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
@@ -35,5 +36,16 @@ public class RequirementsPublicTenantREST {
                                                  Parameters parameters) {
         Assert.isTrue(StringUtils.isNotBlank(tableId), "数据表ID无效!");
         return publicTenantService.pagedResource(tableId, parameters);
+    }
+
+    /**
+     * 查询需求管理列表
+     * @param param
+     * @return
+     */
+    @POST
+    @Path("list")
+    public PageResult getListByCreatorPage(RequireListParam param) {
+        return publicTenantService.getListByCreatorPage(param);
     }
 }

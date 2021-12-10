@@ -50,4 +50,9 @@ public class RequirementsPO {
     private Integer delete;
     
     private Long total;
+
+    /**
+     * 业务目录ID
+     */
+    private String businessCategoryId;
 }

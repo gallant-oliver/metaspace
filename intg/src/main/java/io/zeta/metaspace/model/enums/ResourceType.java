@@ -37,6 +37,15 @@ public enum ResourceType {
                 .findFirst()
                 .orElse(null);
     }
+
+    public static String getValue(int code) {
+        for (ResourceType value : ResourceType.values()) {
+            if (value.getCode() == code) {
+                return value.getDesc();
+            }
+        }
+        return "";
+    }
     
     @JsonCreator
     public static ResourceType parseByDesc(String desc) {
