@@ -1,29 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="io.zeta.metaspace.web.dao.requirements.RequirementsMapper">
-    <resultMap id="BaseResultMap" type="io.zeta.metaspace.model.po.requirements.RequirementsPO">
-        <id column="guid" jdbcType="VARCHAR" property="guid"/>
-        <result column="name" jdbcType="VARCHAR" property="name"/>
-        <result column="num" jdbcType="VARCHAR" property="num"/>
-        <result column="resource_type" jdbcType="SMALLINT" property="resourceType"/>
-        <result column="version" jdbcType="VARCHAR" property="version"/>
-        <result column="agreement" jdbcType="VARCHAR" property="agreement"/>
-        <result column="request mode" jdbcType="VARCHAR" property="requestMode"/>
-        <result column="aiming_field" jdbcType="VARCHAR" property="aimingField"/>
-        <result column="file_name" jdbcType="VARCHAR" property="fileName"/>
-        <result column="file_path" jdbcType="VARCHAR" property="filePath"/>
-        <result column="description" jdbcType="VARCHAR" property="description"/>
-        <result column="business_id" jdbcType="VARCHAR" property="businessId"/>
-        <result column="table_id" jdbcType="VARCHAR" property="tableId"/>
-        <result column="source_id" jdbcType="VARCHAR" property="sourceId"/>
-        <result column="tenant_id" jdbcType="VARCHAR" property="tenantId"/>
-        <result column="creator" jdbcType="VARCHAR" property="creator"/>
-        <result column="status" jdbcType="SMALLINT" property="status"/>
-        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
-        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
-        <result column="delete" jdbcType="SMALLINT" property="delete"/>
-    </resultMap>
+  <resultMap id="BaseResultMap" type="io.zeta.metaspace.model.po.requirements.RequirementsPO">
+    <id column="guid" jdbcType="VARCHAR" property="guid" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="num" jdbcType="VARCHAR" property="num" />
+    <result column="resource_type" jdbcType="SMALLINT" property="resourceType" />
+    <result column="version" jdbcType="VARCHAR" property="version" />
+    <result column="agreement" jdbcType="VARCHAR" property="agreement" />
+    <result column="request_mode" jdbcType="VARCHAR" property="requestMode" />
+    <result column="aiming_field" jdbcType="VARCHAR" property="aimingField" />
+    <result column="file_name" jdbcType="VARCHAR" property="fileName" />
+    <result column="file_path" jdbcType="VARCHAR" property="filePath" />
+    <result column="description" jdbcType="VARCHAR" property="description" />
+    <result column="business_id" jdbcType="VARCHAR" property="businessId" />
+    <result column="table_id" jdbcType="VARCHAR" property="tableId" />
+    <result column="source_id" jdbcType="VARCHAR" property="sourceId" />
+    <result column="tenant_id" jdbcType="VARCHAR" property="tenantId" />
+    <result column="creator" jdbcType="VARCHAR" property="creator" />
+    <result column="status" jdbcType="SMALLINT" property="status" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="delete" jdbcType="SMALLINT" property="delete" />
+    <result column="total" jdbcType="INTEGER" property="total" />
+    <result column="business_category_id" jdbcType="VARCHAR" property="businessCategoryId" />
+  </resultMap>
 
+  <sql id="Base_Column_List">
+    guid, name, num, resource_type, version, agreement, request_mode, aiming_field,
+    file_name, file_path, description, business_id, table_id, source_id, tenant_id, creator,
+    status, create_time, update_time,
+    delete
+  </sql>
 
     <select id="pagedResources"
             resultType="io.zeta.metaspace.model.po.requirements.ResourcePO">
@@ -87,6 +95,32 @@
             </if>
         </if>
     </select>
+
+<select id = "selectListByCreatorPage" resultMap="BaseResultMap">
+    select count(*)over() total,br.categoryguid as business_category_id,
+    <include refid="Base_Column_List"/>
+    from requirements left join business_relation as br on requirements.business_id = br.businessid
+    where creator = #{creator}
+    <if test="param.status != null and param.status == 1">
+        and param.status = 1
+    </if>
+    <if test="param.status != null and param.status == 2">
+      and param.status in (2,3)
+    </if>
+    <if test="param.status != null and param.status == 3">
+      and param.status in (4,-1)
+    </if>
+    <if test="param.type != null">
+      and resource_type = #{param.type}
+    </if>
+    <if test="param.query != null  and param.query != ''">
+      and name like concat('%',#{param.query},'%')
+    </if>
+    order by create_time desc
+    <if test="param.limit != null and param.limit != -1 ">
+      limit #{param.limit} offset #{param.offset}
+    </if>
+  </select>
 
     <select id="countRequirementByName" resultType="java.lang.Long">
         select count(guid)

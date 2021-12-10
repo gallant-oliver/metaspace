@@ -175,4 +175,15 @@ public class RequirementsPublicTenantREST {
         FeedbackDetailBaseDTO result = publicTenantService.getDetailBase(id, type);
         return ReturnUtil.success(result);
     }
+
+    /**
+     * 查询需求管理列表
+     * @param param
+     * @return
+     */
+    @POST
+    @Path("list")
+    public PageResult getListByCreatorPage(RequireListParam param) {
+        return publicTenantService.getListByCreatorPage(param);
+    }
 }
