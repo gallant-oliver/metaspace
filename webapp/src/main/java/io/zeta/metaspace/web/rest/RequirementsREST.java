@@ -71,7 +71,7 @@ public class RequirementsREST {
     @Path("/feedback")
     @OperateType(INSERT)
     public Result requirementsFeedback(RequirementsFeedbackCommit commitInput) {
-        HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTSMANAGE.getAlias(), "需求反馈：" + commitInput.getRequirementsId());
+        HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENT.getAlias(), "需求反馈：" + commitInput.getRequirementsId());
         requirementsService.feedback(commitInput);
         return ReturnUtil.success("success");
     }
