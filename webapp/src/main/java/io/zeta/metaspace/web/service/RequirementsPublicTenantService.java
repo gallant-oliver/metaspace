@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.service;
 import io.zeta.metaspace.model.dto.requirements.*;
 import io.zeta.metaspace.model.enums.ResourceState;
 import io.zeta.metaspace.model.enums.ResourceType;
+import io.zeta.metaspace.model.enums.ResourceType;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.po.requirements.RequirementIssuedPO;
 import io.zeta.metaspace.model.po.requirements.RequirementsPO;
@@ -33,7 +34,7 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class RequirementsPublicTenantService {
-    
+
     @Autowired
     private RequirementsMapper requirementsMapper;
     @Autowired
@@ -47,7 +48,8 @@ public class RequirementsPublicTenantService {
     private RequirementColumnService columnService;
     @Autowired
     private TenantService tenantService;
-    
+    @Autowired
+    private TenantDAO tenantDAO;
     
     /**
      * 查询数据表关联的已反馈需求下的资源
@@ -111,7 +113,7 @@ public class RequirementsPublicTenantService {
         List<FilterConditionDTO> filterConditions = dto.getFilterConditions();
         columnService.batchInsert(po.getGuid(), po.getTableId(), filterConditions);
     }
-    
+
     @Transactional(rollbackFor = Exception.class)
     public void editedResource(RequirementDTO dto) {
         Assert.isTrue(StringUtils.isNotBlank(dto.getGuid()), "需求ID不能为空");
@@ -145,7 +147,7 @@ public class RequirementsPublicTenantService {
         //  修改需求的过滤条件字段
         columnService.batchUpdate(oldPo.getGuid(), oldPo.getTableId(), dto.getFilterConditions());
     }
-    
+
     private void verifyRequirementDTO(RequirementDTO dto) {
         Assert.isTrue(StringUtils.isNotBlank(dto.getName()), "需求名称不能为空");
         Assert.isTrue(StringUtils.isNotBlank(dto.getNum()), "需求编码不能为空");
@@ -205,4 +207,54 @@ public class RequirementsPublicTenantService {
         
         return userInfos.parallelStream().anyMatch(v -> Objects.equals(v.getUserName(), businessOwner));
     }
-}
+/**
+     * 需求管理列表
+     * @param requireListParam
+     * @return
+     */
+    public PageResult getListByCreatorPage(RequireListParam requireListParam) {
+        PageResult pageResult = new PageResult();
+        List<RequirementsListDTO> requirementsListDTOList = new ArrayList<>();
+        try {
+            User user = AdminUtils.getUserData();
+            List<RequirementsPO> requirementsPOList = requirementsMapper.selectListByCreatorPage(user.getUserId(), requireListParam);
+            if (CollectionUtils.isEmpty(requirementsPOList)) {
+                pageResult.setTotalSize(0);
+                pageResult.setCurrentSize(0);
+                pageResult.setOffset(0);
+                pageResult.setLists(requirementsListDTOList);
+                return pageResult;
+            }
+            String tenantId = requirementsPOList.get(0).getTenantId();
+            String name = tenantDAO.selectNameById(tenantId);
+
+            List<String> categoryList = new ArrayList<>();
+            requirementsPOList.stream().forEach(requirementsPO -> categoryList.add(requirementsPO.getBusinessCategoryId()));
+            Set<CategoryEntityV2> categoryEntityV2s = categoryDAO.selectPathByGuidAndCategoryType(categoryList, tenantId, CommonConstant.BUSINESS_CATEGORY_TYPE);
+            Map<String, String> map = categoryEntityV2s.stream().collect(Collectors.toMap(CategoryEntityV2::getGuid, CategoryEntityV2::getPath));
+            for (RequirementsPO requirementsPO : requirementsPOList) {
+                RequirementsListDTO requirementsListDTO = new RequirementsListDTO();
+                BeanUtils.copyProperties(requirementsPO, requirementsListDTO);
+                requirementsListDTO.setResourceTypeName(ResourceType.getValue(requirementsListDTO.getResourceType()));
+                if (requirementsListDTO.getStatus().equals(1)) {
+                    requirementsListDTO.setStatusName("待下发");
+                } else if ("2,3".contains(String.valueOf(requirementsListDTO.getStatus()))) {
+                    requirementsListDTO.setStatusName("已下发");
+                } else {
+                    requirementsListDTO.setStatusName("已反馈");
+                }
+                String path = map.get(requirementsListDTO.getBusinessCategoryId());
+                if (StringUtils.isNotBlank(path)) {
+                    requirementsListDTO.setCategoryPath(name + "/" + path);
+                }
+                requirementsListDTOList.add(requirementsListDTO);
+            }
+            pageResult.setTotalSize(requirementsListDTOList.get(0).getTotal());
+            pageResult.setCurrentSize(requirementsListDTOList.size());
+            pageResult.setOffset(requireListParam.getOffset());
+            pageResult.setLists(requirementsListDTOList);
+        } catch (Exception e) {
+            log.error("getListByCreatorPage  exception is {}", e);
+        }
+        return pageResult;
+    }}

@@ -164,4 +164,15 @@ public class RequirementsPublicTenantREST {
         }
         
     }
+
+    /**
+     * 查询需求管理列表
+     * @param param
+     * @return
+     */
+    @POST
+    @Path("list")
+    public PageResult getListByCreatorPage(RequireListParam param) {
+        return publicTenantService.getListByCreatorPage(param);
+    }
 }

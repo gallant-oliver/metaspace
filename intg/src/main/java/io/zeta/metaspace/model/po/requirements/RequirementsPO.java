@@ -70,4 +70,9 @@ public class RequirementsPO {
     
     @JsonIgnore
     private Long total;
+
+    /**
+     * 业务目录ID
+     */
+    private String businessCategoryId;
 }

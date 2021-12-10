@@ -163,6 +163,15 @@ public interface CategoryDAO {
     @Select("select * from category where parentCategoryGuid in (select guid from category where parentCategoryGuid is null) and categoryType=#{categoryType} and tenantid=#{tenantId}")
     public Set<CategoryEntityV2> getAllDepartments(@Param("categoryType") int categoryType, @Param("tenantId") String tenantId) throws SQLException;
 
+    /**
+     * 注意！！！注意！！！注意！！！
+     * 禁止使用此方法进行循环调用，切记！！！
+     * 请使用方法 selectPathByGuidAndCategoryType、
+     * 再发现的话拖出去斩了
+     * @param guid
+     * @param tenantId
+     * @return
+     */
     @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
             "(SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH " +
             "FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId}" +
@@ -187,6 +196,28 @@ public interface CategoryDAO {
             " ORDER BY PATH" +
             "</script>")
     Set<CategoryEntityV2> queryPathByGuidAndType(@Param("list") List<String> guid, @Param("tenantId") String tenantId);
+
+    /**
+     *
+     * @param guid
+     * @param tenantId
+     * @param type
+     * @return
+     */
+    @Select("<script>" +
+            " WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
+            " (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH" +
+            " FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId} AND categorytype = #{type}" +
+            " UNION ALL " +
+            " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH" +
+            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid= #{tenantId} AND categorytype = #{type})" +
+            " SELECT  PATH,guid FROM T WHERE guid in " +
+            " <foreach item='guid' index='index' collection='list' separator=',' open='(' close=')'>" +
+            "   #{guid} " +
+            " </foreach>" +
+            " ORDER BY PATH" +
+            "</script>")
+    Set<CategoryEntityV2> selectPathByGuidAndCategoryType(@Param("list") List<String> guid, @Param("tenantId") String tenantId, @Param("type") Integer type);
 
     @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
             "(SELECT guid,name,parentCategoryGuid, ARRAY[guid] AS PATH, 1 AS DEPTH " +
