@@ -65,7 +65,7 @@
         SELECT
         COUNT(1) OVER () total,
         temp.resourceId,
-        temp.requirements_id,
+        r.guid AS requirementId,
         temp.NAME,
         temp.TYPE,
         CASE WHEN temp.TYPE = 1 THEN temp.VERSION ELSE r.version END AS version,
