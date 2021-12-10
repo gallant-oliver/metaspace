@@ -12,6 +12,7 @@ import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.DateUtils;
+import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.dao.TenantDAO;
@@ -48,13 +49,14 @@ public class RequirementsPublicTenantService {
     private ColumnDAO columnDAO;
     @Autowired
     private SourceInfoDAO sourceInfoDAO;
-
     @Autowired
     private RequirementColumnService columnService;
     @Autowired
     private TenantService tenantService;
     @Autowired
     private TenantDAO tenantDAO;
+    @Autowired
+    private CategoryDAO categoryDAO;
 
     /**
      * 查询数据表关联的已反馈需求下的资源
@@ -280,4 +282,5 @@ public class RequirementsPublicTenantService {
         //TODO 待补充查询反馈结果
         return baseDTO;
     }
+
 }
