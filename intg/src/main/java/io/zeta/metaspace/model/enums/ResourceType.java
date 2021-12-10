@@ -21,9 +21,9 @@ public enum ResourceType {
     ;
     
     @Getter
+    @JsonValue
     private int code;
     @Getter
-    @JsonValue
     private String desc;
     
     ResourceType(int code, String desc) {
@@ -31,6 +31,7 @@ public enum ResourceType {
         this.desc = desc;
     }
     
+    @JsonCreator
     public static ResourceType parseByCode(int code) {
         return Stream.of(ResourceType.values())
                 .filter(obj -> Objects.equals(code, obj.getCode()))
@@ -38,7 +39,6 @@ public enum ResourceType {
                 .orElse(null);
     }
     
-    @JsonCreator
     public static ResourceType parseByDesc(String desc) {
         return Stream.of(ResourceType.values())
                 .filter(obj -> Objects.equals(desc, obj.getDesc()))

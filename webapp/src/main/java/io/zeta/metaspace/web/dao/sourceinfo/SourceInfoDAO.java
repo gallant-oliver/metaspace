@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.dao.sourceinfo;
 
+import io.zeta.metaspace.model.po.requirements.RequirementIssuedPO;
 import io.zeta.metaspace.model.po.sourceinfo.SourceInfo;
 import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
 import io.zeta.metaspace.model.result.AddRelationTable;
@@ -60,10 +61,15 @@ public interface SourceInfoDAO {
             " </foreach> " +
             "</script>")
     List<TableDataSourceRelationPO> selectListByCategoryIdAndTenantId(@Param("categoryId") String categoryId, @Param("tenantId") String tenantId, @Param("dbNameList") List<String> dbNameList);
-
+    
     @Select("SELECT category_id FROM source_info WHERE tenant_id = #{tenantId} AND version = 0 and category_id is not null and category_id != ''")
     List<String> selectCategoryListByTenantId(@Param("tenantId") String tenantId);
-
+    
     @Select("SELECT category_id,count(*) as count FROM source_info si INNER JOIN tableinfo on si.database_id = tableinfo.databaseguid WHERE tenant_id = #{tenantId} AND version = 0 and tableinfo.status = 'ACTIVE' and category_id is not null and category_id != '' GROUP BY category_id")
     List<SourceInfo> selectCategoryListAndCount(@Param("tenantId") String tenantId);
+    
+    /**
+     * 需求管理 - 查询需求下发的相关展示信息
+     */
+    RequirementIssuedPO queryIssuedInfo(@Param("tableId") String tableId, @Param("sourceId") String sourceId);
 }

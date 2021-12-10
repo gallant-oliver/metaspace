@@ -334,8 +334,7 @@ public class MetaDataREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getDatabaseList(" + sourceId + " )");
             }
-            PageResult<Database> result = searchService.getDatabases(sourceId, offset, limit, query, tenantId, queryTableCount);
-            return result;
+            return searchService.getDatabaseDataList(sourceId, offset, limit, query, tenantId, queryTableCount);
         } finally {
             if(StringUtils.isNotBlank(query)){
                 dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "metadata");
