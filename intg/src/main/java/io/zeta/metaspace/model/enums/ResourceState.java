@@ -20,9 +20,9 @@ public enum ResourceState {
     ;
     
     @Getter
+    @JsonValue
     private int code;
     @Getter
-    @JsonValue
     private String desc;
     
     ResourceState(int code, String desc) {
@@ -30,6 +30,7 @@ public enum ResourceState {
         this.desc = desc;
     }
     
+    @JsonCreator
     public static ResourceState parseByCode(int code) {
         return Stream.of(ResourceState.values())
                 .filter(obj -> Objects.equals(code, obj.getCode()))
@@ -37,7 +38,6 @@ public enum ResourceState {
                 .orElse(null);
     }
     
-    @JsonCreator
     public static ResourceState parseByDesc(String desc) {
         return Stream.of(ResourceState.values())
                 .filter(obj -> Objects.equals(desc, obj.getDesc()))
