@@ -1,9 +1,12 @@
 package io.zeta.metaspace.web.rest;
 
+import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dto.requirements.ApiCateDTO;
 import io.zeta.metaspace.model.dto.requirements.DealDetailDTO;
 import io.zeta.metaspace.model.dto.requirements.RequirementsFeedbackCommit;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.web.service.RequirementsService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.web.util.Servlets;
@@ -13,6 +16,8 @@ import org.springframework.stereotype.Service;
 import javax.inject.Singleton;
 import javax.ws.rs.*;
 import java.util.List;
+
+import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.INSERT;
 
 /**
  * 需求管理 - 普通租户
@@ -64,7 +69,9 @@ public class RequirementsREST {
      */
     @POST
     @Path("/feedback")
+    @OperateType(INSERT)
     public Result requirementsFeedback(RequirementsFeedbackCommit commitInput) {
+        HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTSMANAGE.getAlias(), "需求反馈：" + commitInput.getRequirementsId());
         requirementsService.feedback(commitInput);
         return ReturnUtil.success("success");
     }

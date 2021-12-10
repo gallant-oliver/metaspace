@@ -1,6 +1,5 @@
 package io.zeta.metaspace.model.operatelog;
 
-import com.sun.org.apache.xpath.internal.operations.Mod;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.security.RoleResource;
 import io.zeta.metaspace.model.user.UserInfo;
@@ -75,7 +74,7 @@ public enum ModuleEnum {
     IPRESTRICTION(5,"数据服务","黑白名单管理",26,"黑白名单管理","iprestriction","iprestriction",1, 26),
     DESENSITIZATION(5,"数据服务","脱敏管理",27,"脱敏管理","desensitization","desensitization",1, 27),
     AUDIT(5,"数据服务","API审核中心",28,"API审核中心", "audit", "audit",1, 28),
-
+    REQUIREMENTSMANAGE(5, "数据服务", "需求管理", 60, "需求管理", "requirementsmanage", "requirementsmanage", 1, 60),
 
     //角色管理和权限在安全中心不存在
     ROLE(6,"角色管理","查看",29,"角色管理", "role", "role",0, 29),
