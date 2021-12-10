@@ -17,7 +17,7 @@ public class RequirementsMqPO {
 
     private String format;
 
-    private Short status;
+    private Integer status;
 
     private String description;
 

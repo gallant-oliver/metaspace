@@ -42,12 +42,13 @@ public class RequirementsPublicTenantService {
     @Autowired
     private RequirementsMapper requirementsMapper;
     @Autowired
+    RequirementsService requirementsService;
+    @Autowired
     private TableDAO tableDAO;
     @Autowired
     private ColumnDAO columnDAO;
     @Autowired
     private SourceInfoDAO sourceInfoDAO;
-
     @Autowired
     private RequirementColumnService columnService;
     @Autowired
@@ -266,4 +267,20 @@ public class RequirementsPublicTenantService {
         }
         return pageResult;
     }
+
+    /**
+     * 查询需求处理结果及反馈结果
+     */
+    public FeedbackDetailBaseDTO getDetailBase(String id, Integer type) {
+        Assert.isTrue(StringUtils.isNotBlank(id), "需求id为空");
+        Assert.isTrue(null != type, "资源类型为空");
+        FeedbackDetailBaseDTO baseDTO = new FeedbackDetailBaseDTO();
+        DealDetailDTO dealDetailDTO = requirementsService.getDealDetail(id);
+        baseDTO.setResult(dealDetailDTO.getResult());
+        baseDTO.setUser(dealDetailDTO.getUser());
+        baseDTO.setDescription(dealDetailDTO.getDescription());
+        //TODO 待补充查询反馈结果
+        return baseDTO;
+    }
+
 }
