@@ -67,7 +67,7 @@ public class RequirementDTO {
     /**
      * 过滤字段
      */
-    private List<FilterConditionDTO> FilterConditions;
+    private List<FilterConditionDTO> filterConditions;
     /**
      * 文件原始名称
      */

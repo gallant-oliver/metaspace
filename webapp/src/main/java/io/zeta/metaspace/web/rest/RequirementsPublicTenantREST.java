@@ -56,7 +56,7 @@ public class RequirementsPublicTenantREST {
     @Autowired
     private HdfsService hdfsService;
     
-    @GET
+    @POST
     @Path("/paged/resource")
     public PageResult<ResourceDTO> pagedResource(@QueryParam("tableId") String tableId,
                                                  Parameters parameters) {
@@ -116,12 +116,12 @@ public class RequirementsPublicTenantREST {
                     StandardCharsets.UTF_8);
             String fileType = FilenameUtils.getExtension(fileName);
             //判断文件格式是否支持
-            if (ENABLE_UPLOAD_FILE_TYPE.contains(fileType)) {
+            if (!ENABLE_UPLOAD_FILE_TYPE.contains(fileType)) {
                 log.error("不支持的附件上传格式:{}", fileType);
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,
                         "支持上传的文件类型:".concat(ENABLE_UPLOAD_FILE_TYPE.toString()));
             }
-            
+    
             //tenantId 使用租户id作为上传文件子目录
             long timestamp = DateTimeUtils.currentTimeMillis();
             String uploadPath = hdfsService.uploadFile(
@@ -132,7 +132,10 @@ public class RequirementsPublicTenantREST {
             HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), "上传附件:".concat(fileName));
             return new FileDTO(fileName, uploadPath);
         } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, "文件上传失败");
+            throw new AtlasBaseException(
+                    String.format("文件上传失败:%s", e.getMessage()),
+                    AtlasErrorCode.INTERNAL_UNKNOWN_ERROR,
+                    e);
         }
     }
     
@@ -141,7 +144,6 @@ public class RequirementsPublicTenantREST {
      */
     @POST
     @Path("/download/file")
-    @Consumes({MediaType.APPLICATION_FORM_URLENCODED})
     public void downloadFile(FileDTO fileDTO) {
         String filePath = fileDTO.getFilePath();
         String filename = fileDTO.getFileName();

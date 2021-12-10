@@ -90,8 +90,8 @@
         update_time,
         delete
         )
+        values
         <foreach collection='list' item='item' index='index' separator=','>
-            values
             (
             #{item.guid,jdbcType=VARCHAR},
             #{item.requirementsId,jdbcType=VARCHAR},

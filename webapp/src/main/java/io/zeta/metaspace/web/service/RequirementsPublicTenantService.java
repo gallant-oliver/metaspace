@@ -55,7 +55,7 @@ public class RequirementsPublicTenantService {
     public PageResult<ResourceDTO> pagedResource(String tableId, Parameters parameters) {
         List<ResourcePO> resources = requirementsMapper.pagedResources(tableId, parameters);
         
-        if (CollectionUtils.isNotEmpty(resources)) {
+        if (CollectionUtils.isEmpty(resources)) {
             return PageResult.empty(ResourceDTO.class);
         }
         
