@@ -8,7 +8,7 @@
     <result column="resource_type" jdbcType="SMALLINT" property="resourceType" />
     <result column="version" jdbcType="VARCHAR" property="version" />
     <result column="agreement" jdbcType="VARCHAR" property="agreement" />
-    <result column="request mode" jdbcType="VARCHAR" property="requestMode" />
+    <result column="request_mode" jdbcType="VARCHAR" property="requestMode" />
     <result column="aiming_field" jdbcType="VARCHAR" property="aimingField" />
     <result column="file_name" jdbcType="VARCHAR" property="fileName" />
     <result column="file_path" jdbcType="VARCHAR" property="filePath" />
@@ -22,6 +22,8 @@
     <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
     <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
     <result column="delete" jdbcType="SMALLINT" property="delete" />
+    <result column="total" jdbcType="INTEGER" property="total" />
+    <result column="business_category_id" jdbcType="VARCHAR" property="businessCategoryId" />
   </resultMap>
 
   <sql id="Base_Column_List">
@@ -30,269 +32,377 @@
     status, create_time, update_time,
     delete
   </sql>
-
-  <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+    <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
     select
     <include refid="Base_Column_List"/>
     from "public"."requirements"
     where guid = #{guid,jdbcType=VARCHAR}
-  </select>
+    </select>
 
+    <select id="pagedResources"
+            resultType="io.zeta.metaspace.model.po.requirements.ResourcePO">
+        WITH temp_resource AS (
+        SELECT
+        ra.guid AS resourceId,
+        ra.requirements_id,
+        a.name AS NAME,
+        1 AS TYPE,
+        a.version AS VERSION,
+        CASE WHEN a.status = 'up' THEN 1 ELSE 2 END AS state,
+        a.creator,
+        ra.create_time
+        FROM requirements_api ra INNER JOIN api a ON ra.api_id = a.guid AND a.status IN ('up', 'down')
+        UNION ALL
+        SELECT
+        guid AS resourceId,
+        requirements_id,
+        table_name_ch AS NAME,
+        2 AS TYPE,
+        '' AS VERSION,
+        status AS state,
+        creator,
+        create_time
+        FROM requirements_database
+        UNION ALL
+        SELECT
+        guid AS resourceId,
+        requirements_id,
+        mq_name_ch AS NAME,
+        3 AS TYPE,
+        '' AS VERSION,
+        status AS state,
+        creator,
+        create_time
+        FROM requirements_mq
+        )
 
-  <select id="pagedAlreadyFeedbackRequirements"
-          resultType="io.zeta.metaspace.model.po.requirements.RequirementsPO">
-    SELECT COUNT(1) OVER () total,
-    guid,
-    version
-    FROM requirements
-    WHERE table_id = #{tableId}
-    AND status = 4
-    AND delete = false
-    <if test='params != null'>
-      ORDER BY create_time DESC
-      <if test='params.limit != null and params.limit != -1 and params.offset != null '>
-        LIMIT #{params.limit} OFFSET #{offset}
-      </if>
+        SELECT
+        COUNT(1) OVER () total,
+        temp.resourceId,
+        r.guid AS requirementId,
+        temp.NAME,
+        temp.TYPE,
+        CASE WHEN temp.TYPE = 1 THEN temp.VERSION ELSE r.version END AS version,
+        temp.state,
+        c.username AS creator
+        FROM temp_resource temp
+        INNER JOIN requirements r ON temp.requirements_id = r.guid
+        LEFT JOIN users c ON temp.creator = c.userid
+        WHERE r.table_id = #{tableId}
+        AND r.status = 4
+        AND r.delete = 0
+        <if test="params.query != null and params.query != '' ">
+            AND temp.NAME like concat('%',#{params.query},'%') ESCAPE '/'
+        </if>
+        <if test='params != null'>
+            ORDER BY temp.create_time DESC
+            <if test='params.limit != null and params.limit != -1 and params.offset != null '>
+                LIMIT #{params.limit} OFFSET #{params.offset}
+            </if>
+        </if>
+    </select>
+
+<select id = "selectListByCreatorPage" resultMap="BaseResultMap">
+    select count(*)over() total,br.categoryguid as business_category_id,
+    <include refid="Base_Column_List"/>
+    from requirements left join business_relation as br on requirements.business_id = br.businessid
+    where creator = #{creator}
+    <if test="param.status != null and param.status == 1">
+        and param.status = 1
+    </if>
+    <if test="param.status != null and param.status == 2">
+      and param.status in (2,3)
+    </if>
+    <if test="param.status != null and param.status == 3">
+      and param.status in (4,-1)
+    </if>
+    <if test="param.type != null">
+      and resource_type = #{param.type}
+    </if>
+    <if test="param.query != null  and param.query != ''">
+      and name like concat('%',#{param.query},'%')
+    </if>
+    order by create_time desc
+    <if test="param.limit != null and param.limit != -1 ">
+      limit #{param.limit} offset #{param.offset}
     </if>
   </select>
 
+    <select id="countRequirementByName" resultType="java.lang.Long">
+        select count(guid)
+        from requirements
+        where delete = 0
+          and tenant_id = #{tenantId}
+          and name = #{name}
+    </select>
 
-  <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
-    delete
-    from "public"."requirements"
-    where guid = #{guid,jdbcType=VARCHAR}
-  </delete>
+    <select id="countRequirementByNum" resultType="java.lang.Long">
+        select count(guid)
+        from requirements
+        where delete = 0
+          and tenant_id = #{tenantId}
+          and num = #{num}
+    </select>
 
-  <insert id="insert" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsPO">
-    insert into "public"."requirements" (guid, name, num,
-                                         resource_type, version, agreement,
-                                         "request mode", aiming_field, file_name,
-                                         file_path, description, business_id,
-                                         table_id, source_id, tenant_id,
-                                         creator, status, create_time,
-                                         update_time, delete)
-    values (#{guid,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, #{num,jdbcType=VARCHAR},
-            #{resourceType,jdbcType=SMALLINT}, #{version,jdbcType=VARCHAR}, #{agreement,jdbcType=VARCHAR},
-            #{requestMode,jdbcType=VARCHAR}, #{aimingField,jdbcType=VARCHAR}, #{fileName,jdbcType=VARCHAR},
-            #{filePath,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, #{businessId,jdbcType=VARCHAR},
-            #{tableId,jdbcType=VARCHAR}, #{sourceId,jdbcType=VARCHAR}, #{tenantId,jdbcType=VARCHAR},
-            #{creator,jdbcType=VARCHAR}, #{status,jdbcType=SMALLINT}, #{createTime,jdbcType=TIMESTAMP},
-            #{updateTime,jdbcType=TIMESTAMP}, #{delete,jdbcType=SMALLINT})
-  </insert>
-  <insert id="insertSelective" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsPO">
-    insert into "public"."requirements"
-    <trim prefix="(" suffix=")" suffixOverrides=",">
-      <if test="guid != null">
-        guid,
-      </if>
-      <if test="name != null">
-        name,
-      </if>
-      <if test="num != null">
-        num,
-      </if>
-      <if test="resourceType != null">
-        resource_type,
-      </if>
-      <if test="version != null">
-        version,
-      </if>
-      <if test="agreement != null">
-        agreement,
-      </if>
-      <if test="requestMode != null">
-        "request mode",
-      </if>
-      <if test="aimingField != null">
-        aiming_field,
-      </if>
-      <if test="fileName != null">
-        file_name,
-      </if>
-      <if test="filePath != null">
-        file_path,
-      </if>
-      <if test="description != null">
-        description,
-      </if>
-      <if test="businessId != null">
-        business_id,
-      </if>
-      <if test="tableId != null">
-        table_id,
-      </if>
-      <if test="sourceId != null">
-        source_id,
-      </if>
-      <if test="tenantId != null">
-        tenant_id,
-      </if>
-      <if test="creator != null">
-        creator,
-      </if>
-      <if test="status != null">
-        status,
-      </if>
-      <if test="createTime != null">
-        create_time,
-      </if>
-      <if test="updateTime != null">
-        update_time,
-      </if>
-      <if test="delete != null">
-        delete,
-      </if>
-    </trim>
-    <trim prefix="values (" suffix=")" suffixOverrides=",">
-      <if test="guid != null">
-        #{guid,jdbcType=VARCHAR},
-      </if>
-      <if test="name != null">
-        #{name,jdbcType=VARCHAR},
-      </if>
-      <if test="num != null">
-        #{num,jdbcType=VARCHAR},
-      </if>
-      <if test="resourceType != null">
-        #{resourceType,jdbcType=SMALLINT},
-      </if>
-      <if test="version != null">
-        #{version,jdbcType=VARCHAR},
-      </if>
-      <if test="agreement != null">
-        #{agreement,jdbcType=VARCHAR},
-      </if>
-      <if test="requestMode != null">
-        #{requestMode,jdbcType=VARCHAR},
-      </if>
-      <if test="aimingField != null">
-        #{aimingField,jdbcType=VARCHAR},
-      </if>
-      <if test="fileName != null">
-        #{fileName,jdbcType=VARCHAR},
-      </if>
-      <if test="filePath != null">
-        #{filePath,jdbcType=VARCHAR},
-      </if>
-      <if test="description != null">
-        #{description,jdbcType=VARCHAR},
-      </if>
-      <if test="businessId != null">
-        #{businessId,jdbcType=VARCHAR},
-      </if>
-      <if test="tableId != null">
-        #{tableId,jdbcType=VARCHAR},
-      </if>
-      <if test="sourceId != null">
-        #{sourceId,jdbcType=VARCHAR},
-      </if>
-      <if test="tenantId != null">
-        #{tenantId,jdbcType=VARCHAR},
-      </if>
-      <if test="creator != null">
-        #{creator,jdbcType=VARCHAR},
-      </if>
-      <if test="status != null">
-        #{status,jdbcType=SMALLINT},
-      </if>
-      <if test="createTime != null">
-        #{createTime,jdbcType=TIMESTAMP},
-      </if>
-      <if test="updateTime != null">
-        #{updateTime,jdbcType=TIMESTAMP},
-      </if>
-      <if test="delete != null">
-        #{delete,jdbcType=SMALLINT},
-      </if>
-    </trim>
-  </insert>
+    <select id="getRequirementById"
+            resultType="io.zeta.metaspace.model.po.requirements.RequirementsPO"
+            parameterType="java.lang.String">
+        select guid,
+               name,
+               num,
+               resource_type,
+               version,
+               agreement,
+               request_mode,
+               aiming_field,
+               file_name,
+               file_path,
+               description,
+               business_id,
+               table_id,
+               source_id,
+               tenant_id,
+               creator,
+               status,
+               create_time,
+               update_time
+        from requirements
+        where guid = #{id,jdbcType=VARCHAR}
+          and delete = 0
+    </select>
 
-  <update id="updateByPrimaryKeySelective" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsPO">
-    update "public"."requirements"
-    <set>
-      <if test="name != null">
-        name = #{name,jdbcType=VARCHAR},
-      </if>
-      <if test="num != null">
-        num = #{num,jdbcType=VARCHAR},
-      </if>
-      <if test="resourceType != null">
-        resource_type = #{resourceType,jdbcType=SMALLINT},
-      </if>
-      <if test="version != null">
-        version = #{version,jdbcType=VARCHAR},
-      </if>
-      <if test="agreement != null">
-        agreement = #{agreement,jdbcType=VARCHAR},
-      </if>
-      <if test="requestMode != null">
-        "request mode" = #{requestMode,jdbcType=VARCHAR},
-      </if>
-      <if test="aimingField != null">
-        aiming_field = #{aimingField,jdbcType=VARCHAR},
-      </if>
-      <if test="fileName != null">
-        file_name = #{fileName,jdbcType=VARCHAR},
-      </if>
-      <if test="filePath != null">
-        file_path = #{filePath,jdbcType=VARCHAR},
-      </if>
-      <if test="description != null">
-        description = #{description,jdbcType=VARCHAR},
-      </if>
-      <if test="businessId != null">
-        business_id = #{businessId,jdbcType=VARCHAR},
-      </if>
-      <if test="tableId != null">
-        table_id = #{tableId,jdbcType=VARCHAR},
-      </if>
-      <if test="sourceId != null">
-        source_id = #{sourceId,jdbcType=VARCHAR},
-      </if>
-      <if test="tenantId != null">
-        tenant_id = #{tenantId,jdbcType=VARCHAR},
-      </if>
-      <if test="creator != null">
-        creator = #{creator,jdbcType=VARCHAR},
-      </if>
-      <if test="status != null">
-        status = #{status,jdbcType=SMALLINT},
-      </if>
-      <if test="createTime != null">
-        create_time = #{createTime,jdbcType=TIMESTAMP},
-      </if>
-      <if test="updateTime != null">
-        update_time = #{updateTime,jdbcType=TIMESTAMP},
-      </if>
-      <if test="delete != null">
-        delete = #{delete,jdbcType=SMALLINT},
-      </if>
-    </set>
-    where guid = #{guid,jdbcType=VARCHAR}
-  </update>
-  <update id="updateByPrimaryKey" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsPO">
-    update "public"."requirements"
-    set name = #{name,jdbcType=VARCHAR},
-      num = #{num,jdbcType=VARCHAR},
-      resource_type = #{resourceType,jdbcType=SMALLINT},
-      version = #{version,jdbcType=VARCHAR},
-      agreement = #{agreement,jdbcType=VARCHAR},
-      "request mode" = #{requestMode,jdbcType=VARCHAR},
-      aiming_field = #{aimingField,jdbcType=VARCHAR},
-      file_name = #{fileName,jdbcType=VARCHAR},
-      file_path = #{filePath,jdbcType=VARCHAR},
-      description = #{description,jdbcType=VARCHAR},
-      business_id = #{businessId,jdbcType=VARCHAR},
-      table_id = #{tableId,jdbcType=VARCHAR},
-      source_id = #{sourceId,jdbcType=VARCHAR},
-      tenant_id = #{tenantId,jdbcType=VARCHAR},
-      creator = #{creator,jdbcType=VARCHAR},
-      status = #{status,jdbcType=SMALLINT},
-      create_time = #{createTime,jdbcType=TIMESTAMP},
-      update_time = #{updateTime,jdbcType=TIMESTAMP},
-      delete = #{delete,jdbcType=SMALLINT}
-    where guid = #{guid,jdbcType=VARCHAR}
-  </update>
+
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+        delete
+        from "public"."requirements"
+        where guid = #{guid,jdbcType=VARCHAR}
+    </delete>
+
+    <insert id="insert" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsPO">
+        insert into "public"."requirements" (guid, name, num,
+                                             resource_type, version, agreement,
+                                             request_mode, aiming_field, file_name,
+                                             file_path, description, business_id,
+                                             table_id, source_id, tenant_id,
+                                             creator, status, create_time,
+                                             update_time, delete)
+        values (#{guid,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, #{num,jdbcType=VARCHAR},
+                #{resourceType,jdbcType=SMALLINT}, #{version,jdbcType=VARCHAR}, #{agreement,jdbcType=VARCHAR},
+                #{requestMode,jdbcType=VARCHAR}, #{aimingField,jdbcType=VARCHAR}, #{fileName,jdbcType=VARCHAR},
+                #{filePath,jdbcType=VARCHAR}, #{description,jdbcType=VARCHAR}, #{businessId,jdbcType=VARCHAR},
+                #{tableId,jdbcType=VARCHAR}, #{sourceId,jdbcType=VARCHAR}, #{tenantId,jdbcType=VARCHAR},
+                #{creator,jdbcType=VARCHAR}, #{status,jdbcType=SMALLINT}, #{createTime,jdbcType=TIMESTAMP},
+                #{updateTime,jdbcType=TIMESTAMP}, #{delete,jdbcType=SMALLINT})
+    </insert>
+    <insert id="insertSelective" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsPO">
+        insert into "public"."requirements"
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="guid != null">
+                guid,
+            </if>
+            <if test="name != null">
+                name,
+            </if>
+            <if test="num != null">
+                num,
+            </if>
+            <if test="resourceType != null">
+                resource_type,
+            </if>
+            <if test="version != null">
+                version,
+            </if>
+            <if test="agreement != null">
+                agreement,
+            </if>
+            <if test="requestMode != null">
+                "request mode",
+            </if>
+            <if test="aimingField != null">
+                aiming_field,
+            </if>
+            <if test="fileName != null">
+                file_name,
+            </if>
+            <if test="filePath != null">
+                file_path,
+            </if>
+            <if test="description != null">
+                description,
+            </if>
+            <if test="businessId != null">
+                business_id,
+            </if>
+            <if test="tableId != null">
+                table_id,
+            </if>
+            <if test="sourceId != null">
+                source_id,
+            </if>
+            <if test="tenantId != null">
+                tenant_id,
+            </if>
+            <if test="creator != null">
+                creator,
+            </if>
+            <if test="status != null">
+                status,
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+            <if test="updateTime != null">
+                update_time,
+            </if>
+            <if test="delete != null">
+                delete,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="guid != null">
+                #{guid,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null">
+                #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="num != null">
+                #{num,jdbcType=VARCHAR},
+            </if>
+            <if test="resourceType != null">
+                #{resourceType,jdbcType=SMALLINT},
+            </if>
+            <if test="version != null">
+                #{version,jdbcType=VARCHAR},
+            </if>
+            <if test="agreement != null">
+                #{agreement,jdbcType=VARCHAR},
+            </if>
+            <if test="requestMode != null">
+                #{requestMode,jdbcType=VARCHAR},
+            </if>
+            <if test="aimingField != null">
+                #{aimingField,jdbcType=VARCHAR},
+            </if>
+            <if test="fileName != null">
+                #{fileName,jdbcType=VARCHAR},
+            </if>
+            <if test="filePath != null">
+                #{filePath,jdbcType=VARCHAR},
+            </if>
+            <if test="description != null">
+                #{description,jdbcType=VARCHAR},
+            </if>
+            <if test="businessId != null">
+                #{businessId,jdbcType=VARCHAR},
+            </if>
+            <if test="tableId != null">
+                #{tableId,jdbcType=VARCHAR},
+            </if>
+            <if test="sourceId != null">
+                #{sourceId,jdbcType=VARCHAR},
+            </if>
+            <if test="tenantId != null">
+                #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null">
+                #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="status != null">
+                #{status,jdbcType=SMALLINT},
+            </if>
+            <if test="createTime != null">
+                #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updateTime != null">
+                #{updateTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="delete != null">
+                #{delete,jdbcType=SMALLINT},
+            </if>
+        </trim>
+    </insert>
+
+    <update id="updateByPrimaryKeySelective" parameterType="io.zeta.metaspace.model.po.requirements.RequirementsPO">
+        update "public"."requirements"
+        <set>
+            <if test="name != null">
+                name = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="num != null">
+                num = #{num,jdbcType=VARCHAR},
+            </if>
+            <if test="resourceType != null">
+                resource_type = #{resourceType,jdbcType=SMALLINT},
+            </if>
+            <if test="version != null">
+                version = #{version,jdbcType=VARCHAR},
+            </if>
+            <if test="agreement != null">
+                agreement = #{agreement,jdbcType=VARCHAR},
+            </if>
+            <if test="requestMode != null">
+                "request mode" = #{requestMode,jdbcType=VARCHAR},
+            </if>
+            <if test="aimingField != null">
+                aiming_field = #{aimingField,jdbcType=VARCHAR},
+            </if>
+            <if test="fileName != null">
+                file_name = #{fileName,jdbcType=VARCHAR},
+            </if>
+            <if test="filePath != null">
+                file_path = #{filePath,jdbcType=VARCHAR},
+            </if>
+            <if test="description != null">
+                description = #{description,jdbcType=VARCHAR},
+            </if>
+            <if test="businessId != null">
+                business_id = #{businessId,jdbcType=VARCHAR},
+            </if>
+            <if test="tableId != null">
+                table_id = #{tableId,jdbcType=VARCHAR},
+            </if>
+            <if test="sourceId != null">
+                source_id = #{sourceId,jdbcType=VARCHAR},
+            </if>
+            <if test="tenantId != null">
+                tenant_id = #{tenantId,jdbcType=VARCHAR},
+            </if>
+            <if test="creator != null">
+                creator = #{creator,jdbcType=VARCHAR},
+            </if>
+            <if test="status != null">
+                status = #{status,jdbcType=SMALLINT},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updateTime != null">
+                update_time = #{updateTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="delete != null">
+                delete = #{delete,jdbcType=SMALLINT},
+            </if>
+        </set>
+        where guid = #{guid,jdbcType=VARCHAR}
+    </update>
+
+    <update id="updateByPrimaryKey"
+            parameterType="io.zeta.metaspace.model.po.requirements.RequirementsPO">
+        update "public"."requirements"
+        set name          = #{name,jdbcType=VARCHAR},
+            num           = #{num,jdbcType=VARCHAR},
+            resource_type = #{resourceType,jdbcType=SMALLINT},
+            version       = #{version,jdbcType=VARCHAR},
+            agreement     = #{agreement,jdbcType=VARCHAR},
+            request_mode  = #{requestMode,jdbcType=VARCHAR},
+            aiming_field  = #{aimingField,jdbcType=VARCHAR},
+            file_name     = #{fileName,jdbcType=VARCHAR},
+            file_path     = #{filePath,jdbcType=VARCHAR},
+            description   = #{description,jdbcType=VARCHAR},
+            status        = #{status,jdbcType=SMALLINT},
+            update_time   = #{updateTime,jdbcType=TIMESTAMP}
+        where guid = #{guid,jdbcType=VARCHAR}
+    </update>
 
   <delete id="deleteByGuids" parameterType="java.util.List">
     update "public"."requirements"

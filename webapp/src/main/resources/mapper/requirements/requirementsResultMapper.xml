@@ -143,4 +143,12 @@
             #{record.createTime,jdbcType=TIMESTAMP}, #{record.updateTime,jdbcType=TIMESTAMP})
     </foreach>
   </insert>
+
+  <select id="queryDealDetail" resultType="io.zeta.metaspace.model.dto.requirements.DealDetailDTO">
+        select case rr.type when 1 then '同意' when 2 then '拒绝' end as result, ug.name as group, u.username as user, rr.description from requirements_result rr
+        left join  user_group ug on ug.id=rr.group_id
+        left join  users u on u.userid = rr.user_id
+        where requirements_id=#{id}
+  </select>
+
 </mapper>

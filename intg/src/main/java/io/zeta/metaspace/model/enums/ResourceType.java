@@ -20,6 +20,7 @@ public enum ResourceType {
     MESSAGE_QUEUE(3, "消息队列"),
     ;
 
+    @JsonValue
     private int code;
     @Getter
     private String desc;
@@ -34,14 +35,23 @@ public enum ResourceType {
         this.desc = desc;
     }
     
+    @JsonCreator
     public static ResourceType parseByCode(int code) {
         return Stream.of(ResourceType.values())
                 .filter(obj -> Objects.equals(code, obj.getCode()))
                 .findFirst()
                 .orElse(null);
     }
+
+    public static String getValue(int code) {
+        for (ResourceType value : ResourceType.values()) {
+            if (value.getCode() == code) {
+                return value.getDesc();
+            }
+        }
+        return "";
+    }
     
-    @JsonCreator
     public static ResourceType parseByDesc(String desc) {
         return Stream.of(ResourceType.values())
                 .filter(obj -> Objects.equals(desc, obj.getDesc()))

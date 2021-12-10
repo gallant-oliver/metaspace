@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.apigroup.ApiVersion;
+import io.zeta.metaspace.model.dto.requirements.ApiCateDTO;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
@@ -564,6 +565,16 @@ public interface DataShareDAO {
             "  select count(distinct guid) count,categoryguid from api where valid=true group by categoryguid " +
             ") c on c.categoryguid=api_category.guid where api_category.projectid=#{projectId} and tenantid=#{tenantId}")
     public List<CategoryPrivilege> getCategoryByProject(@Param("projectId")String projectId,@Param("tenantId")String tenantId);
+
+    @Select("<script>" +
+            "select api_category.guid as id,api_category.name from api_category left join(" +
+            "  select count(distinct guid) count,categoryguid from api where valid=true group by categoryguid " +
+            ") c on c.categoryguid=api_category.guid where api_category.projectid=#{projectId} and tenantid=#{tenantId}" +
+            " <if test=\"search!=null and search !=''\">" +
+            "and api_category.name like concat('%',#{search},'%') ESCAPE '/' " +
+            " </if>" +
+            "</script>")
+    public List<ApiCateDTO> getCategories(@Param("projectId") String projectId, @Param("tenantId") String tenantId, @Param("search") String search);
 
     @Update("update api set valid=false where categoryguid=#{categoryId}")
     public int deleteApiByCategory(@Param("categoryId")String categoryId);

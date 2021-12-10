@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO">
+
+
+    <select id="queryIssuedInfo"
+            resultType="io.zeta.metaspace.model.po.requirements.RequirementIssuedPO">
+        SELECT c.guid     AS categoryId,
+               u.username AS businessOwner,
+               ti.dbname  AS database,
+               si.tenant_id,
+               t.name     AS tenantName
+        FROM source_info AS si
+                 INNER JOIN tableinfo ti
+                            ON si.database_id = ti.databaseguid
+                 INNER JOIN category c ON si.category_id = c.guid
+                 INNER JOIN users u ON si.business_leader = u.userid
+                 INNER JOIN tenant t ON t.id = si.tenant_id
+        WHERE si.version = 0
+          AND si.data_source_id = #{sourceId}
+          AND ti.tableguid = #{tableId}
+    </select>
+</mapper>

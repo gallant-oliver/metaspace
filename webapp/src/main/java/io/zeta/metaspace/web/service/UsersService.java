@@ -318,7 +318,10 @@ public class UsersService {
 
     public List<String> getMailsByGroups(String[] toList) {
         List<WarningGroup> warningGroups = warningGroupService.getByIds(toList);
-        List<String> userIds = warningGroups.stream().map(WarningGroup::getContacts).collect(Collectors.toList());
+        List<String> userIds = new ArrayList<>();
+        warningGroups.forEach(wg ->
+                userIds.addAll(Arrays.asList(wg.getContacts().split(",")))
+        );
         if (Boolean.TRUE.equals(ParamUtil.isNull(userIds))){
             return Collections.emptyList();
         }

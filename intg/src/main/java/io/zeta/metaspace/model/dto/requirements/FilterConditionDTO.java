@@ -22,7 +22,7 @@ public class FilterConditionDTO {
      */
     private String columnName;
     /**
-     * 操作符
+     * 操作符 {@link FilterOperation#getDesc()}
      */
     private FilterOperation operation;
     /**
