@@ -9,11 +9,10 @@ import io.zeta.metaspace.web.dao.requirements.RequirementsDatabaseMapper;
 import io.zeta.metaspace.web.dao.requirements.RequirementsMapper;
 import io.zeta.metaspace.web.dao.requirements.RequirementsMqMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -71,6 +70,7 @@ public class RequirementsPublicTenantService {
      * @param
      * @throws
      */
+    @Transactional(rollbackFor=Exception.class)
     public void grant(String requirementId) {
         RequirementsPO requirementsPO = new RequirementsPO();
         // 1、待下发  2、已下发（待处理）  3、已处理（未反馈） 4、已反馈  -1、退回
@@ -79,6 +79,12 @@ public class RequirementsPublicTenantService {
         requirementsMapper.updateByPrimaryKeySelective(requirementsPO);
     }
 
+    /**
+     * 需求反馈结果
+     *
+     * @param
+     * @throws
+     */
     public FeedbackResultDTO getFeedbackResult(String requirementId, Integer resourceType) {
         FeedbackResultDTO result = requirementsService.getFeedbackResult(requirementId, resourceType);
         // 查询处理结果
@@ -93,6 +99,7 @@ public class RequirementsPublicTenantService {
      * @param
      * @throws
      */
+    @Transactional(rollbackFor=Exception.class)
     public void deleteRequirements(List<String> guids) {
         requirementsMapper.deleteByGuids(guids);
     }

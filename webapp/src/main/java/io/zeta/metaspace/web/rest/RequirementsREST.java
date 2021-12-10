@@ -4,6 +4,7 @@ import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dto.requirements.FeedbackResultDTO;
 import io.zeta.metaspace.model.dto.requirements.RequirementDTO;
 import io.zeta.metaspace.model.dto.requirements.RequirementsHandleDTO;
+import io.zeta.metaspace.model.metadata.TableExtInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.web.service.RequirementsService;
 import io.zeta.metaspace.web.util.ReturnUtil;
@@ -54,7 +55,7 @@ public class RequirementsREST {
             return ReturnUtil.success(requirement);
         }
         catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"需求下发失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"查询需求详情失败");
         }
     }
 
@@ -70,7 +71,7 @@ public class RequirementsREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     public Result getTableStatus(@PathParam("tableId") String tableId) {
         try {
-            SourceInfoDeriveTableInfo tableStatus = requirementsService.getTableStatus(tableId);
+            TableExtInfo tableStatus = requirementsService.getTableStatus(tableId);
             return ReturnUtil.success(tableStatus);
         }
         catch (Exception e) {

@@ -470,4 +470,9 @@ public interface TableDAO {
                                                       @Param("isPublic")boolean isPublic,
                                                       @Param("isGlobal")boolean isGlobal,
                                                       @Param("userId")String userId);
+
+    /**
+     * 表是否为重要表、保密表
+     */
+    TableExtInfo getTableImportanceInfo(@Param("tableId")String tableId);
 }

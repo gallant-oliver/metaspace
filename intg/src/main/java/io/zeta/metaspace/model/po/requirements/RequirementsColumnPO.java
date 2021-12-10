@@ -15,6 +15,8 @@ public class RequirementsColumnPO {
 
     private String columnId;
 
+    private String columnName;
+
     private String operator;
 
     private String sampleData;

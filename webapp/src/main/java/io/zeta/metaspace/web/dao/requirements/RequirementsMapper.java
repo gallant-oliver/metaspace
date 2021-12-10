@@ -30,4 +30,6 @@ public interface RequirementsMapper {
      * @param parameters 分页参数
      */
     List<RequirementsPO> pagedAlreadyFeedbackRequirements(String tableId, Parameters parameters);
+
+    void batchUpdateStatusByIds(@Param("guids") List<String> guids, @Param("status") int status);
 }

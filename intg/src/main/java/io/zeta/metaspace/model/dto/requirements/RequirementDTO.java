@@ -47,9 +47,15 @@ public class RequirementDTO {
     private List<String> targetFieldIDs;
 
     /**
-     * 目标字段ID
+     * 目标字段名称
      */
     private List<String> targetFieldNames;
+
+    /**
+     * 过滤字段名称
+     */
+    private List<String> filterFieldNames;
+
     /**
      * 过滤字段
      */

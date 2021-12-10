@@ -29,4 +29,14 @@
             #{columnId}
         </foreach>
     </select>
+
+    <select id="queryColumnNames" resultType="java.lang.String">
+        select column_name
+        from column_info
+        where column_guid in
+        <foreach item='columnId' index='index' collection='columnIds' separator=',' open='(' close=')'>
+        #{columnId}
+        </foreach>
+    </select>
+
 </mapper>

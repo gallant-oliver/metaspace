@@ -25,7 +25,7 @@
   </resultMap>
 
   <sql id="Base_Column_List">
-    guid, name, num, resource_type, version, agreement, "request mode", aiming_field,
+    guid, name, num, resource_type, version, agreement, request_mode, aiming_field,
     file_name, file_path, description, business_id, table_id, source_id, tenant_id, creator,
     status, create_time, update_time,
     delete
@@ -294,12 +294,21 @@
     where guid = #{guid,jdbcType=VARCHAR}
   </update>
 
-  <delete id="deleteByPrimaryKey" parameterType="java.util.List">
+  <delete id="deleteByGuids" parameterType="java.util.List">
     update "public"."requirements"
-    set delete = #{delete,jdbcType=SMALLINT}
-    where guid = #{guid,jdbcType=VARCHAR}
+    set delete = 1
+    where guid in
     <foreach item='id' index='index' collection='guids' separator=',' open='(' close=')'>
       #{id}
     </foreach>
   </delete>
+
+  <update id="batchUpdateStatusByIds">
+    update requirements
+    set status = #{status,jdbcType=SMALLINT}
+    where guid in
+    <foreach item='id' index='index' collection='guids' separator=',' open='(' close=')'>
+      #{id}
+    </foreach>
+  </update>
 </mapper>
