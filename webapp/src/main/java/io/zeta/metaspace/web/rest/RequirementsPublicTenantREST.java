@@ -1,5 +1,8 @@
 package io.zeta.metaspace.web.rest;
 
+import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.dto.requirements.FeedbackResultDTO;
+import io.zeta.metaspace.model.dto.requirements.ResourceDTO;
 import com.google.common.collect.ImmutableList;
 import com.gridsum.gdp.library.commons.utils.DateTimeUtils;
 import com.sun.jersey.core.header.FormDataContentDisposition;
@@ -36,6 +39,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import java.util.List;
+
 import static io.zeta.metaspace.web.model.CommonConstant.HEADER_TENANT_ID;
 
 /**
@@ -64,6 +69,66 @@ public class RequirementsPublicTenantREST {
                                                  Parameters parameters) {
         Assert.isTrue(StringUtils.isNotBlank(tableId), "数据表ID无效!");
         return publicTenantService.pagedResource(tableId, parameters);
+    }
+
+    /**
+     * 需求下发
+     *
+     * @param
+     * @throws
+     */
+    @POST
+    @Path("/grant/{requirementId}")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public Result grant(@PathParam("requirementId") String requirementId) {
+        try {
+            publicTenantService.grant(requirementId);
+            return ReturnUtil.success();
+        }
+        catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"需求下发失败");
+        }
+    }
+
+    /**
+     * 删除需求
+     *
+     * @param
+     * @throws
+     */
+    @DELETE
+    @Path("")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public Result delete(List<String> guids) {
+        try {
+            publicTenantService.deleteRequirements(guids);
+            return ReturnUtil.success();
+        }
+        catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"需求删除失败");
+        }
+    }
+
+    /**
+     * 反馈结果
+     *
+     * @param
+     * @throws
+     */
+    @GET
+    @Path("/{requirementId}/feedback")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    public Result feedback(@PathParam("requirementId") String requirementId, @QueryParam("resourceType") Integer resourceType) {
+        try {
+            FeedbackResultDTO result = publicTenantService.getFeedbackResult(requirementId, resourceType);
+            return ReturnUtil.success(result);
+        }
+        catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"获取需求反馈结果失败");
+        }
     }
 
 

@@ -8,6 +8,8 @@ import io.zeta.metaspace.model.po.requirements.RequirementIssuedPO;
 import io.zeta.metaspace.model.po.requirements.RequirementsPO;
 import io.zeta.metaspace.model.po.requirements.ResourcePO;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.web.dao.requirements.RequirementsApiMapper;
+import io.zeta.metaspace.web.dao.requirements.RequirementsDatabaseMapper;
 import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.user.User;
@@ -17,6 +19,7 @@ import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.dao.TenantDAO;
 import io.zeta.metaspace.web.dao.requirements.RequirementsMapper;
+import io.zeta.metaspace.web.dao.requirements.RequirementsMqMapper;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -41,8 +44,11 @@ public class RequirementsPublicTenantService {
 
     @Autowired
     private RequirementsMapper requirementsMapper;
+
     @Autowired
-    RequirementsService requirementsService;
+    private RequirementsService requirementsService;
+    
+
     @Autowired
     private TableDAO tableDAO;
     @Autowired
@@ -85,6 +91,46 @@ public class RequirementsPublicTenantService {
                 .peek(dto -> dto.setDataTableName(tableName))
                 .collect(Collectors.toList());
         return new PageResult<>(total, list);
+    }
+
+    /**
+     * 需求下发
+     *
+     * @param
+     * @throws
+     */
+    @Transactional(rollbackFor=Exception.class)
+    public void grant(String requirementId) {
+        RequirementsPO requirementsPO = new RequirementsPO();
+        // 1、待下发  2、已下发（待处理）  3、已处理（未反馈） 4、已反馈  -1、退回
+        requirementsPO.setStatus(2);
+        requirementsPO.setGuid(requirementId);
+        requirementsMapper.updateByPrimaryKeySelective(requirementsPO);
+    }
+
+    /**
+     * 需求反馈结果
+     *
+     * @param
+     * @throws
+     */
+    public FeedbackResultDTO getFeedbackResult(String requirementId, Integer resourceType) {
+        FeedbackResultDTO result = requirementsService.getFeedbackResult(requirementId, resourceType);
+        // 查询处理结果
+        result.setHandle(null);
+
+        return result;
+    }
+
+    /**
+     * 删除需求
+     *
+     * @param
+     * @throws
+     */
+    @Transactional(rollbackFor=Exception.class)
+    public void deleteRequirements(List<String> guids) {
+        requirementsMapper.deleteByGuids(guids);
     }
 
     @Transactional(rollbackFor = Exception.class)

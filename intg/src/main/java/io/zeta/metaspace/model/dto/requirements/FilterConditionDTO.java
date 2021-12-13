@@ -16,6 +16,11 @@ public class FilterConditionDTO {
      * 字段ID
      */
     private String columnId;
+
+    /**
+     * 字段名称
+     */
+    private String columnName;
     /**
      * 操作符 {@link FilterOperation#getDesc()}
      */
