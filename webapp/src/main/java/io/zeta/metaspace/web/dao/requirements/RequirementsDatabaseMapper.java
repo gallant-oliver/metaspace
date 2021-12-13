@@ -19,5 +19,5 @@ public interface RequirementsDatabaseMapper {
 
     int updateByPrimaryKey(RequirementsDatabasePO record);
 
-    RequirementsDatabaseDetailDTO selectByRequirementId(@Param("requirementId") String requirementId);
+    RequirementsDatabasePO selectByRequirementId(@Param("requirementId") String requirementId);
 }

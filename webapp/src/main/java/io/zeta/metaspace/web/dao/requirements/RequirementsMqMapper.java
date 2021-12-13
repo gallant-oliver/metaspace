@@ -18,5 +18,5 @@ public interface RequirementsMqMapper {
 
     int updateByPrimaryKey(RequirementsMqPO record);
 
-    RequirementsMqDetailDTO selectByRequirementId(@Param("requirementId") String requirementId);
+    RequirementsMqPO selectByRequirementId(@Param("requirementId") String requirementId);
 }

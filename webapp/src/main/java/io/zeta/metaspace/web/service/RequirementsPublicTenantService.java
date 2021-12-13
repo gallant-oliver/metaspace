@@ -113,8 +113,9 @@ public class RequirementsPublicTenantService {
      */
     public FeedbackResultDTO getFeedbackResult(String requirementId, Integer resourceType) {
         FeedbackResultDTO result = requirementsService.getFeedbackResult(requirementId, resourceType);
+
         // 查询处理结果
-        result.setHandle(null);
+        result.setHandle(requirementsService.getDealDetail(requirementId));
 
         return result;
     }

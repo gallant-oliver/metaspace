@@ -130,28 +130,32 @@ public class RequirementsService {
     public FeedbackResultDTO getFeedbackResult(String requirementId, Integer resourceType) {
         FeedbackResultDTO result = new FeedbackResultDTO();
 
-        RequirementsApiDetailDTO api = null;
-        RequirementsDatabaseDetailDTO database = null;
-        RequirementsMqDetailDTO mq = null;
-
         //资源类型 1：API 2：中间库 3：消息队列
         switch (resourceType){
             case 1:
-                api = requirementsApiMapper.selectByRequirementId(requirementId);
+                RequirementsApiPO apiInfo = requirementsApiMapper.selectByRequirementId(requirementId);
+                RequirementsApiDetailDTO api = new RequirementsApiDetailDTO();
+                BeanUtils.copyProperties(apiInfo, api);
+                api.setStatus("up".equalsIgnoreCase(apiInfo.getStatus()) ? "上线" : "下线");
+                result.setApi(api);
                 break;
             case 2:
-                database = requirementsDatabaseMapper.selectByRequirementId(requirementId);
+                RequirementsDatabasePO databaseInfo = requirementsDatabaseMapper.selectByRequirementId(requirementId);
+                RequirementsDatabaseDetailDTO database = new RequirementsDatabaseDetailDTO();
+                BeanUtils.copyProperties(databaseInfo, database);
+                database.setStatus(databaseInfo.getStatus() == 1 ? "上线" : "下线");
+                result.setDatabase(database);
                 break;
             case 3:
-                mq = requirementsMqMapper.selectByRequirementId(requirementId);
+                RequirementsMqPO mqInfo = requirementsMqMapper.selectByRequirementId(requirementId);
+                RequirementsMqDetailDTO mq = new RequirementsMqDetailDTO();
+                BeanUtils.copyProperties(mqInfo, mq);
+                mq.setStatus(mqInfo.getStatus() == 1 ? "上线" : "下线");
+                result.setMq(mq);
                 break;
             default:
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"资源类型错误：1-API 2-中间库 3-消息队列");
         }
-
-        result.setApi(api);
-        result.setDatabase(database);
-        result.setMq(mq);
 
         return result;
     }
