@@ -50,9 +50,7 @@ import static io.zeta.metaspace.web.model.CommonConstant.HEADER_TENANT_ID;
 public class RequirementsPublicTenantREST {
     private static final List<String> ENABLE_UPLOAD_FILE_TYPE =
             ImmutableList.of("pdf", "doc", "xls", "xlsx", "png", "jpg");
-
-    @Context
-    private HttpServletResponse response;
+    
     @Autowired
     private RequirementsPublicTenantService publicTenantService;
     @Autowired
@@ -133,8 +131,7 @@ public class RequirementsPublicTenantREST {
     public void createdResource(RequirementDTO requirementDTO) {
         Assert.notNull(requirementDTO, "需求对象为空");
         publicTenantService.createdResource(requirementDTO);
-        // TODO 审计日志 模块修改
-        HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), requirementDTO.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), requirementDTO.getName());
     }
 
     @PUT
@@ -143,8 +140,7 @@ public class RequirementsPublicTenantREST {
     public void editedResource(RequirementDTO requirementDTO) {
         Assert.notNull(requirementDTO, "需求对象为空");
         publicTenantService.editedResource(requirementDTO);
-        // TODO 审计日志 模块修改
-        HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), requirementDTO.getGuid());
+        HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), requirementDTO.getGuid());
     }
 
     @GET
@@ -191,8 +187,7 @@ public class RequirementsPublicTenantREST {
                     fileInputStream,
                     timestamp + "." + fileType,
                     tenantId + "/" + DateTimeUtils.formatTime(timestamp, DateTimeUtils.YYYYMMDD));
-            // TODO 审计日志 模块修改
-            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), "上传附件:".concat(fileName));
+            HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), "上传附件:".concat(fileName));
             return new FileDTO(fileName, uploadPath);
         } catch (Exception e) {
             throw new AtlasBaseException(
@@ -201,22 +196,22 @@ public class RequirementsPublicTenantREST {
                     e);
         }
     }
-
+    
     /**
      * 下载附件
      */
-    @POST
+    @GET
     @Path("/download/file")
-    public void downloadFile(FileDTO fileDTO) {
-        String filePath = fileDTO.getFilePath();
-        String filename = fileDTO.getFileName();
-        Assert.isTrue(StringUtils.isNotBlank(filename), "文件名不能为空");
+    public void downloadFile(@Context HttpServletResponse response,
+                             @QueryParam("fileName") String fileName,
+                             @QueryParam("filePath") String filePath) {
+        Assert.isTrue(StringUtils.isNotBlank(fileName), "文件名不能为空");
         Assert.isTrue(StringUtils.isNotBlank(filePath), "文件路径不能为空");
         try {
-            filename = URLEncoder.encode(filename, StandardCharsets.UTF_8.name());
+            fileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8.name());
             response.setContentType("application/force-download");
             response.addHeader("Access-Control-Expose-Headers", "Content-Disposition");
-            response.addHeader("Content-Disposition", "attachment;fileName=" + filename);
+            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(
                     hdfsService.getFileInputStream(filePath),
                     response.getOutputStream(),
