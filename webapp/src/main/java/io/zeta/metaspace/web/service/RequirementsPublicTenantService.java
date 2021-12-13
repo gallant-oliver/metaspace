@@ -289,7 +289,7 @@ public class RequirementsPublicTenantService {
                 RequirementsListDTO requirementsListDTO = new RequirementsListDTO();
                 BeanUtils.copyProperties(requirementsPO, requirementsListDTO);
                 requirementsListDTO.setResourceTypeName(ResourceType.getValue(requirementsListDTO.getResourceType()));
-                if (requirementsListDTO.getStatus().equals(1)) {
+                if (requirementsListDTO.getStatus().equals(CommonConstant.REQUIREMENTS_STATUS_ONE)) {
                     requirementsListDTO.setStatusName("待下发");
                 } else if ("2,3".contains(String.valueOf(requirementsListDTO.getStatus()))) {
                     requirementsListDTO.setStatusName("已下发");

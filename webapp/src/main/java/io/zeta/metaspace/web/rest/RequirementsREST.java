@@ -6,6 +6,7 @@ import io.zeta.metaspace.model.dto.requirements.*;
 import io.zeta.metaspace.model.metadata.TableExtInfo;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.RequirementsService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -33,16 +34,6 @@ public class RequirementsREST {
 
     @Autowired
     private RequirementsService requirementsService;
-
-
-    @POST
-    @Path("test")
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public void test() {
-    }
-
-
 
     /**
      * 需求详情
@@ -168,4 +159,28 @@ public class RequirementsREST {
         return ReturnUtil.success("success");
     }
 
+
+    /**
+     * 需求处理列表
+     * @param param
+     * @param tenantId
+     * @return
+     */
+    @POST
+    @Path("handle/list")
+    public PageResult getHandleListPage(RequireListParam param, @HeaderParam("tenantId") String tenantId) {
+        return requirementsService.getHandleListPage(param, tenantId);
+    }
+
+    /**
+     * 需求反馈列表
+     * @param param
+     * @param tenantId
+     * @return
+     */
+    @POST
+    @Path("return/list")
+    public PageResult getReturnListPage(RequireListParam param, @HeaderParam("tenantId") String tenantId) {
+        return requirementsService.getReturnListPage(param, tenantId);
+    }
 }

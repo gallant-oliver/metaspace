@@ -7,11 +7,14 @@ import io.zeta.metaspace.model.enums.ResourceType;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.TableExtInfo;
 import io.zeta.metaspace.model.po.requirements.*;
+import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.ApiHead;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.dao.requirements.*;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.util.AdminUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.AtlasErrorCode;
@@ -348,5 +351,96 @@ public class RequirementsService {
         List<String> guids = new ArrayList<>();
         guids.add(requirementsId);
         requirementsMapper.batchUpdateStatusByIds(guids, 4);
+    }
+
+    /**
+     * 需求处理列表
+     * @param requireListParam
+     * @param tenantId
+     * @return
+     */
+    public PageResult getHandleListPage(RequireListParam requireListParam, String tenantId) {
+        PageResult pageResult = new PageResult();
+        List<RequirementsListDTO> requirementsListDTOList = new ArrayList<>();
+        try {
+            User user = AdminUtils.getUserData();
+            if (StringUtils.isBlank(requireListParam.getOrder())) {
+                requireListParam.setOrder("asc");
+            }
+            List<RequirementsPO> requirementsPOList;
+            if (requireListParam.getStatus() != null) {
+                requirementsPOList = requirementsMapper.selectHandleListByStatusPage(user.getUserId(), tenantId, requireListParam);
+            } else {
+                requirementsPOList = requirementsMapper.selectHandleListPage(user.getUserId(), tenantId, requireListParam);
+            }
+            if (CollectionUtils.isEmpty(requirementsPOList)) {
+                pageResult.setTotalSize(0);
+                pageResult.setCurrentSize(0);
+                pageResult.setOffset(0);
+                pageResult.setLists(requirementsListDTOList);
+                return pageResult;
+            }
+            for (RequirementsPO requirementsPO : requirementsPOList) {
+                RequirementsListDTO requirementsListDTO = new RequirementsListDTO();
+                BeanUtils.copyProperties(requirementsPO, requirementsListDTO);
+                requirementsListDTO.setResourceTypeName(ResourceType.getValue(requirementsListDTO.getResourceType()));
+                if ((requirementsListDTO.getStatus().equals(CommonConstant.REQUIREMENTS_STATUS_TWO))) {
+                    requirementsListDTO.setStatusName("待处理");
+                } else {
+                    requirementsListDTO.setStatusName("已处理");
+                }
+                requirementsListDTOList.add(requirementsListDTO);
+            }
+            pageResult.setTotalSize(requirementsListDTOList.get(0).getTotal());
+            pageResult.setCurrentSize(requirementsListDTOList.size());
+            pageResult.setOffset(requireListParam.getOffset());
+            pageResult.setLists(requirementsListDTOList);
+        } catch (Exception e) {
+            log.error("getHandleListPage exception is {}", e);
+        }
+        return pageResult;
+    }
+
+    /**
+     * 需求反馈列表接口
+     * @param requireListParam
+     * @param tenantId
+     * @return
+     */
+    public PageResult getReturnListPage(RequireListParam requireListParam, String tenantId) {
+        PageResult pageResult = new PageResult();
+        List<RequirementsListDTO> requirementsListDTOList = new ArrayList<>();
+        try {
+            User user = AdminUtils.getUserData();
+            if (StringUtils.isBlank(requireListParam.getOrder())) {
+                requireListParam.setOrder("asc");
+            }
+            List<RequirementsPO> requirementsPOList = requirementsMapper.selectReturnListPage(user.getUserId(), tenantId, requireListParam);
+            if (CollectionUtils.isEmpty(requirementsPOList)) {
+                pageResult.setTotalSize(0);
+                pageResult.setCurrentSize(0);
+                pageResult.setOffset(0);
+                pageResult.setLists(requirementsListDTOList);
+                return pageResult;
+            }
+            for (RequirementsPO requirementsPO : requirementsPOList) {
+                RequirementsListDTO requirementsListDTO = new RequirementsListDTO();
+                BeanUtils.copyProperties(requirementsPO, requirementsListDTO);
+                requirementsListDTO.setResourceTypeName(ResourceType.getValue(requirementsListDTO.getResourceType()));
+                if ((requirementsListDTO.getStatus().equals(CommonConstant.REQUIREMENTS_STATUS_THREE))) {
+                    requirementsListDTO.setStatusName("待反馈");
+                } else {
+                    requirementsListDTO.setStatusName("已反馈");
+                }
+                requirementsListDTOList.add(requirementsListDTO);
+            }
+            pageResult.setTotalSize(requirementsListDTOList.get(0).getTotal());
+            pageResult.setCurrentSize(requirementsListDTOList.size());
+            pageResult.setOffset(requireListParam.getOffset());
+            pageResult.setLists(requirementsListDTOList);
+        } catch (Exception e) {
+            log.error("getReturnListPage exception is {}", e);
+        }
+        return pageResult;
     }
 }
