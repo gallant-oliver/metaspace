@@ -8,8 +8,6 @@ import io.zeta.metaspace.model.po.requirements.RequirementIssuedPO;
 import io.zeta.metaspace.model.po.requirements.RequirementsPO;
 import io.zeta.metaspace.model.po.requirements.ResourcePO;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.web.dao.requirements.RequirementsApiMapper;
-import io.zeta.metaspace.web.dao.requirements.RequirementsDatabaseMapper;
 import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.user.User;
@@ -19,7 +17,6 @@ import io.zeta.metaspace.web.dao.ColumnDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.dao.TenantDAO;
 import io.zeta.metaspace.web.dao.requirements.RequirementsMapper;
-import io.zeta.metaspace.web.dao.requirements.RequirementsMqMapper;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -326,7 +323,11 @@ public class RequirementsPublicTenantService {
         baseDTO.setResult(dealDetailDTO.getResult());
         baseDTO.setUser(dealDetailDTO.getUser());
         baseDTO.setDescription(dealDetailDTO.getDescription());
-        //TODO 待补充查询反馈结果
+
+        FeedbackResultDTO feedbackResultDTO = requirementsService.getFeedbackResult(id, type);
+        baseDTO.setApi(feedbackResultDTO.getApi());
+        baseDTO.setDatabase(feedbackResultDTO.getDatabase());
+        baseDTO.setMq(feedbackResultDTO.getMq());
         return baseDTO;
     }
 
