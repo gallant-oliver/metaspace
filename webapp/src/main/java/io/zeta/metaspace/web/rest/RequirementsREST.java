@@ -132,7 +132,7 @@ public class RequirementsREST {
     @Path("/category/{projectId}")
     public Result getCateategories(@PathParam("projectId") String projectId, @QueryParam("search") String search,
                                    @HeaderParam("tenantId") String tenantId) {
-        List<ApiCateDTO> result = requirementsService.getCateategories(projectId, search, tenantId);
+        List<ApiCateDTO> result = requirementsService.getCategories(projectId, search, tenantId);
         return ReturnUtil.success(result);
     }
 
@@ -143,7 +143,7 @@ public class RequirementsREST {
     @Path("/api")
     public Result getCateategoryApis(@QueryParam("projectId") String projectId, @QueryParam("categoryId") String categoryId,
                                      @QueryParam("search") String search, @HeaderParam("tenantId") String tenantId) {
-        List<ApiCateDTO> result = requirementsService.getCateategoryApis(projectId, categoryId, search, tenantId);
+        List<ApiCateDTO> result = requirementsService.getCategoryApis(projectId, categoryId, search, tenantId);
         return ReturnUtil.success(result);
     }
 

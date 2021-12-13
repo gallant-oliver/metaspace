@@ -323,7 +323,11 @@ public class RequirementsPublicTenantService {
         baseDTO.setResult(dealDetailDTO.getResult());
         baseDTO.setUser(dealDetailDTO.getUser());
         baseDTO.setDescription(dealDetailDTO.getDescription());
-        //TODO 待补充查询反馈结果
+
+        FeedbackResultDTO feedbackResultDTO = requirementsService.getFeedbackResult(id, type);
+        baseDTO.setApi(feedbackResultDTO.getApi());
+        baseDTO.setDatabase(feedbackResultDTO.getDatabase());
+        baseDTO.setMq(feedbackResultDTO.getMq());
         return baseDTO;
     }
 

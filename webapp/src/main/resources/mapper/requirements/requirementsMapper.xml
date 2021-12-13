@@ -522,7 +522,7 @@
 
   <update id="batchUpdateStatusByIds">
     update requirements
-    set status = #{status,jdbcType=SMALLINT}
+      set status = #{status,jdbcType=SMALLINT},update_time = now()
     where guid in
     <foreach item='id' index='index' collection='guids' separator=',' open='(' close=')'>
       #{id}
