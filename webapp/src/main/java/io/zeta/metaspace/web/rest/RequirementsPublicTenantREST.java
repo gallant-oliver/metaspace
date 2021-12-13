@@ -1,8 +1,5 @@
 package io.zeta.metaspace.web.rest;
 
-import io.zeta.metaspace.model.Result;
-import io.zeta.metaspace.model.dto.requirements.FeedbackResultDTO;
-import io.zeta.metaspace.model.dto.requirements.ResourceDTO;
 import com.google.common.collect.ImmutableList;
 import com.gridsum.gdp.library.commons.utils.DateTimeUtils;
 import com.sun.jersey.core.header.FormDataContentDisposition;
@@ -37,8 +34,6 @@ import javax.ws.rs.core.MediaType;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-
 import java.util.List;
 
 import static io.zeta.metaspace.web.model.CommonConstant.HEADER_TENANT_ID;
@@ -235,8 +230,7 @@ public class RequirementsPublicTenantREST {
 
     @GET
     @Path("/feedback/detail/base")
-    public Result getDetailBase(@HeaderParam(HEADER_TENANT_ID) String tenantId,
-                                @QueryParam("id") String id, @QueryParam("type") Integer type) {
+    public Result getDetailBase(@QueryParam("id") String id, @QueryParam("type") Integer type) {
         FeedbackDetailBaseDTO result = publicTenantService.getDetailBase(id, type);
         return ReturnUtil.success(result);
     }
