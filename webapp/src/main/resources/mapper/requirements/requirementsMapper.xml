@@ -21,7 +21,6 @@
     <result column="status" jdbcType="SMALLINT" property="status" />
     <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
     <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
-    <result column="delete" jdbcType="SMALLINT" property="delete" />
     <result column="total" jdbcType="INTEGER" property="total" />
     <result column="business_category_id" jdbcType="VARCHAR" property="businessCategoryId" />
   </resultMap>
@@ -29,8 +28,7 @@
   <sql id="Base_Column_List">
     guid, name, num, resource_type, version, agreement, request_mode, aiming_field,
     file_name, file_path, description, business_id, table_id, source_id, tenant_id, creator,
-    status, create_time, update_time,
-    delete
+    status, create_time, update_time
   </sql>
     <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
     select
@@ -120,13 +118,122 @@
       and resource_type = #{param.type}
     </if>
     <if test="param.query != null  and param.query != ''">
-      and name like concat('%',#{param.query},'%')
+      and (name like concat('%',#{param.query},'%') or num like concat('%',#{param.query},'%'))
     </if>
     order by create_time desc
     <if test="param.limit != null and param.limit != -1 ">
       limit #{param.limit} offset #{param.offset}
     </if>
   </select>
+
+   <select id = "selectHandleListByStatusPage" resultMap="BaseResultMap">
+        select count(*)over() total,
+       re.guid, re.name, re.num, re.resource_type, re.version,re.business_id, re.table_id, re.source_id, re.tenant_id,re.creator,
+       re.status, re.create_time
+        from requirements AS re INNER JOIN tableinfo AS tb ON re.table_id = tb.tableguid INNER JOIN source_info AS si ON si.database_id = tb.databaseguid
+        WHERE si.data_source_id = re.source_id AND si.VERSION = 0 AND si.category_id IS NOT NULL AND si.category_id != '' AND si.business_leader = #{userId}
+        AND tb.status = 'ACTIVE' AND tb.databasestatus = 'ACTIVE' AND re.DELETE = 0 AND re.tenant_id = #{tenantId} and si.tenant_id = #{tenantId} AND re.status != 1
+        <if test="param.status == 1">
+            and re.status = 2
+        </if>
+        <if test="param.status == 2">
+            and re.status in (3,4,-1)
+        </if>
+        <if test="param.type != null">
+            and re.resource_type = #{param.type}
+        </if>
+        <if test="param.query != null  and param.query != ''">
+            and (re.name like concat('%',#{param.query},'%') or re.num like concat('%',#{param.query},'%'))
+        </if>
+        order by create_time desc
+        <if test="param.limit != null and param.limit != -1 ">
+            limit #{param.limit} offset #{param.offset}
+        </if>
+    </select>
+
+    <select id = "selectHandleListPage" resultMap="BaseResultMap">
+        select count(*)over() total,
+        guid, name, num, resource_type, version,business_id, table_id, source_id, tenant_id,creator,
+        status, create_time
+        from (
+        select
+        re.guid, re.name, re.num, re.resource_type, re.version,re.business_id, re.table_id, re.source_id, re.tenant_id,re.creator,
+        re.status, re.create_time, 1 as sort
+        from requirements AS re INNER JOIN tableinfo AS tb ON re.table_id = tb.tableguid INNER JOIN source_info AS si ON
+        si.database_id = tb.databaseguid
+        WHERE si.data_source_id = re.source_id AND si.VERSION = 0 AND si.category_id IS NOT NULL AND si.category_id !=
+        '' AND si.business_leader = #{userId}
+        AND tb.status = 'ACTIVE' AND tb.databasestatus = 'ACTIVE' AND re.DELETE = 0 AND re.tenant_id = #{tenantId} and
+        si.tenant_id = #{tenantId} AND re.status != 1
+        <if test="param.type != null">
+            and re.resource_type = #{param.type}
+        </if>
+        <if test="param.query != null  and param.query != ''">
+            and (re.name like concat('%',#{param.query},'%') or re.num like concat('%',#{param.query},'%'))
+        </if>
+        <if test="param.order = 'asc'">
+            and re.status = 2
+        </if>
+        <if test="param.order = 'desc'">
+            and re.status in (3,4,-1)
+        </if>
+        union
+        select
+        re.guid, re.name, re.num, re.resource_type, re.version,re.business_id, re.table_id, re.source_id, re.tenant_id,re.creator,
+        re.status, re.create_time, 2 as sort
+        from requirements AS re INNER JOIN tableinfo AS tb ON re.table_id = tb.tableguid INNER JOIN source_info AS si ON
+        si.database_id = tb.databaseguid
+        WHERE si.data_source_id = re.source_id AND si.VERSION = 0 AND si.category_id IS NOT NULL AND si.category_id !=
+        '' AND si.business_leader = #{userId}
+        AND tb.status = 'ACTIVE' AND tb.databasestatus = 'ACTIVE' AND re.DELETE = 0 AND re.tenant_id = #{tenantId} and
+        si.tenant_id = #{tenantId} AND re.status != 1
+        <if test="param.type != null">
+            and re.resource_type = #{param.type}
+        </if>
+        <if test="param.query != null  and param.query != ''">
+            and (re.name like concat('%',#{param.query},'%') or re.num like concat('%',#{param.query},'%'))
+        </if>
+        <if test="param.order = 'asc'">
+            and re.status in (3,4,-1)
+        </if>
+        <if test="param.order = 'desc'">
+            and re.status = 2
+        </if>
+        ) as a
+        order by a.sort
+        <if test="param.limit != null and param.limit != -1 ">
+            limit #{param.limit} offset #{param.offset}
+        </if>
+    </select>
+
+    <select id = "selectReturnListPage" resultMap="BaseResultMap">
+        SELECT count(*)over() total,
+          re.guid, re.name, re.num, re.resource_type, re.version,re.business_id, re.table_id, re.source_id, re.tenant_id,re.creator,
+          re.status, re.create_time
+         from requirements AS re INNER JOIN requirements_result as result on re.guid = result.requirements_id
+        WHERE re.delete = 0 AND re.tenant_id = #{tenantId} and result.user_id = #{userId} and re.status in (3,4)
+        <if test="param.type != null">
+            and re.resource_type = #{param.type}
+        </if>
+        <if test="param.query != null  and param.query != ''">
+            and (re.name like concat('%',#{param.query},'%') or re.num like concat('%',#{param.query},'%'))
+        </if>
+        <if test="param.status != null and param.status == 1">
+            and re.status = 3
+        </if>
+        <if test="param.status != null and param.status == 2">
+            and re.status = 4
+        </if>
+        <if test="param.order == 'asc'">
+            order by create_time desc,status asc
+        </if>
+        <if test="param.order == 'desc'">
+            order by create_time,status desc
+        </if>
+        <if test="param.limit != null and param.limit != -1 ">
+            limit #{param.limit} offset #{param.offset}
+        </if>
+    </select>
 
     <select id="countRequirementByName" resultType="java.lang.Long">
         select count(guid)
