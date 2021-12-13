@@ -21,6 +21,7 @@ import io.zeta.metaspace.model.dataquality.Schedule;
 import io.zeta.metaspace.web.service.DataQualityService;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.quartz.*;
 import org.quartz.spi.MutableTrigger;
@@ -102,7 +103,7 @@ public class QuartzManager {
                     .startAt(startTime)
                     .endAt(endTime)
                     .build();
-
+    
             //调度器设置JobDetail和Trigger
             scheduler.scheduleJob(jobDetail, trigger);
             //启动
@@ -113,19 +114,17 @@ public class QuartzManager {
             throw new RuntimeException(e);
         }
     }
-
-    public void addSimpleJob(String jobName, String jobGroupName, Class jobClass) {
-        addSimpleJob(jobName, jobGroupName, jobClass, null);
-    }
-
-    public void addSimpleJob(String jobName, String jobGroupName, Class jobClass, String executor) {
+    
+    public void addSimpleJob(String jobName, String jobGroupName, Class jobClass, Map<String, Object> jobDataMap) {
         try {
             //任务名，任务组，任务执行类
-            JobDetail jobDetail = JobBuilder.newJob(jobClass).withIdentity(jobName, jobGroupName).build();
-            if (executor != null) {
-                jobDetail.getJobDataMap().put("executor", executor);
-                jobDetail.getJobDataMap().put("isSimple", true);
+            JobDetail jobDetail = JobBuilder.newJob(jobClass)
+                    .withIdentity(jobName, jobGroupName)
+                    .build();
+            if (MapUtils.isNotEmpty(jobDataMap)) {
+                jobDetail.getJobDataMap().putAll(jobDataMap);
             }
+            
             Trigger trigger = TriggerBuilder.newTrigger()
                     .withSchedule(SimpleScheduleBuilder.simpleSchedule().withRepeatCount(0))
                     .startNow().build();
@@ -133,7 +132,7 @@ public class QuartzManager {
             //启动
             if (!scheduler.isShutdown()) {
                 scheduler.start();
-            }else{
+            } else {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务已关闭");
             }
         } catch (Exception e) {

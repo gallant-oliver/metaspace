@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.dataassets.*;
 import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.metadata.GuidCount;
+import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
@@ -57,7 +58,7 @@ public class DataAssetsRetrievalService {
     private SearchService searchService;
 
     // 租户资产-业务目录模块id
-    private int TENANT_ASSETS_BUSINESS_MODULE = 50;
+    private int TENANT_ASSETS_BUSINESS_MODULE = ModuleEnum.BUSINESSALL.getId();
 
     @Autowired
     private UserGroupDAO userGroupDAO;
@@ -259,8 +260,7 @@ public class DataAssetsRetrievalService {
                 }
                 break;
             case 3:
-                boolean publicTenant = isPublicTenant(tenantId);
-                result = getThemeDetail(id, publicTenant);
+                result = getThemeDetail(id, isPublic);
                 break;
             default:
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据资产类别错误: " + type);
@@ -276,12 +276,12 @@ public class DataAssetsRetrievalService {
         return result;
     }
 
-    public TableShow dataPreview(String tableId, int count) {
+    public TableShow dataPreview(String tableId, int count) throws Exception {
         GuidCount gc = new GuidCount();
         gc.setGuid(tableId);
         gc.setCount(count);
 
-        return searchService.getRDBMSTableShow(gc);
+        return searchService.getTableShow(gc, false);
     }
 
     public PageResult<TableInfo> getTableInfoByBusinessId(String businessId, String belongTenantId, String tenantId, int limit, int offset) {
@@ -430,6 +430,7 @@ public class DataAssetsRetrievalService {
 
     public List<DomainInfo> getThemeDomains(String tenantId) throws AtlasException {
         List<DomainInfo> domainList;
+        List<DomainInfo> resultList = new ArrayList<>();
         Boolean isPublicTenant = isPublicTenant(tenantId);
         Boolean isPublicUser = isGlobalUser();
         String userId = AdminUtils.getUserData().getUserId();
@@ -442,7 +443,13 @@ public class DataAssetsRetrievalService {
         if (isPublicTenant && isPublicUser) {
             domainList = categoryDAO.getDomainCategory();
             for (DomainInfo domain : domainList) {
-                domain.setThemeNum(categoryDAO.getThemeNumber(domain.getDomainId()));
+                //过滤没有二级目录的一级目录
+                int num = categoryDAO.getThemeNumber(domain.getDomainId());
+                if (0 == num) {
+                    continue;
+                }
+                domain.setThemeNum(num);
+                resultList.add(domain);
             }
         } else {
             if (isPublicTenant) {
@@ -477,12 +484,17 @@ public class DataAssetsRetrievalService {
                         }
                     }
                 }
-                domain.setThemeNum(themeList.size());
+                //过滤没有二级目录的一级目录
+                int num = themeList.size();
+                if (0 == num) {
+                    continue;
+                }
+                domain.setThemeNum(num);
+                resultList.add(domain);
             }
         }
 
-
-        return domainList;
+        return resultList;
     }
 
 

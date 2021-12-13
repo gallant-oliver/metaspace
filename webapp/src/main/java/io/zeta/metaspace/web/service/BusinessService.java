@@ -989,8 +989,10 @@ public class BusinessService implements Approvable {
         Integer limit = parameters.getLimit();
         Integer offset = parameters.getOffset();
         List<ApiHead> apiList = new ArrayList<>();
+        List<ApiHead> apiTempList = new ArrayList<>();
         PageResult<ApiHead> pageResult = new PageResult<>();
         int totalSize = 0;
+        //查询HIVE数据表关联的API
         if (Objects.nonNull(tableList) && tableList.size() > 0) {
             apiList = shareDAO.getTableRelatedDataServiceAPI(tableList, limit, offset, tenantId, up, down, isNew);
             for (ApiHead api : apiList) {
@@ -1009,7 +1011,32 @@ public class BusinessService implements Approvable {
                 totalSize = apiList.get(0).getTotal();
             }
         }
-        pageResult.setTotalSize(totalSize);
+        //查询其他类型数据表关联的API
+        if (CollectionUtils.isNotEmpty(tableHeaderList)) {
+            for (TechnologyInfo.Table table : tableHeaderList) {
+                ApiHead apiHead = shareDAO.getTableRelatedDataServiceAPIByTableName(table.getSourceId(), table.getDbName(), table.getTableName(), table.getTableGuid(), tenantId, up, down, isNew);
+                if (null == apiHead) {
+                    continue;
+                }
+                String tableId = table.getTableGuid();
+                String displayName = apiHead.getTableDisplayName();
+                if (Objects.isNull(displayName) || "".equals(displayName)) {
+                    apiHead.setTableDisplayName(apiHead.getTableName());
+                }
+                List<DataOwnerHeader> dataOwner = metaDataService.getDataOwner(tableId);
+                List<String> dataOwnerName = new ArrayList<>();
+                if (Objects.nonNull(dataOwner) && dataOwner.size() > 0) {
+                    dataOwner.stream().forEach(owner -> dataOwnerName.add(owner.getName()));
+                }
+                apiHead.setTableGuid(tableId);
+                apiHead.setDataOwner(dataOwnerName);
+                apiTempList.add(apiHead);
+            }
+        }
+        int tempSize = apiTempList.size();
+        apiList.addAll(apiTempList);
+
+        pageResult.setTotalSize(totalSize + tempSize);
         pageResult.setLists(apiList);
         pageResult.setCurrentSize(apiList.size());
         return pageResult;

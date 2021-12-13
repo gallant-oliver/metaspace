@@ -743,7 +743,10 @@ public class UserGroupService {
     public PageResult<SourceAndPrivilege> getSearchDataSource(String groupId, int offset, int limit, String search) {
         PageResult<SourceAndPrivilege> commonResult = new PageResult<>();
         List<SourceAndPrivilege> lists = userGroupDAO.getSourceBySearch(groupId, offset, limit, null);
-        Long totalSize = lists.get(0).getTotalSize();
+        Long totalSize = 0L;
+        if (CollectionUtils.isNotEmpty(lists)) {
+            totalSize = lists.get(0).getTotalSize();
+        }
         //查询有权限的数据源，默认hive数据源有权限
         SourceAndPrivilege hive = new SourceAndPrivilege();
         hive.setPrivilegeCode("r");

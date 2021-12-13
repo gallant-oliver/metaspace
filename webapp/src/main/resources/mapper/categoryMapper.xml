@@ -7,7 +7,7 @@
     <select id="getDomainCategory" resultType="io.zeta.metaspace.model.dataassets.DomainInfo">
         select c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as tenantName from category c
         left join tenant t on c.tenantid=t.id
-        where c.level=1 and c.categorytype=1 order by c.tenantid
+        where c.level=1 and c.categorytype=1 order by c.tenantid,c.createtime desc
     </select>
 
     <select id="getThemeNumber" resultType="int">
@@ -17,7 +17,8 @@
 
     <select id="getDomainCategoryByNotPublicUser" resultType="io.zeta.metaspace.model.dataassets.DomainInfo">
         select * from (
-        select c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as tenantName,c.private_status from
+        select c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as tenantName,c.private_status,
+        c.createtime from
         category c left join tenant t on c.tenantid=t.id
         where c.level=1 and c.categorytype=1 and c.private_status='PUBLIC'
         <if test='tenantId != null'>
@@ -26,7 +27,7 @@
         <if test='groupIdList != null and groupIdList.size() > 0'>
             union
             SELECT DISTINCT c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as
-            tenantName,c.private_status from
+            tenantName,c.private_status,c.createtime from
             category c
             left join tenant t on c.tenantid=t.id
             INNER JOIN category_group_relation as relation on c.guid = relation.category_id
@@ -42,18 +43,20 @@
         </if>
         union
         SELECT DISTINCT c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as
-        tenantName,c.private_status
+        tenantName,c.private_status,c.createtime
         from category c
         left join tenant t on c.tenantid=t.id
         WHERE c.level=1 and c.private_status = 'PRIVATE' AND c.categorytype =1 and c.creator=#{userId}
         <if test='tenantId != null'>
             AND c.tenantid=#{tenantId}
         </if>
-        ) temp order by temp.tenantId
+        ) temp order by temp.tenantId,temp.createtime desc
     </select>
 
     <select id="getThemeByUserGroup" resultType="io.zeta.metaspace.model.dataassets.DomainInfo">
-        select c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as tenantName,c.private_status from
+        select * from (
+        select c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as tenantName,c.private_status,
+        c.createtime from
         category c left join tenant t on c.tenantid=t.id
         where c.parentcategoryguid=#{guid} and c.private_status='PUBLIC'
         <if test='tenantId != null'>
@@ -62,7 +65,7 @@
         <if test='groupIdList != null and groupIdList.size() > 0'>
             union
             SELECT DISTINCT c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as
-            tenantName,c.private_status from
+            tenantName,c.private_status,c.createtime from
             category c left join tenant t on c.tenantid=t.id
             INNER JOIN category_group_relation as relation on c.guid = relation.category_id
             WHERE c.parentcategoryguid=#{guid}
@@ -77,23 +80,30 @@
         </if>
         union
         SELECT DISTINCT c.guid as domainId,c.name as domainName,c.tenantid as tenantId,t.name as
-        tenantName,c.private_status
+        tenantName,c.private_status,c.createtime
         from category c left join tenant t on c.tenantid=t.id
         WHERE c.parentcategoryguid=#{guid} and c.creator=#{userId}
         <if test='tenantId != null'>
             AND c.tenantid=#{tenantId}
         </if>
+        ) temp order by temp.createtime desc
     </select>
 
     <select id="getThemeCategory" resultType="io.zeta.metaspace.model.dataassets.ThemeInfo">
         select guid as themeId, name as themeName from category
-        where parentcategoryguid=#{guid}
+        where parentcategoryguid=#{guid} order by createtime desc
     </select>
 
     <select id="queryCategoryInfo" resultType="org.apache.atlas.model.metadata.CategoryEntityV2">
         select  c.guid,c.name,c.description,c.qualifiedname,t.name as tenantName from category c
         left join tenant t on c.tenantid=t.id
         where c.guid = #{guid}
+    </select>
+
+    <select id="queryCategoryPrivilege" resultType="io.zeta.metaspace.model.result.CategorycateQueryResult">
+        select  c.guid,c.name,c.private_status,c.publish,case  when ai.status is null then '0' else ai.status end FROM category c
+                left join approval_item ai on ai.id=c.approval_id
+             WHERE c.guid = #{guid}
     </select>
 
 </mapper>

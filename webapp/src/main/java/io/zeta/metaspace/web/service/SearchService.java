@@ -118,9 +118,9 @@ public class SearchService {
         return databasePageResult;
 
     }
-    public PageResult<Database> getDatabases(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount){
-        PageResult<Database> databasePageResult = getDatabaseData( sourceId,  offset,  limit,  query,  tenantId,  queryCount,false);
-        return databasePageResult;
+
+    public PageResult<Database> getDatabases(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount) {
+        return getDatabaseData(sourceId, offset, limit, query, tenantId, queryCount, false);
     }
 
     private PageResult<Database> getDatabaseData(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount,boolean isGlobal) {
@@ -156,6 +156,71 @@ public class SearchService {
                 databaseList = databaseInfoDAO.selectAuthHive(dbList, limit, offset, groupIds, HiveConstant.SOURCE_ID);
             } else {
 //                databaseList = databaseInfoDAO.selectBySourceId(sourceId, limit, offset);
+                //用户组新增数据库权限，需要根据租户查询用户组，然后显示该用户组下该数据源可显示的数据库
+                databaseList = databaseInfoDAO.selectDataBaseBySourceId(sourceId,groupIds, limit, offset);
+            }
+            if (CollectionUtils.isEmpty(databaseList)) {
+                return databasePageResult;
+            }
+            if (queryCount) {
+                Map<String, Long> map = databaseInfoDAO.selectTableCountByDB(databaseList).stream().collect(Collectors.toMap(Database::getDatabaseId, Database::getTableCount));
+                databaseList.forEach(database -> database.setTableCount(map.get(database.getDatabaseId()) == null ? 0 : map.get(database.getDatabaseId())));
+            }
+            databaseList.forEach(database -> {
+                if(StringUtils.isBlank(database.getDatabaseDescription())){
+                    database.setDatabaseDescription("-");
+                }
+                database.setTenantId(tenantId);
+                database.setBizTreeId(EntityUtil.generateBusinessId(tenantId,sourceId,database.getDatabaseId(),""));
+            });
+            databasePageResult.setCurrentSize(databaseList.size());
+            databasePageResult.setLists(databaseList);
+            databasePageResult.setTotalSize(databaseList.get(0).getTotal());
+            return databasePageResult;
+        } catch (AtlasBaseException e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取数据库列表失败");
+        }
+    }
+
+
+    /**
+     * 普通租户获取数据库列表
+     * @param sourceId
+     * @param offset
+     * @param limit
+     * @param query
+     * @param tenantId
+     * @param queryCount
+     * @param isGlobal
+     * @return
+     */
+    public PageResult<Database> getDatabaseDataList(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount) {
+        try {
+            List<String> dbList;
+            PageResult<Database> databasePageResult = new PageResult<>();
+            List<Database> databaseList;
+            List<String> groupIds = null;
+            //获取当前租户下用户所属用户组
+            User user = AdminUtils.getUserData();
+            List<UserGroup> groups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+            if (CollectionUtils.isEmpty(groups)) {
+                return databasePageResult;
+            }
+            groupIds = groups.stream().map(x -> x.getId()).distinct().collect(Collectors.toList());
+
+            if (StringUtils.isEmpty(sourceId)) {
+                dbList = tenantService.getDatabase(tenantId);
+                if(StringUtils.isNotBlank(query)){
+                    query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
+                }
+                databaseList = databaseInfoDAO.selectByDbNameAndTenantId(tenantId, groupIds,query, dbList, limit, offset);
+            } else if (HiveConstant.SOURCE_ID.equalsIgnoreCase(sourceId)) {
+                dbList = tenantService.getDatabase(tenantId);
+                if (CollectionUtils.isEmpty(dbList)) {
+                    return databasePageResult;
+                }
+                databaseList = databaseInfoDAO.selectAuthHive(dbList, limit, offset, groupIds, HiveConstant.SOURCE_ID);
+            } else {
                 //用户组新增数据库权限，需要根据租户查询用户组，然后显示该用户组下该数据源可显示的数据库
                 databaseList = databaseInfoDAO.selectDataBaseBySourceId(sourceId,groupIds, limit, offset);
             }

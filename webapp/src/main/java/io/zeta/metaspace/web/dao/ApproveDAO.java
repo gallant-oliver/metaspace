@@ -15,16 +15,9 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.approve.ApproveItem;
 import io.zeta.metaspace.model.approve.ApproveParas;
-import io.zeta.metaspace.model.approvegroup.ApproveGroup;
-import io.zeta.metaspace.model.approvegroup.ApproveGroupListAndSearchResult;
-import io.zeta.metaspace.model.approvegroup.ApproveGroupMemberSearch;
-import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.model.usergroup.UserGroup;
-import io.zeta.metaspace.model.usergroup.result.MemberListAndSearchResult;
 import org.apache.ibatis.annotations.*;
 
-import java.sql.Timestamp;
 import java.util.List;
 
 /**
@@ -56,8 +49,8 @@ public interface ApproveDAO {
             " #{stat}" +
             " </foreach>" +
             "</if>" +
-            "<if test='paras.startTime!=null and paras.endTime!=null'>"+
-            " and a.approve_time between #{paras.startTime} and #{paras.endTime} "+
+            "<if test=\"paras.startTimeParam != null and paras.endTimeParam != null \">"+
+            " and a.approve_time between #{paras.startTimeParam} and #{paras.endTimeParam} "+
             "</if>"+
             "<if test=\"paras.userId!=null and paras.userId!=''\">"+
             " and a.submitter = #{paras.userId} " +

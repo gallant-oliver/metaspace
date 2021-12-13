@@ -31,6 +31,7 @@ import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.*;
+import io.zeta.metaspace.model.dto.CategoryPrivilegeDTO;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -47,6 +48,7 @@ import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
@@ -403,11 +405,11 @@ public class BusinessREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
     public CategoryPrivilege createCategory(BussinessCatalogueInput bussinessCatalogueInput, @HeaderParam("tenantId") String tenantId) throws Exception {
-        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), bussinessCatalogueInput.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESSCATALOGUE.getAlias(), "新增目录：" + bussinessCatalogueInput.getName());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessCatalogueREST.createCategory()");
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.createCategory()");
             }
             return businessCatalogueService.createCategory(bussinessCatalogueInput,tenantId);
         } catch (CannotCreateTransactionException e) {
@@ -430,7 +432,9 @@ public class BusinessREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Transactional(rollbackFor = Exception.class)
+    @OperateType(DELETE)
     public Result deleteCategory(List<String> categoryGuids, @HeaderParam("tenantId") String tenantId) throws Exception {
+        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESSCATALOGUE.getAlias(), "删除目录" + categoryGuids.toString());
         AtlasPerfTracer perf = null;
         CategoryDeleteReturn deleteReturn = null;
         int item = 0;
@@ -469,7 +473,9 @@ public class BusinessREST {
     @Path("/categories/{categoryId}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(UPDATE)
     public String updateCategory(@PathParam("categoryId") String categoryGuid, BussinessCatalogueInput categoryInfo, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        HttpRequestContext.get().auditLog(ModuleEnum.BUSINESSCATALOGUE.getAlias(), "修改目录：" + categoryInfo.getName());
         AtlasPerfTracer perf = null;
         int type=categoryInfo.getCategoryType();
         try {
@@ -859,7 +865,7 @@ public class BusinessREST {
     @Path("/import/{path}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    @OperateType(UPDATE)
+    @OperateType(INSERT)
     public Result importCategory(@PathParam("path") String path, ImportCategory importCategory, @HeaderParam("tenantId") String tenantId) throws Exception {
         File file = null;
         try {
@@ -873,7 +879,7 @@ public class BusinessREST {
                 name = businessCatalogueService.getCategoryNameById(categoryId, tenantId);
             }
 
-            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "导入目录:" + name + "," + importCategory.getDirection());
+            HttpRequestContext.get().auditLog(ModuleEnum.BUSINESSCATALOGUE.getAlias(), "导入目录:" + name + "," + importCategory.getDirection());
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + path);
             List<CategoryPrivilege> categoryPrivileges = null;
             if (importCategory.isAll()) {
@@ -1352,4 +1358,28 @@ public class BusinessREST {
             AtlasPerfTracer.log(perf);
         }
     }
+
+    /**
+     * 获取指定目录权限（指标调用）
+     */
+    @GET
+    @Path("/category/privilege")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getCategoryPrivilege(@QueryParam("guid") final String guid, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        if (StringUtils.isBlank(guid)) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录id不能为空");
+        }
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategoryPrivilege()");
+            }
+            CategoryPrivilegeDTO result = businessCatalogueService.getCategoriesPrivilege(guid, tenantId);
+            return ReturnUtil.success(result);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
 }
