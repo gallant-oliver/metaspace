@@ -76,7 +76,7 @@ public class ApproveServiceImp implements ApproveService{
             sortByField = sortByField.split(" ")[0];
             paras.setSortBy(sortByField);
         }
-
+        paras.setQuery(paras.getQuery().replace("%", "/%").replace("_", "/_"));
         List<ApproveItem> approveItems = approveDao.getApproveItems(tenantId, paras, groups);
        for(ApproveItem item:approveItems){
            item.setBusinessTypeText(BusinessType.getTextByCode(item.getBusinessType()));
