@@ -131,13 +131,13 @@
     where guid = #{guid,jdbcType=VARCHAR}
   </update>
 
-  <select id="selectByRequirementId" parameterType="java.lang.String" resultType="io.zeta.metaspace.model.dto.requirements.RequirementsApiDetailDTO">
+  <select id="selectByRequirementId" parameterType="java.lang.String" resultType="io.zeta.metaspace.model.po.requirements.RequirementsApiPO">
     select p.name project, ac.name category, a.name apiName, ra.description, a.status,
     (select u.username from users u where u.userid=a.creator) creator,
     (select t.name from tenant t where t.id=r.tenant_id) tenant
     from requirements_api ra
     join requirements r on r.guid=ra.requirements_id
-    left join api a on a.guid=ra.api_id
+    left join api a on a.guid=ra.api_id and a.version_num=(select max(a2.version_num) from api a2 where a2.guid=ra.api_id and a2.valid=true)
     left join api_category ac on ac.guid=ra.category_id
     left join project p on p.id =ra.project_id
     where ra.requirements_id=#{requirementId}
