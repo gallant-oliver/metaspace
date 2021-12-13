@@ -20,7 +20,6 @@ public enum ResourceType {
     MESSAGE_QUEUE(3, "消息队列"),
     ;
 
-    @JsonValue
     private int code;
     @Getter
     private String desc;
