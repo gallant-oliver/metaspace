@@ -18,5 +18,5 @@ public interface RequirementsApiMapper {
 
     int updateByPrimaryKey(RequirementsApiPO record);
 
-    RequirementsApiDetailDTO selectByRequirementId(@Param("requirementId") String requirementId);
+    RequirementsApiPO selectByRequirementId(@Param("requirementId") String requirementId);
 }

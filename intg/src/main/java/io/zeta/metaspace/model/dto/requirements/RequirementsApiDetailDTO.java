@@ -1,10 +1,14 @@
 package io.zeta.metaspace.model.dto.requirements;
 
+import lombok.Data;
+
 /**
  * @Author wuyongliang
  * @Date 2021/12/8 16:05
  * @Description 反馈结果-api
  */
+
+@Data
 public class RequirementsApiDetailDTO {
     /**
      * 需求guid
