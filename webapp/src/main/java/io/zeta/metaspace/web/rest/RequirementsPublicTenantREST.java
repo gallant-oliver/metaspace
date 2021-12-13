@@ -205,15 +205,15 @@ public class RequirementsPublicTenantREST {
     @Path("/download/file")
     @Permission({ModuleEnum.TECHNICAL, ModuleEnum.AUTHORIZATION})
     public void downloadFile(@Context HttpServletResponse response,
-                             @QueryParam("fileName") String fileName,
+                             @DefaultValue("") @QueryParam("fileName") String fileName,
                              @QueryParam("filePath") String filePath) {
-        Assert.isTrue(StringUtils.isNotBlank(fileName), "文件名不能为空");
         Assert.isTrue(StringUtils.isNotBlank(filePath), "文件路径不能为空");
         try {
             fileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8.name());
-            response.setContentType("application/force-download");
-            response.addHeader("Access-Control-Expose-Headers", "Content-Disposition");
-            response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
+            if(StringUtils.isNotBlank(fileName)){
+                response.setContentType("application/force-download");// 应用程序强制下载
+                response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", fileName));
+            }
             IOUtils.copyBytes(
                     hdfsService.getFileInputStream(filePath),
                     response.getOutputStream(),
