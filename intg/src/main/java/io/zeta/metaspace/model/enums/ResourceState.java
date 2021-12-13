@@ -19,11 +19,14 @@ public enum ResourceState {
     OFFLINE(2, "下线"),
     ;
     
-    @Getter
-    @JsonValue
     private int code;
     @Getter
     private String desc;
+    
+    @JsonValue
+    public int getCode() {
+        return code;
+    }
     
     ResourceState(int code, String desc) {
         this.code = code;
