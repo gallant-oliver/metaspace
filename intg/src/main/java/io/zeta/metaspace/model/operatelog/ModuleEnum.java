@@ -1,6 +1,5 @@
 package io.zeta.metaspace.model.operatelog;
 
-import com.sun.org.apache.xpath.internal.operations.Mod;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.security.RoleResource;
 import io.zeta.metaspace.model.user.UserInfo;
@@ -60,6 +59,7 @@ public enum ModuleEnum {
     APPROVERMANAGE(9,"审批管理","审批人管理",17,"审批人管理", "approvermanage", "approvermanage",1, 17),
     STATUS(9,"审批管理","审批状况",45,"审批状况", "status", "status",1, 17),
     APPLICATIONS(9,"审批管理","我的申请",46,"我的申请", "applications", "applications",1, 17),
+    AUDIT(9, "审批管理", "API审核中心", 28, "API审核中心", "audit", "audit", 1, 28),
 
     //数据质量
     RULEMANAGE(4,"数据质量","规则管理",20,"规则管理", "rulemanage", "rulemanage",1, 20),
@@ -74,8 +74,7 @@ public enum ModuleEnum {
     APIMANAGE(5,"数据服务","API项目管理",25,"API项目管理", "apimanage", "apimanage",1, 25),
     IPRESTRICTION(5,"数据服务","黑白名单管理",26,"黑白名单管理","iprestriction","iprestriction",1, 26),
     DESENSITIZATION(5,"数据服务","脱敏管理",27,"脱敏管理","desensitization","desensitization",1, 27),
-    AUDIT(5,"数据服务","API审核中心",28,"API审核中心", "audit", "audit",1, 28),
-
+    REQUIREMENTMANAGEMENT(5, "数据服务", "需求管理", 61, "需求管理", "requirementManagement", "requirementManagement", 1, 61),
 
     //角色管理和权限在安全中心不存在
     ROLE(6,"角色管理","查看",29,"角色管理", "role", "role",0, 29),
@@ -98,7 +97,10 @@ public enum ModuleEnum {
     //公共租户-权限管理
     USERALL(11,"权限管理","用户管理",53,"用户管理", "userAll", "userAll",1, 53),
     //数据资产检索
-    DATAASSERTSEARCH(12,"数据资产检索","数据资产检索",56, "数据资产检索", "dataAssertSearch", "dataAssertSearch",1,56);
+    DATAASSERTSEARCH(12, "数据资产检索", "数据资产检索", 56, "数据资产检索", "dataAssertSearch", "dataAssertSearch", 1, 56),
+    //公共租户-需求管理
+    REQUIREMENTMANAGEMENTPUBLIC(13, "需求管理", "需求管理", 60, "需求管理", "requirementManagementPublic", "requirementManagementPublic", 1, 60);
+
     private int id;
     private String name;
     private String alias;

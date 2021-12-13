@@ -19,12 +19,16 @@ public enum ResourceType {
     TABLE(2, "中间库"),
     MESSAGE_QUEUE(3, "消息队列"),
     ;
-    
-    @Getter
+
     @JsonValue
     private int code;
     @Getter
     private String desc;
+
+    @JsonValue
+    public int getCode() {
+        return code;
+    }
     
     ResourceType(int code, String desc) {
         this.code = code;
@@ -37,6 +41,15 @@ public enum ResourceType {
                 .filter(obj -> Objects.equals(code, obj.getCode()))
                 .findFirst()
                 .orElse(null);
+    }
+
+    public static String getValue(int code) {
+        for (ResourceType value : ResourceType.values()) {
+            if (value.getCode() == code) {
+                return value.getDesc();
+            }
+        }
+        return "";
     }
     
     public static ResourceType parseByDesc(String desc) {

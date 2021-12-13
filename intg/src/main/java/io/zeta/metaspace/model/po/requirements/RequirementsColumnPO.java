@@ -22,6 +22,8 @@ public class RequirementsColumnPO {
     /**
      * 操作符 {@link FilterOperation#getDesc()}
      */
+    private String columnName;
+
     private String operator;
     
     private String sampleData;

@@ -165,4 +165,14 @@
       creator = #{creator,jdbcType=VARCHAR}
     where guid = #{guid,jdbcType=VARCHAR}
   </update>
+
+  <select id="selectByRequirementId" parameterType="java.lang.String" resultType="io.zeta.metaspace.model.po.requirements.RequirementsDatabasePO">
+    select rd.middle_type, rd.database, rd.table_name_en, rd.table_name_ch, rd.description
+           case when rd.status=1 then '上线' else '下线' end as status,
+           (select u.username from users u where u.userid=rd.creator) creator,
+           (select t.name from tenant t where t.id=r.tenant_id) tenant
+    from requirements_database rd
+    join requirements r on r.guid=rd.requirements_id
+    where rd.requirements_id=#{requirementId}
+  </select>
 </mapper>

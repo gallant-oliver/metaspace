@@ -25,4 +25,33 @@ public class RequirementsApiPO {
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
     private Timestamp updateTime;
 
+    /**
+     * 所属租户名称
+     */
+    private String tenant;
+
+    /**
+     * api项目名称
+     */
+    private String project;
+
+    /**
+     * api所属目录
+     */
+    private String category;
+
+    /**
+     * api名称
+     */
+    private String apiName;
+
+    /**
+     * 状态：上线；下线
+     */
+    private String status;
+
+    /**
+     * 创建人
+     */
+    private String creator;
 }

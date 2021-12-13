@@ -22,10 +22,13 @@ public enum FilterOperation {
     greater(">"),
     less("<"),
     ;
-    
-    @Getter
-    @JsonValue
+
     private String desc;
+
+    @JsonValue
+    public String getDesc() {
+        return desc;
+    }
     
     FilterOperation(String desc) {
         this.desc = desc;

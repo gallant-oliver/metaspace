@@ -30,4 +30,9 @@ public class RequirementsDatabasePO {
     private Timestamp updateTime;
 
     private String creator;
+
+    /**
+     * 所属租户
+     */
+    private String tenant;
 }

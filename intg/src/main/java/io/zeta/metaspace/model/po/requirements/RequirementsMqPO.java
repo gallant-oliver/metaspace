@@ -17,7 +17,7 @@ public class RequirementsMqPO {
 
     private String format;
 
-    private Short status;
+    private Integer status;
 
     private String description;
 
@@ -28,4 +28,9 @@ public class RequirementsMqPO {
     private Timestamp updateTime;
 
     private String creator;
+
+    /**
+     * 所属租户
+     */
+    private String tenant;
 }
