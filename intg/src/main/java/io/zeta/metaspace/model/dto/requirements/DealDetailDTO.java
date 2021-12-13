@@ -11,9 +11,9 @@ import lombok.Data;
 public class DealDetailDTO {
 
     /**
-     * 结果： 同意  拒绝
+     * 结果： 1.同意  2.拒绝
      */
-    private String result;
+    private Integer result;
 
     /**
      * 用户组

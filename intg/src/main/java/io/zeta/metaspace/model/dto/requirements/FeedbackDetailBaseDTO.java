@@ -12,7 +12,7 @@ public class FeedbackDetailBaseDTO {
     /**
      * 结果： 同意  拒绝
      */
-    private String result;
+    private Integer result;
 
     /**
      * 处理人

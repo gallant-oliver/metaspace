@@ -5,6 +5,7 @@ import com.gridsum.gdp.library.commons.utils.DateTimeUtils;
 import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
+import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dto.requirements.*;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -202,6 +203,7 @@ public class RequirementsPublicTenantREST {
      */
     @GET
     @Path("/download/file")
+    @Permission({ModuleEnum.TECHNICAL, ModuleEnum.AUTHORIZATION})
     public void downloadFile(@Context HttpServletResponse response,
                              @QueryParam("fileName") String fileName,
                              @QueryParam("filePath") String filePath) {
@@ -225,8 +227,7 @@ public class RequirementsPublicTenantREST {
 
     @GET
     @Path("/feedback/detail/base")
-    public Result getDetailBase(@HeaderParam(HEADER_TENANT_ID) String tenantId,
-                                @QueryParam("id") String id, @QueryParam("type") Integer type) {
+    public Result getDetailBase(@QueryParam("id") String id, @QueryParam("type") Integer type) {
         FeedbackDetailBaseDTO result = publicTenantService.getDetailBase(id, type);
         return ReturnUtil.success(result);
     }
