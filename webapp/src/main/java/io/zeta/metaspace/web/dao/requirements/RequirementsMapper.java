@@ -35,11 +35,38 @@ public interface RequirementsMapper {
      * @param requireListParam
      * @return
      */
-    List<RequirementsPO> selectListByCreatorPage(@Param("creator") String creator,@Param("param") RequireListParam requireListParam);
+    List<RequirementsPO> selectListByCreatorPage(@Param("creator") String creator, @Param("param") RequireListParam requireListParam);
 
     long countRequirementByName(@Param("name") String name, @Param("tenantId") String tenantId);
 
     void batchUpdateStatusByIds(@Param("guids") List<String> guids, @Param("status") int status);
-    
+
     RequirementsPO getRequirementById(String id);
+
+    /**
+     * 需求处理-根据状态查询
+     * @param userId
+     * @param tenantId
+     * @param requireListParam
+     * @return
+     */
+    List<RequirementsPO> selectHandleListByStatusPage(@Param("userId") String userId,@Param("tenantId") String tenantId, @Param("param") RequireListParam requireListParam);
+
+    /**
+     * 需求处理无状态查询
+     * @param userId
+     * @param tenantId
+     * @param requireListParam
+     * @return
+     */
+    List<RequirementsPO> selectHandleListPage(@Param("userId") String userId,@Param("tenantId") String tenantId, @Param("param") RequireListParam requireListParam);
+
+    /**
+     * 需求反馈列表
+     * @param userId
+     * @param tenantId
+     * @param requireListParam
+     * @return
+     */
+    List<RequirementsPO> selectReturnListPage(@Param("userId") String userId,@Param("tenantId") String tenantId, @Param("param") RequireListParam requireListParam);
 }

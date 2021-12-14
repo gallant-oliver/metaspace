@@ -75,7 +75,7 @@ public class TaskManageOpenREST {
         }
     }
     
-    @GET
+    @POST
     @Path("/start/{taskId}")
     public Result startTask(@HeaderParam(HEADER_TENANT_ID) String tenantId,
                             @PathParam("taskId") String taskId) {

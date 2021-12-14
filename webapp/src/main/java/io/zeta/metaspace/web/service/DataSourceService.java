@@ -19,7 +19,10 @@ import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.model.datasource.*;
-import io.zeta.metaspace.model.dto.indices.*;
+import io.zeta.metaspace.model.dto.indices.ColumnDTO;
+import io.zeta.metaspace.model.dto.indices.DataBaseDTO;
+import io.zeta.metaspace.model.dto.indices.OptionalDataSourceDTO;
+import io.zeta.metaspace.model.dto.indices.TableDTO;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.pojo.TableInfo;
@@ -1612,29 +1615,15 @@ public class DataSourceService {
         if (!CollectionUtils.isEmpty(columnInfoList)) {
             columnDTOS = columnInfoList.stream().map(x -> BeanMapper.map(x, ColumnDTO.class)).collect(Collectors.toList());
         }
-        if(columnDTOS.size()>0){
-           for(ColumnDTO columnDTO:columnDTOS) {
-               List<String> values=new ArrayList<>();
-               if(lines.size()>0)
-               {
-                  for(Map<String,String> map:lines){
-                      String param=columnDTO.getColumnName();
-                      if("hive".equals(sourceId)){
-                          param=tableName+"."+columnDTO.getColumnName();
-                      }
-                      String value=map.get(param);
-                      if(!"NULL".equals(value)){
-                        if(StringUtils.isNotBlank(value)) {
-                            values.add(value);
-                        }
-                      }
-                  }
-                   columnDTO.setColumnValues(values);
-               }else{
-                   columnDTO.setColumnValues(values);
-               }
-           }
-        }
         return columnDTOS;
+    }
+
+    public List<String> getColumnValues(String sourceId, String tableId, String columnId) throws IOException, SQLException {
+        GuidCount guidCount = new GuidCount();
+        guidCount.setCount(100);//指标纬度管理编辑纬度映射字段预览量由5改为100
+        guidCount.setGuid(tableId);
+        guidCount.setSourceId(sourceId);
+        List<String> data = searchService.getDistinctColumnValues(guidCount, columnId);
+        return data;
     }
 }

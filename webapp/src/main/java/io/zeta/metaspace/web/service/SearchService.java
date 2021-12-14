@@ -99,6 +99,8 @@ public class SearchService {
     private DataSourceDAO dataSourceDAO;
     @Autowired
     private PublicService publicService;
+    @Autowired
+    private ColumnDAO columnDAO;
 
     public PageResult<Database> queryDatabases(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount,boolean isPublic) {
         PageResult<Database> databasePageResult = null;
@@ -785,6 +787,79 @@ public class SearchService {
             tableShow.setColumnNames(columns);
             tableShow.setLines(resultList);
             return tableShow;
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有找到数据" + e.getMessage());
+        }
+
+
+    }
+
+    public List<String> getDistinctColumnValues(GuidCount guidCount, String columnId) throws AtlasBaseException {
+        String[] names = getDbTableNames(guidCount.getGuid());
+        DataSourceInfo dataSourceInfo = dataSourceService.getAnyDataSourceInfoByTableId(guidCount.getSourceId(), guidCount.getGuid());
+        AdapterExecutor adapterExecutor = AdapterUtils.getAdapterExecutor(dataSourceInfo);
+        AdapterTransformer adapterTransformer = adapterExecutor.getAdapterSource().getAdapter().getAdapterTransformer();
+        Column col = columnDAO.getColumnName(columnId);
+        if (null == col) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "表字段记录异常");
+        }
+        String sqlStr = "";
+        String type = col.getType();
+        String name = col.getColumnName();
+
+        if ("CLOB".equals(type) || "NCLOB".equals(type)) {
+            sqlStr = "to_char(" + name + ")";
+        } else if ("BLOB".equals(type)) {
+            sqlStr = "'不支持展示的数据类型'";
+        } else if ("TIMESTAMP(6)".equals(name) || "TIMESTAMP".equals(name)) {
+            sqlStr = "to_char(" + name + ",'yyyy-MM-dd hh24:mi:ss')";
+        } else if ("DATE".equals(name)) {
+            sqlStr = "to_char(" + name + ",'yyyyMMdd')";
+        } else {
+            sqlStr = name;
+        }
+
+        String executeSql = "SELECT DISTINCT " + sqlStr + " FROM " + adapterTransformer.caseSensitive(names[0]) + "." + adapterTransformer.caseSensitive(names[1]) + " t1 WHERE (ROWNUM < " + (guidCount.getCount() + 1) + ")";
+        try (Connection conn = adapterExecutor.getAdapterSource().getConnection()) {
+            LOG.info("执行sql" + executeSql);
+            ResultSet resultSet = conn.createStatement().executeQuery(executeSql);
+            List<String> columns = new ArrayList<>();
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            List<String> result = new ArrayList<>();
+            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                String columnName = metaData.getColumnName(i);
+                columns.add(columnName);
+            }
+            while (resultSet.next()) {
+                Map<String, String> map = new HashMap<>();
+                for (String column : columns) {
+                    String s = null;
+                    Object object = resultSet.getObject(column) == null ? "NULL" : resultSet.getObject(column);
+                    if (object instanceof Clob) {
+                        try {
+                            Clob clob = (Clob) object;
+                            StringBuffer buffer = new StringBuffer();
+                            clob.getCharacterStream();
+                            BufferedReader br = new BufferedReader(clob.getCharacterStream());
+                            clob.getCharacterStream();
+                            String line = br.readLine();
+                            while (line != null) {
+                                buffer.append(line);
+                                line = br.readLine();
+                            }
+                            s = buffer.toString();
+                        } catch (Exception e) {
+                            LOG.error(e.getMessage());
+                            s = object.toString();
+                        }
+
+                    } else {
+                        s = adapterTransformer.convertColumnValue(object).toString();
+                    }
+                    result.add(s.trim());
+                }
+            }
+            return result;
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有找到数据" + e.getMessage());
         }

@@ -5,37 +5,35 @@ import io.zeta.metaspace.model.dto.requirements.*;
 import io.zeta.metaspace.model.enums.FilterOperation;
 import io.zeta.metaspace.model.enums.ResourceType;
 import io.zeta.metaspace.model.metadata.Column;
+import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.TableExtInfo;
-import io.zeta.metaspace.model.po.requirements.RequirementsColumnPO;
-import io.zeta.metaspace.model.po.requirements.RequirementsPO;
-import io.zeta.metaspace.model.po.requirements.RequirementsResultPO;
+import io.zeta.metaspace.model.po.requirements.*;
+import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.share.ApiHead;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.ColumnDAO;
+import io.zeta.metaspace.web.dao.DataShareDAO;
 import io.zeta.metaspace.web.dao.TableDAO;
 import io.zeta.metaspace.web.dao.requirements.*;
-import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.po.requirements.RequirementsApiPO;
-import io.zeta.metaspace.model.po.requirements.RequirementsDatabasePO;
-import io.zeta.metaspace.model.po.requirements.RequirementsMqPO;
-import io.zeta.metaspace.model.share.ApiHead;
-import io.zeta.metaspace.web.dao.DataShareDAO;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.util.AdminUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.BeanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 import java.sql.Timestamp;
-import java.util.stream.Collectors;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -217,7 +215,7 @@ public class RequirementsService {
         return requirementsResultMapper.queryDealDetail(id);
     }
 
-    public List<ApiCateDTO> getCateategoryApis(String projectId, String categoryId, String search, String tenantId) {
+    public List<ApiCateDTO> getCategoryApis(String projectId, String categoryId, String search, String tenantId) {
         if (StringUtils.isBlank(projectId)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "项目id不能为空");
         }
@@ -249,7 +247,7 @@ public class RequirementsService {
         return apiList;
     }
 
-    public List<ApiCateDTO> getCateategories(String projectId, String search, String tenantId) {
+    public List<ApiCateDTO> getCategories(String projectId, String search, String tenantId) {
         List<ApiCateDTO> cateList;
         try {
             cateList = shareDAO.getCategories(projectId, tenantId, search);
@@ -259,34 +257,23 @@ public class RequirementsService {
         return cateList;
     }
 
-
+    @Transactional(rollbackFor = Exception.class)
     public void feedback(RequirementsFeedbackCommit commitInput) {
         //必输参数校验
         String requirementsId = commitInput.getRequirementsId();
         Integer resourceType = commitInput.getResourceType();
-
-        if (StringUtils.isBlank(requirementsId)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "需求id不能为空");
-        }
-
-        if (Objects.isNull(resourceType)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "资源类型不能为空");
-        }
+        Assert.isTrue(StringUtils.isNotBlank(requirementsId), "需求id不能为空");
+        Assert.notNull(resourceType, "资源类型不能为空");
 
         if (resourceType == ResourceType.API.getCode()) {
             RequirementsApiCommitDTO apiInput = commitInput.getApi();
-            if (null == apiInput) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API入参为空");
-            }
+            Assert.notNull(apiInput, "API入参不能为空");
             String projectId = apiInput.getProjectId();
             String categoryId = apiInput.getCategoryId();
             String apiId = apiInput.getApiId();
-            if (StringUtils.isBlank(projectId)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "项目id为空");
-            }
-            if (StringUtils.isBlank(apiId)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API id为空");
-            }
+            Assert.isTrue(StringUtils.isNotBlank(projectId), "项目id不能为空");
+            Assert.isTrue(StringUtils.isNotBlank(apiId), "API id不能为空");
+
             RequirementsApiPO record = new RequirementsApiPO();
             record.setGuid(UUID.randomUUID().toString());
             record.setRequirementsId(requirementsId);
@@ -303,29 +290,17 @@ public class RequirementsService {
         String userId = AdminUtils.getUserData().getUserId();
         if (resourceType == ResourceType.TABLE.getCode()) {
             RequirementsDatabaseCommitDTO databaseInput = commitInput.getDatabase();
-            if (null == databaseInput) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "中间库入参不能为空");
-            }
+            Assert.notNull(databaseInput, "中间库入参不能为空");
             String middleType = databaseInput.getMiddleType();
             String database = databaseInput.getDatabase();
             String tableNameEn = databaseInput.getTableNameEn();
             String tableNameCh = databaseInput.getTableNameCh();
             Integer status = databaseInput.getStatus();
-            if (StringUtils.isBlank(middleType)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "中间库类型不能为空");
-            }
-            if (StringUtils.isBlank(database)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库名称不能为空");
-            }
-            if (StringUtils.isBlank(tableNameEn)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据表英文名称不能为空");
-            }
-            if (StringUtils.isBlank(tableNameCh)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据表中文名称不能为空");
-            }
-            if (null == status) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "状态不能为空");
-            }
+            Assert.isTrue(StringUtils.isNotBlank(middleType), "中间库类型不能为空");
+            Assert.isTrue(StringUtils.isNotBlank(database), "数据库名称不能为空");
+            Assert.isTrue(StringUtils.isNotBlank(tableNameEn), "数据表英文名称不能为空");
+            Assert.isTrue(StringUtils.isNotBlank(tableNameCh), "数据表中文名称不能为空");
+            Assert.notNull(status, "状态不能为空");
 
             RequirementsDatabasePO record = new RequirementsDatabasePO();
             record.setGuid(UUID.randomUUID().toString());
@@ -344,28 +319,17 @@ public class RequirementsService {
             requirementsDatabaseMapper.insert(record);
         }
 
-
         if (resourceType == ResourceType.MESSAGE_QUEUE.getCode()) {
             RequirementsMqCommitDTO mqInput = commitInput.getMq();
-            if (null == mqInput) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "消息队列入参不能为空");
-            }
+            Assert.notNull(mqInput, "消息队列入参不能为空");
             String mqNameEn = mqInput.getMqNameEn();
             String mqNameCh = mqInput.getMqNameCh();
             String format = mqInput.getFormat();
             Integer status = mqInput.getStatus();
-            if (StringUtils.isBlank(mqNameEn)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "消息队列英文名称不能为空");
-            }
-            if (StringUtils.isBlank(mqNameCh)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "消息队列中文名称不能为空");
-            }
-            if (StringUtils.isBlank(format)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "格式不能为空");
-            }
-            if (null == status) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "状态不能为空");
-            }
+            Assert.isTrue(StringUtils.isNotBlank(mqNameEn), "消息队列英文名称不能为空");
+            Assert.isTrue(StringUtils.isNotBlank(mqNameCh), "消息队列中文名称不能为空");
+            Assert.isTrue(StringUtils.isNotBlank(format), "格式不能为空");
+            Assert.notNull(status, "状态不能为空");
 
             RequirementsMqPO record = new RequirementsMqPO();
             record.setGuid(UUID.randomUUID().toString());
@@ -382,6 +346,100 @@ public class RequirementsService {
             requirementsMqMapper.insert(record);
         }
 
+        // 更新需求状态：1、待下发  2、已下发（待处理）  3、已处理（未反馈） 4、已反馈  -1、退回
+        List<String> guids = new ArrayList<>();
+        guids.add(requirementsId);
+        requirementsMapper.batchUpdateStatusByIds(guids, 4);
+    }
 
+    /**
+     * 需求处理列表
+     * @param requireListParam
+     * @param tenantId
+     * @return
+     */
+    public PageResult getHandleListPage(RequireListParam requireListParam, String tenantId) {
+        PageResult pageResult = new PageResult();
+        List<RequirementsListDTO> requirementsListDTOList = new ArrayList<>();
+        try {
+            User user = AdminUtils.getUserData();
+            if (StringUtils.isBlank(requireListParam.getOrder())) {
+                requireListParam.setOrder("asc");
+            }
+            List<RequirementsPO> requirementsPOList;
+            if (requireListParam.getStatus() != null) {
+                requirementsPOList = requirementsMapper.selectHandleListByStatusPage(user.getUserId(), tenantId, requireListParam);
+            } else {
+                requirementsPOList = requirementsMapper.selectHandleListPage(user.getUserId(), tenantId, requireListParam);
+            }
+            if (CollectionUtils.isEmpty(requirementsPOList)) {
+                pageResult.setTotalSize(0);
+                pageResult.setCurrentSize(0);
+                pageResult.setOffset(0);
+                pageResult.setLists(requirementsListDTOList);
+                return pageResult;
+            }
+            for (RequirementsPO requirementsPO : requirementsPOList) {
+                RequirementsListDTO requirementsListDTO = new RequirementsListDTO();
+                BeanUtils.copyProperties(requirementsPO, requirementsListDTO);
+                requirementsListDTO.setResourceTypeName(ResourceType.getValue(requirementsListDTO.getResourceType()));
+                if ((requirementsListDTO.getStatus().equals(CommonConstant.REQUIREMENTS_STATUS_TWO))) {
+                    requirementsListDTO.setStatusName("待处理");
+                } else {
+                    requirementsListDTO.setStatusName("已处理");
+                }
+                requirementsListDTOList.add(requirementsListDTO);
+            }
+            pageResult.setTotalSize(requirementsListDTOList.get(0).getTotal());
+            pageResult.setCurrentSize(requirementsListDTOList.size());
+            pageResult.setOffset(requireListParam.getOffset());
+            pageResult.setLists(requirementsListDTOList);
+        } catch (Exception e) {
+            log.error("getHandleListPage exception is {}", e);
+        }
+        return pageResult;
+    }
+
+    /**
+     * 需求反馈列表接口
+     * @param requireListParam
+     * @param tenantId
+     * @return
+     */
+    public PageResult getReturnListPage(RequireListParam requireListParam, String tenantId) {
+        PageResult pageResult = new PageResult();
+        List<RequirementsListDTO> requirementsListDTOList = new ArrayList<>();
+        try {
+            User user = AdminUtils.getUserData();
+            if (StringUtils.isBlank(requireListParam.getOrder())) {
+                requireListParam.setOrder("asc");
+            }
+            List<RequirementsPO> requirementsPOList = requirementsMapper.selectReturnListPage(user.getUserId(), tenantId, requireListParam);
+            if (CollectionUtils.isEmpty(requirementsPOList)) {
+                pageResult.setTotalSize(0);
+                pageResult.setCurrentSize(0);
+                pageResult.setOffset(0);
+                pageResult.setLists(requirementsListDTOList);
+                return pageResult;
+            }
+            for (RequirementsPO requirementsPO : requirementsPOList) {
+                RequirementsListDTO requirementsListDTO = new RequirementsListDTO();
+                BeanUtils.copyProperties(requirementsPO, requirementsListDTO);
+                requirementsListDTO.setResourceTypeName(ResourceType.getValue(requirementsListDTO.getResourceType()));
+                if ((requirementsListDTO.getStatus().equals(CommonConstant.REQUIREMENTS_STATUS_THREE))) {
+                    requirementsListDTO.setStatusName("待反馈");
+                } else {
+                    requirementsListDTO.setStatusName("已反馈");
+                }
+                requirementsListDTOList.add(requirementsListDTO);
+            }
+            pageResult.setTotalSize(requirementsListDTOList.get(0).getTotal());
+            pageResult.setCurrentSize(requirementsListDTOList.size());
+            pageResult.setOffset(requireListParam.getOffset());
+            pageResult.setLists(requirementsListDTOList);
+        } catch (Exception e) {
+            log.error("getReturnListPage exception is {}", e);
+        }
+        return pageResult;
     }
 }
