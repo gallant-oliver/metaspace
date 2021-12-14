@@ -1,12 +1,9 @@
 package io.zeta.metaspace.model.dto.indices;
 
-import java.util.List;
-
 public class ColumnDTO {
     private String columnId;
     private String columnName;
     private String type;
-    private List<String> columnValues;
 
     public String getColumnId() {
         return columnId;
@@ -30,12 +27,5 @@ public class ColumnDTO {
 
     public void setType(String type) {
         this.type = type;
-    }
-
-    public List<String> getColumnValues() {
-        return columnValues;
-    }
-    public void setColumnValues(List<String> columnValues) {
-        this.columnValues = columnValues;
     }
 }
