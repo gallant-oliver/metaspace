@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import io.zeta.metaspace.model.dto.requirements.*;
 import io.zeta.metaspace.model.enums.FilterOperation;
 import io.zeta.metaspace.model.enums.ResourceType;
+import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.TableExtInfo;
 import io.zeta.metaspace.model.po.requirements.RequirementsColumnPO;
 import io.zeta.metaspace.model.po.requirements.RequirementsPO;
@@ -185,18 +186,17 @@ public class RequirementsService {
             Gson gson = new Gson();
             List<String> columnIds = gson.fromJson(aimingField, List.class);
             if (CollectionUtils.isNotEmpty(columnIds)) {
-                List<String> columnNames = columnDAO.queryColumnNames(columnIds);
-                result.setTargetFieldNames(columnNames);
+                List<Column> columns = columnDAO.queryColumns(columnIds);
+                result.setTargetFields(columns);
             }
 
-            List<String> filterFieldNames = null;
+            result.setTargetFieldIDs(columnIds);
+
             List<FilterConditionDTO> filterConditions = null;
 
             // 查询过滤字段信息
             List<RequirementsColumnPO> filterColumnInfos = requirementsColumnMapper.selectByRequirementId(requirementId);
             if (CollectionUtils.isNotEmpty(filterColumnInfos)) {
-                filterFieldNames = filterColumnInfos.stream().map(RequirementsColumnPO :: getColumnName).collect(Collectors.toList());
-
                 filterConditions = new ArrayList<>();
                 for (RequirementsColumnPO filterColumnInfo : filterColumnInfos) {
                     FilterConditionDTO filterCondition = new FilterConditionDTO();
@@ -206,7 +206,6 @@ public class RequirementsService {
                 }
             }
 
-            result.setFilterFieldNames(filterFieldNames);
             result.setFilterConditions(filterConditions);
         }
 

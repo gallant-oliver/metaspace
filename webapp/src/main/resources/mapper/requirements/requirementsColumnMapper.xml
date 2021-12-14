@@ -171,7 +171,7 @@
 
     </update>
   <select id="selectByRequirementId" resultType="io.zeta.metaspace.model.po.requirements.RequirementsColumnPO">
-    select ci.column_name, rc.operator, rc.sample_data, rc.description
+    select rc.column_id, ci.column_name, rc.operator, rc.sample_data, rc.description
     from requirements_column rc
     join column_info ci on ci.column_guid=rc.column_id
     where rc.requirements_id=#{requirementId} and delete=0

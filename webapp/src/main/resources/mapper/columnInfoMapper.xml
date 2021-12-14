@@ -30,8 +30,8 @@
         </foreach>
     </select>
 
-    <select id="queryColumnNames" resultType="java.lang.String">
-        select column_name
+    <select id="queryColumns" resultType="io.zeta.metaspace.model.metadata.Column">
+        select column_guid columnId, column_name
         from column_info
         where column_guid in
         <foreach item='columnId' index='index' collection='columnIds' separator=',' open='(' close=')'>
