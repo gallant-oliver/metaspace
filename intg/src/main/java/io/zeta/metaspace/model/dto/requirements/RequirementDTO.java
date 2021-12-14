@@ -2,6 +2,7 @@ package io.zeta.metaspace.model.dto.requirements;
 
 import io.zeta.metaspace.model.enums.ApiProtocol;
 import io.zeta.metaspace.model.enums.ResourceType;
+import io.zeta.metaspace.model.metadata.Column;
 import lombok.Data;
 
 import java.util.List;
@@ -68,12 +69,7 @@ public class RequirementDTO {
     /**
      * 目标字段名称
      */
-    private List<String> targetFieldNames;
-
-    /**
-     * 过滤字段名称
-     */
-    private List<String> filterFieldNames;
+    private List<Column> targetFields;
 
     /**
      * 过滤字段
