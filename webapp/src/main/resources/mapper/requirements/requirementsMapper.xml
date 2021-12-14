@@ -104,7 +104,7 @@
     select count(*)over() total,br.categoryguid as business_category_id,
     <include refid="Base_Column_List"/>
     from requirements left join business_relation as br on requirements.business_id = br.businessid
-    where creator = #{creator}
+    where delete=0 and creator = #{creator}
     <if test="param.status != null and param.status == 1">
         and param.status = 1
     </if>
