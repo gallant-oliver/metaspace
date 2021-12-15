@@ -97,11 +97,12 @@ public class RequirementsService {
             Timestamp currentTime = new Timestamp(currentTimeMillis);
 
             List<RequirementsResultPO> resultPOS = new ArrayList<>();
-            RequirementsResultPO result = resultDTO.getResult();
+            DealDetailDTO result = resultDTO.getResult();
             for (String requirementsId : guids) {
                 RequirementsResultPO resultPO = new RequirementsResultPO();
                 BeanUtils.copyProperties(result, resultPO);
                 resultPO.setRequirementsId(requirementsId);
+                resultPO.setType(result.getResult().shortValue());
 
                 String guid = UUID.randomUUID().toString();
                 resultPO.setGuid(guid);
@@ -115,7 +116,7 @@ public class RequirementsService {
             requirementsResultMapper.batchInsert(resultPOS);
 
             // 更新需求状态：1、待下发  2、已下发（待处理）  3、已处理（未反馈） 4、已反馈  -1、退回
-            Short type = result.getType(); // 1同意；2拒绝
+            Integer type = result.getResult(); // 1同意；2拒绝
             if (type == 1) {
                 requirementsMapper.batchUpdateStatusByIds(guids, 3);
             }
