@@ -1227,14 +1227,19 @@ public class BusinessCatalogueService implements Approvable {
                     if(String.valueOf(Status.REJECT.getIntValue()).equals(status) ||String.valueOf(Status.ACTIVE.getIntValue()).equals(status) ){
                         edit=true;
                     }
-                    CategoryPrivilege.Privilege privilege=new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
-                    result.setPrivilege(privilege);
-                    UserGroupPrivilege userGroupPrivilege=getCataPrivilege(userGroupIds,guid);
-                    if(null !=userGroupPrivilege) {
+                    UserGroupPrivilege userGroupPrivilege = getCataPrivilege(userGroupIds, guid);
+                    if (null != userGroupPrivilege) {
                         result.setEditCategory(userGroupPrivilege.getEditCategory());
                         result.setEditItem(userGroupPrivilege.getEditItem());
                         result.setRead(userGroupPrivilege.getRead());
+                        if (userGroupPrivilege.getEditCategory()) {
+                            edit = true;
+                        }
+                    } else {
+                        edit = false;
                     }
+                    CategoryPrivilege.Privilege privilege=new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
+                    result.setPrivilege(privilege);
                     valuesList.add(result);
                 }else {
                     UserGroupPrivilege userGroupPrivilege=getCataPrivilege(userGroupIds,guid);
@@ -1244,8 +1249,6 @@ public class BusinessCatalogueService implements Approvable {
                         result.setRead(userGroupPrivilege.getRead());
                         if(userGroupPrivilege.getEditCategory()){
                             delete=true;
-                            edit=true;
-                        }else {
                             edit=true;
                         }
                     }else {
@@ -1261,16 +1264,6 @@ public class BusinessCatalogueService implements Approvable {
                         delete=false;
                         edit=false;
                     }
-                /*    //如果当前目录有子目录，则不能删除当前目录
-                    List<CategorycateQueryResult> sonCateList = userGroupDAO.getCanotDeleteChrildCategory(guid);
-                    if (sonCateList.size() > 0) {
-                        delete = false;
-                    }
-                    //如果当前目录挂载有业务对象，则不能删除当前目录
-                    if (count > 0) {
-                        delete = false;
-                    }
-                 */
                     CategoryPrivilege.Privilege privilege=new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
                     result.setPrivilege(privilege);
                     valuesList.add(result);
