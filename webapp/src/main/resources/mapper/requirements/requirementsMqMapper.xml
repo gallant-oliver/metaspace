@@ -157,7 +157,7 @@
   </update>
 
   <select id="selectByRequirementId" parameterType="java.lang.String" resultType="io.zeta.metaspace.model.po.requirements.RequirementsMqPO">
-    select rm.mq_name_en, rm.mq_name_ch, rm.format, rm.description
+    select rm.mq_name_en, rm.mq_name_ch, rm.format, rm.description,
            case when rm.status=1 then '上线' else '下线' end as status,
            (select u.username from users u where u.userid=rm.creator) creator,
            (select t.name from tenant t where t.id=r.tenant_id) tenant
