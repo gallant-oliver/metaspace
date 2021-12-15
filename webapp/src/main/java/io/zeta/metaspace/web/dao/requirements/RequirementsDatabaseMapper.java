@@ -1,7 +1,6 @@
 package io.zeta.metaspace.web.dao.requirements;
 
 
-import io.zeta.metaspace.model.dto.requirements.RequirementsDatabaseDetailDTO;
 import io.zeta.metaspace.model.po.requirements.RequirementsDatabasePO;
 import org.apache.ibatis.annotations.Param;
 

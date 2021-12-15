@@ -1,6 +1,5 @@
 package io.zeta.metaspace.web.dao.requirements;
 
-import io.zeta.metaspace.model.dto.requirements.RequirementsMqDetailDTO;
 import io.zeta.metaspace.model.po.requirements.RequirementsMqPO;
 import org.apache.ibatis.annotations.Param;
 
