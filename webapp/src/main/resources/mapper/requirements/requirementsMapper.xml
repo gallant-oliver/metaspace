@@ -168,13 +168,13 @@
         <if test="param.type != null">
             and re.resource_type = #{param.type}
         </if>
-        <if test="param.query != null  and param.query != ''">
+        <if test="param.query != ''">
             and (re.name like concat('%',#{param.query},'%') or re.num like concat('%',#{param.query},'%'))
         </if>
-        <if test="param.order = 'asc'">
+        <if test="param.order == 'asc'">
             and re.status = 2
         </if>
-        <if test="param.order = 'desc'">
+        <if test="param.order == 'desc'">
             and re.status in (3,4,-1)
         </if>
         union
@@ -190,13 +190,13 @@
         <if test="param.type != null">
             and re.resource_type = #{param.type}
         </if>
-        <if test="param.query != null  and param.query != ''">
+        <if test="param.query != ''">
             and (re.name like concat('%',#{param.query},'%') or re.num like concat('%',#{param.query},'%'))
         </if>
-        <if test="param.order = 'asc'">
+        <if test="param.order == 'asc'">
             and re.status in (3,4,-1)
         </if>
-        <if test="param.order = 'desc'">
+        <if test="param.order == 'desc'">
             and re.status = 2
         </if>
         ) as a
