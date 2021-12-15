@@ -29,4 +29,8 @@ public class DealDetailDTO {
      * 处理说明
      */
     private String description;
+
+    private String groupId;
+
+    private String userId;
 }
