@@ -195,8 +195,8 @@ public class RequirementsService {
 
             // 查询过滤字段信息
             List<RequirementsColumnPO> filterColumnInfos = requirementsColumnMapper.selectByRequirementId(requirementId);
+            filterConditions = new ArrayList<>();
             if (CollectionUtils.isNotEmpty(filterColumnInfos)) {
-                filterConditions = new ArrayList<>();
                 for (RequirementsColumnPO filterColumnInfo : filterColumnInfos) {
                     FilterConditionDTO filterCondition = new FilterConditionDTO();
                     BeanUtils.copyProperties(filterColumnInfo, filterCondition);
