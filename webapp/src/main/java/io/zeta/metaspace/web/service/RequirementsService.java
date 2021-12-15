@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import io.zeta.metaspace.model.dto.requirements.*;
 import io.zeta.metaspace.model.enums.FilterOperation;
 import io.zeta.metaspace.model.enums.ResourceType;
+import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.TableExtInfo;
 import io.zeta.metaspace.model.po.requirements.*;
@@ -96,11 +97,12 @@ public class RequirementsService {
             Timestamp currentTime = new Timestamp(currentTimeMillis);
 
             List<RequirementsResultPO> resultPOS = new ArrayList<>();
-            RequirementsResultPO result = resultDTO.getResult();
+            DealDetailDTO result = resultDTO.getResult();
             for (String requirementsId : guids) {
                 RequirementsResultPO resultPO = new RequirementsResultPO();
                 BeanUtils.copyProperties(result, resultPO);
                 resultPO.setRequirementsId(requirementsId);
+                resultPO.setType(result.getResult().shortValue());
 
                 String guid = UUID.randomUUID().toString();
                 resultPO.setGuid(guid);
@@ -114,7 +116,7 @@ public class RequirementsService {
             requirementsResultMapper.batchInsert(resultPOS);
 
             // 更新需求状态：1、待下发  2、已下发（待处理）  3、已处理（未反馈） 4、已反馈  -1、退回
-            Short type = result.getType(); // 1同意；2拒绝
+            Integer type = result.getResult(); // 1同意；2拒绝
             if (type == 1) {
                 requirementsMapper.batchUpdateStatusByIds(guids, 3);
             }
@@ -183,19 +185,18 @@ public class RequirementsService {
             Gson gson = new Gson();
             List<String> columnIds = gson.fromJson(aimingField, List.class);
             if (CollectionUtils.isNotEmpty(columnIds)) {
-                List<String> columnNames = columnDAO.queryColumnNames(columnIds);
-                result.setTargetFieldNames(columnNames);
+                List<Column> columns = columnDAO.queryColumns(columnIds);
+                result.setTargetFields(columns);
             }
 
-            List<String> filterFieldNames = null;
+            result.setTargetFieldIDs(columnIds);
+
             List<FilterConditionDTO> filterConditions = null;
 
             // 查询过滤字段信息
             List<RequirementsColumnPO> filterColumnInfos = requirementsColumnMapper.selectByRequirementId(requirementId);
+            filterConditions = new ArrayList<>();
             if (CollectionUtils.isNotEmpty(filterColumnInfos)) {
-                filterFieldNames = filterColumnInfos.stream().map(RequirementsColumnPO :: getColumnName).collect(Collectors.toList());
-
-                filterConditions = new ArrayList<>();
                 for (RequirementsColumnPO filterColumnInfo : filterColumnInfos) {
                     FilterConditionDTO filterCondition = new FilterConditionDTO();
                     BeanUtils.copyProperties(filterColumnInfo, filterCondition);
@@ -204,7 +205,6 @@ public class RequirementsService {
                 }
             }
 
-            result.setFilterFieldNames(filterFieldNames);
             result.setFilterConditions(filterConditions);
         }
 

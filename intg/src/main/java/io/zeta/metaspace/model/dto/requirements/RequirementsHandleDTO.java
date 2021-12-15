@@ -21,5 +21,5 @@ public class RequirementsHandleDTO {
     /**
      * 处理结果
      */
-    private RequirementsResultPO result;
+    private DealDetailDTO result;
 }

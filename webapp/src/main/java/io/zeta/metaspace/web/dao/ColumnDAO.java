@@ -175,5 +175,5 @@ public interface ColumnDAO {
                                          @Param("tenantId")String tenantId,
                                          @Param("tableId")String tableId);
 
-    List<String> queryColumnNames(@Param("columnIds")List<String> columnIds);
+    List<Column> queryColumns(@Param("columnIds")List<String> columnIds);
 }
