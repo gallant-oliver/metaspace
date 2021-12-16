@@ -46,7 +46,7 @@ public class RequirementsApiPO {
     private String apiName;
 
     /**
-     * 状态：上线；下线
+     * 状态：up；down
      */
     private String status;
 
