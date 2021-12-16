@@ -106,13 +106,13 @@
     from requirements left join business_relation as br on requirements.business_id = br.businessid
     where delete=0 and creator = #{creator}
     <if test="param.status != null and param.status == 1">
-        and param.status = 1
+        and status = 1
     </if>
     <if test="param.status != null and param.status == 2">
-      and param.status in (2,3)
+      and status in (2,3)
     </if>
     <if test="param.status != null and param.status == 3">
-      and param.status in (4,-1)
+      and status in (4,-1)
     </if>
     <if test="param.type != null">
       and resource_type = #{param.type}
