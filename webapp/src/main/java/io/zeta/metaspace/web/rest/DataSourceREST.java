@@ -697,7 +697,6 @@ public class DataSourceREST {
 
     /**
      * 获取数据表字段
-     *
      * @param tableId
      * @return
      */
@@ -705,7 +704,7 @@ public class DataSourceREST {
     @Path("/dataSource/db/table/column")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getOptionalColumn(@QueryParam("sourceId") String sourceId, @QueryParam("tableId") String tableId) throws Exception {
+    public Result getOptionalColumn(@QueryParam("sourceId") String sourceId,@QueryParam("tableId") String tableId) throws Exception {
         if (StringUtils.isBlank(sourceId)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源id不能为空");
         }
@@ -713,36 +712,8 @@ public class DataSourceREST {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据表id不能为空");
         }
         try {
-            List<ColumnDTO> columnDTOs = dataSourceService.getOptionalColumn(sourceId, tableId);
+            List<ColumnDTO> columnDTOs = dataSourceService.getOptionalColumn(sourceId,tableId);
             return ReturnUtil.success(columnDTOs);
-        } catch (Exception e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
-        }
-    }
-
-    /**
-     * 获取表字段数据
-     *
-     * @param tableId
-     * @return
-     */
-    @GET
-    @Path("/dataSource/db/column/data")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getColumnData(@QueryParam("tableId") String tableId, @QueryParam("sourceId") String sourceId, @QueryParam("columnId") String columnId) throws Exception {
-        if (StringUtils.isBlank(columnId)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "字段id不能为空");
-        }
-        if (StringUtils.isBlank(tableId)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据表id不能为空");
-        }
-        if (StringUtils.isBlank(sourceId)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源id不能为空");
-        }
-        try {
-            List<String> columnData = dataSourceService.getColumnValues(sourceId, tableId, columnId);
-            return ReturnUtil.success(columnData);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
