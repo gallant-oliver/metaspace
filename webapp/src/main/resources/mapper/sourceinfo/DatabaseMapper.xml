@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO">
+
+    <select id="getHiveDataBaseName" resultType="java.lang.String">
+        SELECT d.database_name
+        FROM db_info d
+                 INNER JOIN database_group_relation dgr ON d.database_guid = dgr.database_guid
+                 INNER JOIN user_group_relation ugr ON dgr.group_id = ugr.group_id
+                 INNER JOIN user_group ug ON ugr.group_id = ug.id
+        WHERE ugr.user_id = #{userId}
+          AND ug.valid = TRUE
+          AND ug.tenant = #{tenantId}
+          AND dgr.source_id = 'hive'
+    </select>
+</mapper>
