@@ -1496,7 +1496,7 @@ public interface UserGroupDAO {
 
     @Select({"<script>" ,
             "select di.database_guid databaseGuid,di.database_name databaseName from db_info di " +
-                    " where di.status='ACTIVE'" +
+                    " where di.status='ACTIVE' and di.db_type='HIVE'" +
                     " and di.database_name in " +
                     " <foreach collection='dbs' item='item' separator=',' open='(' close=')'>"+
                     "    #{item}"+
