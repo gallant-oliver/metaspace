@@ -132,7 +132,7 @@
   </update>
 
   <select id="selectByRequirementId" parameterType="java.lang.String" resultType="io.zeta.metaspace.model.po.requirements.RequirementsApiPO">
-    select p.name project, ac.name category, a.name apiName, ra.description, a.status,
+    select ra.guid, p.name project, ac.name category, a.name apiName, ra.description, a.status,
     (select u.username from users u where u.userid=a.creator) creator,
     (select t.name from tenant t where t.id=r.tenant_id) tenant
     from requirements_api ra

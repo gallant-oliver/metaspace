@@ -125,14 +125,14 @@ public class RequirementsPublicTenantREST {
         }
     }
 
-
     @POST
     @Path("/create/resource")
     @OperateType(OperateTypeEnum.INSERT)
-    public void createdResource(RequirementDTO requirementDTO) {
+    public Result createdResource(RequirementDTO requirementDTO) {
         Assert.notNull(requirementDTO, "需求对象为空");
-        publicTenantService.createdResource(requirementDTO);
+        String resourceId = publicTenantService.createdResource(requirementDTO);
         HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), requirementDTO.getName());
+        return ReturnUtil.success((Object) resourceId);
     }
 
     @PUT

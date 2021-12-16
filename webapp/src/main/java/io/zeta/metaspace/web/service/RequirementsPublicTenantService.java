@@ -132,7 +132,7 @@ public class RequirementsPublicTenantService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public void createdResource(RequirementDTO dto) {
+    public String createdResource(RequirementDTO dto) {
         // 校验字段
         verifyRequirementDTO(dto);
         Assert.isTrue(StringUtils.isNotBlank(dto.getTenantId()), "需求关联的数据表所在的租户的ID不能为空");
@@ -141,7 +141,7 @@ public class RequirementsPublicTenantService {
         Assert.isTrue(StringUtils.isNotBlank(dto.getSourceId()), "数据源ID不能为空");
         Assert.isTrue(!isRequirementNameExist(dto.getName(), dto.getTenantId()), "需求名称已经存在!");
         Assert.isTrue(!isRequirementNumExist(dto.getNum(), dto.getTenantId()), "需求编码已经存在!");
-
+    
         RequirementsPO po = RequirementsPO.builder()
                 .guid(UUID.randomUUID().toString())
                 .resourceType(dto.getResourceType().getCode())
@@ -163,6 +163,7 @@ public class RequirementsPublicTenantService {
         // 存储过滤条件
         List<FilterConditionDTO> filterConditions = dto.getFilterConditions();
         columnService.batchInsert(po.getGuid(), po.getTableId(), filterConditions);
+        return po.getGuid();
     }
 
     @Transactional(rollbackFor = Exception.class)
