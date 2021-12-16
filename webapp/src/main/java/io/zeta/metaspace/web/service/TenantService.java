@@ -26,6 +26,7 @@ import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.TenantDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.CategoryUtil;
 import org.apache.atlas.ApplicationProperties;
@@ -69,21 +70,25 @@ public class TenantService {
     private final static String METASPACE_STANDALONE = "metaspace.standalone";
     private static Configuration conf;
     private static String SECURITY_HOST;
-    private static int USER_INFO_EXPIRE ;
+    private static int USER_INFO_EXPIRE;
     private static Cache<String, PageResult<UserAndModule>> userModulesCache;
     private static Cache<String, List<Tenant>> tenantsCache;
     private static Cache<String, List<Tenant>> tenantsCacheAll;
     private static Cache<String, List<Module>> modulesCache;
     private static Cache<String, Pool> poolCache;
     private static Cache<String, List<String>> databaseCache;
-    private final String successStatusCode="200";
-
-
+    private final String successStatusCode = "200";
+    
+    
     @Autowired
     private UserDAO userDAO;
     @Autowired
     private TenantDAO tenantDAO;
+    @Autowired
+    private DatabaseDAO databaseDAO;
+    
     private static Logger LOG = Logger.getLogger(TenantService.class);
+    
     static {
         try {
             conf = ApplicationProperties.get();
@@ -532,66 +537,13 @@ public class TenantService {
         databaseCache.put(cacheKey, dbs);
         return dbs;
     }
-
+    
     /**
-     * 获取住户下有权限的所有数据库
-     * @param tenantId
-     * @return
+     * 获取住户下有权限的HIVE数据库
+     * fix: HIVE 元数据权限管理优化：不再根据安全中心的权限过滤，改为查询当前用户有权限访问的HIVE库（用户组权限）
      */
     public List<String> getDatabase(String tenantId) throws AtlasBaseException {
-        String msgDesc = null;
-        String cacheKey = tenantId;
-        List<String> dbs = databaseCache.getIfPresent("privilege:" + cacheKey);
-        if (dbs != null) {
-            return dbs;
-        }
-        Gson gson = new Gson();
-        Map<String, String> hashMap = new HashMap<String, String>() {
-            private static final long serialVersionUID = 1L;
-            {
-                put(TICKET_KEY, AdminUtils.getSSOTicket());
-                put("tenant-id", tenantId);
-                put("internal-id", conf.getString(SECURITY_INTERNAL_ID, SECURITY_INTERNAL_ID_DEFAULT_VALUE));
-                put("user-email", AdminUtils.getUserName());
-                put("User-Agent", "Chrome");
-            }
-        };
-        Map<String, String> query = new HashMap<String, String>() {
-            private static final long serialVersionUID = 1L;
-            {
-                put("withTables", "false");
-            }
-        };
-        try {
-            int retryCount = 0;
-            int retries = 3;
-            while (retryCount < retries) {
-                SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
-                String string = OKHttpClient.doGet(SECURITY_HOST + URI_DBS, query, hashMap);
-                Map map = gson.fromJson(string, HashMap.class);
-                if (map.containsKey("message")) {
-                    msgDesc = (String) map.get("message");
-                    retryCount++;
-                    continue;
-                }
-                Object data = map.get("dbList");
-                if (null != data) {
-                    List<Map<String, Object>> databaseList = gson.fromJson(gson.toJson(data), new TypeToken<List<Map<String, Object>>>() {
-                    }.getType());
-                    dbs = databaseList.stream().map(database -> (String) database.get("dbName")).collect(Collectors.toList());
-                    databaseCache.put(cacheKey, dbs);
-                    return dbs;
-                } else {
-                    return new ArrayList<>();
-                }
-            }
-            if (retryCount == retries && null == dbs && msgDesc != null) {
-                throw new RuntimeException(msgDesc);
-            }
-        } catch (Exception e) {
-            LOG.error("租户ID：" + tenantId + "从安全中心获取当前用户的hive库权限错误:" + e);
-        }
-        return new ArrayList<>();
+        return databaseDAO.getHiveDataBaseName(tenantId, AdminUtils.getUserData().getUserId());
     }
 
     public AtlasBaseException getAtlasBaseException(Object status,Object msgDesc,String message){
