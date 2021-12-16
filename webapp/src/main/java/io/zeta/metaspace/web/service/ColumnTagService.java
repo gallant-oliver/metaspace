@@ -1,15 +1,12 @@
 package io.zeta.metaspace.web.service;
 
-import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.RDBMSColumn;
 import io.zeta.metaspace.model.table.column.tag.ColumnTag;
 import io.zeta.metaspace.model.table.column.tag.ColumnTagRelation;
-import io.zeta.metaspace.utils.StringUtil;
-import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.ColumnTagDAO;
 import io.zeta.metaspace.web.util.ReturnUtil;
-import org.apache.logging.log4j.core.util.UuidUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
