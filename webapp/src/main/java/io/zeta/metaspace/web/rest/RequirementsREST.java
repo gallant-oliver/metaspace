@@ -71,7 +71,7 @@ public class RequirementsREST {
             return ReturnUtil.success(tableStatus);
         }
         catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"需求下发失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"获取表状态失败");
         }
     }
 
@@ -91,7 +91,7 @@ public class RequirementsREST {
             return ReturnUtil.success();
         }
         catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"需求下发失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"需求处理失败");
         }
     }
 
@@ -111,7 +111,7 @@ public class RequirementsREST {
             return ReturnUtil.success(result);
         }
         catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"需求下发失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"获取需求反馈结果失败");
         }
     }
 
