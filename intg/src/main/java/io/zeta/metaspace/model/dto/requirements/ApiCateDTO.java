@@ -18,4 +18,12 @@ public class ApiCateDTO {
      * API名称
      */
     private String name;
+    /**
+     * 目录id
+     */
+    private String categoryId;
+    /**
+     * 目录名称
+     */
+    private String categoryName;
 }
