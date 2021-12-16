@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -242,6 +241,8 @@ public class RequirementsService {
                 ApiCateDTO dto = new ApiCateDTO();
                 dto.setId(head.getId());
                 dto.setName(head.getName());
+                dto.setCategoryId(head.getCategoryId());
+                dto.setCategoryName(head.getCategoryName());
                 apiList.add(dto);
             }
         }
