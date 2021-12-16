@@ -9,6 +9,7 @@ import io.zeta.metaspace.model.po.requirements.RequirementsPO;
 import io.zeta.metaspace.model.po.requirements.ResourcePO;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.SecuritySearch;
+import io.zeta.metaspace.model.security.Tenant;
 import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.DateUtils;
@@ -279,12 +280,15 @@ public class RequirementsPublicTenantService {
                 pageResult.setLists(requirementsListDTOList);
                 return pageResult;
             }
-            String tenantId = requirementsPOList.get(0).getTenantId();
-            String name = tenantDAO.selectNameById(tenantId);
-
             List<String> categoryList = new ArrayList<>();
-            requirementsPOList.stream().forEach(requirementsPO -> categoryList.add(requirementsPO.getBusinessCategoryId()));
-            Set<CategoryEntityV2> categoryEntityV2s = categoryDAO.selectPathByGuidAndCategoryType(categoryList, tenantId, CommonConstant.BUSINESS_CATEGORY_TYPE);
+            Set<String> tenantIdS = new HashSet<>();
+            requirementsPOList.stream().forEach(requirementsPO -> {
+                categoryList.add(requirementsPO.getBusinessCategoryId());
+                tenantIdS.add(requirementsPO.getTenantId());
+            });
+            List<Tenant> tenants = tenantDAO.selectListByTenantId(tenantIdS);
+            Map<String, String> mapTenant = tenants.stream().collect(Collectors.toMap(Tenant::getTenantId,Tenant::getProjectName));
+            Set<CategoryEntityV2> categoryEntityV2s = categoryDAO.selectPathByGuidAndTenantList(categoryList, tenantIdS, CommonConstant.BUSINESS_CATEGORY_TYPE);
             Map<String, String> map = categoryEntityV2s.stream().collect(Collectors.toMap(CategoryEntityV2::getGuid, CategoryEntityV2::getPath));
             for (RequirementsPO requirementsPO : requirementsPOList) {
                 RequirementsListDTO requirementsListDTO = new RequirementsListDTO();
@@ -299,7 +303,7 @@ public class RequirementsPublicTenantService {
                 }
                 String path = map.get(requirementsListDTO.getBusinessCategoryId());
                 if (StringUtils.isNotBlank(path)) {
-                    requirementsListDTO.setCategoryPath(name + "/" + path);
+                    requirementsListDTO.setCategoryPath(mapTenant.get(requirementsListDTO.getTenantId()) + "/" + path.replace(",", "/").replace("\"", "").replace("{", "").replace("}", ""));
                 }
                 requirementsListDTOList.add(requirementsListDTO);
             }

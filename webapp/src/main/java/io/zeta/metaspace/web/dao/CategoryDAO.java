@@ -219,6 +219,29 @@ public interface CategoryDAO {
             "</script>")
     Set<CategoryEntityV2> selectPathByGuidAndCategoryType(@Param("list") List<String> guid, @Param("tenantId") String tenantId, @Param("type") Integer type);
 
+    @Select("<script>" +
+            " WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
+            " (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH" +
+            " FROM category WHERE parentCategoryGuid IS NULL and tenantid in " +
+            " <foreach item='guid' index='index' collection='tenantIdS' separator=',' open='(' close=')'>" +
+            "   #{guid} " +
+            " </foreach>" +
+            " AND categorytype = #{type}" +
+            " UNION ALL " +
+            " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH" +
+            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid in " +
+            " <foreach item='guid' index='index' collection='tenantIdS' separator=',' open='(' close=')'>" +
+            "   #{guid} " +
+            " </foreach>" +
+            " AND categorytype = #{type})" +
+            " SELECT  PATH,guid FROM T WHERE guid in " +
+            " <foreach item='guid' index='index' collection='list' separator=',' open='(' close=')'>" +
+            "   #{guid} " +
+            " </foreach>" +
+            " ORDER BY PATH" +
+            "</script>")
+    Set<CategoryEntityV2> selectPathByGuidAndTenantList(@Param("list") List<String> guid, @Param("tenantIdS") Set<String> tenantId, @Param("type") Integer type);
+
     @Select("WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
             "(SELECT guid,name,parentCategoryGuid, ARRAY[guid] AS PATH, 1 AS DEPTH " +
             "FROM category WHERE parentCategoryGuid IS NULL and tenantid=#{tenantId} " +
