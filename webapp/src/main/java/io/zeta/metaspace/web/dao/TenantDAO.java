@@ -19,6 +19,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author lixiang03
@@ -38,6 +39,14 @@ public interface TenantDAO {
 
     @Select("SELECT name FROM tenant WHERE id = #{id}")
     String selectNameById(String id);
+
+    @Select("<script>" +
+            "select DISTINCT id as tenantId,name as projectName from tenant where id in " +
+            " <foreach item='item' index='index' collection='list' separator=',' open='(' close=')'>" +
+            "   #{item} " +
+            " </foreach>" +
+            "</script>")
+    List<Tenant> selectListByTenantId(@Param("list") Set<String> list);
 
     @Select("select DISTINCT id as tenantId,name as projectName from tenant")
     List<Tenant> selectAll();
