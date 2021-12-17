@@ -436,7 +436,7 @@ public class RequirementsService {
                 BeanUtils.copyProperties(requirementsPO, requirementsListDTO);
                 requirementsListDTO.setResourceTypeName(ResourceType.getValue(requirementsListDTO.getResourceType()));
                 if ((requirementsListDTO.getStatus().equals(CommonConstant.REQUIREMENTS_STATUS_THREE))) {
-                    requirementsListDTO.setStatusName("待反馈");
+                    requirementsListDTO.setStatusName("未反馈");
                 } else {
                     requirementsListDTO.setStatusName("已反馈");
                 }
