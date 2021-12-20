@@ -630,7 +630,8 @@ public class BusinessService implements Approvable {
                 infoHeader.setPath(joiner.toString());
                 //level2Category
                 infoHeader.setLevel2Category(level2Category);
-                buildTablesByBusinessId(infoHeader.getBusinessId(), tenantId,infoHeader.getTrustTable(),infoHeader.getTables()==null?new ArrayList<>():infoHeader.getTables());
+                List<TechnologyInfo.Table> tables = buildTablesByBusinessId(infoHeader.getBusinessId(), tenantId, infoHeader.getTrustTable(), null);
+                infoHeader.setTables(tables);
                 if (CollectionUtils.isEmpty(infoHeader.getTables())) {
                     infoHeader.setTechnicalStatus("0");
                 } else {

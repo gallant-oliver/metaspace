@@ -99,6 +99,8 @@ public class SearchService {
     private DataSourceDAO dataSourceDAO;
     @Autowired
     private PublicService publicService;
+    @Autowired
+    private DbDAO dbDAO;
 
     public PageResult<Database> queryDatabases(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount,boolean isPublic) {
         PageResult<Database> databasePageResult = null;
@@ -140,7 +142,7 @@ public class SearchService {
             }
 
             if (StringUtils.isEmpty(sourceId)) {
-                dbList = tenantService.getDatabase(tenantId);
+                dbList = tenantService.getCurrentTenantDatabase(tenantId);
                 if (CollectionUtils.isEmpty(dbList)) {
                     return databasePageResult;
                 }
@@ -191,7 +193,6 @@ public class SearchService {
      * @param query
      * @param tenantId
      * @param queryCount
-     * @param isGlobal
      * @return
      */
     public PageResult<Database> getDatabaseDataList(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount) {
@@ -249,7 +250,6 @@ public class SearchService {
 
     public PageResult<Database> getPublicDatabases(Long offset, Long limit, String query, Boolean queryCount) {
         try {
-            List<TenantHive> dbList = new ArrayList<>() ;
             PageResult<Database> databasePageResult = new PageResult<>();
             List<Database> databaseList = new ArrayList<>();
             //获取当前租户下用户所属用户组
@@ -269,7 +269,8 @@ public class SearchService {
                 }
             }
 
-            for (Tenant item : tenants){
+            List<TenantHive> dbList = dbDAO.getAuthHiveDbs();
+            /*for (Tenant item : tenants){
                 String currentTenantId = item.getTenantId();
                 LOG.info("租户["+currentTenantId+"]下hive的库查询" );
                 List<String> list = tenantService.getDatabase(currentTenantId);
@@ -283,7 +284,7 @@ public class SearchService {
                     }
                    // dbList.addAll(list);
                 }
-            }
+            }*/
 
             if(StringUtils.isNotBlank(query)){
                 query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
@@ -314,12 +315,13 @@ public class SearchService {
     }
 
     public PageResult<TableEntity> getPublicTable(String schemaId, long offset, long limit, String query, Boolean isView, Boolean queryInfo) {
-        List<TenantHive> dbList = new ArrayList<>();
         PageResult<TableEntity> tablePageResult = new PageResult<>();
         List<TableEntity> tableEntityList;
         try {
             List<Tenant> tenants = tenantService.getTenantAll();
-            for (Tenant item : tenants){
+            // 获取已配置用户组权限的hive数据库
+            List<TenantHive> dbList = dbDAO.getAuthHiveDbs();
+            /*for (Tenant item : tenants){
                 String currentTenantId = item.getTenantId();
                 LOG.info("租户["+currentTenantId+"]下hive的库查询" );
                 List<String> list = tenantService.getDatabase(currentTenantId);
@@ -332,10 +334,10 @@ public class SearchService {
                         dbList.add(hive);
                     }
                 }
-               /* if(CollectionUtils.isNotEmpty(list)){
+               *//* if(CollectionUtils.isNotEmpty(list)){
                     dbList.addAll(list);
-                }*/
-            }
+                }*//*
+            }*/
             if(StringUtils.isNotBlank(query)){
                 query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
             }
@@ -391,7 +393,7 @@ public class SearchService {
         List<TableEntity> tableEntityList;
         try {
             if (StringUtils.isEmpty(sourceId)) {
-                dbList = tenantService.getDatabase(tenantId);
+                dbList = tenantService.getCurrentTenantDatabase(tenantId);
                 if(StringUtils.isNotBlank(query)){
                     query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
                 }

@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.TechnicalCategory;
+import io.zeta.metaspace.model.usergroup.TenantHive;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -76,5 +77,12 @@ public interface DbDAO {
             "select source_id as id,source_name as name from data_source where source_id = #{sourceId}",
             "</script>"})
     List<Map<String, String>> queryDbNameAndSourceNameByIds(@Param("dbId") String dbId, @Param("sourceId") String sourceId);
+
+    @Select("select distinct di.database_name hiveDb, ug.tenant tenantId " +
+            "from db_info di " +
+            "join database_group_relation dgr on dgr.database_guid=di.database_guid " +
+            "join user_group ug on ug.id=dgr.group_id and ug.valid=true " +
+            "where di.db_type='HIVE' and di.status='ACTIVE'")
+    List<TenantHive> getAuthHiveDbs();
 }
 
