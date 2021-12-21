@@ -14,63 +14,16 @@
 package io.zeta.metaspace.model.metadata;
 
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
+import lombok.Data;
 
 import java.io.Serializable;
 
+@Data
 public class Parameters implements Serializable {
-
     private String query;
     private int offset;
     private int limit;
     private String sortby;
     private String order;
     private ModuleEnum module;
-
-    public ModuleEnum getModule() {
-        return module;
-    }
-
-    public void setModule(ModuleEnum module) {
-        this.module = module;
-    }
-
-    public String getSortby() {
-        return sortby;
-    }
-
-    public void setSortby(String sortby) {
-        this.sortby = sortby;
-    }
-
-    public String getOrder() {
-        return order;
-    }
-
-    public void setOrder(String order) {
-        this.order = order;
-    }
-
-    public int getOffset() {
-        return offset;
-    }
-
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
-
-    public int getLimit() {
-        return limit;
-    }
-
-    public void setLimit(int limit) {
-        this.limit = limit;
-    }
-
-    public String getQuery() {
-        return query;
-    }
-
-    public void setQuery(String query) {
-        this.query = query;
-    }
 }
