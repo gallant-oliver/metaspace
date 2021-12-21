@@ -128,19 +128,19 @@ public class RequirementsPublicTenantREST {
     @POST
     @Path("/create/resource")
     @OperateType(OperateTypeEnum.INSERT)
-    public Result createdResource(RequirementDTO requirementDTO) {
+    public Result createdRequirement(RequirementDTO requirementDTO) {
         Assert.notNull(requirementDTO, "需求对象为空");
-        String resourceId = publicTenantService.createdResource(requirementDTO);
+        String resourceId = publicTenantService.createdRequirement(requirementDTO);
         HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), requirementDTO.getName());
         return ReturnUtil.success((Object) resourceId);
     }
-
+    
     @PUT
     @Path("/edit/resource")
     @OperateType(OperateTypeEnum.UPDATE)
-    public void editedResource(RequirementDTO requirementDTO) {
+    public void editedRequirement(RequirementDTO requirementDTO) {
         Assert.notNull(requirementDTO, "需求对象为空");
-        publicTenantService.editedResource(requirementDTO);
+        publicTenantService.editedRequirement(requirementDTO);
         HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), requirementDTO.getGuid());
     }
 
