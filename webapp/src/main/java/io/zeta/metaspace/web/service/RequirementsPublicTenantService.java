@@ -171,17 +171,18 @@ public class RequirementsPublicTenantService {
     public void editedRequirement(RequirementDTO dto) {
         Assert.isTrue(StringUtils.isNotBlank(dto.getGuid()), "需求ID不能为空");
         verifyRequirementDTO(dto);
-        
+    
         RequirementsPO oldPo = requirementsMapper.getRequirementById(dto.getGuid());
         Assert.notNull(oldPo, "需求ID无效");
-        
-        Assert.isTrue(Objects.equals(oldPo.getName(), dto.getName())
-                        || isRequirementNameExist(dto.getName(), oldPo.getTenantId()),
+    
+        // 名称未修改直接为true;名称修改了，查库判断名称是否存在
+        Assert.isTrue(!(Objects.equals(oldPo.getName(), dto.getName())
+                        || isRequirementNameExist(dto.getName(), oldPo.getTenantId())),
                 "需求名称已经存在!");
-        Assert.isTrue(Objects.equals(oldPo.getNum(), dto.getNum())
-                        || isRequirementNameExist(dto.getNum(), oldPo.getTenantId()),
+        Assert.isTrue(!(Objects.equals(oldPo.getNum(), dto.getNum())
+                        || isRequirementNameExist(dto.getNum(), oldPo.getTenantId())),
                 "需求编码已经存在!");
-
+    
         RequirementsPO newPo = RequirementsPO.builder()
                 .guid(oldPo.getGuid())
                 .resourceType(dto.getResourceType().getCode())
