@@ -28,21 +28,24 @@ public interface RequirementsMapper {
      */
     List<ResourcePO> pagedResources(@Param("tableId") String tableId,
                                     @Param("params") Parameters params);
-
+    
     /**
      * 分页查询需求管理列表
+     *
      * @param creator
      * @param requireListParam
      * @return
      */
     List<RequirementsPO> selectListByCreatorPage(@Param("creator") String creator, @Param("param") RequireListParam requireListParam);
-
+    
     long countRequirementByName(@Param("name") String name, @Param("tenantId") String tenantId);
-
+    
+    long countRequirementByNum(@Param("num") String name, @Param("tenantId") String tenantId);
+    
     void batchUpdateStatusByIds(@Param("guids") List<String> guids, @Param("status") int status);
-
+    
     RequirementsPO getRequirementById(String id);
-
+    
     /**
      * 需求处理-根据状态查询
      * @param userId
