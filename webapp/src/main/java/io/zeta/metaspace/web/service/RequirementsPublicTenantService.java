@@ -213,7 +213,7 @@ public class RequirementsPublicTenantService {
     }
 
     private boolean isRequirementNumExist(String num, String tenantId) {
-        return requirementsMapper.countRequirementByName(num, tenantId) > 0;
+        return requirementsMapper.countRequirementByNum(num, tenantId) > 0;
     }
 
     /**
