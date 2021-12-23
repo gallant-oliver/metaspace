@@ -200,7 +200,7 @@
             and re.status = 2
         </if>
         ) as a
-        order by a.sort
+        order by a.sort asc,a.create_time desc
         <if test="param.limit != null and param.limit != -1 ">
             limit #{param.limit} offset #{param.offset}
         </if>
@@ -225,10 +225,10 @@
             and re.status = 4
         </if>
         <if test="param.order == 'asc'">
-            order by create_time desc,status asc
+            order by status asc,create_time desc
         </if>
         <if test="param.order == 'desc'">
-            order by create_time,status desc
+            order by status desc,create_time desc
         </if>
         <if test="param.limit != null and param.limit != -1 ">
             limit #{param.limit} offset #{param.offset}
