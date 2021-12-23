@@ -1254,14 +1254,12 @@ public class SearchService {
 
     @Transactional(rollbackFor = Exception.class)
     public PageResult<Database> getDatabasePageResultV2(Parameters parameters, String tenantId) throws AtlasBaseException {
-        User user = AdminUtils.getUserData();
-        List<String> strings = new ArrayList<>();
-        List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
-        strings = getChildAndOwnerCategorysByRoles(userGroups, tenantId);
-        if (strings.size() > 0) {
-            return getDatabaseV2(parameters, strings, tenantId);
-        }
-        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前用户无获取库表权限");
+        //User user = AdminUtils.getUserData();
+        //List<String> strings = new ArrayList<>();
+        //List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
+        //strings = getChildAndOwnerCategorysByRoles(userGroups, tenantId);*/
+
+        return getDatabaseV2(parameters, tenantId);
     }
 
     //多租户
@@ -1283,20 +1281,14 @@ public class SearchService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public PageResult<Database> getDatabaseV2(Parameters parameters, List<String> strings, String tenantId) throws AtlasBaseException {
+    public PageResult<Database> getDatabaseV2(Parameters parameters, String tenantId) throws AtlasBaseException {
         List<DatabaseHeader> dbName = null;
         long totalSize = 0;
         PageResult<Database> databasePageResult = new PageResult<>();
-        //如果没目录
-        if (strings.size() == 0) {
-            databasePageResult.setCurrentSize(0);
-            databasePageResult.setTotalSize(0);
-            return databasePageResult;
-        }
         List<Database> databaseList = null;
 
-        User user = AdminUtils.getUserData();
-        List<String> databases = tenantService.getCurrentTenantDatabase(tenantId);
+        //User user = AdminUtils.getUserData();
+        List<String> databases = tenantService.getDatabase(tenantId);
         if (databases != null && databases.size() != 0){
             databaseList = databaseInfoDAO.selectByHive(databases, (long)parameters.getLimit(),  (long)parameters.getOffset());
            // dbName = userGroupDAO.getDBInfo(strings, parameters.getQuery(), parameters.getOffset(), parameters.getLimit(), databases, tenantId);
