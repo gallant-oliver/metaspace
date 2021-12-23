@@ -1931,6 +1931,10 @@ public class DataManageService {
             if (dataSourceInfo == null || dbInfo == null) {
                 return;
             }
+            //不是采集所有的数据库，并且当前数据库名不在任务中，则不往source_db表添加数据
+            if (!definition.isSyncAll() && !definition.getSchemas().contains(dbInfo.getDatabaseName())) {
+                return;
+            }
             String sourceDbRelationId = dbDAO.getSourceDbRelationId(dbInfo.getDatabaseId(), dataSourceInfo.getSourceId());
             if (null == sourceDbRelationId) {
                 dbDAO.insertSourceDbRelation(UUID.randomUUID().toString(), dbInfo.getDatabaseId(), dataSourceInfo.getSourceId());
