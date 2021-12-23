@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.service.sourceinfo;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
+import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.dto.sourceinfo.SourceInfoDeriveTableColumnDTO;
 import io.zeta.metaspace.model.metadata.Column;
@@ -178,6 +179,9 @@ public class SourceInfoDeriveTableInfoService {
                 //
                 businessDAO.insertDerivedTableRelation(sourceInfoDeriveTableInfo.getBusinessId(), sourceInfoDeriveTableInfo.getTableGuid(), 1, sourceInfoDeriveTableInfo.getSourceId());
             }
+
+            // 更新业务对象技术信息状态
+            businessDAO.updateTechnicalStatus(sourceInfoDeriveTableInfo.getBusinessId(), TechnicalStatus.ADDED.code);
         }
         return true;
     }
