@@ -147,7 +147,7 @@
         <node.version>v12.4.0</node.version>
         <npm.version>6.10.1</npm.version>
         <node-for-v2.version>v4.4.2</node-for-v2.version>
-        <slf4j.version>1.7.25</slf4j.version>
+        <slf4j.version>1.7.26</slf4j.version>
         <jetty.version>9.3.14.v20161028</jetty.version>
         <jetty.jsp.version>9.2.12.v20150709</jetty.jsp.version>
         <jersey.version>1.19</jersey.version>
