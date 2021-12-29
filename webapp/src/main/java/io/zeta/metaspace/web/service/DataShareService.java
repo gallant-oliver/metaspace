@@ -3213,54 +3213,58 @@ public class DataShareService {
     private List<CategoryExport> file2Data(File file) throws Exception {
         List<String> names = new ArrayList<>();
         List<CategoryExport> categoryExports = new ArrayList<>();
-        Workbook workbook = WorkbookFactory.create(file);
-        Sheet sheet = workbook.getSheetAt(0);
+        try(Workbook workbook = WorkbookFactory.create(file)) {
+            Sheet sheet = workbook.getSheetAt(0);
 
-        //文件格式校验
-        Row first = sheet.getRow(0);
-        ArrayList<String> strings = Lists.newArrayList("目录名字");
+            //文件格式校验
+            Row first = sheet.getRow(0);
+            ArrayList<String> strings = Lists.newArrayList("目录名字");
 
-        for (int i = 0; i < strings.size(); i++) {
-            Cell cell = first.getCell(i);
-            if (Objects.isNull(cell)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
-            } else {
-                if (!strings.get(i).equals(cell.getStringCellValue())) {
+            for (int i = 0; i < strings.size(); i++) {
+                Cell cell = first.getCell(i);
+                if (Objects.isNull(cell)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+                } else {
+                    if (!strings.get(i).equals(cell.getStringCellValue())) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+                    }
                 }
             }
+            int rowNum = sheet.getLastRowNum() + 1;
+            for (int i = 1; i < rowNum; i++) {
+                Row row = sheet.getRow(i);
+                CategoryExport category = new CategoryExport();
+                Cell nameCell = null;
+                try {
+                    nameCell = row.getCell(0);
+                } catch (NullPointerException e) {
+                    continue;
+                }
+                String name = nameCell.getStringCellValue();
+                if (StringUtils.isBlank(name)) {
+                    continue;
+                }
+                if (names.contains(name)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中存在相同目录名");
+                }
+                //目录名校验：仅支持中文、英文、数字、下划线“_”和“-”
+                String pattern = "^[\\u4E00-\\u9FA5A-Za-z0-9_\\-]+$";
+                if (!name.matches(pattern)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名仅支持中文、英文、数字、下划线“_”和“-”");
+                }
+                //目录长度校验
+                if (name.length() > 32) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名长度需小于33个字符");
+                }
+                category.setName(name);
+                String guid = UUID.randomUUID().toString();
+                category.setGuid(guid);
+                categoryExports.add(category);
+                names.add(name);
+            }
         }
-        int rowNum = sheet.getLastRowNum() + 1;
-        for (int i = 1; i < rowNum; i++) {
-            Row row = sheet.getRow(i);
-            CategoryExport category = new CategoryExport();
-            Cell nameCell = null;
-            try {
-                nameCell = row.getCell(0);
-            } catch (NullPointerException e) {
-                continue;
-            }
-            String name = nameCell.getStringCellValue();
-            if (StringUtils.isBlank(name)) {
-                continue;
-            }
-            if (names.contains(name)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中存在相同目录名");
-            }
-            //目录名校验：仅支持中文、英文、数字、下划线“_”和“-”
-            String pattern = "^[\\u4E00-\\u9FA5A-Za-z0-9_\\-]+$";
-            if (!name.matches(pattern)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名仅支持中文、英文、数字、下划线“_”和“-”");
-            }
-            //目录长度校验
-            if (name.length() > 32) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名长度需小于33个字符");
-            }
-            category.setName(name);
-            String guid = UUID.randomUUID().toString();
-            category.setGuid(guid);
-            categoryExports.add(category);
-            names.add(name);
+        catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "转化失败");
         }
         return categoryExports;
     }
