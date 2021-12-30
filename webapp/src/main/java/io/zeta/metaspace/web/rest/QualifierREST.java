@@ -17,6 +17,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +25,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.ws.rs.*;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -68,10 +68,12 @@ public class QualifierREST {
             }
             List<String> markList = new ArrayList<>();
             List<String> nameList = new ArrayList<>();
-            dataList.getDataList().forEach((data -> {
-                markList.add(data.getMark());
-                nameList.add(data.getName());
-            }));
+            if (CollectionUtils.isNotEmpty(dataList.getDataList())) {
+                dataList.getDataList().forEach((data -> {
+                    markList.add(data.getMark());
+                    nameList.add(data.getName());
+                }));
+            }
             List<Qualifier> oldMarkList = qualifierService.getIdByMark(markList, dataList.getDataList().get(0).getTypeId(), tenantId);
             List<Qualifier> oldNameList = qualifierService.getIdByName(nameList, dataList.getDataList().get(0).getTypeId(), tenantId);
             val namecount = nameList.stream().distinct().count();

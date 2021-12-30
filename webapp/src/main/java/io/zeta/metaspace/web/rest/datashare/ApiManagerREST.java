@@ -1032,15 +1032,19 @@ public class ApiManagerREST {
             List<String> ids = ExportDataPathUtils.getDataIdsByUrlId(downloadId);
             exportExcel = shareService.exportExcel(ids);
         }
+        InputStream inputStream = null;
         try {
             String filePath = exportExcel.getAbsolutePath();
             String fileName = filename(filePath);
-            InputStream inputStream = new FileInputStream(filePath);
+            inputStream = new FileInputStream(filePath);
             response.setContentType("application/force-download");
             response.addHeader("Content-Disposition", "attachment;fileName=" + fileName);
             IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
         } finally {
             exportExcel.delete();
+            if (inputStream != null) {
+                inputStream.close();
+            }
         }
     }
 

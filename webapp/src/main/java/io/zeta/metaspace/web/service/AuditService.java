@@ -109,7 +109,7 @@ public class AuditService {
                 }
 
                 ApiLog apiLog = new ApiLog();
-                apiLog.setApiId(apiInfoV2.getGuid());
+                apiLog.setApiId(apiInfoV2 == null ? "" : apiInfoV2.getGuid());
                 apiLog.setType(ApiLogEnum.UNSUBMIT.getName());
                 apiLog.setCreator(AdminUtils.getUserData().getUserId());
                 apiLog.setDate(DateUtils.currentTimestamp());
