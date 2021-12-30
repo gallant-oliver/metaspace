@@ -18,11 +18,8 @@ package io.zeta.metaspace.model.share;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.AtlasException;
-import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang3.StringUtils;
-import org.joda.time.format.DateTimeFormat
+import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import schemacrawler.schema.ColumnDataType;
 
