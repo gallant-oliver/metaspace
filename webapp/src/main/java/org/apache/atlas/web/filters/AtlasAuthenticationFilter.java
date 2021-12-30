@@ -127,12 +127,11 @@ public class AtlasAuthenticationFilter extends AuthenticationFilter {
             throw new ServletException(e);
         }
 
+        String tokenValidityStr = "";
         if (configuration != null) {
             headerProperties = ConfigurationConverter.getProperties(configuration.subset("atlas.headers"));
+            tokenValidityStr = configuration.getString(CONFIG_KERBEROS_TOKEN_VALIDITY);
         }
-
-        String tokenValidityStr = configuration.getString(CONFIG_KERBEROS_TOKEN_VALIDITY);
-
         if (StringUtils.isNotBlank(tokenValidityStr)) {
             try {
                 Long tokenValidity = Long.parseLong(tokenValidityStr);
