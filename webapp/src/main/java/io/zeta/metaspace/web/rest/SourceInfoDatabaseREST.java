@@ -229,8 +229,6 @@ public class SourceInfoDatabaseREST {
         if (StringUtils.isBlank(tenantId)) {
             tenantId = httpServletRequest.getHeader("tenantId");
         }
-
-        File outFile = null;
         try{
             setDownloadResponseheader(filename);
             //InputStream inputStream = hdfsService.getFileInputStream(path);
@@ -243,10 +241,6 @@ public class SourceInfoDatabaseREST {
             //IOUtils.copyBytes(inputStream, httpServletResponse.getOutputStream(), 4096, true);
         }catch(Exception e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, e, "模板文件下载失败");
-        }finally {
-            if(outFile != null && outFile.exists()){
-                outFile.delete();
-            }
         }
     }
 
