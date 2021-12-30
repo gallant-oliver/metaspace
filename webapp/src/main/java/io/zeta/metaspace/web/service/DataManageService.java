@@ -639,6 +639,9 @@ public class DataManageService {
                 //无当前目录权限
                 boolean isPrivilege = !userGroupService.isPrivilegeCategory(creatorId, newCategoryGuid, tenantId, type);
                 boolean typeBoolean = type == 1 ;
+                if (privilege == null){
+                    privilege = new CategoryPrivilege.Privilege();
+                }
                 if (isAdmin) {
                     privilege.adminPrivilege(returnEntity.getGuid());
                 }
@@ -695,12 +698,7 @@ public class DataManageService {
         returnEntity.setParentCategoryGuid(null);
         returnEntity.setUpBrotherCategoryGuid(lastCategoryId);
         returnEntity.setDownBrotherCategoryGuid(null);
-        CategoryPrivilege.Privilege privilege = null;
-        if (type == 0 || type == 1) {
-            privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
-        } else {
-            privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
-        }
+        CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
         if (type == technicalType) {
             privilege.setDeleteRelation(false);
             privilege.setAsh(false);

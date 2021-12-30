@@ -72,11 +72,13 @@ public class UsersService {
                 UserInfo.Role role = new UserInfo.Role();
                 roles.add(role);
                 String msadmin = "msadmin";
-                if (msadmin.equals(user.getUsername())) {
+                /*if (msadmin.equals(user.getUsername())) {
                     role.setRoleId(SystemRole.ADMIN.getCode());
                 } else {
                     role.setRoleId(SystemRole.ADMIN.getCode());
-                }
+                }*/
+
+                role.setRoleId(SystemRole.ADMIN.getCode());
                 user.setRoles(roles);
                 userDAO.addUser(user);
             }

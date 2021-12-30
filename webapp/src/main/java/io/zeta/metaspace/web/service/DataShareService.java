@@ -405,9 +405,9 @@ public class DataShareService {
             return true;
         }
         User user = userDAO.getUserInfo(userId);
-        if (user.getRoles() != null && user.getRoles().contains(SystemRole.ADMIN.getCode())) {
+        /*if (user.getRoles() != null && user.getRoles().contains(SystemRole.ADMIN.getCode())) {
             return true;
-        }
+        }*/
         return false;
     }
 
@@ -1034,8 +1034,7 @@ public class DataShareService {
         if (Objects.isNull(limit) || Objects.isNull(offset)) {
             throw new AtlasBaseException("limit和offset不允许为空");
         }
-        limit = Objects.nonNull(limit) ? Math.min(limit, maxRowNumber) : maxRowNumber;
-        offset = Objects.nonNull(offset) ? offset : 0;
+        limit = Math.min(limit, maxRowNumber);
         if (offset < 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "offset取值异常，需大于等于0");
         }
@@ -2025,7 +2024,7 @@ public class DataShareService {
         String apiMobiusId = shareDAO.getApiMobiusIdByVersion(api.getApiId(), api.getVersion());
         List<String> groupIds = shareDAO.getMobiusApiGroupIds(apiMobiusId);
         apiGroupDAO.deleteRelationByApiVersion(api);
-        if (apiMobiusId != null || apiMobiusId.length() != 0) {
+        if (StringUtils.isNotEmpty(apiMobiusId)) {
             deleteApiMobius(apiMobiusId, groupIds);
         }
     }
@@ -2750,7 +2749,6 @@ public class DataShareService {
         if (Objects.isNull(limit) || Objects.isNull(offset)) {
             throw new AtlasBaseException("limit和offset不允许为空");
         }
-        offset = Objects.nonNull(offset) ? offset : 0;
         if (offset < 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "offset取值异常，需大于等于0");
         }
@@ -2792,7 +2790,7 @@ public class DataShareService {
             String columnType = field.getColumnType();
             DataType dataType = DataType.convertType(columnType.toUpperCase());
             checkDataTypeV2(dataType, value);
-            String str = (DataType.STRING == dataType || DataType.CLOB == dataType || DataType.DATE == dataType || DataType.TIMESTAMP == dataType || DataType.TIMESTAMP == dataType || "".equals(value.toString())) ? ("\'" + value.toString() + "\'") : (value.toString());
+            String str = (DataType.STRING == dataType || DataType.CLOB == dataType || DataType.DATE == dataType || DataType.TIMESTAMP == dataType || "".equals(value.toString())) ? ("\'" + value.toString() + "\'") : (value.toString());
 
             String filterStr = SqlBuilderUtils.getFilterConditionStr(transformer, dataType, columnName, expressionType, Lists.newArrayList(str));
             filterJoiner.add(filterStr);
@@ -2922,9 +2920,7 @@ public class DataShareService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求方式错误");
         }
         Map<String, String> queryMap = new HashMap<>();
-        if (apiInfoByVersion == null) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API已删除或不存在");
-        }
+
         if (!ApiStatusEnum.UP.getName().equals(apiInfoByVersion.getStatus())) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API未上架");
         }

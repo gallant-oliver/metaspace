@@ -247,15 +247,16 @@ public class DataAssetsRetrievalService {
 
                 // 是否有当前表查看权限（为保密表时）
                 // 公共租户，且当前用户有全局权限
-                if (isPublic && isGlobal) {
-                    result.setSecretPrivilege(true);
-                }
-                else {
-                    if (!CollectionUtils.isEmpty(m.get(result.getId()))) {
+                if (result != null) {
+                    if (isPublic && isGlobal) {
                         result.setSecretPrivilege(true);
                     }
                     else {
-                        result.setSecretPrivilege(!result.getSecret());
+                        if (!CollectionUtils.isEmpty(m.get(result.getId()))) {
+                            result.setSecretPrivilege(true);
+                        } else {
+                            result.setSecretPrivilege(!result.getSecret());
+                        }
                     }
                 }
                 break;

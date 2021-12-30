@@ -752,8 +752,6 @@ public class DataSourceService {
      */
     public DataSourceAuthorizeUser getNoAuthorizeUser(String sourceId, String query, boolean isApi, String tenantId) throws AtlasBaseException {
         try {
-            if (Objects.nonNull(query))
-                query.replaceAll("%", "/%").replaceAll("_", "/_");
             String manager = dataSourceDAO.getManagerBySourceId(sourceId);
             DataSourceAuthorizeUser dataSourceAuthorizeUser = new DataSourceAuthorizeUser();
             List<UserIdAndName> authorizeUsers = isApi ? dataSourceDAO.getApiAuthorizeUser(sourceId, manager) : dataSourceDAO.getAuthorizeUser(sourceId, manager);
@@ -1427,7 +1425,7 @@ public class DataSourceService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不是当前数据源的管理者");
         }
 
-        if (userGroups == null && userGroups.size() == 0) {
+        if (userGroups == null || userGroups.size() == 0) {
             return;
         }
         datasourceDAO.deleteUserGroupsByDataSource(sourceId, userGroups);

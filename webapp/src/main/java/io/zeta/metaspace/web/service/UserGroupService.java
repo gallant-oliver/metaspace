@@ -349,14 +349,16 @@ public class UserGroupService {
             return userGroupCategories;
         }
 
-        List<String> userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+        if (CollectionUtils.isNotEmpty(userGroups)) {
+            List<String> userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
 
-        List<RoleModulesCategories.Category> bcategorys = getCategorys(userGroupId, userGroupIds, 1,tenant,all);
+            List<RoleModulesCategories.Category> bcategorys = getCategorys(userGroupId, userGroupIds, 1, tenant, all);
 
-        userGroupCategories.setBusinessCategories(bcategorys);
-        List<RoleModulesCategories.Category> tcategorys = getCategorys(userGroupId, userGroupIds, 0,tenant,all);
-        userGroupCategories.setTechnicalCategories(tcategorys);
-        userGroupCategories.setEdit(1);
+            userGroupCategories.setBusinessCategories(bcategorys);
+            List<RoleModulesCategories.Category> tcategorys = getCategorys(userGroupId, userGroupIds, 0, tenant, all);
+            userGroupCategories.setTechnicalCategories(tcategorys);
+            userGroupCategories.setEdit(1);
+        }
         return userGroupCategories;
     }
 
@@ -531,12 +533,15 @@ public class UserGroupService {
         int dateStanderType=3;
         if (dateStanderType == categorytype||ruleType == categorytype) {
             List<RoleModulesCategories.Category> allCategorys;
-            if (categorytype==0){
+            /*if (categorytype==0){
                 List<String> dbNames = tenantService.getDatabase(tenantId);
                 allCategorys = userGroupDAO.getAllCategorysAndCount(categorytype,tenantId,dbNames);
             }else{
                 allCategorys = userGroupDAO.getAllCategorysAndCount(categorytype,tenantId,new ArrayList<>());
-            }
+            }*/
+
+            allCategorys = userGroupDAO.getAllCategorysAndCount(categorytype,tenantId, new ArrayList<>());
+
             CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true,false);
             addPrivilege(userCategorys, allCategorys, privilege, categorytype);
         } else {
