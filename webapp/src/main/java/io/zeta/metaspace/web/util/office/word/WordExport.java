@@ -7,6 +7,7 @@ import org.apache.poi.xwpf.usermodel.*;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -301,7 +302,7 @@ public class WordExport {
                     picType = getPictureType(pic.get("type").toString());
                     path = pic.get("path").toString();
                 }
-
+    
                 //模板样式
                 XWPFRun tempRun = null;
                 // 直接调用XWPFRun的setText()方法设置文本时，在底层会重新创建一个XWPFRun，把文本附加在当前文本后面，
@@ -310,6 +311,7 @@ public class WordExport {
                     tempRun = para.getRuns().get(pos);
                     tempRun.setText("", 0);
                 }
+                Assert.notNull(tempRun, "模板样式为空");
                 if (isPic) {
                     //addPicture方法的最后两个参数必须用Units.toEMU转化一下
                     //para.insertNewRun(index).addPicture(getPicStream(path), picType, "测试",Units.toEMU(width), Units.toEMU(height));
