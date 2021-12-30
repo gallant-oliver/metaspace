@@ -3,7 +3,6 @@ package io.zeta.metaspace.web.rest;
 import com.google.common.collect.ImmutableList;
 import com.gridsum.gdp.library.commons.utils.DateTimeUtils;
 import com.sun.jersey.core.header.FormDataContentDisposition;
-import com.sun.jersey.multipart.FormDataBodyPart;
 import com.sun.jersey.multipart.FormDataMultiPart;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
@@ -205,12 +204,12 @@ public class RequirementsPublicTenantREST {
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @OperateType(OperateTypeEnum.INSERT)
     public void uploadFileBatch(@HeaderParam(HEADER_TENANT_ID) String tenantId, FormDataMultiPart form) throws Exception {
-        List<FormDataBodyPart> files = form.getFields("file");
-        for (FormDataBodyPart file : files) {
-            InputStream input = file.getValueAs(InputStream.class);
-            System.out.println(org.apache.commons.io.IOUtils.readLines(input));
-            System.out.println(file.cd.fileName);
-        }
+//        List<FormDataBodyPart> files = form.getFields("file");
+//        for (FormDataBodyPart file : files) {
+//            InputStream input = file.getValueAs(InputStream.class);
+//            System.out.println(org.apache.commons.io.IOUtils.readLines(input));
+//            System.out.println(file.cd.fileName);
+//        }
     }
 
     /**
