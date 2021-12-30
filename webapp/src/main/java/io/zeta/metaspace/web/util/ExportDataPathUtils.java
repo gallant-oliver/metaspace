@@ -97,7 +97,9 @@ public class ExportDataPathUtils {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         } finally {
             try {
-                reader.close();
+                if (reader != null) {
+                    reader.close();
+                }
                 file.delete();
             } catch (Exception e) {
 

@@ -377,14 +377,14 @@ public abstract class BaseImpalaEvent {
         }
 
         AtlasEntity dbEntity = toDbEntity(dbName);
-
+        AtlasEntity ret = null;
         if (entityExtInfo != null) {
             if (dbEntity != null) {
                 entityExtInfo.addReferredEntity(dbEntity);
+
+                ret = toTableEntity(getObjectId(dbEntity), table, entityExtInfo);
             }
         }
-
-        AtlasEntity ret = toTableEntity(getObjectId(dbEntity), table, entityExtInfo);
 
         return ret;
     }

@@ -615,7 +615,7 @@ public abstract class BaseHiveEvent {
 
                 String name = Path.getPathWithoutSchemeAndAuthority(path).toString();
 
-                if (strPath.startsWith(HDFS_PATH_PREFIX) && context.isConvertHdfsPathToLowerCase()) {
+                if (StringUtils.isNotEmpty(strPath) && strPath.startsWith(HDFS_PATH_PREFIX) && context.isConvertHdfsPathToLowerCase()) {
                     name = name.toLowerCase();
                 }
 
