@@ -405,15 +405,19 @@ public class DataQualityService {
 
     public File getZipFile(List<File> inputs) throws IOException  {
         File zipFile = new File("report.zip");
-        ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(zipFile));
-        for (int i = 0; i < inputs.size(); i++) {
-            File file = inputs.get(i);
-            zout.putNextEntry(new ZipEntry(file.getName()));
-            zout.write(FileUtils.readFileToByteArray(file));
-            zout.closeEntry();
-            file.delete();
+        try(ZipOutputStream zout = new ZipOutputStream(new FileOutputStream(zipFile))) {
+            for (int i = 0; i < inputs.size(); i++) {
+                File file = inputs.get(i);
+                zout.putNextEntry(new ZipEntry(file.getName()));
+                zout.write(FileUtils.readFileToByteArray(file));
+                zout.closeEntry();
+                file.delete();
+            }
         }
-        zout.close();
+        catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取文件失败");
+        }
+
         return zipFile;
     }
 

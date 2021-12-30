@@ -234,7 +234,7 @@ public class BusinessService implements Approvable {
             info.setBusinessId(businessId);
 
             // 如果开关变动，则需要审批
-            if (currentInfo.getPublish() != info.getPublish()) {
+            if (!currentInfo.getPublish().equals(info.getPublish())) {
                 // 修改审批状态
                 info.setStatus(Status.AUDITING.getIntValue() + "");
 
@@ -1436,8 +1436,7 @@ public class BusinessService implements Approvable {
 
 
     public List<Column> convertExceltoMap(File file) throws AtlasBaseException {
-        try {
-            Workbook workbook = new WorkbookFactory().create(file);
+        try(Workbook workbook = new WorkbookFactory().create(file)){
             Sheet sheet = workbook.getSheetAt(0);
             int rowNum = sheet.getLastRowNum() + 1;
             Row row = null;
@@ -1563,12 +1562,22 @@ public class BusinessService implements Approvable {
             String tableName = tableHeader.getTableName();
             StringJoiner joiner = new StringJoiner("_");
             joiner.add(dbName).add(tableName).add("columns");
-            Workbook workbook = PoiExcelUtils.createExcelFile(attributes, datas, XLSX);
+
+            FileOutputStream output = null;
             File file = new File(joiner.toString() + ".xlsx");
-            FileOutputStream output = new FileOutputStream(file);
-            workbook.write(output);
-            output.flush();
-            output.close();
+            try(Workbook workbook = PoiExcelUtils.createExcelFile(attributes, datas, XLSX)) {
+                output = new FileOutputStream(file);
+                workbook.write(output);
+            }
+            catch (Exception e){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导出失败");
+            }
+            finally {
+                if (output != null) {
+                    output.flush();
+                    output.close();
+                }
+            }
 
             return file;
         } catch (Exception e) {

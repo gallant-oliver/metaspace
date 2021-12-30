@@ -159,13 +159,15 @@ public class MarketService {
 
             String trustTableGuid = businessDao.getTrustTableGuid(businessId);
             if(Objects.nonNull(trustTableGuid)) {
-                TechnologyInfo.Table trustTable = tables.stream().filter(table -> table.getTableGuid().equals(trustTableGuid)).findFirst().get();
+                TechnologyInfo.Table trustTable = tables.stream().filter(table -> table.getTableGuid().equals(trustTableGuid)).findFirst().orElse(null);
                 if(Objects.nonNull(trustTable)) {
                     tables.remove(trustTable);
                     trustTable.setTrust(true);
                     tables.add(0, trustTable);
                 } else {
-                    tables.stream().findFirst().get().setTrust(true);
+                   tables.stream().findFirst().ifPresent(table -> {
+                       table.setTrust(true);
+                   });
                 }
             }
             info.setTables(tables);
