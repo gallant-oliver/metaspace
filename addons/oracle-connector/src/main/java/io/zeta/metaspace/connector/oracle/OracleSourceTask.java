@@ -1,6 +1,5 @@
 package io.zeta.metaspace.connector.oracle;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.source.SourceTask;
@@ -14,7 +13,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.*;
+import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.SCN_FIELD;
+import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.SQL_REDO_FIELD;
+import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.TEMPORARY_TABLE;
+import static io.zeta.metaspace.connector.oracle.OracleConnectorConstant.TIMESTAMP_FIELD;
 
 /**
  *
@@ -176,7 +178,11 @@ public class OracleSourceTask extends SourceTask {
 			}
 			logMinerSelect = execute(records);
 		} catch (Throwable e) {
-			LOG.error("during poll on connector {} : ", config.getName(), e.getMessage(), e);
+			LOG.error("during poll on connector {} {}: ", config.getName(), e.getMessage(), e);
+			if (e instanceof InterruptedException) {
+				// Restore interrupted state...
+				Thread.currentThread().interrupt();
+			}
 			retry(records);
 		}finally{
 			if(null != logMinerSelect){
@@ -184,6 +190,7 @@ public class OracleSourceTask extends SourceTask {
 					logMinerSelect.cancel();
 					logMinerSelect.close();
 				} catch (Exception e) {
+					LOG.error("logMinerSelect close error:", e);
 				}
 			}
 		}
@@ -214,12 +221,17 @@ public class OracleSourceTask extends SourceTask {
 				break;
 			} catch (Exception ex) {
 				LOG.error("{} : connector {} execute error: {}", times, config.getName(), ex);
+				if (ex instanceof InterruptedException) {
+					// Restore interrupted state...
+					Thread.currentThread().interrupt();
+				}
 			}finally {
 				if(null != logMinerSelect){
 					try {
 						logMinerSelect.cancel();
 						logMinerSelect.close();
 					} catch (Exception e) {
+						LOG.error("logMinerSelect close error:", e);
 					}
 				}
 			}

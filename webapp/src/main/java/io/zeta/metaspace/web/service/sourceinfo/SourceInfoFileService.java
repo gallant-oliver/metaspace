@@ -68,7 +68,7 @@ public class SourceInfoFileService {
     /*
      * 正则表达式：验证邮箱
      */
-    public static final String REGEX_EMAIL = "^([a-z0-9A-Z]+[-|\\.]?)+[a-z0-9A-Z]@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)?\\.)+[a-zA-Z]{2,}$";
+    public static final String REGEX_EMAIL = "^([a-z0-9A-Z]+[-\\.]?)+[a-z0-9A-Z]@([a-z0-9A-Z]+(-[a-z0-9A-Z]+)?\\.)+[a-zA-Z]{2,}$";
 
 
     private final String[] validFields = new String[]{"数据层名称","数据库中文名","数据库类型","数据源","数据库英文名称",
@@ -787,17 +787,17 @@ public class SourceInfoFileService {
      * @param userList
      * @return
      */
-    private String convertUsernameToUserId(String name,List<User> userList){
-        if(CollectionUtils.isEmpty(userList)){
+    private String convertUsernameToUserId(String name,List<User> userList) {
+        if (CollectionUtils.isEmpty(userList)) {
             return name;
         }
-
-        Optional<User> user = userList.stream().filter(p-> StringUtils.equalsIgnoreCase(p.getUsername(),name))
+    
+        Optional<User> user = userList.stream().filter(p -> StringUtils.equalsIgnoreCase(p.getUsername(), name))
                 .findFirst();
-        if(user == null || !user.isPresent()){
-            return "";
+        if (!user.isPresent()) {
+            return StringUtils.EMPTY;
         }
-
+    
         return user.get().getUserId();
     }
 
