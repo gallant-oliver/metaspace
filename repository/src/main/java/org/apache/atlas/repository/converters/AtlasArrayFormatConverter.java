@@ -78,7 +78,7 @@ public class AtlasArrayFormatConverter extends BaseAtlasAbstractFormatConverter 
         }
 
         if (LOG.isDebugEnabled()) {
-            LOG.debug("AtlasArrayFormatConverter.isValidValueV1(type={}, value={}): {}", (v1Obj != null ? v1Obj.getClass().getCanonicalName() : null), v1Obj, ret);
+            LOG.debug("AtlasArrayFormatConverter.isValidValueV1(type={}, value={}): {}", v1Obj.getClass().getCanonicalName(), v1Obj, ret);
         }
 
         return ret;

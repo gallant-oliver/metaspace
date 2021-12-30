@@ -90,9 +90,11 @@ public class AdapterUtils {
                         } else if (extensions.size() > 1) {
                             throw new InternalException(String.format("%d adapters are found by name[%s].", extensions.size(), plugin.getPluginId()));
                         }
-                        AdapterExtensionPoint element = extensions.stream().findAny().get();
+                        AdapterExtensionPoint element = extensions.stream().findAny().orElse(null);
                         PluginDescriptor descriptor = plugin.getDescriptor();
-                        ADAPTERS.add(element.build(descriptor));
+                        if (element != null) {
+                            ADAPTERS.add(element.build(descriptor));
+                        }
                     }
                 }
             }

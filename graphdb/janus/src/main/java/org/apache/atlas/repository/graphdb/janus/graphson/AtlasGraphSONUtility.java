@@ -32,6 +32,7 @@ import org.apache.atlas.repository.graphdb.AtlasEdge;
 import org.apache.atlas.repository.graphdb.AtlasElement;
 import org.apache.atlas.repository.graphdb.AtlasVertex;
 import org.apache.atlas.repository.graphdb.janus.graphson.AtlasElementPropertyConfig.ElementPropertiesRule;
+import org.apache.commons.collections.CollectionUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.codehaus.jettison.json.JSONTokener;
@@ -404,10 +405,12 @@ public final class AtlasGraphSONUtility {
 
                 // there is a set of values that must be accumulated as an array under a key
                 ArrayNode valueArray = valueAndType.putArray(AtlasGraphSONTokens.VALUE);
-                for (int ix = 0; ix < list.size(); ix++) {
-                    // the value of each item in the array is a node object from an ArrayNode...must
-                    // get the value of it.
-                    addObject(valueArray, getValue(getTypedValueFromJsonNode(list.get(ix)), includeType));
+                if (list != null) {
+                    for (int ix = 0; ix < list.size(); ix++) {
+                        // the value of each item in the array is a node object from an ArrayNode...must
+                        // get the value of it.
+                        addObject(valueArray, getValue(getTypedValueFromJsonNode(list.get(ix)), includeType));
+                    }
                 }
 
             } else if (type.equals(AtlasGraphSONTokens.TYPE_MAP)) {

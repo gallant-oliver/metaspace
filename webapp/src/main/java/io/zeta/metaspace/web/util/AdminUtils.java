@@ -12,6 +12,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -73,10 +74,10 @@ public class AdminUtils {
         try {
             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
             ssoTicket =  request.getHeader(TICKET_KEY);
-            if (ssoTicket == null || ssoTicket == "") {
+            if (StringUtils.isEmpty(ssoTicket)) {
                 ssoTicket = request.getParameter(TICKET_KEY);
             }
-            if(ssoTicket==null||ssoTicket.equals(""))
+            if(StringUtils.isEmpty(ssoTicket))
                 throw new AtlasBaseException(AtlasErrorCode.SSO_USER_ERROE);
             return ssoTicket;
         }catch (AtlasBaseException e){
