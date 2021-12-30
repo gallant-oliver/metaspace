@@ -1,12 +1,10 @@
 package io.zeta.metaspace.web.util.office.excel;
 
-import com.itextpdf.text.*;
 import com.itextpdf.text.Font;
+import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
-import org.apache.poi.hssf.usermodel.HSSFCellStyle;
 import org.apache.poi.hssf.util.HSSFColor;
-import org.apache.poi.ss.format.CellNumberFormatter;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 
@@ -217,7 +215,7 @@ public class PdfTableExcel {
             result.setStyle(Font.BOLD);
         }
 
-        HSSFColor color = HSSFColor.getIndexHash().get(font.getColor());
+        HSSFColor color = HSSFColor.getIndexHash().get(Integer.valueOf(font.getColor()));
 
         if(color != null){
             int rbg = POIUtil.getRGB(color);
