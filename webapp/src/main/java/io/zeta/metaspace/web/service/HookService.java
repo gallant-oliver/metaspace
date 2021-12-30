@@ -101,16 +101,20 @@ public class HookService {
         if (!file.exists()){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "hiveserver2脚本不存在，请正确配置" + hiveBin);
         }
-        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
-        String line;
-        while((line=bufferedReader.readLine())!=null){
-            if (line.matches(".*export.*HADOOP_CLASSPATH.*/hook/hive.*")) {
-                char separatorChar = File.separatorChar;
-                int start = line.indexOf(separatorChar);
-                int end = line.lastIndexOf(separatorChar);
-                String hookPath = line.substring(start, end);
-                hookPaths.add(hookPath);
+        try(BufferedReader bufferedReader = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+                if (line.matches(".*export.*HADOOP_CLASSPATH.*/hook/hive.*")) {
+                    char separatorChar = File.separatorChar;
+                    int start = line.indexOf(separatorChar);
+                    int end = line.lastIndexOf(separatorChar);
+                    String hookPath = line.substring(start, end);
+                    hookPaths.add(hookPath);
+                }
             }
+        }
+        catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
 
         for (String hookPath:hookPaths){

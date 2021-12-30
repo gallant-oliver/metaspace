@@ -422,7 +422,7 @@ public class PoiExcelUtils {
      * @param file excel文件
      * @return 工作簿对象
      */
-    public static Workbook getWorkBookFile(File file) {
+    public static Workbook getWorkBookFile(File file) throws IOException {
         // 获得文件名
         String fileName = file.getName();
         // 创建Workbook工作簿对象，表示整个excel
@@ -443,6 +443,9 @@ public class PoiExcelUtils {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+        finally {
+            workbook.close();
         }
         return workbook;
     }
