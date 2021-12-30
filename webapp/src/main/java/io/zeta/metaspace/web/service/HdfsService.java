@@ -173,6 +173,10 @@ public class HdfsService {
     }
     public InputStream getFileInputStream(String filePath) throws IOException {
         FileSystem fileSystem = initProxyFs();
+        if(fileSystem == null){
+            log.error("hdfs 初始化为空");
+            throw new RuntimeException("hdfs 初始化失败.");
+        }
         filePath = getHdfsAbsoluteFilePath(filePath,false);
         Path path = new Path(filePath);
         if (!fileSystem.exists(path)) {

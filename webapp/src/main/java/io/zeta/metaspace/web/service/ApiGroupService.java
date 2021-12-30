@@ -602,7 +602,7 @@ public class ApiGroupService {
         Map<String,ApiCategory> apiCategoryMap = new HashMap<>();
         aPiByGroup.forEach(api -> {
             String status = api.getStatus();
-            if (ApiStatusEnum.UP.equals(status)){
+            if (ApiStatusEnum.UP.getName().equals(status)){
                 api.setApiStatus(true);
             }else{
                 api.setApiStatus(false);

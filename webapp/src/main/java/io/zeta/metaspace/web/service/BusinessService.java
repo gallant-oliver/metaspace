@@ -234,7 +234,7 @@ public class BusinessService implements Approvable {
             info.setBusinessId(businessId);
 
             // 如果开关变动，则需要审批
-            if (currentInfo.getPublish() != info.getPublish()) {
+            if (!currentInfo.getPublish().equals(info.getPublish())) {
                 // 修改审批状态
                 info.setStatus(Status.AUDITING.getIntValue() + "");
 

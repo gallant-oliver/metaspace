@@ -107,12 +107,8 @@ public class KafkaConnectorService {
         }else{
 
             KafkaConnector kafkaConnector = getKafkaConnector(connectorName);
-            if(null != kafkaConnector){
-                KafkaConnectorUtil.startConnector(kafkaConnector);
-                LOG.warn("重启connector {}失败： 因为connector {}原本没有启动。本次操作直接启动了connector {}", connectorName, connectorName, connectorName);
-            }else{
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "kafka connector " + connectorName + "不存在");
-            }
+            KafkaConnectorUtil.startConnector(kafkaConnector);
+            LOG.warn("重启connector {}失败： 因为connector {}原本没有启动。本次操作直接启动了connector {}", connectorName, connectorName, connectorName);
         }
         return true;
     }

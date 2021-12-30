@@ -65,7 +65,9 @@ public class TableService {
             return resultMap;
         } finally {
             try {
-                reader.close();
+                if (reader != null) {
+                    reader.close();
+                }
             } catch (Exception e) {
                 LOG.warn("关闭文件失败");
             }

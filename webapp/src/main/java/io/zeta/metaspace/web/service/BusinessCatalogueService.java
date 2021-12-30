@@ -245,7 +245,6 @@ public class BusinessCatalogueService implements Approvable {
         returnEntity.setLevel(1);
         returnEntity.setParentCategoryGuid(null);
         returnEntity.setPrivateStatus(CategoryPrivateStatus.PRIVATE.name());
-        CategoryPrivilege.Privilege privilege = null;
         Boolean delete=true;
         Boolean edit=true;
         if(publish){
@@ -257,11 +256,7 @@ public class BusinessCatalogueService implements Approvable {
             returnEntity.setPublish(false);
             returnEntity.setStatus("0");//待发布
         }
-        if (type == 1) {
-            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
-        }else {
-            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
-        }
+        CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
         returnEntity.setPrivilege(privilege);
         return returnEntity;
     }
@@ -294,12 +289,7 @@ public class BusinessCatalogueService implements Approvable {
             returnEntity.setStatus("0");//待发布
         }
 
-        CategoryPrivilege.Privilege privilege = null;
-        if (type == 1) {
-            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
-        } else {
-            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
-        }
+        CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
         returnEntity.setPrivilege(privilege);
         return returnEntity;
     }
@@ -343,12 +333,7 @@ public class BusinessCatalogueService implements Approvable {
             delete=false;
             edit=false;
         }
-        CategoryPrivilege.Privilege privilege = null;
-        if (type == 1) {
-            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
-        } else {
-            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
-        }
+        CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
        return privilege;
     }
 
@@ -460,7 +445,7 @@ public class BusinessCatalogueService implements Approvable {
             Boolean newisPublish=info.getPublish();
             String approveId = UUID.randomUUID().toString();
             CategoryEntityV2 entity = new CategoryEntityV2();
-            if(oldisPublish!=newisPublish){
+            if(!oldisPublish.equals(newisPublish)){
                 if (StringUtils.isBlank(approveGroupId)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审批组不能为空");
                 }
@@ -1021,12 +1006,7 @@ public class BusinessCatalogueService implements Approvable {
 
         }
 
-        CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
-        if (type==1) {
-            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true, false);
-        } else {
-            privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true, false);
-        }
+        CategoryPrivilege.Privilege privilege = privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, true, false, false, true, false);
         List<CategoryPrivilege> categoryPrivileges = new ArrayList<>();
         for (CategoryEntityV2 categoryEntityV2 : categories) {
             CategoryPrivilege categoryPrivilege = new CategoryPrivilege(categoryEntityV2);
