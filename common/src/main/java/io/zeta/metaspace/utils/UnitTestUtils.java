@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 public class UnitTestUtils {
@@ -41,8 +42,8 @@ public class UnitTestUtils {
      */
     public static DataSourceInfo readDataSourceInfoJson(String path) {
         String json = null;
-        try {
-            json = Files.lines(Paths.get(path), StandardCharsets.UTF_8).collect(Collectors.joining("\n"));
+        try (Stream<String> stream = Files.lines(Paths.get(path), StandardCharsets.UTF_8)) {
+            json = stream.collect(Collectors.joining("\n"));
         } catch (IOException e) {
             e.printStackTrace();
         }

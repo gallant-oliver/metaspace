@@ -945,7 +945,9 @@ public class MetaDataREST {
             os.close();
             xlsxFile.delete();
         } finally {
-            xlsxFile.deleteOnExit();
+            if (null != xlsxFile) {
+                xlsxFile.deleteOnExit();
+            }
         }
     }
 

@@ -415,7 +415,6 @@ public class TaskManageService {
         }
     }
 
-    @Transactional(rollbackFor = Exception.class)
     public void addDataQualitySubTaskRule(String subTaskId, Timestamp currentTime, List<TaskInfo.SubTaskRule> subTaskRuleList, String tenantId) throws AtlasBaseException {
         try {
             for (int i = 0, size = subTaskRuleList.size(); i < size; i++) {
@@ -1238,7 +1237,8 @@ public class TaskManageService {
         try (FileOutputStream output = new FileOutputStream(dataFile)) {
             workbook.write(output);
             output.flush();
-            output.close();
+        } finally {
+            workbook.close();
         }
         return dataFile;
     }
@@ -1305,22 +1305,31 @@ public class TaskManageService {
                           String subTaskName, String fileName) throws Exception {
         byte[] buf = new byte[100 * 1024];
         File[] listFiles = sourceFile.listFiles();
-        for (File file : listFiles) {
-            // 向zip输出流中添加一个zip实体，构造器中name为zip实体的文件的名字
-            if (!"all".equals(subTaskName) && !file.getName().contains(subTaskName) && !file.getName().contains(fileName)) {
-                continue;
+        FileInputStream in = null;
+        try {
+            for (File file : listFiles) {
+                // 向zip输出流中添加一个zip实体，构造器中name为zip实体的文件的名字
+                if (!"all".equals(subTaskName) && !file.getName().contains(subTaskName) && !file.getName().contains(fileName)) {
+                    continue;
+                }
+                zos.putNextEntry(new ZipEntry(file.getName()));
+                // copy文件到zip输出流中
+                int len;
+                in = new FileInputStream(file);
+                while ((len = in.read(buf)) != -1) {
+                    zos.write(buf, 0, len);
+                }
+                // Complete the entry
+                zos.closeEntry();
+//                in.close();
             }
-            zos.putNextEntry(new ZipEntry(file.getName()));
-            // copy文件到zip输出流中
-            int len;
-            FileInputStream in = new FileInputStream(file);
-            while ((len = in.read(buf)) != -1) {
-                zos.write(buf, 0, len);
+        } finally {
+            if (null != in) {
+                in.close();
             }
-            // Complete the entry
-            zos.closeEntry();
-            in.close();
         }
+
+
     }
 
     public void toZip(String srcDir, OutputStream out, String subTaskName, String fileName)
