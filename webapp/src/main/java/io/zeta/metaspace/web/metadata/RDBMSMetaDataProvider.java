@@ -127,6 +127,7 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
     }
 
 
+    @Override
     public void importDatabases(String taskInstanceId, TableSchema tableSchema) throws Exception {
         LOG.info("import metadata start at {}", new Date());
         syncTaskInstanceDAO.updateStatusAndAppendLog(taskInstanceId, SyncTaskInstance.Status.RUN, "开始初始化数据库并拉取元数据");
@@ -167,10 +168,12 @@ public class RDBMSMetaDataProvider implements IMetaDataProvider {
                                 clearRelationshipAttributes(dbEntity);
                                 metaDataContext.putEntity(dbQualifiedName, dbEntity);
                             }
+                            if (null == dbEntity) {
+                                throw new AtlasBaseException("获取的数据库表为空");
+                            }
                             importTables(dbEntity.getEntity(), taskInstanceId, database.getFullName(),
                                     getTables(database), false, instanceGuid, taskInstanceId, null);
-                        }
-                        finally {
+                        } finally {
                             // 每处理完一个库清理相关的缓存数据
                             RequestContext.clear();
                         }

@@ -102,6 +102,9 @@ public class ApproveServiceImp implements ApproveService{
     public void deal(ApproveParas paras, String tenant_id) throws Exception {
         ApproveOperate result = null;
         Map<String,List<ApproveItem>> moduleItemMap = new HashMap<>(); //key:moduleId value: list<approveItem>
+        if (CollectionUtils.isEmpty(paras.getApproveList())) {
+            throw new AtlasBaseException("审批列表不能为空");
+        }
         if(ApproveOperate.APPROVE.equals(ApproveOperate.getOprateByCode(paras.getResult()))){  //审批通过
             result = ApproveOperate.APPROVE;
             List<ApproveItem> approveList = paras.getApproveList(); //批量审批列表
