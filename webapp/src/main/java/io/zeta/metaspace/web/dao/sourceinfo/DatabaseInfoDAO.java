@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.dao.sourceinfo;
 import io.zeta.metaspace.bo.DatabaseInfoBO;
 import io.zeta.metaspace.model.metadata.Database;
 import io.zeta.metaspace.model.po.sourceinfo.DatabaseInfoPO;
+import io.zeta.metaspace.model.security.TenantDatabaseList;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForCategory;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForList;
@@ -629,7 +630,7 @@ public interface DatabaseInfoDAO {
             " FROM db_info as db, (" +
 
             " <foreach collection='hiveList' item='item' separator=' union all '>" +
-            " ( select #{item.tenantId} as id,#{item.hiveDb} as db_name from tenant limit 1 )" +
+            " ( select #{item.tenantId} as id,#{item.name} as db_name from tenant limit 1 )" +
             " </foreach>" +
             " ) te"+
 
@@ -655,7 +656,7 @@ public interface DatabaseInfoDAO {
             "</if>" +
             " AND db.database_name in " +
             " <foreach collection='hiveList' item='item' separator=',' open='(' close=')'>" +
-            "  #{item.hiveDb}" +
+            "  #{item.name}" +
             " </foreach>" +
             " </if>" +
             " ) as t" +
@@ -666,7 +667,7 @@ public interface DatabaseInfoDAO {
             "  offset #{offset}" +
             " </if>" +
             "</script>")
-    List<Database> selectByDbNameAndTenantIdList(@Param("tenantGroupList") List<TenantGroup> tenantGroups, @Param("dbName") String dbName, @Param("hiveList") List<TenantHive> hiveList, @Param("limit") Long limit, @Param("offset") Long offset);
+    List<Database> selectByDbNameAndTenantIdList(@Param("tenantGroupList") List<TenantGroup> tenantGroups, @Param("dbName") String dbName, @Param("hiveList") List<TenantDatabaseList.Database> hiveList, @Param("limit") Long limit, @Param("offset") Long offset);
 
 
     @Select("<script>" +

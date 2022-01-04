@@ -84,5 +84,15 @@ public interface DbDAO {
             "join user_group ug on ug.id=dgr.group_id and ug.valid=true " +
             "where di.db_type='HIVE' and di.status='ACTIVE'")
     List<TenantHive> getAuthHiveDbs();
+
+    @Select("<script>" +
+            "select database_name " +
+            "from db_info " +
+            "where db_type='HIVE' and status='ACTIVE' " +
+            "<if test = \"query !=null and query !=''\">" +
+            "and database_name like concat('%',#{query},'%')  " +
+            "</if>" +
+            "</script>")
+    List<String> getHiveDatabasesByQuery(@Param("query") String query);
 }
 

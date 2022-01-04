@@ -4,6 +4,7 @@ import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.dataassets.DataAssets;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.pojo.TableInfo;
+import io.zeta.metaspace.model.security.TenantDatabaseList;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import io.zeta.metaspace.model.usergroup.TenantGroup;
 import io.zeta.metaspace.model.usergroup.TenantHive;
@@ -324,7 +325,7 @@ public interface TableDAO {
             " <if test='dbNameList != null and dbNameList.size() > 0'>" +
             "  INNER JOIN ( "+
             " <foreach collection='dbNameList' item='item' separator=' union all '>" +
-            " ( select #{item.tenantId} as id,#{item.hiveDb} as db_name from tenant limit 1 )" +
+            " ( select #{item.tenantId} as id,#{item.name} as db_name from tenant limit 1 )" +
             " </foreach>" +
             " ) te on te.db_name=tb.dbname "+
             " </if>" +
@@ -360,7 +361,7 @@ public interface TableDAO {
             " offset #{offset}"+
             "</script>")
     List<TableEntity> selectListByTenantIdListAndTableName(@Param("tableName") String tableName, @Param("tenantList") List<String> tenants,
-                                                           @Param("dbNameList") List<TenantHive> dbNameList, @Param("tenantGroupList") List<TenantGroup> tenantGroups,
+                                                           @Param("dbNameList") List<TenantDatabaseList.Database> dbNameList, @Param("tenantGroupList") List<TenantGroup> tenantGroups,
                                                            @Param("limit") Long limit, @Param("offset") Long offset);
 
     @Select("<script>" +
@@ -453,6 +454,16 @@ public interface TableDAO {
             " WHERE tb.tableguid = #{id} AND tb.status = 'ACTIVE' LIMIT 1" +
             "</script>")
     TableEntity selectById(@Param("id") String id);
+
+    @Select("<script>" +
+            "select dbname " +
+            "from tableinfo " +
+            "where status='ACTIVE' " +
+            "<if test = \"query !=null and query !=''\">" +
+            "and tablename like concat('%',#{query},'%')  " +
+            "</if>" +
+            "</script>")
+    List<String> getHiveDatabasesByTableQuery(@Param("query") String query);
 
 
     /**
