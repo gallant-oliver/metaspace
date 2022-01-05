@@ -34,6 +34,14 @@ public class FilterUtils {
         add("/api/metaspace/internal/table/");
     }};
 
+    private static List<String> permissionUrl = new ArrayList<String>(){{
+        add("api/metaspace/health/check");
+        add("api/metaspace/health/check/password");
+        add("api/metaspace/businesses/excel/file/template");
+        add("api/metaspace/businesses/excel/category/template");
+        add("api/metaspace/businesses/excel/allcategory/template");
+    }};
+
     // TODO 这种实现方式存在风险，而且粒度也不好控制
     public static boolean isSkipUrl(String requestURL) {
 
@@ -55,10 +63,7 @@ public class FilterUtils {
      */
     public static Boolean isHealthCheck(String requestURL){
         String result = StringUtils.substring(requestURL, requestURL.indexOf("api/metaspace"), requestURL.length());
-        if("api/metaspace/health/check".equals(result)){
-            return true;
-        }
-        if("api/metaspace/health/check/password".equals(result)){
+        if(permissionUrl.contains(result)){
             return true;
         }
         return false;

@@ -953,7 +953,6 @@ public class BusinessREST {
         }
     }
 
-    @Permission({ModuleEnum.BUSINESS, ModuleEnum.AUTHORIZATION})
     @GET
     @Path("/excel/category/template")
     @Valid
@@ -965,7 +964,6 @@ public class BusinessREST {
         IOUtils.copyBytes(inputStream, response.getOutputStream(), 4096, true);
     }
 
-    @Permission({ModuleEnum.BUSINESS, ModuleEnum.AUTHORIZATION})
     @GET
     @Path("/excel/allcategory/template")
     @Valid
