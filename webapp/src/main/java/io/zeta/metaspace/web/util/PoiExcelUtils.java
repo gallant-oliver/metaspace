@@ -113,6 +113,54 @@ public class PoiExcelUtils {
 
     /**
      * 读取excel文件
+     * @param inputStream
+     * @param fileName
+     * @param startRow
+     * @param lastCellNum
+     * @return
+     * @throws IOException
+     */
+    public static List<String[]> readExcelFile(InputStream inputStream, String fileName, int startRow, int lastCellNum) throws IOException {
+        // 获得工作簿对象
+        Workbook workbook = getWorkBookFile(inputStream, fileName);
+        // 创建返回对象，把每行中的值作为一个数组，所有的行作为一个集合返回
+        List<String[]> list = new ArrayList<>();
+        if (workbook != null) {
+            // 获取当前sheet工作表
+            Sheet sheet = workbook.getSheetAt(0);
+            if (sheet == null) {
+                return list;
+            }
+            // 获得当前sheet的结束行
+            int lastRowNum = sheet.getLastRowNum();
+            if (startRow < 0 || startRow > lastRowNum) {
+                throw new RuntimeException("wrong startRow");
+            }
+            // 循环除了第一行之外的所有行
+            for (int rowNum = startRow; rowNum <= lastRowNum; rowNum++) {
+                // 获得当前行
+                Row row = sheet.getRow(rowNum);
+                if (row == null) {
+                    return list;
+                }
+                // 获得当前行的开始列
+                int firstCellNum = row.getFirstCellNum();
+                // 获得当前行的列数
+                String[] cells = new String[lastCellNum];
+                // 循环当前行
+                for (int cellNum = firstCellNum; cellNum < lastCellNum; cellNum++) {
+                    Cell cell = row.getCell(cellNum);
+                    cells[cellNum] = getCellValue(cell);
+                }
+                list.add(cells);
+            }
+        }
+        return list;
+    }
+
+
+    /**
+     * 读取excel文件
      *
      * @param file
      * @param startRow    开始行数
@@ -442,7 +490,35 @@ public class PoiExcelUtils {
                 workbook = new XSSFWorkbook(is);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("getWorkBookFile exception is {}", e);
+        }
+        return workbook;
+    }
+
+
+    /**
+     * 获得工作簿对象
+     * @param input
+     * @param fileName
+     * @return
+     */
+    public static Workbook getWorkBookFile(InputStream input, String fileName) {
+        // 创建Workbook工作簿对象，表示整个excel
+        Workbook workbook = null;
+        try {
+            // 根据文件后缀名不同(xls和xlsx)获得不同的workbook实现类对象
+            if (fileName.endsWith(XLS)) {
+                // 2003版本
+                workbook = new HSSFWorkbook(input);
+            } else if (fileName.endsWith(XLSX)) {
+                // 2007版本
+                workbook = new XSSFWorkbook(input);
+            } else {
+                // 2007版本
+                workbook = new XSSFWorkbook(input);
+            }
+        } catch (IOException e) {
+            logger.error("getWorkBookFile exception is {}", e);
         }
         finally {
             workbook.close();
