@@ -77,6 +77,9 @@ public class SourceInfoDeriveColumnInfo implements Serializable {
     @ApiModelProperty(value = "备注")
     private String remark;
 
+    @ApiModelProperty(value = "关联标签数组")
+    private String tags;
+
     @JsonIgnore
     private String tenantId;
 
@@ -105,6 +108,7 @@ public class SourceInfoDeriveColumnInfo implements Serializable {
                 Objects.equals(important, that.important) &&
                 Objects.equals(permissionField, that.permissionField) &&
                 Objects.equals(remark, that.remark) &&
+                Objects.equals(tags, that.tags) &&
                 Objects.equals(tenantId, that.tenantId) &&
                 Objects.equals(tableGuid, that.tableGuid) &&
                 Objects.equals(sort, that.sort);
