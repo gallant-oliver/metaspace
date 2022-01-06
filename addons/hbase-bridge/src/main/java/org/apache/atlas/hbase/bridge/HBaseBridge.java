@@ -395,7 +395,10 @@ public class HBaseBridge {
             ret = updateEntityInAtlas(ret);
         }
 
-        AtlasEntity tableEntity = ret.getEntity();
+        AtlasEntity tableEntity = null;
+        if (ret != null) {
+            tableEntity = ret.getEntity();
+        }
 
         if (tableEntity != null) {
             List<AtlasEntityWithExtInfo> cfEntities = createOrUpdateColumnFamilies(nameSpace, tableName, owner, hcdts, tableEntity);

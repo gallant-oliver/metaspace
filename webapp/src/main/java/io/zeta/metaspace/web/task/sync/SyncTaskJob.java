@@ -101,6 +101,9 @@ public class SyncTaskJob implements Job {
             if (syncTaskInstance != null) {
                 syncTaskInstanceDAO.updateStatusAndAppendLog(instanceId, SyncTaskInstance.Status.FAIL, "执行异常：" + e.getMessage());
             }
+            if (null == definition) {
+                throw new AtlasBaseException(e.getMessage());
+            }
             {
                 indexCounter.plusOneFail(definition.getDataSourceType());
             }

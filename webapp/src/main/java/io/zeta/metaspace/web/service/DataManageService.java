@@ -639,6 +639,9 @@ public class DataManageService {
                 //无当前目录权限
                 boolean isPrivilege = !userGroupService.isPrivilegeCategory(creatorId, newCategoryGuid, tenantId, type);
                 boolean typeBoolean = type == 1 ;
+                if (privilege == null){
+                    privilege = new CategoryPrivilege.Privilege();
+                }
                 if (isAdmin) {
                     privilege.adminPrivilege(returnEntity.getGuid());
                 }
@@ -695,12 +698,7 @@ public class DataManageService {
         returnEntity.setParentCategoryGuid(null);
         returnEntity.setUpBrotherCategoryGuid(lastCategoryId);
         returnEntity.setDownBrotherCategoryGuid(null);
-        CategoryPrivilege.Privilege privilege = null;
-        if (type == 0 || type == 1) {
-            privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
-        } else {
-            privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
-        }
+        CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
         if (type == technicalType) {
             privilege.setDeleteRelation(false);
             privilege.setAsh(false);
@@ -2744,52 +2742,56 @@ public class DataManageService {
     private List<CategoryExport> file2Data(File file) throws Exception {
         List<String> names = new ArrayList<>();
         List<CategoryExport> categoryExports = new ArrayList<>();
-        Workbook workbook = WorkbookFactory.create(file);
-        Sheet sheet = workbook.getSheetAt(0);
+        try(Workbook workbook = WorkbookFactory.create(file)) {
+            Sheet sheet = workbook.getSheetAt(0);
 
-        //文件格式校验
-        Row first = sheet.getRow(0);
-        ArrayList<String> strings = Lists.newArrayList("目录名字", "目录描述");
-        ArrayList<String> allStrings = Lists.newArrayList("目录id", "目录名字", "目录描述", "同级的上方目录id", "同级的下方目录id", "父目录id", "全名称", "级别");
+            //文件格式校验
+            Row first = sheet.getRow(0);
+            ArrayList<String> strings = Lists.newArrayList("目录名字", "目录描述");
+            ArrayList<String> allStrings = Lists.newArrayList("目录id", "目录名字", "目录描述", "同级的上方目录id", "同级的下方目录id", "父目录id", "全名称", "级别");
 
-        for (int i = 0; i < strings.size(); i++) {
-            Cell cell = first.getCell(i);
-            if (Objects.isNull(cell)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
-            } else {
-                if (!strings.get(i).equals(cell.getStringCellValue())) {
-                    if (allStrings.get(i).equals(cell.getStringCellValue())) {
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "全局导出文件只能用于全局导入，请导入正确的文件");
-                    }
+            for (int i = 0; i < strings.size(); i++) {
+                Cell cell = first.getCell(i);
+                if (Objects.isNull(cell)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+                } else {
+                    if (!strings.get(i).equals(cell.getStringCellValue())) {
+                        if (allStrings.get(i).equals(cell.getStringCellValue())) {
+                            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "全局导出文件只能用于全局导入，请导入正确的文件");
+                        }
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+                    }
                 }
             }
+
+            int rowNum = sheet.getLastRowNum() + 1;
+            for (int i = 1; i < rowNum; i++) {
+                Row row = sheet.getRow(i);
+                CategoryExport category = new CategoryExport();
+                Cell nameCell = row.getCell(0);
+                if (Objects.isNull(nameCell)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名称不能为空");
+                }
+                if (names.contains(nameCell.getStringCellValue())) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中存在相同目录名");
+                }
+                category.setName(nameCell.getStringCellValue());
+
+                Cell discriptionCell = row.getCell(1);
+                if (Objects.isNull(discriptionCell)) {
+                    category.setDescription("");
+                } else {
+                    category.setDescription(discriptionCell.getStringCellValue());
+                }
+
+                String guid = UUID.randomUUID().toString();
+                category.setGuid(guid);
+                categoryExports.add(category);
+                names.add(nameCell.getStringCellValue());
+            }
         }
-
-        int rowNum = sheet.getLastRowNum() + 1;
-        for (int i = 1; i < rowNum; i++) {
-            Row row = sheet.getRow(i);
-            CategoryExport category = new CategoryExport();
-            Cell nameCell = row.getCell(0);
-            if (Objects.isNull(nameCell)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名称不能为空");
-            }
-            if (names.contains(nameCell.getStringCellValue())) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中存在相同目录名");
-            }
-            category.setName(nameCell.getStringCellValue());
-
-            Cell discriptionCell = row.getCell(1);
-            if (Objects.isNull(discriptionCell)) {
-                category.setDescription("");
-            } else {
-                category.setDescription(discriptionCell.getStringCellValue());
-            }
-
-            String guid = UUID.randomUUID().toString();
-            category.setGuid(guid);
-            categoryExports.add(category);
-            names.add(nameCell.getStringCellValue());
+        catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "转化失败");
         }
         return categoryExports;
     }
@@ -2806,98 +2808,102 @@ public class DataManageService {
         names.put(null, new ArrayList<>());
         List<String> codes = new ArrayList<>();
         List<IndexFieldExport> indexFieldExports = new ArrayList<>();
-        Workbook workbook = WorkbookFactory.create(file);
-        Sheet sheet = workbook.getSheetAt(0);
+        try(Workbook workbook = WorkbookFactory.create(file)) {
+            Sheet sheet = workbook.getSheetAt(0);
 
-        //文件格式校验
-        Row first = sheet.getRow(0);
-        ArrayList<String> strings = Lists.newArrayList("注释", "编码", "名称", "父指标域编码", "描述");
+            //文件格式校验
+            Row first = sheet.getRow(0);
+            ArrayList<String> strings = Lists.newArrayList("注释", "编码", "名称", "父指标域编码", "描述");
 
-        for (int i = 0; i < strings.size(); i++) {
-            Cell cell = first.getCell(i);
-            if (Objects.isNull(cell)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
-            } else {
-                if (!strings.get(i).equals(cell.getStringCellValue())) {
+            for (int i = 0; i < strings.size(); i++) {
+                Cell cell = first.getCell(i);
+                if (Objects.isNull(cell)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
-                }
-            }
-        }
-
-        int rowNum = sheet.getLastRowNum() + 1;
-        for (int i = 3; i < rowNum; i++) {
-            Row row = sheet.getRow(i);
-            IndexFieldExport indexFieldExport = new IndexFieldExport();
-            Cell codeCell = row.getCell(1);
-            if (Objects.isNull(codeCell)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码不能为空");
-            } else {
-                codeCell.setCellType(CellType.STRING);
-                if (!codeCell.getStringCellValue().matches("^[0-9A-Za-z]+$")) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码仅支持英文、数字");
-                }
-                if (codeCell.getStringCellValue().length() > 128) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码长度不能超过128个字符");
-                }
-            }
-            if (codes.contains(codeCell.getStringCellValue())) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中存在相同指标域编码");
-            }
-            Cell nameCell = row.getCell(2);
-            if (Objects.isNull(nameCell)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不能为空");
-            } else {
-                nameCell.setCellType(CellType.STRING);
-                if (nameCell.getStringCellValue().length() > 128) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称长度不能超过128个字符");
-                }
-            }
-            Cell parentCode = row.getCell(3);
-            if (Objects.isNull(parentCode)) {
-                //一级指标域
-                List<String> nameList = names.get(null);
-                if (nameList.contains(nameCell.getStringCellValue())) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中的一级指标域中存在重名");
                 } else {
-                    nameList.add(nameCell.getStringCellValue());
+                    if (!strings.get(i).equals(cell.getStringCellValue())) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+                    }
                 }
-            } else {
-                parentCode.setCellType(CellType.STRING);
-                //二级指标域
-                String pc = parentCode.getStringCellValue();
-                if (!pc.matches("^[0-9A-Za-z]+$")) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码仅支持英文、数字");
+            }
+
+            int rowNum = sheet.getLastRowNum() + 1;
+            for (int i = 3; i < rowNum; i++) {
+                Row row = sheet.getRow(i);
+                IndexFieldExport indexFieldExport = new IndexFieldExport();
+                Cell codeCell = row.getCell(1);
+                if (Objects.isNull(codeCell)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码不能为空");
+                } else {
+                    codeCell.setCellType(CellType.STRING);
+                    if (!codeCell.getStringCellValue().matches("^[0-9A-Za-z]+$")) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码仅支持英文、数字");
+                    }
+                    if (codeCell.getStringCellValue().length() > 128) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码长度不能超过128个字符");
+                    }
                 }
-                if (pc.length() > 128) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码长度不能超过128个字符");
+                if (codes.contains(codeCell.getStringCellValue())) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中存在相同指标域编码");
                 }
-                List<String> nameList = names.get(pc);
-                if (nameList != null) {
+                Cell nameCell = row.getCell(2);
+                if (Objects.isNull(nameCell)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称不能为空");
+                } else {
+                    nameCell.setCellType(CellType.STRING);
+                    if (nameCell.getStringCellValue().length() > 128) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域名称长度不能超过128个字符");
+                    }
+                }
+                Cell parentCode = row.getCell(3);
+                if (Objects.isNull(parentCode)) {
+                    //一级指标域
+                    List<String> nameList = names.get(null);
                     if (nameList.contains(nameCell.getStringCellValue())) {
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中父指标域编码为" + pc + "的指标域中存在重名");
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中的一级指标域中存在重名");
                     } else {
                         nameList.add(nameCell.getStringCellValue());
                     }
                 } else {
-                    nameList = new ArrayList<>();
-                    nameList.add(nameCell.getStringCellValue());
-                    names.put(pc, nameList);
+                    parentCode.setCellType(CellType.STRING);
+                    //二级指标域
+                    String pc = parentCode.getStringCellValue();
+                    if (!pc.matches("^[0-9A-Za-z]+$")) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码仅支持英文、数字");
+                    }
+                    if (pc.length() > 128) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域编码长度不能超过128个字符");
+                    }
+                    List<String> nameList = names.get(pc);
+                    if (nameList != null) {
+                        if (nameList.contains(nameCell.getStringCellValue())) {
+                            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中父指标域编码为" + pc + "的指标域中存在重名");
+                        } else {
+                            nameList.add(nameCell.getStringCellValue());
+                        }
+                    } else {
+                        nameList = new ArrayList<>();
+                        nameList.add(nameCell.getStringCellValue());
+                        names.put(pc, nameList);
+                    }
+                    indexFieldExport.setParentCode(pc);
                 }
-                indexFieldExport.setParentCode(pc);
-            }
-            indexFieldExport.setCode(codeCell.getStringCellValue());
-            indexFieldExport.setName(nameCell.getStringCellValue());
-            Cell descriptionCell = row.getCell(4);
-            if (!Objects.isNull(descriptionCell)) {
-                descriptionCell.setCellType(CellType.STRING);
-                String description = descriptionCell.getStringCellValue();
-                if (description.length() > 200) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域描述长度不能超过200个字符");
+                indexFieldExport.setCode(codeCell.getStringCellValue());
+                indexFieldExport.setName(nameCell.getStringCellValue());
+                Cell descriptionCell = row.getCell(4);
+                if (!Objects.isNull(descriptionCell)) {
+                    descriptionCell.setCellType(CellType.STRING);
+                    String description = descriptionCell.getStringCellValue();
+                    if (description.length() > 200) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "指标域描述长度不能超过200个字符");
+                    }
+                    indexFieldExport.setDescription(description);
                 }
-                indexFieldExport.setDescription(description);
+                indexFieldExports.add(indexFieldExport);
+                codes.add(codeCell.getStringCellValue());
             }
-            indexFieldExports.add(indexFieldExport);
-            codes.add(codeCell.getStringCellValue());
+        }
+        catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "转化失败");
         }
         return indexFieldExports;
     }
@@ -3367,107 +3373,111 @@ public class DataManageService {
      */
     private List<CategoryEntityV2> file2AllData(File file, int type, List<CategoryEntityV2> systemCategory) throws Exception {
         List<CategoryEntityV2> categories = new ArrayList<>();
-        Workbook workbook = WorkbookFactory.create(file);
-        Sheet sheet = workbook.getSheetAt(0);
-        int rowNum = sheet.getLastRowNum() + 1;
+        try(Workbook workbook = WorkbookFactory.create(file)) {
+            Sheet sheet = workbook.getSheetAt(0);
+            int rowNum = sheet.getLastRowNum() + 1;
 
-        List<String> systemCategoryGuids;
-        if (type == technicalType) {
-            systemCategoryGuids = new ArrayList<>(CategoryUtil.initTechnicalCategoryId);
-        } else if (type == dataStandType) {
-            systemCategoryGuids = new ArrayList<>(CategoryUtil.initDataStandardCategoryId);
-        } else {
-            systemCategoryGuids = new ArrayList<>();
-        }
-        Timestamp createTime = io.zeta.metaspace.utils.DateUtils.currentTimestamp();
-
-        //文件格式校验
-        Row first = sheet.getRow(0);
-        ArrayList<String> strings = Lists.newArrayList("目录id", "目录名字", "目录描述", "同级的上方目录id", "同级的下方目录id", "父目录id", "全名称", "级别");
-        for (int i = 0; i < strings.size(); i++) {
-            Cell cell = first.getCell(i);
-            if (Objects.isNull(cell)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+            List<String> systemCategoryGuids;
+            if (type == technicalType) {
+                systemCategoryGuids = new ArrayList<>(CategoryUtil.initTechnicalCategoryId);
+            } else if (type == dataStandType) {
+                systemCategoryGuids = new ArrayList<>(CategoryUtil.initDataStandardCategoryId);
             } else {
-                System.out.println("strings.get(i)="+strings.get(i));
-                System.out.println("cell.getStringCellValue()="+cell.getStringCellValue());
-                if (!strings.get(i).equals(cell.getStringCellValue())) {
+                systemCategoryGuids = new ArrayList<>();
+            }
+            Timestamp createTime = io.zeta.metaspace.utils.DateUtils.currentTimestamp();
+
+            //文件格式校验
+            Row first = sheet.getRow(0);
+            ArrayList<String> strings = Lists.newArrayList("目录id", "目录名字", "目录描述", "同级的上方目录id", "同级的下方目录id", "父目录id", "全名称", "级别");
+            for (int i = 0; i < strings.size(); i++) {
+                Cell cell = first.getCell(i);
+                if (Objects.isNull(cell)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+                } else {
+                    System.out.println("strings.get(i)=" + strings.get(i));
+                    System.out.println("cell.getStringCellValue()=" + cell.getStringCellValue());
+                    if (!strings.get(i).equals(cell.getStringCellValue())) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+                    }
                 }
             }
+
+            for (int i = 1; i < rowNum; i++) {
+                Row row = sheet.getRow(i);
+                CategoryEntityV2 category = new CategoryEntityV2();
+
+                Cell guidCell = row.getCell(0);
+                if (Objects.isNull(guidCell)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "guid不能为空");
+                }
+                category.setGuid(guidCell.getStringCellValue());
+
+                Cell nameCell = row.getCell(1);
+                if (Objects.isNull(nameCell)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名称不能为空");
+                }
+                category.setName(nameCell.getStringCellValue());
+
+                Cell discriptionCell = row.getCell(2);
+                if (Objects.isNull(discriptionCell)) {
+                    category.setDescription("");
+                } else {
+                    category.setDescription(discriptionCell.getStringCellValue());
+                }
+
+                Cell upCell = row.getCell(3);
+                if (Objects.isNull(upCell) || upCell.getStringCellValue().length() == 0) {
+                    category.setUpBrotherCategoryGuid(null);
+                } else {
+                    category.setUpBrotherCategoryGuid(upCell.getStringCellValue());
+                }
+
+                Cell downCell = row.getCell(4);
+                if (Objects.isNull(downCell) || downCell.getStringCellValue().length() == 0) {
+                    category.setDownBrotherCategoryGuid(null);
+                } else {
+                    category.setDownBrotherCategoryGuid(downCell.getStringCellValue());
+                }
+
+                Cell parentCell = row.getCell(5);
+                if (Objects.isNull(parentCell) || parentCell.getStringCellValue().length() == 0) {
+                    category.setParentCategoryGuid(null);
+                } else {
+                    category.setParentCategoryGuid(parentCell.getStringCellValue());
+                }
+
+                Cell qualifiedNameCell = row.getCell(6);
+                if (Objects.isNull(qualifiedNameCell)) {
+                    category.setQualifiedName(null);
+                } else {
+                    category.setQualifiedName(qualifiedNameCell.getStringCellValue());
+                }
+
+                Cell levelNameCell = row.getCell(7);
+                if (Objects.isNull(levelNameCell)) {
+                    category.setLevel(0);
+                } else {
+                    category.setLevel(Integer.parseInt(levelNameCell.getStringCellValue()));
+                }
+
+                category.setCategoryType(type);
+                category.setCreateTime(createTime);
+                User user = AdminUtils.getUserData();
+                category.setCreator(user.getUserId());
+                if (systemCategoryGuids.contains(category.getGuid())) {
+                    systemCategoryGuids.remove(category.getGuid());
+                    systemCategory.add(category);
+                } else {
+                    categories.add(category);
+                }
+            }
+            if (systemCategoryGuids.size() != 0) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内容不合规范，不包含初始目录，请使用全局导出的文件");
+            }
         }
-
-        for (int i = 1; i < rowNum; i++) {
-            Row row = sheet.getRow(i);
-            CategoryEntityV2 category = new CategoryEntityV2();
-
-            Cell guidCell = row.getCell(0);
-            if (Objects.isNull(guidCell)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "guid不能为空");
-            }
-            category.setGuid(guidCell.getStringCellValue());
-
-            Cell nameCell = row.getCell(1);
-            if (Objects.isNull(nameCell)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名称不能为空");
-            }
-            category.setName(nameCell.getStringCellValue());
-
-            Cell discriptionCell = row.getCell(2);
-            if (Objects.isNull(discriptionCell)) {
-                category.setDescription("");
-            } else {
-                category.setDescription(discriptionCell.getStringCellValue());
-            }
-
-            Cell upCell = row.getCell(3);
-            if (Objects.isNull(upCell) || upCell.getStringCellValue().length() == 0) {
-                category.setUpBrotherCategoryGuid(null);
-            } else {
-                category.setUpBrotherCategoryGuid(upCell.getStringCellValue());
-            }
-
-            Cell downCell = row.getCell(4);
-            if (Objects.isNull(downCell) || downCell.getStringCellValue().length() == 0) {
-                category.setDownBrotherCategoryGuid(null);
-            } else {
-                category.setDownBrotherCategoryGuid(downCell.getStringCellValue());
-            }
-
-            Cell parentCell = row.getCell(5);
-            if (Objects.isNull(parentCell) || parentCell.getStringCellValue().length() == 0) {
-                category.setParentCategoryGuid(null);
-            } else {
-                category.setParentCategoryGuid(parentCell.getStringCellValue());
-            }
-
-            Cell qualifiedNameCell = row.getCell(6);
-            if (Objects.isNull(qualifiedNameCell)) {
-                category.setQualifiedName(null);
-            } else {
-                category.setQualifiedName(qualifiedNameCell.getStringCellValue());
-            }
-
-            Cell levelNameCell = row.getCell(7);
-            if (Objects.isNull(levelNameCell)) {
-                category.setLevel(0);
-            } else {
-                category.setLevel(Integer.parseInt(levelNameCell.getStringCellValue()));
-            }
-
-            category.setCategoryType(type);
-            category.setCreateTime(createTime);
-            User user = AdminUtils.getUserData();
-            category.setCreator(user.getUserId());
-            if (systemCategoryGuids.contains(category.getGuid())) {
-                systemCategoryGuids.remove(category.getGuid());
-                systemCategory.add(category);
-            } else {
-                categories.add(category);
-            }
-        }
-        if (systemCategoryGuids.size() != 0) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内容不合规范，不包含初始目录，请使用全局导出的文件");
+        catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件转化失败");
         }
         return categories;
     }

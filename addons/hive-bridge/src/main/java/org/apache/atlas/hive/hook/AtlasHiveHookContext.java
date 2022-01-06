@@ -288,6 +288,6 @@ public class AtlasHiveHookContext {
     }
 
     private static boolean isCreateAlterOperation(String operationName) {
-        return operationName != null && operationName.startsWith(CREATE_OPERATION) || operationName.startsWith(ALTER_OPERATION);
+        return operationName != null && (operationName.startsWith(CREATE_OPERATION) || operationName.startsWith(ALTER_OPERATION));
     }
 }

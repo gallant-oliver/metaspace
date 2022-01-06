@@ -170,15 +170,13 @@ public class SourceInfoDeriveTableInfoService {
         }
 
         // 提交：新增业务对象-表关系(关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表)
-        if (DeriveTableStateEnum.COMMIT.getState() == sourceInfoDeriveTableInfo.getState()) {
+        if (DeriveTableStateEnum.COMMIT.getState().equals(sourceInfoDeriveTableInfo.getState())) {
             // 关系是否存在,不存在则插入
             boolean isRelationExist = businessDAO.isRelationExist(sourceInfoDeriveTableInfo.getBusinessId(), sourceInfoDeriveTableInfo.getTableGuid(), sourceInfoDeriveTableInfo.getSourceId());
             if (isRelationExist) {
                 // 更新关联类型为衍生表关联
                 businessDAO.updateRelationType(sourceInfoDeriveTableInfo.getBusinessId(), sourceInfoDeriveTableInfo.getTableGuid(), sourceInfoDeriveTableInfo.getSourceId(), 1);
-            }
-            else {
-                //
+            } else {
                 businessDAO.insertDerivedTableRelation(sourceInfoDeriveTableInfo.getBusinessId(), sourceInfoDeriveTableInfo.getTableGuid(), 1, sourceInfoDeriveTableInfo.getSourceId());
             }
 
@@ -327,13 +325,13 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveColumnInfoService.saveOrUpdateBatch(sourceInfoDeriveColumnInfos);
         }
         sourceInfoDeriveTableColumnRelationService.saveOrUpdateBatch(sourceInfoDeriveTableColumnRelationList);
-
-
-        if (DeriveTableStateEnum.COMMIT.getState() == sourceInfoDeriveTableInfo.getState()) {
+    
+    
+        if (DeriveTableStateEnum.COMMIT.getState().equals(sourceInfoDeriveTableInfo.getState())) {
             // 删除旧的业务对象-表关联关系
             businessDAO.deleteRelationByBusinessIdAndTableId(oldSourceInfoDeriveTableInfo.getBusinessId(), oldSourceInfoDeriveTableInfo.getTableGuid(), oldSourceInfoDeriveTableInfo.getSourceId(), 1);
             // 新增业务对象-表关系(关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表)
-
+        
             // 关系是否存在,不存在则插入
             boolean isRelationExist = businessDAO.isRelationExist(sourceInfoDeriveTableInfo.getBusinessId(), sourceInfoDeriveTableInfo.getTableGuid(), sourceInfoDeriveTableInfo.getSourceId());
             if (isRelationExist) {
@@ -1068,9 +1066,9 @@ public class SourceInfoDeriveTableInfoService {
             return ReturnUtil.error("400", "数据库或数据源不存在");
         }
         // 校验源表
-        if (!checkSourceTableByGuid(sourceInfoDeriveTableColumnDto.getSourceTableGuid())) {
-            return ReturnUtil.error("400", "源表不存在");
-        }
+//        if (!checkSourceTableByGuid(sourceInfoDeriveTableColumnDto.getSourceTableGuid())) {
+//            return ReturnUtil.error("400", "源表不存在");
+//        }
         // 校验源字段
         List<String> sourceColumnIds = sourceInfoDeriveColumnInfos.stream().map(SourceInfoDeriveColumnInfo::getSourceColumnGuid).filter(StringUtils::isNotBlank).collect(Collectors.toList());
         if (!CollectionUtils.isEmpty(sourceColumnIds) && !checkSourceColumnsByGuid(sourceColumnIds)) {

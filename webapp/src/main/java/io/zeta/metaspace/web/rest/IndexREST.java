@@ -20,10 +20,7 @@ import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
 import io.zeta.metaspace.web.service.indexmanager.IndexService;
-import io.zeta.metaspace.web.util.CategoryUtil;
-import io.zeta.metaspace.web.util.ExportDataPathUtils;
-import io.zeta.metaspace.web.util.PoiExcelUtils;
-import io.zeta.metaspace.web.util.ReturnUtil;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryDeleteReturn;
@@ -163,7 +160,8 @@ public class IndexREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "IndexREST.deleteCategory(" + categoryGuid + ")");
             }
-            deleteReturn = deleteIndexField(categoryGuid, tenantId, CATEGORY_TYPE, deleteIndex);
+            deleteReturn = ProxyUtil.getProxy(IndexREST.class).deleteIndexField(categoryGuid, tenantId, CATEGORY_TYPE, deleteIndex);
+//            deleteReturn = deleteIndexField(categoryGuid, tenantId, CATEGORY_TYPE, deleteIndex);
             return ReturnUtil.success(deleteReturn);
         } catch (CannotCreateTransactionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");

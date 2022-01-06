@@ -7,6 +7,7 @@ import org.apache.poi.xwpf.usermodel.*;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
 
 import java.io.*;
 import java.math.BigInteger;
@@ -33,79 +34,83 @@ public class WordExport {
 
     public static boolean generateAttachTemplate(String demoTemplate){
         // 创建Word文件
-        XWPFDocument docx = new XWPFDocument();
-        XWPFParagraph p = docx.createParagraph();
-        // 设置段落的对齐方式
-        p.setAlignment(ParagraphAlignment.LEFT);
-        //创建段落文本
-        XWPFRun r = p.createRun();
-        r.setText("元数据版本差异清单");
-        r.setBold(true);//设置为粗体
-        r.setColor("FF0000");//设置颜色
-        p = docx.createParagraph();
-        r = p.createRun();
-        r.setBold(true);//设置为粗体
-        r.setText("表名-基础信息");
-        p = docx.createParagraph();
-        r = p.createRun();
-        r.setText("Ip：${ip}");
-        p = docx.createParagraph();
-        r = p.createRun();
-        r.setText("端口：${port}");
-        p = docx.createParagraph();
-        r = p.createRun();
-        r.setText("实例名：${instance}");
-        p = docx.createParagraph();
-        r = p.createRun();
-        r.setText("数据库名：${dbName}");
-        p = docx.createParagraph();
-        r = p.createRun();
-        r.setText("数据库类型：${dbType}");
-        p = docx.createParagraph();
-        r = p.createRun();
-        r.setText("业务负责人：${bizLeader}");
-        p = docx.createParagraph();
-        r = p.createRun();
-        r.setText("衍生表设计人：${deriveTableDesigner}");
-        p = docx.createParagraph();
-        r = p.createRun();
-        r.setText("技术目录路径：${techenicalPath}");
-        p = docx.createParagraph();
-        r = p.createRun();
-        r.setText("业务目录路径：${businessPath}");
+        try(XWPFDocument docx = new XWPFDocument()) {
+            XWPFParagraph p = docx.createParagraph();
+            // 设置段落的对齐方式
+            p.setAlignment(ParagraphAlignment.LEFT);
+            //创建段落文本
+            XWPFRun r = p.createRun();
+            r.setText("元数据版本差异清单");
+            r.setBold(true);//设置为粗体
+            r.setColor("FF0000");//设置颜色
+            p = docx.createParagraph();
+            r = p.createRun();
+            r.setBold(true);//设置为粗体
+            r.setText("表名-基础信息");
+            p = docx.createParagraph();
+            r = p.createRun();
+            r.setText("Ip：${ip}");
+            p = docx.createParagraph();
+            r = p.createRun();
+            r.setText("端口：${port}");
+            p = docx.createParagraph();
+            r = p.createRun();
+            r.setText("实例名：${instance}");
+            p = docx.createParagraph();
+            r = p.createRun();
+            r.setText("数据库名：${dbName}");
+            p = docx.createParagraph();
+            r = p.createRun();
+            r.setText("数据库类型：${dbType}");
+            p = docx.createParagraph();
+            r = p.createRun();
+            r.setText("业务负责人：${bizLeader}");
+            p = docx.createParagraph();
+            r = p.createRun();
+            r.setText("衍生表设计人：${deriveTableDesigner}");
+            p = docx.createParagraph();
+            r = p.createRun();
+            r.setText("技术目录路径：${techenicalPath}");
+            p = docx.createParagraph();
+            r = p.createRun();
+            r.setText("业务目录路径：${businessPath}");
 
-        p = docx.createParagraph();
-        r = p.createRun();
-        r.setBold(true);
-        r.setText("模型变更详情");
-        XWPFTable table= docx.createTable(2, 4);//创建一个表格
-        CTTblWidth width = table.getCTTbl().addNewTblPr().addNewTblW();
-        width.setType(STTblWidth.DXA);
-        width.setW(BigInteger.valueOf(9072));
+            p = docx.createParagraph();
+            r = p.createRun();
+            r.setBold(true);
+            r.setText("模型变更详情");
+            XWPFTable table = docx.createTable(2, 4);//创建一个表格
+            CTTblWidth width = table.getCTTbl().addNewTblPr().addNewTblW();
+            width.setType(STTblWidth.DXA);
+            width.setW(BigInteger.valueOf(9072));
 
-        table.getRow(0).getCell(0).setText("变更列");
-        table.getRow(0).getCell(1).setText("变更前");
-        table.getRow(0).getCell(2).setText("变更类型");
-        table.getRow(0).getCell(3).setText("变更后");
-        table.getRow(1).getCell(0).setText("${changeColumn}");
-        table.getRow(1).getCell(1).setText("${beforeInfo}");
-        table.getRow(1).getCell(2).setText("${changeType}");
-        table.getRow(1).getCell(3).setText("${afterInfo}");
+            table.getRow(0).getCell(0).setText("变更列");
+            table.getRow(0).getCell(1).setText("变更前");
+            table.getRow(0).getCell(2).setText("变更类型");
+            table.getRow(0).getCell(3).setText("变更后");
+            table.getRow(1).getCell(0).setText("${changeColumn}");
+            table.getRow(1).getCell(1).setText("${beforeInfo}");
+            table.getRow(1).getCell(2).setText("${changeType}");
+            table.getRow(1).getCell(3).setText("${afterInfo}");
 
-        p = docx.createParagraph();
-        r = p.createRun();
-        r.setText("变更类型：列名称变更，列删除，列添加，列类型变更");
+            p = docx.createParagraph();
+            r = p.createRun();
+            r.setText("变更类型：列名称变更，列删除，列添加，列类型变更");
 
-        logger.info("开始生成模板文档...");
-        try(FileOutputStream out = new FileOutputStream(demoTemplate); ) {
-            docx.write(out);
-            logger.info("生成模板文档成功.");
-            return true;
-        } catch (IOException e) {
-            logger.error("生成模板文档失败。",e);
+            logger.info("开始生成模板文档...");
+            try (FileOutputStream out = new FileOutputStream(demoTemplate);) {
+                docx.write(out);
+                logger.info("生成模板文档成功.");
+                return true;
+            } catch (IOException e) {
+                logger.error("生成模板文档失败。", e);
+                return false;
+            }
+        }
+        catch (Exception e){
+            logger.error("生成模板文档失败。", e);
             return false;
         }
-
     }
 
     /**
@@ -301,7 +306,7 @@ public class WordExport {
                     picType = getPictureType(pic.get("type").toString());
                     path = pic.get("path").toString();
                 }
-
+    
                 //模板样式
                 XWPFRun tempRun = null;
                 // 直接调用XWPFRun的setText()方法设置文本时，在底层会重新创建一个XWPFRun，把文本附加在当前文本后面，
@@ -310,6 +315,7 @@ public class WordExport {
                     tempRun = para.getRuns().get(pos);
                     tempRun.setText("", 0);
                 }
+                Assert.notNull(tempRun, "模板样式为空");
                 if (isPic) {
                     //addPicture方法的最后两个参数必须用Units.toEMU转化一下
                     //para.insertNewRun(index).addPicture(getPicStream(path), picType, "测试",Units.toEMU(width), Units.toEMU(height));

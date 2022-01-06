@@ -26,13 +26,14 @@ public enum SystemStatistical {
         this.desc = desc;
     }
     public String getDescByCode(int code){
-        return getSystemRoleByCode(code).desc;
+        SystemStatistical systemRoleByCode = getSystemRoleByCode(code);
+        return systemRoleByCode != null ? systemRoleByCode.desc : null;
     }
     public SystemStatistical getSystemRoleByCode(int code){
-        SystemStatistical systemModule=null;
+        SystemStatistical systemModule = null;
         for (SystemStatistical module : SystemStatistical.values()) {
-            if(module.code==code)
-                systemModule=module;
+            if(module.code == code)
+                systemModule = module;
         }
         return systemModule;
     }

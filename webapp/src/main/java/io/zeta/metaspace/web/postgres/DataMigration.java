@@ -126,6 +126,7 @@ public class DataMigration {
      */
     public  void processDbInfo() {
         Connection c = null;
+        PreparedStatement insertStmt = null;
         List<String> databaseGuidList = queryDataBaseGuid(url, username, password);
         if(CollectionUtils.isEmpty(databaseGuidList)){
             log.info("没有要处理的db_guid信息");
@@ -137,7 +138,7 @@ public class DataMigration {
             String insertDbInfo = "INSERT INTO public.db_info(\n" +
                     "\tdatabase_guid, database_name, owner, db_type, status, database_description, instance_guid)\n" +
                     "\tVALUES (?, ?, ?, ?, ?, ?, ?, ?);";
-            PreparedStatement insertStmt = c.prepareStatement(insertDbInfo);
+            insertStmt = c.prepareStatement(insertDbInfo);
 
             for (String guid : databaseGuidList){
                 Map<String,Object> resultMap = queryAtlasEntityByGuid(guid);// queryDbInfoByGuid(guid);
@@ -164,11 +165,16 @@ public class DataMigration {
 
             insertStmt.executeBatch();
             c.commit();
-            insertStmt.close();
-            if(c!= null) c.close();
             log.info("操作执行成功.");
         } catch (Exception e) {
             log.error("操作 db_info 出错了，{}",e);
+        } finally {
+            try {
+                if (c != null) c.close();
+                if (insertStmt != null) insertStmt.close();
+            } catch (Exception e) {
+                log.error("释放资源异常，{}", e);
+            }
         }
     }
     /*
@@ -177,20 +183,27 @@ public class DataMigration {
     private  List<String> queryDataBaseGuid(String url,String username,String password){
         List<String> resultList = new ArrayList<>();
         Connection c = null;
+        ResultSet rs = null;
+        PreparedStatement selectStmt = null;
         try {
             c = getConnection(false);
             log.info("Opened database successfully");
             String sql =  "SELECT db_guid FROM public.source_db";
-            PreparedStatement selectStmt = c.prepareStatement(sql);
-            ResultSet rs = selectStmt.executeQuery();
+            selectStmt = c.prepareStatement(sql);
+            rs = selectStmt.executeQuery();
             while(rs.next()){
                 resultList.add(rs.getString("db_guid"));
             }
-            if(rs != null) rs.close();
-            selectStmt.close();
-            if(c != null) c.close();
         }catch (Exception e){
             log.error("获取db_guid出错，{}",e);
+        } finally {
+            try {
+                if (rs != null) rs.close();
+                selectStmt.close();
+                if (c != null) c.close();
+            } catch (Exception e) {
+                log.error("释放资源异常，{}", e);
+            }
         }
          return resultList;
     }

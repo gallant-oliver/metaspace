@@ -752,8 +752,6 @@ public class DataSourceService {
      */
     public DataSourceAuthorizeUser getNoAuthorizeUser(String sourceId, String query, boolean isApi, String tenantId) throws AtlasBaseException {
         try {
-            if (Objects.nonNull(query))
-                query.replaceAll("%", "/%").replaceAll("_", "/_");
             String manager = dataSourceDAO.getManagerBySourceId(sourceId);
             DataSourceAuthorizeUser dataSourceAuthorizeUser = new DataSourceAuthorizeUser();
             List<UserIdAndName> authorizeUsers = isApi ? dataSourceDAO.getApiAuthorizeUser(sourceId, manager) : dataSourceDAO.getAuthorizeUser(sourceId, manager);
@@ -909,51 +907,60 @@ public class DataSourceService {
      * @return
      * @throws AtlasBaseException
      */
-    public File exportExcel(List<String> sourceIds, String tenantId) throws AtlasBaseException {
+    public File exportExcel(List<String> sourceIds, String tenantId) throws AtlasBaseException, IOException {
+        boolean existOnPg = dataSourceDAO.exportDataSource(tenantId) > 0 ? true : false;
+        List<DataSourceBody> datasourceList = null;
+        if (!existOnPg) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无数据源");
+        }
+        datasourceList = dataSourceDAO.getDataSource(sourceIds);
+        List<String> attributes = new ArrayList<>();
+        attributes.add("数据源名称");
+        attributes.add("数据源类型");
+        attributes.add("描述");
+        attributes.add("主机IP");
+        attributes.add("端口");
+        attributes.add("用户名");
+        attributes.add("密码");
+        attributes.add("数据库名");
+        attributes.add("Jdbc连接参数");
+        List<List<String>> datas = new ArrayList<>();
+        List<String> data = null;
+        for (DataSourceBody dataSourceBody : datasourceList) {
+            data = new ArrayList<>();
+            data.add(dataSourceBody.getSourceName());
+            data.add(dataSourceBody.getSourceType());
+            data.add(dataSourceBody.getDescription());
+            data.add(dataSourceBody.getIp());
+            data.add(dataSourceBody.getPort());
+            data.add(dataSourceBody.getUserName());
+            data.add(dataSourceBody.getPassword());
+            data.add(dataSourceBody.getDatabase());
+            data.add(dataSourceBody.getJdbcParameter());
+            datas.add(data);
+        }
+        //文件名定义
+        Workbook workbook = null;
+        FileOutputStream output = null;
         try {
-            boolean existOnPg = dataSourceDAO.exportDataSource(tenantId) > 0 ? true : false;
-            List<DataSourceBody> datasourceList = null;
-            if (!existOnPg) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "无数据源");
-            }
-            datasourceList = dataSourceDAO.getDataSource(sourceIds);
-            List<String> attributes = new ArrayList<>();
-            attributes.add("数据源名称");
-            attributes.add("数据源类型");
-            attributes.add("描述");
-            attributes.add("主机IP");
-            attributes.add("端口");
-            attributes.add("用户名");
-            attributes.add("密码");
-            attributes.add("数据库名");
-            attributes.add("Jdbc连接参数");
-            List<List<String>> datas = new ArrayList<>();
-            List<String> data = null;
-            for (DataSourceBody dataSourceBody : datasourceList) {
-                data = new ArrayList<>();
-                data.add(dataSourceBody.getSourceName());
-                data.add(dataSourceBody.getSourceType());
-                data.add(dataSourceBody.getDescription());
-                data.add(dataSourceBody.getIp());
-                data.add(dataSourceBody.getPort());
-                data.add(dataSourceBody.getUserName());
-                data.add(dataSourceBody.getPassword());
-                data.add(dataSourceBody.getDatabase());
-                data.add(dataSourceBody.getJdbcParameter());
-                datas.add(data);
-            }
-            //文件名定义
-            Workbook workbook = PoiExcelUtils.createExcelFile(attributes, datas, XLSX);
+            workbook = PoiExcelUtils.createExcelFile(attributes, datas, XLSX);
             File file = new File("DataSource." + new Timestamp(System.currentTimeMillis()).toString().substring(0, 10) + ".xlsx");
-            FileOutputStream output = new FileOutputStream(file);
+            output = new FileOutputStream(file);
             workbook.write(output);
             output.flush();
-            output.close();
 
             return file;
         } catch (Exception e) {
             LOG.error("导出Excel失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导出Excel失败");
+        }
+        finally {
+            if (workbook != null) {
+                workbook.close();
+            }
+            if (output != null) {
+                output.close();
+            }
         }
     }
 
@@ -1051,8 +1058,7 @@ public class DataSourceService {
 
     //把excel文档导入到一个list里
     public List<DataSourceBody> convertExceltoMap(File file) throws AtlasBaseException {
-        try {
-            Workbook workbook = new WorkbookFactory().create(file);
+        try(Workbook workbook = new WorkbookFactory().create(file)) {
             Sheet sheet = workbook.getSheetAt(0);
             int rowNum = sheet.getLastRowNum() + 1;
 
@@ -1419,7 +1425,7 @@ public class DataSourceService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "不是当前数据源的管理者");
         }
 
-        if (userGroups == null && userGroups.size() == 0) {
+        if (userGroups == null || userGroups.size() == 0) {
             return;
         }
         datasourceDAO.deleteUserGroupsByDataSource(sourceId, userGroups);

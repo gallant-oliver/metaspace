@@ -47,6 +47,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.IOUtils;
@@ -1116,7 +1117,7 @@ public class BusinessREST {
     @OperateType(DELETE)
     public Result deleteBusinesses(List<String> businessId, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         List<String> names = businessService.getNamesByIds(businessId, tenantId);
-        if (names != null || names.size() != 0) {
+        if (CollectionUtils.isNotEmpty(names)) {
             HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "批量删除业务对象:[" + Joiner.on("、").join(names) + "]");
         }
         try {
@@ -1179,7 +1180,7 @@ public class BusinessREST {
             }
             List<String> namesByIds = businessService.getNamesByIds(item.getIds(), tenantId);
             String path = CategoryRelationUtils.getPath(item.getCategoryId(), tenantId);
-            if (namesByIds != null || namesByIds.size() != 0) {
+            if (CollectionUtils.isNotEmpty(namesByIds)) {
                 HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "迁移业务对象:[" + Joiner.on("、").join(namesByIds) + "]到" + path);
             }
             businessService.moveBusinesses(item);

@@ -152,6 +152,7 @@ public class DocConvertToPdf {
                     DocumentBuilderFactory.newInstance().newDocumentBuilder()
                             .newDocument());
             wordToHtmlConverter.setPicturesManager( new PicturesManager(){
+                @Override
                 public String savePicture(byte[] content,
                                           PictureType pictureType, String suggestedName,
                                           float widthInches, float heightInches ){
@@ -310,11 +311,7 @@ public class DocConvertToPdf {
                 break;
             }
             // 判断替换的字符串位置是否是末尾
-            if (oldStr.indexOf(";") != -1) {
-                htmlStr = htmlStr.replace(oldStr, "font-family:" + fontId + ";");
-            } else {
-                htmlStr = htmlStr.replace(oldStr, "font-family:" + fontId + ";");
-            }
+            htmlStr = htmlStr.replace(oldStr, "font-family:" + fontId + ";");
         }
         // 设置body的字体，此处必须设置全局字体文件，不设置全局字体则设置的字体无效
         reg = "<style type=\"text/css\">";

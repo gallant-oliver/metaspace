@@ -353,7 +353,7 @@ public class HiveMetaStoreBridge {
                     String      tableLocation = isConvertHdfsPathToLowerCase() ? lower(table.getDataLocation().toString()) : table.getDataLocation().toString();
                     String      query         = getCreateTableString(table, tableLocation);
                     AtlasEntity pathInst      = toHdfsPathEntity(tableLocation);
-                    AtlasEntity tableInst     = tableEntity.getEntity();
+                    AtlasEntity tableInst     = tableEntity == null ? null : tableEntity.getEntity();
                     AtlasEntity processInst   = new AtlasEntity(HiveDataTypes.HIVE_PROCESS.getName());
                     long        now           = System.currentTimeMillis();
 

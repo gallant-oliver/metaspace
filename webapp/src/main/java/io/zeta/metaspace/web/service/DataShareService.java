@@ -405,9 +405,9 @@ public class DataShareService {
             return true;
         }
         User user = userDAO.getUserInfo(userId);
-        if (user.getRoles() != null && user.getRoles().contains(SystemRole.ADMIN.getCode())) {
+        /*if (user.getRoles() != null && user.getRoles().contains(SystemRole.ADMIN.getCode())) {
             return true;
-        }
+        }*/
         return false;
     }
 
@@ -1034,8 +1034,7 @@ public class DataShareService {
         if (Objects.isNull(limit) || Objects.isNull(offset)) {
             throw new AtlasBaseException("limit和offset不允许为空");
         }
-        limit = Objects.nonNull(limit) ? Math.min(limit, maxRowNumber) : maxRowNumber;
-        offset = Objects.nonNull(offset) ? offset : 0;
+        limit = Math.min(limit, maxRowNumber);
         if (offset < 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "offset取值异常，需大于等于0");
         }
@@ -2025,7 +2024,7 @@ public class DataShareService {
         String apiMobiusId = shareDAO.getApiMobiusIdByVersion(api.getApiId(), api.getVersion());
         List<String> groupIds = shareDAO.getMobiusApiGroupIds(apiMobiusId);
         apiGroupDAO.deleteRelationByApiVersion(api);
-        if (apiMobiusId != null || apiMobiusId.length() != 0) {
+        if (StringUtils.isNotEmpty(apiMobiusId)) {
             deleteApiMobius(apiMobiusId, groupIds);
         }
     }
@@ -2750,7 +2749,6 @@ public class DataShareService {
         if (Objects.isNull(limit) || Objects.isNull(offset)) {
             throw new AtlasBaseException("limit和offset不允许为空");
         }
-        offset = Objects.nonNull(offset) ? offset : 0;
         if (offset < 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "offset取值异常，需大于等于0");
         }
@@ -2792,7 +2790,7 @@ public class DataShareService {
             String columnType = field.getColumnType();
             DataType dataType = DataType.convertType(columnType.toUpperCase());
             checkDataTypeV2(dataType, value);
-            String str = (DataType.STRING == dataType || DataType.CLOB == dataType || DataType.DATE == dataType || DataType.TIMESTAMP == dataType || DataType.TIMESTAMP == dataType || "".equals(value.toString())) ? ("\'" + value.toString() + "\'") : (value.toString());
+            String str = (DataType.STRING == dataType || DataType.CLOB == dataType || DataType.DATE == dataType || DataType.TIMESTAMP == dataType || "".equals(value.toString())) ? ("\'" + value.toString() + "\'") : (value.toString());
 
             String filterStr = SqlBuilderUtils.getFilterConditionStr(transformer, dataType, columnName, expressionType, Lists.newArrayList(str));
             filterJoiner.add(filterStr);
@@ -2922,9 +2920,7 @@ public class DataShareService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求方式错误");
         }
         Map<String, String> queryMap = new HashMap<>();
-        if (apiInfoByVersion == null) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API已删除或不存在");
-        }
+
         if (!ApiStatusEnum.UP.getName().equals(apiInfoByVersion.getStatus())) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API未上架");
         }
@@ -3213,54 +3209,58 @@ public class DataShareService {
     private List<CategoryExport> file2Data(File file) throws Exception {
         List<String> names = new ArrayList<>();
         List<CategoryExport> categoryExports = new ArrayList<>();
-        Workbook workbook = WorkbookFactory.create(file);
-        Sheet sheet = workbook.getSheetAt(0);
+        try(Workbook workbook = WorkbookFactory.create(file)) {
+            Sheet sheet = workbook.getSheetAt(0);
 
-        //文件格式校验
-        Row first = sheet.getRow(0);
-        ArrayList<String> strings = Lists.newArrayList("目录名字");
+            //文件格式校验
+            Row first = sheet.getRow(0);
+            ArrayList<String> strings = Lists.newArrayList("目录名字");
 
-        for (int i = 0; i < strings.size(); i++) {
-            Cell cell = first.getCell(i);
-            if (Objects.isNull(cell)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
-            } else {
-                if (!strings.get(i).equals(cell.getStringCellValue())) {
+            for (int i = 0; i < strings.size(); i++) {
+                Cell cell = first.getCell(i);
+                if (Objects.isNull(cell)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+                } else {
+                    if (!strings.get(i).equals(cell.getStringCellValue())) {
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内部格式错误，请导入正确的文件");
+                    }
                 }
             }
+            int rowNum = sheet.getLastRowNum() + 1;
+            for (int i = 1; i < rowNum; i++) {
+                Row row = sheet.getRow(i);
+                CategoryExport category = new CategoryExport();
+                Cell nameCell = null;
+                try {
+                    nameCell = row.getCell(0);
+                } catch (NullPointerException e) {
+                    continue;
+                }
+                String name = nameCell.getStringCellValue();
+                if (StringUtils.isBlank(name)) {
+                    continue;
+                }
+                if (names.contains(name)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中存在相同目录名");
+                }
+                //目录名校验：仅支持中文、英文、数字、下划线“_”和“-”
+                String pattern = "^[\\u4E00-\\u9FA5A-Za-z0-9_\\-]+$";
+                if (!name.matches(pattern)) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名仅支持中文、英文、数字、下划线“_”和“-”");
+                }
+                //目录长度校验
+                if (name.length() > 32) {
+                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名长度需小于33个字符");
+                }
+                category.setName(name);
+                String guid = UUID.randomUUID().toString();
+                category.setGuid(guid);
+                categoryExports.add(category);
+                names.add(name);
+            }
         }
-        int rowNum = sheet.getLastRowNum() + 1;
-        for (int i = 1; i < rowNum; i++) {
-            Row row = sheet.getRow(i);
-            CategoryExport category = new CategoryExport();
-            Cell nameCell = null;
-            try {
-                nameCell = row.getCell(0);
-            } catch (NullPointerException e) {
-                continue;
-            }
-            String name = nameCell.getStringCellValue();
-            if (StringUtils.isBlank(name)) {
-                continue;
-            }
-            if (names.contains(name)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中存在相同目录名");
-            }
-            //目录名校验：仅支持中文、英文、数字、下划线“_”和“-”
-            String pattern = "^[\\u4E00-\\u9FA5A-Za-z0-9_\\-]+$";
-            if (!name.matches(pattern)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名仅支持中文、英文、数字、下划线“_”和“-”");
-            }
-            //目录长度校验
-            if (name.length() > 32) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名长度需小于33个字符");
-            }
-            category.setName(name);
-            String guid = UUID.randomUUID().toString();
-            category.setGuid(guid);
-            categoryExports.add(category);
-            names.add(name);
+        catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "转化失败");
         }
         return categoryExports;
     }

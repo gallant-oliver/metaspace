@@ -170,7 +170,7 @@ public class RuleService {
                     .stream()
                     .map(rule -> {
                         rule.setPath(path);
-                        String ruleTypeName = ruleTemplateCategoryMap.get(rule.getRuleType());
+                        String ruleTypeName = ruleTemplateCategoryMap.get(String.valueOf(rule.getRuleType()));
                         rule.setRuleTypeName(ruleTypeName);
                         return rule;
                     }).collect(Collectors.toList());
@@ -194,7 +194,7 @@ public class RuleService {
                         try {
                             path = CategoryRelationUtils.getPath(rule.getCategoryId(),tenantId);
                             rule.setPath(path);
-                            String ruleTypeName = ruleTemplateCategoryMap.get(rule.getRuleType());
+                            String ruleTypeName = ruleTemplateCategoryMap.get(String.valueOf(rule.getRuleType()));
                             rule.setRuleTypeName(ruleTypeName);
                         } catch (AtlasBaseException e) {
                             log.error(e.getMessage(), e);

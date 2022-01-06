@@ -29,6 +29,9 @@ public class FilterUtils {
         add("/api/metaspace/admin/version");
         add("/api/metaspace/cache");
         add("api/metaspace/metadata/update/supplementTable");
+        add("/api/metaspace/dataquality/monitor");
+        // 供指标的统一监控使用，由于当前统一监控并未通过sso认证，只通过ip白名单过滤，故此放行
+        add("/api/metaspace/internal/table/");
     }};
 
     private static List<String> permissionUrl = new ArrayList<String>(){{

@@ -31,6 +31,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.*;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
@@ -252,6 +253,9 @@ public class TechnicalREST {
         int item = 0;
         int categorys = 0;
         try {
+            if (CollectionUtils.isEmpty(categoryGuids)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录id不能为空");
+            }
             for (String categoryGuid : categoryGuids) {
                 Servlets.validateQueryParamLength("categoryGuid", categoryGuid);
                 if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
@@ -686,9 +690,8 @@ public class TechnicalREST {
             }
             String path = CategoryRelationUtils.getPath(item.getCategoryId(), tenantId);
             List<String> tableNames = metaDataService.getTableNames(item.getIds());
-            if (tableNames != null || tableNames.size() != 0) {
+            if (CollectionUtils.isNotEmpty(tableNames)) {
                 HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), "迁移表关联:[" + Joiner.on("、").join(tableNames) + "]到" + path);
-
             }
 //            dataManageService.assignTablesToCategory(item.getCategoryId(), item.getIds(), tenantId);
             return ReturnUtil.success();

@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.rest;
 import com.google.common.collect.ImmutableList;
 import com.gridsum.gdp.library.commons.utils.DateTimeUtils;
 import com.sun.jersey.core.header.FormDataContentDisposition;
+import com.sun.jersey.multipart.FormDataMultiPart;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Permission;
@@ -51,7 +52,7 @@ import static io.zeta.metaspace.web.model.CommonConstant.HEADER_TENANT_ID;
 public class RequirementsPublicTenantREST {
     private static final List<String> ENABLE_UPLOAD_FILE_TYPE =
             ImmutableList.of("pdf", "doc", "xls", "xlsx", "png", "jpg");
-    
+
     @Autowired
     private RequirementsPublicTenantService publicTenantService;
     @Autowired
@@ -79,9 +80,8 @@ public class RequirementsPublicTenantREST {
         try {
             publicTenantService.grant(requirementId);
             return ReturnUtil.success();
-        }
-        catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"需求下发失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "需求下发失败");
         }
     }
 
@@ -99,9 +99,8 @@ public class RequirementsPublicTenantREST {
         try {
             publicTenantService.deleteRequirements(guids);
             return ReturnUtil.success();
-        }
-        catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"需求删除失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "需求删除失败");
         }
     }
 
@@ -119,9 +118,8 @@ public class RequirementsPublicTenantREST {
         try {
             FeedbackResultDTO result = publicTenantService.getFeedbackResult(requirementId, resourceType);
             return ReturnUtil.success(result);
-        }
-        catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e,"获取需求反馈结果失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取需求反馈结果失败");
         }
     }
 
@@ -134,7 +132,7 @@ public class RequirementsPublicTenantREST {
         HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), requirementDTO.getName());
         return ReturnUtil.success((Object) resourceId);
     }
-    
+
     @PUT
     @Path("/edit/resource")
     @OperateType(OperateTypeEnum.UPDATE)
@@ -197,7 +195,23 @@ public class RequirementsPublicTenantREST {
                     e);
         }
     }
-    
+
+    /**
+     * 上传文件-批量
+     */
+    @POST
+    @Path("/upload/batch/file")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @OperateType(OperateTypeEnum.INSERT)
+    public void uploadFileBatch(@HeaderParam(HEADER_TENANT_ID) String tenantId, FormDataMultiPart form) throws Exception {
+//        List<FormDataBodyPart> files = form.getFields("file");
+//        for (FormDataBodyPart file : files) {
+//            InputStream input = file.getValueAs(InputStream.class);
+//            System.out.println(org.apache.commons.io.IOUtils.readLines(input));
+//            System.out.println(file.cd.fileName);
+//        }
+    }
+
     /**
      * 下载附件
      */
@@ -210,7 +224,7 @@ public class RequirementsPublicTenantREST {
         Assert.isTrue(StringUtils.isNotBlank(filePath), "文件路径不能为空");
         try {
             fileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8.name());
-            if(StringUtils.isNotBlank(fileName)){
+            if (StringUtils.isNotBlank(fileName)) {
                 response.setContentType("application/force-download");// 应用程序强制下载
                 response.setHeader("Content-Disposition", String.format("attachment; filename=\"%s\"", fileName));
             }
@@ -234,6 +248,7 @@ public class RequirementsPublicTenantREST {
 
     /**
      * 查询需求管理列表
+     *
      * @param param
      * @return
      */
