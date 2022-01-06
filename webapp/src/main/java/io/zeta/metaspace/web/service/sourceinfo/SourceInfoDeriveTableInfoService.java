@@ -1064,9 +1064,9 @@ public class SourceInfoDeriveTableInfoService {
             return ReturnUtil.error("400", "数据库或数据源不存在");
         }
         // 校验源表
-        if (!checkSourceTableByGuid(sourceInfoDeriveTableColumnDto.getSourceTableGuid())) {
-            return ReturnUtil.error("400", "源表不存在");
-        }
+//        if (!checkSourceTableByGuid(sourceInfoDeriveTableColumnDto.getSourceTableGuid())) {
+//            return ReturnUtil.error("400", "源表不存在");
+//        }
         // 校验源字段
         List<String> sourceColumnIds = sourceInfoDeriveColumnInfos.stream().map(SourceInfoDeriveColumnInfo::getSourceColumnGuid).filter(StringUtils::isNotBlank).collect(Collectors.toList());
         if (!CollectionUtils.isEmpty(sourceColumnIds) && !checkSourceColumnsByGuid(sourceColumnIds)) {

@@ -25,6 +25,12 @@ public class DeriveTableVersion {
     @ApiModelProperty(value = "更新时间")
     private String updateTime;
 
+    @ApiModelProperty(value = "文件名称")
+    private String fileName;
+
+    @ApiModelProperty(value = "文件路径")
+    private String filePath;
+
     @JsonIgnore
     private int total;
 

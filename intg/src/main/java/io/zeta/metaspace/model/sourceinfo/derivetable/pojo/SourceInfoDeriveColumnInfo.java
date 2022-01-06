@@ -8,6 +8,7 @@ import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -79,6 +80,9 @@ public class SourceInfoDeriveColumnInfo implements Serializable {
 
     @ApiModelProperty(value = "关联标签数组")
     private String tags;
+
+    @ApiModelProperty(value = "目标字段脱敏规则")
+    private String desensitizationRules;
 
     @JsonIgnore
     private String tenantId;

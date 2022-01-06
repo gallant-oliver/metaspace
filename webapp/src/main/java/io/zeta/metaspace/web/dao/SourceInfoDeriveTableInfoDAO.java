@@ -54,7 +54,7 @@ public interface SourceInfoDeriveTableInfoDAO {
     int updateVersionByTableId(@Param("tableId") String tableId, @Param("version") int version);
 
     @Select({"<script>",
-            " select t1.version,t2.username as updater,cast(t1.update_time as varchar) as updateTime,count(*)over() as total",
+            " select t1.version,t2.username as updater,t1.file_name as fileName,t1.file_path as filePath,cast(t1.update_time as varchar) as updateTime,count(*)over() as total",
             " from source_info_derive_table_info t1 left join users t2 on t1.updater = t2.userid",
             " where table_guid = #{tableGuid} and version >= 1 ",
             " order by version ",
