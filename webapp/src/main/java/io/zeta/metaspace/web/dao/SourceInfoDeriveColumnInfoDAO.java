@@ -39,11 +39,11 @@ public interface SourceInfoDeriveColumnInfoDAO {
     @Insert({"<script>",
             " INSERT INTO source_info_derive_column_info(id, column_guid, column_name_en, column_name_zh, data_type, ",
             " source_column_guid, primary_key, remove_sensitive, mapping_rule, mapping_describe, group_field, permission_field, ",
-            " secret, secret_period, important, remark, tags, tenant_id, table_guid, sort) ",
+            " secret, secret_period, important, remark, tags, desensitization_rules, tenant_id, table_guid, sort) ",
             " VALUES (#{deriveColumn.id},#{deriveColumn.columnGuid},#{deriveColumn.columnNameEn},#{deriveColumn.columnNameZh},",
             " #{deriveColumn.dataType},#{deriveColumn.sourceColumnGuid},#{deriveColumn.primaryKey},#{deriveColumn.removeSensitive},",
             " #{deriveColumn.mappingRule},#{deriveColumn.mappingDescribe},#{deriveColumn.groupField},#{deriveColumn.permissionField},",
-            " #{deriveColumn.secret},#{deriveColumn.secretPeriod},#{deriveColumn.important},#{deriveColumn.remark},#{deriveColumn.tags},#{deriveColumn.tenantId},",
+            " #{deriveColumn.secret},#{deriveColumn.secretPeriod},#{deriveColumn.important},#{deriveColumn.remark},#{deriveColumn.tags},#{deriveColumn.desensitizationRules},#{deriveColumn.tenantId},",
             " #{deriveColumn.tableGuid}, #{deriveColumn.sort})",
             "</script>"})
     int add(@Param("deriveColumn") SourceInfoDeriveColumnInfo deriveColumn);
@@ -51,16 +51,16 @@ public interface SourceInfoDeriveColumnInfoDAO {
     @Insert({"<script>",
             " INSERT INTO source_info_derive_column_info(id, column_guid, column_name_en, column_name_zh, data_type, ",
             " source_column_guid, primary_key, remove_sensitive, mapping_rule, mapping_describe, group_field, permission_field, ",
-            " secret, secret_period, important, remark, tags, tenant_id, table_guid, sort) ",
+            " secret, secret_period, important, remark, tags, desensitization_rules, tenant_id, table_guid, sort) ",
             " VALUES (#{deriveColumn.id},#{deriveColumn.columnGuid},#{deriveColumn.columnNameEn},#{deriveColumn.columnNameZh},",
             " #{deriveColumn.dataType},#{deriveColumn.sourceColumnGuid},#{deriveColumn.primaryKey},#{deriveColumn.removeSensitive},",
             " #{deriveColumn.mappingRule},#{deriveColumn.mappingDescribe},#{deriveColumn.groupField},#{deriveColumn.permissionField},",
-            " #{deriveColumn.secret},#{deriveColumn.secretPeriod},#{deriveColumn.important},#{deriveColumn.remark},#{deriveColumn.tags},#{deriveColumn.tenantId},",
+            " #{deriveColumn.secret},#{deriveColumn.secretPeriod},#{deriveColumn.important},#{deriveColumn.remark},#{deriveColumn.tags},#{deriveColumn.desensitizationRules},#{deriveColumn.tenantId},",
             " #{deriveColumn.tableGuid}, #{deriveColumn.sort})",
             " ON conflict(id) DO UPDATE SET column_guid = excluded.column_guid,column_name_en = excluded.column_name_en,column_name_zh = excluded.column_name_zh,data_type = excluded.data_type,",
             " source_column_guid = excluded.source_column_guid ,primary_key = excluded.primary_key ,remove_sensitive = excluded.remove_sensitive ,mapping_rule = excluded.mapping_rule,",
             " mapping_describe = excluded.mapping_describe,group_field = excluded.group_field,permission_field = excluded.permission_field,secret = excluded.secret,secret_period = excluded.secret_period,important = excluded.important,",
-            " remark = excluded.remark,tags = excluded.tags,tenant_id = excluded.tenant_id,table_guid= excluded.table_guid,sort= excluded.sort",
+            " remark = excluded.remark,tags = excluded.tags,desensitization_rules = excluded.desensitization_rules,tenant_id = excluded.tenant_id,table_guid= excluded.table_guid,sort= excluded.sort",
             "</script>"})
     int upsert(@Param("deriveColumn") SourceInfoDeriveColumnInfo deriveColumn);
 
