@@ -25,6 +25,7 @@ import io.zeta.metaspace.web.rest.BusinessREST;
 import io.zeta.metaspace.web.rest.TechnicalREST;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -37,6 +38,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -1195,5 +1197,22 @@ public class SourceInfoDeriveTableInfoService {
             return ReturnUtil.error("400", "数据源类型不符合规范");
         }
         return ReturnUtil.success(list);
+    }
+
+    public void getDeriveDataFile(String fileName, String filePath) throws Exception{
+        InputStream input = null;
+        List<String[]> list = PoiExcelUtils.readExcelFile(input, fileName, 0, 19);
+        SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto = new SourceInfoDeriveTableColumnDTO();
+        sourceInfoDeriveTableColumnDto.setTableNameEn(list.get(1)[1]);
+        sourceInfoDeriveTableColumnDto.setTableNameZh(list.get(1)[3]);
+        sourceInfoDeriveTableColumnDto.setCategoryName(list.get(1)[5]);
+        sourceInfoDeriveTableColumnDto.setCreatorName(list.get(1)[7]);
+        sourceInfoDeriveTableColumnDto.setUpdateFrequency(list.get(2)[1]);
+        sourceInfoDeriveTableColumnDto.setEtlPolicy(list.get(2)[3]);
+        sourceInfoDeriveTableColumnDto.setIncreStandard(list.get(2)[5]);
+        // TODO: 2022/1/6 增量字段 
+        sourceInfoDeriveTableColumnDto.setCleanRule(list.get(3)[1]);
+        sourceInfoDeriveTableColumnDto.setFilter(list.get(3)[3]);
+
     }
 }

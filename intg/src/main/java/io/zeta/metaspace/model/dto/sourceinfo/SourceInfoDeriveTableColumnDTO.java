@@ -42,6 +42,9 @@ public class SourceInfoDeriveTableColumnDTO implements Serializable {
     @ApiModelProperty(value = "技术目录对应id", required = true)
     private String categoryId;
 
+    @ApiModelProperty(value = "技术目录对应名称", required = true)
+    private String categoryName;
+
     @ApiModelProperty(value = "目标层级/库类型")
     private String dbType;
 
@@ -86,6 +89,9 @@ public class SourceInfoDeriveTableColumnDTO implements Serializable {
 
     @ApiModelProperty(value = "设计人")
     private String creator;
+
+    @ApiModelProperty(value = "设计人名称")
+    private String creatorName;
 
     @ApiModelProperty(value = "创建时间")
     private String createTime;
