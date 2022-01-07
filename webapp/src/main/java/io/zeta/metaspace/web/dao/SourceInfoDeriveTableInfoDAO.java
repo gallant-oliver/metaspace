@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.metadata.TableExtInfo;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.ColumnTagRelationToColumn;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.DeriveTableVersion;
 import org.apache.ibatis.annotations.*;
@@ -254,4 +255,34 @@ public interface SourceInfoDeriveTableInfoDAO {
             "ddl=#{ddl}, dml=#{dml} " +
             "WHERE table_guid = #{tableGuid}")
     int updateByTableGuid(@Param("tableGuid") String table_guid, @Param("tableName") String tableName, @Param("ddl") String ddl, @Param("dml") String dml);
+
+    @Insert({"<script>",
+            " INSERT INTO column_tag_relation_to_column ",
+            " (id, column_id, tag_id ) VALUES ",
+            " <foreach item='tag' index='index' collection='list' separator=',' close=';'> ",
+            "   (#{tag.id}, #{tag.columnId}, #{tag.tagId} ) ",
+            " </foreach>",
+            "</script>"})
+    int addPreserveTags(@Param("list") List<ColumnTagRelationToColumn> list);
+
+    /**
+     * 判断当前信息在表中是否存在
+     * @param columnId 列id
+     * @param tagId 标签ID
+     * @return
+     */
+    @Select({"<script>",
+            " select count(*) from column_tag_relation_to_column t where t.column_id=#{columnId} and t.tag_id=#{tagId} ",
+            " </script>"})
+    int judgeExitRepetitionTags(@Param("columnId") String columnId, @Param("tagId") String tagId);
+
+    /**
+     * 判断当前标签在标签表中是否存在
+     * @param tagId 标签ID
+     * @return
+     */
+    @Select({"<script>",
+            " select count(*) from column_tag t where t.id=#{tagId} ",
+            " </script>"})
+    int judgeExitTags(@Param("tagId") String tagId);
 }
