@@ -1197,7 +1197,7 @@ public class SourceInfoDeriveTableInfoService {
         return ReturnUtil.success(list);
     }
 
-    public void getDeriveDataFile(String fileName, String filePath) throws Exception{
+    public void getDeriveDataFile(String fileName, String filePath) throws Exception {
         InputStream input = null;
         List<String[]> list = PoiExcelUtils.readExcelFile(input, fileName, 0, 19);
         SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto = new SourceInfoDeriveTableColumnDTO();
@@ -1211,6 +1211,48 @@ public class SourceInfoDeriveTableInfoService {
         // TODO: 2022/1/6 增量字段 
         sourceInfoDeriveTableColumnDto.setCleanRule(list.get(3)[1]);
         sourceInfoDeriveTableColumnDto.setFilter(list.get(3)[3]);
-
+        sourceInfoDeriveTableColumnDto.setProcedure(list.get(3)[5]);
+        sourceInfoDeriveTableColumnDto.setRemark(list.get(4)[1]);
+        sourceInfoDeriveTableColumnDto.setBusinessCategoryName(list.get(6)[1]);
+        sourceInfoDeriveTableColumnDto.setBusinessName(list.get(6)[3]);
+        List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfoList = new ArrayList<>();
+        for (int i = 10; i < list.size(); i++) {
+            SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo = new SourceInfoDeriveColumnInfo();
+            sourceInfoDeriveColumnInfo.setColumnNameEn(list.get(i)[0]);
+            sourceInfoDeriveColumnInfo.setColumnNameZh(list.get(i)[1]);
+            sourceInfoDeriveColumnInfo.setDataType(list.get(i)[2]);
+            sourceInfoDeriveColumnInfo.setSourceName(list.get(i)[3]);
+            sourceInfoDeriveColumnInfo.setSourceTableNameEn(list.get(i)[4]);
+            sourceInfoDeriveColumnInfo.setSourceTableNameZh(list.get(i)[5]);
+            sourceInfoDeriveColumnInfo.setSourceColumnNameEn(list.get(i)[6]);
+            if ("是".equals(list.get(i)[10])) {
+                sourceInfoDeriveColumnInfo.setPrimaryKey(true);
+            } else {
+                sourceInfoDeriveColumnInfo.setPrimaryKey(false);
+            }
+            sourceInfoDeriveColumnInfo.setMappingRule(list.get(i)[11]);
+            sourceInfoDeriveColumnInfo.setMappingDescribe(list.get(i)[12]);
+            if ("是".equals(list.get(i)[13])) {
+                sourceInfoDeriveColumnInfo.setSecret(true);
+            } else {
+                sourceInfoDeriveColumnInfo.setSecret(false);
+            }
+            sourceInfoDeriveColumnInfo.setSecretPeriod(list.get(i)[14]);
+            if ("是".equals(list.get(i)[15])) {
+                sourceInfoDeriveColumnInfo.setImportant(true);
+            } else {
+                sourceInfoDeriveColumnInfo.setImportant(false);
+            }
+            sourceInfoDeriveColumnInfo.setDesensitizationRules(list.get(i)[16]);
+            sourceInfoDeriveColumnInfo.setTags(list.get(i)[17]);
+            if ("是".equals(list.get(i)[18])) {
+                sourceInfoDeriveColumnInfo.setPermissionField(true);
+            } else {
+                sourceInfoDeriveColumnInfo.setPermissionField(false);
+            }
+            sourceInfoDeriveColumnInfo.setRemark(list.get(i)[19]);
+            sourceInfoDeriveColumnInfoList.add(sourceInfoDeriveColumnInfo);
+        }
+        sourceInfoDeriveTableColumnDto.setSourceInfoDeriveColumnInfos(sourceInfoDeriveColumnInfoList);
     }
 }

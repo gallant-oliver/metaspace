@@ -491,6 +491,12 @@ public class PoiExcelUtils {
             }
         } catch (IOException e) {
             logger.error("getWorkBookFile exception is {}", e);
+        }finally {
+            try {
+                workbook.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return workbook;
     }
@@ -519,9 +525,12 @@ public class PoiExcelUtils {
             }
         } catch (IOException e) {
             logger.error("getWorkBookFile exception is {}", e);
-        }
-        finally {
-            workbook.close();
+        } finally {
+            try {
+                workbook.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         return workbook;
     }
