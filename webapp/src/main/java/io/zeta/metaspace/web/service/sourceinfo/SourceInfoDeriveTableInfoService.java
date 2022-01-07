@@ -15,6 +15,7 @@ import io.zeta.metaspace.model.result.CategorycateQueryResult;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.Constant;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.DeriveTableStateEnum;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.ColumnTagRelationToColumn;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveColumnInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableColumnRelation;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
@@ -167,6 +168,9 @@ public class SourceInfoDeriveTableInfoService {
         if(!CollectionUtils.isEmpty(sourceInfoDeriveColumnInfos)){
             sourceInfoDeriveColumnInfoService.saveBatch(sourceInfoDeriveColumnInfos);
             sourceInfoDeriveTableColumnRelationService.saveBatch(sourceInfoDeriveTableColumnRelationList);
+
+            // 标签同步到column_tag_relation_to_column表
+            preserveTags(sourceInfoDeriveTableInfo.getTableGuid(), sourceInfoDeriveColumnInfos);
         }
 
         // 提交：新增业务对象-表关系(关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表)
@@ -184,6 +188,60 @@ public class SourceInfoDeriveTableInfoService {
             businessDAO.updateTechnicalStatus(sourceInfoDeriveTableInfo.getBusinessId(), TechnicalStatus.ADDED.code);
         }
         return true;
+    }
+
+    /**
+     * 标签同步到column_tag_relation_to_column表
+     * 根据source_info_derive_table_info表的table_guid去column_info表查询，
+     * 如果存在，根据列名称找到对应的id,然后把列id和标签id维护到column_tag_relation_to_column表
+     *
+     * @param tableGuid                   source_info_derive_table_info表的table_guid
+     * @param sourceInfoDeriveColumnInfos 列集合
+     */
+    public void preserveTags(String tableGuid, List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos) {
+        boolean isExist = columnDAO.tableColumnExist(tableGuid) > 0;
+        if (isExist) {
+            for (SourceInfoDeriveColumnInfo deriveColumnInfo : sourceInfoDeriveColumnInfos) {
+                // 根据列名称找到对应的id
+                String columnGuid = columnDAO.getColumnGuid(tableGuid, deriveColumnInfo.getSourceColumnNameEn());
+                String tags = deriveColumnInfo.getTags();
+                List<ColumnTagRelationToColumn> columnTagRelationToColumns = packTags(columnGuid, tags);
+                if (columnTagRelationToColumns != null) {
+                    sourceInfoDeriveTableInfoDao.addPreserveTags(columnTagRelationToColumns);
+                }
+            }
+        }
+
+    }
+
+    /**
+     * 将字符串标签转为实体类
+     * @param columnGuid 源表列ID
+     * @param strTags    字符串数组标签
+     * @return 返回当前列对应的标签列表
+     */
+    public List<ColumnTagRelationToColumn> packTags(String columnGuid, String strTags) {
+        List<ColumnTagRelationToColumn> columnTagRelationToColumns = new ArrayList<>();
+        if (StringUtils.isBlank(strTags) || StringUtils.isBlank(columnGuid)) {
+            return null;
+        }
+        String[] tags = strTags.split(",");
+        if (tags.length > 0) {
+            for (int i = 0; i < tags.length; i++) {
+                if (sourceInfoDeriveTableInfoDao.judgeExitTags(tags[i]) > 0) {
+                    continue;
+                }
+                if (sourceInfoDeriveTableInfoDao.judgeExitRepetitionTags(columnGuid, tags[i]) > 0) {
+                    continue;
+                }
+                ColumnTagRelationToColumn columnTagRelationToColumn = new ColumnTagRelationToColumn();
+                columnTagRelationToColumn.setId(UUID.randomUUID().toString());
+                columnTagRelationToColumn.setColumnId(columnGuid);
+                columnTagRelationToColumn.setTagId(tags[i]);
+                columnTagRelationToColumns.add(columnTagRelationToColumn);
+            }
+        }
+        return columnTagRelationToColumns;
     }
 
     private String getDbNameByDbId(String dbId, String sourceId) {
@@ -324,6 +382,8 @@ public class SourceInfoDeriveTableInfoService {
          if (!CollectionUtils.isEmpty(sourceInfoDeriveColumnInfos)) {
             sourceInfoDeriveColumnInfoService.saveOrUpdateBatch(sourceInfoDeriveColumnInfos);
         }
+        // 标签同步到column_tag_relation_to_column表
+        preserveTags(sourceInfoDeriveTableInfo.getTableGuid(), sourceInfoDeriveColumnInfos);
         sourceInfoDeriveTableColumnRelationService.saveOrUpdateBatch(sourceInfoDeriveTableColumnRelationList);
     
     
