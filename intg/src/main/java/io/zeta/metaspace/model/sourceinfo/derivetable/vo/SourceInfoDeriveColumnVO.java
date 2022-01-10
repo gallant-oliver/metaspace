@@ -2,6 +2,7 @@ package io.zeta.metaspace.model.sourceinfo.derivetable.vo;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import io.zeta.metaspace.model.table.column.tag.ColumnTag;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
@@ -95,7 +96,7 @@ public class SourceInfoDeriveColumnVO implements Serializable {
     private String remark;
 
     @ApiModelProperty(value = "关联标签数组")
-    private String tags;
+    private List<ColumnTag> tags;
 
     @ApiModelProperty(value = "目标字段脱敏规则")
     private String desensitizationRules;
