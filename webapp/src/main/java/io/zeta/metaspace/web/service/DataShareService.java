@@ -49,7 +49,6 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.role.SystemRole;
 import io.zeta.metaspace.model.security.Pool;
 import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.security.SecuritySearch;
@@ -2813,7 +2812,7 @@ public class DataShareService {
                 }
                 columnJoiner.add("\"" + column.getColumnName() + "\" " + order);
             });
-        } else if (searchType == DataSourceType.HIVE) {
+        } else if (searchType == DataSourceType.HIVE || DataSourceType.IMPALA == searchType) {
             sortColumns.stream().filter(column -> column.getColumnName() != null).forEach(column -> {
 
             });
