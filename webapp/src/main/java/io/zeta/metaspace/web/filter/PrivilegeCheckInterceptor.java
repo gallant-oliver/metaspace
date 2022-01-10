@@ -81,7 +81,6 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
 
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         String requestURL = request.getRequestURL().toString();
-        String type = request.getMethod();
         if (FilterUtils.isSkipUrl(requestURL)) {
             return invocation.proceed();
         } else if(FilterUtils.isHealthCheck(requestURL)){
@@ -98,20 +97,22 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                 throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "查询用户信息失败");
             }
 
-            Method method = invocation.getMethod();
-            Path path = method.getAnnotation(Path.class);
-            String pathStr = Objects.nonNull(path)?path.value():"";
-            String urlStr = "/" + prefix + pathStr;
-            String requestMethod = request.getMethod();
-            String tenantId=request.getHeader("tenantId");
-            if (tenantId==null||tenantId.length()==0){
-                tenantId=request.getParameter("tenantId");
-            }
-            if (tenantId==null||tenantId.length()==0){
-                throw new AtlasBaseException(AtlasErrorCode.TENANT_ERROE);
-            }
             String privilegecheck = "privilegecheck";
             if (privilegecheck.equals(prefix.toLowerCase().trim())) {
+
+                Method method = invocation.getMethod();
+                Path path = method.getAnnotation(Path.class);
+                String pathStr = Objects.nonNull(path)?path.value():"";
+                String urlStr = "/" + prefix + pathStr;
+                String requestMethod = request.getMethod();
+                String tenantId=request.getHeader("tenantId");
+                if (tenantId==null||tenantId.length()==0){
+                    tenantId=request.getParameter("tenantId");
+                }
+                if (tenantId==null||tenantId.length()==0){
+                    throw new AtlasBaseException(AtlasErrorCode.TENANT_ERROE);
+                }
+
                 String privilegeType = "";
                 String privilegeGuid = "";
                 try {
@@ -128,12 +129,6 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                                     categoryGuids.add(category.getGuid());
                             }
                             return invocation.proceed();
-//                            boolean havePrivilege = usersService.ifPrivilege(categoryGuids, privilegeGuid, tenantId);
-//                            if (havePrivilege) {
-//                                return invocation.proceed();
-//                            } else {
-//                                throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户权限不足");
-//                            }
                         default:
                             throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户权限不足");
                     }
@@ -144,42 +139,7 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
                     throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户没有该表的权限");
                 }
             } else {
-                List<Integer> moduleIds;
-                if (true){
-                    return invocation.proceed();
-                }
-                List<Module> modules = tenantService.getModule(tenantId);
-                moduleIds = modules.stream().map(module -> module.getModuleId()).collect(Collectors.toList());
-                String dataquality = "dataquality";
-                if (prefix.equals(dataquality)){
-                    Path annotation = method.getDeclaringClass().getAnnotation(Path.class);
-                    prefix = annotation==null?prefix : annotation.value();
-                    urlStr = prefix + pathStr;
-                }
-                Integer moduleId = null;
-
-                List<String> prefixCheckPathList = apiModuleDAO.getPrefixCheckPath();
-                String checkUrl = prefixCheckPathList.contains(prefix) ? prefix : urlStr;
-                requestMethod = prefixCheckPathList.contains(prefix) ? "OPTION" : requestMethod;
-                moduleId = apiModuleDAO.getModuleByPathAndMethod(checkUrl, requestMethod);
-                if (Objects.isNull(moduleId)) {
-                    return invocation.proceed();
-                    //throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未查询到当前接口权限");
-                } else if (moduleIds.contains(moduleId)) {
-                    return invocation.proceed();
-                } else {
-                    Permission permission = method.getAnnotation(Permission.class);
-                    if (permission!=null){
-                        ModuleEnum[] value = permission.value();
-                        if (Arrays.stream(value).anyMatch(moduleEnum -> moduleIds.contains(moduleEnum.getId()))){
-                            return invocation.proceed();
-                        }
-                    }
-                    String ip = HttpRequestContext.get().getIp();
-                    auditLog(ModuleEnum.getModuleName(moduleId), ip, userId, tenantId);
-
-                    throw new AtlasBaseException(AtlasErrorCode.UNAUTHORIZED_ACCESS, "当前用户没有当前调用接口的权限");
-                }
+                return invocation.proceed();
             }
         }
     }

@@ -29,9 +29,6 @@ public class FilterUtils {
         add("/api/metaspace/admin/version");
         add("/api/metaspace/cache");
         add("api/metaspace/metadata/update/supplementTable");
-        add("/api/metaspace/dataquality/monitor");
-        // 供指标的统一监控使用，由于当前统一监控并未通过sso认证，只通过ip白名单过滤，故此放行
-        add("/api/metaspace/internal/table/");
     }};
 
     private static List<String> permissionUrl = new ArrayList<String>(){{
@@ -63,12 +60,12 @@ public class FilterUtils {
      */
     public static Boolean isHealthCheck(String requestURL){
         String result = StringUtils.substring(requestURL, requestURL.indexOf("api/metaspace"), requestURL.length());
-        if(permissionUrl.contains(result)){
+        if (permissionUrl.contains(result)){
             return true;
         }
         return false;
     }
-    
+
     private static String replaceWithCase(String src,String search,String replace,Boolean ignoreCase){
         return StringUtils.replacePattern(src,ignoreCase?"(?i)"+search : search,replace);
     }
@@ -83,7 +80,7 @@ public class FilterUtils {
         if (StringUtils.isBlank(source)){
             return "";
         }
-            
+
         //半角括号替换为全角括号
         source = source.replace("'", "'''").replace(";","");
         //去除执行SQL语句的命令关键字
