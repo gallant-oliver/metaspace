@@ -1,5 +1,8 @@
 package io.zeta.metaspace.web.service.sourceinfo;
 
+import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.ExcelWriter;
+import com.alibaba.excel.write.metadata.WriteSheet;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.business.BusinessInfoHeader;
@@ -27,11 +30,15 @@ import io.zeta.metaspace.web.rest.BusinessREST;
 import io.zeta.metaspace.web.rest.TechnicalREST;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.DeriveTableExportUtil;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
@@ -40,6 +47,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -1335,5 +1346,62 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveColumnInfoList.add(sourceInfoDeriveColumnInfo);
         }
         sourceInfoDeriveTableColumnDto.setSourceInfoDeriveColumnInfos(sourceInfoDeriveColumnInfoList);
+    }
+
+    public void exportById(HttpServletResponse response, String tenantId, String tableId) {
+        SourceInfoDeriveTableColumnVO deriveTableColumnDetail = null;
+        try {
+            deriveTableColumnDetail = getDeriveTableColumnDetail(tenantId, tableId);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        if (deriveTableColumnDetail == null) {
+            throw new AtlasBaseException("该衍生表不存在");
+        }
+        List<SourceInfoDeriveColumnDTO> list = DeriveTableExportUtil.getPojo(deriveTableColumnDetail.getSourceInfoDeriveColumnVOS());
+        String templateName = DeriveTableExportUtil.deriveTableTemplate();
+        String exportTableName = DeriveTableExportUtil.deriveTableExcelName(deriveTableColumnDetail.getTableNameZh());
+
+        ExcelWriter excelWriter = EasyExcel.write(exportTableName).withTemplate(templateName).build();
+        WriteSheet writeSheet = EasyExcel.writerSheet().build();
+        excelWriter.fill(deriveTableColumnDetail, writeSheet);
+        excelWriter.fill(list, writeSheet);
+        excelWriter.finish();
+        File file = null;
+        try {
+            file = DeriveTableExportUtil.deriveTableExport(exportTableName);
+            InputStream inputStream = new FileInputStream(file);
+            Workbook workbook = WorkbookFactory.create(inputStream);
+            String fileName = DeriveTableExportUtil.getDeriveImportTemplate();
+            response.setCharacterEncoding("UTF-8");
+            response.setHeader("content-Type", "application/vnd.ms-excel");
+            response.addHeader("Content-Disposition", "attachment;filename=" + fileName);
+            workbook.write(response.getOutputStream());
+        } catch (IOException | InvalidFormatException e) {
+            e.printStackTrace();
+            throw new AtlasBaseException("导出失败");
+        } finally {
+            assert file != null;
+            if (file.exists() && !file.delete()) {
+                LOG.error("衍生表导出文" + exportTableName + "未实时删除");
+            }
+        }
+    }
+
+    public void downloadTemplate(HttpServletResponse response) {
+        try {
+            File file = DeriveTableExportUtil.deriveTableImportTemplate();
+            InputStream input = new FileInputStream(file);
+            Workbook workbook = WorkbookFactory.create(input);
+            String fileName = DeriveTableExportUtil.getDeriveImportTemplate();
+            fileName = java.net.URLEncoder.encode(fileName, "UTF-8");
+            response.setCharacterEncoding("UTF-8");
+            response.setHeader("content-Type", "application/vnd.ms-excel");
+            response.setHeader("Content-Disposition", "attachment;filename="+fileName);
+            workbook.write(response.getOutputStream());
+        } catch (IOException | InvalidFormatException e) {
+            e.printStackTrace();
+            throw new AtlasBaseException("导出失败");
+        }
     }
 }
