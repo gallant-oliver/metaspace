@@ -61,7 +61,7 @@ public class SourceInfoFileService {
     @Autowired
     private TenantService tenantService;
     /*
-     * 正则表达式：验证手机号
+     * 正则表达式：验证联系电话
      */
     public static final String REGEX_MOBILE = "^(1[3-9])\\d{9}$";
 
@@ -72,11 +72,11 @@ public class SourceInfoFileService {
 
 
     private final String[] validFields = new String[]{"数据层名称","数据库中文名","数据库类型","数据源","数据库英文名称",
-            "数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","业务Owner手机号",
-            "数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","技术Owner手机号",
+            "数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","业务Owner联系电话",
+            "数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","技术Owner联系电话",
             "技术负责人","业务负责人"};
 
-    private final String emptyFields = "数据库业务Owner姓名, 数据库业务Owner部门名称, 数据库业务Owner电子邮箱, 业务Owner手机号,数据库技术Owner姓名, 数据库技术Owner部门名称, 数据库技术Owner电子邮箱, 技术Owner手机号";
+    private final String emptyFields = "数据库业务Owner姓名, 数据库业务Owner部门名称, 数据库业务Owner电子邮箱, 业务Owner联系电话,数据库技术Owner姓名, 数据库技术Owner部门名称, 数据库技术Owner电子邮箱, 技术Owner联系电话";
 
     private Map<String,String> categoryMap  = new HashMap<String,String>(){{
         put("贴源层","1");
@@ -85,13 +85,13 @@ public class SourceInfoFileService {
         put("应用层","5");
     }};
   
-    private String[] tableTitleAttr = {"数据层名称","数据库中文名","数据库类型","数据源","数据库实例","数据库英文名称","抽取频率","抽取工具","规划包编号","规划包名称",
-            "是否保密","保密期限","是否重要","描述","数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","业务Owner手机号","数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","技术Owner手机号",
+    private String[] tableTitleAttr = {"数据层名称","数据库中文名","数据库类型","数据源","数据库实例","数据库英文名称","抽取频率","源系统数据库类型/抽取工具","规划包编号","规划包名称",
+            "是否保密","保密期限","是否重要","描述","数据库业务Owner姓名","数据库业务Owner部门名称","数据库业务Owner电子邮箱","业务Owner联系电话","数据库技术Owner姓名","数据库技术Owner部门名称","数据库技术Owner电子邮箱","技术Owner联系电话",
             "技术负责人","业务负责人"};
     private static final int CHINA_LENGTH = 128;
     private static final int EMAIL_LENGTH = 64;
     /**
-     * 校验手机号
+     * 校验联系电话
      *
      * @param mobile
      * @return 校验通过返回true，否则返回false
@@ -142,7 +142,7 @@ public class SourceInfoFileService {
         tableData.add("ORACLE数据库类型需要实例");
         tableData.add("数据库的英文定义");
         tableData.add(""); //抽取频率
-        tableData.add(""); //抽取工具
+        tableData.add(""); //源系统数据库类型/抽取工具
         tableData.add(""); //规划包编号
         tableData.add(""); //规划包name
         tableData.add(Arrays.asList("是","否")); //是否保密
@@ -153,12 +153,12 @@ public class SourceInfoFileService {
         tableData.add(""); //数据库业务Owner姓名
         tableData.add(""); //数据库业务Owner部门名称
         tableData.add(""); //数据库业务Owner电子邮箱
-        tableData.add(""); //手机号
+        tableData.add(""); //联系电话
         //数据库技术
         tableData.add(""); //数据库技术Owner姓名
         tableData.add(""); //数据库技术Owner部门名称
         tableData.add(""); //数据库技术Owner电子邮箱
-        tableData.add(""); //技术Owner手机号
+        tableData.add(""); //技术Owner联系电话
 
         //"技术负责人","业务负责人"
        /* List<User> userList = userDAO.getAllUserByValid();
@@ -246,7 +246,7 @@ public class SourceInfoFileService {
 
                 }
 
-                if( ("业务Owner手机号".equals(fieldName) || "技术Owner手机号".equals(fieldName) )
+                if( ("业务Owner联系电话".equals(fieldName) || "技术Owner联系电话".equals(fieldName) )
                         && StringUtils.isNotBlank(v) && !isMobile(v)){
                     String errMsg = fieldName+"输入格式不正常";
                     results.add(setAnalyticResult(errMsg,array, map));
@@ -601,9 +601,9 @@ public class SourceInfoFileService {
     private Map<String,Integer> propertyToColumnIndexMap( String[] array){
         Map<String,Integer> result = new HashMap<>();
         for(int i = 0,len = array.length; i < len;i++){
-            //增加处理手机号的字段  模板有两个问题
-            if("手机号".equals(array[i]) && result.containsKey("手机号") ){
-                result.put("技术Owner手机号",i);
+            //增加处理联系电话的字段  模板有两个问题
+            if("联系电话".equals(array[i]) && result.containsKey("联系电话") ){
+                result.put("技术Owner联系电话",i);
                 continue;
             }
             result.put(array[i],i);
@@ -729,7 +729,7 @@ public class SourceInfoFileService {
             databaseInfo.setPlanningPackageCode(getElementOrDefault(array,MapUtils.getIntValue(map,"规划包编号",-1)));
             databaseInfo.setPlanningPackageName(getElementOrDefault(array,MapUtils.getIntValue(map,"规划包名称",-1)));
             databaseInfo.setExtractCycle(getElementOrDefault(array,MapUtils.getIntValue(map,"抽取频率",-1)));
-            databaseInfo.setExtractTool(getElementOrDefault(array,MapUtils.getIntValue(map,"抽取工具",-1)));
+            databaseInfo.setExtractTool(getElementOrDefault(array,MapUtils.getIntValue(map,"源系统数据库类型/抽取工具",-1)));
             databaseInfo.setSecurity("是".equals(getElementOrDefault(array,MapUtils.getIntValue(map,"是否保密",-1))));
             databaseInfo.setSecurityCycle(getElementOrDefault(array,MapUtils.getIntValue(map,"保密期限",-1)));
             databaseInfo.setImportance("是".equals(getElementOrDefault(array,MapUtils.getIntValue(map,"是否重要",-1))));
@@ -738,9 +738,9 @@ public class SourceInfoFileService {
 
             databaseInfo.setBoName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner姓名",-1)));
             databaseInfo.setBoDepartmentName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner部门名称",-1)));
-            String bizMobile = getElementOrDefault(array,MapUtils.getIntValue(map,"业务Owner手机号",-1));
+            String bizMobile = getElementOrDefault(array,MapUtils.getIntValue(map,"业务Owner联系电话",-1));
             if (StringUtils.isNoneBlank(bizMobile) && !isMobile(bizMobile)) {
-                return new Result("400","业务Owner手机号输入格式错误");
+                return new Result("400","业务Owner联系电话输入格式错误");
             }
             databaseInfo.setBoTel(bizMobile);
             String bizEmail = getElementOrDefault(array,MapUtils.getIntValue(map,"数据库业务Owner电子邮箱",-1));
@@ -750,9 +750,9 @@ public class SourceInfoFileService {
             databaseInfo.setBoEmail(bizEmail);
             databaseInfo.setToName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner姓名",-1)));
             databaseInfo.setToDepartmentName(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner部门名称",-1)));
-            String techMobile = getElementOrDefault(array,MapUtils.getIntValue(map,"技术Owner手机号",-1));
+            String techMobile = getElementOrDefault(array,MapUtils.getIntValue(map,"技术Owner联系电话",-1));
             if (StringUtils.isNoneBlank(techMobile) && !isMobile(techMobile)) {
-                return new Result("400","技术Owner手机号输入格式错误");
+                return new Result("400","技术Owner联系电话输入格式错误");
             }
             databaseInfo.setToTel(techMobile);
             String techEmail = getElementOrDefault(array,MapUtils.getIntValue(map,"数据库技术Owner电子邮箱",-1));
