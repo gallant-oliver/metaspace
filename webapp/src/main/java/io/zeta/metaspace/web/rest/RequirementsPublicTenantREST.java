@@ -6,7 +6,6 @@ import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataMultiPart;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
-import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dto.requirements.*;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -217,7 +216,6 @@ public class RequirementsPublicTenantREST {
      */
     @GET
     @Path("/download/file")
-    @Permission({ModuleEnum.TECHNICAL, ModuleEnum.AUTHORIZATION})
     public void downloadFile(@Context HttpServletResponse response,
                              @DefaultValue("") @QueryParam("fileName") String fileName,
                              @QueryParam("filePath") String filePath) {

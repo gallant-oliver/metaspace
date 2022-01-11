@@ -41,6 +41,9 @@ public class SourceInfoDeriveColumnInfo implements Serializable {
     @ApiModelProperty(value = "数据类型", required = true)
     private String dataType;
 
+    @ApiModelProperty(value = "数据库类型")
+    private String dbType;
+
     @ApiModelProperty(value = "来源字段的guid（column_info）", required = true)
     private String sourceColumnGuid;
 
@@ -49,6 +52,9 @@ public class SourceInfoDeriveColumnInfo implements Serializable {
 
     @ApiModelProperty(value = "是否是主键")
     private boolean primaryKey;
+
+    @ApiModelProperty(value = "是否是主键名称")
+    private String primaryKeyName;
 
     @ApiModelProperty(value = "是否脱敏")
     private boolean removeSensitive;
@@ -65,11 +71,17 @@ public class SourceInfoDeriveColumnInfo implements Serializable {
     @ApiModelProperty(value = "是否保密")
     private boolean secret;
 
+    @ApiModelProperty(value = "是否保密名称")
+    private String secretName;
+
     @ApiModelProperty(value = "保密期限")
     private String secretPeriod;
 
     @ApiModelProperty(value = "是否重要")
     private boolean important;
+
+    @ApiModelProperty(value = "是否重要名称")
+    private String importantName;
 
     @ApiModelProperty(value = "是否是权限字段")
     private boolean permissionField;

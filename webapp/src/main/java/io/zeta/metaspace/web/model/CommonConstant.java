@@ -36,4 +36,8 @@ public class CommonConstant {
      * 需求状态-待反馈
      */
     public static final Integer REQUIREMENTS_STATUS_THREE = 3;
+
+    public static final String EXCEL_FORMAT_XLSX = ".xlsx";
+
+    public static final String EXCEL_FORMAT_XLS = ".xls";
 }

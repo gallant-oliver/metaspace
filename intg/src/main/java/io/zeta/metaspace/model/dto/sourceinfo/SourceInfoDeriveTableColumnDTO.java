@@ -54,6 +54,9 @@ public class SourceInfoDeriveTableColumnDTO implements Serializable {
     @ApiModelProperty(value = "目标数据源Id")
     private String sourceId;
 
+    @ApiModelProperty(value = "业务目录Id", required = true)
+    private String businessCategoryId;
+
     @ApiModelProperty(value = "业务目录名称", required = true)
     private String businessCategoryName;
 

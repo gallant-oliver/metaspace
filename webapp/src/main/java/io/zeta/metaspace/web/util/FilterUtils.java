@@ -37,6 +37,7 @@ public class FilterUtils {
         add("api/metaspace/businesses/excel/file/template");
         add("api/metaspace/businesses/excel/category/template");
         add("api/metaspace/businesses/excel/allcategory/template");
+        add("api/metaspace/public/tenant/requirements/download/file");
     }};
 
     // TODO 这种实现方式存在风险，而且粒度也不好控制
