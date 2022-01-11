@@ -20,6 +20,7 @@ import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveColum
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableColumnRelation;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.*;
+import io.zeta.metaspace.model.table.column.tag.ColumnTag;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.rest.BusinessREST;
@@ -242,6 +243,25 @@ public class SourceInfoDeriveTableInfoService {
             }
         }
         return columnTagRelationToColumns;
+    }
+
+    /**
+     * 根据字符串标签ID获取对应的名称
+     *
+     * @param strTags 字符串数组标签
+     * @return 返回当前列对应的标签列表
+     */
+    public List<ColumnTag> getTags(String strTags) {
+        List<ColumnTag> columnTags = new ArrayList<>();
+        if (StringUtils.isBlank(strTags)) {
+            return null;
+        }
+        String[] tags = strTags.split(",");
+        if (tags.length > 0) {
+            List<String> listTags = Arrays.asList(tags);
+            columnTags = sourceInfoDeriveTableInfoDao.getTagListById(listTags);
+        }
+        return columnTags;
     }
 
     private String getDbNameByDbId(String dbId, String sourceId) {
@@ -893,6 +913,7 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveColumnVO.setSourceColumnNameEn(null == column ? null : column.getColumnName());
             sourceInfoDeriveColumnVO.setSourceColumnNameZh(null == column ? null : column.getDescription());
             sourceInfoDeriveColumnVO.setSourceColumnType(null == column ? null : column.getType());
+            sourceInfoDeriveColumnVO.setTags(getTags(e.getTags()));
             return sourceInfoDeriveColumnVO;
         }).collect(Collectors.toList()));
         return sourceInfoDeriveTableColumnVO;
