@@ -1367,9 +1367,8 @@ public class SourceInfoDeriveTableInfoService {
         excelWriter.fill(deriveTableColumnDetail, writeSheet);
         excelWriter.fill(list, writeSheet);
         excelWriter.finish();
-        File file = null;
+        File file = DeriveTableExportUtil.deriveTableExport(exportTableName);
         try {
-            file = DeriveTableExportUtil.deriveTableExport(exportTableName);
             InputStream inputStream = new FileInputStream(file);
             Workbook workbook = WorkbookFactory.create(inputStream);
             String fileName = DeriveTableExportUtil.getDeriveImportTemplate();
@@ -1381,7 +1380,6 @@ public class SourceInfoDeriveTableInfoService {
             e.printStackTrace();
             throw new AtlasBaseException("导出失败");
         } finally {
-            assert file != null;
             if (file.exists() && !file.delete()) {
                 LOG.error("衍生表导出文" + exportTableName + "未实时删除");
             }
@@ -1389,15 +1387,15 @@ public class SourceInfoDeriveTableInfoService {
     }
 
     public void downloadTemplate(HttpServletResponse response) {
+        File file = DeriveTableExportUtil.deriveTableImportTemplate();
         try {
-            File file = DeriveTableExportUtil.deriveTableImportTemplate();
             InputStream input = new FileInputStream(file);
             Workbook workbook = WorkbookFactory.create(input);
             String fileName = DeriveTableExportUtil.getDeriveImportTemplate();
             fileName = java.net.URLEncoder.encode(fileName, "UTF-8");
             response.setCharacterEncoding("UTF-8");
             response.setHeader("content-Type", "application/vnd.ms-excel");
-            response.setHeader("Content-Disposition", "attachment;filename="+fileName);
+            response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
             workbook.write(response.getOutputStream());
         } catch (IOException | InvalidFormatException e) {
             e.printStackTrace();
