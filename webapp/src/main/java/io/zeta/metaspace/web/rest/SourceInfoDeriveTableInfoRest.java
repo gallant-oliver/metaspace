@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import java.util.List;
@@ -58,6 +59,9 @@ public class SourceInfoDeriveTableInfoRest {
 
     @Context
     private HttpServletRequest httpServletRequest;
+
+    @Context
+    private HttpServletResponse response;
 
     /**
      * 新建-保存或保存并提交衍生表登记
@@ -369,6 +373,22 @@ public class SourceInfoDeriveTableInfoRest {
         }
     }
 
+    @ApiOperation(value = "衍生表导出", tags = "源信息登记-衍生表登记")
+    @Path("/exportById")
+    @GET
+    public Result exportDriveTable(@HeaderParam(value = "tenantId") String tenantId,
+                                   @QueryParam(value = "tableId") String tableId) {
+        sourceInfoDeriveTableInfoService.exportById(response, tenantId, tableId);
+        return ReturnUtil.success();
+    }
+
+    @ApiOperation(value = "衍生表导出", tags = "源信息登记-衍生表登记")
+    @Path("/importTemplate")
+    @GET
+    public Result downloadTemplate() {
+        sourceInfoDeriveTableInfoService.downloadTemplate(response);
+        return ReturnUtil.success();
+    }
 
 }
 

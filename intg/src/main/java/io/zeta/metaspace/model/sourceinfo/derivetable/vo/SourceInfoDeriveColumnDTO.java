@@ -1,29 +1,17 @@
 package io.zeta.metaspace.model.sourceinfo.derivetable.vo;
 
-import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import io.zeta.metaspace.model.table.column.tag.ColumnTag;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.experimental.Accessors;
 
 import java.io.Serializable;
-import java.util.List;
 
 /**
- * <p>
- * 衍生表对应的字段
- * </p>
- *
- * @author Echo
- * @since 2021-07-13
+ * @author huangrongwen
+ * @Description: 衍生表导出dto
+ * @date 2022/1/1015:49
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
-@Accessors(chain = true)
-@ApiModel(value = "DeriveColumnInfo对象", description = "衍生表对应的字段")
-public class SourceInfoDeriveColumnVO implements Serializable {
-
+public class SourceInfoDeriveColumnDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @ApiModelProperty(value = "主键id")
@@ -66,10 +54,10 @@ public class SourceInfoDeriveColumnVO implements Serializable {
     private String sourceColumnType;
 
     @ApiModelProperty(value = "是否是主键")
-    private boolean primaryKey;
+    private String primaryKey;
 
     @ApiModelProperty(value = "是否脱敏")
-    private boolean removeSensitive;
+    private String removeSensitive;
 
     @ApiModelProperty(value = "映射规则")
     private String mappingRule;
@@ -78,25 +66,25 @@ public class SourceInfoDeriveColumnVO implements Serializable {
     private String mappingDescribe;
 
     @ApiModelProperty(value = "是否是分组字段")
-    private boolean groupField;
+    private String groupField;
 
     @ApiModelProperty(value = "是否保密")
-    private boolean secret;
+    private String secret;
 
     @ApiModelProperty(value = "保密期限")
     private String secretPeriod;
 
     @ApiModelProperty(value = "是否重要")
-    private boolean important;
+    private String important;
 
     @ApiModelProperty(value = "是否是权限字段")
-    private boolean permissionField;
+    private String permissionField;
 
     @ApiModelProperty(value = "备注")
     private String remark;
 
     @ApiModelProperty(value = "关联标签数组")
-    private List<ColumnTag> tags;
+    private String tags;
 
     @ApiModelProperty(value = "目标字段脱敏规则")
     private String desensitizationRules;

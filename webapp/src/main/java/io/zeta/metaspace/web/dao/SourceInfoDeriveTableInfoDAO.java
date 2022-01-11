@@ -4,6 +4,7 @@ import io.zeta.metaspace.model.metadata.TableExtInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.ColumnTagRelationToColumn;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.DeriveTableVersion;
+import io.zeta.metaspace.model.table.column.tag.ColumnTag;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -285,4 +286,22 @@ public interface SourceInfoDeriveTableInfoDAO {
             " select count(*) from column_tag t where t.id=#{tagId} ",
             " </script>"})
     int judgeExitTags(@Param("tagId") String tagId);
+
+    /**
+     * 获取当前标签列表
+     * @param tagIds 标签数组id
+     * @return 标签列表
+     */
+    @Select("<script>" +
+            "SELECT\n" +
+            " ct.id,ct.name,ct.tenant_id,ct.create_time,ct.modify_time as updateTime " +
+            "FROM\n" +
+            " column_tag ct \n" +
+            "WHERE\n" +
+            " ct.id IN " +
+            "<foreach collection = 'tagIds' item='tagId' index='index' separator = ',' open = '(' close = ')' >" +
+            "#{tagId}" +
+            "</foreach> " +
+            "</script>" )
+    List<ColumnTag> getTagListById(@Param("tagIds") List<String> tagIds);
 }
