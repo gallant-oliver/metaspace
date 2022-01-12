@@ -59,6 +59,9 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -96,13 +99,14 @@ public class SourceInfoDeriveTableInfoService {
     private TechnicalREST technicalREST;
     private DataSourceService dataSourceService;
     private GroupDeriveTableRelationDAO relationDAO;
+    private ColumnTagDAO columnTagDao;
 
     @Autowired
     public SourceInfoDeriveTableInfoService(SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao, GroupDeriveTableRelationDAO relationDAO, DbDAO dbDao, BusinessDAO businessDAO,
                                             TableDAO tableDAO, ColumnDAO columnDAO, BusinessREST businessREST, TechnicalREST technicalREST,
                                             CategoryDAO categoryDAO, SourceInfoDeriveColumnInfoService sourceInfoDeriveColumnInfoService,
                                             SourceInfoDeriveTableColumnRelationService sourceInfoDeriveTableColumnRelationService,
-                                            DataSourceService dataSourceService) {
+                                            DataSourceService dataSourceService, ColumnTagDAO columnTagDao) {
         this.sourceInfoDeriveTableInfoDao = sourceInfoDeriveTableInfoDao;
         this.dbDao = dbDao;
         this.tableDAO = tableDAO;
@@ -115,6 +119,7 @@ public class SourceInfoDeriveTableInfoService {
         this.sourceInfoDeriveColumnInfoService = sourceInfoDeriveColumnInfoService;
         this.sourceInfoDeriveTableColumnRelationService = sourceInfoDeriveTableColumnRelationService;
         this.relationDAO = relationDAO;
+        this.columnTagDao = columnTagDao;
     }
 
     /**
@@ -161,9 +166,11 @@ public class SourceInfoDeriveTableInfoService {
         } else {
             // 保存并提交，设置状态是1
             // 生成DDL和DML语句
+            String targetDbName = getDbNameByDbId(sourceInfoDeriveTableInfo.getDbId(), sourceInfoDeriveTableInfo.getSourceId());
+            String sourceDbName = tableDAO.getTableInfoByTableguidAndStatus(sourceInfoDeriveTableColumnDto.getSourceTableGuid()).getDbName();
             sourceInfoDeriveTableInfo.setState(DeriveTableStateEnum.COMMIT.getState());
-            sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto, getDbNameByDbId(sourceInfoDeriveTableInfo.getDbId(), sourceInfoDeriveTableInfo.getSourceId())));
-            sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto));
+            sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto, targetDbName));
+            sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto,sourceDbName,targetDbName));
         }
 
         for (SourceInfoDeriveColumnInfo deriveColumnInfo : sourceInfoDeriveColumnInfos) {
@@ -272,17 +279,34 @@ public class SourceInfoDeriveTableInfoService {
      * @param strTags 字符串数组标签
      * @return 返回当前列对应的标签列表
      */
-    public List<ColumnTag> getTags(String strTags) {
-        List<ColumnTag> columnTags = new ArrayList<>();
-        if (StringUtils.isBlank(strTags)) {
-            return null;
-        }
-        String[] tags = strTags.split(",");
-        if (tags.length > 0) {
+    public List<ColumnTag> getTags(String strTags, String sourceColumnId, String tenantId) {
+        //1、查询源目标列关联的标签
+        List<ColumnTag> columnTags = columnTagDao.getTagListByColumnId(tenantId, sourceColumnId);
+        //2、查询衍生表列关联的标签
+        if (StringUtils.isNotBlank(strTags)) {
+            String[] tags = strTags.split(",");
             List<String> listTags = Arrays.asList(tags);
-            columnTags = sourceInfoDeriveTableInfoDao.getTagListById(listTags);
+            List<ColumnTag> tagListById = sourceInfoDeriveTableInfoDao.getTagListById(listTags);
+            if (tagListById != null && tagListById.size() > 0) {
+                columnTags.addAll(tagListById);
+                List<ColumnTag> collect = columnTags.stream().filter(distinctByKey(ColumnTag::getId)).collect(Collectors.toList());
+                columnTags.clear();
+                columnTags.addAll(collect);
+            }
         }
         return columnTags;
+    }
+
+    /**
+     * 自定义条件过滤器
+     *
+     * @param keyExtractor
+     * @param <T>
+     * @return
+     */
+    public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
+        Map<Object, Boolean> seen = new ConcurrentHashMap<>();
+        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
     private String getDbNameByDbId(String dbId, String sourceId) {
@@ -386,8 +410,10 @@ public class SourceInfoDeriveTableInfoService {
             // 版本是1
             sourceInfoDeriveTableInfo.setVersion(-1);
             sourceInfoDeriveTableInfo.setState(DeriveTableStateEnum.COMMIT.getState());
-            sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto, getDbNameByDbId(sourceInfoDeriveTableInfo.getDbId(), sourceInfoDeriveTableInfo.getSourceId())));
-            sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto));
+            String targetDbName = getDbNameByDbId(sourceInfoDeriveTableInfo.getDbId(), sourceInfoDeriveTableInfo.getSourceId());
+            String sourceDbName = tableDAO.getTableInfoByTableguidAndStatus(sourceInfoDeriveTableColumnDto.getSourceTableGuid()).getDbName();
+            sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto, targetDbName));
+            sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto,sourceDbName,targetDbName));
 
         }
         // 表-字段关系
@@ -923,17 +949,21 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableColumnVO.setSourceDb(sourceTechnicalCategoryGuidPathMap.getOrDefault(sourceCategoryId, ""));
 
         sourceInfoDeriveTableColumnVO.setSourceInfoDeriveColumnVOS(deriveColumnInfoListByTableId.stream().map(e -> {
+            TableInfo tableInfo = tableDAO.getTableInfoByTableguidAndStatus(e.getSourceTableGuid());
+            if (null == tableInfo) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "原表不存在");
+            }
             Column column = idColumnMap.get(e.getSourceColumnGuid());
             SourceInfoDeriveColumnVO sourceInfoDeriveColumnVO = new SourceInfoDeriveColumnVO();
             BeanUtils.copyProperties(e, sourceInfoDeriveColumnVO);
-            sourceInfoDeriveColumnVO.setDataBaseName(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getDbName());
-            sourceInfoDeriveColumnVO.setSourceTableGuid(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getTableGuid());
-            sourceInfoDeriveColumnVO.setSourceTableNameEn(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getTableName());
-            sourceInfoDeriveColumnVO.setSourceTableNameZh(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getDescription());
+            sourceInfoDeriveColumnVO.setDataBaseName(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getDbName());
+            sourceInfoDeriveColumnVO.setSourceTableGuid(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getTableGuid());
+            sourceInfoDeriveColumnVO.setSourceTableNameEn(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getTableName());
+            sourceInfoDeriveColumnVO.setSourceTableNameZh(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getDescription());
             sourceInfoDeriveColumnVO.setSourceColumnNameEn(null == column ? null : column.getColumnName());
             sourceInfoDeriveColumnVO.setSourceColumnNameZh(null == column ? null : column.getDescription());
             sourceInfoDeriveColumnVO.setSourceColumnType(null == column ? null : column.getType());
-            sourceInfoDeriveColumnVO.setTags(getTags(e.getTags()));
+            sourceInfoDeriveColumnVO.setTags(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : getTags(e.getTags(), sourceInfoDeriveColumnVO.getSourceColumnGuid(), tenantId));
             return sourceInfoDeriveColumnVO;
         }).collect(Collectors.toList()));
         return sourceInfoDeriveTableColumnVO;
@@ -1029,7 +1059,7 @@ public class SourceInfoDeriveTableInfoService {
         }
         tableDDL.append(commentDDL);
         removeTimeField(sourceInfoDeriveColumnInfos);
-        return tableDDL.toString();
+        return tableDDL.toString().toUpperCase();
     }
 
 
@@ -1039,17 +1069,17 @@ public class SourceInfoDeriveTableInfoService {
      * @param sourceInfoDeriveTableColumnDto
      * @return
      */
-    private String createDML(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto) {
+    private String createDML(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto,String sourceDbName,String targetDbName) {
         String dbType = sourceInfoDeriveTableColumnDto.getDbType();
         // 数据库类型获取数据类型-替换值
         Map<String, Object> stringObjectMap = Constant.REPLACE_DATE_MAP.get(dbType);
         String tableNameEn = sourceInfoDeriveTableColumnDto.getTableNameEn();
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
         addTimeField(sourceInfoDeriveColumnInfos);
-        StringBuilder columnBuilder = new StringBuilder("insert into ").append(tableNameEn).append("\r\n");
+        StringBuilder columnBuilder = new StringBuilder("insert into ").append(targetDbName).append(".").append(tableNameEn).append("\r\n");
         removeTimeField(sourceInfoDeriveColumnInfos);
 
-        columnBuilder.append(this.getMapping(sourceInfoDeriveTableColumnDto));
+        columnBuilder.append(this.getMapping(sourceInfoDeriveTableColumnDto,sourceDbName));
         return columnBuilder.toString();
     }
 
@@ -1059,7 +1089,7 @@ public class SourceInfoDeriveTableInfoService {
      * @param sourceInfoDeriveTableColumnDto
      * @return
      */
-    private String getMapping(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto) {
+    private String getMapping(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto,String dbName) {
         StringBuilder str = new StringBuilder();
         StringBuilder strColumn = new StringBuilder();
         StringBuilder strSelect = new StringBuilder();
@@ -1075,7 +1105,7 @@ public class SourceInfoDeriveTableInfoService {
         strColumn.append(")\r\n");
         str.append(strColumn).append("select \r\n");
         strSelect = new StringBuilder(strSelect.substring(0, strSelect.length() - 1));
-        str.append(strSelect).append("\r\n from " + sourceInfoDeriveTableColumnDto.getSourceTableNameEn()).append(";");
+        str.append(strSelect).append("\r\n from " + dbName + "." + sourceInfoDeriveTableColumnDto.getSourceTableNameEn()).append(";");
         return str.toString();
     }
 

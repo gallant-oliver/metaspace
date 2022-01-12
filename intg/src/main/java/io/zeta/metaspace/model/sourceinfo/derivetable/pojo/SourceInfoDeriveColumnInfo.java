@@ -44,6 +44,9 @@ public class SourceInfoDeriveColumnInfo implements Serializable {
     @ApiModelProperty(value = "数据库类型")
     private String dbType;
 
+    @ApiModelProperty(value = "来源表的guid", required = true)
+    private String sourceTableGuid;
+
     @ApiModelProperty(value = "来源字段的guid（column_info）", required = true)
     private String sourceColumnGuid;
 
@@ -121,6 +124,7 @@ public class SourceInfoDeriveColumnInfo implements Serializable {
         return Objects.equals(columnNameEn, that.columnNameEn) &&
                 Objects.equals(columnNameZh, that.columnNameZh) &&
                 Objects.equals(dataType, that.dataType) &&
+                Objects.equals(sourceTableGuid, that.sourceTableGuid) &&
                 Objects.equals(sourceColumnGuid, that.sourceColumnGuid) &&
                 Objects.equals(primaryKey, that.primaryKey) &&
                 Objects.equals(removeSensitive, that.removeSensitive) &&
