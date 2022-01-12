@@ -20,11 +20,12 @@ import java.util.List;
 public class DeriveTableExportUtil {
     private final static String FILE_PATH = System.getProperty("atlas.home");
     private final static String DERIVE_TABLE_EXPORT_FILE_NAME = "deriveTableExport.xlsx";
-    private final static String DERIVE_IMPORT_TEMPLATE = "衍生表批量登记模板_.xlsx";
+    private final static String DERIVE_IMPORT_TEMPLATE = "deriveTableImport.xlsx";
     private final static String SPACE = "\\conf\\";
+    private final static String DERIVE_IMPORT_TEMPLATE_NAME = "衍生表登记模板.xlsx";
 
     public static String getDeriveImportTemplate() {
-        return DERIVE_IMPORT_TEMPLATE;
+        return DERIVE_IMPORT_TEMPLATE_NAME;
     }
 
     /**
