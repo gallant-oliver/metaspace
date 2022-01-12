@@ -12,6 +12,7 @@ import io.zeta.metaspace.model.dto.sourceinfo.SourceInfoDeriveTableColumnDTO;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.po.tableinfo.TableInfoDerivePO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.CategorycateQueryResult;
@@ -1325,7 +1326,39 @@ public class SourceInfoDeriveTableInfoService {
 
         this.getBusinessId(sourceInfoDeriveTableColumnDTO, tenantId);
 
+
+
+    }
+
+    private void checkColumn(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDTO, String tenantId){
         List<String> dataTypeList = (List<String>) this.getDataTypeByDbType(sourceInfoDeriveTableColumnDTO.getDbType()).getData();
+        List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDTO.getSourceInfoDeriveColumnInfos();
+
+        List<TechnicalCategory> technicalCategoryList = this.getTechnicalCategory(false, tenantId);
+        List<String> dbIdList = new ArrayList<>();
+        technicalCategoryList.stream().forEach(p -> dbIdList.add(p.getDbId()));
+        List<String> dbNameList = new ArrayList<>();
+        List<String> tableNameList = new ArrayList<>();
+        for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
+            if(!dataTypeList.contains(sourceInfoDeriveColumnInfo.getDataType())){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中目标字段类型所填写的内容在系统中不存在:" + sourceInfoDeriveColumnInfo.getDataType());
+            }
+            dbNameList.add(sourceInfoDeriveColumnInfo.getSourceDbName());
+            tableNameList.add(sourceInfoDeriveColumnInfo.getSourceTableNameEn());
+        }
+        List<TableInfoDerivePO> tableInfoDerivePOList = tableDAO.selectByNameAndDbGuid(dbNameList, tableNameList, dbIdList);
+        for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
+            List<TableInfoDerivePO> collect = tableInfoDerivePOList.stream().filter(p -> p.getDatabaseName().equals(sourceInfoDeriveColumnInfo.getSourceDbName()) &&
+                    p.getTableName().equals(sourceInfoDeriveColumnInfo.getSourceTableNameEn()) &&
+                    p.getColumnName().equals(sourceInfoDeriveColumnInfo.getSourceColumnNameEn())).collect(Collectors.toList());
+            if(CollectionUtils.isEmpty(collect)){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中源库/系统英文名、源表英文名或者源字段英文名所填写的内容在系统中不存在:" + sourceInfoDeriveColumnInfo.getSourceDbName());
+            }
+            if(collect.size() > 1){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中源库/系统英文名、源表英文名或者源字段英文名所填写的内容在系统中存在多个:" + sourceInfoDeriveColumnInfo.getSourceDbName());
+            }
+//            sourceInfoDeriveColumnInfo.setTableGuid()
+        }
     }
 
     private void getBusinessId(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDTO, String tenantId){
@@ -1471,7 +1504,7 @@ public class SourceInfoDeriveTableInfoService {
                 sourceInfoDeriveColumnInfo.setColumnNameEn(list.get(i)[0]);
                 sourceInfoDeriveColumnInfo.setColumnNameZh(list.get(i)[1]);
                 sourceInfoDeriveColumnInfo.setDataType(list.get(i)[2]);
-                sourceInfoDeriveColumnInfo.setSourceName(list.get(i)[3]);
+                sourceInfoDeriveColumnInfo.setSourceDbName(list.get(i)[3]);
                 sourceInfoDeriveColumnInfo.setSourceTableNameEn(list.get(i)[4]);
                 sourceInfoDeriveColumnInfo.setSourceTableNameZh(list.get(i)[5]);
                 sourceInfoDeriveColumnInfo.setSourceColumnNameEn(list.get(i)[6]);

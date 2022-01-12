@@ -3,11 +3,12 @@ package io.zeta.metaspace.web.dao;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.dataassets.DataAssets;
 import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.po.tableinfo.TableInfoDerivePO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
+import io.zeta.metaspace.model.table.TableSource;
 import io.zeta.metaspace.model.usergroup.TenantGroup;
 import io.zeta.metaspace.model.usergroup.TenantHive;
-import io.zeta.metaspace.model.table.TableSource;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -475,4 +476,6 @@ public interface TableDAO {
      * 表是否为重要表、保密表
      */
     TableExtInfo getTableImportanceInfo(@Param("tableId")String tableId);
+
+    List<TableInfoDerivePO> selectByNameAndDbGuid(@Param("dbNameList") List<String> dbNameList, @Param("tableNameList") List<String> tableNameList, @Param("dbIdList") List<String> dbIdList);
 }

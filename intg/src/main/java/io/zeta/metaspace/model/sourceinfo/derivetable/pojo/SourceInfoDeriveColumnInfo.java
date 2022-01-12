@@ -95,8 +95,8 @@ public class SourceInfoDeriveColumnInfo implements Serializable {
     @ApiModelProperty(value = "目标字段脱敏规则")
     private String desensitizationRules;
 
-    @ApiModelProperty(value = "源库系统名")
-    private String sourceName;
+    @ApiModelProperty(value = "源数据库名称")
+    private String sourceDbName;
 
     @ApiModelProperty(value = "源表英文名")
     private String sourceTableNameEn;
