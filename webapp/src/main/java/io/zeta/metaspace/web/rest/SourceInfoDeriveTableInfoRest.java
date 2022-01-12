@@ -382,7 +382,7 @@ public class SourceInfoDeriveTableInfoRest {
         return ReturnUtil.success();
     }
 
-    @ApiOperation(value = "衍生表导出", tags = "源信息登记-衍生表登记")
+    @ApiOperation(value = "衍生表导入模板-下载接口", tags = "源信息登记-衍生表登记")
     @Path("/importTemplate")
     @GET
     public Result downloadTemplate() {

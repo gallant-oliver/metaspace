@@ -160,9 +160,11 @@ public class SourceInfoDeriveTableInfoService {
         } else {
             // 保存并提交，设置状态是1
             // 生成DDL和DML语句
+            String targetDbName = getDbNameByDbId(sourceInfoDeriveTableInfo.getDbId(), sourceInfoDeriveTableInfo.getSourceId());
+            String sourceDbName = tableDAO.getTableInfoByTableguidAndStatus(sourceInfoDeriveTableColumnDto.getSourceTableGuid()).getDbName();
             sourceInfoDeriveTableInfo.setState(DeriveTableStateEnum.COMMIT.getState());
-            sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto, getDbNameByDbId(sourceInfoDeriveTableInfo.getDbId(), sourceInfoDeriveTableInfo.getSourceId())));
-            sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto));
+            sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto, targetDbName));
+            sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto,sourceDbName,targetDbName));
         }
 
         for (SourceInfoDeriveColumnInfo deriveColumnInfo : sourceInfoDeriveColumnInfos) {
@@ -385,8 +387,10 @@ public class SourceInfoDeriveTableInfoService {
             // 版本是1
             sourceInfoDeriveTableInfo.setVersion(-1);
             sourceInfoDeriveTableInfo.setState(DeriveTableStateEnum.COMMIT.getState());
-            sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto, getDbNameByDbId(sourceInfoDeriveTableInfo.getDbId(), sourceInfoDeriveTableInfo.getSourceId())));
-            sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto));
+            String targetDbName = getDbNameByDbId(sourceInfoDeriveTableInfo.getDbId(), sourceInfoDeriveTableInfo.getSourceId());
+            String sourceDbName = tableDAO.getTableInfoByTableguidAndStatus(sourceInfoDeriveTableColumnDto.getSourceTableGuid()).getDbName();
+            sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto, targetDbName));
+            sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto,sourceDbName,targetDbName));
 
         }
         // 表-字段关系
@@ -1028,7 +1032,7 @@ public class SourceInfoDeriveTableInfoService {
         }
         tableDDL.append(commentDDL);
         removeTimeField(sourceInfoDeriveColumnInfos);
-        return tableDDL.toString();
+        return tableDDL.toString().toUpperCase();
     }
 
 
@@ -1038,17 +1042,17 @@ public class SourceInfoDeriveTableInfoService {
      * @param sourceInfoDeriveTableColumnDto
      * @return
      */
-    private String createDML(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto) {
+    private String createDML(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto,String sourceDbName,String targetDbName) {
         String dbType = sourceInfoDeriveTableColumnDto.getDbType();
         // 数据库类型获取数据类型-替换值
         Map<String, Object> stringObjectMap = Constant.REPLACE_DATE_MAP.get(dbType);
         String tableNameEn = sourceInfoDeriveTableColumnDto.getTableNameEn();
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
         addTimeField(sourceInfoDeriveColumnInfos);
-        StringBuilder columnBuilder = new StringBuilder("insert into ").append(tableNameEn).append("\r\n");
+        StringBuilder columnBuilder = new StringBuilder("insert into ").append(targetDbName).append(".").append(tableNameEn).append("\r\n");
         removeTimeField(sourceInfoDeriveColumnInfos);
 
-        columnBuilder.append(this.getMapping(sourceInfoDeriveTableColumnDto));
+        columnBuilder.append(this.getMapping(sourceInfoDeriveTableColumnDto,sourceDbName));
         return columnBuilder.toString();
     }
 
@@ -1058,7 +1062,7 @@ public class SourceInfoDeriveTableInfoService {
      * @param sourceInfoDeriveTableColumnDto
      * @return
      */
-    private String getMapping(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto) {
+    private String getMapping(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto,String dbName) {
         StringBuilder str = new StringBuilder();
         StringBuilder strColumn = new StringBuilder();
         StringBuilder strSelect = new StringBuilder();
@@ -1074,7 +1078,7 @@ public class SourceInfoDeriveTableInfoService {
         strColumn.append(")\r\n");
         str.append(strColumn).append("select \r\n");
         strSelect = new StringBuilder(strSelect.substring(0, strSelect.length() - 1));
-        str.append(strSelect).append("\r\n from " + sourceInfoDeriveTableColumnDto.getSourceTableNameEn()).append(";");
+        str.append(strSelect).append("\r\n from " + dbName + "." + sourceInfoDeriveTableColumnDto.getSourceTableNameEn()).append(";");
         return str.toString();
     }
 
