@@ -58,6 +58,9 @@ import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -95,13 +98,14 @@ public class SourceInfoDeriveTableInfoService {
     private TechnicalREST technicalREST;
     private DataSourceService dataSourceService;
     private GroupDeriveTableRelationDAO relationDAO;
+    private ColumnTagDAO columnTagDao;
 
     @Autowired
     public SourceInfoDeriveTableInfoService(SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao, GroupDeriveTableRelationDAO relationDAO, DbDAO dbDao, BusinessDAO businessDAO,
                                             TableDAO tableDAO, ColumnDAO columnDAO, BusinessREST businessREST, TechnicalREST technicalREST,
                                             CategoryDAO categoryDAO, SourceInfoDeriveColumnInfoService sourceInfoDeriveColumnInfoService,
                                             SourceInfoDeriveTableColumnRelationService sourceInfoDeriveTableColumnRelationService,
-                                            DataSourceService dataSourceService) {
+                                            DataSourceService dataSourceService, ColumnTagDAO columnTagDao) {
         this.sourceInfoDeriveTableInfoDao = sourceInfoDeriveTableInfoDao;
         this.dbDao = dbDao;
         this.tableDAO = tableDAO;
@@ -114,6 +118,7 @@ public class SourceInfoDeriveTableInfoService {
         this.sourceInfoDeriveColumnInfoService = sourceInfoDeriveColumnInfoService;
         this.sourceInfoDeriveTableColumnRelationService = sourceInfoDeriveTableColumnRelationService;
         this.relationDAO = relationDAO;
+        this.columnTagDao = columnTagDao;
     }
 
     /**
@@ -273,17 +278,34 @@ public class SourceInfoDeriveTableInfoService {
      * @param strTags 字符串数组标签
      * @return 返回当前列对应的标签列表
      */
-    public List<ColumnTag> getTags(String strTags) {
-        List<ColumnTag> columnTags = new ArrayList<>();
-        if (StringUtils.isBlank(strTags)) {
-            return null;
-        }
-        String[] tags = strTags.split(",");
-        if (tags.length > 0) {
+    public List<ColumnTag> getTags(String strTags, String sourceColumnId, String tenantId) {
+        //1、查询源目标列关联的标签
+        List<ColumnTag> columnTags = columnTagDao.getTagListByColumnId(tenantId, sourceColumnId);
+        //2、查询衍生表列关联的标签
+        if (StringUtils.isNotBlank(strTags)) {
+            String[] tags = strTags.split(",");
             List<String> listTags = Arrays.asList(tags);
-            columnTags = sourceInfoDeriveTableInfoDao.getTagListById(listTags);
+            List<ColumnTag> tagListById = sourceInfoDeriveTableInfoDao.getTagListById(listTags);
+            if (tagListById != null && tagListById.size() > 0) {
+                columnTags.addAll(tagListById);
+                List<ColumnTag> collect = columnTags.stream().filter(distinctByKey(ColumnTag::getId)).collect(Collectors.toList());
+                columnTags.clear();
+                columnTags.addAll(collect);
+            }
         }
         return columnTags;
+    }
+
+    /**
+     * 自定义条件过滤器
+     *
+     * @param keyExtractor
+     * @param <T>
+     * @return
+     */
+    public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
+        Map<Object, Boolean> seen = new ConcurrentHashMap<>();
+        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
     private String getDbNameByDbId(String dbId, String sourceId) {
@@ -926,17 +948,21 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableColumnVO.setSourceDb(sourceTechnicalCategoryGuidPathMap.getOrDefault(sourceCategoryId, ""));
 
         sourceInfoDeriveTableColumnVO.setSourceInfoDeriveColumnVOS(deriveColumnInfoListByTableId.stream().map(e -> {
+            TableInfo tableInfo = tableDAO.getTableInfoByTableguidAndStatus(e.getSourceTableGuid());
+            if (null == tableInfo) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "原表不存在");
+            }
             Column column = idColumnMap.get(e.getSourceColumnGuid());
             SourceInfoDeriveColumnVO sourceInfoDeriveColumnVO = new SourceInfoDeriveColumnVO();
             BeanUtils.copyProperties(e, sourceInfoDeriveColumnVO);
-            sourceInfoDeriveColumnVO.setDataBaseName(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getDbName());
-            sourceInfoDeriveColumnVO.setSourceTableGuid(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getTableGuid());
-            sourceInfoDeriveColumnVO.setSourceTableNameEn(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getTableName());
-            sourceInfoDeriveColumnVO.setSourceTableNameZh(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : sourceTableInfo.getDescription());
+            sourceInfoDeriveColumnVO.setDataBaseName(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getDbName());
+            sourceInfoDeriveColumnVO.setSourceTableGuid(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getTableGuid());
+            sourceInfoDeriveColumnVO.setSourceTableNameEn(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getTableName());
+            sourceInfoDeriveColumnVO.setSourceTableNameZh(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getDescription());
             sourceInfoDeriveColumnVO.setSourceColumnNameEn(null == column ? null : column.getColumnName());
             sourceInfoDeriveColumnVO.setSourceColumnNameZh(null == column ? null : column.getDescription());
             sourceInfoDeriveColumnVO.setSourceColumnType(null == column ? null : column.getType());
-            sourceInfoDeriveColumnVO.setTags(getTags(e.getTags()));
+            sourceInfoDeriveColumnVO.setTags(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : getTags(e.getTags(), sourceInfoDeriveColumnVO.getSourceColumnGuid(), tenantId));
             return sourceInfoDeriveColumnVO;
         }).collect(Collectors.toList()));
         return sourceInfoDeriveTableColumnVO;
