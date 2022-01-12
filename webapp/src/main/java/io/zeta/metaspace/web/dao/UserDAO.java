@@ -142,4 +142,11 @@ public interface UserDAO {
 
     @Select("SELECT count(tablename) FROM pg_tables WHERE tablename NOT LIKE 'pg%' AND tablename NOT LIKE 'sql_%'")
     int selectDatabaseCount();
+
+    @Select("<script>" +
+            " SELECT DISTINCT users.userid " +
+            " FROM user_group AS ug INNER JOIN user_group_relation AS ugr ON ug.ID = ugr.group_id INNER JOIN users ON users.userid = ugr.user_id " +
+            " WHERE ug.tenant = #{tenantId}  AND users.username = #{name}" +
+            "</script>")
+    String selectByTenantIdAndName(@Param("tenantId") String tenantId, @Param("name") String name);
 }
