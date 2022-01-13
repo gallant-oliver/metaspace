@@ -86,7 +86,7 @@ public interface CategoryDAO {
     public CategoryEntityV2 getQuery(@Param("type") int type, @Param("tenantId") String tenantId) throws SQLException;
 
     @Select("select * from category where guid=#{guid} and tenantid=#{tenantId}")
-    public CategoryPrivilege queryByGuidV2(@Param("guid") String categoryGuid, @Param("tenantId") String tenantId) throws SQLException;
+    public CategoryPrivilege queryByGuidV2(@Param("guid") String categoryGuid, @Param("tenantId") String tenantId);
 
     @Select("select * from category where tenantid=#{tenantId} and guid = (select category_id from source_info where version = 0 and database_id  = #{databaseId} and tenant_id = #{tenantId} and category_id is not null)")
     public CategoryPrivilege queryByGuidByDBId(@Param("databaseId") String databaseId, @Param("tenantId") String tenantId);

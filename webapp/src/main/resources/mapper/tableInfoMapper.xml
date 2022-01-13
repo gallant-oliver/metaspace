@@ -62,4 +62,34 @@
         LEFT JOIN source_info_derive_table_info si ON si.table_guid=t.tableguid and si.version=-1
         WHERE t.tableguid=#{tableId}
     </select>
+
+    <select id = "selectByNameAndDbGuid" resultType = "io.zeta.metaspace.model.po.tableinfo.TableInfoDerivePO">
+         SELECT
+        	db.database_guid,
+        	db.database_name,
+        	tb.tableguid,
+        	tb.tablename,
+        	ci.column_guid,
+        	ci.COLUMN_NAME
+        FROM
+        	db_info AS db
+        	INNER JOIN tableinfo AS tb ON db.database_guid = tb.databaseguid
+        	INNER JOIN column_info AS ci ON tb.tableguid = ci.table_guid
+        WHERE
+        	tb.status = 'ACTIVE'
+        	AND tb.databasestatus = 'ACTIVE'
+        	AND ci.status = 'ACTIVE'
+        	AND db.database_name IN
+            <foreach item="item" index="index" collection="dbNameList" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        	AND tb.tablename IN
+            <foreach item="item" index="index" collection="tableNameList" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        	AND db.database_guid IN
+            <foreach item="item" index="index" collection="dbIdList" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+    </select>
 </mapper>

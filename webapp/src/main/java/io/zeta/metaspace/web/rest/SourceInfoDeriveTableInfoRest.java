@@ -5,6 +5,7 @@ import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.dto.sourceinfo.DeriveFileDTO;
 import io.zeta.metaspace.model.dto.sourceinfo.SourceInfoDeriveTableColumnDTO;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -390,5 +391,23 @@ public class SourceInfoDeriveTableInfoRest {
         return ReturnUtil.success();
     }
 
+    @ApiOperation(value = "文件解析接口", tags = "源信息登记-衍生表登记")
+    @Path("file/parse")
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<DeriveFileDTO> fileUploadDerivePatch(List<DeriveFileDTO> deriveFileDTOList, @HeaderParam(value = "tenantId") String tenantId) {
+        return sourceInfoDeriveTableInfoService.fileUploadDeriveBatch(deriveFileDTOList, tenantId);
+    }
+
+    @ApiOperation(value = "文件确认接口", tags = "源信息登记-衍生表登记")
+    @Path("file/submit")
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result fileUploadSubmitBatch(List<DeriveFileDTO> deriveFileDTOList, @HeaderParam(value = "tenantId") String tenantId) {
+        HttpRequestContext.get().auditLog(ModuleEnum.DERIVEDTABLESREGISTER.getAlias(), "新增衍生表登记记录：文件导入");
+        return sourceInfoDeriveTableInfoService.fileUploadSubmitBatch(deriveFileDTOList, tenantId);
+    }
 }
 
