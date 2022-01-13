@@ -101,4 +101,7 @@ public class SourceInfoDeriveColumnVO implements Serializable {
     @ApiModelProperty(value = "目标字段脱敏规则")
     private String desensitizationRules;
 
+    @ApiModelProperty(value = "是否手动添加")
+    private boolean custom;
+
 }

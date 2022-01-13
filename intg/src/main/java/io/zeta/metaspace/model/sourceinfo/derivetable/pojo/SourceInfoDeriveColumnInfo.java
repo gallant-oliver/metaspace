@@ -98,6 +98,9 @@ public class SourceInfoDeriveColumnInfo implements Serializable {
     @ApiModelProperty(value = "目标字段脱敏规则")
     private String desensitizationRules;
 
+    @ApiModelProperty(value = "是否手动添加", required = true)
+    private boolean custom;
+
     @ApiModelProperty(value = "源数据库名称")
     private String sourceDbName;
 
@@ -137,6 +140,8 @@ public class SourceInfoDeriveColumnInfo implements Serializable {
                 Objects.equals(permissionField, that.permissionField) &&
                 Objects.equals(remark, that.remark) &&
                 Objects.equals(tags, that.tags) &&
+                Objects.equals(desensitizationRules, that.desensitizationRules) &&
+                Objects.equals(custom, that.custom) &&
                 Objects.equals(tenantId, that.tenantId) &&
                 Objects.equals(tableGuid, that.tableGuid) &&
                 Objects.equals(sort, that.sort);
