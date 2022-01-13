@@ -61,6 +61,7 @@ public class TenantService {
     private final static String POOL="/service/cluster/pools";
     private final static String TENANT_USER_DATABASE="/service/tools/tables/";
     private final static String TENANT_DATABASE="/service/external/getHiveDatabase";
+    private final static String DATABASE_TENANT = "/service/external/hiveDB/getTenant"; //根据数据库名称获取所属租户
     private final static String URI_DBS="/service/dbinternal/hive/privilege";
     private final String SECURITY_INTERNAL_ID = "security.internal.id";
     private final String SECURITY_INTERNAL_ID_DEFAULT_VALUE = "adf067d2a51e49a68a181be09df87b91";
@@ -536,6 +537,45 @@ public class TenantService {
         dbs = databaseList.stream().map(database->database.get("resourceContent")).collect(Collectors.toList());
         databaseCache.put(cacheKey, dbs);
         return dbs;
+    }
+
+    /**
+     * 从安全中心获取hive数据库所属的租户
+     * @param
+     * @return
+     */
+    public List<TenantDatabaseList.Database> getTenantByDatabase(List<String> databaseNames) throws AtlasBaseException {
+        HashMap<String, Object> headerMap = new HashMap<>();
+        headerMap.put("User-Agent","Chrome");
+        headerMap.put("X-XSRF-HEADER","valid");
+        headerMap.put(TICKET_KEY, AdminUtils.getSSOTicket());
+
+        try {
+            int retryCount = 0;
+            int retries = 3;
+            Gson gson = new Gson();
+            String body = gson.toJson(databaseNames);
+            while(retryCount < retries) {
+                SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
+                String string = OKHttpClient.doPost(SECURITY_HOST + DATABASE_TENANT, body, headerMap);
+                Map m = gson.fromJson(string, HashMap.class);
+                Object status = m.get("statusCode");
+                if (status == null || !status.toString().startsWith(successStatusCode)){
+                    retryCount++;
+                    continue;
+                }
+                Object data = m.get("data");
+                Object resourceList = ((Map) data).getOrDefault("resourceList", new ArrayList<>());
+                List<TenantDatabaseList.Database> result = gson.fromJson(gson.toJson(resourceList), new TypeToken<List<TenantDatabaseList.Database>>() {
+                }.getType());
+                return result;
+            }
+        }catch (AtlasBaseException e){
+            throw new AtlasBaseException(e.getAtlasErrorCode(),e,"从安全中心获取数据库所属租户错误:" + e.getMessage());
+        }catch (Exception e){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取数据库所属租户错误:" + e.getMessage());
+        }
+        return null;
     }
     
     /**

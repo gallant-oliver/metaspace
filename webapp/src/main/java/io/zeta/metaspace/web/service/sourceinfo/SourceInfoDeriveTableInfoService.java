@@ -156,6 +156,7 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableInfo.setCreateTime(LocalDateTime.now());
         sourceInfoDeriveTableInfo.setUpdater(user.getUserId());
         sourceInfoDeriveTableInfo.setUpdateTime(LocalDateTime.now());
+        sourceInfoDeriveTableInfo.setOperator(user.getUserId());
         sourceInfoDeriveTableInfo.setTenantId(tenantId);
         sourceInfoDeriveTableInfo.setImportance(sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isImportant));
         sourceInfoDeriveTableInfo.setSecurity(sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isSecret));
@@ -352,6 +353,7 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableInfo.setCreateTime(LocalDateTime.parse(sourceInfoDeriveTableColumnDto.getCreateTime(), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         sourceInfoDeriveTableInfo.setUpdater(user.getUserId());
         sourceInfoDeriveTableInfo.setUpdateTime(LocalDateTime.now());
+        sourceInfoDeriveTableInfo.setOperator(user.getUserId());
         sourceInfoDeriveTableInfo.setTenantId(tenantId);
         boolean important = sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isImportant);
         boolean security = sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isSecret);
@@ -939,8 +941,6 @@ public class SourceInfoDeriveTableInfoService {
         if (null == sourceTableInfo) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "原表不存在");
         }
-        List<Column> sourceColumnInfoList = columnDAO.getColumnInfoListByTableGuid(byId.getSourceTableGuid());
-        Map<String, Column> idColumnMap = sourceColumnInfoList.stream().collect(Collectors.toMap(Column::getColumnId, e -> e));
 
         String sourceCategoryId = categoryDAO.queryCategoryIdByGuidByDBId(sourceTableInfo.getDatabaseGuid(), tenantId);
         Map<String, String> sourceTechnicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE, sourceCategoryId);
@@ -954,7 +954,7 @@ public class SourceInfoDeriveTableInfoService {
             if (null == tableInfo) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "原表不存在");
             }
-            Column column = idColumnMap.get(e.getSourceColumnGuid());
+            Column column = columnDAO.getColumnInfoByColumnGuid(e.getSourceColumnGuid());
             SourceInfoDeriveColumnVO sourceInfoDeriveColumnVO = new SourceInfoDeriveColumnVO();
             BeanUtils.copyProperties(e, sourceInfoDeriveColumnVO);
             sourceInfoDeriveColumnVO.setDataBaseName(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getDbName());
