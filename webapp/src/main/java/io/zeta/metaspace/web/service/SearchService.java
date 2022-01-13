@@ -13,6 +13,7 @@ import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.security.Tenant;
+import io.zeta.metaspace.model.security.TenantDatabaseList;
 import io.zeta.metaspace.model.table.DataSourceHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
 import io.zeta.metaspace.model.user.User;
@@ -251,14 +252,13 @@ public class SearchService {
     public PageResult<Database> getPublicDatabases(Long offset, Long limit, String query, Boolean queryCount) {
         try {
             PageResult<Database> databasePageResult = new PageResult<>();
-            List<Database> databaseList = new ArrayList<>();
             //获取当前租户下用户所属用户组
             List<Tenant> tenants = tenantService.getTenantAll();
             List<String> tenantParamList = tenants.stream().map(Tenant::getTenantId).collect(Collectors.toList());
             List<UserGroup> groups = userGroupDAO.getuserGroupByUid(tenantParamList);
             List<TenantGroup> tenantGroups = new ArrayList<>();
             if(!publicService.isGlobal()){
-                TenantGroup tenantGroup = null;
+                TenantGroup tenantGroup;
                 List<String> configTenantList = groups.stream().map(UserGroup::getTenantId).distinct().collect(Collectors.toList());
                 for (String v : configTenantList){
                     tenantGroup = new TenantGroup();
@@ -269,7 +269,8 @@ public class SearchService {
                 }
             }
 
-            List<TenantHive> dbList = dbDAO.getAuthHiveDbs();
+
+            //List<TenantHive> dbList = dbDAO.getAuthHiveDbs();
             /*for (Tenant item : tenants){
                 String currentTenantId = item.getTenantId();
                 LOG.info("租户["+currentTenantId+"]下hive的库查询" );
@@ -290,7 +291,10 @@ public class SearchService {
                 query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
             }
 
-            databaseList = databaseInfoDAO.selectByDbNameAndTenantIdList(tenantGroups,query, dbList, limit, offset);
+            List<String> databaseNames = dbDAO.getHiveDatabasesByQuery(query);
+            List<TenantDatabaseList.Database> dbList = tenantService.getTenantByDatabase(databaseNames);
+
+            List<Database> databaseList = databaseInfoDAO.selectByDbNameAndTenantIdList(tenantGroups, query, dbList, limit, offset);
 
             if (CollectionUtils.isEmpty(databaseList)) {
                 return databasePageResult;
@@ -320,7 +324,7 @@ public class SearchService {
         try {
             List<Tenant> tenants = tenantService.getTenantAll();
             // 获取已配置用户组权限的hive数据库
-            List<TenantHive> dbList = dbDAO.getAuthHiveDbs();
+            //List<TenantHive> dbList = dbDAO.getAuthHiveDbs();
             /*for (Tenant item : tenants){
                 String currentTenantId = item.getTenantId();
                 LOG.info("租户["+currentTenantId+"]下hive的库查询" );
@@ -341,12 +345,18 @@ public class SearchService {
             if(StringUtils.isNotBlank(query)){
                 query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
             }
+
+            //根据模糊表名查询数据库
+            List<String> databaseNames = tableDAO.getHiveDatabasesByTableQuery(query);
+            List<TenantDatabaseList.Database> dbList = tenantService.getTenantByDatabase(databaseNames);
+
+
             List<String> tenantParamList = tenants.stream().map(Tenant::getTenantId).collect(Collectors.toList());
 
             List<TenantGroup> tenantGroups = new ArrayList<>();
             if(!publicService.isGlobal()){
                 List<UserGroup> groups = userGroupDAO.getuserGroupByUid(tenantParamList);
-                TenantGroup tenantGroup = null;
+                TenantGroup tenantGroup;
                 List<String> configTenantList = groups.stream().map(UserGroup::getTenantId).distinct().collect(Collectors.toList());
                 for (String v : configTenantList){
                     tenantGroup = new TenantGroup();
@@ -357,7 +367,7 @@ public class SearchService {
                 }
             }
 
-            tableEntityList = tableDAO.selectListByTenantIdListAndTableName(query, tenantParamList, dbList,tenantGroups, limit, offset);
+            tableEntityList = tableDAO.selectListByTenantIdListAndTableName(query, tenantParamList, dbList, tenantGroups, limit, offset);
 
             if (CollectionUtils.isEmpty(tableEntityList)) {
                 return tablePageResult;

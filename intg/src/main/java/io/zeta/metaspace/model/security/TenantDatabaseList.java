@@ -13,6 +13,8 @@
 
 package io.zeta.metaspace.model.security;
 
+import lombok.Data;
+
 import java.util.List;
 
 /**
@@ -50,34 +52,14 @@ public class TenantDatabaseList {
             this.databases = databases;
         }
     }
+
+    @Data
     public static class Database{
         private String name;
         private String tableCount;
         private String ownerName;
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public String getTableCount() {
-            return tableCount;
-        }
-
-        public void setTableCount(String tableCount) {
-            this.tableCount = tableCount;
-        }
-
-        public String getOwnerName() {
-            return ownerName;
-        }
-
-        public void setOwnerName(String ownerName) {
-            this.ownerName = ownerName;
-        }
+        private String tenantId;
+        private String projectName;
     }
 
 }
