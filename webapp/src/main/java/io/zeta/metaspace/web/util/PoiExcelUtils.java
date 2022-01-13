@@ -136,7 +136,6 @@ public class PoiExcelUtils {
             if (startRow < 0 || startRow > lastRowNum) {
                 throw new RuntimeException("wrong startRow");
             }
-            // 循环除了第一行之外的所有行
             for (int rowNum = startRow; rowNum <= lastRowNum; rowNum++) {
                 // 获得当前行
                 Row row = sheet.getRow(rowNum);
@@ -147,12 +146,19 @@ public class PoiExcelUtils {
                 int firstCellNum = row.getFirstCellNum();
                 // 获得当前行的列数
                 String[] cells = new String[lastCellNum];
+                boolean isBlank = false;
                 // 循环当前行
                 for (int cellNum = firstCellNum; cellNum < lastCellNum; cellNum++) {
                     Cell cell = row.getCell(cellNum);
-                    cells[cellNum] = getCellValue(cell);
+                    String value = getCellValue(cell);
+                    cells[cellNum] = value;
+                    if(!isBlank && StringUtils.isNotBlank(value)){
+                        isBlank = true;
+                    }
                 }
-                list.add(cells);
+                if(isBlank){
+                    list.add(cells);
+                }
             }
         }
         return list;

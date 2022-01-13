@@ -40,4 +40,9 @@ public class CommonConstant {
     public static final String EXCEL_FORMAT_XLSX = ".xlsx";
 
     public static final String EXCEL_FORMAT_XLS = ".xls";
+
+    /**
+     * 字段长度
+     */
+    public static final int LENGTH = 128;
 }
