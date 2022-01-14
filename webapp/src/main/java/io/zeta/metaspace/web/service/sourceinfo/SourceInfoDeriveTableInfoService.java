@@ -1525,6 +1525,11 @@ public class SourceInfoDeriveTableInfoService {
             return;
         }
         List<TableInfoDerivePO> tableInfoDerivePOList = tableDAO.selectByNameAndDbGuid(dbNameList, tableNameList, dbIdList);
+        List<ColumnTag> columnTags = columnTagDao.selectListByTenantId(tenantId);
+        Map<String, String> mapColumn = new HashMap<>();
+        if (!CollectionUtils.isEmpty(columnTags)) {
+            mapColumn = columnTags.stream().collect(Collectors.toMap(ColumnTag::getName, ColumnTag::getId));
+        }
         for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
             if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceDbName()) && StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceTableNameEn())) {
                 continue;
@@ -1539,6 +1544,20 @@ public class SourceInfoDeriveTableInfoService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中源库/系统英文名、源表英文名或者源字段英文名所填写的内容在系统中存在多个:" + sourceInfoDeriveColumnInfo.getSourceDbName());
             }
             sourceInfoDeriveColumnInfo.setSourceTableGuid(collect.get(0).getTableGuid());
+
+            if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getTagsName())) {
+                List<String> tagIdList = new ArrayList<>();
+                for (String value : sourceInfoDeriveColumnInfo.getTagsName().split(",")) {
+                    if (StringUtils.isNotBlank(value)) {
+                        String id = mapColumn.get(value);
+                        if (StringUtils.isBlank(id)) {
+                            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中目标字段标签所填写的内容在系统中不存在:" + value);
+                        }
+                        tagIdList.add(id);
+                    }
+                }
+                sourceInfoDeriveColumnInfo.setTags(StringUtils.join(tagIdList, ","));
+            }
         }
     }
 
@@ -1800,7 +1819,7 @@ public class SourceInfoDeriveTableInfoService {
                     sourceInfoDeriveColumnInfo.setImportant(false);
                 }
                 sourceInfoDeriveColumnInfo.setDesensitizationRules(list.get(i)[16]);
-                sourceInfoDeriveColumnInfo.setTags(list.get(i)[17]);
+                sourceInfoDeriveColumnInfo.setTagsName(list.get(i)[17]);
                 if ("是".equals(list.get(i)[18])) {
                     sourceInfoDeriveColumnInfo.setPermissionField(true);
                 } else {
