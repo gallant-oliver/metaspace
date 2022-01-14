@@ -69,4 +69,7 @@ public interface SourceInfoDeriveColumnInfoDAO {
 
     @Update("update source_info_derive_table_column_relation set table_guid=#{newTableGuid} where table_guid=#{oldTableGuid}")
     void updateColumnRelationByTableGuid(@Param("newTableGuid")String newTableGuid, @Param("oldTableGuid")String oldTableGuid);
+
+    @Select("select id,column_guid,column_name_en,column_name_zh,data_type,tenant_id,tags from source_info_derive_column_info WHERE table_guid = #{tableGuid} and tags is not null and tags != ''")
+    List<SourceInfoDeriveColumnInfo> selectListByTableGuidAndTags(@Param("tableGuid") String tableGuid);
 }

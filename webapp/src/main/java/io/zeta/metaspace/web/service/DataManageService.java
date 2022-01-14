@@ -47,9 +47,11 @@ import io.zeta.metaspace.model.share.APIDataOwner;
 import io.zeta.metaspace.model.share.APIInfoHeader;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForCategory;
+import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveColumnInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.table.Tag;
+import io.zeta.metaspace.model.table.column.tag.ColumnTagRelation;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.OKHttpClient;
@@ -167,6 +169,8 @@ public class DataManageService {
 
     @Autowired
     private SourceInfoDeriveColumnInfoDAO sourceInfoDeriveColumnInfoDAO;
+
+    private ColumnTagDAO columnTagDAO;
 
     int technicalType = 0;
     int dataStandType = 3;
@@ -1825,12 +1829,33 @@ public class DataManageService {
     }
 
 
-    private synchronized void addOrUpdateColumn(Column column){
+    private void addOrUpdateColumn(Column column){
         Column c = columnDAO.getColumnInfoByGuid(column.getColumnId());
         if(null == c){
             columnDAO.addColumn(column);
         }else{
             columnDAO.updateColumnInfo(column);
+        }
+
+        //衍生表字段标签更新
+        List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfoList = sourceInfoDeriveColumnInfoDAO.selectListByTableGuidAndTags(column.getTableId());
+        if(CollectionUtils.isEmpty(sourceInfoDeriveColumnInfoList)){
+            return;
+        }
+        for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfoList) {
+            if(column.getColumnName().equals(sourceInfoDeriveColumnInfo.getColumnNameEn())){
+                List<String> strings = Arrays.asList(sourceInfoDeriveColumnInfo.getTags().split(","));
+                List<ColumnTagRelation> columnTagRelationList = new ArrayList<>();
+                for (String string : strings) {
+                    ColumnTagRelation columnTagRelation = new ColumnTagRelation();
+                    columnTagRelation.setColumnId(column.getColumnId());
+                    columnTagRelation.setTagId(string);
+                    columnTagRelation.setId(UUID.randomUUID().toString());
+                    columnTagRelationList.add(columnTagRelation);
+                }
+                columnTagDAO.addTagRelationsToColumn(columnTagRelationList);
+                return;
+            }
         }
     }
 
