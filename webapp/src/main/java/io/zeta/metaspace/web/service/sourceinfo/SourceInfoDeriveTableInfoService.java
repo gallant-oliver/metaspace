@@ -1335,6 +1335,13 @@ public class SourceInfoDeriveTableInfoService {
             Result result = this.fileUploadDerive(fileDTO.getFileName(), fileDTO.getPath(), tenantId);
             fileDTO.setDescription(result.getMessage());
         }
+        Iterator<DeriveFileDTO> it = deriveFileDTOList.iterator();
+        while(it.hasNext()){
+            DeriveFileDTO item = it.next();
+            if("success".equals(item.getDescription())){
+                it.remove();
+            }
+        }
         return deriveFileDTOList;
     }
 
@@ -1635,9 +1642,6 @@ public class SourceInfoDeriveTableInfoService {
             }
             if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getDataType())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "缺少必填字段：目标字段类型");
-            }
-            if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getPrimaryKeyName())) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "缺少必填字段：目标字段是否为主键");
             }
             if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSecretName())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "缺少必填字段：目标字段是否保密");
