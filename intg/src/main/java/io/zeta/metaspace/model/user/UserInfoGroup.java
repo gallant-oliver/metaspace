@@ -26,7 +26,16 @@ public class UserInfoGroup {
     private List<Group> modules;
     private List<UserInfo.Category> technicalCategory;
     private List<UserInfo.Category> businessCategory;
+    private List<UserInfo.Category> indicatorCategory;
     private List<UserGroupIdAndName> userGroups;
+
+    public List<UserInfo.Category> getIndicatorCategory() {
+        return indicatorCategory;
+    }
+
+    public void setIndicatorCategory(List<UserInfo.Category> indicatorCategory) {
+        this.indicatorCategory = indicatorCategory;
+    }
 
     public List<UserGroupIdAndName> getUserGroups() {
         return userGroups;

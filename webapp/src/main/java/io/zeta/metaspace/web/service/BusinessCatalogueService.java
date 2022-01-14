@@ -1190,9 +1190,11 @@ public class BusinessCatalogueService implements Approvable {
         return workbook;
     }
 
-    public List<CategorycateQueryResult> getAllCategories(int type, String tenantId) throws AtlasBaseException {
+    public List<CategorycateQueryResult> getAllCategories(int type, String tenantId,String userId) throws AtlasBaseException {
         try {
-            String userId = AdminUtils.getUserData().getUserId();
+            if (StringUtils.isEmpty(userId)) {
+                userId = AdminUtils.getUserData().getUserId();
+            }
             List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(userId, tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
             List<CategorycateQueryResult> valuesList=new ArrayList<>();
             List<CategorycateQueryResult> categories=userGroupDAO.getAllCategory(userGroupIds,type,tenantId,userId);
@@ -1224,6 +1226,10 @@ public class BusinessCatalogueService implements Approvable {
                             edit = true;
                         }
                     } else {
+                        //公开目录但是该用户不属于它的用户组内，只有查看权限
+                        result.setEditCategory(false);
+                        result.setEditItem(false);
+                        result.setRead(true);
                         edit = false;
                     }
                     CategoryPrivilege.Privilege privilege=new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
@@ -1247,6 +1253,10 @@ public class BusinessCatalogueService implements Approvable {
                         if(cnt>0){
                             continue;
                         }
+                        //私密，但是是它的创建者，拥有读，编写目录权限
+                        result.setEditCategory(true);
+                        result.setEditItem(false);
+                        result.setRead(true);
                     }
                     if(status1.equals(status)){
                         delete=false;

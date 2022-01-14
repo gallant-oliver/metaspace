@@ -182,7 +182,6 @@ public class SourceInfoDeriveTableInfoService {
             deriveColumnInfo.setTenantId(tenantId);
         }
 
-
         // 表-字段关系
         List<SourceInfoDeriveTableColumnRelation> sourceInfoDeriveTableColumnRelationList = sourceInfoDeriveColumnInfos.stream().map(e -> {
             SourceInfoDeriveTableColumnRelation sourceInfoDeriveTableColumnRelation = new SourceInfoDeriveTableColumnRelation();
@@ -1110,6 +1109,9 @@ public class SourceInfoDeriveTableInfoService {
             strColumn.append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(", ");
             strSelect.append(sourceInfoDeriveColumnInfo.getSourceColumnNameEn()).append(" as ").append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(",");
         }
+        if("(".equals(strColumn.toString())){
+            return "";
+        }
         strColumn = new StringBuilder(strColumn.substring(0, strColumn.length() - 2));
         strColumn.append(")\r\n");
         str.append(strColumn).append("select \r\n");
@@ -1819,7 +1821,7 @@ public class SourceInfoDeriveTableInfoService {
             e.printStackTrace();
         }
         if (deriveTableColumnDetail == null) {
-            throw new AtlasBaseException("该衍生表不存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"该衍生表不存在");
         }
         List<SourceInfoDeriveColumnDTO> list = DeriveTableExportUtil.getPojo(deriveTableColumnDetail.getSourceInfoDeriveColumnVOS());
         String templateName = DeriveTableExportUtil.deriveTableTemplate();
@@ -1847,7 +1849,7 @@ public class SourceInfoDeriveTableInfoService {
             workbook.write(response.getOutputStream());
         } catch (IOException | InvalidFormatException e) {
             e.printStackTrace();
-            throw new AtlasBaseException("导出失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"导出失败");
         } finally {
             if (file.exists() && !file.delete()) {
                 LOG.error("衍生表导出文" + exportTableName + "未实时删除");
