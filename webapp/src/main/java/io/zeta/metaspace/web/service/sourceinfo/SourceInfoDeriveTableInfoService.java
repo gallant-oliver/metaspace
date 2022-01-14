@@ -165,12 +165,13 @@ public class SourceInfoDeriveTableInfoService {
         } else {
             // 保存并提交，设置状态是1
             // 生成DDL和DML语句
+            String targetDbName = getDbNameByDbId(sourceInfoDeriveTableInfo.getDbId(), sourceInfoDeriveTableInfo.getSourceId());
+            String sourceDbName = "";
             if (StringUtils.isNotBlank(sourceInfoDeriveTableColumnDto.getSourceTableGuid())) {
-                String targetDbName = getDbNameByDbId(sourceInfoDeriveTableInfo.getDbId(), sourceInfoDeriveTableInfo.getSourceId());
-                String sourceDbName = tableDAO.getTableInfoByTableguidAndStatus(sourceInfoDeriveTableColumnDto.getSourceTableGuid()).getDbName();
-                sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto, targetDbName));
-                sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto, sourceDbName, targetDbName));
+                sourceDbName = tableDAO.getTableInfoByTableguidAndStatus(sourceInfoDeriveTableColumnDto.getSourceTableGuid()).getDbName();
             }
+            sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto, targetDbName));
+            sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto, sourceDbName, targetDbName));
             sourceInfoDeriveTableInfo.setState(DeriveTableStateEnum.COMMIT.getState());
         }
 
@@ -1109,7 +1110,7 @@ public class SourceInfoDeriveTableInfoService {
             strColumn.append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(", ");
             strSelect.append(sourceInfoDeriveColumnInfo.getSourceColumnNameEn()).append(" as ").append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(",");
         }
-        if("(".equals(strColumn.toString())){
+        if ("(".equals(strColumn.toString())) {
             return "";
         }
         strColumn = new StringBuilder(strColumn.substring(0, strColumn.length() - 2));
@@ -1342,9 +1343,9 @@ public class SourceInfoDeriveTableInfoService {
             fileDTO.setDescription(result.getMessage());
         }
         Iterator<DeriveFileDTO> it = deriveFileDTOList.iterator();
-        while(it.hasNext()){
+        while (it.hasNext()) {
             DeriveFileDTO item = it.next();
-            if("success".equals(item.getDescription())){
+            if ("success".equals(item.getDescription())) {
                 it.remove();
             }
         }
@@ -1501,7 +1502,7 @@ public class SourceInfoDeriveTableInfoService {
      */
     private void checkColumn(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDTO, String tenantId) {
         List<String> dataTypeList = (List<String>) this.getDataTypeByDbType(sourceInfoDeriveTableColumnDTO.getDbType()).getData();
-        if(CollectionUtils.isEmpty(dataTypeList)){
+        if (CollectionUtils.isEmpty(dataTypeList)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源类型不符合规范");
         }
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDTO.getSourceInfoDeriveColumnInfos();
@@ -1518,12 +1519,12 @@ public class SourceInfoDeriveTableInfoService {
             dbNameList.add(sourceInfoDeriveColumnInfo.getSourceDbName());
             tableNameList.add(sourceInfoDeriveColumnInfo.getSourceTableNameEn());
         }
-        if(CollectionUtils.isEmpty(dbNameList) && CollectionUtils.isEmpty(tableNameList)){
+        if (CollectionUtils.isEmpty(dbNameList) && CollectionUtils.isEmpty(tableNameList)) {
             return;
         }
         List<TableInfoDerivePO> tableInfoDerivePOList = tableDAO.selectByNameAndDbGuid(dbNameList, tableNameList, dbIdList);
         for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
-            if(StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceDbName()) && StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceTableNameEn())){
+            if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceDbName()) && StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceTableNameEn())) {
                 continue;
             }
             List<TableInfoDerivePO> collect = tableInfoDerivePOList.stream().filter(p -> p.getDatabaseName().equals(sourceInfoDeriveColumnInfo.getSourceDbName()) &&
@@ -1821,7 +1822,7 @@ public class SourceInfoDeriveTableInfoService {
             e.printStackTrace();
         }
         if (deriveTableColumnDetail == null) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"该衍生表不存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该衍生表不存在");
         }
         List<SourceInfoDeriveColumnDTO> list = DeriveTableExportUtil.getPojo(deriveTableColumnDetail.getSourceInfoDeriveColumnVOS());
         String templateName = DeriveTableExportUtil.deriveTableTemplate();
@@ -1849,7 +1850,7 @@ public class SourceInfoDeriveTableInfoService {
             workbook.write(response.getOutputStream());
         } catch (IOException | InvalidFormatException e) {
             e.printStackTrace();
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"导出失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导出失败");
         } finally {
             if (file.exists() && !file.delete()) {
                 LOG.error("衍生表导出文" + exportTableName + "未实时删除");
