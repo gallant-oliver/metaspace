@@ -377,7 +377,7 @@ public class SourceInfoDeriveTableInfoRest {
     @ApiOperation(value = "衍生表导出", tags = "源信息登记-衍生表登记")
     @Path("/exportById")
     @GET
-    public Result exportDriveTable(@HeaderParam(value = "tenantId") String tenantId,
+    public Result exportDriveTable(@QueryParam(value = "tenantId") String tenantId,
                                    @QueryParam(value = "tableId") String tableId) {
         sourceInfoDeriveTableInfoService.exportById(response, tenantId, tableId);
         return ReturnUtil.success();
