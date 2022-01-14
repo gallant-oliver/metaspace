@@ -95,6 +95,9 @@ public class SourceInfoDeriveColumnInfo implements Serializable {
     @ApiModelProperty(value = "关联标签数组")
     private String tags;
 
+    @ApiModelProperty(value = "关联标签数组名称，以,分隔")
+    private String tagsName;
+
     @ApiModelProperty(value = "目标字段脱敏规则")
     private String desensitizationRules;
 

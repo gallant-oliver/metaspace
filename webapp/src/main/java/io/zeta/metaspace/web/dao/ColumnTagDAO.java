@@ -1,11 +1,7 @@
 package io.zeta.metaspace.web.dao;
 
-import io.zeta.metaspace.model.apigroup.ApiGroupInfo;
 import io.zeta.metaspace.model.metadata.Column;
-import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RDBMSColumn;
-import io.zeta.metaspace.model.share.ApiAudit;
-import io.zeta.metaspace.model.share.AuditStatusEnum;
 import io.zeta.metaspace.model.table.column.tag.ColumnTag;
 import io.zeta.metaspace.model.table.column.tag.ColumnTagRelation;
 import org.apache.ibatis.annotations.*;
@@ -74,6 +70,9 @@ public interface ColumnTagDAO {
             "GROUP BY ct.id,ct.name,ct.tenant_id,ct.modify_time" +
             " ORDER BY ct.modify_time DESC,ct.name")
     List<ColumnTag> getTagList(@Param("tenantId") String tenantId);
+
+    @Select("SELECT id,name FROM column_tag WHERE tenant_id = #{tenantId}")
+    List<ColumnTag> selectListByTenantId(@Param("tenantId") String tenantId);
 
     @Insert("INSERT INTO column_tag ( ID, NAME, tenant_id, create_time, modify_time )\n" +
             "VALUES\n" +
