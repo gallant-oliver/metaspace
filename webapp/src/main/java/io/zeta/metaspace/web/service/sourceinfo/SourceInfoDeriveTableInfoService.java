@@ -52,10 +52,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -1814,18 +1811,24 @@ public class SourceInfoDeriveTableInfoService {
         }
         List<SourceInfoDeriveColumnDTO> list = DeriveTableExportUtil.getPojo(deriveTableColumnDetail.getSourceInfoDeriveColumnVOS());
         String templateName = DeriveTableExportUtil.deriveTableTemplate();
-        String exportTableName = DeriveTableExportUtil.deriveTableExcelName(deriveTableColumnDetail.getTableNameZh());
+        String exportTableName = DeriveTableExportUtil.deriveTableExcelPathName(deriveTableColumnDetail.getTableNameZh());
 
         ExcelWriter excelWriter = EasyExcel.write(exportTableName).withTemplate(templateName).build();
         WriteSheet writeSheet = EasyExcel.writerSheet().build();
         excelWriter.fill(deriveTableColumnDetail, writeSheet);
         excelWriter.fill(list, writeSheet);
         excelWriter.finish();
+        String fileName = null;
+        try {
+            fileName = java.net.URLEncoder.encode(DeriveTableExportUtil.
+                    deriveTableExcelName(deriveTableColumnDetail.getTableNameZh()), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
         File file = DeriveTableExportUtil.deriveTableExport(exportTableName);
         try {
             InputStream inputStream = new FileInputStream(file);
             Workbook workbook = WorkbookFactory.create(inputStream);
-            String fileName = DeriveTableExportUtil.getDeriveImportTemplate();
             response.setCharacterEncoding("UTF-8");
             response.setHeader("content-Type", "application/vnd.ms-excel");
             response.addHeader("Content-Disposition", "attachment;filename=" + fileName);

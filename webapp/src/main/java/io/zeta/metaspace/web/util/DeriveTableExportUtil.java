@@ -62,10 +62,16 @@ public class DeriveTableExportUtil {
     /**
      * @return
      */
-    public static String deriveTableExcelName(String tableName) {
+    public static String deriveTableExcelPathName(String tableName) {
         return FILE_PATH + SPACE + "衍生表_" + tableName + ".xlsx";
     }
 
+    /**
+     * @return
+     */
+    public static String deriveTableExcelName(String tableName) {
+        return "衍生表_" + tableName + ".xlsx";
+    }
     public static List<SourceInfoDeriveColumnDTO> getPojo(List<SourceInfoDeriveColumnVO> sourceInfoDeriveColumnVOS) {
         List<SourceInfoDeriveColumnDTO> list = new ArrayList<>();
         for (SourceInfoDeriveColumnVO vo1 : sourceInfoDeriveColumnVOS) {
