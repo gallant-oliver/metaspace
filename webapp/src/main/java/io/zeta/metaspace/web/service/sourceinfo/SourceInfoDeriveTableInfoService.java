@@ -1811,7 +1811,7 @@ public class SourceInfoDeriveTableInfoService {
             e.printStackTrace();
         }
         if (deriveTableColumnDetail == null) {
-            throw new AtlasBaseException("该衍生表不存在");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"该衍生表不存在");
         }
         List<SourceInfoDeriveColumnDTO> list = DeriveTableExportUtil.getPojo(deriveTableColumnDetail.getSourceInfoDeriveColumnVOS());
         String templateName = DeriveTableExportUtil.deriveTableTemplate();
@@ -1839,7 +1839,7 @@ public class SourceInfoDeriveTableInfoService {
             workbook.write(response.getOutputStream());
         } catch (IOException | InvalidFormatException e) {
             e.printStackTrace();
-            throw new AtlasBaseException("导出失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"导出失败");
         } finally {
             if (file.exists() && !file.delete()) {
                 LOG.error("衍生表导出文" + exportTableName + "未实时删除");
