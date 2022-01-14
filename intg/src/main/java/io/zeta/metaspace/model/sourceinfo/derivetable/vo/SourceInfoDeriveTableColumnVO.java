@@ -111,6 +111,9 @@ public class SourceInfoDeriveTableColumnVO implements Serializable {
     @ApiModelProperty(value = "操作人")
     private String operator;
 
+    @ApiModelProperty(value = "操作人名称")
+    private String operatorName;
+
     @ApiModelProperty(value = "上传文件名称")
     private String fileName;
 
