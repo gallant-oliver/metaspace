@@ -954,6 +954,11 @@ public class SourceInfoDeriveTableInfoService {
             Column column = columnDAO.getColumnInfoByColumnGuid(e.getSourceColumnGuid());
             SourceInfoDeriveColumnVO sourceInfoDeriveColumnVO = new SourceInfoDeriveColumnVO();
             BeanUtils.copyProperties(e, sourceInfoDeriveColumnVO);
+
+            String columnSourceCategoryId = categoryDAO.queryCategoryIdByGuidByDBId(tableInfo.getDatabaseGuid(), tenantId);
+            // 列获取源数据层、库
+            sourceInfoDeriveColumnVO.setSourceDbGuid(columnSourceCategoryId);
+
             sourceInfoDeriveColumnVO.setDataBaseName(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getDbName());
             sourceInfoDeriveColumnVO.setSourceTableGuid(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getTableGuid());
             sourceInfoDeriveColumnVO.setSourceTableNameEn(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getTableName());
