@@ -1375,6 +1375,8 @@ public class SourceInfoDeriveTableInfoService {
             this.fileCheckDb(sourceInfoDeriveTableColumnDTO, tenantId);
             this.checkDeriveTableEntityFile(sourceInfoDeriveTableColumnDTO, tenantId);
             sourceInfoDeriveTableColumnDTO.setSubmit(true);
+            sourceInfoDeriveTableColumnDTO.setFileName(fileName);
+            sourceInfoDeriveTableColumnDTO.setFilePath(filePath);
             return this.createSaveAndSubmitDeriveTableInfo(sourceInfoDeriveTableColumnDTO, tenantId);
         } catch (Exception e) {
             LOG.error("fileUploadSubmit exception is {}", e);
