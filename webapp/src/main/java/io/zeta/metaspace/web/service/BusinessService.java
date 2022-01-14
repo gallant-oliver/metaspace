@@ -671,7 +671,7 @@ public class BusinessService implements Approvable {
                     categoryIds = categoryBusiness.stream().map(c -> c.getGuid()).collect(Collectors.toList());
                 }
             } else {
-                List<CategorycateQueryResult> allCategories = businessCatalogueService.getAllCategories(BUSINESS_TYPE, tenantId);
+                List<CategorycateQueryResult> allCategories = businessCatalogueService.getAllCategories(BUSINESS_TYPE, tenantId,null);
                 if (CollectionUtils.isNotEmpty(allCategories)) {
                     categoryIds = allCategories.stream().map(c -> c.getGuid()).collect(Collectors.toList());
                 }
@@ -785,7 +785,7 @@ public class BusinessService implements Approvable {
                 categoryIds = categoryBusiness.stream().map(c -> c.getGuid()).collect(Collectors.toList());
             }
         } else {
-            List<CategorycateQueryResult> allCategories = businessCatalogueService.getAllCategories(BUSINESS_TYPE, tenantId);
+            List<CategorycateQueryResult> allCategories = businessCatalogueService.getAllCategories(BUSINESS_TYPE, tenantId,null);
             if (CollectionUtils.isNotEmpty(allCategories)) {
                 categoryIds = allCategories.stream().map(c -> c.getGuid()).collect(Collectors.toList());
             }
@@ -2268,7 +2268,7 @@ public class BusinessService implements Approvable {
 
     public List<CategorycateQueryResult> getBusinessPlaceCategories(Integer type, String tenantId) {
         List<CategorycateQueryResult> result = new ArrayList<>();
-        List<CategorycateQueryResult> allCategories = businessCatalogueService.getAllCategories(1, tenantId);
+        List<CategorycateQueryResult> allCategories = businessCatalogueService.getAllCategories(1, tenantId,null);
         if (CollectionUtils.isNotEmpty(allCategories)) {
             // 取出有编辑权限的目录
             result = allCategories.stream().filter(c -> c.getEditItem() != null && c.getEditItem()).collect(Collectors.toList());

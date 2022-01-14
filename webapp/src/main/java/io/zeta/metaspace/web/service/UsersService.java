@@ -51,6 +51,8 @@ public class UsersService {
     private CategoryDAO categoryDAO;
     @Autowired
     private DataManageService dataManageService;
+    @Autowired
+    BusinessCatalogueService businessCatalogueService;
 
     @Bean(name = "getUserService")
     public UsersService getUserService() {
@@ -256,7 +258,33 @@ public class UsersService {
 
                 }
             }
-
+            /*
+              指标目录的权限配置
+              1.新建未分配的目录只有创建者可见，且只有目录编辑权
+              2.分配了用户组，read，edit，editItem字段才不为null
+             */
+            List<CategorycateQueryResult> indicatorCategories = businessCatalogueService.getAllCategories(5, tenantId, userId);
+            List<UserInfo.Category> indicatorCategory = new ArrayList<>();
+            if (indicatorCategories != null && !indicatorCategories.isEmpty()) {
+                List<String> categoryGuids = indicatorCategories.stream().map(CategorycateQueryResult::getGuid).collect(Collectors.toList());
+                List<CategoryPath> indicatorPaths = categoryDAO.getPathByIds(categoryGuids, 5, tenantId);
+                Map<String, String> indicatorPathMap = new HashMap<>();
+                indicatorPaths.forEach(path -> {
+                    String categoryPath = path.getPath().replace("\"", "").replace("{", "").replace("}", "").replace(",", "/");
+                    indicatorPathMap.put(path.getGuid(), categoryPath);
+                });
+                indicatorCategory = indicatorCategories.stream().map(item -> {
+                    UserInfo.Category category = new UserInfo.Category();
+                    category.setGuid(item.getGuid());
+                    category.setCategoryName(item.getName());
+                    category.setRead(item.getRead());
+                    category.setEditItem(item.getEditItem());
+                    category.setEditCategory(item.getEditCategory());
+                    category.setPath(indicatorPathMap.get(category.getGuid()));
+                    return category;
+                }).collect(Collectors.toList());
+            }
+            info.setIndicatorCategory(indicatorCategory);
             info.setModules(new ArrayList<>(modules.values()));
             info.setUserGroups(userDAO.getUserGroupNameByUserId(userId, tenantId));
             return info;
