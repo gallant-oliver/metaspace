@@ -166,7 +166,10 @@ public class SourceInfoDeriveTableInfoService {
             // 保存并提交，设置状态是1
             // 生成DDL和DML语句
             String targetDbName = getDbNameByDbId(sourceInfoDeriveTableInfo.getDbId(), sourceInfoDeriveTableInfo.getSourceId());
-            String sourceDbName = tableDAO.getTableInfoByTableguidAndStatus(sourceInfoDeriveTableColumnDto.getSourceTableGuid()).getDbName();
+            String sourceDbName = "";
+            if(StringUtils.isNotBlank(sourceInfoDeriveTableColumnDto.getSourceTableGuid())){
+                sourceDbName = tableDAO.getTableInfoByTableguidAndStatus(sourceInfoDeriveTableColumnDto.getSourceTableGuid()).getDbName();
+            }
             sourceInfoDeriveTableInfo.setState(DeriveTableStateEnum.COMMIT.getState());
             sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto, targetDbName));
             sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto, sourceDbName, targetDbName));
@@ -179,7 +182,6 @@ public class SourceInfoDeriveTableInfoService {
             deriveColumnInfo.setTableGuid(sourceInfoDeriveTableInfo.getTableGuid());
             deriveColumnInfo.setTenantId(tenantId);
         }
-
 
         // 表-字段关系
         List<SourceInfoDeriveTableColumnRelation> sourceInfoDeriveTableColumnRelationList = sourceInfoDeriveColumnInfos.stream().map(e -> {
@@ -1103,6 +1105,9 @@ public class SourceInfoDeriveTableInfoService {
             }
             strColumn.append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(", ");
             strSelect.append(sourceInfoDeriveColumnInfo.getSourceColumnNameEn()).append(" as ").append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(",");
+        }
+        if("(".equals(strColumn.toString())){
+            return "";
         }
         strColumn = new StringBuilder(strColumn.substring(0, strColumn.length() - 2));
         strColumn.append(")\r\n");
