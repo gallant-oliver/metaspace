@@ -1155,10 +1155,6 @@ public class SourceInfoDeriveTableInfoService {
         if (!checkTableOrColumnNameEnPattern(sourceInfoDeriveTableColumnDto.getTableNameEn())) {
             return ReturnUtil.error("400", "衍生表英文名不符合规范");
         }
-        // 检验更新频率
-        if (StringUtils.isEmpty(sourceInfoDeriveTableColumnDto.getUpdateFrequency())) {
-            return ReturnUtil.error("400", "更新频率不能为空");
-        }
         // 字段
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
 
@@ -1369,6 +1365,7 @@ public class SourceInfoDeriveTableInfoService {
             this.fileCheckLength(sourceInfoDeriveTableColumnDTO);
             this.fileCheckDb(sourceInfoDeriveTableColumnDTO, tenantId);
             this.checkDeriveTableEntityFile(sourceInfoDeriveTableColumnDTO, tenantId);
+            sourceInfoDeriveTableColumnDTO.setSubmit(true);
             return this.createSaveAndSubmitDeriveTableInfo(sourceInfoDeriveTableColumnDTO, tenantId);
         } catch (Exception e) {
             LOG.error("fileUploadSubmit exception is {}", e);
