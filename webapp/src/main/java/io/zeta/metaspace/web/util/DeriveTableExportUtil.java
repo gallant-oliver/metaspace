@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.util;
 
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceInfoDeriveColumnDTO;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.SourceInfoDeriveColumnVO;
+import io.zeta.metaspace.model.table.column.tag.ColumnTag;
 import lombok.Data;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.springframework.beans.BeanUtils;
@@ -9,6 +10,7 @@ import org.springframework.beans.BeanUtils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 /**
@@ -77,22 +79,15 @@ public class DeriveTableExportUtil {
         for (SourceInfoDeriveColumnVO vo1 : sourceInfoDeriveColumnVOS) {
             SourceInfoDeriveColumnDTO sourceInfoDeriveColumnDTO = new SourceInfoDeriveColumnDTO();
             BeanUtils.copyProperties(vo1, sourceInfoDeriveColumnDTO);
-            sourceInfoDeriveColumnDTO.setGroupField(getTrueOrFalse(vo1.isGroupField()));
-            sourceInfoDeriveColumnDTO.setRemoveSensitive(getTrueOrFalse(vo1.isRemoveSensitive()));
-            sourceInfoDeriveColumnDTO.setImportant(getTrueOrFalse(vo1.isImportant()));
-            sourceInfoDeriveColumnDTO.setPermissionField(getTrueOrFalse(vo1.isPermissionField()));
-            sourceInfoDeriveColumnDTO.setSecret(getTrueOrFalse(vo1.isSecret()));
-            sourceInfoDeriveColumnDTO.setPrimaryKey(getTrueOrFalse(vo1.isPrimaryKey()));
+            sourceInfoDeriveColumnDTO.setGroupField(vo1.isGroupField()? "是":"否");
+            sourceInfoDeriveColumnDTO.setRemoveSensitive(vo1.isRemoveSensitive()? "是":"否");
+            sourceInfoDeriveColumnDTO.setImportant(vo1.isImportant()? "是":"否");
+            sourceInfoDeriveColumnDTO.setPermissionField(vo1.isPermissionField()? "是":"否");
+            sourceInfoDeriveColumnDTO.setSecret(vo1.isSecret()? "是":"否");
+            sourceInfoDeriveColumnDTO.setPrimaryKey(vo1.isPrimaryKey()? "是":"否");
+            sourceInfoDeriveColumnDTO.setTags(vo1.getTags().stream().map(ColumnTag::getName).collect(Collectors.joining("/")));
             list.add(sourceInfoDeriveColumnDTO);
         }
         return list;
-    }
-
-    private static String getTrueOrFalse(boolean f) {
-        if (f) {
-            return "是";
-        } else {
-            return "否";
-        }
     }
 }
