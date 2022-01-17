@@ -38,6 +38,8 @@ public class FilterUtils {
         add("api/metaspace/businesses/excel/category/template");
         add("api/metaspace/businesses/excel/allcategory/template");
         add("api/metaspace/public/tenant/requirements/download/file");
+        add("api/metaspace/info/deriveTable/exportById");
+        add("api/metaspace/info/deriveTable/importTemplate");
     }};
 
     // TODO 这种实现方式存在风险，而且粒度也不好控制
