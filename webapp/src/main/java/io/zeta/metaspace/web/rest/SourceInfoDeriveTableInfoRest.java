@@ -377,18 +377,16 @@ public class SourceInfoDeriveTableInfoRest {
     @ApiOperation(value = "衍生表导出", tags = "源信息登记-衍生表登记")
     @Path("/exportById")
     @GET
-    public Result exportDriveTable(@QueryParam(value = "tenantId") String tenantId,
+    public void exportDriveTable(@QueryParam(value = "tenantId") String tenantId,
                                    @QueryParam(value = "tableId") String tableId) {
         sourceInfoDeriveTableInfoService.exportById(response, tenantId, tableId);
-        return ReturnUtil.success();
     }
 
     @ApiOperation(value = "衍生表导入模板-下载接口", tags = "源信息登记-衍生表登记")
     @Path("/importTemplate")
     @GET
-    public Result downloadTemplate() {
+    public void downloadTemplate() {
         sourceInfoDeriveTableInfoService.downloadTemplate(response);
-        return ReturnUtil.success();
     }
 
     @ApiOperation(value = "文件解析接口", tags = "源信息登记-衍生表登记")
