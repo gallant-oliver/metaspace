@@ -85,7 +85,7 @@ public class DeriveTableExportUtil {
             sourceInfoDeriveColumnDTO.setPermissionField(vo1.isPermissionField()? "是":"否");
             sourceInfoDeriveColumnDTO.setSecret(vo1.isSecret()? "是":"否");
             sourceInfoDeriveColumnDTO.setPrimaryKey(vo1.isPrimaryKey()? "是":"否");
-            sourceInfoDeriveColumnDTO.setTags(vo1.getTags().stream().map(ColumnTag::getName).collect(Collectors.joining("/")));
+            sourceInfoDeriveColumnDTO.setTags(vo1.getTags().stream().map(ColumnTag::getName).collect(Collectors.joining(",")));
             list.add(sourceInfoDeriveColumnDTO);
         }
         return list;
