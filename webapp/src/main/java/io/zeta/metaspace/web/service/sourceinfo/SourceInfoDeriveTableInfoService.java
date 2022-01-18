@@ -1512,8 +1512,7 @@ public class SourceInfoDeriveTableInfoService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源类型不符合规范");
         }
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDTO.getSourceInfoDeriveColumnInfos();
-
-        List<TechnicalCategory> technicalCategoryList = this.getTechnicalCategory(false, tenantId);
+        List<TechnicalCategory> technicalCategoryList = this.getTechnicalCategory(true, tenantId);
         List<String> dbIdList = new ArrayList<>();
         technicalCategoryList.stream().forEach(p -> dbIdList.add(p.getDbId()));
         List<String> dbNameList = new ArrayList<>();
