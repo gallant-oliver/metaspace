@@ -149,11 +149,15 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveTableInfo.setTableGuid(UUID.randomUUID().toString());
         }
 
-        sourceInfoDeriveTableInfo.setCreator(user.getUserId());
+        if(StringUtils.isBlank(sourceInfoDeriveTableInfo.getCreator())){
+            sourceInfoDeriveTableInfo.setCreator(user.getUserId());
+        }
+        if(StringUtils.isBlank(sourceInfoDeriveTableInfo.getOperator())){
+            sourceInfoDeriveTableInfo.setOperator(user.getUserId());
+        }
         sourceInfoDeriveTableInfo.setCreateTime(LocalDateTime.now());
         sourceInfoDeriveTableInfo.setUpdater(user.getUserId());
         sourceInfoDeriveTableInfo.setUpdateTime(LocalDateTime.now());
-        sourceInfoDeriveTableInfo.setOperator(user.getUserId());
         sourceInfoDeriveTableInfo.setTenantId(tenantId);
         sourceInfoDeriveTableInfo.setImportance(sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isImportant));
         sourceInfoDeriveTableInfo.setSecurity(sourceInfoDeriveColumnInfos.stream().anyMatch(SourceInfoDeriveColumnInfo::isSecret));
