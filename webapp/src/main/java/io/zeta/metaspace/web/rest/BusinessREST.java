@@ -58,6 +58,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -387,6 +388,41 @@ public class BusinessREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategories()");
             }
             return businessCatalogueService.getAllCategories(type, tenantId, null);
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+    /**
+     * 获取list《租户id》下的全部目录，供指标图书馆使用
+     *
+     * @param sort
+     * @return
+     * @throws AtlasBaseException
+     */
+    @POST
+    @Path("/tenantIdList/categories")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Map<String, List<CategorycateQueryResult>> getCategoriesByTenantId(@DefaultValue("ASC") @QueryParam("sort") final String sort,
+                                                                              @QueryParam("type") Integer type,
+                                                                              @RequestBody List<String> tenantIdList) throws AtlasBaseException {
+        AtlasPerfTracer perf = null;
+        if (tenantIdList == null || tenantIdList.isEmpty()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "租户id不能为空");
+        }
+        if (null == type) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录类型不能为空");
+        }
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getCategories()");
+            }
+            Map<String, List<CategorycateQueryResult>> map = new HashMap<>();
+            for (String tenantId : tenantIdList) {
+                List<CategorycateQueryResult> categories = businessCatalogueService.getAllCategories(type, tenantId, null);
+                map.put(tenantId, categories);
+            }
+            return map;
         } finally {
             AtlasPerfTracer.log(perf);
         }
