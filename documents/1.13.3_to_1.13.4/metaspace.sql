@@ -25,14 +25,16 @@ comment on column "source_info_derive_table_info"."incremental_field" is '增量
 -- ----------------------------
 -- 老数据同步到新加的字段中
 -- ----------------------------
-UPDATE source_info_derive_column_info C
-SET source_table_guid = T.source_table_guid
-FROM
-    source_info_derive_table_info T,
-    source_info_derive_table_column_relation tc
+UPDATE source_info_derive_column_info c1
+SET source_table_guid = t1.source_table_guid
+    FROM
+	source_info_derive_table_info t1,
+	source_info_derive_table_column_relation tc
 WHERE
-    C.column_guid = tc.column_guid
-    AND T.ID = tc.table_id
+    tc.table_id = t1.id
+  AND tc.table_guid = t1.table_guid
+  AND tc.column_guid = c1.column_guid
+  AND t1.version = - 1;
 	
 UPDATE source_info_derive_column_info 
 SET custom = FALSE 
