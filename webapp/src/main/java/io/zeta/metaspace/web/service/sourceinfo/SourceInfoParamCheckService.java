@@ -8,13 +8,17 @@ import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.util.ParamUtil;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.regex.Pattern;
 
 @Service
 public class SourceInfoParamCheckService {
@@ -208,8 +212,32 @@ public class SourceInfoParamCheckService {
                 return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                         AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("业务负责人"));
             }
+            if(this.checkPhone(databaseInfo.getBoTel())){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "业务Owner联系电话输入格式不正常");
+            }
+            if(this.checkPhone(databaseInfo.getToTel())){
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "技术Owner联系电话输入格式不正常");
+            }
         }
         return ReturnUtil.success();
+    }
+
+    /**
+     * 校验手机号和座机号
+     * @param value
+     * @return
+     */
+    private Boolean checkPhone(String value){
+        if(StringUtils.isBlank(value)){
+            return false;
+        }
+        if(Pattern.matches(CommonConstant.REGEX_MOBILE, value)){
+            return false;
+        }
+        if(Pattern.matches(CommonConstant.REGEX_PHONE, value)){
+            return false;
+        }
+        return true;
     }
 
     public Result checkUpdateParam(DatabaseInfo databaseInfo, String tenantId,String approveGroupId, SubmitType submitType){

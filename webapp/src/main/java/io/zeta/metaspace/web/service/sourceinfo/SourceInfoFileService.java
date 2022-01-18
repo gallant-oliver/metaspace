@@ -16,6 +16,7 @@ import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.DataSourceDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.TenantService;
 import io.zeta.metaspace.web.service.UserGroupService;
@@ -60,10 +61,6 @@ public class SourceInfoFileService {
     private UserGroupService userGroupService;
     @Autowired
     private TenantService tenantService;
-    /*
-     * 正则表达式：验证联系电话
-     */
-    public static final String REGEX_MOBILE = "(^(\\d{3,4}-)?\\d{7,8})$|(^0?(13[0-9]|15[012356789]|18[0-9]|14[57])[0-9]{8})$";
 
     /*
      * 正则表达式：验证邮箱
@@ -100,7 +97,13 @@ public class SourceInfoFileService {
         if(StringUtils.isBlank(mobile)){
             return false;
         }
-        return Pattern.matches(REGEX_MOBILE, mobile);
+        if(Pattern.matches(CommonConstant.REGEX_MOBILE, mobile)){
+            return true;
+        }
+        if(Pattern.matches(CommonConstant.REGEX_PHONE, mobile)){
+            return true;
+        }
+        return false;
     }
 
     /**
