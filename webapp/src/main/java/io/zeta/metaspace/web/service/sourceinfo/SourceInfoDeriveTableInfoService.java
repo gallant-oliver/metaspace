@@ -1560,6 +1560,8 @@ public class SourceInfoDeriveTableInfoService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中源库英文名、源表英文名或者源字段英文名所填写的内容在系统中存在多个:" + sourceInfoDeriveColumnInfo.getSourceDbName());
             }
             sourceInfoDeriveColumnInfo.setSourceTableGuid(collect.get(0).getTableGuid());
+            sourceInfoDeriveColumnInfo.setSourceColumnGuid(collect.get(0).getColumnGuid());
+            sourceInfoDeriveColumnInfo.setSourceColumnNameEn(collect.get(0).getColumnName());
         }
     }
 
