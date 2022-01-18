@@ -63,7 +63,7 @@ public class SourceInfoFileService {
     /*
      * 正则表达式：验证联系电话
      */
-    public static final String REGEX_MOBILE = "^(1[3-9])\\d{9}$";
+    public static final String REGEX_MOBILE = "(^(\\d{3,4}-)?\\d{7,8})$|(^0?(13[0-9]|15[012356789]|18[0-9]|14[57])[0-9]{8})$";
 
     /*
      * 正则表达式：验证邮箱
