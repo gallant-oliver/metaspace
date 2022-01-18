@@ -170,6 +170,7 @@ public class DataManageService {
     @Autowired
     private SourceInfoDeriveColumnInfoDAO sourceInfoDeriveColumnInfoDAO;
 
+    @Autowired
     private ColumnTagDAO columnTagDAO;
 
     int technicalType = 0;
@@ -1843,7 +1844,7 @@ public class DataManageService {
             return;
         }
         for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfoList) {
-            if(column.getColumnName().equals(sourceInfoDeriveColumnInfo.getColumnNameEn())){
+            if(column.getColumnName().equalsIgnoreCase(sourceInfoDeriveColumnInfo.getColumnNameEn())){
                 List<String> strings = Arrays.asList(sourceInfoDeriveColumnInfo.getTags().split(","));
                 List<ColumnTagRelation> columnTagRelationList = new ArrayList<>();
                 for (String string : strings) {
