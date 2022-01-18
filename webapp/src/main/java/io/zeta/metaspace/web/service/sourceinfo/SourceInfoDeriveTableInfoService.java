@@ -1568,6 +1568,9 @@ public class SourceInfoDeriveTableInfoService {
     private void getBusinessId(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDTO, String tenantId) {
         List<SourceBusinessInfo> businessByCategoryId = this.getBusinessByCategoryId(sourceInfoDeriveTableColumnDTO.getBusinessCategoryId(), tenantId);
         List<SourceBusinessInfo> list = businessByCategoryId.stream().filter(p -> p.getName().equals(sourceInfoDeriveTableColumnDTO.getBusinessName())).collect(Collectors.toList());
+        if(CollectionUtils.isEmpty(list)){
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中业务对象所填写的内容在系统中不存在:" + sourceInfoDeriveTableColumnDTO.getBusinessName());
+        }
         sourceInfoDeriveTableColumnDTO.setBusinessId(list.get(0).getBusinessId());
     }
 
