@@ -1534,20 +1534,6 @@ public class SourceInfoDeriveTableInfoService {
             mapColumn = columnTags.stream().collect(Collectors.toMap(ColumnTag::getName, ColumnTag::getId));
         }
         for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
-            if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceDbName()) && StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceTableNameEn())) {
-                continue;
-            }
-            List<TableInfoDerivePO> collect = tableInfoDerivePOList.stream().filter(p -> p.getDatabaseName().equals(sourceInfoDeriveColumnInfo.getSourceDbName()) &&
-                    p.getTableName().equals(sourceInfoDeriveColumnInfo.getSourceTableNameEn()) &&
-                    p.getColumnName().equals(sourceInfoDeriveColumnInfo.getSourceColumnNameEn())).collect(Collectors.toList());
-            if (CollectionUtils.isEmpty(collect)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中源库英文名、源表英文名或者源字段英文名所填写的内容在系统中不存在:" + sourceInfoDeriveColumnInfo.getSourceDbName());
-            }
-            if (collect.size() > 1) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中源库英文名、源表英文名或者源字段英文名所填写的内容在系统中存在多个:" + sourceInfoDeriveColumnInfo.getSourceDbName());
-            }
-            sourceInfoDeriveColumnInfo.setSourceTableGuid(collect.get(0).getTableGuid());
-
             if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getTagsName())) {
                 List<String> tagIdList = new ArrayList<>();
                 for (String value : sourceInfoDeriveColumnInfo.getTagsName().split(",")) {
@@ -1561,6 +1547,19 @@ public class SourceInfoDeriveTableInfoService {
                 }
                 sourceInfoDeriveColumnInfo.setTags(StringUtils.join(tagIdList, ","));
             }
+            if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceDbName()) && StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceTableNameEn())) {
+                continue;
+            }
+            List<TableInfoDerivePO> collect = tableInfoDerivePOList.stream().filter(p -> p.getDatabaseName().equals(sourceInfoDeriveColumnInfo.getSourceDbName()) &&
+                    p.getTableName().equals(sourceInfoDeriveColumnInfo.getSourceTableNameEn()) &&
+                    p.getColumnName().equals(sourceInfoDeriveColumnInfo.getSourceColumnNameEn())).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(collect)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中源库英文名、源表英文名或者源字段英文名所填写的内容在系统中不存在:" + sourceInfoDeriveColumnInfo.getSourceDbName());
+            }
+            if (collect.size() > 1) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中源库英文名、源表英文名或者源字段英文名所填写的内容在系统中存在多个:" + sourceInfoDeriveColumnInfo.getSourceDbName());
+            }
+            sourceInfoDeriveColumnInfo.setSourceTableGuid(collect.get(0).getTableGuid());
         }
     }
 
