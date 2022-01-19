@@ -235,7 +235,7 @@ public class SourceInfoDeriveTableInfoService {
     public void preserveTags(String tableGuid, List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos) {
         List<Column> columnInfoList = columnDAO.getColumnInfoList(tableGuid);
         List<ColumnTagRelationToColumn> columnTagRelationToColumns = new ArrayList<>();
-        if (columnInfoList != null && sourceInfoDeriveColumnInfos != null) {
+        if (!CollectionUtils.isEmpty(columnInfoList) && !CollectionUtils.isEmpty(sourceInfoDeriveColumnInfos)) {
             List<String> columnGuids = columnInfoList.stream().map(Column::getColumnId).collect(Collectors.toList());
             for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
                 for (Column column : columnInfoList) {
@@ -249,7 +249,7 @@ public class SourceInfoDeriveTableInfoService {
                 }
             }
             columnTagDao.deleteRelationAll(columnGuids);
-            if (columnTagRelationToColumns.size() > 0) {
+            if (!CollectionUtils.isEmpty(columnTagRelationToColumns)) {
                 sourceInfoDeriveTableInfoDao.addPreserveTags(columnTagRelationToColumns);
             }
         }
@@ -303,7 +303,7 @@ public class SourceInfoDeriveTableInfoService {
             String[] tags = strTags.split(",");
             List<String> listTags = Arrays.asList(tags);
             List<ColumnTag> tagListById = sourceInfoDeriveTableInfoDao.getTagListById(listTags);
-            if (tagListById != null && tagListById.size() > 0) {
+            if (!CollectionUtils.isEmpty(tagListById)) {
                 columnTags.addAll(tagListById);
                 List<ColumnTag> collect = columnTags.stream().filter(distinctByKey(ColumnTag::getId)).collect(Collectors.toList());
                 columnTags.clear();
