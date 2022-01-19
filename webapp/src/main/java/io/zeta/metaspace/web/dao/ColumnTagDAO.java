@@ -108,5 +108,18 @@ public interface ColumnTagDAO {
             " tenant_id = #{tenantId} \n" +
             " AND name = #{tagName}")
     int getTagByTagName(@Param("tenantId") String tenantId, @Param("tagName") String tagName);
+
+    @Delete("<script>" +
+            "DELETE \n" +
+            "FROM\n" +
+            " column_tag_relation_to_column \n" +
+            "WHERE\n" +
+            " column_id in " +
+            "<foreach collection = 'columnIds' item='columnId' index='index' separator = ',' open = '(' close = ')' >" +
+                "#{columnId}" +
+            "</foreach>" +
+            "</script>")
+    void deleteRelationAll(@Param("columnIds") List<String> columnIds);
+
 }
 

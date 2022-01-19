@@ -231,17 +231,26 @@ public class SourceInfoDeriveTableInfoService {
      * @param tableGuid                   source_info_derive_table_info表的table_guid
      * @param sourceInfoDeriveColumnInfos 列集合
      */
+    @Transactional(rollbackFor = Exception.class)
     public void preserveTags(String tableGuid, List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos) {
-        boolean isExist = columnDAO.tableColumnExist(tableGuid) > 0;
-        if (isExist) {
-            for (SourceInfoDeriveColumnInfo deriveColumnInfo : sourceInfoDeriveColumnInfos) {
-                // 根据列名称找到对应的id
-                String columnGuid = columnDAO.getColumnGuid(tableGuid, deriveColumnInfo.getSourceColumnNameEn());
-                String tags = deriveColumnInfo.getTags();
-                List<ColumnTagRelationToColumn> columnTagRelationToColumns = packTags(columnGuid, tags);
-                if (columnTagRelationToColumns != null) {
-                    sourceInfoDeriveTableInfoDao.addPreserveTags(columnTagRelationToColumns);
+        List<Column> columnInfoList = columnDAO.getColumnInfoList(tableGuid);
+        List<ColumnTagRelationToColumn> columnTagRelationToColumns = new ArrayList<>();
+        if (!CollectionUtils.isEmpty(columnInfoList) && !CollectionUtils.isEmpty(sourceInfoDeriveColumnInfos)) {
+            List<String> columnGuids = columnInfoList.stream().map(Column::getColumnId).collect(Collectors.toList());
+            for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
+                for (Column column : columnInfoList) {
+                    if (sourceInfoDeriveColumnInfo.getColumnNameEn().equalsIgnoreCase(column.getColumnName())) {
+                        List<ColumnTagRelationToColumn> columnTagRelations = packTags(column.getColumnId(), sourceInfoDeriveColumnInfo.getTags());
+                        if (columnTagRelations != null && columnTagRelations.size() > 0) {
+                            columnTagRelationToColumns.addAll(columnTagRelations);
+                        }
+                        break;
+                    }
                 }
+            }
+            columnTagDao.deleteRelationAll(columnGuids);
+            if (!CollectionUtils.isEmpty(columnTagRelationToColumns)) {
+                sourceInfoDeriveTableInfoDao.addPreserveTags(columnTagRelationToColumns);
             }
         }
 
@@ -262,12 +271,6 @@ public class SourceInfoDeriveTableInfoService {
         String[] tags = strTags.split(",");
         if (tags.length > 0) {
             for (int i = 0; i < tags.length; i++) {
-                if (sourceInfoDeriveTableInfoDao.judgeExitTags(tags[i]) > 0) {
-                    continue;
-                }
-                if (sourceInfoDeriveTableInfoDao.judgeExitRepetitionTags(columnGuid, tags[i]) > 0) {
-                    continue;
-                }
                 ColumnTagRelationToColumn columnTagRelationToColumn = new ColumnTagRelationToColumn();
                 columnTagRelationToColumn.setId(UUID.randomUUID().toString());
                 columnTagRelationToColumn.setColumnId(columnGuid);
@@ -284,18 +287,23 @@ public class SourceInfoDeriveTableInfoService {
      * @param strTags 字符串数组标签
      * @return 返回当前列对应的标签列表
      */
-    public List<ColumnTag> getTags(String strTags, String sourceColumnId, String tenantId) {
+    public List<ColumnTag> getTags(String strTags, String tableGuid, String columnNameEn, String tenantId) {
         List<ColumnTag> columnTags = new ArrayList<>();
         //1、查询源目标列关联的标签
-        if (StringUtils.isNotBlank(sourceColumnId)) {
-            columnTags = columnTagDao.getTagListByColumnId(tenantId, sourceColumnId);
+        if (StringUtils.isNotBlank(tableGuid) && StringUtils.isNotBlank(columnNameEn)) {
+            List<Column> columnInfoList = columnDAO.getColumnInfoList(tableGuid);
+            for (Column column : columnInfoList) {
+                if (columnNameEn.equalsIgnoreCase(column.getColumnName())) {
+                    columnTags = columnTagDao.getTagListByColumnId(tenantId, column.getColumnId());
+                }
+            }
         }
         //2、查询衍生表列关联的标签
         if (StringUtils.isNotBlank(strTags)) {
             String[] tags = strTags.split(",");
             List<String> listTags = Arrays.asList(tags);
             List<ColumnTag> tagListById = sourceInfoDeriveTableInfoDao.getTagListById(listTags);
-            if (tagListById != null && tagListById.size() > 0) {
+            if (!CollectionUtils.isEmpty(tagListById)) {
                 columnTags.addAll(tagListById);
                 List<ColumnTag> collect = columnTags.stream().filter(distinctByKey(ColumnTag::getId)).collect(Collectors.toList());
                 columnTags.clear();
@@ -461,7 +469,7 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveColumnInfoService.saveOrUpdateBatch(sourceInfoDeriveColumnInfos);
         }
         // 标签同步到column_tag_relation_to_column表
-        preserveTags(sourceInfoDeriveTableInfo.getTableGuid(), sourceInfoDeriveColumnInfos);
+        preserveTags(sourceInfoDeriveTableInfo.getTableGuid(), sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos());
         sourceInfoDeriveTableColumnRelationService.saveOrUpdateBatch(sourceInfoDeriveTableColumnRelationList);
 
 
@@ -976,7 +984,7 @@ public class SourceInfoDeriveTableInfoService {
                 sourceInfoDeriveColumnVO.setSourceColumnNameZh(null == column ? null : column.getDescription());
                 sourceInfoDeriveColumnVO.setSourceColumnType(null == column ? null : column.getType());
             }
-            sourceInfoDeriveColumnVO.setTags(getTags(e.getTags(), sourceInfoDeriveColumnVO.getSourceColumnGuid(), tenantId));
+            sourceInfoDeriveColumnVO.setTags(getTags(e.getTags(), byId.getTableGuid(), sourceInfoDeriveColumnVO.getColumnNameEn(), tenantId));
             return sourceInfoDeriveColumnVO;
         }).collect(Collectors.toList()));
         return sourceInfoDeriveTableColumnVO;
