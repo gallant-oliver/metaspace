@@ -908,7 +908,6 @@ public class SourceInfoDeriveTableInfoService {
      * @return
      */
     public SourceInfoDeriveTableColumnVO getDeriveTableColumnDetail(String tenantId, String tableId) throws SQLException {
-
         // 根据主键id查询衍生表
         SourceInfoDeriveTableInfo byId = this.getByIdAndTenantId(tableId, tenantId);
         if (null == byId) {
@@ -962,29 +961,44 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveTableColumnVO.setSourceDb(sourceTechnicalCategoryGuidPathMap.getOrDefault(sourceCategoryId, ""));
         }
 
+        Set<String> sourceTableIdLst = new HashSet<>();
+        Set<String> sourceColumnIdList = new HashSet<>();
+        List<Column> columnList = new ArrayList<>();
+        List<TableInfo> tableInfoList = new ArrayList<>();
+        deriveColumnInfoListByTableId.stream().forEach(p -> {
+            sourceTableIdLst.add(p.getSourceTableGuid());
+            sourceColumnIdList.add(p.getSourceColumnGuid());
+        });
+        if (!CollectionUtils.isEmpty(sourceColumnIdList)) {
+            columnList = columnDAO.selectListByColumnGuid(sourceColumnIdList);
+        }
+        if (!CollectionUtils.isEmpty(sourceTableIdLst)) {
+            tableInfoList = tableDAO.selectListByGuid(sourceTableIdLst);
+        }
+        Map<String, Column> columnMap = columnList.stream().collect(Collectors.toMap(Column::getColumnId, Column -> Column));
+        Map<String, TableInfo> tableMap = tableInfoList.stream().collect(Collectors.toMap(TableInfo::getTableGuid, TableInfo -> TableInfo));
+
         sourceInfoDeriveTableColumnVO.setSourceInfoDeriveColumnVOS(deriveColumnInfoListByTableId.stream().map(e -> {
             SourceInfoDeriveColumnVO sourceInfoDeriveColumnVO = new SourceInfoDeriveColumnVO();
             BeanUtils.copyProperties(e, sourceInfoDeriveColumnVO);
-            if (StringUtils.isNotBlank(e.getSourceColumnGuid())) {
-                TableInfo tableInfo = tableDAO.getTableInfoByTableguidAndStatus(e.getSourceTableGuid());
-                if (null == tableInfo) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "原表不存在");
-                }
-                Column column = columnDAO.getColumnInfoByColumnGuid(e.getSourceColumnGuid());
-
-                String columnSourceCategoryId = categoryDAO.queryCategoryIdByGuidByDBId(tableInfo.getDatabaseGuid(), tenantId);
-                // 列获取源数据层、库
-                sourceInfoDeriveColumnVO.setSourceDbGuid(columnSourceCategoryId);
-
-                sourceInfoDeriveColumnVO.setDataBaseName(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getDbName());
-                sourceInfoDeriveColumnVO.setSourceTableGuid(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getTableGuid());
-                sourceInfoDeriveColumnVO.setSourceTableNameEn(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getTableName());
-                sourceInfoDeriveColumnVO.setSourceTableNameZh(StringUtils.isBlank(sourceInfoDeriveColumnVO.getSourceColumnGuid()) ? null : tableInfo.getDescription());
-                sourceInfoDeriveColumnVO.setSourceColumnNameEn(null == column ? null : column.getColumnName());
-                sourceInfoDeriveColumnVO.setSourceColumnNameZh(null == column ? null : column.getDescription());
-                sourceInfoDeriveColumnVO.setSourceColumnType(null == column ? null : column.getType());
-            }
             sourceInfoDeriveColumnVO.setTags(getTags(e.getTags(), byId.getTableGuid(), sourceInfoDeriveColumnVO.getColumnNameEn(), tenantId));
+            if (StringUtils.isBlank(e.getSourceColumnGuid())) {
+                return sourceInfoDeriveColumnVO;
+            }
+            TableInfo tableInfo = tableMap.get(e.getSourceTableGuid());
+            if (null == tableInfo) {
+                return sourceInfoDeriveColumnVO;
+            }
+            Column column = columnMap.get(e.getSourceColumnGuid());
+            // 列获取源数据层、库
+            sourceInfoDeriveColumnVO.setSourceDbGuid(tableInfo.getDatabaseGuid());
+            sourceInfoDeriveColumnVO.setDataBaseName(tableInfo.getDbName());
+            sourceInfoDeriveColumnVO.setSourceTableGuid(tableInfo.getTableGuid());
+            sourceInfoDeriveColumnVO.setSourceTableNameEn(tableInfo.getTableName());
+            sourceInfoDeriveColumnVO.setSourceTableNameZh(tableInfo.getDescription());
+            sourceInfoDeriveColumnVO.setSourceColumnNameEn(column.getColumnName());
+            sourceInfoDeriveColumnVO.setSourceColumnNameZh(column.getDescription());
+            sourceInfoDeriveColumnVO.setSourceColumnType(column.getType());
             return sourceInfoDeriveColumnVO;
         }).collect(Collectors.toList()));
         return sourceInfoDeriveTableColumnVO;
