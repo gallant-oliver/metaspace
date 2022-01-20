@@ -246,7 +246,7 @@ public interface DataShareDAO {
             " </if>",
             " order by api.createtime desc",
             " </script>"})
-    public ApiHead getTableRelatedDataServiceAPIByTableName(@Param("sourceid") String sourceid, @Param("schemaname") String schemaname, @Param("tablename") String tablename, @Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId,
+    public List<ApiHead> getTableRelatedDataServiceAPIByTableName(@Param("sourceid") String sourceid, @Param("schemaname") String schemaname, @Param("tablename") String tablename, @Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId,
                                                             @Param("up") boolean up, @Param("down") boolean down, @Param("isNew") boolean isNew);
 
 

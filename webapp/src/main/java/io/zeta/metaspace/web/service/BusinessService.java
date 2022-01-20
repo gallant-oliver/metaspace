@@ -1015,23 +1015,25 @@ public class BusinessService implements Approvable {
         //查询其他类型数据表关联的API
         if (CollectionUtils.isNotEmpty(tableHeaderList)) {
             for (TechnologyInfo.Table table : tableHeaderList) {
-                ApiHead apiHead = shareDAO.getTableRelatedDataServiceAPIByTableName(table.getSourceId(), table.getDbName(), table.getTableName(), table.getTableGuid(), tenantId, up, down, isNew);
-                if (null == apiHead) {
-                    continue;
+                List<ApiHead> apiHeads = shareDAO.getTableRelatedDataServiceAPIByTableName(table.getSourceId(), table.getDbName(), table.getTableName(), table.getTableGuid(), tenantId, up, down, isNew);
+                for (ApiHead apiHead : apiHeads) {
+                    if (null == apiHead) {
+                        continue;
+                    }
+                    String tableId = table.getTableGuid();
+                    String displayName = apiHead.getTableDisplayName();
+                    if (Objects.isNull(displayName) || "".equals(displayName)) {
+                        apiHead.setTableDisplayName(apiHead.getTableName());
+                    }
+                    List<DataOwnerHeader> dataOwner = metaDataService.getDataOwner(tableId);
+                    List<String> dataOwnerName = new ArrayList<>();
+                    if (Objects.nonNull(dataOwner) && dataOwner.size() > 0) {
+                        dataOwner.stream().forEach(owner -> dataOwnerName.add(owner.getName()));
+                    }
+                    apiHead.setTableGuid(tableId);
+                    apiHead.setDataOwner(dataOwnerName);
+                    apiTempList.add(apiHead);
                 }
-                String tableId = table.getTableGuid();
-                String displayName = apiHead.getTableDisplayName();
-                if (Objects.isNull(displayName) || "".equals(displayName)) {
-                    apiHead.setTableDisplayName(apiHead.getTableName());
-                }
-                List<DataOwnerHeader> dataOwner = metaDataService.getDataOwner(tableId);
-                List<String> dataOwnerName = new ArrayList<>();
-                if (Objects.nonNull(dataOwner) && dataOwner.size() > 0) {
-                    dataOwner.stream().forEach(owner -> dataOwnerName.add(owner.getName()));
-                }
-                apiHead.setTableGuid(tableId);
-                apiHead.setDataOwner(dataOwnerName);
-                apiTempList.add(apiHead);
             }
         }
         int tempSize = apiTempList.size();
