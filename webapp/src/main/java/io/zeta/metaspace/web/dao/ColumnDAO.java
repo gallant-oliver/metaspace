@@ -26,6 +26,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
+import java.util.Set;
 
 /*
  * @description
@@ -70,6 +71,14 @@ public interface ColumnDAO {
 
     @Select("select column_guid as columnId,column_name as columnName,type,description from column_info where column_guid=#{columnGuid} and status='ACTIVE' ")
     Column getColumnInfoByColumnGuid(@Param("columnGuid")String columnGuid);
+
+    @Select("<script>" +
+            "select column_guid as columnId,column_name as columnName,type,description from column_info where status='ACTIVE' and column_guid in " +
+            " <foreach item='item' index='index' collection='list' separator=',' open='(' close=')'>" +
+            " #{item}" +
+            " </foreach>" +
+            "</script>")
+    List<Column> selectListByColumnGuid(@Param("list") Set<String> columnGuid);
 
     @Select("select column_guid from column_info where table_guid=#{tableGuid} and column_name = #{columnName} and status='ACTIVE'")
     String getColumnGuid(@Param("tableGuid")String tableGuid, @Param("columnName")String columnName);
