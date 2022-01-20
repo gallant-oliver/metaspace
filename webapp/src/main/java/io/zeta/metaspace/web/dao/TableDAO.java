@@ -9,7 +9,6 @@ import io.zeta.metaspace.model.security.TenantDatabaseList;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import io.zeta.metaspace.model.table.TableSource;
 import io.zeta.metaspace.model.usergroup.TenantGroup;
-import io.zeta.metaspace.model.usergroup.TenantHive;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -422,7 +421,7 @@ public interface TableDAO {
             " WHERE tableinfo.tableguid = #{guid}")
     TableSource selectTableSource(@Param("guid") String guid);
 
-    @Select("select * from tableinfo where databaseguid = #{dbId} and tablename = #{tableName} and status = 'ACTIVE' and databasestatus = 'ACTIVE'")
+    @Select("select * from tableinfo where databaseguid = #{dbId} and tablename ~* #{tableName} and status = 'ACTIVE' and databasestatus = 'ACTIVE'")
     TableInfo selectByDbGuidAndTableName(@Param("dbId") String dbId, @Param("tableName") String tableName);
 
     @Select("<script>" +

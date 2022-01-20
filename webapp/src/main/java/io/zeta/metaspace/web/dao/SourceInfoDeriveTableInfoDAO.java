@@ -246,10 +246,10 @@ public interface SourceInfoDeriveTableInfoDAO {
             "</script>")
     List<SourceInfoDeriveTableInfo> getDeriveTableInfoByGuids(@Param("tableGuids")List<String> tableGuids);
 
-    @Select("SELECT * FROM source_info_derive_table_info WHERE db_id = #{dbId} AND table_name_en = #{tableName} and version=-1")
+    @Select("SELECT * FROM source_info_derive_table_info WHERE db_id = #{dbId} AND table_name_en ~* #{tableName} and version=-1")
     SourceInfoDeriveTableInfo selectByDbAndTableName(@Param("dbId") String dbId, @Param("tableName") String tableName);
 
-    @Update("update source_info_derive_table_info SET table_guid = #{tableGuid},update_time = now() WHERE db_id = #{dbId} AND table_name_en = #{tableName}")
+    @Update("update source_info_derive_table_info SET table_guid = #{tableGuid},update_time = now() WHERE db_id = #{dbId} AND table_name_en ~* #{tableName}")
     int updateByDbAndTableName(@Param("dbId") String dbId, @Param("tableName") String tableName, @Param("tableGuid") String tableGuid);
 
     @Select("SELECT * FROM source_info_derive_table_info WHERE table_guid = #{tableGuid} and version=-1")
