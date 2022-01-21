@@ -13,6 +13,7 @@ import io.zeta.metaspace.model.dto.sourceinfo.SourceInfoDeriveTableColumnDTO;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
 import io.zeta.metaspace.model.po.tableinfo.TableInfoDerivePO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -28,6 +29,7 @@ import io.zeta.metaspace.model.sourceinfo.derivetable.vo.*;
 import io.zeta.metaspace.model.table.column.tag.ColumnTag;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.rest.BusinessREST;
 import io.zeta.metaspace.web.rest.TechnicalREST;
@@ -84,6 +86,9 @@ public class SourceInfoDeriveTableInfoService {
 
     @Autowired
     private UserDAO userDAO;
+
+    @Autowired
+    private SourceInfoDAO sourceInfoDAO;
 
     private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao;
     private DbDAO dbDao;
@@ -966,8 +971,10 @@ public class SourceInfoDeriveTableInfoService {
 
         Set<String> sourceTableIdLst = new HashSet<>();
         Set<String> sourceColumnIdList = new HashSet<>();
+        Set<String> sourceDbGuidList = new HashSet<>();
         List<Column> columnList = new ArrayList<>();
         List<TableInfo> tableInfoList = new ArrayList<>();
+        List<TableDataSourceRelationPO> tableDataSourceRelationPOList = new ArrayList<>();
         deriveColumnInfoListByTableId.stream().forEach(p -> {
             sourceTableIdLst.add(p.getSourceTableGuid());
             sourceColumnIdList.add(p.getSourceColumnGuid());
@@ -978,9 +985,13 @@ public class SourceInfoDeriveTableInfoService {
         if (!CollectionUtils.isEmpty(sourceTableIdLst)) {
             tableInfoList = tableDAO.selectListByGuid(sourceTableIdLst);
         }
+        tableInfoList.stream().forEach(p -> sourceDbGuidList.add(p.getDatabaseGuid()));
+        if (!CollectionUtils.isEmpty(sourceDbGuidList)) {
+            tableDataSourceRelationPOList = sourceInfoDAO.selectListByTenantIdAndDbId(tenantId, sourceDbGuidList);
+        }
         Map<String, Column> columnMap = columnList.stream().collect(Collectors.toMap(Column::getColumnId, Column -> Column));
         Map<String, TableInfo> tableMap = tableInfoList.stream().collect(Collectors.toMap(TableInfo::getTableGuid, TableInfo -> TableInfo));
-
+        Map<String, TableDataSourceRelationPO> sourceInfoMap = tableDataSourceRelationPOList.stream().collect(Collectors.toMap(TableDataSourceRelationPO::getDatabaseId, TableDataSourceRelationPO -> TableDataSourceRelationPO));
         sourceInfoDeriveTableColumnVO.setSourceInfoDeriveColumnVOS(deriveColumnInfoListByTableId.stream().map(e -> {
             SourceInfoDeriveColumnVO sourceInfoDeriveColumnVO = new SourceInfoDeriveColumnVO();
             BeanUtils.copyProperties(e, sourceInfoDeriveColumnVO);
@@ -994,7 +1005,10 @@ public class SourceInfoDeriveTableInfoService {
             }
             Column column = columnMap.get(e.getSourceColumnGuid());
             // 列获取源数据层、库
-            sourceInfoDeriveColumnVO.setSourceDbGuid(tableInfo.getDatabaseGuid());
+            TableDataSourceRelationPO tableDataSourceRelationPO = sourceInfoMap.get(tableInfo.getDatabaseGuid());
+            if(tableDataSourceRelationPO != null){
+                sourceInfoDeriveColumnVO.setSourceDbGuid(tableDataSourceRelationPO.getCategoryId());
+            }
             sourceInfoDeriveColumnVO.setDataBaseName(tableInfo.getDbName());
             sourceInfoDeriveColumnVO.setSourceTableGuid(tableInfo.getTableGuid());
             sourceInfoDeriveColumnVO.setSourceTableNameEn(tableInfo.getTableName());

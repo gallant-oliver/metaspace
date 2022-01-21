@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
+import java.util.Set;
 
 public interface SourceInfoDAO {
 
@@ -72,4 +73,12 @@ public interface SourceInfoDAO {
      * 需求管理 - 查询需求下发的相关展示信息
      */
     RequirementIssuedPO queryIssuedInfo(@Param("tableId") String tableId, @Param("sourceId") String sourceId);
+
+    @Select("<script>" +
+            "SELECT id, category_id, database_id FROM source_info WHERE tenant_id = #{tenantId} AND version = 0 and category_id is not null and category_id != '' AND database_id in" +
+            " <foreach item='item' index='index' collection='list' open='(' separator=',' close=')'>" +
+            "   #{item}" +
+            " </foreach> " +
+            "</script>")
+    List<TableDataSourceRelationPO> selectListByTenantIdAndDbId(@Param("tenantId") String tenantId, @Param("list") Set<String> list);
 }
