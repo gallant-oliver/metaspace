@@ -98,14 +98,6 @@ public class SourceInfoDeriveTableInfoServiceTest {
         spy.exportById(response, "tenantId", "tableId");
     }
 
-    /**
-     * 本次单测需要加入vm参数：-Datlas.home=
-     */
-    @Test
-    public void downloadTemplate() {
-        sourceInfoDeriveTableInfoService.downloadTemplate(response);
-    }
-
     @Test
     public void getDeriveTableColumnDetail() throws SQLException {
         String tenantId = "a788801785844f71b3009a53595afb26";
