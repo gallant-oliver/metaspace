@@ -120,6 +120,9 @@ public class SourceInfoDeriveTableInfoService {
         this.columnTagDao = columnTagDao;
     }
 
+    public SourceInfoDeriveTableInfoService() {
+
+    }
     /**
      * 新建-保存或保存并提交
      *
