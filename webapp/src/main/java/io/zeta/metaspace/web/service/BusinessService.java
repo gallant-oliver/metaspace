@@ -1014,8 +1014,16 @@ public class BusinessService implements Approvable {
         }
         //查询其他类型数据表关联的API
         if (CollectionUtils.isNotEmpty(tableHeaderList)) {
+            List<ApiHead> apiHeadList = shareDAO.getTableRelatedDataServiceAPIListByTableName(tableHeaderList, tenantId, up, down, isNew);
+            Map<String, List<ApiHead>> apiHeadMap = apiHeadList.stream().collect(Collectors.groupingBy(ApiHead::getTableTableGuid));
+            List<String> tableIds = tableHeaderList.stream().map(TechnologyInfo.Table::getTableGuid).collect(Collectors.toList());
+            List<DataOwnerHeader> dataOwnerByGuids = metaDataService.getDataOwnerByGuids(tableIds);
+            Map<String, List<DataOwnerHeader>> dataOwnerMap = dataOwnerByGuids.stream().collect(Collectors.groupingBy(DataOwnerHeader::getTableGuid));
             for (TechnologyInfo.Table table : tableHeaderList) {
-                List<ApiHead> apiHeads = shareDAO.getTableRelatedDataServiceAPIByTableName(table.getSourceId(), table.getDbName(), table.getTableName(), table.getTableGuid(), tenantId, up, down, isNew);
+                List<ApiHead> apiHeads = apiHeadMap.get(table.getTableGuid());
+                if (CollectionUtils.isEmpty(apiHeads)){
+                    continue;
+                }
                 for (ApiHead apiHead : apiHeads) {
                     if (null == apiHead) {
                         continue;
@@ -1025,10 +1033,10 @@ public class BusinessService implements Approvable {
                     if (Objects.isNull(displayName) || "".equals(displayName)) {
                         apiHead.setTableDisplayName(apiHead.getTableName());
                     }
-                    List<DataOwnerHeader> dataOwner = metaDataService.getDataOwner(tableId);
+                    List<DataOwnerHeader> dataOwner = dataOwnerMap.get(tableId);
                     List<String> dataOwnerName = new ArrayList<>();
                     if (Objects.nonNull(dataOwner) && dataOwner.size() > 0) {
-                        dataOwner.stream().forEach(owner -> dataOwnerName.add(owner.getName()));
+                        dataOwner.forEach(owner -> dataOwnerName.add(owner.getName()));
                     }
                     apiHead.setTableGuid(tableId);
                     apiHead.setDataOwner(dataOwnerName);

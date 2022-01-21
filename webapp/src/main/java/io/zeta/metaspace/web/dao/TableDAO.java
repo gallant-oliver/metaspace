@@ -72,6 +72,14 @@ public interface TableDAO {
     @Select("select organization.name,table2owner.tableGuid,table2owner.pkId from organization,table2owner where organization.pkId=table2owner.pkId and tableGuid=#{tableGuid}")
     public List<DataOwnerHeader> getDataOwnerList(@Param("tableGuid") String tableGuid);
 
+    @Select({" <script>",
+            " select organization.name,table2owner.tableGuid,table2owner.pkId from organization,table2owner where organization.pkId=table2owner.pkId and tableGuid in " ,
+            " <foreach item='tableGuid' index='index' collection='tableGuids' separator=',' open='(' close=')'>" ,
+            "   #{tableGuid}",
+            " </foreach>",
+            " </script>"})
+    public List<DataOwnerHeader> getDataOwnerLists(@Param("tableGuids") List<String> tableGuids);
+
     @Select("select pkId from table2owner where tableGuid=#{tableGuid}")
     public List<String> getDataOwnerIdList(@Param("tableGuid") String tableGuid);
 
