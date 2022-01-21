@@ -44,7 +44,7 @@ public class SourceInfoDeriveColumnVO implements Serializable {
     @ApiModelProperty(value = "源库系统名")
     private String dataBaseName;
 
-    @ApiModelProperty(value = "源数据层/库Id")
+    @ApiModelProperty(value = "源数据层/库Id,也就是技术目录id")
     private String sourceDbGuid;
 
     @ApiModelProperty(value = "源表guid")
