@@ -22,6 +22,10 @@ comment on column "source_info_derive_table_info"."file_path" is '上次文件�
 alter table source_info_derive_table_info add column incremental_field varchar(255);
 comment on column "source_info_derive_table_info"."incremental_field" is '增量字段';
 
+ALTER TABLE data_quality_task_rule_execute ALTER COLUMN error_msg TYPE TEXT;
+
+alter table source_info_derive_table_info alter source_table_guid drop not null;
+
 -- ----------------------------
 -- 老数据同步到新加的字段中
 -- ----------------------------
