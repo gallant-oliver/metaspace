@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.apigroup.ApiVersion;
+import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.dto.requirements.ApiCateDTO;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -249,6 +250,40 @@ public interface DataShareDAO {
     public List<ApiHead> getTableRelatedDataServiceAPIByTableName(@Param("sourceid") String sourceid, @Param("schemaname") String schemaname, @Param("tablename") String tablename, @Param("tableGuid") String tableGuid, @Param("tenantId") String tenantId,
                                                             @Param("up") boolean up, @Param("down") boolean down, @Param("isNew") boolean isNew);
 
+    @Select({" <script>",
+            " select count(1)over() total,api.guid id,api.name,api.tableGuid,api.status,users.username as creator,",
+            " tableInfo.tableName, tableInfo.display_name as tableDisplayName,api.version, tableInfo.tableGuid AS tableTableGuid ",
+            " from api LEFT JOIN tableInfo ON tableInfo.tablename = api.tablename " ,
+            " join users on users.userId=api.creator ",
+            " <if test='isNew'>",
+            " INNER join ( select guid,max(version_num) max from api where valid=true and status!='draft' and status!='audit' ",
+            " group by guid) v on v.guid=api.guid and v.max=api.version_num ",
+            " </if>",
+            " where ",
+            " api.sourceid in " ,
+            " <foreach item='table' index='index' collection='tableList' separator=',' open='(' close=')'>" ,
+            "   #{table.sourceId}",
+            " </foreach>",
+            " and api.schemaname in " ,
+            " <foreach item='table' index='index' collection='tableList' separator=',' open='(' close=')'>" ,
+            "   #{table.dbName}",
+            " </foreach>",
+            " and api.tablename in " ,
+            " <foreach item='table' index='index' collection='tableList' separator=',' open='(' close=')'>" ,
+            "   #{table.tableName}",
+            " </foreach>",
+            " and api.tenantid=#{tenantId} and api.status!='draft' and api.status!='audit' AND api.valid = true ",
+            " <if test='!up'>",
+            " and api.status!='up'",
+            " </if>",
+            " <if test='!down'>",
+            " and api.status!='down'",
+            " </if>",
+            " AND api.VALID = TRUE ",
+            " order by api.createtime desc",
+            " </script>"})
+    public List<ApiHead> getTableRelatedDataServiceAPIListByTableName(@Param("tableList") List<TechnologyInfo.Table> tableList, @Param("tenantId") String tenantId,
+                                                                      @Param("up") boolean up, @Param("down") boolean down, @Param("isNew") boolean isNew);
 
     @Select("select count(1) from apiInfo where manager=#{manager} and guid=#{guid}")
     public int countUserAPI(@Param("manager")String keeper, @Param("guid")String apiGuid);

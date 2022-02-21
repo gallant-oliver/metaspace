@@ -42,6 +42,19 @@ public class ApiHead {
     private String tableDisplayName;
     private List<String> dataOwner;
 
+    /**
+     * tableInfo表中的tableGuid
+     */
+    private String tableTableGuid;
+
+    public String getTableTableGuid() {
+        return tableTableGuid;
+    }
+
+    public void setTableTableGuid(String tableTableGuid) {
+        this.tableTableGuid = tableTableGuid;
+    }
+
     public String getTableGuid() {
         return tableGuid;
     }

@@ -2056,6 +2056,16 @@ public class MetaDataService {
         }
     }
 
+    public List<DataOwnerHeader> getDataOwnerByGuids(List<String> guids) throws AtlasBaseException {
+        try {
+            List<DataOwnerHeader> owners = tableDAO.getDataOwnerLists(guids);
+            return owners;
+        } catch (Exception e) {
+            LOG.error("获取数据失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据失败");
+        }
+    }
+
     public List<String> getDataOwnerId(String guid) throws AtlasBaseException {
         try {
             List<String> ownerIdList = tableDAO.getDataOwnerIdList(guid);
