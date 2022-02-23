@@ -55,4 +55,14 @@ public class CommonConstant {
      * 手机号正则表达式
      */
     public static final  String REGEX_PHONE = "^(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\\d{8}$";
+
+    public final static int ALL = 0;
+
+    public final static int BUSINESS = 1;
+
+    public final static int TABLES = 2;
+
+    public final static int TASKS = 3;
+
+    public final static int STANDARD = 4;
 }
