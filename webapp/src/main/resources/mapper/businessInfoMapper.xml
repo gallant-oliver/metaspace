@@ -16,9 +16,9 @@
     </resultMap>
 
     <select id="searchAll" resultMap="dataAssetsInfo">
-        SELECT count(*)over() total, t.*, te.name tenantName FROM
+        SELECT count(*)over() total, t.*, te.name tenantName,te.id tenantId FROM
         (
-        SELECT bi.businessid id, bi.name, bi.description,
+        SELECT bi.businessid id, tenantid, bi.name,null as number,null businessId, bi.description,
         1 as type,
         (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS
         (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
@@ -28,9 +28,7 @@
         FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
         SELECT PATH FROM T WHERE guid=br.categoryguid
         ORDER BY PATH) businessPath,
-        null technicalPath,
-        null tableGuid, null businessId, null businessName, bi.tenantid,
-        null important, null secret
+        null technicalPath,null tableGuid,null businessName,null important, null secret
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
         WHERE 1=1
@@ -62,7 +60,7 @@
             </otherwise>
         </choose>
         UNION ALL
-        SELECT ti.tableguid id, ti.tablename as name, ti.description,
+        SELECT ti.tableguid id,tenantid, ti.tablename as name, null as number, bi.businessid businessId, ti.description,
         2 as type,
         (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS
         (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
@@ -80,7 +78,7 @@
         FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
         SELECT PATH FROM T WHERE guid=si.category_id
         ORDER BY PATH) technicalPath,
-        ti.tableguid tableGuid, bi.businessid businessId, bi.name businessName, bi.tenantid,
+        ti.tableguid tableGuid,bi.name businessName,
         CASE WHEN sidti.importance IS null THEN false ELSE sidti.importance END AS important,
         CASE WHEN sidti.security IS null THEN false ELSE sidti.security END AS secret
         FROM businessinfo bi
@@ -117,6 +115,31 @@
                 )
             </otherwise>
         </choose>
+        UNION ALL
+        select bi.id,tenantid,bi.name,bi.number,null businessId,bi.description, 4 as type,
+        (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS
+        (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
+        FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid
+        UNION ALL
+        SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH
+        FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
+        SELECT PATH FROM T WHERE guid=bi.categoryid
+        ORDER BY PATH) as businessPath,
+        null technicalPath,null tableGuid,null businessName,null important, null secret
+        FROM data_standard bi
+        where delete=false
+        <if test="isPublic==false">
+            AND
+            tenantid=#{tenantId}
+        </if>
+        UNION ALL
+        SELECT da.id,tenantid,da.name,null number,null businessId,da.description,3 as type,
+        null businessPath,null technicalPath,null tableGuid,null businessName,null important,null secret
+        FROM data_quality_task da
+        where delete=false
+        <if test="isPublic==false">
+            AND tenantid=#{tenantId}
+        </if>
         )t
         LEFT JOIN tenant te ON te.id=t.tenantid
         WHERE 1=1

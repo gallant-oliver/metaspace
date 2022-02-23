@@ -13,6 +13,9 @@ import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.dataquality.RuleTemplateDAO;
+import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
+import io.zeta.metaspace.web.model.CommonConstant;
+import io.zeta.metaspace.web.service.dataquality.TaskManageService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
@@ -85,6 +88,8 @@ public class DataAssetsRetrievalService {
     @Autowired
     private RuleTemplateDAO ruleTemplateDAO;
 
+    @Autowired
+    private TaskManageDAO taskManageDAO;
 
     /**
      * 初始化租户标签缓存
@@ -153,6 +158,12 @@ public class DataAssetsRetrievalService {
                 break;
             case 2:
                 list = businessDAO.searchTables(tenantId, userId, isPublic, isGlobal, offset, limit, query);
+                break;
+            case CommonConstant.TASKS:
+                list = taskManageDAO.tasksSearch(tenantId, userId, isPublic, isGlobal, offset, limit, query);
+                break;
+            case CommonConstant.STANDARD:
+                list = dataStandardDAO.dataSearch(tenantId, userId, isPublic, isGlobal, offset, limit, query);
                 break;
             default:
                 list = businessDAO.searchAll(tenantId, userId, isPublic, isGlobal, offset, limit, query);

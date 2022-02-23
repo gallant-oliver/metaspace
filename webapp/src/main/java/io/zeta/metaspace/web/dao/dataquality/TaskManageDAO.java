@@ -16,6 +16,7 @@
  */
 package io.zeta.metaspace.web.dao.dataquality;
 
+import io.zeta.metaspace.model.dataassets.DataAssets;
 import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -955,5 +956,22 @@ public interface TaskManageDAO {
             "WHERE d.tenant_id = #{tenantId} and d.data_source_id = #{sourceId} " +
             "order by d.id")
     List<SyncTaskDefinition> getTaskSchemas(@Param("tenantId") String tenantId, @Param("sourceId") String sourceId);
-    
+
+
+    @Select("<script>"+
+            "SELECT da.name,description,da.id,tenantid tenantId,count(*)over() total,3 as type,te.name tenantName \n" +
+            "FROM data_quality_task  da \n" +
+            "LEFT JOIN tenant te ON te.id=da.tenantid \n" +
+            "where delete=false \n" +
+            "    <if test=\"query!='' and query !=null\">\n" +
+            "        AND ((da.name like concat('%',#{query},'%') ESCAPE '/')\n" +
+            "        OR (da.description like concat('%',#{query},'%') ESCAPE '/'))\n" +
+            "    </if>\n" +
+            "    <if test=\"isPublic==false\">\n" +
+            "        AND tenantid=#{tenantId}\n" +
+            "    </if>\n" +
+            "limit #{limit} offset #{offset}" +
+            "</script>")
+    List<DataAssets> tasksSearch(@Param("tenantId") String tenantId, @Param("userId") String userId, @Param("isPublic") boolean isPublic,
+                                 @Param("isGlobal") boolean isGlobal, @Param("offset") int offset, @Param("limit") int limit, @Param("query") String query);
 }

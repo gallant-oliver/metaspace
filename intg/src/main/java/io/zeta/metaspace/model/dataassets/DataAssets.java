@@ -25,7 +25,12 @@ public class DataAssets {
     private String name;
 
     /**
-     * 资产类型（1业务对象；2数据表；3主题）
+     * 编码（数据标准需要）
+     */
+    private String number;
+
+    /**
+     * 资产类型（1业务对象；2数据表；3任务；4标准）
      */
     private int type;
 
