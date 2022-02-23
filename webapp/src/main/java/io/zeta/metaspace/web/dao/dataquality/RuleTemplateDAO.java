@@ -54,7 +54,35 @@ public interface RuleTemplateDAO {
     List<RuleTemplate> getRuleTemplateByCategoryId(@Param("ruleType") String ruleType,
                                                    @Param("params") RuleParameters params,
                                                    @Param("tenantId") String tenantId);
-    
+
+    @Select({
+            "<script>",
+            "SELECT r.id,",
+            "       r.name,",
+            "       r.scope,",
+            "       r.unit,",
+            "       r.description,",
+            "       r.delete,",
+            "       r.create_time,",
+            "       r.rule_type,",
+            "       r.code,",
+            "       r.enable,",
+            "       r.sql,",
+            "       r.type,",
+            "       d.number         AS data_standard_code,",
+            "       d.name           AS data_standard_name,",
+            "       COUNT(*) OVER () AS total ",
+            "FROM data_standard d ",
+            "        LEFT JOIN data_quality_rule_template r",
+            "                   ON d.number = r.data_standard_code",
+            "                       AND d.tenantid = r.tenantId",
+            "                       AND d.delete = FALSE",
+            "                       AND d.version = 0",
+            "where d.id=#{dataStandardId} ",
+            "and r.delete=false",
+            " </script>"
+    })
+    List<RuleTemplate> getRuleTemplateByDataStandardId(@Param("dataStandardId") String dataStandardId);
     
     @Select({
             "<script>",

@@ -2151,7 +2151,7 @@ public class DataShareService {
         try {
             ApiInfoV2 apiInfo = shareDAO.getApiInfoByVersion(id, version);
             DataSourceType sourceType = DataSourceType.getType(apiInfo.getSourceType());
-            if (sourceType == DataSourceType.HIVE) {
+            if (sourceType == DataSourceType.HIVE || sourceType == DataSourceType.IMPALA) {
                 String tableGuid = apiInfo.getTableGuid();
                 Table table = shareDAO.getTableByGuid(tableGuid);
                 apiInfo.setTableName(table.getTableName());

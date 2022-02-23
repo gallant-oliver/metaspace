@@ -242,4 +242,22 @@ public class DataAssetsRetrievalREST {
             AtlasPerfTracer.log(perf);
         }
     }
+
+    @GET
+    @Path("/rule/list/{id}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getRetrievalRuleList(@PathParam("id") String id){
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "DataAssetsRetrievalREST.getRetrievalRuleList( 使用数据标准id： "+id+" 查询数据标准详情 )");
+            }
+            return ReturnUtil.success(dataAssetsRetrievalService.getStandardDetailListByDataStandardId(id));
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据资产失败");
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
 }
