@@ -12,6 +12,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.dataquality.RuleTemplateDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
@@ -77,6 +78,12 @@ public class DataAssetsRetrievalService {
 
     @Autowired
     RelationDAO relationDAO;
+
+    @Autowired
+    private DataStandardDAO dataStandardDAO;
+
+    @Autowired
+    private RuleTemplateDAO ruleTemplateDAO;
 
 
     /**
@@ -602,5 +609,14 @@ public class DataAssetsRetrievalService {
         theme.setDescription(categoryEntityV2.getDescription());
         theme.setType(3);
         return theme;
+    }
+
+    public StandardDetail getStandardDetailListByDataStandardId(String dataStandardId){
+        StandardDetail standardDetail = new StandardDetail();
+        if(!StringUtils.isEmpty(dataStandardId)){
+            standardDetail.setDataStandard(dataStandardDAO.getById(dataStandardId));
+            standardDetail.setRuleTemplates(ruleTemplateDAO.getRuleTemplateByDataStandardId(dataStandardId));
+        }
+        return standardDetail;
     }
 }
