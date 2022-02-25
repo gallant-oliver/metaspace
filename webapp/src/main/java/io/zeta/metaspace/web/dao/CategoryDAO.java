@@ -198,6 +198,26 @@ public interface CategoryDAO {
     Set<CategoryEntityV2> queryPathByGuidAndType(@Param("list") List<String> guid, @Param("tenantId") String tenantId);
 
     /**
+     *  根据Categoryid查询目录路径
+     * @param guid Categoryid
+     * @return 目录路径
+     */
+    @Select("<script>" +
+            " WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH)  AS" +
+            " (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH" +
+            " FROM category WHERE parentCategoryGuid IS NULL " +
+            " UNION ALL " +
+            " SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH" +
+            " FROM category D JOIN T ON D.parentCategoryGuid = T.guid )" +
+            " SELECT  PATH,guid FROM T WHERE guid in " +
+            " <foreach item='guid' index='index' collection='list' separator=',' open='(' close=')'>" +
+            "   #{guid} " +
+            " </foreach>" +
+            " ORDER BY PATH" +
+            "</script>")
+    Set<CategoryEntityV2> selectPathsByGuid(@Param("list") List<String> guid);
+
+    /**
      *
      * @param guid
      * @param tenantId

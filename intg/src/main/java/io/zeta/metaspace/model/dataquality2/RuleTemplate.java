@@ -56,4 +56,12 @@ public class RuleTemplate {
      * 参照数据标准: {@link DataStandard#getName()}
      */
     private String dataStandardName;
+    /**
+     * 规则目录
+     */
+    private String rulesDirectory;
+    /**
+     * 规则路径
+     */
+    private String path;
 }
