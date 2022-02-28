@@ -80,9 +80,13 @@ public interface RuleTemplateDAO {
             "                       AND d.version = 0",
             "where d.id=#{dataStandardId} ",
             "and r.delete=false",
+            " <if test='params.limit != null and params.limit >= 0 and params.offset != null and params.offset >= 0 '>",
+            " limit #{params.limit} offset #{params.offset}",
+            " </if>",
             " </script>"
     })
-    List<RuleTemplate> getRuleTemplateByDataStandardId(@Param("dataStandardId") String dataStandardId);
+    List<RuleTemplate> getRuleTemplateByDataStandardId(@Param("dataStandardId") String dataStandardId,
+                                                       @Param("params") RuleParameters params);
     
     @Select({
             "<script>",

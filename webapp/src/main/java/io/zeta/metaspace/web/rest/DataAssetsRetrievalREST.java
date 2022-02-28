@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dataassets.*;
+import io.zeta.metaspace.model.metadata.RuleParameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.web.service.DataAssetsRetrievalService;
@@ -243,17 +244,24 @@ public class DataAssetsRetrievalREST {
         }
     }
 
+    /**
+     * 根据（数据/命名）标准id查询对应的（数据/命名）标准详情与关联的质量规则列表详情
+     * @param id （数据/命名）标准id
+     * @param parameters 质量规则分页
+     * @return （数据/命名）标准详情与关联的质量规则列表详情
+     */
     @GET
     @Path("/rule/list/{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getRetrievalRuleList(@PathParam("id") String id){
+    public Result getRetrievalRuleList(@PathParam("id") String id,
+                                       RuleParameters parameters) {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
-                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "DataAssetsRetrievalREST.getRetrievalRuleList( 使用数据标准id： "+id+" 查询数据标准详情 )");
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "DataAssetsRetrievalREST.getRetrievalRuleList( 使用数据标准id： " + id + " 查询数据标准详情 )");
             }
-            return ReturnUtil.success(dataAssetsRetrievalService.getStandardDetailListByDataStandardId(id));
+            return ReturnUtil.success(dataAssetsRetrievalService.getStandardDetailListByDataStandardId(id, parameters));
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据资产失败");
         } finally {

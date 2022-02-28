@@ -4,10 +4,14 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.dataassets.*;
+import io.zeta.metaspace.model.dataquality2.RuleTemplate;
+import io.zeta.metaspace.model.datastandard.DataStandard;
 import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.metadata.GuidCount;
+import io.zeta.metaspace.model.metadata.RuleParameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.privilege.Module;
+import io.zeta.metaspace.model.result.AddRelationTable;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.TableShow;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
@@ -622,11 +626,49 @@ public class DataAssetsRetrievalService {
         return theme;
     }
 
-    public StandardDetail getStandardDetailListByDataStandardId(String dataStandardId){
+    public StandardDetail getStandardDetailListByDataStandardId(String dataStandardId, RuleParameters parameters) {
         StandardDetail standardDetail = new StandardDetail();
-        if(!StringUtils.isEmpty(dataStandardId)){
-            standardDetail.setDataStandard(dataStandardDAO.getById(dataStandardId));
-            standardDetail.setRuleTemplates(ruleTemplateDAO.getRuleTemplateByDataStandardId(dataStandardId));
+        if (parameters == null || parameters.getLimit() < 0 || parameters.getOffset() < 0) {
+            //输入页数不符合规范自动填写默认值
+            RuleParameters parame = new RuleParameters();
+            parame.setLimit(10);
+            parame.setOffset(0);
+            parameters = parame;
+        }
+        if (!StringUtils.isEmpty(dataStandardId)) {
+            DataStandard dataStandard = dataStandardDAO.getStandardById(dataStandardId);
+            if (dataStandard != null) {
+                dataStandard.setPath(CategoryRelationUtils.getPath(dataStandard.getCategoryId(), dataStandard.getTenantId()));
+                standardDetail.setDataStandard(dataStandard);
+            }
+
+            List<RuleTemplate> ruleTemplates = ruleTemplateDAO.getRuleTemplateByDataStandardId(dataStandardId, parameters);
+            if (!ruleTemplates.isEmpty()) {
+                List<String> categoryIds = ruleTemplates.stream().map(RuleTemplate::getRuleType).collect(Collectors.toList());
+                Set<CategoryEntityV2> categoryEntityV2s = categoryDAO.selectPathsByGuid(categoryIds);
+                Map<String, String> map = categoryEntityV2s.stream().collect(Collectors.toMap(CategoryEntityV2::getGuid, CategoryEntityV2::getPath));
+                for (RuleTemplate ruleTemplate : ruleTemplates) {
+                    String path = map.get(ruleTemplate.getRuleType());
+                    if (org.apache.commons.lang3.StringUtils.isNotBlank(path)) {
+                        String replacePath = path.replace(",", "/").replace("\"", "").replace("{", "").replace("}", "");
+                        ruleTemplate.setRulesDirectory(replacePath.substring(replacePath.lastIndexOf("/") + 1));
+                        ruleTemplate.setPath(replacePath);
+                    }
+                }
+                PageResult<RuleTemplate> pageResult = new PageResult<>();
+                pageResult.setLists(ruleTemplates);
+                pageResult.setCurrentSize(
+                        org.apache.commons.collections4.CollectionUtils.isNotEmpty(ruleTemplates)
+                                ? ruleTemplates.size()
+                                : 0);
+                pageResult.setTotalSize(
+                        org.apache.commons.collections4.CollectionUtils.isNotEmpty(ruleTemplates)
+                                ? ruleTemplates.get(0).getTotal()
+                                : 0
+                );
+                pageResult.setOffset(parameters.getOffset());
+                standardDetail.setRuleTemplates(pageResult);
+            }
         }
         return standardDetail;
     }

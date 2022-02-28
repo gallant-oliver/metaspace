@@ -85,5 +85,5 @@ public class DataStandard {
     @JsonIgnore
     private int total;
     
-    
+    private String tenantId;
 }

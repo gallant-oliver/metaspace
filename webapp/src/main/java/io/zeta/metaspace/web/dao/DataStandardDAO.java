@@ -54,6 +54,16 @@ public interface DataStandardDAO {
             " where b.delete=false and b.id = #{id} "
     })
     DataStandard getById(@Param("id") String id);
+
+    @Select({
+            " select b.id,b.number,b.name,b.description,b.createtime,b.updatetime,",
+            " c.username as operator,b.version,b.categoryid,b.standard_type,b.data_type,b.data_length,",
+            " b.allowable_value_flag,b.allowable_value,b.standard_level,b.tenantid as tenantId ",
+            " from data_standard b ",
+            " inner join users c on b.operator=c.userid ",
+            " where b.delete=false and b.id = #{id} "
+    })
+    DataStandard getStandardById(@Param("id") String id);
     
     /**
      * 根据标准编码查询最大历史版本号

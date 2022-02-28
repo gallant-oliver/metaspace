@@ -2,6 +2,7 @@ package io.zeta.metaspace.model.dataassets;
 
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.datastandard.DataStandard;
+import io.zeta.metaspace.model.result.PageResult;
 import lombok.Data;
 
 import java.util.List;
@@ -18,5 +19,5 @@ public class StandardDetail {
     /**
      * 质量规则列表
      */
-    private List<RuleTemplate> ruleTemplates;
+    private PageResult<RuleTemplate> ruleTemplates;
 }
