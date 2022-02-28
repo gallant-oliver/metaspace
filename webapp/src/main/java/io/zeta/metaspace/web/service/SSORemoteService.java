@@ -52,6 +52,7 @@ public class SSORemoteService {
         queryParamMap.put("currentPage",currentPage+"");
         queryParamMap.put("pageSize",pageSize+"");
         Map<String,String> headerMap = new HashMap<>();
+        makeHeaderInfo(headerMap);
         String responseStr = OKHttpClient.doGet(SSO_PREFIX_ALL_URL,queryParamMap,headerMap,times);
         log.info("sso query {} ok.",SSO_PREFIX_ALL_URL);
 
