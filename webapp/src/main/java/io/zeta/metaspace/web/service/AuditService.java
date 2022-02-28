@@ -1,10 +1,9 @@
 package io.zeta.metaspace.web.service;
 
 import com.google.common.collect.Maps;
-import com.gridsum.gdp.library.commons.utils.UUIDUtils;
-
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -36,13 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.lang.reflect.Type;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -327,7 +320,8 @@ public class AuditService {
         });
         apiInfoV2.getReturnParam().forEach(param->{
             MoebiusApiParam.BodyParam bodyParam = new MoebiusApiParam.BodyParam();
-            bodyParam.setType(param.getColumnType());
+//            bodyParam.setType(param.getColumnType());
+            bodyParam.setType("");
             bodyParam.setDescription(param.getDescription());
             returnParamMap.put(param.getName(),bodyParam);
         });

@@ -502,8 +502,8 @@ public class BusinessCatalogueService implements Approvable {
 
 
     public String uploadAllCategory(File fileInputStream, int type, String tenantId) throws Exception {
-        Set<CategoryEntityV2> all = categoryDao.getAll(type, tenantId);
-        if (all.size() != 0 && type != 0) {
+        Set<CategoryEntityV2> all = categoryDao.getAllByLevel(type, tenantId);
+        if (!CollectionUtils.isEmpty(all) && type != 0) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在目录，无法全局导入");
         }
         List<CategoryEntityV2> categories;
