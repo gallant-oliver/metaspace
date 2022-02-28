@@ -62,7 +62,7 @@ public class CommonConstant {
 
     public final static int TABLES = 2;
 
-    public final static int TASKS = 3;
+    public final static int TASKS = 4;
 
-    public final static int STANDARD = 4;
+    public final static int STANDARD = 5;
 }

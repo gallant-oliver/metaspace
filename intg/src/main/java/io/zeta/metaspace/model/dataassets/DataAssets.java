@@ -25,12 +25,7 @@ public class DataAssets {
     private String name;
 
     /**
-     * 编码（数据标准需要）
-     */
-    private String number;
-
-    /**
-     * 资产类型（1业务对象；2数据表；3任务；4标准）
+     * 资产类型（1业务对象；2数据表；3主题；4任务；5标准）
      */
     private int type;
 
@@ -94,6 +89,21 @@ public class DataAssets {
      * 如当前为数据表，且为保密表，是否有查看权限（数据表信息展示）
      */
     private Boolean secretPrivilege;
+
+    /**
+     * 任务等级：1-普通,2-重要,3-非常重要
+     */
+    private int taskLevel;
+
+    /**
+     * 任务状态：1-执行中,2-成功,3-失败,0-待执行,4-取消
+     */
+    private int executeStatus;
+
+    /**
+     * 标准类型：1 - 数据标准 2 - 命名标准
+     */
+    private int standardType;
 
     /**
      * 数据总数，分页使用

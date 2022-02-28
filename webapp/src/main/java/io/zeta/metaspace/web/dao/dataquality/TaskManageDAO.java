@@ -959,7 +959,8 @@ public interface TaskManageDAO {
 
 
     @Select("<script>"+
-            "SELECT da.name,description,da.id,tenantid tenantId,count(*)over() total,3 as type,te.name tenantName \n" +
+            "SELECT da.name,description,da.id,tenantid tenantId,count(*)over() total,4 as type,te.name tenantName," +
+            "da.current_execution_status executeStatus,da.level  taskLevel\n" +
             "FROM data_quality_task  da \n" +
             "LEFT JOIN tenant te ON te.id=da.tenantid \n" +
             "where delete=false \n" +

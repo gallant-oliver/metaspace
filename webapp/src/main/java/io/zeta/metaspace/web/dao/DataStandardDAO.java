@@ -288,18 +288,19 @@ public interface DataStandardDAO {
 
     //名字，描述，目录路径，资产类型，编码，租户id
     @Select("<script>"+
-            "select count(*)over() total,bi.id,bi.description,bi.number,bi.tenantid tenantId,bi.name,4 as type,te.name tenantName," +
+            "select count(*)over() total,bi.id,bi.description,bi.tenantid tenantId,bi.name,5 as type,te.name tenantName," +
+            "bi.standard_type standardType," +
             "(WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS\n" +
-            "        (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH\n" +
-            "        FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid\n" +
-            "        UNION ALL\n" +
-            "        SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH\n" +
-            "        FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)\n" +
-            "        SELECT PATH FROM T WHERE guid=bi.categoryid\n" +
-            "        ORDER BY PATH) as businessPath" +
+            "(SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH\n" +
+            "FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid\n" +
+            "UNION ALL\n" +
+            "SELECT D.guid, D.name, D.parentCategoryGuid, T.PATH || D.name, T.DEPTH + 1 AS DEPTH\n" +
+            "FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)\n" +
+            "SELECT PATH FROM T WHERE guid=bi.categoryid\n" +
+            "ORDER BY PATH) as businessPath" +
             "        FROM data_standard bi " +
             "        LEFT JOIN tenant te ON te.id=bi.tenantid \n" +
-            "        where delete=false \n" +
+            "        where delete=false  and bi.version=0 \n" +
             "           <if test=\"query!='' and query !=null\">\n" +
             "              AND ((bi.name like concat('%',#{query},'%') ESCAPE '/')\n" +
             "              OR (bi.description like concat('%',#{query},'%') ESCAPE '/'))\n" +
