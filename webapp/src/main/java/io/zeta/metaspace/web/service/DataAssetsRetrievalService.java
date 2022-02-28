@@ -3,8 +3,11 @@ package io.zeta.metaspace.web.service;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dataassets.*;
+import io.zeta.metaspace.model.dataquality2.EditionTaskInfo;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
+import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
 import io.zeta.metaspace.model.datastandard.DataStandard;
 import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.metadata.GuidCount;
@@ -21,6 +24,7 @@ import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.service.dataquality.TaskManageService;
 import io.zeta.metaspace.web.util.AdminUtils;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
@@ -238,18 +242,21 @@ public class DataAssetsRetrievalService {
         return path;
     }
 
-    public DataAssets getDataAssetsById(String id, int type, String belongTenantId, String tenantId, String businessId) {
+    public Result getDataAssetsById(String id, int type, String belongTenantId, String tenantId, String businessId) {
+        Result success = ReturnUtil.success();
+
         // 是否公共租户
         boolean isPublic = isPublicTenant(tenantId);
 
         // 当前用户是否有全局权限
         boolean isGlobal = isGlobalUser();
 
-        DataAssets result;
+        DataAssets result = null;
         // 搜索类型：1业务对象；2数据表；3主题
         switch (type) {
             case 1:
                 result = businessDAO.searchBusinessById(id, belongTenantId);
+                success.setData(result);
                 break;
             case 2:
                 // 表需要判断是否有保密表和重要表权限
@@ -281,9 +288,22 @@ public class DataAssetsRetrievalService {
                         }
                     }
                 }
+                success.setData(result);
                 break;
             case 3:
                 result = getThemeDetail(id, isPublic);
+                success.setData(result);
+                break;
+            case 4:
+                TaskExecutionReport taskExecutionInfo = taskManageDAO.getTaskExecutionInfo(id);
+                success.setData(taskExecutionInfo);
+                break;
+            case 5:
+                DataStandard dataStandard = dataStandardDAO.getStandardById(id);
+                if (dataStandard != null) {
+                    dataStandard.setPath(CategoryRelationUtils.getPath(dataStandard.getCategoryId(), dataStandard.getTenantId()));
+                }
+                success.setData(dataStandard);
                 break;
             default:
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据资产类别错误: " + type);
@@ -296,7 +316,7 @@ public class DataAssetsRetrievalService {
             result.setTechnicalPath(formatPath(technicalPath, null, isPublic));
         }
 
-        return result;
+        return success;
     }
 
     public TableShow dataPreview(String tableId, int count) throws Exception {
@@ -626,8 +646,7 @@ public class DataAssetsRetrievalService {
         return theme;
     }
 
-    public StandardDetail getStandardDetailListByDataStandardId(String dataStandardId, RuleParameters parameters) {
-        StandardDetail standardDetail = new StandardDetail();
+    public PageResult<RuleTemplate> getStandardDetailListByDataStandardId(String dataStandardId, RuleParameters parameters) {
         if (parameters == null || parameters.getLimit() < 0 || parameters.getOffset() < 0) {
             //输入页数不符合规范自动填写默认值
             RuleParameters parame = new RuleParameters();
@@ -635,12 +654,8 @@ public class DataAssetsRetrievalService {
             parame.setOffset(0);
             parameters = parame;
         }
+        PageResult<RuleTemplate> pageResult = new PageResult<>();
         if (!StringUtils.isEmpty(dataStandardId)) {
-            DataStandard dataStandard = dataStandardDAO.getStandardById(dataStandardId);
-            if (dataStandard != null) {
-                dataStandard.setPath(CategoryRelationUtils.getPath(dataStandard.getCategoryId(), dataStandard.getTenantId()));
-                standardDetail.setDataStandard(dataStandard);
-            }
 
             List<RuleTemplate> ruleTemplates = ruleTemplateDAO.getRuleTemplateByDataStandardId(dataStandardId, parameters);
             if (!ruleTemplates.isEmpty()) {
@@ -655,7 +670,6 @@ public class DataAssetsRetrievalService {
                         ruleTemplate.setPath(replacePath);
                     }
                 }
-                PageResult<RuleTemplate> pageResult = new PageResult<>();
                 pageResult.setLists(ruleTemplates);
                 pageResult.setCurrentSize(
                         org.apache.commons.collections4.CollectionUtils.isNotEmpty(ruleTemplates)
@@ -667,9 +681,8 @@ public class DataAssetsRetrievalService {
                                 : 0
                 );
                 pageResult.setOffset(parameters.getOffset());
-                standardDetail.setRuleTemplates(pageResult);
             }
         }
-        return standardDetail;
+        return pageResult;
     }
 }
