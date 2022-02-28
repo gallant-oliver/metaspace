@@ -151,12 +151,12 @@ public class DataAssetsRetrievalService {
             query = query.replaceAll("%", "/%").replaceAll("_", "/_");
         }
 
-        // 搜索类型：0全部；1业务对象；2数据表
+        // 搜索类型：0全部；1业务对象；2数据表;4任务；5质量
         switch (type) {
-            case 1:
+            case CommonConstant.BUSINESS:
                 list = businessDAO.searchBusinesses(tenantId, userId, isPublic, isGlobal, offset, limit, query);
                 break;
-            case 2:
+            case CommonConstant.TABLES:
                 list = businessDAO.searchTables(tenantId, userId, isPublic, isGlobal, offset, limit, query);
                 break;
             case CommonConstant.TASKS:
@@ -176,7 +176,7 @@ public class DataAssetsRetrievalService {
             Map<String, List<GroupDeriveTableRelation>> m = new HashMap<>();
 
             // 数据表需要判断是否有重要表的查看权限
-            if (type != 1) {
+            if (type == CommonConstant.TABLES || type == CommonConstant.ALL) {
                 List<GroupDeriveTableRelation> privileges = null;
                 if (!isPublic || !isGlobal) {
                     List<String> tableIds = list.stream().filter(t -> t.getType() == 2 && t.getImportant()).map(DataAssets::getId).collect(Collectors.toList());
@@ -197,7 +197,7 @@ public class DataAssetsRetrievalService {
                 dataAssets.setBusinessPath(formatPath(businessPath, dataAssets.getTenantName(), isPublic));
                 dataAssets.setTechnicalPath(formatPath(technicalPath, null, isPublic));
 
-                if (dataAssets.getType() == 2) {
+                if (dataAssets.getType() == CommonConstant.TABLES) {
                     // 是否有当前表查看权限（为重要表时）
                     // 公共租户，且当前用户有全局权限
                     if ((isPublic && isGlobal)) {

@@ -18,7 +18,7 @@
     <select id="searchAll" resultMap="dataAssetsInfo">
         SELECT count(*)over() total, t.*, te.name tenantName,te.id tenantId FROM
         (
-        SELECT bi.businessid id, tenantid, bi.name,null as number,null businessId, bi.description,
+        SELECT bi.businessid id, tenantid, bi.name,null businessId, bi.description,
         1 as type,
         (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS
         (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
@@ -28,7 +28,8 @@
         FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
         SELECT PATH FROM T WHERE guid=br.categoryguid
         ORDER BY PATH) businessPath,
-        null technicalPath,null tableGuid,null businessName,null important, null secret
+        null technicalPath,null tableGuid,null businessName,null important, null secret,
+        0 standardType,0 executeStatus,0  taskLevel
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
         WHERE 1=1
@@ -60,7 +61,7 @@
             </otherwise>
         </choose>
         UNION ALL
-        SELECT ti.tableguid id,tenantid, ti.tablename as name, null as number, bi.businessid businessId, ti.description,
+        SELECT ti.tableguid id,tenantid, ti.tablename as name,  bi.businessid businessId, ti.description,
         2 as type,
         (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS
         (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
@@ -80,7 +81,8 @@
         ORDER BY PATH) technicalPath,
         ti.tableguid tableGuid,bi.name businessName,
         CASE WHEN sidti.importance IS null THEN false ELSE sidti.importance END AS important,
-        CASE WHEN sidti.security IS null THEN false ELSE sidti.security END AS secret
+        CASE WHEN sidti.security IS null THEN false ELSE sidti.security END AS secret,
+        0 standardType,0 executeStatus,0  taskLevel
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
         JOIN business2table b2t ON b2t.businessid=br.businessid
@@ -116,7 +118,7 @@
             </otherwise>
         </choose>
         UNION ALL
-        select bi.id,tenantid,bi.name,bi.number,null businessId,bi.description, 4 as type,
+        select bi.id,tenantid,bi.name,null businessId,bi.description, 5 as type,
         (WITH RECURSIVE T(guid, name, parentCategoryGuid, PATH, DEPTH) AS
         (SELECT guid,name,parentCategoryGuid, ARRAY[name] AS PATH, 1 AS DEPTH
         FROM category WHERE parentCategoryGuid IS NULL and tenantid=bi.tenantid
@@ -125,16 +127,18 @@
         FROM category D JOIN T ON D.parentCategoryGuid = T.guid and D.tenantid=bi.tenantid)
         SELECT PATH FROM T WHERE guid=bi.categoryid
         ORDER BY PATH) as businessPath,
-        null technicalPath,null tableGuid,null businessName,null important, null secret
+        null technicalPath,null tableGuid,null businessName,null important, null secret,
+        bi.standard_type standardType,0 executeStatus,0  taskLevel
         FROM data_standard bi
-        where delete=false
+        where delete=false and bi.version=0
         <if test="isPublic==false">
             AND
             tenantid=#{tenantId}
         </if>
         UNION ALL
-        SELECT da.id,tenantid,da.name,null number,null businessId,da.description,3 as type,
-        null businessPath,null technicalPath,null tableGuid,null businessName,null important,null secret
+        SELECT da.id,tenantid,da.name,null businessId,da.description,4 as type,
+        null businessPath,null technicalPath,null tableGuid,null businessName,null important,null secret,
+        0 standardType,da.current_execution_status executeStatus,da.level taskLevel
         FROM data_quality_task da
         where delete=false
         <if test="isPublic==false">
