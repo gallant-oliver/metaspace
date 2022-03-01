@@ -42,6 +42,18 @@ public class TaskExecutionReport {
     private Integer errorTotalCount;
     private Integer executeCount;
     private List<ExecutionRecord> executionRecordList;
+    /**
+     * 当前进度百分比
+     */
+    private Float percent;
+
+    public Float getPercent() {
+        return percent;
+    }
+
+    public void setPercent(Float percent) {
+        this.percent = percent;
+    }
 
     public String getPool() {
         return pool;
