@@ -5,9 +5,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dataassets.*;
-import io.zeta.metaspace.model.dataquality2.EditionTaskInfo;
-import io.zeta.metaspace.model.dataquality2.RuleTemplate;
-import io.zeta.metaspace.model.dataquality2.TaskExecutionReport;
+import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.datastandard.DataStandard;
 import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
 import io.zeta.metaspace.model.metadata.GuidCount;
@@ -678,6 +676,54 @@ public class DataAssetsRetrievalService {
                 pageResult.setTotalSize(
                         org.apache.commons.collections4.CollectionUtils.isNotEmpty(ruleTemplates)
                                 ? ruleTemplates.get(0).getTotal()
+                                : 0
+                );
+                pageResult.setOffset(parameters.getOffset());
+            }
+        }
+        return pageResult;
+    }
+
+    public PageResult<ExecutionRecordPage> getDataAssetsTaskExecutionReport(String taskId, RuleParameters parameters, String tenantId) {
+        if (parameters == null || parameters.getLimit() < 0 || parameters.getOffset() < 0) {
+            //输入页数不符合规范自动填写默认值
+            RuleParameters parame = new RuleParameters();
+            parame.setLimit(10);
+            parame.setOffset(0);
+            parameters = parame;
+        }
+        PageResult<ExecutionRecordPage> pageResult = new PageResult<>();
+        if (!StringUtils.isEmpty(taskId)) {
+
+            List<ExecutionRecordPage> taskExecutionRecords = taskManageDAO.getTaskExecutionRecordByPage(taskId, parameters);
+            if (!CollectionUtils.isEmpty(taskExecutionRecords)) {
+                //获取报告归档路径
+                List<String> executionIds = taskExecutionRecords.stream().map(ExecutionRecordPage::getExecutionId).collect(Collectors.toList());
+                List<ReportArchivedPath> archivedPathByExecuteId = ruleTemplateDAO.getArchivedPathByExecuteId(executionIds, tenantId);
+                Map<String, String> archivedPathMap = archivedPathByExecuteId.stream().collect(Collectors.toMap(ReportArchivedPath::getExecuteId, ReportArchivedPath::getArchivedPath, (key1, key2) -> key1));
+
+                taskExecutionRecords.stream().forEach(r -> {
+                    if (r.getErrorCount() != null && r.getErrorCount() != 0) {
+                        r.setCheckResult("异常");
+                    } else if (r.getGeneralWarningCount() != null && r.getGeneralWarningCount() != 0) {
+                        r.setCheckResult("不合格");
+                    } else {
+                        r.setCheckResult("合格");
+                    }
+
+                    if (archivedPathMap.get(r.getExecutionId()) != null) {
+                        r.setArchivePath(archivedPathMap.get(r.getExecutionId()));
+                    }
+                });
+
+                pageResult.setLists(taskExecutionRecords);
+                pageResult.setCurrentSize(
+                        org.apache.commons.collections4.CollectionUtils.isNotEmpty(taskExecutionRecords)
+                                ? taskExecutionRecords.size()
+                                : 0);
+                pageResult.setTotalSize(
+                        org.apache.commons.collections4.CollectionUtils.isNotEmpty(taskExecutionRecords)
+                                ? taskExecutionRecords.get(0).getTotal()
                                 : 0
                 );
                 pageResult.setOffset(parameters.getOffset());

@@ -1,6 +1,7 @@
 package io.zeta.metaspace.web.dao.dataquality;
 
 import io.zeta.metaspace.model.dataquality2.Report2RuleTemplate;
+import io.zeta.metaspace.model.dataquality2.ReportArchivedPath;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RuleParameters;
@@ -152,4 +153,42 @@ public interface RuleTemplateDAO {
             " </if>",
             " </script>"})
     List<Report2RuleTemplate> getReportByRuleType(@Param("templateId") String templateId, @Param("params") Parameters params, @Param("tenantId") String tenantId);
+
+    /**
+     * 获取任务归档路径列表
+     * @param executeIds 任务列表id
+     * @param tenantId 当前执行的租户id
+     * @return 任务归档路径实体
+     */
+    @Select({" <script>",
+            " select A.*,",
+                    " data_quality_rule_template.name AS ruleTemplateName, ",
+                    " data_quality_rule_template.rule_type AS ruleType,",
+                    " ( ",
+                    " case  ",
+                    "  when rule_type = 'rule_1' then concat('表体积/',name) ",
+                    "  when rule_type = 'rule_2' then concat('空值校验/',name) ",
+                    "  when rule_type = 'rule_3' then concat('唯一值校验/',name) ",
+                    "  when rule_type = 'rule_4' then concat('重复值校验/',name) ",
+                    "  when rule_type = 'rule_5' then concat('数值型校验/',name) ",
+                    "  when rule_type = 'rule_6' then concat('一致性校验/',name) ",
+                    "  else '其他' end ",
+                    " ) AS archivedPath ",
+                    " FROM ( ",
+                    " SELECT ",
+                    "  rule_template_id AS ruleTemplateId, ",
+                    "  data_quality_execute_id AS executeId, ",
+                    "  report2ruletemplate.creator AS creatorId, ",
+                    "  report2ruletemplate.create_time AS createTime ",
+                    " FROM ",
+                    "  report2ruletemplate ",
+                    " JOIN data_quality_task_execute ON data_quality_task_execute.ID = report2ruletemplate.data_quality_execute_id  ",
+                    " WHERE ",
+                    "  data_quality_execute_id in ",
+                    " <foreach collection='executeIds' item='executeId' index='index'  separator=',' open='(' close=')' >",
+                    "   #{executeId}",
+                    " </foreach>",
+                    " )A JOIN data_quality_rule_template ON data_quality_rule_template.ID = A.ruleTemplateId AND tenantid =#{tenantId} ",
+            " </script>"})
+    List<ReportArchivedPath> getArchivedPathByExecuteId(@Param("executeIds") List<String> executeIds, @Param("tenantId") String tenantId);
 }
