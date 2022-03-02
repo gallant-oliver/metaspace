@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dataassets.*;
+import io.zeta.metaspace.model.dataquality2.ExecutionRecordPage;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.metadata.RuleParameters;
 import io.zeta.metaspace.model.result.PageResult;
@@ -263,6 +264,32 @@ public class DataAssetsRetrievalREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "DataAssetsRetrievalREST.getRetrievalRuleList( 使用数据标准id： " + id + " 查询数据标准详情 )");
             }
             return dataAssetsRetrievalService.getStandardDetailListByDataStandardId(id, parameters);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据资产失败");
+        } finally {
+            AtlasPerfTracer.log(perf);
+        }
+    }
+
+    /**
+     * 根据任务ID（taskId）查询对应的执行列表详情
+     * @param taskId 任务ID（taskId）
+     * @param parameters 质量规则分页
+     * @return 对应的执行列表详情
+     */
+    @GET
+    @Path("/report/list/{taskId}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<ExecutionRecordPage> getRetrievalReportList(@PathParam("taskId") String taskId,
+                                                                  RuleParameters parameters,
+                                                                  @HeaderParam("tenantId") String tenantId) {
+        AtlasPerfTracer perf = null;
+        try {
+            if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
+                perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "DataAssetsRetrievalREST.getRetrievalReportList( 使用数据标准id： " + taskId + " 查询任务执行列表详情 )");
+            }
+            return dataAssetsRetrievalService.getDataAssetsTaskExecutionReport(taskId, parameters, tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据资产失败");
         } finally {
