@@ -283,7 +283,7 @@ public class DataAssetsRetrievalREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<ExecutionRecordPage> getRetrievalReportList(@PathParam("taskId") String taskId,
                                                                   RuleParameters parameters,
-                                                                  @HeaderParam("tenantId") String tenantId) {
+                                                                  @QueryParam("tenantId") String tenantId) {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
