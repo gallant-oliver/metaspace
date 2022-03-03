@@ -96,9 +96,9 @@ public class DataAssets {
     private int taskLevel;
 
     /**
-     * 任务状态：1-执行中,2-成功,3-失败,0-待执行,4-取消
+     * 任务是否开启：（任务）
      */
-    private int executeStatus;
+    private boolean open;
 
     /**
      * 标准类型：1 - 数据标准 2 - 命名标准

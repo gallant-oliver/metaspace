@@ -20,6 +20,7 @@ import io.zeta.metaspace.model.dataassets.DataAssets;
 import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.metadata.RuleParameters;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.web.typeHandler.ListStringTypeHandler;
@@ -693,6 +694,20 @@ public interface TaskManageDAO {
     public List<TaskExecutionReport.ExecutionRecord> getTaskExecutionRecord(@Param("taskId")String id);
 
     /**
+     * 获取任务执行记录(分页)
+     * @param id
+     * @return
+     */
+    @Select({"<script>",
+            "select count(*)over() total, id as executionId,number,orange_warning_count as orangeWarningCount,red_warning_count as redWarningCount,general_warning_count as generalWarningCount,rule_error_count as errorCount,execute_time as executeTime ",
+            " from data_quality_task_execute where task_id=#{taskId} order by executeTime desc",
+            " <if test='params.limit != null and params.limit >= 0 and params.offset != null and params.offset >= 0 '>",
+            " limit #{params.limit} offset #{params.offset}",
+            " </if>",
+            " </script>"})
+    public List<ExecutionRecordPage> getTaskExecutionRecordByPage(@Param("taskId")String id, @Param("params") RuleParameters params);
+
+    /**
      * 获取任务更新者
      * @param id
      * @return
@@ -960,7 +975,7 @@ public interface TaskManageDAO {
 
     @Select("<script>"+
             "SELECT da.name,description,da.id,tenantid tenantId,count(*)over() total,4 as type,te.name tenantName," +
-            "da.current_execution_status executeStatus,da.level  taskLevel\n" +
+            "da.enable open,da.level  taskLevel\n" +
             "FROM data_quality_task  da \n" +
             "LEFT JOIN tenant te ON te.id=da.tenantid \n" +
             "where delete=false \n" +
