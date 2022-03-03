@@ -33,6 +33,7 @@ import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.adapter.AdapterTransformer;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.apigroup.ApiGroupInfo;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
@@ -40,6 +41,8 @@ import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.desensitization.ApiDesensitization;
 import io.zeta.metaspace.model.desensitization.DesensitizationRule;
+import io.zeta.metaspace.model.dto.api.ApiTestDTO;
+import io.zeta.metaspace.model.dto.api.ApiTestInfoVO;
 import io.zeta.metaspace.model.ip.restriction.ApiIpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
@@ -2765,8 +2768,8 @@ public class DataShareService {
         List<ApiInfoV2.FieldV2> filterColumns = queryColumns.stream().filter(column -> column.getColumnName() != null).collect(Collectors.toList());
         for (ApiInfoV2.FieldV2 field : filterColumns) {
             columnName = field.getColumnName();
-            int minSize = Integer.valueOf(field.getMinSize());
-            int maxSize = Integer.valueOf(field.getMaxSize());
+            int minSize = Integer.parseInt(field.getMinSize());
+            int maxSize = Integer.parseInt(field.getMaxSize());
             Object value = field.getValue();
             if (minSize != 0 && value.toString().length() < minSize) {
                 throw new AtlasBaseException("字段长度不够");
@@ -3417,6 +3420,38 @@ public class DataShareService {
         cateNameList.add(cate.getName());
         guid = cate.getGuid();
         getNextCateName(guid, cateMap, cateNameList);
+    }
+
+    public Result testApi(ApiTestInfoVO apiTestInfoVO) {
+        ApiInfoV2 apiInfo = getApiInfoByVersion(apiTestInfoVO.getApiId(), apiTestInfoVO.getVersion());
+        apiInfo.setParam(apiTestInfoVO.getParam());
+        Map map = testAPI(apiTestInfoVO.getRandomName(), apiInfo, apiTestInfoVO.getPageSize(), apiTestInfoVO.getPageNum());
+        List<LinkedHashMap<String, Object>> result = (List<LinkedHashMap<String, Object>>) map.get("queryResult");
+        ApiTestDTO apiInfo2 = shareDAO.getApiAndGroupInfoStatus(apiTestInfoVO.getVersion(), apiTestInfoVO.getApiId());
+        ApiStatusEnum anEnum = ApiStatusEnum.getEnum(apiInfo2.getApiStatus());
+        String message = "测试通过！";
+        String success = message;
+        switch (anEnum) {
+            case DRAFT:
+            case DOWN:
+            case AUDIT:
+                message = "api处于" + anEnum.getStr() + "状态，api测试不通过！";
+                break;
+            case UP:
+                if (apiInfo2.getApiGroupId() == null || !apiInfo2.isApiGroupPublish()) {
+                    message = "该版本api未存在于已发布的分组中，api测试不通过！";
+                    break;
+                }
+                if (StringUtils.isEmpty(apiInfo2.getApiMobiusId()) ||
+                        StringUtils.isEmpty(apiInfo2.getApiGroupIdMobiusId())) {
+                    throw new AtlasBaseException("API信息存在错误，请联系运维人员");
+                }
+        }
+        if (message.equals(success)) {
+            return ReturnUtil.success(result);
+        } else {
+            return ReturnUtil.error("400", message);
+        }
     }
 }
 

@@ -175,9 +175,9 @@ public class DataAssetsRetrievalService {
                 list = businessDAO.searchAll(tenantId, userId, isPublic, isGlobal, offset, limit, query);
         }
 
-        Long totalSize = 0L;
+        long totalSize = 0L;
         if (!CollectionUtils.isEmpty(list)) {
-            totalSize = Long.valueOf(list.get(0).getTotal());
+            totalSize =  list.get(0).getTotal();
 
             Map<String, List<GroupDeriveTableRelation>> m = new HashMap<>();
 

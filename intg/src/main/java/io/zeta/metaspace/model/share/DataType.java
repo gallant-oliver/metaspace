@@ -108,6 +108,7 @@ public enum DataType {
             case "LONGVARCHAR":
             case "ROWID":
             case "NROWID":
+            case "TEXT":
                 typeGroup = DataType.STRING;
                 break;
             case "CLOB":
