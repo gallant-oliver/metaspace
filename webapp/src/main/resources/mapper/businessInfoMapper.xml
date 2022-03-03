@@ -29,7 +29,7 @@
         SELECT PATH FROM T WHERE guid=br.categoryguid
         ORDER BY PATH) businessPath,
         null technicalPath,null tableGuid,null businessName,null important, null secret,
-        0 standardType,0 executeStatus,0  taskLevel
+        0 standardType,false isOpen,0  taskLevel
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
         WHERE 1=1
@@ -82,7 +82,7 @@
         ti.tableguid tableGuid,bi.name businessName,
         CASE WHEN sidti.importance IS null THEN false ELSE sidti.importance END AS important,
         CASE WHEN sidti.security IS null THEN false ELSE sidti.security END AS secret,
-        0 standardType,0 executeStatus,0  taskLevel
+        0 standardType,false isOpen,0  taskLevel
         FROM businessinfo bi
         JOIN business_relation br ON br.businessid=bi.businessid
         JOIN business2table b2t ON b2t.businessid=br.businessid
@@ -128,7 +128,7 @@
         SELECT PATH FROM T WHERE guid=bi.categoryid
         ORDER BY PATH) as businessPath,
         null technicalPath,null tableGuid,null businessName,null important, null secret,
-        bi.standard_type standardType,0 executeStatus,0  taskLevel
+        bi.standard_type standardType,false isOpen,0  taskLevel
         FROM data_standard bi
         where delete=false and bi.version=0
         <if test="isPublic==false">
@@ -138,7 +138,7 @@
         UNION ALL
         SELECT da.id,tenantid,da.name,null businessId,da.description,4 as type,
         null businessPath,null technicalPath,null tableGuid,null businessName,null important,null secret,
-        0 standardType,da.current_execution_status executeStatus,da.level taskLevel
+        0 standardType,da.enable isOpen,da.level taskLevel
         FROM data_quality_task da
         where delete=false
         <if test="isPublic==false">
