@@ -18,6 +18,7 @@ package io.zeta.metaspace.web.dao;
 
 import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.business.TechnologyInfo;
+import io.zeta.metaspace.model.dto.api.ApiTestDTO;
 import io.zeta.metaspace.model.dto.requirements.ApiCateDTO;
 import io.zeta.metaspace.model.metadata.CategoryEntity;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -864,4 +865,11 @@ public interface DataShareDAO {
     List<String> getUserColumns(@Param("sourceId") String sourceId, @Param("database") String database, @Param("tableName") String tableName);
 
     List<ApiInfoV2> getApiDisplayInfos(@Param("ids")List<String> ids);
+
+    @Select("select a.guid apiId,a.version,a.status apiStatus,c.publish apiGroupPublish,a.mobius_id apiMobiusId,c.id apiGroupId,c.mobius_id apiGroupIdMobiusId " +
+            "      from api a" +
+            "      left join api_relation b on a.guid=b.apiid and a.version=b.version "+
+            "      left join api_group c on b.groupid =  c.id" +
+            "      where a.guid=#{guid} and a.version=#{version}")
+    ApiTestDTO getApiAndGroupInfoStatus(@Param("version")String version,@Param("guid")String guid);
 }

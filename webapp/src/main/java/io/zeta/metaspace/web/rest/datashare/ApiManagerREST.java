@@ -22,6 +22,7 @@ import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.desensitization.DesensitizationRule;
+import io.zeta.metaspace.model.dto.api.ApiTestInfoVO;
 import io.zeta.metaspace.model.ip.restriction.IpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
 import io.zeta.metaspace.model.metadata.Column;
@@ -56,6 +57,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -806,10 +809,10 @@ public class ApiManagerREST {
             long limit = 10;
             long offset = 0;
             if (pageSize != null) {
-                limit = Long.valueOf(pageSize);
+                limit = pageSize;
             }
-            if (pageNum != null && Long.valueOf(pageNum) > 0) {
-                offset = (Long.valueOf(pageNum) - 1) * limit;
+            if (pageNum != null && pageNum > 0) {
+                offset = (pageNum - 1) * limit;
             }
             Map resultMap = shareService.testAPI(randomName, apiInfoV2, limit, offset);
             List<LinkedHashMap<String, Object>> result = (List<LinkedHashMap<String, Object>>) resultMap.get("queryResult");
@@ -817,6 +820,26 @@ public class ApiManagerREST {
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "测试api失败");
         }
+    }
+
+    @POST
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Path("/testApi")
+    public Result testApi2(@HeaderParam("tenantId") String tenantId,
+                           @RequestBody @Valid ApiTestInfoVO apiTestInfoVO) {
+
+        long limit = 10;
+        long offset = 0;
+        if (apiTestInfoVO.getPageSize() != null) {
+            limit = apiTestInfoVO.getPageSize();
+        }
+        if (apiTestInfoVO.getPageNum() != null && apiTestInfoVO.getPageNum() > 0) {
+            offset = (apiTestInfoVO.getPageNum() - 1) * limit;
+        }
+        apiTestInfoVO.setPageNum(offset);
+        apiTestInfoVO.setPageSize(limit);
+        return shareService.testApi(apiTestInfoVO);
     }
 
     @PUT
