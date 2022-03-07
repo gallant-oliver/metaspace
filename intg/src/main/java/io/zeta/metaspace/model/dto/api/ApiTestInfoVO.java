@@ -18,8 +18,6 @@ public class ApiTestInfoVO {
     String apiId;
     @NotNull
     String version;
-    @NotNull
-    String randomName;
     @DefaultValue("1")
     Long pageNum;
     @DefaultValue("10")

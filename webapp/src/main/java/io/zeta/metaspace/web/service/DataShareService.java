@@ -3425,10 +3425,10 @@ public class DataShareService {
     public Result testApi(ApiTestInfoVO apiTestInfoVO) {
         ApiInfoV2 apiInfo = getApiInfoByVersion(apiTestInfoVO.getApiId(), apiTestInfoVO.getVersion());
         apiInfo.setParam(apiTestInfoVO.getParam());
-        Map map = testAPI(apiTestInfoVO.getRandomName(), apiInfo, apiTestInfoVO.getPageSize(), apiTestInfoVO.getPageNum());
-        List<LinkedHashMap<String, Object>> result = (List<LinkedHashMap<String, Object>>) map.get("queryResult");
-        ApiTestDTO apiInfo2 = shareDAO.getApiAndGroupInfoStatus(apiTestInfoVO.getVersion(), apiTestInfoVO.getApiId());
-        ApiStatusEnum anEnum = ApiStatusEnum.getEnum(apiInfo2.getApiStatus());
+        testAPI(UUID.randomUUID().toString(), apiInfo, apiTestInfoVO.getPageSize(), apiTestInfoVO.getPageNum());
+        List<ApiTestDTO> apiAndGroupInfoStatus = shareDAO.getApiAndGroupInfoStatus(apiTestInfoVO.getVersion(), apiTestInfoVO.getApiId());
+        ApiTestDTO apiTestDTO = apiAndGroupInfoStatus.get(0);
+        ApiStatusEnum anEnum = ApiStatusEnum.getEnum(apiTestDTO.getApiStatus());
         String message = "测试通过！";
         String success = message;
         switch (anEnum) {
@@ -3438,17 +3438,22 @@ public class DataShareService {
                 message = "api处于" + anEnum.getStr() + "状态，api测试不通过！";
                 break;
             case UP:
-                if (apiInfo2.getApiGroupId() == null || !apiInfo2.isApiGroupPublish()) {
-                    message = "该版本api未存在于已发布的分组中，api测试不通过！";
-                    break;
+                message = "该版本api未存在于已发布的分组中，api测试不通过！";
+                for (ApiTestDTO apiTestDTO1:apiAndGroupInfoStatus) {
+                    //存在组id，且组上线即可
+                    if (apiTestDTO1.getApiGroupId() != null && apiTestDTO1.isApiGroupPublish()) {
+                        //如果api和apigroup的mobiusId为空则数据有误
+                        if (StringUtils.isEmpty(apiTestDTO1.getApiMobiusId()) ||
+                                StringUtils.isEmpty(apiTestDTO1.getApiGroupIdMobiusId())) {
+                            throw new AtlasBaseException("API信息存在错误，请联系运维人员");
+                        }
+                        message = "测试通过！";
+                    }
                 }
-                if (StringUtils.isEmpty(apiInfo2.getApiMobiusId()) ||
-                        StringUtils.isEmpty(apiInfo2.getApiGroupIdMobiusId())) {
-                    throw new AtlasBaseException("API信息存在错误，请联系运维人员");
-                }
+                break;
         }
         if (message.equals(success)) {
-            return ReturnUtil.success(result);
+            return new Result("200",message,null,null);
         } else {
             return ReturnUtil.error("400", message);
         }
