@@ -13,6 +13,11 @@
 
 package io.zeta.metaspace.model.share;
 
+import org.apache.atlas.exception.AtlasBaseException;
+
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author lixiang03
  * @Data 2020/8/14 15:47
@@ -24,7 +29,13 @@ public enum ApiStatusEnum {
     AUDIT("audit","审核中");
     private String name;
     private String str;
+    private static Map<String, ApiStatusEnum> map = new HashMap<>();
 
+    static {
+        for (ApiStatusEnum statusEnum : ApiStatusEnum.values()) {
+            map.put(statusEnum.name, statusEnum);
+        }
+    }
     ApiStatusEnum(String name, String str) {
         this.name = name;
         this.str = str;
@@ -54,4 +65,13 @@ public enum ApiStatusEnum {
         }
         return null;
     }
+
+    public static ApiStatusEnum getEnum(String str) {
+        ApiStatusEnum statusEnum = map.get(str);
+        if (statusEnum == null) {
+            throw new AtlasBaseException("api状态错误");
+        }
+        return statusEnum;
+    }
+
 }

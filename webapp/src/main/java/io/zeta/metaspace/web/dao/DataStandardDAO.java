@@ -286,7 +286,7 @@ public interface DataStandardDAO {
     })
     List<DataStandardHead> getStandardByCategoyrId(@Param("categoryId") String categoryId, @Param("tenantId") String tenantId);
 
-    //名字，描述，目录路径，资产类型，编码，租户id
+    //名字，描述，目录路径，资产类型，租户id
     @Select("<script>"+
             "select count(*)over() total,bi.id,bi.description,bi.tenantid tenantId,bi.name,5 as type,te.name tenantName," +
             "bi.standard_type standardType," +
