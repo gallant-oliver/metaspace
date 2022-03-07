@@ -249,7 +249,8 @@ public class DataAssetsRetrievalREST {
     /**
      * 根据（数据/命名）标准id查询对应的（数据/命名）标准关联的质量规则列表详情
      * @param id （数据/命名）标准id
-     * @param parameters 质量规则分页
+     * @param offset 质量规则分页
+     * @param limit 质量规则分页
      * @return （数据/命名）标准关联的质量规则列表详情
      */
     @GET
@@ -257,12 +258,16 @@ public class DataAssetsRetrievalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<RuleTemplate> getRetrievalRuleList(@PathParam("id") String id,
-                                                         RuleParameters parameters) {
+                                                         @QueryParam("offset") int offset,
+                                                         @QueryParam("limit") int limit) {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "DataAssetsRetrievalREST.getRetrievalRuleList( 使用数据标准id： " + id + " 查询数据标准详情 )");
             }
+            RuleParameters parameters = new RuleParameters();
+            parameters.setOffset(offset);
+            parameters.setLimit(limit);
             return dataAssetsRetrievalService.getStandardDetailListByDataStandardId(id, parameters);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据资产失败");
@@ -274,7 +279,8 @@ public class DataAssetsRetrievalREST {
     /**
      * 根据任务ID（taskId）查询对应的执行列表详情
      * @param taskId 任务ID（taskId）
-     * @param parameters 质量规则分页
+     * @param offset 质量规则分页
+     * @param limit 质量规则分页
      * @return 对应的执行列表详情
      */
     @GET
@@ -282,13 +288,17 @@ public class DataAssetsRetrievalREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<ExecutionRecordPage> getRetrievalReportList(@PathParam("taskId") String taskId,
-                                                                  RuleParameters parameters,
+                                                                  @QueryParam("offset") int offset,
+                                                                  @QueryParam("limit") int limit,
                                                                   @QueryParam("tenantId") String tenantId) {
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "DataAssetsRetrievalREST.getRetrievalReportList( 使用数据标准id： " + taskId + " 查询任务执行列表详情 )");
             }
+            RuleParameters parameters = new RuleParameters();
+            parameters.setOffset(offset);
+            parameters.setLimit(limit);
             return dataAssetsRetrievalService.getDataAssetsTaskExecutionReport(taskId, parameters, tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "查询数据资产失败");
