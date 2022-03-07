@@ -659,7 +659,7 @@ public class DataAssetsRetrievalService {
             if (!ruleTemplates.isEmpty()) {
                 List<String> categoryIds = ruleTemplates.stream().map(RuleTemplate::getRuleType).collect(Collectors.toList());
                 Set<CategoryEntityV2> categoryEntityV2s = categoryDAO.selectPathsByGuid(categoryIds);
-                Map<String, String> map = categoryEntityV2s.stream().collect(Collectors.toMap(CategoryEntityV2::getGuid, CategoryEntityV2::getPath));
+                Map<String, String> map = categoryEntityV2s.stream().collect(Collectors.toMap(CategoryEntityV2::getGuid, CategoryEntityV2::getPath, (key1, key2) -> key1));
                 for (RuleTemplate ruleTemplate : ruleTemplates) {
                     String path = map.get(ruleTemplate.getRuleType());
                     if (org.apache.commons.lang3.StringUtils.isNotBlank(path)) {
