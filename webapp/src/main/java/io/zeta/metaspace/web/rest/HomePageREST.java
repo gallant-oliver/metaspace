@@ -15,6 +15,7 @@ package io.zeta.metaspace.web.rest;
 
 import io.zeta.metaspace.model.homepage.*;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
@@ -78,6 +79,24 @@ public class HomePageREST {
             return homePageService.getDataDistribution(tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据失败");
+        }
+    }
+
+    /**
+     * 获取数据标准一级目录下的多有数量
+     *
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/datastandard/count")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public List<CategoryPrivilege> getDataStandardCountList(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        try {
+            return homePageService.getDataStandardCountList(tenantId);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取数据失败");
         }
     }
 
