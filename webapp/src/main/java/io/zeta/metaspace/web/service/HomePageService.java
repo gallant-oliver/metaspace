@@ -20,6 +20,7 @@ import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.homepage.*;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -32,6 +33,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.text.DecimalFormat;
 import java.util.*;
@@ -363,6 +366,31 @@ public class HomePageService {
             blankData.setValue(blankNumber);
             dataDistributionList.add(blankData);
             return dataDistributionList;
+        } catch (Exception e) {
+            LOG.error("查询异常", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
+        }
+    }
+
+
+    /**
+     * 获取数据标准一级目录下的数量
+     *
+     * @return
+     * @throws AtlasBaseException
+     */
+    public List<CategoryPrivilege> getDataStandardCountList(String tenantId) throws AtlasBaseException {
+        try {
+            List<CategoryPrivilege> result = new ArrayList<>();
+            // 数据标准目录类型id
+            int type = 3;
+            List<CategoryPrivilege> allByUserGroup = dataManageService.getAllByUserGroup(type, tenantId);
+
+            if (!CollectionUtils.isEmpty(allByUserGroup)) {
+                List<CategoryPrivilege> standardMap = allByUserGroup.stream().filter(r -> StringUtils.isEmpty(r.getParentCategoryGuid())).collect(Collectors.toList());
+                result = standardMap;
+            }
+            return result;
         } catch (Exception e) {
             LOG.error("查询异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
