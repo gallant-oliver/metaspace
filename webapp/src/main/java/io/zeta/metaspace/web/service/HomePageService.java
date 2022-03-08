@@ -22,6 +22,7 @@ import io.zeta.metaspace.model.homepage.*;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -36,6 +37,7 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 /*
  * @description
@@ -414,6 +416,27 @@ public class HomePageService {
             pageResult.setTotalSize(sum);
             return pageResult;
         } catch (Exception e) {
+            LOG.error("查询异常", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
+        }
+    }
+
+    @Cacheable(value = "ProjectInfoCache", key = "'ProjectInfoCache' + #limit + #offset +#tenantId +#userId")
+    public PageResult<HomeProjectInfo> getHomeProjectInfo(String tenantId, String userId, long limit, long offset) {
+        try {
+            PageResult<HomeProjectInfo> pageResult = new PageResult<>();
+            List<HomeProjectInfo> projectInfo = homePageDAO.getProjectInfo(tenantId, userId, limit, offset);
+            long firstOrder = offset + 1;
+            for (HomeProjectInfo info : projectInfo) {
+                info.setOrder(firstOrder);
+                firstOrder++;
+            }
+            pageResult.setLists(projectInfo);
+            pageResult.setCurrentSize(projectInfo.size());
+            long projectCount = homePageDAO.getProjectCount(tenantId, userId);
+            pageResult.setTotalSize(projectCount);
+            return pageResult;
+        } catch (AtlasBaseException e) {
             LOG.error("查询异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
         }
