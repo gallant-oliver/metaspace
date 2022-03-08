@@ -444,7 +444,7 @@ public class HomePageService {
 
 
     @CacheEvict(value = {"TableByDBCache", "TableUseProportionCache", "RoleUseProportionCache", "TechnicalSupplementProportionCache", "SourceLayerListCache",
-            "SourceChildLayerListCache", "TimeAndDbCache", "DbTotalCache", "TbTotalCache", "BusinessTotalCache", "RoleUserListCache", "RoleCache"}, allEntries = true)
+            "SourceChildLayerListCache","ProjectInfoCache", "TimeAndDbCache", "DbTotalCache", "TbTotalCache", "BusinessTotalCache", "RoleUserListCache", "RoleCache"}, allEntries = true)
     public void refreshCache() throws AtlasBaseException {
 
     }
