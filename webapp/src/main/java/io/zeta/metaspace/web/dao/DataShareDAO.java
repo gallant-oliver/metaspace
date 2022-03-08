@@ -871,5 +871,5 @@ public interface DataShareDAO {
             "      left join api_relation b on a.guid=b.apiid and a.version=b.version "+
             "      left join api_group c on b.groupid =  c.id" +
             "      where a.guid=#{guid} and a.version=#{version}")
-    ApiTestDTO getApiAndGroupInfoStatus(@Param("version")String version,@Param("guid")String guid);
+    List<ApiTestDTO> getApiAndGroupInfoStatus(@Param("version")String version,@Param("guid")String guid);
 }
