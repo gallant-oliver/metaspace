@@ -19,6 +19,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.service.HomePageService;
+import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -26,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
@@ -191,4 +193,12 @@ public class HomePageREST {
         return Response.status(200).entity("success").build();
     }
 
+    @GET
+    @Path("/getProjectInfo")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<HomeProjectInfo> getProjectInfo(@HeaderParam("tenantId") String tenantId,
+                                                      @QueryParam("limit") long limit, @QueryParam("offset") long offset) {
+        String userId = AdminUtils.getUserData().getUserId();
+        return homePageService.getHomeProjectInfo(tenantId, userId, limit, offset);
+    }
 }
