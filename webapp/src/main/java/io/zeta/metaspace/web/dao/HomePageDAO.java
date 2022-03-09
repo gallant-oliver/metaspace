@@ -189,4 +189,15 @@ public interface HomePageDAO {
             "   pros.tenantid = #{tenantId}  " +
             "   AND ( pros.user_id = #{userId} OR pros.manager = #{userId} )")
     public long getProjectCount(@Param("tenantId") String tenantId, @Param("userId") String userId);
+
+    @Select("SELECT SUM " +
+            " ( cute.red_warning_count ) redCount, " +
+            " SUM ( cute.orange_warning_count ) orangeCount, " +
+            " SUM ( cute.general_warning_count ) generalCount  " +
+            "FROM " +
+            " \"data_quality_task_execute\" cute " +
+            " INNER JOIN data_quality_task task ON cute.task_id = task.\"id\"  " +
+            "WHERE " +
+            " task.tenantid = #{tenantId}")
+    public HomeTaskInfo getTaskInfo(@Param("tenantId") String tenantId);
 }

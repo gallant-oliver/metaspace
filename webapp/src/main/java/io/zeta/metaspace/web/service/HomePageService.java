@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.homepage.*;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -25,6 +26,7 @@ import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
@@ -470,9 +472,20 @@ public class HomePageService {
         }
     }
 
+    @Cacheable(value = "HomeTaskInfoCache", key = "'HomeTaskInfoCache' + #tenantId")
+    public Result getTaskHomeInfo(String tenantId) {
+        HomeTaskInfo taskInfo = null;
+        try {
+            taskInfo = homePageDAO.getTaskInfo(tenantId);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务详情查询异常");
+        }
+        return ReturnUtil.success(taskInfo);
+    }
+
 
     @CacheEvict(value = {"TableByDBCache", "TableUseProportionCache", "RoleUseProportionCache", "TechnicalSupplementProportionCache", "SourceLayerListCache",
-            "SourceChildLayerListCache","ProjectInfoCache", "TimeAndDbCache", "DbTotalCache", "TbTotalCache", "BusinessTotalCache", "RoleUserListCache", "RoleCache"}, allEntries = true)
+            "SourceChildLayerListCache", "ProjectInfoCache", "HomeTaskInfoCache", "TimeAndDbCache", "DbTotalCache", "TbTotalCache", "BusinessTotalCache", "RoleUserListCache", "RoleCache"}, allEntries = true)
     public void refreshCache() throws AtlasBaseException {
 
     }

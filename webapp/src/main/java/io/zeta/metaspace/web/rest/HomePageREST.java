@@ -13,6 +13,7 @@
 package io.zeta.metaspace.web.rest;
 
 
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.homepage.*;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -219,5 +220,12 @@ public class HomePageREST {
                                                       @QueryParam("limit") long limit, @QueryParam("offset") long offset) {
         String userId = AdminUtils.getUserData().getUserId();
         return homePageService.getHomeProjectInfo(tenantId, userId, limit, offset);
+    }
+
+    @GET
+    @Path("/getTaskInfo")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getTaskInfo(@HeaderParam("tenantId") String tenantId) {
+        return homePageService.getTaskHomeInfo(tenantId);
     }
 }
