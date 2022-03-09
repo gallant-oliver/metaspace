@@ -381,6 +381,7 @@ public class HomePageService {
      * @return
      * @throws AtlasBaseException
      */
+    @Cacheable(value = "DataStandardTotalCache", key = "'DataStandardTotalCache'+#tenantId")
     public List<CategoryPrivilege> getDataStandardCountList(String tenantId) throws AtlasBaseException {
         try {
             List<CategoryPrivilege> result = new ArrayList<>();
@@ -485,7 +486,8 @@ public class HomePageService {
 
 
     @CacheEvict(value = {"TableByDBCache", "TableUseProportionCache", "RoleUseProportionCache", "TechnicalSupplementProportionCache", "SourceLayerListCache",
-            "SourceChildLayerListCache", "ProjectInfoCache", "HomeTaskInfoCache", "TimeAndDbCache", "DbTotalCache", "TbTotalCache", "BusinessTotalCache", "RoleUserListCache", "RoleCache"}, allEntries = true)
+            "SourceChildLayerListCache", "ProjectInfoCache", "HomeTaskInfoCache", "TimeAndDbCache", "DbTotalCache", "TbTotalCache", "BusinessTotalCache", "RoleUserListCache", "RoleCache",
+    "DataStandardTotalCache"}, allEntries = true)
     public void refreshCache() throws AtlasBaseException {
 
     }
