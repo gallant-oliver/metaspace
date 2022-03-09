@@ -472,7 +472,7 @@ public class HomePageService {
         }
     }
 
-    @Cacheable(value = "HomeTaskInfoCache", key = "'ProjectInfoCacheCache' + #tenantId")
+    @Cacheable(value = "HomeTaskInfoCache", key = "'HomeTaskInfoCache' + #tenantId")
     public Result getTaskHomeInfo(String tenantId) {
         HomeTaskInfo taskInfo = null;
         try {
