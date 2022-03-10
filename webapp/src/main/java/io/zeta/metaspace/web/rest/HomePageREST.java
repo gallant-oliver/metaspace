@@ -93,9 +93,11 @@ public class HomePageREST {
     @Path("/datastandard/count")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public List<CategoryPrivilege> getDataStandardCountList(@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+    public PageResult<CategoryPrivilege> getDataStandardCountList(@HeaderParam("tenantId") String tenantId,
+                                                                  @QueryParam("limit") int limit,
+                                                                  @QueryParam("offset") int offset) throws AtlasBaseException {
         try {
-            return homePageService.getDataStandardCountList(tenantId);
+            return homePageService.getDataStandardCountList(tenantId, limit, offset);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取数据失败");
         }
