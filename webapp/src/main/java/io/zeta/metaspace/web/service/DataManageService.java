@@ -55,7 +55,6 @@ import io.zeta.metaspace.model.table.column.tag.ColumnTagRelation;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.OKHttpClient;
-import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
@@ -98,7 +97,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -2190,12 +2188,12 @@ public class DataManageService {
                 case "rdbms_table":
                     TableInfo tableInfo = getTableInfo(entity);
                     addOrUpdateTable(tableInfo,definition);
-                    if (enableEmail) {
-                        ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
-                        threadPoolExecutor.execute(()->{
-                            sendMetadataChangedMail(entity.getGuid());
-                        });
-                    }
+//                    if (enableEmail) {
+//                        ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
+//                        threadPoolExecutor.execute(()->{
+//                            sendMetadataChangedMail(entity.getGuid());
+//                        });
+//                    }
                     break;
                 case "hive_column":
                     if(this.getOutputFromProcesses(entity) && hiveAtlasEntityAll){
