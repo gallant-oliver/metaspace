@@ -107,87 +107,128 @@ public interface HomePageDAO {
     @Delete("delete  from statistical where date=#{date} and tenantid=#{tenantId}")
     public int deleteStatistical(@Param("date") long date,@Param("tenantId")String tenantId);
 
-    @Select("SELECT DISTINCT  " +
-            " pros.ID,  " +
-            " pros.NAME,  " +
-            " pros.upApi upApiNum,  " +
-            " pros.notUpApi notUpApiNum,  " +
+    @Select("SELECT DISTINCT " +
+            " pros.ID, " +
+            " pros.NAME, " +
+            " pros.upApi upApiNum, " +
+            " pros.notUpApi notUpApiNum, " +
             " pros.createtime  " +
-            "FROM  " +
-            " (  " +
-            " SELECT DISTINCT   " +
-            "  P.ID,  " +
-            "  P.\"name\",  " +
-            "  ugr.user_id,  " +
-            "  P.manager,  " +
-            "  P.tenantid,  " +
-            "  ( SELECT COUNT ( 1 ) FROM api WHERE P.ID = projectid AND status = 'up' ) upApi,  " +
-            "  ( SELECT COUNT ( 1 ) FROM api WHERE P.ID = projectid AND status != 'up' ) notUpApi,  " +
-            "  p.createtime  " +
-            " FROM  " +
-            "  \"project\" P   " +
-            "  JOIN project_group_relation pug ON pug.project_id = P.ID   " +
-            "  LEFT JOIN user_group_relation ugr ON ugr.group_id = pug.group_id   " +
-            " WHERE  " +
-            "  P.\"valid\" = 't' " +
-            "  UNION ALL  " +
-            " SELECT  " +
-            "  pro.ID,  " +
-            "  pro.\"name\",  " +
-            "  NULL user_id,  " +
-            "  manager,  " +
-            "  pro.tenantid,  " +
-            "  ( SELECT COUNT ( 1 ) FROM api WHERE pro.ID = projectid AND status = 'up' ) upApi,  " +
-            "  ( SELECT COUNT ( 1 ) FROM api WHERE pro.ID = projectid AND status != 'up' ) notUpApi,  " +
+            "FROM " +
+            " ( " +
+            " SELECT DISTINCT P " +
+            "  .ID, " +
+            "  P.NAME, " +
+            "  ugr.user_id, " +
+            "  P.manager, " +
+            "  P.tenantid, " +
+            "  ( " +
+            "  SELECT COUNT " +
+            "   ( 1 )  " +
+            "  FROM " +
+            "   ( SELECT DISTINCT ap.guid FROM api ap WHERE P.ID = ap.projectid AND status = 'up' ) b  " +
+            "  ) upApi, " +
+            "  ( " +
+            "  SELECT COUNT " +
+            "   ( 1 )  " +
+            "  FROM " +
+            "   ( SELECT DISTINCT ap.guid FROM api ap WHERE P.ID = ap.projectid AND status != 'up' ) b  " +
+            "  ) notUpApi, " +
+            "  P.createtime  " +
+            " FROM " +
+            "  project " +
+            "  P JOIN project_group_relation pug ON pug.project_id = P. " +
+            "  ID LEFT JOIN user_group_relation ugr ON ugr.group_id = pug.group_id  " +
+            " WHERE " +
+            "  P.VALID = 't' UNION ALL " +
+            " SELECT " +
+            "  pro.ID, " +
+            "  pro.NAME, " +
+            "  NULL user_id, " +
+            "  manager, " +
+            "  pro.tenantid, " +
+            "  ( " +
+            "  SELECT COUNT " +
+            "   ( 1 )  " +
+            "  FROM " +
+            "   ( SELECT DISTINCT ap.guid FROM api ap WHERE pro.ID = ap.projectid AND status = 'up' ) b  " +
+            "  ) upApi, " +
+            "  ( " +
+            "  SELECT COUNT " +
+            "   ( 1 )  " +
+            "  FROM " +
+            "   ( SELECT DISTINCT ap.guid FROM api ap WHERE pro.ID = ap.projectid AND status != 'up' ) b  " +
+            "  ) notUpApi, " +
             "  pro.createtime  " +
-            " FROM  " +
-            "  project pro   " +
-            " WHERE  " +
-            "  pro.\"valid\" = 't'   " +
-            " ) pros   " +
-            "WHERE  " +
-            " pros.tenantid = #{tenantId}   " +
+            " FROM " +
+            "  project pro  " +
+            " WHERE " +
+            "  pro.VALID = 't'  " +
+            " ) pros  " +
+            "WHERE " +
+            " pros.tenantid = #{tenantId}  " +
             " AND ( pros.user_id = #{userId} OR pros.manager = #{userId} )  " +
-            " ORDER BY pros.createtime DESC  " +
-            " limit #{limit} OFFSET #{offset}")
+            "ORDER BY " +
+            " pros.createtime DESC "+
+            "limit #{limit} offset #{offset}"
+    )
     public List<HomeProjectInfo> getProjectInfo(@Param("tenantId") String tenantId, @Param("userId") String userId,
                                                 @Param("limit") long limit,@Param("offset") long offset);
 
     @Select("SELECT   count(distinct pros.name) total  " +
             "FROM  " +
-            "   (  " +
-            "   SELECT DISTINCT   " +
-            "      P.ID,  " +
-            "      P.\"name\",  " +
-            "      ugr.user_id,  " +
-            "      P.manager,  " +
-            "      P.tenantid,  " +
-            "      ( SELECT COUNT ( 1 ) FROM api WHERE P.ID = projectid AND status = 'up' ) upApi,  " +
-            "      ( SELECT COUNT ( 1 ) FROM api WHERE P.ID = projectid AND status != 'up' ) notUpApi,  " +
-            "      p.createtime  " +
-            "   FROM  " +
-            "      \"project\" P   " +
-            "      JOIN project_group_relation pug ON pug.project_id = P.ID   " +
-            "      LEFT JOIN user_group_relation ugr ON ugr.group_id = pug.group_id   " +
-            "   WHERE  " +
-            "      P.\"valid\" = 't' UNION ALL  " +
-            "   SELECT  " +
-            "      pro.ID,  " +
-            "      pro.\"name\",  " +
-            "      NULL user_id,  " +
-            "      manager,  " +
-            "      pro.tenantid,  " +
-            "      ( SELECT COUNT ( 1 ) FROM api WHERE pro.ID = projectid AND status = 'up' ) upApi,  " +
-            "      ( SELECT COUNT ( 1 ) FROM api WHERE pro.ID = projectid AND status != 'up' ) notUpApi,  " +
-            "      pro.createtime  " +
-            "   FROM  " +
-            "      project pro   " +
-            "   WHERE  " +
-            "      pro.\"valid\" = 't'   " +
-            "   ) pros   " +
+            " ( SELECT DISTINCT P" +
+            "  .ID, " +
+            "  P.NAME, " +
+            "  ugr.user_id, " +
+            "  P.manager, " +
+            "  P.tenantid, " +
+            "  ( " +
+            "  SELECT COUNT " +
+            "   ( 1 )  " +
+            "  FROM " +
+            "   ( SELECT DISTINCT ap.guid FROM api ap WHERE P.ID = ap.projectid AND status = 'up' ) b  " +
+            "  ) upApi, " +
+            "  ( " +
+            "  SELECT COUNT " +
+            "   ( 1 )  " +
+            "  FROM " +
+            "   ( SELECT DISTINCT ap.guid FROM api ap WHERE P.ID = ap.projectid AND status != 'up' ) b  " +
+            "  ) notUpApi, " +
+            "  P.createtime  " +
+            " FROM " +
+            "  project " +
+            "  P JOIN project_group_relation pug ON pug.project_id = P. " +
+            "  ID LEFT JOIN user_group_relation ugr ON ugr.group_id = pug.group_id  " +
+            " WHERE " +
+            "  P.VALID = 't' UNION ALL " +
+            " SELECT " +
+            "  pro.ID, " +
+            "  pro.NAME, " +
+            "  NULL user_id, " +
+            "  manager, " +
+            "  pro.tenantid, " +
+            "  ( " +
+            "  SELECT COUNT " +
+            "   ( 1 )  " +
+            "  FROM " +
+            "   ( SELECT DISTINCT ap.guid FROM api ap WHERE pro.ID = ap.projectid AND status = 'up' ) b  " +
+            "  ) upApi, " +
+            "  ( " +
+            "  SELECT COUNT " +
+            "   ( 1 )  " +
+            "  FROM " +
+            "   ( SELECT DISTINCT ap.guid FROM api ap WHERE pro.ID = ap.projectid AND status != 'up' ) b  " +
+            "  ) notUpApi, " +
+            "  pro.createtime  " +
+            " FROM " +
+            "  project pro  " +
+            " WHERE " +
+            "  pro.VALID = 't'  " +
+            " ) pros  " +
             "WHERE  " +
             "   pros.tenantid = #{tenantId}  " +
-            "   AND ( pros.user_id = #{userId} OR pros.manager = #{userId} )")
+            "   AND ( pros.user_id = #{userId} OR pros.manager = #{userId} )" +
+            "")
     public long getProjectCount(@Param("tenantId") String tenantId, @Param("userId") String userId);
 
     @Select("SELECT SUM " +
