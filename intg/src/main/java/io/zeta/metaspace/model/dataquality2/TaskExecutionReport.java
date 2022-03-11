@@ -42,14 +42,14 @@ public class TaskExecutionReport {
     private Integer errorTotalCount;
     private Integer executeCount;
     private List<ExecutionRecord> executionRecordList;
-    private boolean enable;
+    private boolean open;
 
     public boolean getEnable() {
-        return enable;
+        return open;
     }
 
-    public void setEnable(boolean enable) {
-        this.enable = enable;
+    public void setEnable(boolean open) {
+        this.open = open;
     }
 
     /**
