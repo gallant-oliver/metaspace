@@ -2681,6 +2681,10 @@ public class DataShareService {
         DataSourceType sourceType = DataSourceType.getType(apiInfo.getSourceType());
         if (!sourceType.isBuildIn()) {
             DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(apiInfo.getSourceId());
+            if(dataSourceInfo==null){
+                LOG.error("数据源信息已失效");
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源信息已失效，测试失败！");
+            }
             sourceType = DataSourceType.getType(dataSourceInfo.getSourceType());
         }
         AdapterSource adapterSource = null;
