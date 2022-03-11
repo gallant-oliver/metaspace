@@ -109,6 +109,30 @@
          timeToLiveSeconds="1800"
          memoryStoreEvictionPolicy="LRU"/>
 
+  <cache name="ProjectInfoCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
+  <cache name="HomeTaskInfoCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
+  <cache name="DataStandardTotalCache"
+         maxElementsInMemory="1000"
+         eternal="false"
+         overflowToDisk="true"
+         timeToIdleSeconds="1200"
+         timeToLiveSeconds="1800"
+         memoryStoreEvictionPolicy="LRU"/>
+
   <cache name="SourceChildLayerListCache"
          maxElementsInMemory="1000"
          eternal="false"

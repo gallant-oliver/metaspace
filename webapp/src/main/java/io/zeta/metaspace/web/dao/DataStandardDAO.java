@@ -301,19 +301,16 @@ public interface DataStandardDAO {
             "        FROM data_standard bi " +
             "        LEFT JOIN tenant te ON te.id=bi.tenantid \n" +
             "        where delete=false  and bi.version=0 \n" +
-            "           <if test=\"query!='' and query !=null\">\n" +
-            "              AND ((bi.name like concat('%',#{query},'%') ESCAPE '/')\n" +
-            "              OR (bi.description like concat('%',#{query},'%') ESCAPE '/'))\n" +
-            "           </if>\n" +
-            "           <if test=\"isPublic==false\">\n" +
-            "              AND\n" +
-            "              tenantid=#{tenantId}\n" +
-            "           </if>\n" +
+            "        <if test=\"query!='' and query !=null\">\n" +
+            "            AND ((bi.name like concat('%',#{query},'%') ESCAPE '/')\n" +
+            "            OR (bi.description like concat('%',#{query},'%') ESCAPE '/'))\n" +
+            "        </if>\n" +
+            "       and  tenantid=#{tenantId}\n" +
             "       ORDER BY bi.id\n" +
             "       limit #{limit}\n" +
             "       offset #{offset}" +
             "</script>")
-    List<DataAssets> dataSearch(@Param("tenantId") String tenantId, @Param("userId") String userId, @Param("isPublic") boolean isPublic,
+    List<DataAssets> dataSearch(@Param("tenantId") String tenantId, @Param("userId") String userId,
                                 @Param("isGlobal") boolean isGlobal, @Param("offset") int offset, @Param("limit") int limit, @Param("query") String query);
     
 }

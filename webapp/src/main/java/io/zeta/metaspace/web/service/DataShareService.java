@@ -3425,7 +3425,12 @@ public class DataShareService {
     public Result testApi(ApiTestInfoVO apiTestInfoVO) {
         ApiInfoV2 apiInfo = getApiInfoByVersion(apiTestInfoVO.getApiId(), apiTestInfoVO.getVersion());
         apiInfo.setParam(apiTestInfoVO.getParam());
-        testAPI(UUID.randomUUID().toString(), apiInfo, apiTestInfoVO.getPageSize(), apiTestInfoVO.getPageNum());
+        try {
+            testAPI(UUID.randomUUID().toString(), apiInfo, apiTestInfoVO.getPageSize(), apiTestInfoVO.getPageNum());
+        } catch (AtlasBaseException e) {
+            LOG.error("查询失败", e);
+            throw new AtlasBaseException("测试失败");
+        }
         List<ApiTestDTO> apiAndGroupInfoStatus = shareDAO.getApiAndGroupInfoStatus(apiTestInfoVO.getVersion(), apiTestInfoVO.getApiId());
         ApiTestDTO apiTestDTO = apiAndGroupInfoStatus.get(0);
         ApiStatusEnum anEnum = ApiStatusEnum.getEnum(apiTestDTO.getApiStatus());
