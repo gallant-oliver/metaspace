@@ -21,7 +21,7 @@ package org.apache.atlas.hbase.bridge;
 import org.apache.atlas.AtlasConstants;
 import org.apache.atlas.hbase.model.HBaseOperationContext;
 import org.apache.atlas.hbase.model.HBaseDataTypes;
-import org.apache.atlas.hook.AbstractAtlasHook;
+import org.apache.atlas.hook.AtlasHook;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasEntity.AtlasEntitiesWithExtInfo;
 import org.apache.atlas.model.instance.AtlasObjectId;
@@ -30,12 +30,12 @@ import org.apache.atlas.model.notification.HookNotification.EntityDeleteRequestV
 import org.apache.atlas.model.notification.HookNotification.EntityUpdateRequestV2;
 import org.apache.atlas.type.AtlasTypeUtil;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.configuration.Configuration;
-import org.apache.hadoop.hbase.HTableDescriptor;
-import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.NamespaceDescriptor;
-import org.apache.hadoop.hbase.ipc.RpcServer;
+import org.apache.hadoop.hbase.client.ColumnFamilyDescriptor;
+import org.apache.hadoop.hbase.client.TableDescriptor;
+import org.apache.hadoop.hbase.coprocessor.MasterCoprocessorEnvironment;
+import org.apache.hadoop.hbase.coprocessor.ObserverContext;
 import org.apache.hadoop.hbase.security.User;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
@@ -45,45 +45,47 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 // This will register Hbase entities into Atlas
-public class HBaseAtlasHook extends AbstractAtlasHook {
+public class HBaseAtlasHook extends AtlasHook {
     private static final Logger LOG = LoggerFactory.getLogger(HBaseAtlasHook.class);
 
 
-    public static final String HBASE_CLUSTER_NAME   = "atlas.cluster.name";
-    public static final String DEFAULT_CLUSTER_NAME = "ms";
-    public static final String ATTR_DESCRIPTION     = "description";
-    public static final String ATTR_ATLAS_ENDPOINT  = "atlas.rest.address";
-    public static final String ATTR_COMMENT         = "comment";
-    public static final String ATTR_PARAMETERS      = "parameters";
-    public static final String ATTR_URI             = "uri";
-    public static final String ATTR_NAMESPACE       = "namespace";
-    public static final String ATTR_TABLE           = "table";
-    public static final String ATTR_COLUMNFAMILIES  = "column_families";
-    public static final String ATTR_CREATE_TIME     = "createTime";
-    public static final String ATTR_MODIFIED_TIME   = "modifiedTime";
-    public static final String ATTR_OWNER           = "owner";
-    public static final String ATTR_NAME            = "name";
+    public static final String ATTR_DESCRIPTION           = "description";
+    public static final String ATTR_ATLAS_ENDPOINT        = "atlas.rest.address";
+    public static final String ATTR_PARAMETERS            = "parameters";
+    public static final String ATTR_URI                   = "uri";
+    public static final String ATTR_NAMESPACE             = "namespace";
+    public static final String ATTR_TABLE                 = "table";
+    public static final String ATTR_COLUMNFAMILIES        = "column_families";
+    public static final String ATTR_CREATE_TIME           = "createTime";
+    public static final String ATTR_MODIFIED_TIME         = "modifiedTime";
+    public static final String ATTR_OWNER                 = "owner";
+    public static final String ATTR_NAME                  = "name";
 
     // column addition metadata
     public static final String ATTR_TABLE_MAX_FILESIZE              = "maxFileSize";
     public static final String ATTR_TABLE_ISREADONLY                = "isReadOnly";
     public static final String ATTR_TABLE_ISCOMPACTION_ENABLED      = "isCompactionEnabled";
+    public static final String ATTR_TABLE_ISNORMALIZATION_ENABLED   = "isNormalizationEnabled";
     public static final String ATTR_TABLE_REPLICATION_PER_REGION    = "replicasPerRegion";
     public static final String ATTR_TABLE_DURABLILITY               = "durability";
+    public static final String ATTR_TABLE_NORMALIZATION_ENABLED     = "isNormalizationEnabled";
 
     // column family additional metadata
     public static final String ATTR_CF_BLOOMFILTER_TYPE             = "bloomFilterType";
     public static final String ATTR_CF_COMPRESSION_TYPE             = "compressionType";
     public static final String ATTR_CF_COMPACTION_COMPRESSION_TYPE  = "compactionCompressionType";
     public static final String ATTR_CF_ENCRYPTION_TYPE              = "encryptionType";
+    public static final String ATTR_CF_INMEMORY_COMPACTION_POLICY   = "inMemoryCompactionPolicy";
     public static final String ATTR_CF_KEEP_DELETE_CELLS            = "keepDeletedCells";
     public static final String ATTR_CF_MAX_VERSIONS                 = "maxVersions";
     public static final String ATTR_CF_MIN_VERSIONS                 = "minVersions";
     public static final String ATTR_CF_DATA_BLOCK_ENCODING          = "dataBlockEncoding";
+    public static final String ATTR_CF_STORAGE_POLICY               = "StoragePolicy";
     public static final String ATTR_CF_TTL                          = "ttl";
     public static final String ATTR_CF_BLOCK_CACHE_ENABLED          = "blockCacheEnabled";
     public static final String ATTR_CF_CACHED_BLOOM_ON_WRITE        = "cacheBloomsOnWrite";
@@ -91,13 +93,18 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
     public static final String ATTR_CF_CACHED_INDEXES_ON_WRITE      = "cacheIndexesOnWrite";
     public static final String ATTR_CF_EVICT_BLOCK_ONCLOSE          = "evictBlocksOnClose";
     public static final String ATTR_CF_PREFETCH_BLOCK_ONOPEN        = "prefetchBlocksOnOpen";
+    public static final String ATTR_CF_NEW_VERSION_BEHAVIOR         = "newVersionBehavior";
+    public static final String ATTR_CF_MOB_ENABLED                  = "isMobEnabled";
+    public static final String ATTR_CF_MOB_COMPATCTPARTITION_POLICY = "mobCompactPartitionPolicy";
 
     public static final String HBASE_NAMESPACE_QUALIFIED_NAME            = "%s@%s";
     public static final String HBASE_TABLE_QUALIFIED_NAME_FORMAT         = "%s:%s@%s";
     public static final String HBASE_COLUMN_FAMILY_QUALIFIED_NAME_FORMAT = "%s:%s.%s@%s";
 
     private static final String REFERENCEABLE_ATTRIBUTE_NAME = "qualifiedName";
-    private              String clusterName                  = null;
+
+    public static final String RELATIONSHIP_HBASE_TABLE_COLUMN_FAMILIES = "hbase_table_column_families";
+    public static final String RELATIONSHIP_HBASE_TABLE_NAMESPACE = "hbase_table_namespace";
 
     private static volatile HBaseAtlasHook me;
 
@@ -132,7 +139,7 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
                     ret = me;
 
                     if (ret == null) {
-                        me = ret = new HBaseAtlasHook(atlasProperties);
+                        me = ret = new HBaseAtlasHook();
                     }
                 }
             } catch (Exception e) {
@@ -143,17 +150,11 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
         return ret;
     }
 
-    public HBaseAtlasHook(Configuration atlasProperties) {
-        this(atlasProperties.getString(HBASE_CLUSTER_NAME, DEFAULT_CLUSTER_NAME));
+    public HBaseAtlasHook() {
     }
-
-    public HBaseAtlasHook(String clusterName) {
-        this.clusterName = clusterName;
-    }
-
 
     public void createAtlasInstances(HBaseOperationContext hbaseOperationContext) {
-        HBaseAtlasHook.OPERATION operation = hbaseOperationContext.getOperation();
+        OPERATION operation = hbaseOperationContext.getOperation();
 
         LOG.info("HBaseAtlasHook(operation={})", operation);
 
@@ -179,7 +180,6 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
             case DELETE_COLUMN_FAMILY:
                 deleteColumnFamilyInstance(hbaseOperationContext);
                 break;
-            default:break;
         }
     }
 
@@ -198,12 +198,11 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
 
                 hbaseOperationContext.addMessage(new EntityUpdateRequestV2(hbaseOperationContext.getUser(), new AtlasEntitiesWithExtInfo(nameSpace)));
                 break;
-            default:break;
         }
     }
 
     private void deleteNameSpaceInstance(HBaseOperationContext hbaseOperationContext) {
-        String        nameSpaceQName = getNameSpaceQualifiedName(clusterName, hbaseOperationContext.getNameSpace());
+        String        nameSpaceQName = getNameSpaceQualifiedName(getMetadataNamespace(), hbaseOperationContext.getNameSpace());
         AtlasObjectId nameSpaceId    = new AtlasObjectId(HBaseDataTypes.HBASE_NAMESPACE.getName(), REFERENCEABLE_ATTRIBUTE_NAME, nameSpaceQName);
 
         LOG.info("Delete NameSpace {}", nameSpaceQName);
@@ -216,7 +215,7 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
         AtlasEntity       table          = buildTable(hbaseOperationContext, nameSpace);
         List<AtlasEntity> columnFamilies = buildColumnFamilies(hbaseOperationContext, nameSpace, table);
 
-        table.setAttribute(ATTR_COLUMNFAMILIES, AtlasTypeUtil.getAtlasObjectIds(columnFamilies));
+        table.setRelationshipAttribute(ATTR_COLUMNFAMILIES, AtlasTypeUtil.getAtlasRelatedObjectIds(columnFamilies, RELATIONSHIP_HBASE_TABLE_COLUMN_FAMILIES));
 
         AtlasEntitiesWithExtInfo entities = new AtlasEntitiesWithExtInfo(table);
 
@@ -240,7 +239,6 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
 
                 hbaseOperationContext.addMessage(new EntityUpdateRequestV2(hbaseOperationContext.getUser(), entities));
                 break;
-            default:break;
         }
     }
 
@@ -253,7 +251,7 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
         }
 
         String        tableNameStr = tableName.getNameAsString();
-        String        tableQName   = getTableQualifiedName(clusterName, nameSpaceName, tableNameStr);
+        String        tableQName   = getTableQualifiedName(getMetadataNamespace(), nameSpaceName, tableNameStr);
         AtlasObjectId tableId      = new AtlasObjectId(HBaseDataTypes.HBASE_TABLE.getName(), REFERENCEABLE_ATTRIBUTE_NAME, tableQName);
 
         LOG.info("Delete Table {}", tableQName);
@@ -283,7 +281,6 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
 
                 hbaseOperationContext.addMessage(new EntityUpdateRequestV2(hbaseOperationContext.getUser(), entities));
                 break;
-            default:break;
         }
     }
 
@@ -297,7 +294,7 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
 
         String        tableNameStr      = tableName.getNameAsString();
         String        columnFamilyName  = hbaseOperationContext.getColummFamily();
-        String        columnFamilyQName = getColumnFamilyQualifiedName(clusterName, nameSpaceName, tableNameStr, columnFamilyName);
+        String        columnFamilyQName = getColumnFamilyQualifiedName(getMetadataNamespace(), nameSpaceName, tableNameStr, columnFamilyName);
         AtlasObjectId columnFamilyId    = new AtlasObjectId(HBaseDataTypes.HBASE_COLUMN_FAMILY.getName(), REFERENCEABLE_ATTRIBUTE_NAME, columnFamilyQName);
 
         LOG.info("Delete ColumnFamily {}", columnFamilyQName);
@@ -309,48 +306,48 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
     /**
      * Construct the qualified name used to uniquely identify a ColumnFamily instance in Atlas.
      *
-     * @param clusterName  Name of the cluster to which the HBase component belongs
+     * @param metadataNamespace  Metadata namespace of the cluster to which the HBase component belongs
      * @param nameSpace    Name of the HBase database to which the Table belongs
      * @param tableName    Name of the HBase table
      * @param columnFamily Name of the ColumnFamily
      * @return Unique qualified name to identify the Table instance in Atlas.
      */
-    public static String getColumnFamilyQualifiedName(String clusterName, String nameSpace, String tableName, String columnFamily) {
-        if (clusterName == null || nameSpace == null || tableName == null || columnFamily == null) {
+    public static String getColumnFamilyQualifiedName(String metadataNamespace, String nameSpace, String tableName, String columnFamily) {
+        if (metadataNamespace == null || nameSpace == null || tableName == null || columnFamily == null) {
             return null;
         } else {
-            return String.format(HBASE_COLUMN_FAMILY_QUALIFIED_NAME_FORMAT, nameSpace.toLowerCase(), stripNameSpace(tableName.toLowerCase()), columnFamily.toLowerCase(), clusterName);
+            return String.format(HBASE_COLUMN_FAMILY_QUALIFIED_NAME_FORMAT, nameSpace, stripNameSpace(tableName), columnFamily, metadataNamespace);
         }
     }
 
     /**
      * Construct the qualified name used to uniquely identify a Table instance in Atlas.
      *
-     * @param clusterName Name of the cluster to which the HBase component belongs
+     * @param metadataNamespace  Metadata namespace of the cluster to which the HBase component belongs
      * @param nameSpace   Name of the HBase database to which the Table belongs
      * @param tableName   Name of the HBase table
      * @return Unique qualified name to identify the Table instance in Atlas.
      */
-    public static String getTableQualifiedName(String clusterName, String nameSpace, String tableName) {
-        if (clusterName == null || nameSpace == null || tableName == null) {
+    public static String getTableQualifiedName(String metadataNamespace, String nameSpace, String tableName) {
+        if (metadataNamespace == null || nameSpace == null || tableName == null) {
             return null;
         } else {
-            return String.format(HBASE_TABLE_QUALIFIED_NAME_FORMAT, nameSpace.toLowerCase(), stripNameSpace(tableName.toLowerCase()), clusterName);
+            return String.format(HBASE_TABLE_QUALIFIED_NAME_FORMAT, nameSpace, stripNameSpace(tableName), metadataNamespace);
         }
     }
 
     /**
      * Construct the qualified name used to uniquely identify a HBase NameSpace instance in Atlas.
      *
-     * @param clusterName Name of the cluster to which the HBase component belongs
+     * @param metadataNamespace  Metadata namespace of the cluster to which the HBase component belongs
      * @param nameSpace
      * @return Unique qualified name to identify the HBase NameSpace instance in Atlas.
      */
-    public static String getNameSpaceQualifiedName(String clusterName, String nameSpace) {
-        if (clusterName == null || nameSpace == null) {
+    public static String getNameSpaceQualifiedName(String metadataNamespace, String nameSpace) {
+        if (metadataNamespace == null || nameSpace == null) {
             return null;
         } else {
-            return String.format(HBASE_NAMESPACE_QUALIFIED_NAME, nameSpace.toLowerCase(), clusterName);
+            return String.format(HBASE_NAMESPACE_QUALIFIED_NAME, nameSpace, metadataNamespace);
         }
     }
 
@@ -370,8 +367,8 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
         Date now = new Date(System.currentTimeMillis());
 
         nameSpace.setAttribute(ATTR_NAME, nameSpaceName);
-        nameSpace.setAttribute(REFERENCEABLE_ATTRIBUTE_NAME, getNameSpaceQualifiedName(clusterName, nameSpaceName));
-        nameSpace.setAttribute(AtlasConstants.CLUSTER_NAME_ATTRIBUTE, clusterName);
+        nameSpace.setAttribute(REFERENCEABLE_ATTRIBUTE_NAME, getNameSpaceQualifiedName(getMetadataNamespace(), nameSpaceName));
+        nameSpace.setAttribute(AtlasConstants.CLUSTER_NAME_ATTRIBUTE, getMetadataNamespace());
         nameSpace.setAttribute(ATTR_DESCRIPTION, nameSpaceName);
         nameSpace.setAttribute(ATTR_PARAMETERS, hbaseOperationContext.getHbaseConf());
         nameSpace.setAttribute(ATTR_OWNER, hbaseOperationContext.getOwner());
@@ -388,7 +385,7 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
         AtlasEntity table         = new AtlasEntity(HBaseDataTypes.HBASE_TABLE.getName());
         String      tableName     = getTableName(hbaseOperationContext);
         String      nameSpaceName = (String) nameSpace.getAttribute(ATTR_NAME);
-        String      tableQName    = getTableQualifiedName(clusterName, nameSpaceName, tableName);
+        String      tableQName    = getTableQualifiedName(getMetadataNamespace(), nameSpaceName, tableName);
         OPERATION   operation     = hbaseOperationContext.getOperation();
         Date        now           = new Date(System.currentTimeMillis());
 
@@ -398,15 +395,17 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
         table.setAttribute(ATTR_OWNER, hbaseOperationContext.getOwner());
         table.setAttribute(ATTR_DESCRIPTION, tableName);
         table.setAttribute(ATTR_PARAMETERS, hbaseOperationContext.getHbaseConf());
-        table.setAttribute(ATTR_NAMESPACE, AtlasTypeUtil.getAtlasObjectId(nameSpace));
+        table.setRelationshipAttribute(ATTR_NAMESPACE, AtlasTypeUtil.getAtlasRelatedObjectId(nameSpace, RELATIONSHIP_HBASE_TABLE_NAMESPACE));
 
-        HTableDescriptor htableDescriptor = hbaseOperationContext.gethTableDescriptor();
-        if (htableDescriptor != null) {
-            table.setAttribute(ATTR_TABLE_MAX_FILESIZE, htableDescriptor.getMaxFileSize());
-            table.setAttribute(ATTR_TABLE_REPLICATION_PER_REGION, htableDescriptor.getRegionReplication());
-            table.setAttribute(ATTR_TABLE_ISREADONLY, htableDescriptor.isReadOnly());
-            table.setAttribute(ATTR_TABLE_ISCOMPACTION_ENABLED, htableDescriptor.isCompactionEnabled());
-            table.setAttribute(ATTR_TABLE_DURABLILITY, (htableDescriptor.getDurability() != null ? htableDescriptor.getDurability().name() : null));
+        TableDescriptor tableDescriptor = hbaseOperationContext.gethTableDescriptor();
+        if (tableDescriptor != null) {
+            table.setAttribute(ATTR_TABLE_MAX_FILESIZE, tableDescriptor.getMaxFileSize());
+            table.setAttribute(ATTR_TABLE_REPLICATION_PER_REGION, tableDescriptor.getRegionReplication());
+            table.setAttribute(ATTR_TABLE_ISREADONLY, tableDescriptor.isReadOnly());
+            table.setAttribute(ATTR_TABLE_ISNORMALIZATION_ENABLED, tableDescriptor.isNormalizationEnabled());
+            table.setAttribute(ATTR_TABLE_ISCOMPACTION_ENABLED, tableDescriptor.isCompactionEnabled());
+            table.setAttribute(ATTR_TABLE_DURABLILITY, (tableDescriptor.getDurability() != null ? tableDescriptor.getDurability().name() : null));
+            table.setAttribute(ATTR_TABLE_NORMALIZATION_ENABLED, tableDescriptor.isNormalizationEnabled());
         }
 
         switch (operation) {
@@ -430,11 +429,11 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
 
     private List<AtlasEntity> buildColumnFamilies(HBaseOperationContext hbaseOperationContext, AtlasEntity nameSpace, AtlasEntity table) {
         List<AtlasEntity>   columnFamilies     = new ArrayList<>();
-        HColumnDescriptor[] hColumnDescriptors = hbaseOperationContext.gethColumnDescriptors();
+        ColumnFamilyDescriptor[] columnFamilyDescriptors = hbaseOperationContext.gethColumnDescriptors();
 
-        if (hColumnDescriptors != null) {
-            for (HColumnDescriptor hColumnDescriptor : hColumnDescriptors) {
-                AtlasEntity columnFamily = buildColumnFamily(hbaseOperationContext, hColumnDescriptor, nameSpace, table);
+        if (columnFamilyDescriptors != null) {
+            for (ColumnFamilyDescriptor columnFamilyDescriptor : columnFamilyDescriptors) {
+                AtlasEntity columnFamily = buildColumnFamily(hbaseOperationContext, columnFamilyDescriptor, nameSpace, table);
 
                 columnFamilies.add(columnFamily);
             }
@@ -443,36 +442,41 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
         return columnFamilies;
     }
 
-    private AtlasEntity buildColumnFamily(HBaseOperationContext hbaseOperationContext, HColumnDescriptor hColumnDescriptor, AtlasEntity nameSpace, AtlasEntity table) {
+    private AtlasEntity buildColumnFamily(HBaseOperationContext hbaseOperationContext, ColumnFamilyDescriptor columnFamilyDescriptor, AtlasEntity nameSpace, AtlasEntity table) {
         AtlasEntity columnFamily      = new AtlasEntity(HBaseDataTypes.HBASE_COLUMN_FAMILY.getName());
-        String      columnFamilyName  = hColumnDescriptor.getNameAsString();
+        String      columnFamilyName  = columnFamilyDescriptor.getNameAsString();
         String      tableName         = (String) table.getAttribute(ATTR_NAME);
         String      nameSpaceName     = (String) nameSpace.getAttribute(ATTR_NAME);
-        String      columnFamilyQName = getColumnFamilyQualifiedName(clusterName, nameSpaceName, tableName, columnFamilyName);
+        String      columnFamilyQName = getColumnFamilyQualifiedName(getMetadataNamespace(), nameSpaceName, tableName, columnFamilyName);
         Date        now               = new Date(System.currentTimeMillis());
 
         columnFamily.setAttribute(ATTR_NAME, columnFamilyName);
         columnFamily.setAttribute(ATTR_DESCRIPTION, columnFamilyName);
         columnFamily.setAttribute(REFERENCEABLE_ATTRIBUTE_NAME, columnFamilyQName);
         columnFamily.setAttribute(ATTR_OWNER, hbaseOperationContext.getOwner());
-        columnFamily.setAttribute(ATTR_TABLE, AtlasTypeUtil.getAtlasObjectId(table));
+        columnFamily.setRelationshipAttribute(ATTR_TABLE, AtlasTypeUtil.getAtlasRelatedObjectId(table, RELATIONSHIP_HBASE_TABLE_COLUMN_FAMILIES));
 
-        if (hColumnDescriptor!= null) {
-            columnFamily.setAttribute(ATTR_CF_BLOCK_CACHE_ENABLED, hColumnDescriptor.isBlockCacheEnabled());
-            columnFamily.setAttribute(ATTR_CF_BLOOMFILTER_TYPE, (hColumnDescriptor.getBloomFilterType() != null ? hColumnDescriptor.getBloomFilterType().name():null));
-            columnFamily.setAttribute(ATTR_CF_CACHED_BLOOM_ON_WRITE, hColumnDescriptor.isCacheBloomsOnWrite());
-            columnFamily.setAttribute(ATTR_CF_CACHED_DATA_ON_WRITE, hColumnDescriptor.isCacheDataOnWrite());
-            columnFamily.setAttribute(ATTR_CF_CACHED_INDEXES_ON_WRITE, hColumnDescriptor.isCacheIndexesOnWrite());
-            columnFamily.setAttribute(ATTR_CF_COMPACTION_COMPRESSION_TYPE, (hColumnDescriptor.getCompactionCompressionType() != null ? hColumnDescriptor.getCompactionCompressionType().name():null));
-            columnFamily.setAttribute(ATTR_CF_COMPRESSION_TYPE, (hColumnDescriptor.getCompressionType() != null ? hColumnDescriptor.getCompressionType().name():null));
-            columnFamily.setAttribute(ATTR_CF_DATA_BLOCK_ENCODING, (hColumnDescriptor.getDataBlockEncoding() != null ? hColumnDescriptor.getDataBlockEncoding().name():null));
-            columnFamily.setAttribute(ATTR_CF_ENCRYPTION_TYPE, hColumnDescriptor.getEncryptionType());
-            columnFamily.setAttribute(ATTR_CF_EVICT_BLOCK_ONCLOSE, hColumnDescriptor.isEvictBlocksOnClose());
-            columnFamily.setAttribute(ATTR_CF_KEEP_DELETE_CELLS, ( hColumnDescriptor.getKeepDeletedCells() != null ? hColumnDescriptor.getKeepDeletedCells().name():null));
-            columnFamily.setAttribute(ATTR_CF_MAX_VERSIONS, hColumnDescriptor.getMaxVersions());
-            columnFamily.setAttribute(ATTR_CF_MIN_VERSIONS, hColumnDescriptor.getMinVersions());
-            columnFamily.setAttribute(ATTR_CF_PREFETCH_BLOCK_ONOPEN, hColumnDescriptor.isPrefetchBlocksOnOpen());
-            columnFamily.setAttribute(ATTR_CF_TTL, hColumnDescriptor.getTimeToLive());
+        if (columnFamilyDescriptor!= null) {
+            columnFamily.setAttribute(ATTR_CF_BLOCK_CACHE_ENABLED, columnFamilyDescriptor.isBlockCacheEnabled());
+            columnFamily.setAttribute(ATTR_CF_BLOOMFILTER_TYPE, (columnFamilyDescriptor.getBloomFilterType() != null ? columnFamilyDescriptor.getBloomFilterType().name():null));
+            columnFamily.setAttribute(ATTR_CF_CACHED_BLOOM_ON_WRITE, columnFamilyDescriptor.isCacheBloomsOnWrite());
+            columnFamily.setAttribute(ATTR_CF_CACHED_DATA_ON_WRITE, columnFamilyDescriptor.isCacheDataOnWrite());
+            columnFamily.setAttribute(ATTR_CF_CACHED_INDEXES_ON_WRITE, columnFamilyDescriptor.isCacheIndexesOnWrite());
+            columnFamily.setAttribute(ATTR_CF_COMPACTION_COMPRESSION_TYPE, (columnFamilyDescriptor.getCompactionCompressionType() != null ? columnFamilyDescriptor.getCompactionCompressionType().name():null));
+            columnFamily.setAttribute(ATTR_CF_COMPRESSION_TYPE, (columnFamilyDescriptor.getCompressionType() != null ? columnFamilyDescriptor.getCompressionType().name():null));
+            columnFamily.setAttribute(ATTR_CF_DATA_BLOCK_ENCODING, (columnFamilyDescriptor.getDataBlockEncoding() != null ? columnFamilyDescriptor.getDataBlockEncoding().name():null));
+            columnFamily.setAttribute(ATTR_CF_ENCRYPTION_TYPE, columnFamilyDescriptor.getEncryptionType());
+            columnFamily.setAttribute(ATTR_CF_EVICT_BLOCK_ONCLOSE, columnFamilyDescriptor.isEvictBlocksOnClose());
+            columnFamily.setAttribute(ATTR_CF_INMEMORY_COMPACTION_POLICY, (columnFamilyDescriptor.getInMemoryCompaction() != null ? columnFamilyDescriptor.getInMemoryCompaction().name():null));
+            columnFamily.setAttribute(ATTR_CF_KEEP_DELETE_CELLS, ( columnFamilyDescriptor.getKeepDeletedCells() != null ? columnFamilyDescriptor.getKeepDeletedCells().name():null));
+            columnFamily.setAttribute(ATTR_CF_MAX_VERSIONS, columnFamilyDescriptor.getMaxVersions());
+            columnFamily.setAttribute(ATTR_CF_MIN_VERSIONS, columnFamilyDescriptor.getMinVersions());
+            columnFamily.setAttribute(ATTR_CF_NEW_VERSION_BEHAVIOR, columnFamilyDescriptor.isNewVersionBehavior());
+            columnFamily.setAttribute(ATTR_CF_MOB_ENABLED, columnFamilyDescriptor.isMobEnabled());
+            columnFamily.setAttribute(ATTR_CF_MOB_COMPATCTPARTITION_POLICY, ( columnFamilyDescriptor.getMobCompactPartitionPolicy() != null ? columnFamilyDescriptor.getMobCompactPartitionPolicy().name():null));
+            columnFamily.setAttribute(ATTR_CF_PREFETCH_BLOCK_ONOPEN, columnFamilyDescriptor.isPrefetchBlocksOnOpen());
+            columnFamily.setAttribute(ATTR_CF_STORAGE_POLICY, columnFamilyDescriptor.getStoragePolicy());
+            columnFamily.setAttribute(ATTR_CF_TTL, columnFamilyDescriptor.getTimeToLive());
         }
 
         switch (hbaseOperationContext.getOperation()) {
@@ -501,21 +505,24 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
         if (tableName != null) {
             ret = tableName.getNameAsString();
         } else {
-            HTableDescriptor tableDescriptor = hbaseOperationContext.gethTableDescriptor();
+            TableDescriptor tableDescriptor = hbaseOperationContext.gethTableDescriptor();
 
-            ret = (tableDescriptor != null) ? tableDescriptor.getNameAsString() : null;
+            ret = (tableDescriptor != null) ? tableDescriptor.getTableName().getNameAsString() : null;
         }
 
         return ret;
     }
 
-    public void sendHBaseNameSpaceOperation(final NamespaceDescriptor namespaceDescriptor, final String nameSpace, final OPERATION operation) {
+    public void sendHBaseNameSpaceOperation(final NamespaceDescriptor namespaceDescriptor, final String nameSpace, final OPERATION operation, ObserverContext<MasterCoprocessorEnvironment> ctx) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> HBaseAtlasHook.sendHBaseNameSpaceOperation()");
         }
 
         try {
-            HBaseOperationContext hbaseOperationContext = handleHBaseNameSpaceOperation(namespaceDescriptor, nameSpace, operation);
+            final UserGroupInformation ugi  = getUGI(ctx);
+            final User user                 = getActiveUser(ctx);
+            final String userName           = (user != null) ? user.getShortName() : null;
+            HBaseOperationContext hbaseOperationContext = handleHBaseNameSpaceOperation(namespaceDescriptor, nameSpace, operation, ugi, userName);
 
             sendNotification(hbaseOperationContext);
         } catch (Throwable t) {
@@ -527,13 +534,16 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
         }
     }
 
-    public void sendHBaseTableOperation(final HTableDescriptor hTableDescriptor, final TableName tableName, final OPERATION operation) {
+    public void sendHBaseTableOperation(TableDescriptor tableDescriptor, final TableName tableName, final OPERATION operation, ObserverContext<MasterCoprocessorEnvironment> ctx) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> HBaseAtlasHook.sendHBaseTableOperation()");
         }
 
         try {
-            HBaseOperationContext hbaseOperationContext = handleHBaseTableOperation(hTableDescriptor, tableName, operation);
+            final UserGroupInformation ugi  = getUGI(ctx);
+            final User user                 = getActiveUser(ctx);
+            final String userName           = (user != null) ? user.getShortName() : null;
+            HBaseOperationContext hbaseOperationContext = handleHBaseTableOperation(tableDescriptor, tableName, operation, ugi, userName);
 
             sendNotification(hbaseOperationContext);
         } catch (Throwable t) {
@@ -542,24 +552,6 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
 
         if (LOG.isDebugEnabled()) {
             LOG.debug("<== HBaseAtlasHook.sendHBaseTableOperation()");
-        }
-    }
-
-    public void sendHBaseColumnFamilyOperation(final HColumnDescriptor hColumnDescriptor, final TableName tableName, final String columnFamily, final OPERATION operation) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("==> HBaseAtlasHook.sendHBaseColumnFamilyOperation()");
-        }
-
-        try {
-            HBaseOperationContext hbaseOperationContext = handleHBaseColumnFamilyOperation(hColumnDescriptor, tableName, columnFamily, operation);
-
-            sendNotification(hbaseOperationContext);
-        } catch (Throwable t) {
-            LOG.error("<== HBaseAtlasHook.sendHBaseColumnFamilyOperation(): failed to send notification", t);
-        }
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("<== HBaseAtlasHook.sendHBaseColumnFamilyOperation()");
         }
     }
 
@@ -573,14 +565,10 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
         notifyEntities(hbaseOperationContext.getMessages(), ugi);
     }
 
-    private HBaseOperationContext handleHBaseNameSpaceOperation(NamespaceDescriptor namespaceDescriptor, String nameSpace, OPERATION operation) {
+    private HBaseOperationContext handleHBaseNameSpaceOperation(NamespaceDescriptor namespaceDescriptor, String nameSpace, OPERATION operation, UserGroupInformation ugi, String userName) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> HBaseAtlasHook.handleHBaseNameSpaceOperation()");
         }
-
-        UserGroupInformation ugi      = getUGI();
-        User                 user     = getActiveUser();
-        String               userName = (user != null) ? user.getShortName() : null;
 
         HBaseOperationContext hbaseOperationContext = new HBaseOperationContext(namespaceDescriptor, nameSpace, operation, ugi, userName, userName);
         createAtlasInstances(hbaseOperationContext);
@@ -592,24 +580,21 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
         return hbaseOperationContext;
     }
 
-    private HBaseOperationContext handleHBaseTableOperation(HTableDescriptor hTableDescriptor, TableName tableName, OPERATION operation) {
+    private HBaseOperationContext handleHBaseTableOperation(TableDescriptor tableDescriptor, TableName tableName, OPERATION operation, UserGroupInformation ugi, String userName) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> HBaseAtlasHook.handleHBaseTableOperation()");
         }
 
-        UserGroupInformation ugi                = getUGI();
-        User                 user               = getActiveUser();
-        String               userName           = (user != null) ? user.getShortName() : null;
         Map<String, String>  hbaseConf          = null;
         String               owner              = null;
         String               tableNameSpace     = null;
         TableName            hbaseTableName     = null;
-        HColumnDescriptor[]  hColumnDescriptors = null;
+        ColumnFamilyDescriptor[]  columnFamilyDescriptors = null;
 
-        if (hTableDescriptor != null) {
-            owner = hTableDescriptor.getOwnerString();
-            hbaseConf = hTableDescriptor.getConfiguration();
-            hbaseTableName = hTableDescriptor.getTableName();
+        if (tableDescriptor != null) {
+            owner = tableDescriptor.getOwnerString();
+            hbaseConf = null;
+            hbaseTableName = tableDescriptor.getTableName();
             if (hbaseTableName != null) {
                 tableNameSpace = hbaseTableName.getNamespaceAsString();
                 if (tableNameSpace == null) {
@@ -622,11 +607,11 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
             owner = userName;
         }
 
-        if (hTableDescriptor != null) {
-            hColumnDescriptors = hTableDescriptor.getColumnFamilies();
+        if (tableDescriptor != null) {
+            columnFamilyDescriptors = tableDescriptor.getColumnFamilies();
         }
 
-        HBaseOperationContext hbaseOperationContext = new HBaseOperationContext(tableNameSpace, hTableDescriptor, tableName, hColumnDescriptors, operation, ugi, userName, owner, hbaseConf);
+        HBaseOperationContext hbaseOperationContext = new HBaseOperationContext(tableNameSpace, tableDescriptor, tableName, columnFamilyDescriptors, operation, ugi, userName, owner, hbaseConf);
         createAtlasInstances(hbaseOperationContext);
 
         if (LOG.isDebugEnabled()) {
@@ -635,27 +620,24 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
         return hbaseOperationContext;
     }
 
-    private HBaseOperationContext handleHBaseColumnFamilyOperation(HColumnDescriptor hColumnDescriptor, TableName tableName, String columnFamily, OPERATION operation) {
+    private HBaseOperationContext handleHBaseColumnFamilyOperation(ColumnFamilyDescriptor columnFamilyDescriptor, TableName tableName, String columnFamily, OPERATION operation, UserGroupInformation ugi, String userName) {
         if (LOG.isDebugEnabled()) {
             LOG.debug("==> HBaseAtlasHook.handleHBaseColumnFamilyOperation()");
         }
 
-        UserGroupInformation ugi       = getUGI();
-        User                 user      = getActiveUser();
-        String               userName  = (user != null) ? user.getShortName() : null;
         String               owner     = userName;
-        Map<String, String>  hbaseConf = null;
+        Map<String, String>  hbaseConf = new HashMap<>();
 
         String tableNameSpace = tableName.getNamespaceAsString();
         if (tableNameSpace == null) {
             tableNameSpace = tableName.getNameWithNamespaceInclAsString();
         }
 
-        if (hColumnDescriptor != null) {
-            hbaseConf = hColumnDescriptor.getConfiguration();
+        if (columnFamilyDescriptor != null) {
+            hbaseConf = columnFamilyDescriptor.getConfiguration();
         }
 
-        HBaseOperationContext hbaseOperationContext = new HBaseOperationContext(tableNameSpace, tableName, hColumnDescriptor, columnFamily, operation, ugi, userName, owner, hbaseConf);
+        HBaseOperationContext hbaseOperationContext = new HBaseOperationContext(tableNameSpace, tableName, columnFamilyDescriptor, columnFamily, operation, ugi, userName, owner, hbaseConf);
         createAtlasInstances(hbaseOperationContext);
 
         if (LOG.isDebugEnabled()) {
@@ -664,26 +646,12 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
         return hbaseOperationContext;
     }
 
-    private User getActiveUser() {
-        User user = RpcServer.getRequestUser();
-        if (user == null) {
-            // for non-rpc handling, fallback to system user
-            try {
-                user = User.getCurrent();
-            } catch (IOException e) {
-                LOG.error("Unable to find the current user");
-                user = null;
-            }
-        }
-        return user;
-    }
-
-    private UserGroupInformation getUGI() {
+    private UserGroupInformation getUGI(ObserverContext<?> ctx) {
         UserGroupInformation ugi  = null;
-        User                 user = getActiveUser();
-
+        User                 user = null;
         try {
-            ugi = UserGroupInformation.getLoginUser();
+            user = getActiveUser(ctx);
+            ugi  = UserGroupInformation.getLoginUser();
         } catch (Exception e) {
             // not setting the UGI here
         }
@@ -696,5 +664,9 @@ public class HBaseAtlasHook extends AbstractAtlasHook {
 
         LOG.info("HBaseAtlasHook: UGI: {}",  ugi);
         return ugi;
+    }
+
+    private User getActiveUser(ObserverContext<?> ctx) throws IOException {
+        return (User)ctx.getCaller().orElse(User.getCurrent());
     }
 }

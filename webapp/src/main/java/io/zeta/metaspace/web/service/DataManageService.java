@@ -75,7 +75,6 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.directory.api.util.Strings;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.mybatis.spring.MyBatisSystemException;
@@ -799,7 +798,7 @@ public class DataManageService {
             //同级目录
             String up = "up";
             String down = "down";
-            if (StringUtils.isNotEmpty(info.getGuid()) && Strings.equals(info.getDirection(), up)) {
+            if (StringUtils.isNotEmpty(info.getGuid()) && StringUtils.equals(info.getDirection(), up)) {
                 entity.setDownBrotherCategoryGuid(info.getGuid());
                 String upBrotherGuid = currentEntity.getUpBrotherCategoryGuid();
                 if (StringUtils.isNotEmpty(upBrotherGuid)) {
@@ -807,7 +806,7 @@ public class DataManageService {
                     categoryDao.updateDownBrotherCategoryGuid(upBrotherGuid, newCategoryGuid, tenantId);
                 }
                 categoryDao.updateUpBrotherCategoryGuid(info.getGuid(), newCategoryGuid, tenantId);
-            } else if (StringUtils.isNotEmpty(info.getGuid()) && Strings.equals(info.getDirection(), down)) {
+            } else if (StringUtils.isNotEmpty(info.getGuid()) && StringUtils.equals(info.getDirection(), down)) {
                 entity.setUpBrotherCategoryGuid(info.getGuid());
                 String downBrotherGuid = currentEntity.getDownBrotherCategoryGuid();
                 if (StringUtils.isNotEmpty(downBrotherGuid)) {

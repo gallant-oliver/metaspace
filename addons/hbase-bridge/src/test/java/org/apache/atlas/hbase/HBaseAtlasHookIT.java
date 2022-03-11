@@ -44,15 +44,17 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.fail;
+import static org.testng.AssertJUnit.assertFalse;
 
 
 public class HBaseAtlasHookIT {
     private   static final Logger LOG          = LoggerFactory.getLogger(HBaseAtlasHookIT.class);
     protected static final String ATLAS_URL    = "http://localhost:31000/";
-    protected static final String CLUSTER_NAME = "ms";
+    protected static final String CLUSTER_NAME = "primary";
 
     private HBaseTestingUtility utility;
     private int                 port;
@@ -76,6 +78,12 @@ public class HBaseAtlasHookIT {
     }
 
     @Test
+    public void testGetMetaTableRows() throws Exception {
+        List<byte[]> results = utility.getMetaTableRows();
+        assertFalse("results should have some entries and is empty.", results.isEmpty());
+    }
+
+    @Test (enabled = false)
     public void testCreateNamesapce() throws Exception {
         final Configuration conf = HBaseConfiguration.create();
 
@@ -103,7 +111,7 @@ public class HBaseAtlasHookIT {
         }
     }
 
-    @Test
+    @Test (enabled = false)
     public void testCreateTable() throws Exception {
         final Configuration conf = HBaseConfiguration.create();
 
@@ -148,7 +156,7 @@ public class HBaseAtlasHookIT {
     private void createAtlasClient() {
         try {
             org.apache.commons.configuration.Configuration configuration = ApplicationProperties.get();
-            String[]                                       atlasEndPoint = configuration.getStringArray(HBaseAtlasHook.ATTR_ATLAS_ENDPOINT);
+            String[] atlasEndPoint = configuration.getStringArray(HBaseAtlasHook.ATTR_ATLAS_ENDPOINT);
 
             configuration.setProperty("atlas.cluster.name", CLUSTER_NAME);
 
@@ -163,7 +171,7 @@ public class HBaseAtlasHookIT {
             }
 
             if (AuthenticationUtil.isKerberosAuthenticationEnabled()) {
-                atlasClient = new AtlasClientV2(configuration, atlasEndPoint, null);
+                atlasClient = new AtlasClientV2(atlasEndPoint);
             } else {
                 atlasClient = new AtlasClientV2(configuration, atlasEndPoint, new String[]{"admin", "admin"});
             }
@@ -194,8 +202,7 @@ public class HBaseAtlasHookIT {
         utility.getConfiguration().set("hbase.regionserver.info.port", String.valueOf(getFreePort()));
         utility.getConfiguration().set("zookeeper.znode.parent", "/hbase-unsecure");
         utility.getConfiguration().set("hbase.table.sanity.checks", "false");
-        utility.getConfiguration().set("hbase.coprocessor.master.classes",
-                                       "org.apache.atlas.hbase.hook.HBaseAtlasCoprocessor");
+        utility.getConfiguration().set("hbase.coprocessor.master.classes", "org.apache.atlas.hbase.hook.HBaseAtlasCoprocessor");
 
         utility.startMiniCluster();
     }
@@ -219,7 +226,7 @@ public class HBaseAtlasHookIT {
         }
         String nameSpaceQualifiedName = HBaseAtlasHook.getNameSpaceQualifiedName(CLUSTER_NAME, nameSpace);
         return assertEntityIsRegistered(HBaseDataTypes.HBASE_NAMESPACE.getName(), AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME,
-                                        nameSpaceQualifiedName, assertPredicate);
+                nameSpaceQualifiedName, assertPredicate);
     }
 
     protected String assertTableIsRegistered(String nameSpace, String tableName) throws Exception {
@@ -232,7 +239,7 @@ public class HBaseAtlasHookIT {
         }
         String tableQualifiedName = HBaseAtlasHook.getTableQualifiedName(CLUSTER_NAME, nameSpace, tableName);
         return assertEntityIsRegistered(HBaseDataTypes.HBASE_TABLE.getName(), AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, tableQualifiedName,
-                                        assertPredicate);
+                assertPredicate);
     }
 
     public interface AssertPredicate {
@@ -252,7 +259,7 @@ public class HBaseAtlasHookIT {
 
     protected String assertEntityIsRegistered(final String typeName, final String property, final String value,
                                               final HBaseAtlasHookIT.AssertPredicate assertPredicate) throws Exception {
-        waitFor(80000, new HBaseAtlasHookIT.Predicate() {
+        waitFor(30000, new HBaseAtlasHookIT.Predicate() {
             @Override
             public void evaluate() throws Exception {
                 AtlasEntityWithExtInfo entity = atlasClient.getEntityByAttribute(typeName, Collections.singletonMap(property, value));
