@@ -166,10 +166,10 @@ public class DataAssetsRetrievalService {
                 list = businessDAO.searchTables(tenantId, userId, isPublic, isGlobal, offset, limit, query);
                 break;
             case CommonConstant.TASKS:
-                list = taskManageDAO.tasksSearch(tenantId, userId, isPublic, isGlobal, offset, limit, query);
+                list = taskManageDAO.tasksSearch(tenantId, userId, isGlobal, offset, limit, query);
                 break;
             case CommonConstant.STANDARD:
-                list = dataStandardDAO.dataSearch(tenantId, userId, isPublic, isGlobal, offset, limit, query);
+                list = dataStandardDAO.dataSearch(tenantId, userId, isGlobal, offset, limit, query);
                 break;
             default:
                 list = businessDAO.searchAll(tenantId, userId, isPublic, isGlobal, offset, limit, query);

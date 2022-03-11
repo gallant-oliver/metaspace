@@ -983,11 +983,9 @@ public interface TaskManageDAO {
             "        AND ((da.name like concat('%',#{query},'%') ESCAPE '/')\n" +
             "        OR (da.description like concat('%',#{query},'%') ESCAPE '/'))\n" +
             "    </if>\n" +
-            "    <if test=\"isPublic==false\">\n" +
-            "        AND tenantid=#{tenantId}\n" +
-            "    </if>\n" +
+            "    and tenantid=#{tenantId}\n" +
             "limit #{limit} offset #{offset}" +
             "</script>")
-    List<DataAssets> tasksSearch(@Param("tenantId") String tenantId, @Param("userId") String userId, @Param("isPublic") boolean isPublic,
+    List<DataAssets> tasksSearch(@Param("tenantId") String tenantId, @Param("userId") String userId,
                                  @Param("isGlobal") boolean isGlobal, @Param("offset") int offset, @Param("limit") int limit, @Param("query") String query);
 }

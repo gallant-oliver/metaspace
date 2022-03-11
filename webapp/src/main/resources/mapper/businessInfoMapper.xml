@@ -131,19 +131,14 @@
         bi.standard_type standardType,false open,0  taskLevel
         FROM data_standard bi
         where delete=false and bi.version=0
-        <if test="isPublic==false">
-            AND
-            tenantid=#{tenantId}
-        </if>
+        AND tenantid=#{tenantId}
         UNION ALL
         SELECT da.id,tenantid,da.name,null businessId,da.description,4 as type,
         null businessPath,null technicalPath,null tableGuid,null businessName,null important,null secret,
         0 standardType,da.enable open,da.level taskLevel
         FROM data_quality_task da
         where delete=false
-        <if test="isPublic==false">
-            AND tenantid=#{tenantId}
-        </if>
+        AND tenantid=#{tenantId}
         )t
         LEFT JOIN tenant te ON te.id=t.tenantid
         WHERE 1=1

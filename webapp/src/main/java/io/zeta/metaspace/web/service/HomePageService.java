@@ -382,8 +382,9 @@ public class HomePageService {
      * @throws AtlasBaseException
      */
     @Cacheable(value = "DataStandardTotalCache", key = "'DataStandardTotalCache'+#tenantId")
-    public List<CategoryPrivilege> getDataStandardCountList(String tenantId) throws AtlasBaseException {
+    public PageResult<CategoryPrivilege> getDataStandardCountList(String tenantId, int limit, int offset) throws AtlasBaseException {
         try {
+            PageResult<CategoryPrivilege> pageResult = new PageResult<>();
             List<CategoryPrivilege> result = new ArrayList<>();
             // 数据标准目录类型id
             int type = 3;
@@ -392,8 +393,14 @@ public class HomePageService {
             if (!CollectionUtils.isEmpty(allByUserGroup)) {
                 List<CategoryPrivilege> standardMap = allByUserGroup.stream().filter(r -> StringUtils.isEmpty(r.getParentCategoryGuid())).collect(Collectors.toList());
                 result = standardMap;
+
+                List<CategoryPrivilege> collect = result.stream().skip((long) limit * (offset - 1)).limit(limit).collect(Collectors.toList());
+                pageResult.setLists(collect);
+                pageResult.setOffset(offset);
+                pageResult.setCurrentSize(CollectionUtils.isEmpty(collect) ? 0 : collect.size());
+                pageResult.setTotalSize(CollectionUtils.isEmpty(result) ? 0 : result.size());
             }
-            return result;
+            return pageResult;
         } catch (Exception e) {
             LOG.error("查询异常", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
