@@ -729,27 +729,24 @@ public class MetaDataREST {
     /**
      * 关系型表血缘
      *
-     * @param guid
      * @param token
      * @return
      * @throws AtlasBaseException
      */
     @POST
-    @Path("/table/relationLineage/{guid}")
+    @Path("/table/relationLineage")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public TableLineageInfo getRelationTableLineage(@PathParam("guid") String guid,
-                                                    @HeaderParam("X-SSO-FullticketId") String token,
+    public TableLineageInfo getRelationTableLineage(@HeaderParam("X-SSO-FullticketId") String token,
                                                     TableInfoVo tableInfoVo
     ) throws AtlasBaseException {
-        Servlets.validateQueryParamLength("guid", guid);
         AtlasPerfTracer perf = null;
         Long start = System.currentTimeMillis();
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getRelationTableLineage");
             }
-            return metadataService.getRelationTableLineage(guid, token, tableInfoVo);
+            return metadataService.getRelationTableLineage(token, tableInfoVo);
         } finally {
             dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "data_kinship");
             AtlasPerfTracer.log(perf);

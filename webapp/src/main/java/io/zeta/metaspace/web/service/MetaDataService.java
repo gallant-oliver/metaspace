@@ -39,6 +39,7 @@ import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.util.*;
 import lombok.extern.slf4j.Slf4j;
@@ -1584,34 +1585,60 @@ public class MetaDataService {
         }
     }
 
-    public TableLineageInfo getRelationTableLineage(String guid, String token, TableInfoVo tableInfoVo) throws AtlasBaseException {
+    public TableLineageInfo getRelationTableLineage(String token, TableInfoVo tableInfoVo) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
-            LOG.debug("==> MetaDataService.getTableLineage({}, {})", guid, tableInfoVo);
+            LOG.debug("==> MetaDataService.getRelationTableLineage({})", tableInfoVo);
         }
         try {
+            Gson gson = new Gson();
             Configuration conf = ApplicationProperties.get();
             String logoutURL = conf.getString("metaspace.matedate.table.lineage");
             if (logoutURL == null || logoutURL.equals("")) {
-                throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "sso.logout.url");
+                throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.matedate.table.lineage");
             }
-            HashMap<String, String> header = new HashMap<>();
+            Map<String, Object> header = new HashMap<>();
             header.put("token", token);
-            HashMap<String, String> queryParamMap = new HashMap<>();
-            queryParamMap.put("host", tableInfoVo.getHost());
-            queryParamMap.put("port", String.valueOf(tableInfoVo.getPort()));
-            queryParamMap.put("database", tableInfoVo.getDatabase());
-            queryParamMap.put("table", tableInfoVo.getTable());
-            queryParamMap.put("datasource", String.valueOf(tableInfoVo.getDatasource()));
-            queryParamMap.put("type", tableInfoVo.getType());
-            String s = OKHttpClient.doGet(logoutURL, queryParamMap, header);
-            if (Objects.isNull(s)) {
+            String strJson = gson.toJson(tableInfoVo);
+            String res = OKHttpClient.doPost(logoutURL, strJson, header);
+            if (Objects.isNull(res)) {
                 throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取表血缘关系失败");
             }
-            Gson gson = new Gson();
-            List<SimpleTaskNode> simpleTaskNodes = gson.fromJson(s, new TypeToken<List<SimpleTaskNode>>() {
-            }.getType());
+            LOG.info(res);
 
-            return setTableLineageInfo(simpleTaskNodes, tableInfoVo.getDepth(), tableInfoVo, guid);
+            List<SimpleTaskNode> simpleTaskNodes = gson.fromJson(res, new TypeToken<List<SimpleTaskNode>>() {
+            }.getType());
+            TableLineageInfo tableLineageInfo = new TableLineageInfo();
+            List<TableInfoVo> tableInfoVos = new ArrayList<>();
+            tableInfoVos.add(tableInfoVo);
+            Set<LineageTrace> lineageTraceSet = new HashSet<>();
+            List<TableLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
+            List<TableInfoVo> tableInfoVosCache = new ArrayList<>();
+            if (!org.springframework.util.StringUtils.isEmpty(tableInfoVo.getDirection())) {
+                if (CommonConstant.INPUT_DIRECTION.equals(tableInfoVo.getDirection())) {
+                    MetaDateRelationalDateService.upTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
+                            lineageTraceSet, lineageEntities, tableInfoVosCache);
+                } else if (CommonConstant.OUTPUT_DIRECTION.equals(tableInfoVo.getDirection())) {
+                    MetaDateRelationalDateService.downTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
+                            lineageTraceSet, lineageEntities, tableInfoVosCache);
+                } else if (CommonConstant.BOTH_DIRECTION.equals(tableInfoVo.getDirection())) {
+                    MetaDateRelationalDateService.upTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
+                            lineageTraceSet, lineageEntities, tableInfoVosCache);
+                    MetaDateRelationalDateService.downTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
+                            lineageTraceSet, lineageEntities, tableInfoVosCache);
+                } else {
+                    throw new AtlasBaseException(AtlasErrorCode.INSTANCE_LINEAGE_INVALID_PARAMS, "direction", tableInfoVo.getDirection());
+                }
+            } else {
+                throw new AtlasBaseException(AtlasErrorCode.INSTANCE_LINEAGE_INVALID_PARAMS, "direction", null);
+            }
+            if (CollectionUtils.isNotEmpty(tableInfoVos)) {
+                //过滤重复数据
+                tableLineageInfo.setEntities(lineageEntities.stream()
+                        .filter(distinctByKey(TableLineageInfo.LineageEntity::getGuid)).collect(Collectors.toList()));
+            }
+            tableLineageInfo.setRelations(lineageTraceSet);
+            tableLineageInfo.setGuid(tableInfoVo.getGuid());
+            return tableLineageInfo;
         } catch (AtlasBaseException | AtlasException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表血缘关系失败");
         }

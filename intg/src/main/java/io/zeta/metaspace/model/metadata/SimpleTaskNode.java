@@ -33,4 +33,12 @@ public class SimpleTaskNode {
      *  上一节点
      */
     private String preNode;
+    /**
+     *  描述
+     */
+    private String desc;
+    /**
+     *  sql
+     */
+    private String sql;
 }

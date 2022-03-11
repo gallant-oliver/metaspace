@@ -39,5 +39,9 @@ public class TableInfoVo {
     /**
      * 血缘深度
      */
-    int depth;
+    private int depth;
+    /**
+     * 血缘方向（INPUT, OUTPUT, BOTH）
+     */
+    private String direction;
 }

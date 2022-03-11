@@ -65,4 +65,25 @@ public class CommonConstant {
     public final static int TASKS = 4;
 
     public final static int STANDARD = 5;
+
+    /**
+     * 关系型血缘查找默认双向
+     */
+    public static final String DEFAULT_DIRECTION = "BOTH";
+    /**
+     * 关系型血缘查找双向
+     */
+    public static final String BOTH_DIRECTION = "BOTH";
+    /**
+     * 关系型血缘查找向上
+     */
+    public static final String INPUT_DIRECTION = "INPUT";
+    /**
+     * 关系型血缘查找向下
+     */
+    public static final String OUTPUT_DIRECTION = "OUTPUT";
+    /**
+     * 默认血缘深度
+     */
+    public static final String DEFAULT_DEPTH = "-1";
 }
