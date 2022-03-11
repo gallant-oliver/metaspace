@@ -42,6 +42,16 @@ public class TaskExecutionReport {
     private Integer errorTotalCount;
     private Integer executeCount;
     private List<ExecutionRecord> executionRecordList;
+    private boolean enable;
+
+    public boolean getEnable() {
+        return enable;
+    }
+
+    public void setEnable(boolean enable) {
+        this.enable = enable;
+    }
+
     /**
      * 当前进度百分比
      */
