@@ -1613,18 +1613,19 @@ public class MetaDataService {
             Set<LineageTrace> lineageTraceSet = new HashSet<>();
             List<TableLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
             List<TableInfoVo> tableInfoVosCache = new ArrayList<>();
+            List<SimpleTaskNode> taskNodeCache = new ArrayList<>();
             if (!org.springframework.util.StringUtils.isEmpty(tableInfoVo.getDirection())) {
                 if (CommonConstant.INPUT_DIRECTION.equals(tableInfoVo.getDirection())) {
                     MetaDateRelationalDateService.upTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
-                            lineageTraceSet, lineageEntities, tableInfoVosCache);
+                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
                 } else if (CommonConstant.OUTPUT_DIRECTION.equals(tableInfoVo.getDirection())) {
                     MetaDateRelationalDateService.downTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
-                            lineageTraceSet, lineageEntities, tableInfoVosCache);
+                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
                 } else if (CommonConstant.BOTH_DIRECTION.equals(tableInfoVo.getDirection())) {
                     MetaDateRelationalDateService.upTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
-                            lineageTraceSet, lineageEntities, tableInfoVosCache);
+                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
                     MetaDateRelationalDateService.downTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
-                            lineageTraceSet, lineageEntities, tableInfoVosCache);
+                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
                 } else {
                     throw new AtlasBaseException(AtlasErrorCode.INSTANCE_LINEAGE_INVALID_PARAMS, "direction", tableInfoVo.getDirection());
                 }

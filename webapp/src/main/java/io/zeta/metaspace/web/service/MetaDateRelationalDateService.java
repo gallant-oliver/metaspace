@@ -4,6 +4,8 @@ import io.zeta.metaspace.model.metadata.LineageTrace;
 import io.zeta.metaspace.model.metadata.SimpleTaskNode;
 import io.zeta.metaspace.model.metadata.TableInfoVo;
 import io.zeta.metaspace.model.metadata.TableLineageInfo;
+import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -28,9 +30,10 @@ public class MetaDateRelationalDateService {
      * @param lineageTraceSet        血缘关系
      * @param lineageEntities        对应表节点集合（sql与描述也封装为一个节点）
      * @param inputTableInfoVosCache 获取上级表inputTable集合（用于判定唯一guid）
+     * @param taskNodeCache          记录遍历过的节点缓存（用于判定是否存在死循环）
      */
     public static void upTaskNode(List<SimpleTaskNode> simpleTaskNodes, List<TableInfoVo> tableInfoVo, int depth, Set<LineageTrace> lineageTraceSet,
-                                  List<TableLineageInfo.LineageEntity> lineageEntities, List<TableInfoVo> inputTableInfoVosCache) {
+                                  List<TableLineageInfo.LineageEntity> lineageEntities, List<TableInfoVo> inputTableInfoVosCache, List<SimpleTaskNode> taskNodeCache) {
         if (depth < 1) {
             return;
         }
@@ -49,6 +52,9 @@ public class MetaDateRelationalDateService {
                 LineageTrace outLineageTrace = new LineageTrace();
                 String tableGuid = UUID.randomUUID().toString();
                 String descGuid = UUID.randomUUID().toString();
+
+                // 判断是否出现死循环血缘
+                judgeInfiniteLoop(taskNodeCache, r);
 
                 if (!StringUtils.isEmpty(r.getInputTable()) && !StringUtils.isEmpty(r.getOutputTable())) {
                     r.getOutputTable().setGuid(infoVo.getGuid());
@@ -71,15 +77,19 @@ public class MetaDateRelationalDateService {
                         inputTableInfoVosCache.add(r.getInputTable());
                     }
 
-                    // 血缘
-                    inLineageTrace.setFromEntityId(tableGuid);
-                    inLineageTrace.setToEntityId(descGuid);
-                    lineageTraceSet.add(inLineageTrace);
-                    outLineageTrace.setFromEntityId(descGuid);
-                    outLineageTrace.setToEntityId(infoVo.getGuid());
-                    lineageTraceSet.add(outLineageTrace);
+                    if (!judgeAlike(taskNodeCache, r)) {
+                        // 添加缓存
+                        taskNodeCache.add(r);
+                        // 血缘
+                        inLineageTrace.setFromEntityId(tableGuid);
+                        inLineageTrace.setToEntityId(descGuid);
+                        lineageTraceSet.add(inLineageTrace);
+                        outLineageTrace.setFromEntityId(descGuid);
+                        outLineageTrace.setToEntityId(infoVo.getGuid());
+                        lineageTraceSet.add(outLineageTrace);
 
-                    setLineageTableInfoVo(r, lineageEntities, descGuid);
+                        setLineageTableInfoVo(r, lineageEntities, descGuid);
+                    }
 
                 }
                 return r;
@@ -92,7 +102,7 @@ public class MetaDateRelationalDateService {
         if (CollectionUtils.isNotEmpty(outputTableInfoVos)) {
             outputTableInfoVos = outputTableInfoVos.stream().filter(MetaDataService.distinctByKey(TableInfoVo::getGuid)).collect(Collectors.toList());
         }
-        upTaskNode(simpleTaskNodes, outputTableInfoVos, --depth, lineageTraceSet, lineageEntities, inputTableInfoVosCache);
+        upTaskNode(simpleTaskNodes, outputTableInfoVos, --depth, lineageTraceSet, lineageEntities, inputTableInfoVosCache, taskNodeCache);
     }
 
 
@@ -105,9 +115,10 @@ public class MetaDateRelationalDateService {
      * @param lineageTraceSet         血缘关系
      * @param lineageEntities         对应表节点集合（sql与描述也封装为一个节点）
      * @param outputTableInfoVosCache 获取下级表outputTable集合（用于判定唯一guid）
+     * @param taskNodeCache           记录遍历过的节点缓存（用于判定是否存在死循环）
      */
     public static void downTaskNode(List<SimpleTaskNode> simpleTaskNodes, List<TableInfoVo> tableInfoVo, int depth, Set<LineageTrace> lineageTraceSet,
-                                    List<TableLineageInfo.LineageEntity> lineageEntities, List<TableInfoVo> outputTableInfoVosCache) {
+                                    List<TableLineageInfo.LineageEntity> lineageEntities, List<TableInfoVo> outputTableInfoVosCache, List<SimpleTaskNode> taskNodeCache) {
         if (depth < 1) {
             return;
         }
@@ -126,6 +137,9 @@ public class MetaDateRelationalDateService {
                 LineageTrace outLineageTrace = new LineageTrace();
                 String tableGuid = UUID.randomUUID().toString();
                 String descGuid = UUID.randomUUID().toString();
+
+                // 判断是否出现死循环血缘
+                judgeInfiniteLoop(taskNodeCache, r);
 
                 if (!StringUtils.isEmpty(r.getInputTable()) && !StringUtils.isEmpty(r.getOutputTable())) {
                     r.getInputTable().setGuid(infoVo.getGuid());
@@ -148,15 +162,19 @@ public class MetaDateRelationalDateService {
                         outputTableInfoVosCache.add(r.getOutputTable());
                     }
 
-                    // 血缘
-                    inLineageTrace.setFromEntityId(infoVo.getGuid());
-                    inLineageTrace.setToEntityId(descGuid);
-                    lineageTraceSet.add(inLineageTrace);
-                    outLineageTrace.setFromEntityId(descGuid);
-                    outLineageTrace.setToEntityId(tableGuid);
-                    lineageTraceSet.add(outLineageTrace);
+                    if (!judgeAlike(taskNodeCache, r)) {
+                        // 添加缓存
+                        taskNodeCache.add(r);
+                        // 血缘
+                        inLineageTrace.setFromEntityId(infoVo.getGuid());
+                        inLineageTrace.setToEntityId(descGuid);
+                        lineageTraceSet.add(inLineageTrace);
+                        outLineageTrace.setFromEntityId(descGuid);
+                        outLineageTrace.setToEntityId(tableGuid);
+                        lineageTraceSet.add(outLineageTrace);
 
-                    setLineageTableInfoVo(r, lineageEntities, descGuid);
+                        setLineageTableInfoVo(r, lineageEntities, descGuid);
+                    }
 
                 }
                 return r;
@@ -169,7 +187,7 @@ public class MetaDateRelationalDateService {
         if (CollectionUtils.isNotEmpty(inputTableInfoVos)) {
             inputTableInfoVos = inputTableInfoVos.stream().filter(MetaDataService.distinctByKey(TableInfoVo::getGuid)).collect(Collectors.toList());
         }
-        downTaskNode(simpleTaskNodes, inputTableInfoVos, --depth, lineageTraceSet, lineageEntities, outputTableInfoVosCache);
+        downTaskNode(simpleTaskNodes, inputTableInfoVos, --depth, lineageTraceSet, lineageEntities, outputTableInfoVosCache, taskNodeCache);
     }
 
     /**
@@ -211,5 +229,94 @@ public class MetaDateRelationalDateService {
         outLineageEntity.setDisplayText(r.getOutputTable().getTable());
         outLineageEntity.setProcess(false);
         lineageEntities.add(outLineageEntity);
+    }
+
+    /**
+     * 判断是否出现死循环血缘
+     *
+     * @param taskNodeCache  缓存出现过的节点
+     * @param simpleTaskNode 当前节点
+     */
+    public static void judgeInfiniteLoop(List<SimpleTaskNode> taskNodeCache, SimpleTaskNode simpleTaskNode) {
+        if (CollectionUtils.isNotEmpty(taskNodeCache)) {
+            List<SimpleTaskNode> nodes = taskNodeCache.stream().filter(t -> {
+                TableInfoVo outTable = t.getOutputTable();
+                TableInfoVo inTable = t.getInputTable();
+                TableInfoVo inputTable = simpleTaskNode.getInputTable();
+                TableInfoVo outputTable = simpleTaskNode.getOutputTable();
+                if (outTable != null && inTable != null && outputTable != null && inputTable != null) {
+                    if (outTable.getHost().equals(inputTable.getHost()) && outTable.getPort().equals(inputTable.getPort())
+                            && outTable.getDatabase().equals(inputTable.getDatabase()) && outTable.getTable().equals(inputTable.getTable())
+                            && inTable.getHost().equals(outputTable.getHost()) && inTable.getPort().equals(outputTable.getPort())
+                            && inTable.getDatabase().equals(outputTable.getDatabase()) && inTable.getTable().equals(outputTable.getTable())) {
+                        return true;
+                    }
+                }
+                return false;
+            }).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(nodes)) {
+                throw new AtlasBaseException(AtlasErrorCode.INVALID_STRUCT_VALUE, "表结构数据异常，获取表血缘关系失败");
+            }
+            List<TableInfoVo> tableInfos = new ArrayList<>();
+            tableInfos.add(simpleTaskNode.getInputTable());
+            int flag = 1;
+            while (true) {
+                List<TableInfoVo> tableCache = new ArrayList<>();
+                for (TableInfoVo tableInfo : tableInfos) {
+                    tableCache.addAll(taskNodeCache.stream().filter(n -> {
+                        TableInfoVo outputTable = n.getOutputTable();
+                        return outputTable.getHost().equals(tableInfo.getHost()) && outputTable.getPort().equals(tableInfo.getPort())
+                                && outputTable.getDatabase().equals(tableInfo.getDatabase()) && outputTable.getTable().equals(tableInfo.getTable());
+                    }).map(SimpleTaskNode::getInputTable).collect(Collectors.toList()));
+                }
+                if (CollectionUtils.isEmpty(tableCache)) {
+                    return;
+                }
+                List<TableInfoVo> info = tableCache.stream().filter(s -> {
+                    return s.getHost().equals(simpleTaskNode.getOutputTable().getHost()) && s.getPort().equals(simpleTaskNode.getOutputTable().getPort())
+                            && s.getDatabase().equals(simpleTaskNode.getOutputTable().getDatabase()) && s.getPort().equals(simpleTaskNode.getOutputTable().getDatabase());
+                }).collect(Collectors.toList());
+                // 存在则死循环
+                if (CollectionUtils.isNotEmpty(info)) {
+                    throw new AtlasBaseException(AtlasErrorCode.INVALID_STRUCT_VALUE, "表结构数据异常，获取表血缘关系失败");
+                }
+                tableInfos = tableCache.stream().filter(MetaDataService.distinctByKey(TableInfoVo::getGuid)).collect(Collectors.toList());
+                // 是否死循环
+                ++flag;
+                if (flag > 100) {
+                    throw new AtlasBaseException(AtlasErrorCode.INVALID_STRUCT_VALUE, "表结构数据异常，获取表血缘关系失败");
+                }
+            }
+        }
+    }
+
+    /**
+     * 判断当前节点是否出现重复输入输出表
+     *
+     * @param taskNodeCache  缓存出现过的节点
+     * @param simpleTaskNode 当前节点
+     */
+    public static boolean judgeAlike(List<SimpleTaskNode> taskNodeCache, SimpleTaskNode simpleTaskNode) {
+        if (CollectionUtils.isNotEmpty(taskNodeCache)) {
+            List<SimpleTaskNode> nodes = taskNodeCache.stream().filter(t -> {
+                TableInfoVo outTable = t.getOutputTable();
+                TableInfoVo inTable = t.getInputTable();
+                TableInfoVo inputTable = simpleTaskNode.getInputTable();
+                TableInfoVo outputTable = simpleTaskNode.getOutputTable();
+                if (outTable != null && inTable != null && outputTable != null && inputTable != null) {
+                    if (inTable.getHost().equals(inputTable.getHost()) && inTable.getPort().equals(inputTable.getPort())
+                            && inTable.getDatabase().equals(inputTable.getDatabase()) && inTable.getTable().equals(inputTable.getTable())
+                            && outTable.getHost().equals(outputTable.getHost()) && outTable.getPort().equals(outputTable.getPort())
+                            && outTable.getDatabase().equals(outputTable.getDatabase()) && outTable.getTable().equals(outputTable.getTable())) {
+                        return true;
+                    }
+                }
+                return false;
+            }).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(nodes)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
