@@ -737,6 +737,7 @@ public class MetaDataREST {
     @Path("/table/relationLineage")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @Valid
     public TableLineageInfo getRelationTableLineage(@HeaderParam("X-SSO-FullticketId") String token,
                                                     TableInfoVo tableInfoVo
     ) throws AtlasBaseException {
