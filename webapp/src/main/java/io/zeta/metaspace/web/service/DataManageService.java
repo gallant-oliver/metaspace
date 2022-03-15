@@ -40,6 +40,8 @@ import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.po.sourceinfo.SourceInfo;
+import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
+import io.zeta.metaspace.model.po.tableinfo.TableMetadataPO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.*;
@@ -55,6 +57,7 @@ import io.zeta.metaspace.model.table.column.tag.ColumnTagRelation;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.OKHttpClient;
+import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
@@ -97,6 +100,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -1828,13 +1832,15 @@ public class DataManageService {
     }
 
 
-    private void addOrUpdateColumn(Column column){
+    private void addOrUpdateColumn(Column column, Map<String, Object> mapTable, Map<String, String> mapTableUpdate){
         Column c = columnDAO.getColumnInfoByGuid(column.getColumnId());
         if(null == c){
             columnDAO.addColumn(column);
         }else{
             columnDAO.updateColumnInfo(column);
         }
+
+        this.metadataUpdateCheck(c, column, mapTable, mapTableUpdate);
 
         //衍生表字段标签更新
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfoList = sourceInfoDeriveColumnInfoDAO.selectListByTableGuidAndTags(column.getTableId());
@@ -1855,6 +1861,33 @@ public class DataManageService {
                 columnTagDAO.addTagRelationsToColumn(columnTagRelationList);
                 return;
             }
+        }
+    }
+
+    /**
+     * 元数据变更检查
+     */
+    private void metadataUpdateCheck(Column oldColumn, Column newColumn, Map<String, Object> mapTable, Map<String, String> mapTableUpdate) {
+        try {
+            int value = mapTable.get(newColumn.getTableId()) == null ? 0 : (int) mapTable.get(newColumn.getTableId());
+            StringBuilder str = new StringBuilder();
+            //新增的表 0：新增 1：表已经存在
+            if (value == 0) {
+                return;
+            }
+            if (null == oldColumn) {
+                str.append("列[").append(oldColumn.getColumnName()).append("]").append("新增").append("\r\n");
+            } else {
+                if (!newColumn.compareColumn(oldColumn)) {
+                    str.append("列[").append(oldColumn.getColumnName()).append("]类型变更,变更前[").append(oldColumn.getType()).append("]").append("变更后[").append(newColumn.getType()).append("]").append("\r\n");
+                }
+            }
+            if(StringUtils.isNotBlank(str.toString())){
+                String result = mapTableUpdate.get(newColumn.getTableId()) == null ? "" : mapTableUpdate.get(newColumn.getTableId());
+                mapTableUpdate.put(newColumn.getTableId(), result += str.toString());
+            }
+        } catch (Exception e) {
+            LOG.error("metadataUpdateCheck exception is {}", e);
         }
     }
 
@@ -1964,15 +1997,17 @@ public class DataManageService {
         }
     }
 
-    public void addOrUpdateTable(TableInfo tableInfo, SyncTaskDefinition definition) throws Exception {
+    public void addOrUpdateTable(TableInfo tableInfo, SyncTaskDefinition definition, Map<String, Object> mapTable) throws Exception {
         String tableGuid = tableInfo.getTableGuid();
         if ("ACTIVE".equalsIgnoreCase(tableInfo.getStatus())) {
             tableDAO.deleteIfExist(tableGuid, tableInfo.getDatabaseGuid(), tableInfo.getTableName());
         }
         TableInfo table = tableDAO.getTableInfoByTableguid(tableGuid);
         if (null != table) {
+            mapTable.put("tableGuid", 1);
             ProxyUtil.getProxy(DataManageService.class).updateTable(tableInfo);
         } else {
+            mapTable.put("tableGuid", 0);
             ProxyUtil.getProxy(DataManageService.class).addTable(tableInfo);
         }
     }
@@ -2096,6 +2131,7 @@ public class DataManageService {
                     deleteIds.add(table);
                 }
             }
+            Map<String, Object> mapTable = new HashMap<>(tables.size());
             for (TableHeader table : tables) {
                 String tableId = table.getTableId();
                 if (tableDAO.ifTableExists(tableId) == 0) {
@@ -2108,7 +2144,7 @@ public class DataManageService {
                     tableInfo.setDbName(table.getDatabaseName());
                     tableInfo.setDatabaseStatus(table.getDatabaseStatus());
                     tableInfo.setDescription(table.getComment());
-                    addOrUpdateTable(tableInfo, null);
+                    addOrUpdateTable(tableInfo, null, mapTable);
                 }
             }
             for (String tableGuid : deleteIds) {
@@ -2145,6 +2181,8 @@ public class DataManageService {
 
     private void createOrUpdateEntities(List<AtlasEntity> entities, SyncTaskDefinition definition, KafkaConnector.Config config, Boolean enableEmail) throws Exception {
         Boolean hiveAtlasEntityAll = getHiveAtlasEntityAll(entities);
+        Map<String, Object> mapTable = new HashMap<>(256);
+        Map<String, String> mapTableUpdate = new HashMap<>(256);
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
             String dbType = null;
@@ -2187,7 +2225,7 @@ public class DataManageService {
                     }
                 case "rdbms_table":
                     TableInfo tableInfo = getTableInfo(entity);
-                    addOrUpdateTable(tableInfo,definition);
+                    addOrUpdateTable(tableInfo, definition, mapTable);
 //                    if (enableEmail) {
 //                        ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
 //                        threadPoolExecutor.execute(()->{
@@ -2200,12 +2238,49 @@ public class DataManageService {
                         continue;
                     }
                     Column column = getAndRemoveColumn(entity, "type");
-                    addOrUpdateColumn(column);
+                    addOrUpdateColumn(column, mapTable, mapTableUpdate);
                     break;
                 case "rdbms_column":
                     column = getAndRemoveColumn(entity, "data_type");
-                    addOrUpdateColumn(column);
+                    addOrUpdateColumn(column, mapTable, mapTableUpdate);
                     break;
+            }
+        }
+        ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
+        threadPoolExecutor.execute(() -> {
+            sendMessageCompass(mapTableUpdate);
+        });
+    }
+
+    /**
+     * compass需求，发送站内信
+     */
+    public void sendMessageCompass(Map<String, String> mapTableUpdate) {
+        for (String guid : mapTableUpdate.keySet()) {
+            StringBuilder str = new StringBuilder();
+            try {
+                TableDataSourceRelationPO tableDataSourceRelationPO = databaseDAO.selectByTableGuid(guid);
+                if(tableDataSourceRelationPO == null){
+                    continue;
+                }
+
+                List<TableMetadataPO> tableMetadataPOS = tableDAO.selectMetadataListByTableGuid(guid);
+                if(CollectionUtils.isEmpty(tableMetadataPOS)){
+                    continue;
+                }
+                Optional<TableMetadataPO> first = tableMetadataPOS.stream().filter(p -> p.getSourceId().equalsIgnoreCase(tableDataSourceRelationPO.getDataSourceId())).findFirst();
+                if(!first.isPresent()){
+                    continue;
+                }
+                str = new StringBuilder();
+                TableMetadataPO tableMetadataPO = first.get();
+                str.append("数据源[").append(tableMetadataPO.getSourceName()).append("]下的数据库[").append(tableMetadataPO.getDatabaseName()).append("]下的数据表[").append(tableMetadataPO.getTableName()).append("]元数据发生变更。变更内容为:\r\n");
+                str.append(mapTableUpdate.get(guid));
+                LOG.info("guid is {}, user is {}, str is {}", guid, tableDataSourceRelationPO.getUserName(), str.toString());
+                // TODO: 2022/3/15  调用站内信方法
+
+            } catch (Exception e) {
+                LOG.error("sendMessageCompass guid is {}, str is {} exception is {}", guid, str.toString(), e);
             }
         }
     }
