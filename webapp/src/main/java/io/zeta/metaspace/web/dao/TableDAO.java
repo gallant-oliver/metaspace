@@ -4,6 +4,7 @@ import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.dataassets.DataAssets;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.po.tableinfo.TableInfoDerivePO;
+import io.zeta.metaspace.model.po.tableinfo.TableSourceDataBasePO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.security.TenantDatabaseList;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
@@ -504,4 +505,11 @@ public interface TableDAO {
     TableExtInfo getTableImportanceInfo(@Param("tableId")String tableId);
 
     List<TableInfoDerivePO> selectByNameAndDbGuid(@Param("dbNameList") List<String> dbNameList, @Param("tableNameList") List<String> tableNameList, @Param("dbIdList") List<String> dbIdList);
+
+    /**
+     * 根据表guid获取对应的数据ip、端口、数据类型、数据库名、表名
+     * @param guid 表id
+     * @return 源数据库配置信息
+     */
+    TableSourceDataBasePO selectSourceDbByGuid(@Param("guid") String guid);
 }
