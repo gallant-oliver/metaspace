@@ -26,6 +26,7 @@ import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.*;
+import io.zeta.metaspace.model.po.tableinfo.TableSourceDataBasePO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.pojo.TableRelation;
 import io.zeta.metaspace.model.result.PageResult;
@@ -1548,37 +1549,49 @@ public class MetaDataService {
     }
 
     public TableLineageInfo getTableLineage(String guid, AtlasLineageInfo.LineageDirection direction,
-                                            int depth) throws AtlasBaseException {
+                                            int depth, String token) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getTableLineage({}, {}, {})", guid, direction, depth);
         }
         try {
-            AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, direction, depth);
-            if (Objects.isNull(lineageInfo)) {
+            if (StringUtils.isEmpty(guid)) {
                 throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取表血缘关系失败");
             }
+            TableSourceDataBasePO dataBasePO = tableDAO.selectSourceDbByGuid(guid);
             TableLineageInfo info = new TableLineageInfo();
-            Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
-            String lineageGuid = lineageInfo.getBaseEntityGuid();
-            //guid
-            info.setGuid(lineageGuid);
-            //relations
-            Set<LineageTrace> lineageRelations = getRelations(lineageInfo);
-            //entities
-            List<TableLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
-            ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
-            List<CompletableFuture> completableFutureList = new ArrayList<>(entities.size());
-            for (String key : entities.keySet()) {
-                completableFutureList.add(CompletableFuture.runAsync(() -> {
-                    TableLineageInfo.LineageEntity lineageEntity = new TableLineageInfo.LineageEntity();
-                    lineageEntities.add(lineageEntity);
-                    AtlasEntityHeader atlasEntity = entities.get(key);
-                    getTableEntityInfo(key, lineageEntity, entities, atlasEntity);
-                }, threadPoolExecutor));
+            if (dataBasePO == null || dataBasePO.getTable().equalsIgnoreCase("hive")) {
+                AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, direction, depth);
+                if (Objects.isNull(lineageInfo)) {
+                    throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取表血缘关系失败");
+                }
+                Map<String, AtlasEntityHeader> entities = lineageInfo.getGuidEntityMap();
+                String lineageGuid = lineageInfo.getBaseEntityGuid();
+                //guid
+                info.setGuid(lineageGuid);
+                //relations
+                Set<LineageTrace> lineageRelations = getRelations(lineageInfo);
+                //entities
+                List<TableLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
+                ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
+                List<CompletableFuture> completableFutureList = new ArrayList<>(entities.size());
+                for (String key : entities.keySet()) {
+                    completableFutureList.add(CompletableFuture.runAsync(() -> {
+                        TableLineageInfo.LineageEntity lineageEntity = new TableLineageInfo.LineageEntity();
+                        lineageEntities.add(lineageEntity);
+                        AtlasEntityHeader atlasEntity = entities.get(key);
+                        getTableEntityInfo(key, lineageEntity, entities, atlasEntity);
+                    }, threadPoolExecutor));
+                }
+                CompletableFuture.allOf(completableFutureList.toArray(new CompletableFuture[]{})).get(30, TimeUnit.SECONDS);
+                info.setEntities(lineageEntities);
+                info.setRelations(lineageRelations);
+            } else {
+                TableInfoVo tableInfo = new TableInfoVo();
+                org.springframework.beans.BeanUtils.copyProperties(dataBasePO, tableInfo);
+                tableInfo.setDepth(depth);
+                tableInfo.setDirection(direction.toString());
+                info = getRelationTableLineage(token, tableInfo);
             }
-            CompletableFuture.allOf(completableFutureList.toArray(new CompletableFuture[]{})).get(30, TimeUnit.SECONDS);
-            info.setEntities(lineageEntities);
-            info.setRelations(lineageRelations);
             return info;
         } catch (AtlasBaseException | InterruptedException | TimeoutException | ExecutionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表血缘关系失败");
@@ -1590,6 +1603,8 @@ public class MetaDataService {
             LOG.debug("==> MetaDataService.getRelationTableLineage({})", tableInfoVo);
         }
         try {
+            TableLineageInfo tableLineageInfo = new TableLineageInfo();
+            tableLineageInfo.setGuid(tableInfoVo.getGuid());
             Gson gson = new Gson();
             Configuration conf = ApplicationProperties.get();
             String logoutURL = conf.getString("metaspace.matedate.table.lineage");
@@ -1604,10 +1619,20 @@ public class MetaDataService {
                 throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取表血缘关系失败");
             }
             LOG.info(res);
-
-            List<SimpleTaskNode> simpleTaskNodes = gson.fromJson(res, new TypeToken<List<SimpleTaskNode>>() {
-            }.getType());
-            TableLineageInfo tableLineageInfo = new TableLineageInfo();
+            List<SimpleTaskNode> simpleTaskNodes;
+            if (res.contains("[")) {
+                simpleTaskNodes = gson.fromJson(res, new TypeToken<List<SimpleTaskNode>>() {
+                }.getType());
+            } else {
+                return tableLineageInfo;
+            }
+            // 限定血缘层级 小于1大于6 默认为3
+            if (tableInfoVo.getDepth() < 1) {
+                tableInfoVo.setDepth(3);
+            }
+            if (tableInfoVo.getDepth() > 6) {
+                tableInfoVo.setDepth(3);
+            }
             List<TableInfoVo> tableInfoVos = new ArrayList<>();
             tableInfoVos.add(tableInfoVo);
             Set<LineageTrace> lineageTraceSet = new HashSet<>();
@@ -1638,7 +1663,6 @@ public class MetaDataService {
                         .filter(distinctByKey(TableLineageInfo.LineageEntity::getGuid)).collect(Collectors.toList()));
             }
             tableLineageInfo.setRelations(lineageTraceSet);
-            tableLineageInfo.setGuid(tableInfoVo.getGuid());
             return tableLineageInfo;
         } catch (AtlasBaseException | AtlasException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表血缘关系失败");

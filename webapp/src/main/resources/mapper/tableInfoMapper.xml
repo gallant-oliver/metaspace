@@ -93,6 +93,25 @@
             </foreach>
     </select>
 
+    <select id = "selectSourceDbByGuid" resultType = "io.zeta.metaspace.model.po.tableinfo.TableSourceDataBasePO">
+        SELECT DISTINCT
+            tb.tableguid as guid,
+            ds.ip as host,
+            ds.port as port,
+            db.database_name as database,
+            db.db_type as type,
+            tb.tablename as table
+        FROM
+            tableinfo AS tb
+            INNER JOIN db_info AS db ON tb.databaseguid = db.database_guid
+            INNER JOIN source_db AS sd ON db.database_guid = sd.db_guid
+            INNER JOIN data_source AS ds ON ds.source_id = sd.source_id
+        WHERE
+            tb.status = 'ACTIVE'
+          AND db.status = 'ACTIVE'
+          AND tb.tableguid = #{guid}
+    </select>
+
     <select id="selectMetadataListByTableGuid" resultType="io.zeta.metaspace.model.po.tableinfo.TableMetadataPO">
 SELECT DISTINCT
 	ds.ip,
@@ -129,5 +148,4 @@ FROM
 	INNER JOIN db_info AS db ON tb.databaseguid = db.database_guid
 	WHERE 	tb.status = 'ACTIVE'
 	AND db.status = 'ACTIVE' 	AND tb.tableguid = #{tableGuid} and db.db_type = 'HIVE'
-    </select>
-</mapper>
+    </select></mapper>

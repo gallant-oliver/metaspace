@@ -710,6 +710,7 @@ public class MetaDataREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public TableLineageInfo getTableLineage(@PathParam("guid") String guid,
+                                            @HeaderParam("X-SSO-FullticketId") String token,
                                             @QueryParam("direction") @DefaultValue(DEFAULT_DIRECTION) AtlasLineageInfo.LineageDirection direction,
                                             @QueryParam("depth") @DefaultValue(DEFAULT_DEPTH) int depth) throws AtlasBaseException {
         Servlets.validateQueryParamLength("guid", guid);
@@ -719,7 +720,7 @@ public class MetaDataREST {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getTableLineage");
             }
-            return metadataService.getTableLineage(guid, direction, depth);
+            return metadataService.getTableLineage(guid, direction, depth, token);
         } finally {
             dataSourceService.metadataSearchStatistics(start, System.currentTimeMillis(), "data_kinship");
             AtlasPerfTracer.log(perf);

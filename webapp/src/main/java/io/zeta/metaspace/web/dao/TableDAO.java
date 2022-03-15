@@ -506,5 +506,12 @@ public interface TableDAO {
 
     List<TableInfoDerivePO> selectByNameAndDbGuid(@Param("dbNameList") List<String> dbNameList, @Param("tableNameList") List<String> tableNameList, @Param("dbIdList") List<String> dbIdList);
 
+    /**
+     * 根据表guid获取对应的数据ip、端口、数据类型、数据库名、表名
+     * @param guid 表id
+     * @return 源数据库配置信息
+     */
+    TableSourceDataBasePO selectSourceDbByGuid(@Param("guid") String guid);
+
     List<TableMetadataPO> selectMetadataListByTableGuid(@Param("tableGuid") String tableGuid);
 }
