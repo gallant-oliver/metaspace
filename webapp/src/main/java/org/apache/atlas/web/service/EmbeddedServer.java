@@ -60,7 +60,7 @@ public class EmbeddedServer {
         buffer.append("\n############################################");
         buffer.append("############################################");
         LOG.info(buffer.toString());
-        ThreadPoolExecutor executor      = new ThreadPoolExecutor(maxThreads, maxThreads, keepAliveTime, TimeUnit.SECONDS, queue);
+        ThreadPoolExecutor executor      = new ThreadPoolExecutor(minThreads, maxThreads, keepAliveTime, TimeUnit.SECONDS, queue);
         ExecutorThreadPool            pool          = new ExecutorThreadPool(executor, minThreads);
         server = new Server(pool);
 
