@@ -16,6 +16,8 @@
  */
 package io.zeta.metaspace.web.service;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
@@ -32,14 +34,18 @@ import io.zeta.metaspace.model.table.Tag;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AdapterUtils;
+import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.metadata.IMetaDataProvider;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.util.*;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.discovery.AtlasLineageService;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.glossary.enums.AtlasTermRelationshipStatus;
@@ -57,6 +63,7 @@ import org.apache.atlas.type.AtlasTypeRegistry;
 import org.apache.atlas.type.BaseAtlasType;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -81,6 +88,8 @@ import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -1574,6 +1583,182 @@ public class MetaDataService {
         } catch (AtlasBaseException | InterruptedException | TimeoutException | ExecutionException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表血缘关系失败");
         }
+    }
+
+    public TableLineageInfo getRelationTableLineage(String token, TableInfoVo tableInfoVo) throws AtlasBaseException {
+        if (DEBUG_ENABLED) {
+            LOG.debug("==> MetaDataService.getRelationTableLineage({})", tableInfoVo);
+        }
+        try {
+            Gson gson = new Gson();
+            Configuration conf = ApplicationProperties.get();
+            String logoutURL = conf.getString("metaspace.matedate.table.lineage");
+            if (logoutURL == null || logoutURL.equals("")) {
+                throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.matedate.table.lineage");
+            }
+            Map<String, Object> header = new HashMap<>();
+            header.put("token", token);
+            String strJson = gson.toJson(tableInfoVo);
+            String res = OKHttpClient.doPost(logoutURL, strJson, header);
+            if (Objects.isNull(res)) {
+                throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取表血缘关系失败");
+            }
+            LOG.info(res);
+
+            List<SimpleTaskNode> simpleTaskNodes = gson.fromJson(res, new TypeToken<List<SimpleTaskNode>>() {
+            }.getType());
+            TableLineageInfo tableLineageInfo = new TableLineageInfo();
+            List<TableInfoVo> tableInfoVos = new ArrayList<>();
+            tableInfoVos.add(tableInfoVo);
+            Set<LineageTrace> lineageTraceSet = new HashSet<>();
+            List<TableLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
+            List<TableInfoVo> tableInfoVosCache = new ArrayList<>();
+            List<SimpleTaskNode> taskNodeCache = new ArrayList<>();
+            if (!org.springframework.util.StringUtils.isEmpty(tableInfoVo.getDirection())) {
+                if (CommonConstant.INPUT_DIRECTION.equals(tableInfoVo.getDirection())) {
+                    MetaDateRelationalDateService.upTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
+                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
+                } else if (CommonConstant.OUTPUT_DIRECTION.equals(tableInfoVo.getDirection())) {
+                    MetaDateRelationalDateService.downTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
+                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
+                } else if (CommonConstant.BOTH_DIRECTION.equals(tableInfoVo.getDirection())) {
+                    MetaDateRelationalDateService.upTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
+                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
+                    MetaDateRelationalDateService.downTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
+                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
+                } else {
+                    throw new AtlasBaseException(AtlasErrorCode.INSTANCE_LINEAGE_INVALID_PARAMS, "direction", tableInfoVo.getDirection());
+                }
+            } else {
+                throw new AtlasBaseException(AtlasErrorCode.INSTANCE_LINEAGE_INVALID_PARAMS, "direction", null);
+            }
+            if (CollectionUtils.isNotEmpty(tableInfoVos)) {
+                //过滤重复数据
+                tableLineageInfo.setEntities(lineageEntities.stream()
+                        .filter(distinctByKey(TableLineageInfo.LineageEntity::getGuid)).collect(Collectors.toList()));
+            }
+            tableLineageInfo.setRelations(lineageTraceSet);
+            tableLineageInfo.setGuid(tableInfoVo.getGuid());
+            return tableLineageInfo;
+        } catch (AtlasBaseException | AtlasException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表血缘关系失败");
+        }
+    }
+
+    public TableLineageInfo setTableLineageInfo(List<SimpleTaskNode> simpleTaskNodes, int depth, TableInfoVo tableInfoVo, String tableGuid) {
+        TableLineageInfo info = new TableLineageInfo();
+        Set<LineageTrace> lineageTraceSet = new HashSet<>();
+        List<TableLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
+        int num = depth;
+
+        List<SimpleTaskNode> initTable = getConditionTier(simpleTaskNodes, tableInfoVo);
+        List<TableInfoVo> inoutTableInfoVos = new ArrayList<>();
+        List<TableInfoVo> outputTableInfoVos = new ArrayList<>();
+
+        if (CollectionUtils.isNotEmpty(initTable)) {
+            initTable = initTable.stream().map(r -> {
+                r.getOutputTable().setGuid(tableGuid);
+                return r;
+            }).collect(Collectors.toList());
+        }
+
+        if (CollectionUtils.isNotEmpty(simpleTaskNodes)) {
+            while (num > 0) {
+                //下一次获取的目标节点
+                if (num != depth) {
+                    outputTableInfoVos.clear();
+                    outputTableInfoVos.addAll(inoutTableInfoVos);
+                }
+                inoutTableInfoVos = new ArrayList<>();
+                for (SimpleTaskNode simpleTaskNode : initTable) {
+                    TableInfoVo inputTable = simpleTaskNode.getInputTable();
+                    TableInfoVo outputTable = simpleTaskNode.getOutputTable();
+
+                    TableLineageInfo.LineageEntity lineageEntity = new TableLineageInfo.LineageEntity();
+                    lineageEntity.setGuid(outputTable.getGuid());
+                    lineageEntity.setTableName(outputTable.getTable());
+                    lineageEntity.setDbName(outputTable.getDatabase());
+                    lineageEntity.setTypeName(outputTable.getType());
+                    lineageEntities.add(lineageEntity);
+
+                    LineageTrace lineageTrace = new LineageTrace();
+                    lineageTrace.setToEntityId(outputTable.getGuid());
+                    lineageTrace.setFromEntityId(inputTable.getGuid());
+                    lineageTraceSet.add(lineageTrace);
+
+                    inoutTableInfoVos.add(inputTable);
+                }
+
+                initTable = new ArrayList<>();
+                for (TableInfoVo infoVo : inoutTableInfoVos) {
+                    initTable.addAll(getConditionTier(simpleTaskNodes, infoVo));
+                }
+
+                if (num != depth) {
+                    //到顶但是没有上一级的元素(取差集添加)
+                    List<TableInfoVo> differenceSetList = inoutTableInfoVos.stream()
+                            .filter(item -> !outputTableInfoVos.stream()
+                                    .map(TableInfoVo::getGuid)
+                                    .collect(Collectors.toList())
+                                    .contains(item.getGuid()))
+                            .collect(Collectors.toList());
+                    if (CollectionUtils.isEmpty(inoutTableInfoVos) && CollectionUtils.isNotEmpty(outputTableInfoVos)) {
+                        differenceSetList = outputTableInfoVos;
+                    }
+                    if (CollectionUtils.isNotEmpty(differenceSetList)) {
+                        for (TableInfoVo tableInfo : differenceSetList) {
+                            TableLineageInfo.LineageEntity lineageEntity = new TableLineageInfo.LineageEntity();
+                            lineageEntity.setGuid(tableInfo.getGuid());
+                            lineageEntity.setTableName(tableInfo.getTable());
+                            lineageEntity.setDbName(tableInfo.getDatabase());
+                            lineageEntity.setTypeName(tableInfo.getType());
+                            lineageEntities.add(lineageEntity);
+                        }
+                    }
+                }
+                --num;
+            }
+            lineageEntities = lineageEntities.stream().filter(distinctByKey(TableLineageInfo.LineageEntity::getGuid)).collect(Collectors.toList());
+        }
+        info.setGuid(tableGuid);
+        info.setRelations(lineageTraceSet);
+        info.setEntities(lineageEntities);
+        return info;
+    }
+
+    public List<SimpleTaskNode> getConditionTier(List<SimpleTaskNode> simpleTaskNodes, TableInfoVo tableInfoVo) {
+
+        String guid = tableInfoVo.getGuid();
+        String host = tableInfoVo.getHost();
+        Integer port = tableInfoVo.getPort();
+        String database = tableInfoVo.getDatabase();
+        String table = tableInfoVo.getTable();
+
+        return simpleTaskNodes.stream().filter(r -> {
+            TableInfoVo outputTable = r.getOutputTable();
+            if (outputTable != null && outputTable.getHost().equals(host) && outputTable.getPort().equals(port)
+                    && outputTable.getDatabase().equals(database) && outputTable.getTable().equals(table)) {
+                return true;
+            }
+            return false;
+        }).map(r -> {
+            String tableGuid = UUID.randomUUID().toString();
+            r.getOutputTable().setGuid(guid);
+            r.getInputTable().setGuid(tableGuid);
+            return r;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * 自定义条件过滤器
+     *
+     * @param keyExtractor
+     * @param <T>
+     * @return
+     */
+    public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
+        Map<Object, Boolean> seen = new ConcurrentHashMap<>();
+        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
     }
 
     public LineageDepthInfo getTableLineageDepthInfo(String guid) throws AtlasBaseException {
