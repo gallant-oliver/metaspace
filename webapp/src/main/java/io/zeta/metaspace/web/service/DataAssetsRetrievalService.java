@@ -166,18 +166,18 @@ public class DataAssetsRetrievalService {
                 list = businessDAO.searchTables(tenantId, userId, isPublic, isGlobal, offset, limit, query);
                 break;
             case CommonConstant.TASKS:
-                list = taskManageDAO.tasksSearch(tenantId, userId, isPublic, isGlobal, offset, limit, query);
+                list = taskManageDAO.tasksSearch(tenantId, userId, isGlobal, offset, limit, query);
                 break;
             case CommonConstant.STANDARD:
-                list = dataStandardDAO.dataSearch(tenantId, userId, isPublic, isGlobal, offset, limit, query);
+                list = dataStandardDAO.dataSearch(tenantId, userId, isGlobal, offset, limit, query);
                 break;
             default:
                 list = businessDAO.searchAll(tenantId, userId, isPublic, isGlobal, offset, limit, query);
         }
 
-        Long totalSize = 0L;
+        long totalSize = 0L;
         if (!CollectionUtils.isEmpty(list)) {
-            totalSize = Long.valueOf(list.get(0).getTotal());
+            totalSize =  list.get(0).getTotal();
 
             Map<String, List<GroupDeriveTableRelation>> m = new HashMap<>();
 
@@ -659,7 +659,7 @@ public class DataAssetsRetrievalService {
             if (!ruleTemplates.isEmpty()) {
                 List<String> categoryIds = ruleTemplates.stream().map(RuleTemplate::getRuleType).collect(Collectors.toList());
                 Set<CategoryEntityV2> categoryEntityV2s = categoryDAO.selectPathsByGuid(categoryIds);
-                Map<String, String> map = categoryEntityV2s.stream().collect(Collectors.toMap(CategoryEntityV2::getGuid, CategoryEntityV2::getPath));
+                Map<String, String> map = categoryEntityV2s.stream().collect(Collectors.toMap(CategoryEntityV2::getGuid, CategoryEntityV2::getPath, (key1, key2) -> key1));
                 for (RuleTemplate ruleTemplate : ruleTemplates) {
                     String path = map.get(ruleTemplate.getRuleType());
                     if (org.apache.commons.lang3.StringUtils.isNotBlank(path)) {

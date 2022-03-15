@@ -13,12 +13,15 @@
 package io.zeta.metaspace.web.rest;
 
 
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.homepage.*;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.role.Role;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.service.HomePageService;
+import io.zeta.metaspace.web.util.AdminUtils;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
@@ -26,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
@@ -76,6 +80,26 @@ public class HomePageREST {
             return homePageService.getDataDistribution(tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据失败");
+        }
+    }
+
+    /**
+     * 获取数据标准一级目录下的多有数量
+     *
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/datastandard/count")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<CategoryPrivilege> getDataStandardCountList(@HeaderParam("tenantId") String tenantId,
+                                                                  @QueryParam("limit") int limit,
+                                                                  @QueryParam("offset") int offset) throws AtlasBaseException {
+        try {
+            return homePageService.getDataStandardCountList(tenantId, limit, offset);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取数据失败");
         }
     }
 
@@ -191,4 +215,19 @@ public class HomePageREST {
         return Response.status(200).entity("success").build();
     }
 
+    @GET
+    @Path("/getProjectInfo")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public PageResult<HomeProjectInfo> getProjectInfo(@HeaderParam("tenantId") String tenantId,
+                                                      @QueryParam("limit") long limit, @QueryParam("offset") long offset) {
+        String userId = AdminUtils.getUserData().getUserId();
+        return homePageService.getHomeProjectInfo(tenantId, userId, limit, offset);
+    }
+
+    @GET
+    @Path("/getTaskInfo")
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getTaskInfo(@HeaderParam("tenantId") String tenantId) {
+        return homePageService.getTaskHomeInfo(tenantId);
+    }
 }

@@ -286,7 +286,7 @@ public interface DataStandardDAO {
     })
     List<DataStandardHead> getStandardByCategoyrId(@Param("categoryId") String categoryId, @Param("tenantId") String tenantId);
 
-    //名字，描述，目录路径，资产类型，编码，租户id
+    //名字，描述，目录路径，资产类型，租户id
     @Select("<script>"+
             "select count(*)over() total,bi.id,bi.description,bi.tenantid tenantId,bi.name,5 as type,te.name tenantName," +
             "bi.standard_type standardType," +
@@ -301,19 +301,16 @@ public interface DataStandardDAO {
             "        FROM data_standard bi " +
             "        LEFT JOIN tenant te ON te.id=bi.tenantid \n" +
             "        where delete=false  and bi.version=0 \n" +
-            "           <if test=\"query!='' and query !=null\">\n" +
-            "              AND ((bi.name like concat('%',#{query},'%') ESCAPE '/')\n" +
-            "              OR (bi.description like concat('%',#{query},'%') ESCAPE '/'))\n" +
-            "           </if>\n" +
-            "           <if test=\"isPublic==false\">\n" +
-            "              AND\n" +
-            "              tenantid=#{tenantId}\n" +
-            "           </if>\n" +
+            "        <if test=\"query!='' and query !=null\">\n" +
+            "            AND ((bi.name like concat('%',#{query},'%') ESCAPE '/')\n" +
+            "            OR (bi.description like concat('%',#{query},'%') ESCAPE '/'))\n" +
+            "        </if>\n" +
+            "       and  tenantid=#{tenantId}\n" +
             "       ORDER BY bi.id\n" +
             "       limit #{limit}\n" +
             "       offset #{offset}" +
             "</script>")
-    List<DataAssets> dataSearch(@Param("tenantId") String tenantId, @Param("userId") String userId, @Param("isPublic") boolean isPublic,
+    List<DataAssets> dataSearch(@Param("tenantId") String tenantId, @Param("userId") String userId,
                                 @Param("isGlobal") boolean isGlobal, @Param("offset") int offset, @Param("limit") int limit, @Param("query") String query);
     
 }

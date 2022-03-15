@@ -17,12 +17,16 @@
 package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.homepage.*;
 import io.zeta.metaspace.model.metadata.Parameters;
+import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
+import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.slf4j.Logger;
@@ -31,11 +35,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 /*
  * @description
@@ -367,6 +374,39 @@ public class HomePageService {
         }
     }
 
+
+    /**
+     * 获取数据标准一级目录下的数量
+     *
+     * @return
+     * @throws AtlasBaseException
+     */
+    @Cacheable(value = "DataStandardTotalCache", key = "'DataStandardTotalCache'+#tenantId")
+    public PageResult<CategoryPrivilege> getDataStandardCountList(String tenantId, int limit, int offset) throws AtlasBaseException {
+        try {
+            PageResult<CategoryPrivilege> pageResult = new PageResult<>();
+            List<CategoryPrivilege> result = new ArrayList<>();
+            // 数据标准目录类型id
+            int type = 3;
+            List<CategoryPrivilege> allByUserGroup = dataManageService.getAllByUserGroup(type, tenantId);
+
+            if (!CollectionUtils.isEmpty(allByUserGroup)) {
+                List<CategoryPrivilege> standardMap = allByUserGroup.stream().filter(r -> StringUtils.isEmpty(r.getParentCategoryGuid())).collect(Collectors.toList());
+                result = standardMap;
+
+                List<CategoryPrivilege> collect = result.stream().skip((long) limit * (offset - 1)).limit(limit).collect(Collectors.toList());
+                pageResult.setLists(collect);
+                pageResult.setOffset(offset);
+                pageResult.setCurrentSize(CollectionUtils.isEmpty(collect) ? 0 : collect.size());
+                pageResult.setTotalSize(CollectionUtils.isEmpty(result) ? 0 : result.size());
+            }
+            return pageResult;
+        } catch (Exception e) {
+            LOG.error("查询异常", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
+        }
+    }
+
     /**
      * 获取贴源层系统列表
      *
@@ -419,9 +459,42 @@ public class HomePageService {
         }
     }
 
+    @Cacheable(value = "ProjectInfoCache", key = "'ProjectInfoCache' + #limit + #offset +#tenantId +#userId")
+    public PageResult<HomeProjectInfo> getHomeProjectInfo(String tenantId, String userId, long limit, long offset) {
+        try {
+            PageResult<HomeProjectInfo> pageResult = new PageResult<>();
+            List<HomeProjectInfo> projectInfo = homePageDAO.getProjectInfo(tenantId, userId, limit, offset);
+            long firstOrder = offset + 1;
+            for (HomeProjectInfo info : projectInfo) {
+                info.setOrder(firstOrder);
+                firstOrder++;
+            }
+            pageResult.setLists(projectInfo);
+            pageResult.setCurrentSize(projectInfo.size());
+            long projectCount = homePageDAO.getProjectCount(tenantId, userId);
+            pageResult.setTotalSize(projectCount);
+            return pageResult;
+        } catch (AtlasBaseException e) {
+            LOG.error("查询异常", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询异常");
+        }
+    }
+
+    @Cacheable(value = "HomeTaskInfoCache", key = "'HomeTaskInfoCache' + #tenantId")
+    public Result getTaskHomeInfo(String tenantId) {
+        HomeTaskInfo taskInfo = null;
+        try {
+            taskInfo = homePageDAO.getTaskInfo(tenantId);
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务详情查询异常");
+        }
+        return ReturnUtil.success(taskInfo);
+    }
+
 
     @CacheEvict(value = {"TableByDBCache", "TableUseProportionCache", "RoleUseProportionCache", "TechnicalSupplementProportionCache", "SourceLayerListCache",
-            "SourceChildLayerListCache", "TimeAndDbCache", "DbTotalCache", "TbTotalCache", "BusinessTotalCache", "RoleUserListCache", "RoleCache"}, allEntries = true)
+            "SourceChildLayerListCache", "ProjectInfoCache", "HomeTaskInfoCache", "TimeAndDbCache", "DbTotalCache", "TbTotalCache", "BusinessTotalCache", "RoleUserListCache", "RoleCache",
+    "DataStandardTotalCache"}, allEntries = true)
     public void refreshCache() throws AtlasBaseException {
 
     }
