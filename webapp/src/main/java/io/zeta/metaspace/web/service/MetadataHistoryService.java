@@ -226,17 +226,17 @@ public class MetadataHistoryService {
             }
             str = new StringBuilder();
             TableMetadataPO tableMetadataPO = first.get();
-            str.append("数据源[").append(tableMetadataPO.getSourceName()).append("]下的数据库[").append(tableMetadataPO.getDatabaseName()).append("]下的数据表[").append(tableMetadataPO.getTableName()).append("]元数据发生变更。变更内容为:\r\n");
+            str.append("数据源[").append(tableMetadataPO.getSourceName()).append("]下的数据库[").append(tableMetadataPO.getDatabaseName()).append("]下的数据表[").append(tableMetadataPO.getTableName()).append("]元数据发生变更。变更内容为:</br>");
 
             for (ColumnMetadata item : oldColumnMetadataListHistory) {
                 Optional<ColumnMetadata> filterDataOpt = newColumnMetadataList.stream().filter(p -> item.getName().equalsIgnoreCase(p.getName())).findFirst();
                 if (!filterDataOpt.isPresent()) {
-                    str.append("列[").append(item.getName()).append("]").append("删除").append("\r\n");
+                    str.append("列[").append(item.getName()).append("]").append("删除").append("</br>");
                     continue;
                 }
                 //比较类型
                 if (!StringUtils.equalsIgnoreCase(item.getType(), filterDataOpt.get().getType())) {
-                    str.append("列[").append(item.getName()).append("]类型变更,变更前[").append(item.getType()).append("],").append("变更后[").append(filterDataOpt.get().getType()).append("]").append("\r\n");
+                    str.append("列[").append(item.getName()).append("]类型变更,变更前[").append(item.getType()).append("],").append("变更后[").append(filterDataOpt.get().getType()).append("]").append("</br>");
                     continue;
                 }
             }
@@ -246,7 +246,7 @@ public class MetadataHistoryService {
             List<ColumnMetadata> addColumnList = newColumnMetadataList.stream().filter(out -> !oldColumns.contains(out.getName())).collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(addColumnList)) {
                 for (ColumnMetadata item : addColumnList) {
-                    str.append("列[").append(item.getName()).append("]").append("新增").append("\r\n");
+                    str.append("列[").append(item.getName()).append("]").append("新增").append("</br>");
                 }
             }
             LOG.info("guid is {}, user is {}, str is {}", newTableMetadata.getGuid(), tableDataSourceRelationPO.getUserName(), str.toString());
