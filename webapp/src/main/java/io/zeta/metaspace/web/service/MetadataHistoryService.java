@@ -251,7 +251,7 @@ public class MetadataHistoryService {
             }
             LOG.info("guid is {}, user is {}, str is {}", newTableMetadata.getGuid(), tableDataSourceRelationPO.getUserName(), str.toString());
             // 调用站内信方法
-            NoticeCenterUtil.sendMessage(str.toString(), "元数据变更通知", tableDataSourceRelationPO.getUserName());
+            NoticeCenterUtil.sendMessage(str.toString(), "元数据变更提醒", tableDataSourceRelationPO.getUserName());
         } catch (Exception e) {
             log.error("metadataUpdateCheck exception is {}" , e);
         }
