@@ -1608,6 +1608,8 @@ public class MetaDataService {
         try {
             TableLineageInfo tableLineageInfo = new TableLineageInfo();
             tableLineageInfo.setGuid(tableInfoVo.getGuid());
+            tableLineageInfo.setRelations(new HashSet<>());
+            tableLineageInfo.setEntities(new ArrayList<>());
             Gson gson = new Gson();
             Configuration conf = ApplicationProperties.get();
             String logoutURL = conf.getString("metaspace.matedate.table.lineage");
