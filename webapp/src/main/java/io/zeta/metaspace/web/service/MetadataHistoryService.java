@@ -21,12 +21,12 @@ import io.zeta.metaspace.model.business.BusinessInfo;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.ColumnMetadata;
 import io.zeta.metaspace.model.metadata.TableMetadata;
+import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
+import io.zeta.metaspace.model.po.tableinfo.TableMetadataPO;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
-import io.zeta.metaspace.web.dao.BusinessDAO;
-import io.zeta.metaspace.web.dao.MetadataHistoryDAO;
-import io.zeta.metaspace.web.dao.SourceInfoDeriveTableInfoDAO;
-import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDeriveTableInfoService;
@@ -92,6 +92,10 @@ public class MetadataHistoryService {
     private SourceInfoDatabaseService sourceInfoDatabaseService;
     @Autowired
     private MetadataHistoryDAO metadataHistoryDAO;
+    @Autowired
+    private DatabaseDAO databaseDAO;
+    @Autowired
+    private TableDAO tableDAO;
 
 
     public Set<String> getTableGuid(List<AtlasEntity> entities) {
@@ -102,16 +106,16 @@ public class MetadataHistoryService {
                 continue;
             }
             String typeName = entity.getTypeName();
-            if("hive_table".equals(typeName)) {
+            if("hive_table".equals(typeName) || "rdbms_table".equals(typeName)) {
                 tableSet.add(entity.getGuid());
-            } else if("hive_column".equals(typeName) || "hive_storagedesc".equals(typeName)) {
+            } else if("hive_column".equals(typeName) || "hive_storagedesc".equals(typeName) || "rdbms_column".equals(typeName)) {
                 AtlasRelatedObjectId table = (AtlasRelatedObjectId)entity.getRelationshipAttribute("table");
                 if(null != table) {
                     tableSet.add(table.getGuid());
                 }
             }
         }
-        log.debug("tableSet is {}", tableSet);
+        log.info("getTableGuid()方法 ,tableSet is {}", tableSet);
         return tableSet;
     }
 
@@ -147,9 +151,13 @@ public class MetadataHistoryService {
                                 String[] fullFormat = inputFormat.split("\\.");
                                 tableMetadata.setTableFormat(fullFormat[fullFormat.length - 1]);
                             }
+                        } else if ("rdbms_column".equals(typeName) && AtlasEntity.Status.ACTIVE == referrencedEntity.getStatus()){
+                            ColumnMetadata columnMetadata = generateColumnMetadata(tableGuid, referrencedEntity, partitionKeyList);
+                            columnMetadataList.add(columnMetadata);
                         }
                     }
-                    if (this.getTableCompareResult(tableGuid, tableMetadata) && this.getColumnCompareResult(tableGuid, columnMetadataList)) {
+                    List<ColumnMetadata> columnMetadataListHistory = metadataDAO.getLastColumnMetadata(tableGuid);
+                    if (this.getTableCompareResult(tableGuid, tableMetadata) && this.getColumnCompareResult(tableGuid, columnMetadataList, columnMetadataListHistory)) {
                         continue;
                     }
                     metadataDAO.addTableMetadata(tableMetadata);
@@ -166,15 +174,70 @@ public class MetadataHistoryService {
                         continue;
                     }
                     ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
+                    threadPoolExecutor.execute(() -> {
+                        metadataUpdateCheck(tableMetadataList, columnMetadataList, tableMetadata, columnMetadataListHistory);
+                    });
                     threadPoolExecutor.execute(()->{
                         sendNoticeByEmail(tableMetadataList,tableMetadata.getDatabaseName());
                     });
-
                 }
             }
         } catch (Exception e) {
             log.error("storeHistoryMetadata exception is {}", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
+        }
+    }
+
+    private void metadataUpdateCheck(List<TableMetadata> tableMetadataList, List<ColumnMetadata> newColumnMetadataList, TableMetadata newTableMetadata, List<ColumnMetadata> oldColumnMetadataListHistory) {
+        try {
+            if (CollectionUtils.isEmpty(oldColumnMetadataListHistory) || CollectionUtils.isEmpty(newColumnMetadataList)) {
+                return;
+            }
+            StringBuilder str = new StringBuilder();
+
+            //获取源信息登记的数据库信息
+            TableDataSourceRelationPO tableDataSourceRelationPO = databaseDAO.selectByTableGuid(newTableMetadata.getGuid());
+            if(tableDataSourceRelationPO == null){
+                return;
+            }
+            //获取数据表的元数据信息
+            List<TableMetadataPO> tableMetadataPOS = tableDAO.selectMetadataListByTableGuid(newTableMetadata.getGuid());
+            if(CollectionUtils.isEmpty(tableMetadataPOS)){
+                return;
+            }
+            Optional<TableMetadataPO> first = tableMetadataPOS.stream().filter(p -> p.getSourceId().equalsIgnoreCase(tableDataSourceRelationPO.getDataSourceId())).findFirst();
+            if(!first.isPresent()){
+                return;
+            }
+            str = new StringBuilder();
+            TableMetadataPO tableMetadataPO = first.get();
+            str.append("数据源[").append(tableMetadataPO.getSourceName()).append("]下的数据库[").append(tableMetadataPO.getDatabaseName()).append("]下的数据表[").append(tableMetadataPO.getTableName()).append("]元数据发生变更。变更内容为:\r\n");
+
+            for (ColumnMetadata item : oldColumnMetadataListHistory) {
+                Optional<ColumnMetadata> filterDataOpt = newColumnMetadataList.stream().filter(p -> item.getName().equalsIgnoreCase(p.getName())).findFirst();
+                if (!filterDataOpt.isPresent()) {
+                    str.append("列[").append(item.getName()).append("]").append("删除").append("\r\n");
+                    continue;
+                }
+                //比较类型
+                if (!StringUtils.equalsIgnoreCase(item.getType(), filterDataOpt.get().getType())) {
+                    str.append("列[").append(item.getName()).append("]类型变更,变更前[").append(item.getType()).append("]").append("变更后[").append(filterDataOpt.get().getType()).append("]").append("\r\n");
+                    continue;
+                }
+            }
+
+            //查看是否存在添加的列
+            List<String> oldColumns = oldColumnMetadataListHistory.stream().map(ColumnMetadata::getName).collect(Collectors.toList());
+            List<ColumnMetadata> addColumnList = newColumnMetadataList.stream().filter(out -> !oldColumns.contains(out.getName())).collect(Collectors.toList());
+            if (CollectionUtils.isNotEmpty(addColumnList)) {
+                for (ColumnMetadata item : addColumnList) {
+                    str.append("列[").append(item.getName()).append("]").append("新增").append("\r\n");
+                }
+            }
+            LOG.info("guid is {}, user is {}, str is {}", newTableMetadata.getGuid(), tableDataSourceRelationPO.getUserName(), str.toString());
+            // TODO: 2022/3/15  调用站内信方法
+        } catch (Exception e) {
+            log.error("metadataUpdateCheck exception is {}" , e);
         }
     }
 
@@ -340,8 +403,7 @@ public class MetadataHistoryService {
      * @param columnMetadataList
      * @return
      */
-    private Boolean getColumnCompareResult(String tableGuid, List<ColumnMetadata> columnMetadataList) {
-        List<ColumnMetadata> columnMetadataListHistory = metadataDAO.getLastColumnMetadata(tableGuid);
+    private Boolean getColumnCompareResult(String tableGuid, List<ColumnMetadata> columnMetadataList, List<ColumnMetadata> columnMetadataListHistory) {
         if (CollectionUtils.isEmpty(columnMetadataListHistory)) {
             return false;
         }
@@ -386,7 +448,7 @@ public class MetadataHistoryService {
         String updater = entity.getUpdatedBy();
         Timestamp createTime = new Timestamp(entity.getCreateTime().getTime());
         Timestamp updateTime = new Timestamp(entity.getUpdateTime().getTime());
-        String tableType = getEntityAttribute(entity, "tableType");
+        String tableType = getEntityAttribute(entity, "tableType") == null ? "" : getEntityAttribute(entity, "tableType");
         tableType = tableType.contains("EXTERNAL")?"EXTERNAL_TABLE":"INTERNAL_TABLE";
         Boolean isPartitionTable = extractPartitionInfo(entity);
         String tableFormat = "";

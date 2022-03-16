@@ -4,6 +4,7 @@ import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.dataassets.DataAssets;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.po.tableinfo.TableInfoDerivePO;
+import io.zeta.metaspace.model.po.tableinfo.TableMetadataPO;
 import io.zeta.metaspace.model.po.tableinfo.TableSourceDataBasePO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.security.TenantDatabaseList;
@@ -512,4 +513,6 @@ public interface TableDAO {
      * @return 源数据库配置信息
      */
     TableSourceDataBasePO selectSourceDbByGuid(@Param("guid") String guid);
+
+    List<TableMetadataPO> selectMetadataListByTableGuid(@Param("tableGuid") String tableGuid);
 }

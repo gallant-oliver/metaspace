@@ -19,4 +19,19 @@ public class TableDataSourceRelationPO {
     private String tenantId;
 
     private String updateTime;
+
+    /**
+     * 业务负责人id
+     */
+    private String businessLeader;
+
+    /**
+     * 用户名
+     */
+    private String userName;
+
+    /**
+     * 账号
+     */
+    private String account;
 }

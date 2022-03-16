@@ -252,7 +252,7 @@ public interface SourceInfoDeriveTableInfoDAO {
     @Update("update source_info_derive_table_info SET table_guid = #{tableGuid},update_time = now() WHERE db_id = #{dbId} AND table_name_en ~* #{tableName}")
     int updateByDbAndTableName(@Param("dbId") String dbId, @Param("tableName") String tableName, @Param("tableGuid") String tableGuid);
 
-    @Select("SELECT * FROM source_info_derive_table_info WHERE table_guid = #{tableGuid} and version=-1")
+    @Select("SELECT * FROM source_info_derive_table_info WHERE table_guid = #{tableGuid} and version=-1 limit 1")
     SourceInfoDeriveTableInfo selectByTableGuid(@Param("tableGuid") String table_guid);
 
     @Update("update source_info_derive_table_info set table_name_en = #{tableName},update_time = now(), " +

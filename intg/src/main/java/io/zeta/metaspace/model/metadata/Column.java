@@ -15,6 +15,7 @@ package io.zeta.metaspace.model.metadata;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.zeta.metaspace.model.table.column.tag.ColumnTag;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.util.List;
@@ -174,6 +175,22 @@ public class Column implements Serializable {
 
     public void setDisplayNameOperator(String displayNameOperator) {
         this.displayNameOperator = displayNameOperator;
+    }
+
+    public Boolean compareColumn(Column column) {
+        if (StringUtils.isNotBlank(this.columnId) && !this.columnId.equals(column.getColumnId())) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(this.columnName) && !this.columnName.equals(column.getColumnName())) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(this.type) && !this.type.equals(column.getType())) {
+            return false;
+        }
+        if (StringUtils.isNotBlank(this.status) && !this.status.equals(column.getStatus())) {
+            return false;
+        }
+        return true;
     }
 
 }

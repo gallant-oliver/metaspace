@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.dao.sourceinfo;
 
+import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
 import io.zeta.metaspace.model.source.DataBaseInfo;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForDb;
 import org.apache.ibatis.annotations.*;
@@ -144,4 +145,6 @@ public interface DatabaseDAO {
      */
     List<String> getHiveDataBaseName(@Param("tenantId") String tenantId,
                                      @Param("userId") String userId);
+
+    TableDataSourceRelationPO selectByTableGuid(@Param("tableGuid") String tableGuid);
 }

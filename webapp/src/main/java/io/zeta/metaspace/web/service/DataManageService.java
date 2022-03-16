@@ -40,6 +40,8 @@ import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.po.sourceinfo.SourceInfo;
+import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
+import io.zeta.metaspace.model.po.tableinfo.TableMetadataPO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.privilege.Module;
 import io.zeta.metaspace.model.result.*;
@@ -1858,6 +1860,33 @@ public class DataManageService {
         }
     }
 
+    /**
+     * 元数据变更检查
+     */
+    private void metadataUpdateCheck(Column oldColumn, Column newColumn, Map<String, Object> mapTable, Map<String, String> mapTableUpdate) {
+        try {
+            int value = mapTable.get(newColumn.getTableId()) == null ? 0 : (int) mapTable.get(newColumn.getTableId());
+            StringBuilder str = new StringBuilder();
+            //新增的表 0：新增 1：表已经存在
+            if (value == 0) {
+                return;
+            }
+            if (null == oldColumn) {
+                str.append("列[").append(newColumn.getColumnName()).append("]").append("新增").append("\r\n");
+            } else {
+                if (!newColumn.compareColumn(oldColumn)) {
+                    str.append("列[").append(newColumn.getColumnName()).append("]类型变更,变更前[").append(oldColumn.getType()).append("]").append("变更后[").append(newColumn.getType()).append("]").append("\r\n");
+                }
+            }
+            if(StringUtils.isNotBlank(str.toString())){
+                String result = mapTableUpdate.get(newColumn.getTableId()) == null ? "" : mapTableUpdate.get(newColumn.getTableId());
+                mapTableUpdate.put(newColumn.getTableId(), result += str.toString());
+            }
+        } catch (Exception e) {
+            LOG.error("metadataUpdateCheck exception is {}", e);
+        }
+    }
+
 
     private Column getAndRemoveColumn(AtlasEntity entity, String typeKey) {
         AtlasRelatedObjectId table = (AtlasRelatedObjectId) entity.getRelationshipAttribute("table");
@@ -2187,13 +2216,7 @@ public class DataManageService {
                     }
                 case "rdbms_table":
                     TableInfo tableInfo = getTableInfo(entity);
-                    addOrUpdateTable(tableInfo,definition);
-//                    if (enableEmail) {
-//                        ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
-//                        threadPoolExecutor.execute(()->{
-//                            sendMetadataChangedMail(entity.getGuid());
-//                        });
-//                    }
+                    addOrUpdateTable(tableInfo, definition);
                     break;
                 case "hive_column":
                     if(this.getOutputFromProcesses(entity) && hiveAtlasEntityAll){
@@ -2206,6 +2229,39 @@ public class DataManageService {
                     column = getAndRemoveColumn(entity, "data_type");
                     addOrUpdateColumn(column);
                     break;
+            }
+        }
+    }
+
+    /**
+     * compass需求，发送站内信
+     */
+    public void sendMessageCompass(Map<String, String> mapTableUpdate) {
+        for (String guid : mapTableUpdate.keySet()) {
+            StringBuilder str = new StringBuilder();
+            try {
+                TableDataSourceRelationPO tableDataSourceRelationPO = databaseDAO.selectByTableGuid(guid);
+                if(tableDataSourceRelationPO == null){
+                    continue;
+                }
+
+                List<TableMetadataPO> tableMetadataPOS = tableDAO.selectMetadataListByTableGuid(guid);
+                if(CollectionUtils.isEmpty(tableMetadataPOS)){
+                    continue;
+                }
+                Optional<TableMetadataPO> first = tableMetadataPOS.stream().filter(p -> p.getSourceId().equalsIgnoreCase(tableDataSourceRelationPO.getDataSourceId())).findFirst();
+                if(!first.isPresent()){
+                    continue;
+                }
+                str = new StringBuilder();
+                TableMetadataPO tableMetadataPO = first.get();
+                str.append("数据源[").append(tableMetadataPO.getSourceName()).append("]下的数据库[").append(tableMetadataPO.getDatabaseName()).append("]下的数据表[").append(tableMetadataPO.getTableName()).append("]元数据发生变更。变更内容为:\r\n");
+                str.append(mapTableUpdate.get(guid));
+                LOG.info("guid is {}, user is {}, str is {}", guid, tableDataSourceRelationPO.getUserName(), str.toString());
+                // TODO: 2022/3/15  调用站内信方法
+
+            } catch (Exception e) {
+                LOG.error("sendMessageCompass guid is {}, str is {} exception is {}", guid, str.toString(), e);
             }
         }
     }
