@@ -46,7 +46,7 @@ public class NoticeCenterUtil {
         HashMap<String, Object> headerMap = new HashMap<String, Object>(1) ;
         //站内信白名单设置，不传token，只传-1的tenantId
         headerMap.put("tenantId", "-1");
-        log.info("组装发送邮件请求body.");
+        log.info("组装发送站内信请求body.");
         HashMap<String, Object> jsonMap = new HashMap<>(3);
         jsonMap.put("loginEmail", userName);
         jsonMap.put("message", message);
