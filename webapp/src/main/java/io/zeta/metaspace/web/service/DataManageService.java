@@ -1860,34 +1860,6 @@ public class DataManageService {
         }
     }
 
-    /**
-     * 元数据变更检查
-     */
-    private void metadataUpdateCheck(Column oldColumn, Column newColumn, Map<String, Object> mapTable, Map<String, String> mapTableUpdate) {
-        try {
-            int value = mapTable.get(newColumn.getTableId()) == null ? 0 : (int) mapTable.get(newColumn.getTableId());
-            StringBuilder str = new StringBuilder();
-            //新增的表 0：新增 1：表已经存在
-            if (value == 0) {
-                return;
-            }
-            if (null == oldColumn) {
-                str.append("列[").append(newColumn.getColumnName()).append("]").append("新增").append("\r\n");
-            } else {
-                if (!newColumn.compareColumn(oldColumn)) {
-                    str.append("列[").append(newColumn.getColumnName()).append("]类型变更,变更前[").append(oldColumn.getType()).append("]").append("变更后[").append(newColumn.getType()).append("]").append("\r\n");
-                }
-            }
-            if(StringUtils.isNotBlank(str.toString())){
-                String result = mapTableUpdate.get(newColumn.getTableId()) == null ? "" : mapTableUpdate.get(newColumn.getTableId());
-                mapTableUpdate.put(newColumn.getTableId(), result += str.toString());
-            }
-        } catch (Exception e) {
-            LOG.error("metadataUpdateCheck exception is {}", e);
-        }
-    }
-
-
     private Column getAndRemoveColumn(AtlasEntity entity, String typeKey) {
         AtlasRelatedObjectId table = (AtlasRelatedObjectId) entity.getRelationshipAttribute("table");
         String tableGuid = table.getGuid();

@@ -37,12 +37,15 @@ import io.zeta.metaspace.web.util.NoticeCenterUtil;
 import io.zeta.metaspace.web.util.ParamUtil;
 import io.zeta.metaspace.web.util.office.word.WordExport;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasRelatedObjectId;
 import org.apache.atlas.repository.store.graph.v2.AtlasEntityStoreV2;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -188,8 +191,20 @@ public class MetadataHistoryService {
         }
     }
 
+    /**
+     * 元数据变更检查
+     * @param tableMetadataList
+     * @param newColumnMetadataList
+     * @param newTableMetadata
+     * @param oldColumnMetadataListHistory
+     */
     private void metadataUpdateCheck(List<TableMetadata> tableMetadataList, List<ColumnMetadata> newColumnMetadataList, TableMetadata newTableMetadata, List<ColumnMetadata> oldColumnMetadataListHistory) {
         try {
+            Configuration configuration = ApplicationProperties.get();
+            String type = configuration.getString("sendNotice.type");
+            if(!type.contains("2")){
+                return;
+            }
             if (CollectionUtils.isEmpty(oldColumnMetadataListHistory) || CollectionUtils.isEmpty(newColumnMetadataList)) {
                 return;
             }
@@ -235,7 +250,8 @@ public class MetadataHistoryService {
                 }
             }
             LOG.info("guid is {}, user is {}, str is {}", newTableMetadata.getGuid(), tableDataSourceRelationPO.getUserName(), str.toString());
-            // TODO: 2022/3/15  调用站内信方法
+            // 调用站内信方法
+            NoticeCenterUtil.sendMessage(str.toString(), "元数据变更通知", tableDataSourceRelationPO.getUserName());
         } catch (Exception e) {
             log.error("metadataUpdateCheck exception is {}" , e);
         }
@@ -262,6 +278,15 @@ public class MetadataHistoryService {
 
     //元数据有变化，需要邮件通知 （开启一个线程处理,目前只有 hive源存在对比）
     private void sendNoticeByEmail(List<TableMetadata> tableMetadataList,String dbName) {
+        try {
+            Configuration configuration = ApplicationProperties.get();
+            String type = configuration.getString("sendNotice.type");
+            if(!type.contains("1")){
+                return;
+            }
+        } catch (AtlasException e) {
+            log.error("sendNoticeByEmail exception is {}", e);
+        }
         log.info("元数据有变化，查找邮件发送地址.");
         String tableGuid = tableMetadataList.get(0).getGuid();
         String sourceId = "hive";
