@@ -5,6 +5,7 @@ import io.zeta.metaspace.model.dataassets.DataAssets;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.po.tableinfo.TableInfoDerivePO;
 import io.zeta.metaspace.model.po.tableinfo.TableMetadataPO;
+import io.zeta.metaspace.model.po.tableinfo.TableSourceDataBasePO;
 import io.zeta.metaspace.model.pojo.TableInfo;
 import io.zeta.metaspace.model.security.TenantDatabaseList;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;

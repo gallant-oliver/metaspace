@@ -57,7 +57,6 @@ import io.zeta.metaspace.model.table.column.tag.ColumnTagRelation;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.OKHttpClient;
-import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
@@ -100,7 +99,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -1832,15 +1830,13 @@ public class DataManageService {
     }
 
 
-    private void addOrUpdateColumn(Column column, Map<String, Object> mapTable, Map<String, String> mapTableUpdate){
+    private void addOrUpdateColumn(Column column){
         Column c = columnDAO.getColumnInfoByGuid(column.getColumnId());
         if(null == c){
             columnDAO.addColumn(column);
         }else{
             columnDAO.updateColumnInfo(column);
         }
-
-        this.metadataUpdateCheck(c, column, mapTable, mapTableUpdate);
 
         //衍生表字段标签更新
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfoList = sourceInfoDeriveColumnInfoDAO.selectListByTableGuidAndTags(column.getTableId());
@@ -1876,10 +1872,10 @@ public class DataManageService {
                 return;
             }
             if (null == oldColumn) {
-                str.append("列[").append(oldColumn.getColumnName()).append("]").append("新增").append("\r\n");
+                str.append("列[").append(newColumn.getColumnName()).append("]").append("新增").append("\r\n");
             } else {
                 if (!newColumn.compareColumn(oldColumn)) {
-                    str.append("列[").append(oldColumn.getColumnName()).append("]类型变更,变更前[").append(oldColumn.getType()).append("]").append("变更后[").append(newColumn.getType()).append("]").append("\r\n");
+                    str.append("列[").append(newColumn.getColumnName()).append("]类型变更,变更前[").append(oldColumn.getType()).append("]").append("变更后[").append(newColumn.getType()).append("]").append("\r\n");
                 }
             }
             if(StringUtils.isNotBlank(str.toString())){
@@ -1997,17 +1993,15 @@ public class DataManageService {
         }
     }
 
-    public void addOrUpdateTable(TableInfo tableInfo, SyncTaskDefinition definition, Map<String, Object> mapTable) throws Exception {
+    public void addOrUpdateTable(TableInfo tableInfo, SyncTaskDefinition definition) throws Exception {
         String tableGuid = tableInfo.getTableGuid();
         if ("ACTIVE".equalsIgnoreCase(tableInfo.getStatus())) {
             tableDAO.deleteIfExist(tableGuid, tableInfo.getDatabaseGuid(), tableInfo.getTableName());
         }
         TableInfo table = tableDAO.getTableInfoByTableguid(tableGuid);
         if (null != table) {
-            mapTable.put("tableGuid", 1);
             ProxyUtil.getProxy(DataManageService.class).updateTable(tableInfo);
         } else {
-            mapTable.put("tableGuid", 0);
             ProxyUtil.getProxy(DataManageService.class).addTable(tableInfo);
         }
     }
@@ -2131,7 +2125,6 @@ public class DataManageService {
                     deleteIds.add(table);
                 }
             }
-            Map<String, Object> mapTable = new HashMap<>(tables.size());
             for (TableHeader table : tables) {
                 String tableId = table.getTableId();
                 if (tableDAO.ifTableExists(tableId) == 0) {
@@ -2144,7 +2137,7 @@ public class DataManageService {
                     tableInfo.setDbName(table.getDatabaseName());
                     tableInfo.setDatabaseStatus(table.getDatabaseStatus());
                     tableInfo.setDescription(table.getComment());
-                    addOrUpdateTable(tableInfo, null, mapTable);
+                    addOrUpdateTable(tableInfo, null);
                 }
             }
             for (String tableGuid : deleteIds) {
@@ -2181,8 +2174,6 @@ public class DataManageService {
 
     private void createOrUpdateEntities(List<AtlasEntity> entities, SyncTaskDefinition definition, KafkaConnector.Config config, Boolean enableEmail) throws Exception {
         Boolean hiveAtlasEntityAll = getHiveAtlasEntityAll(entities);
-        Map<String, Object> mapTable = new HashMap<>(256);
-        Map<String, String> mapTableUpdate = new HashMap<>(256);
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
             String dbType = null;
@@ -2225,31 +2216,21 @@ public class DataManageService {
                     }
                 case "rdbms_table":
                     TableInfo tableInfo = getTableInfo(entity);
-                    addOrUpdateTable(tableInfo, definition, mapTable);
-//                    if (enableEmail) {
-//                        ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
-//                        threadPoolExecutor.execute(()->{
-//                            sendMetadataChangedMail(entity.getGuid());
-//                        });
-//                    }
+                    addOrUpdateTable(tableInfo, definition);
                     break;
                 case "hive_column":
                     if(this.getOutputFromProcesses(entity) && hiveAtlasEntityAll){
                         continue;
                     }
                     Column column = getAndRemoveColumn(entity, "type");
-                    addOrUpdateColumn(column, mapTable, mapTableUpdate);
+                    addOrUpdateColumn(column);
                     break;
                 case "rdbms_column":
                     column = getAndRemoveColumn(entity, "data_type");
-                    addOrUpdateColumn(column, mapTable, mapTableUpdate);
+                    addOrUpdateColumn(column);
                     break;
             }
         }
-        ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
-        threadPoolExecutor.execute(() -> {
-            sendMessageCompass(mapTableUpdate);
-        });
     }
 
     /**
