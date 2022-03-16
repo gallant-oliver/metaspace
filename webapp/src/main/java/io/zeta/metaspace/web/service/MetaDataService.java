@@ -280,6 +280,9 @@ public class MetaDataService {
      */
     public AtlasEntity.AtlasEntityWithExtInfo getEntityInfoByGuid(String guid, List<String> excludeAttributes, List<String> excludeRelationAttributes) {
         AtlasVertex entityVertex = entityRetriever.getEntityVertex(guid);
+        if (entityVertex == null) {
+            return null;
+        }
         return vertexToEntityInfo(entityVertex, excludeAttributes, excludeRelationAttributes);
     }
 
@@ -1810,6 +1813,8 @@ public class MetaDataService {
                         lineageDepthEntity.setDbName(relatedObject.getDisplayText());
                     lineageDepthEntity = getLineageDepthV2(lineageDepthEntity);
                 }
+            } else {
+                return null;
             }
 
             return lineageDepthEntity;
