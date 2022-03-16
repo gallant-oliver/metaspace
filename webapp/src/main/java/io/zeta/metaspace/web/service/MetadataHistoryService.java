@@ -492,6 +492,10 @@ public class MetadataHistoryService {
         String guid = entity.getGuid();
         String name = getEntityAttribute(entity, "name");
         String type = getEntityAttribute(entity, "type");
+        if(StringUtils.isBlank(type)){
+            //关系型数据库
+            type = getEntityAttribute(entity, "data_type");
+        }
         String description = getEntityAttribute(entity, "commnet");
         Boolean isPartitionKey = partitionKeys.contains(guid)?true:false;
         String status = entity.getStatus().name();
