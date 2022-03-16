@@ -236,7 +236,7 @@ public class MetadataHistoryService {
                 }
                 //比较类型
                 if (!StringUtils.equalsIgnoreCase(item.getType(), filterDataOpt.get().getType())) {
-                    str.append("列[").append(item.getName()).append("]类型变更,变更前[").append(item.getType()).append("]").append("变更后[").append(filterDataOpt.get().getType()).append("]").append("\r\n");
+                    str.append("列[").append(item.getName()).append("]类型变更,变更前[").append(item.getType()).append("],").append("变更后[").append(filterDataOpt.get().getType()).append("]").append("\r\n");
                     continue;
                 }
             }
