@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 
@@ -23,13 +24,55 @@ import java.util.stream.Stream;
 public class NoticeCenterUtil {
     //定义邮件通知的接口
     private final static String NOTICE_EMAIL_API = "/notice-center/api/v1/missions";
+    //定义站内信
+    private final static String SEND_MESSAGE_API="/securecenter/api/v1/message/AddOneMessage";
+    //站内信response放回状态码
+    private final static double MESSAGE_SEND_SUCCESS_CODE = 0.0;
+
+    public static boolean sendMessage(String message, String title,String userName) {
+        String url = "";
+        try {
+            Configuration configuration = ApplicationProperties.get();
+            url = configuration.getString("sendMessage.url");
+        } catch (AtlasException e) {
+            log.error("获取站内信通知url前缀失败", e);
+            throw new AtlasBaseException(e);
+        }
+        if (StringUtils.isBlank(url)) {
+            log.error("properties ENV param [sendMessage.url] is not setting");
+            return false;
+        }
+        log.info("组装发送站内信请求参数...");
+        HashMap<String, Object> headerMap = new HashMap<String, Object>(1) ;
+        //站内信白名单设置，不传token，只传-1的tenantId
+        headerMap.put("tenantId", "-1");
+        log.info("组装发送站内信请求body.");
+        HashMap<String, Object> jsonMap = new HashMap<>(3);
+        jsonMap.put("loginEmail", userName);
+        jsonMap.put("message", message);
+        jsonMap.put("title", title);
+        String json = new JSONObject(jsonMap).toString();
+        String response = OKHttpClient.doPost(url + SEND_MESSAGE_API, headerMap, null, json, 3);
+        if (StringUtils.isBlank(response)) {
+            log.error("请求站内信服务失败");
+            return false;
+        }
+        Gson gson = new Gson();
+        Map map = gson.fromJson(response, HashMap.class);
+        double errorCode = (Double)map.get("errorCode");
+        if (MESSAGE_SEND_SUCCESS_CODE==errorCode) {
+            log.info("发送站内信成功");
+            return true;
+        }
+        return false;
+    }
 
     public static boolean sendEmail(String attachmentBase64content,String fileName,String content,String[] contacts){
         String emailUrlPrefix = "";
         try {
             emailUrlPrefix =  ApplicationProperties.get().getString("notice.email.url");
         } catch (AtlasException e) {
-            log.error("获取通知url前缀失败", e);
+            log.error("获取邮件通知url前缀失败", e);
             throw new AtlasBaseException(e);
         }
 
