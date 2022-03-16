@@ -361,13 +361,7 @@ public final class EntityGraphRetriever {
     }
 
     public AtlasVertex getEntityVertex(String guid) throws AtlasBaseException {
-        AtlasVertex ret = AtlasGraphUtilsV2.findByGuid(guid);
-
-        if (ret == null) {
-            throw new AtlasBaseException(AtlasErrorCode.INSTANCE_GUID_NOT_FOUND, guid);
-        }
-
-        return ret;
+        return AtlasGraphUtilsV2.findByGuid(guid);
     }
 
     public AtlasEntitiesWithExtInfo toAtlasEntitiesWithExtInfo(List<String> guids, boolean isMinExtInfo) throws AtlasBaseException {
