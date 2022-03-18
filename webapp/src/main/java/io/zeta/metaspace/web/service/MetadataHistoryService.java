@@ -202,7 +202,8 @@ public class MetadataHistoryService {
         try {
             Configuration configuration = ApplicationProperties.get();
             String[] type = configuration.getStringArray("sendNotice.type");
-            if(!"2".equals(Arrays.stream(type).filter(item -> item.equals("2")).findFirst().orElse("-1"))){
+            List<String> typeList = Arrays.asList(type);
+            if (!typeList.contains("2")) {
                 return;
             }
             if (CollectionUtils.isEmpty(oldColumnMetadataListHistory) || CollectionUtils.isEmpty(newColumnMetadataList)) {
@@ -281,7 +282,8 @@ public class MetadataHistoryService {
         try {
             Configuration configuration = ApplicationProperties.get();
             String[] type = configuration.getStringArray("sendNotice.type");
-            if(!"1".equals(Arrays.stream(type).filter(item -> item.equals("1")).findFirst().orElse("-1"))){
+            List<String> typeList = Arrays.asList(type);
+            if (!typeList.contains("1")) {
                 return;
             }
         } catch (AtlasException e) {
