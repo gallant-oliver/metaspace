@@ -52,4 +52,8 @@ public class TableInfoVo {
      * 血缘方向（INPUT, OUTPUT, BOTH）
      */
     private String direction;
+    /**
+     * 指向当前guid的描述id
+     */
+    private String descGuid;
 }
