@@ -173,7 +173,7 @@ public class MetadataHistoryService {
                     //查询表的元数据历史，若只有一条则代表第一次添加不需要发送邮件处理，否则需要发送邮件以及对应的字段对比信息（最新的两次数据对比结果）
                     List<TableMetadata> tableMetadataList = metadataDAO.getTableMetadataByGuid(tableGuid);
                     if( CollectionUtils.isEmpty(tableMetadataList) || tableMetadataList.size() == 1 ){
-                        log.info("storeHistoryMetadata AtlasEntity name is {},首次添加，不需要邮件通知。", tableMetadata.getName());
+                        log.info("storeHistoryMetadata AtlasEntity name is {},首次添加，不需要发信息通知。", tableMetadata.getName());
                         continue;
                     }
                     ThreadPoolExecutor threadPoolExecutor = ThreadPoolUtil.getThreadPoolExecutor();
@@ -201,8 +201,9 @@ public class MetadataHistoryService {
     private void metadataUpdateCheck(List<TableMetadata> tableMetadataList, List<ColumnMetadata> newColumnMetadataList, TableMetadata newTableMetadata, List<ColumnMetadata> oldColumnMetadataListHistory) {
         try {
             Configuration configuration = ApplicationProperties.get();
-            String type = configuration.getString("sendNotice.type");
-            if(!type.contains("2")){
+            String[] type = configuration.getStringArray("sendNotice.type");
+            List<String> typeList = Arrays.asList(type);
+            if (!typeList.contains("2")) {
                 return;
             }
             if (CollectionUtils.isEmpty(oldColumnMetadataListHistory) || CollectionUtils.isEmpty(newColumnMetadataList)) {
@@ -280,8 +281,9 @@ public class MetadataHistoryService {
     private void sendNoticeByEmail(List<TableMetadata> tableMetadataList,String dbName) {
         try {
             Configuration configuration = ApplicationProperties.get();
-            String type = configuration.getString("sendNotice.type");
-            if(!type.contains("1")){
+            String[] type = configuration.getStringArray("sendNotice.type");
+            List<String> typeList = Arrays.asList(type);
+            if (!typeList.contains("1")) {
                 return;
             }
         } catch (AtlasException e) {
