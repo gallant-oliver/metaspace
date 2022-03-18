@@ -25,7 +25,7 @@ public class TableInfoVo {
      * 查询的数据库端口
      */
     @NotNull
-    private Integer port;
+    private String port;
     /**
      * 查询的数据库名称
      */

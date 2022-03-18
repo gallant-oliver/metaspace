@@ -4,6 +4,7 @@ import io.zeta.metaspace.model.metadata.LineageTrace;
 import io.zeta.metaspace.model.metadata.SimpleTaskNode;
 import io.zeta.metaspace.model.metadata.TableInfoVo;
 import io.zeta.metaspace.model.metadata.TableLineageInfo;
+import io.zeta.metaspace.model.po.tableinfo.TableSourceDataBasePO;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections.CollectionUtils;
@@ -17,6 +18,33 @@ import java.util.stream.Collectors;
  */
 public class MetaDateRelationalDateService {
 
+    /**
+     * 任务调度映射元数据信息（获取对应的guid）
+     * @param simpleTaskNodes 任务调度节点
+     * @param basePOS 元数据信息
+     */
+    public static void updateExistTableGuid(List<SimpleTaskNode> simpleTaskNodes, List<TableSourceDataBasePO> basePOS) {
+        if (CollectionUtils.isNotEmpty(simpleTaskNodes)) {
+            if (CollectionUtils.isNotEmpty(basePOS)) {
+                // k,v存储元数据采集过的表，值为对应的表Guid
+                Map<String, String> mapGuid = basePOS.stream().collect(Collectors.toMap(t -> t.getHost() + ";" + t.getPort() + ";"
+                        + t.getDatabase() + ";" + t.getTable(), TableSourceDataBasePO::getGuid, (key1, key2) -> key1));
+
+                simpleTaskNodes.forEach(f -> {
+                    String inputKey = f.getInputTable().getHost() + ";" + f.getInputTable().getPort() + ";"
+                            + f.getInputTable().getDatabase() + ";" + f.getInputTable().getTable();
+                    String outputKey = f.getOutputTable().getHost() + ";" + f.getOutputTable().getPort() + ";"
+                            + f.getOutputTable().getDatabase() + ";" + f.getOutputTable().getTable();
+                    if (mapGuid.containsKey(inputKey)) {
+                        f.getInputTable().setGuid(mapGuid.get(inputKey));
+                    }
+                    if (mapGuid.containsKey(outputKey)) {
+                        f.getOutputTable().setGuid(mapGuid.get(outputKey));
+                    }
+                });
+            }
+        }
+    }
 
     /**
      * 向上递归遍历血缘
@@ -67,11 +95,15 @@ public class MetaDateRelationalDateService {
                         if (CollectionUtils.isNotEmpty(inputCache)) {
                             r.getInputTable().setGuid(inputCache.get(0).getGuid());
                         } else {
-                            r.getInputTable().setGuid(tableGuid);
+                            if (StringUtils.isEmpty(r.getInputTable().getGuid())) {
+                                r.getInputTable().setGuid(tableGuid);
+                            }
                             inputTableInfoVosCache.add(r.getInputTable());
                         }
                     } else {
-                        r.getInputTable().setGuid(tableGuid);
+                        if (StringUtils.isEmpty(r.getInputTable().getGuid())) {
+                            r.getInputTable().setGuid(tableGuid);
+                        }
                         inputTableInfoVosCache.add(r.getInputTable());
                     }
 
@@ -154,12 +186,16 @@ public class MetaDateRelationalDateService {
                             descGuid = outputCache.get(0).getDescGuid();
                         } else {
                             r.getOutputTable().setDescGuid(descGuid);
-                            r.getOutputTable().setGuid(tableGuid);
+                            if (StringUtils.isEmpty(r.getOutputTable().getGuid())) {
+                                r.getOutputTable().setGuid(tableGuid);
+                            }
                             outputTableInfoVosCache.add(r.getOutputTable());
                         }
                     } else {
                         r.getOutputTable().setDescGuid(descGuid);
-                        r.getOutputTable().setGuid(tableGuid);
+                        if (StringUtils.isEmpty(r.getOutputTable().getGuid())) {
+                            r.getOutputTable().setGuid(tableGuid);
+                        }
                         outputTableInfoVosCache.add(r.getOutputTable());
                     }
 

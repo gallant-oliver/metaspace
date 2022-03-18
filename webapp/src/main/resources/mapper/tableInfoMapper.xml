@@ -148,4 +148,41 @@ FROM
 	INNER JOIN db_info AS db ON tb.databaseguid = db.database_guid
 	WHERE 	tb.status = 'ACTIVE'
 	AND db.status = 'ACTIVE' 	AND tb.tableguid = #{tableGuid} and db.db_type = 'HIVE'
-    </select></mapper>
+    </select>
+
+    <select id="selectSourceDbByListName"
+            resultType="io.zeta.metaspace.model.po.tableinfo.TableSourceDataBasePO">
+        SELECT DISTINCT
+            tb.tableguid AS guid,
+            ds.ip AS HOST,
+            ds.port AS port,
+            db.database_name AS DATABASE,
+            db.db_type AS TYPE,
+            tb.tablename AS TABLE
+        FROM
+            tableinfo AS tb
+            INNER JOIN db_info AS db ON tb.databaseguid = db.database_guid
+            INNER JOIN source_db AS sd ON db.database_guid = sd.db_guid
+            INNER JOIN data_source AS ds ON ds.source_id = sd.source_id
+        WHERE
+            tb.status = 'ACTIVE'
+          AND db.status = 'ACTIVE'
+          AND ds.ip IN
+            <foreach item="item" index="index" collection="list" open="(" close=")" separator=",">
+                #{item.host}
+            </foreach>
+          AND ds.port IN
+            <foreach item="item" index="index" collection="list" open="(" close=")" separator=",">
+                #{item.port}
+            </foreach>
+          AND db.database_name IN
+            <foreach item="item" index="index" collection="list" open="(" close=")" separator=",">
+                #{item.database}
+            </foreach>
+          AND tb.tablename IN
+            <foreach item="item" index="index" collection="list" open="(" close=")" separator=",">
+                #{item.table}
+            </foreach>
+    </select>
+
+</mapper>

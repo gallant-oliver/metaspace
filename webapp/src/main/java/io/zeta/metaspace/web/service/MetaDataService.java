@@ -1633,6 +1633,9 @@ public class MetaDataService {
             } else {
                 return tableLineageInfo;
             }
+            if (CollectionUtils.isEmpty(simpleTaskNodes)) {
+                return tableLineageInfo;
+            }
             // 限定血缘层级 小于1大于6 默认为3
             if (tableInfoVo.getDepth() < 1) {
                 tableInfoVo.setDepth(3);
@@ -1647,6 +1650,13 @@ public class MetaDataService {
             List<TableInfoVo> tableInfoVosCache = new ArrayList<>();
             List<SimpleTaskNode> taskNodeCache = new ArrayList<>();
             if (!org.springframework.util.StringUtils.isEmpty(tableInfoVo.getDirection())) {
+                // 映射元数据采集的数据
+                List<TableInfoVo> allTableInfo = new ArrayList<>();
+                allTableInfo.addAll(simpleTaskNodes.stream().map(SimpleTaskNode::getInputTable).collect(Collectors.toList()));
+                allTableInfo.addAll(simpleTaskNodes.stream().map(SimpleTaskNode::getOutputTable).collect(Collectors.toList()));
+                List<TableSourceDataBasePO> basePOS = tableDAO.selectSourceDbByListName(allTableInfo);
+                MetaDateRelationalDateService.updateExistTableGuid(simpleTaskNodes, basePOS);
+                // 选择遍历方式
                 if (CommonConstant.INPUT_DIRECTION.equals(tableInfoVo.getDirection())) {
                     MetaDateRelationalDateService.upTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
                             lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
@@ -1763,7 +1773,7 @@ public class MetaDataService {
 
         String guid = tableInfoVo.getGuid();
         String host = tableInfoVo.getHost();
-        Integer port = tableInfoVo.getPort();
+        String port = tableInfoVo.getPort();
         String database = tableInfoVo.getDatabase();
         String table = tableInfoVo.getTable();
 
@@ -1800,7 +1810,11 @@ public class MetaDataService {
         }
         try {
             LineageDepthInfo lineageDepthEntity = new LineageDepthInfo();
-            AtlasEntity entity = getEntityInfoByGuid(guid).getEntity();
+            AtlasEntity.AtlasEntityWithExtInfo entityInfoByGuid = getEntityInfoByGuid(guid);
+            if (Objects.isNull(entityInfoByGuid)) {
+                return null;
+            }
+            AtlasEntity entity = entityInfoByGuid.getEntity();
             if (Objects.nonNull(entity)) {
                 String hdfs = "hdfs";
                 if (entity.getTypeName().contains(tableAttribute) || entity.getTypeName().contains(hdfs)) {
