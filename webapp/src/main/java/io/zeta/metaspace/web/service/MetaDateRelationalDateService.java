@@ -19,6 +19,30 @@ import java.util.stream.Collectors;
 public class MetaDateRelationalDateService {
 
     /**
+     * 将任务调度获取的数据库名数据处理为元数据采集的数据库名
+     *
+     * @param simpleTaskNodes
+     */
+    public static void unifyDataBase(List<SimpleTaskNode> simpleTaskNodes) {
+        if (CollectionUtils.isNotEmpty(simpleTaskNodes)) {
+            simpleTaskNodes.forEach(p -> {
+                if ("POSTGRESQL".equals(p.getInputTable().getType())) {
+                    String database = p.getInputTable().getDatabase();
+                    p.getInputTable().setDatabase(
+                            database.substring(database.lastIndexOf('.') + 1)
+                    );
+                }
+                if ("POSTGRESQL".equals(p.getOutputTable().getType())) {
+                    String database = p.getOutputTable().getDatabase();
+                    p.getOutputTable().setDatabase(
+                            database.substring(database.lastIndexOf('.') + 1)
+                    );
+                }
+            });
+        }
+    }
+
+    /**
      * 任务调度映射元数据信息（获取对应的guid）
      * @param simpleTaskNodes 任务调度节点
      * @param basePOS 元数据信息

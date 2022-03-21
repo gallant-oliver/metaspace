@@ -1598,9 +1598,31 @@ public class MetaDataService {
             org.springframework.beans.BeanUtils.copyProperties(dataBasePO, tableInfo);
             tableInfo.setDepth(depth);
             tableInfo.setDirection(direction.toString());
-            info = getRelationTableLineage(token, tableInfo);
+            TableInfoVo tableInfoVo = judgeSourceDB(tableInfo);
+            info = getRelationTableLineage(token, tableInfoVo);
         }
         return info;
+    }
+
+    /**
+     * 对不同数据库类型进行元数据采集与任务调度数据库名统一
+     *
+     * @param tableInfoVo 元数据采集的配置信息
+     * @return 任务调度的配置信息
+     */
+    public TableInfoVo judgeSourceDB(TableInfoVo tableInfoVo) {
+        if (StringUtils.isNotBlank(tableInfoVo.getType())) {
+            String database;
+            switch (tableInfoVo.getType()) {
+                case "POSTGRESQL":
+                    database = "postgres." + tableInfoVo.getDatabase();
+                    tableInfoVo.setDatabase(database);
+                    break;
+                case "SQLSERVER":
+                    break;
+            }
+        }
+        return tableInfoVo;
     }
 
     public TableLineageInfo getRelationTableLineage(String token, TableInfoVo tableInfoVo) throws AtlasBaseException {
@@ -1650,6 +1672,8 @@ public class MetaDataService {
             List<TableInfoVo> tableInfoVosCache = new ArrayList<>();
             List<SimpleTaskNode> taskNodeCache = new ArrayList<>();
             if (!org.springframework.util.StringUtils.isEmpty(tableInfoVo.getDirection())) {
+                // 将任务调度获取的数据库名数据处理为元数据采集的数据库名
+                MetaDateRelationalDateService.unifyDataBase(simpleTaskNodes);
                 // 映射元数据采集的数据
                 List<TableInfoVo> allTableInfo = new ArrayList<>();
                 allTableInfo.addAll(simpleTaskNodes.stream().map(SimpleTaskNode::getInputTable).collect(Collectors.toList()));
