@@ -26,15 +26,21 @@ import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.dao.dataquality.WarningGroupDAO;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.BeansUtil;
+import io.zeta.metaspace.web.util.PoiExcelUtils;
+import jnr.ffi.Struct;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.text.DateFormat;
@@ -415,30 +421,89 @@ public class WarningGroupService {
         return getDetails(parameters, errors, error -> error.getWarnNo());
     }
 
-    public PagedModel<AlertInfoDTO> getAlert(AlertRequest request){
+    public List<AlertInfoDTO> getAlert(String startTime, String endTime, String keyword, Integer limit, Integer offset){
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         try {
             Timestamp startDate = null;
             Timestamp realEndDate = null;
-            if (StringUtils.isNotBlank(request.getStartTime())) {
-                startDate = new Timestamp(format.parse(request.getStartTime()).getTime());
+            if (StringUtils.isNotBlank(startTime)) {
+                startDate = new Timestamp(format.parse(startTime).getTime());
             }
             // 选择的结束日期需包含在内，应该要加一天
-            if (StringUtils.isNotBlank(request.getEndTime())) {
-                Date endDate = format.parse(request.getEndTime());
+            if (StringUtils.isNotBlank(endTime)) {
+                Date endDate = format.parse(endTime);
                 realEndDate = new Timestamp(endDate.getTime() + 86400000);
             }
-            List<AlertInfoDTO> alerts = warningGroupDAO.getAlerts(startDate, realEndDate, request.getKeyword(),
-                    request.getOffset(), request.getPageSize());
-            if (CollectionUtils.isEmpty(alerts)) {
-                return new PagedModel<>();
-            }
-            return PagedModel.pageInfo(alerts, alerts.get(0).getTotal(), request.getPageNo(), request.getPageSize());
+            List<AlertInfoDTO> alerts = warningGroupDAO.getAlerts(startDate, realEndDate, keyword,
+                    offset, limit);
+            alerts.forEach(alert -> {
+                if (StringUtils.isNotBlank(alert.getObjectId())) {
+                    if (alert.getScope() == 0 || alert.getScope() == 1) {
+                        CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(alert.getObjectId(), CustomizeParam.class);
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("检测对象：");
+                        if (StringUtils.isNotBlank(paramInfo.getDataSourceName())) {
+                            sb.append(paramInfo.getDataSourceName()).append("-");
+                        }
+                        if (StringUtils.isNotBlank(paramInfo.getSchema())) {
+                            sb.append(paramInfo.getSchema()).append("-");
+                        }
+                        if (StringUtils.isNotBlank(paramInfo.getTable())) {
+                            sb.append(paramInfo.getTable()).append("-");
+                        }
+                        if (StringUtils.isNotBlank(paramInfo.getColumn())) {
+                            sb.append(paramInfo.getColumn()).append("-");
+                        }
+                        sb = sb.deleteCharAt(sb.length() - 1).append("，");
+                        appendValueDescribe(sb, alert);
+                        alert.setContent(sb.toString());
+                    }
+                    else if (alert.getScope() == 2 && alert.getType() == 31) {
+                        List<ConsistencyParam> params = GsonUtils.getInstance().fromJson(alert.getObjectId(), new TypeToken<List<ConsistencyParam>>() {
+                        }.getType());
+                        ConsistencyParam standard = params.stream().filter(p -> p.isStandard()).collect(Collectors.toList()).get(0);
+                        List<ConsistencyParam> compare = params.stream().filter(p -> !p.isStandard()).collect(Collectors.toList());
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("一致性校验中基准字段").append(standard.getSchema()).append("-").append(standard.getTable())
+                                .append(String.join("和", standard.getJoinFields()));
+                        String compareContent = compare.stream().map(param -> {
+                            return param.getSchema() + "-" + param.getTable() + "-" + String.join("和", param.getCompareFields());
+                        }).collect(Collectors.joining("或"));
+                        alert.setContent(sb.toString() + "与对比字段" + compareContent + "结果不一");
+                    }
+                    else {
+                        StringBuilder sb = new StringBuilder("自定义规则校验失败，");
+                        appendValueDescribe(sb, alert);
+                        alert.setContent(sb.toString());
+                    }
+
+                }
+            });
+
+            return alerts;
         } catch (ParseException e) {
             throw new AtlasBaseException("时间格式不正确");
         }
     }
 
+    private void appendValueDescribe(StringBuilder sb, AlertInfoDTO alert) {
+        sb.append("阈值为:").append((alert.getCheckType() == 0 ?
+                "固定值" + CheckExpressionEnum.getDescByCode(alert.getCheckExpressionType()) + alert.getMaxValue()
+                : "波动值" + alert.getMinValue() + "~" + alert.getMaxValue()));
+        sb.append("，实际为：" + alert.getResult() + sb.append(alert.getUnit()));
+        alert.setContent(sb.toString());
+    }
+
+    public PagedModel<AlertInfoDTO> getAlert(AlertRequest request){
+        List<AlertInfoDTO> alerts = getAlert(request.getStartTime(), request.getEndTime(), request.getKeyword(),
+                request.getPageSize(), request.getPageSize() * (request.getPageNo() - 1));
+
+        if (CollectionUtils.isEmpty(alerts)) {
+            return new PagedModel<>();
+        }
+
+        return PagedModel.pageInfo(alerts, alerts.get(0).getTotal(), request.getPageNo(), request.getPageSize());
+    }
 
     public PageResult<WarnInformation> getDetails(Parameters parameters, List<WarnInformation> errors, Function<WarnInformation, String> apply){
         PageResult<WarnInformation> pageResult = new PageResult<>();
@@ -512,12 +577,46 @@ public class WarningGroupService {
         return pageResult;
     }
 
+    public Workbook getAlertDownloadWorkbook(String startTime, String endTime) {
+        List<AlertInfoDTO> alerts = getAlert(startTime, endTime, null, null, null);
+
+        Workbook workbook = new XSSFWorkbook();
+        List<String> headers = Arrays.asList("编号", "告警名称", "告警来源", "告警等级", "告警内容", "告警类型", "通知渠道", "通知人", "告警时间");
+        List<List<String>> data = alerts.stream().map(alert -> {
+            return Arrays.asList(alert.getId(), alert.getTitle(), alert.getSource(), alert.getAlertLevel(),
+                    alert.getContent(), alert.getAlertType(), alert.getChannel(), alert.getReceivers(), alert.getCreateTime());
+        }).collect(Collectors.toList());
+        PoiExcelUtils.createSheet(workbook, "Sheet1", headers, data);
+
+        return workbook;
+    }
+
     public ErrorInfo getErrorInfo(String executionRuleId) throws AtlasBaseException {
         try {
             return warningGroupDAO.getErrorInfo(executionRuleId);
         } catch (Exception e) {
             LOG.error("获取异常信息失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取异常信息ssss失败");
+        }
+    }
+
+    public Map<String,Long> getAlertTotalByTenant(AlertRequest request){
+        DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
+        try {
+            Timestamp startDate = null;
+            Timestamp realEndDate = null;
+            if (StringUtils.isNotBlank(request.getStartTime())) {
+                startDate = new Timestamp(format.parse(request.getStartTime()).getTime());
+            }
+            // 选择的结束日期需包含在内，应该要加一天
+            if (StringUtils.isNotBlank(request.getEndTime())) {
+                Date endDate = format.parse(request.getEndTime());
+                realEndDate = new Timestamp(endDate.getTime() + 86400000);
+            }
+            List<String> alertsTenant = warningGroupDAO.getAlertsTenant(startDate, realEndDate);
+            return alertsTenant.stream().collect(Collectors.groupingBy(name -> name, Collectors.counting()));
+        } catch (ParseException e) {
+            throw new AtlasBaseException("时间格式不正确");
         }
     }
 
