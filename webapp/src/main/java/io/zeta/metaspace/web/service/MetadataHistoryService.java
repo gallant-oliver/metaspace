@@ -133,10 +133,6 @@ public class MetadataHistoryService {
                     List<String> partitionKeyList = EntityUtil.extractPartitionKeyInfo(entity);
                     TableMetadata tableMetadata = generateTableMetadata(entity);
                     log.info("storeHistoryMetadata AtlasEntity is {},name is {}", entity, tableMetadata.getName());
-                    int sameCount = metadataDAO.getSameUpdateEntityCount(tableMetadata);
-                    if(sameCount > 0) {
-                        continue;
-                    }
                     List<ColumnMetadata> columnMetadataList = new ArrayList<>();
                     Map<String, AtlasEntity> referrencedEntities = info.getReferredEntities();
                     for (String guid : referrencedEntities.keySet()) {
@@ -209,7 +205,6 @@ public class MetadataHistoryService {
             if (CollectionUtils.isEmpty(oldColumnMetadataListHistory) || CollectionUtils.isEmpty(newColumnMetadataList)) {
                 return;
             }
-            StringBuilder str = new StringBuilder();
 
             //获取源信息登记的数据库信息
             TableDataSourceRelationPO tableDataSourceRelationPO = databaseDAO.selectByTableGuid(newTableMetadata.getGuid());
@@ -225,7 +220,7 @@ public class MetadataHistoryService {
             if(!first.isPresent()){
                 return;
             }
-            str = new StringBuilder();
+            StringBuilder str = new StringBuilder();
             TableMetadataPO tableMetadataPO = first.get();
             str.append("数据源[").append(tableMetadataPO.getSourceName()).append("]下的数据库[").append(tableMetadataPO.getDatabaseName()).append("]下的数据表[").append(tableMetadataPO.getTableName()).append("]元数据发生变更。变更内容为:</br>");
 
