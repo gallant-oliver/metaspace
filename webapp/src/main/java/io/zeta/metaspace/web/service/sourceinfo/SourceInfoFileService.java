@@ -226,8 +226,8 @@ public class SourceInfoFileService {
                         results.add(setAnalyticResult(errMsg,array, map));
                         break;
                     }
-                    if(!v.matches("^[a-zA-Z0-9_\u4e00-\u9fa5]+$")){
-                        String errMsg = "数据库中文名只包含字母数据下划线和中文";
+                    if(!v.matches("^[a-zA-Z0-9_\\-\u4e00-\u9fa5]+$")){
+                        String errMsg = "数据库中文名只支持中文、数字、字母、-和_";
                         results.add(setAnalyticResult(errMsg,array, map));
                         break;
                     }
