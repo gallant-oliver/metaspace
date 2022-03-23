@@ -6,8 +6,11 @@ import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
 @Data
-@ApiModel("告警列表VO")
-public class AlertInfoDTO {
+@ApiModel("告警租户VO")
+public class AlertTenantDTO {
+
+    @ApiModelProperty("租户名称")
+    private String tenant;
 
     @ApiModelProperty("告警编号")
     private String id;
@@ -38,32 +41,4 @@ public class AlertInfoDTO {
 
     @JsonIgnore
     private Integer total;
-
-    @JsonIgnore
-    private Integer checkType;
-
-    @JsonIgnore
-    private Integer checkExpressionType;
-
-    @JsonIgnore
-    private Double maxValue;
-
-    @JsonIgnore
-    private Double minValue;
-
-    @JsonIgnore
-    private String unit;
-
-    @JsonIgnore
-    private String objectId;
-
-    @JsonIgnore
-    private Double result;
-
-    @JsonIgnore
-    private Integer scope;
-
-    @JsonIgnore
-    private Integer type;
-
 }
