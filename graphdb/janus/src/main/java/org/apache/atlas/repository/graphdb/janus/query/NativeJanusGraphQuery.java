@@ -39,6 +39,7 @@ import org.apache.atlas.repository.graphdb.janus.AtlasJanusGraphDatabase;
 import org.apache.atlas.repository.graphdb.janus.AtlasJanusVertex;
 import org.apache.tinkerpop.gremlin.process.traversal.Compare;
 import org.apache.tinkerpop.gremlin.structure.Vertex;
+import org.janusgraph.graphdb.query.JanusGraphPredicateUtils;
 import org.janusgraph.graphdb.query.graph.GraphCentricQueryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -168,7 +169,7 @@ public class NativeJanusGraphQuery implements NativeTinkerpopGraphQuery<AtlasJan
         JanusGraphPredicate pred;
         if (op instanceof ComparisionOperator) {
             Compare c = getGremlinPredicate((ComparisionOperator) op);
-            pred = JanusGraphPredicate.Converter.convert(c);
+            pred = JanusGraphPredicateUtils.convert(c);
         } else {
             pred = getGremlinPredicate((MatchingOperator)op);
         }
@@ -177,7 +178,7 @@ public class NativeJanusGraphQuery implements NativeTinkerpopGraphQuery<AtlasJan
 
     @Override
     public void orderBy(final String propertyName, final AtlasGraphQuery.SortOrder sortOrder) {
-        Order order = sortOrder == AtlasGraphQuery.SortOrder.ASC ? Order.incr : Order.decr;
+        Order order = sortOrder == AtlasGraphQuery.SortOrder.ASC ? Order.asc : Order.desc;
         query.orderBy(propertyName, order);
     }
 

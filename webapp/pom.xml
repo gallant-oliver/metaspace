@@ -818,10 +818,6 @@
                     <artifactId>jasper-compiler</artifactId>
                 </exclusion>
                 <exclusion>
-                    <artifactId>hbase-common</artifactId>
-                    <groupId>org.apache.hbase</groupId>
-                </exclusion>
-                <exclusion>
                     <artifactId>hbase-hadoop-compat</artifactId>
                     <groupId>org.apache.hbase</groupId>
                 </exclusion>
@@ -844,6 +840,10 @@
                 <exclusion>
                     <artifactId>libthrift</artifactId>
                     <groupId>org.apache.thrift</groupId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hbase</groupId>
+                    <artifactId>hbase-common</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -934,7 +934,16 @@
                     <artifactId>hbase-metrics-api</artifactId>
                     <groupId>org.apache.hbase</groupId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>hbase-common</artifactId>
+                    <groupId>org.apache.hbase</groupId>
+                </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-common</artifactId>
+            <version>2.2.6</version>
         </dependency>
       <dependency>
         <groupId>org.mockito</groupId>
