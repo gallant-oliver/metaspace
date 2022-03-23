@@ -87,6 +87,8 @@ public class SourceInfoFileService {
             "技术负责人","业务负责人"};
     private static final int CHINA_LENGTH = 128;
     private static final int EMAIL_LENGTH = 64;
+    // 目录分层符号
+    private static final String CATEGORY_SPLIT_STR = "/";
     /**
      * 校验联系电话
      *
@@ -226,8 +228,8 @@ public class SourceInfoFileService {
                         results.add(setAnalyticResult(errMsg,array, map));
                         break;
                     }
-                    if(!v.matches("^[a-zA-Z0-9_\u4e00-\u9fa5]+$")){
-                        String errMsg = "数据库中文名只包含字母数据下划线和中文";
+                    if(!v.matches("^[a-zA-Z0-9_\\-\u4e00-\u9fa4]+$")){
+                        String errMsg = "数据库中文名仅支持中文、英文、数字、下划线“_”和“-”";
                         results.add(setAnalyticResult(errMsg,array, map));
                         break;
                     }
@@ -433,13 +435,13 @@ public class SourceInfoFileService {
             List<CategoryEntityV2> categoryEntityV2List = categoryDao.queryByTenantId(tenantId);
             if (categoryIndex != -1 && !CollectionUtils.isEmpty(categoryEntityV2List)) {
                 List<String[]> repeatInCategoryList = CollectionUtils.isEmpty(excelDataList) ? new ArrayList<>() : excelDataList.stream().filter(p -> categoryEntityV2List.stream()
-                        .anyMatch(v -> v.getGuid().equals(categoryMap.getOrDefault(p[categoryIndex], "-1")) && v.getName().equals(p[dbZhIndex]))
+                        .anyMatch(v -> v.getGuid().equals(categoryMap.getOrDefault(p[categoryIndex],"-1")) && v.getName().equals(p[dbZhIndex]))
                 ).collect(Collectors.toList());
                 resultMap.put("repeatInCategoryList", repeatInCategoryList);
             }
 
             excelDataList = CollectionUtils.isEmpty(excelDataList) ? new ArrayList<>() : excelDataList.stream().filter(p -> categoryEntityV2List.stream()
-                    .anyMatch(v -> !(v.getGuid().equals(categoryMap.getOrDefault(p[categoryIndex], "-1")) && v.getName().equals(p[dbZhIndex])))
+                    .anyMatch(v -> !(v.getGuid().equals(categoryMap.getOrDefault(p[categoryIndex],"-1")) && v.getName().equals(p[dbZhIndex])))
             ).collect(Collectors.toList());
 
             //4. 数据库中文或者英文名重复 SOURCE_INFO 表
@@ -685,9 +687,24 @@ public class SourceInfoFileService {
             dataSourceInfos = getDataSource(sourceTypeList,tenantId);
         }
 
+        List<CategoryEntityV2> categoryEntityV2List = categoryDao.queryByTenantId(tenantId);
+        // 用 / 号来判断是否是多级目录
+        Pattern pattern = Pattern.compile(CATEGORY_SPLIT_STR);
         for(String[] array : saveDbList){
             String sourceId = UUIDUtils.alphaUUID();
-            String categoryId = MapUtils.getString(categoryMap,getElementOrDefault(array,MapUtils.getIntValue(map,"数据层名称",-1)),"");
+            String categoryName = getElementOrDefault(array, categoryIndex);
+            String categoryId = "";
+            String[] categoryNameList = pattern.split(categoryName);
+            for (String name : categoryNameList) {
+                String guid = categoryId;
+                Optional<CategoryEntityV2> guidOptional = categoryEntityV2List.stream().filter(i -> i.getName().equals(name)
+                        && (StringUtils.isBlank(guid) || i.getParentCategoryGuid().equals(guid)))
+                        .findFirst();
+                if(!guidOptional.isPresent()){
+                    return new Result("400",String.format("未找到数据层[%s]，请检查", categoryName));
+                }
+                categoryId = guidOptional.get().getGuid();
+            }
             databaseInfo = new DatabaseInfo();
             databaseInfo.setId(sourceId);
             databaseInfo.setCategoryId(categoryId);
