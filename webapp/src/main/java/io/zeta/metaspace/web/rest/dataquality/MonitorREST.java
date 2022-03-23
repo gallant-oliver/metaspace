@@ -114,8 +114,10 @@ public class MonitorREST {
     @Valid
     public void download(@QueryParam("startTime") String startTime, @QueryParam("endTime") String endTime) throws Exception {
         Workbook workbook = warningGroupService.getAlertDownloadWorkbook(startTime, endTime);
+        response.setCharacterEncoding("UTF-8");
+        response.setContentType("content-type:octet-stream");
+        response.setHeader("Content-Disposition", "attachment;filename=" + UUID.randomUUID().toString() + ".xlsx");
+        response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
         workbook.write(response.getOutputStream());
-        response.setContentType("application/force-download");
-        response.addHeader("Content-Disposition", "attachment;fileName=".concat(UUID.randomUUID().toString() + ".xlsx"));
     }
 }
