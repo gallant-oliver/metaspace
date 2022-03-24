@@ -890,6 +890,9 @@ public class QuartzJob implements Job {
                     LinkedHashMap<String, Object> map = new LinkedHashMap<>();
                     for (int i = 1; i <= columnCount; i++) {
                         String column = metaData.getColumnName(i);
+                        if(column.contains(".")){
+                            column = column.substring(column.lastIndexOf(".") + 1, column.length());
+                        }
                         Object value = resultSet.getObject(column);
                         if (value instanceof Clob) {
                             Clob clob = (Clob) value;
