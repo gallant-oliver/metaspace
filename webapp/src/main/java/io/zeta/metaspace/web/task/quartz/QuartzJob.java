@@ -799,7 +799,7 @@ public class QuartzJob implements Job {
                     case EMPTY_VALUE_NUM_CHANGE_RATIO:
                     case EMPTY_VALUE_NUM_RATIO:
                         writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath);
-                        sql = String.format(query, sqlDbName, tableName, columnName);
+                        sql = String.format(query, sqlDbName, tableName, columnName, columnName);
                         break;
                     default:
                         sql = String.format(query, columnName, sqlDbName, tableName);
@@ -873,7 +873,7 @@ public class QuartzJob implements Job {
             case EMPTY_VALUE_NUM_CHANGE:
             case EMPTY_VALUE_NUM_CHANGE_RATIO:
             case EMPTY_VALUE_NUM_RATIO:
-                sql = String.format(errDataSql, sqlDbName, tableName, columnName);
+                sql = String.format(errDataSql, sqlDbName, tableName, columnName, columnName);
                 break;
             default:
                 sql = String.format(errDataSql, columnName, sqlDbName, tableName);

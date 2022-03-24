@@ -56,7 +56,7 @@ public class QuartQueryProvider {
             case EMPTY_VALUE_NUM_CHANGE:
             case EMPTY_VALUE_NUM_CHANGE_RATIO:
             case EMPTY_VALUE_NUM_RATIO:
-                return "SELECT count(*) from %s.%s WHERE %s is NULL";
+                return "SELECT count(*) from %s.%s WHERE %s is NULL or %s = ''";
             case DUP_VALUE_NUM:
             case DUP_VALUE_NUM_CHANGE:
             case DUP_VALUE_NUM_CHANGE_RATIO:
@@ -78,7 +78,7 @@ public class QuartQueryProvider {
             case EMPTY_VALUE_NUM_CHANGE:
             case EMPTY_VALUE_NUM_CHANGE_RATIO:
             case EMPTY_VALUE_NUM_RATIO:
-                return "SELECT * from %s.%s WHERE %s is NULL";
+                return "SELECT * from %s.%s WHERE %s is NULL or %s = ''";
             case DUP_VALUE_NUM:
             case DUP_VALUE_NUM_CHANGE:
             case DUP_VALUE_NUM_CHANGE_RATIO:
