@@ -1156,11 +1156,12 @@ public class SourceInfoDeriveTableInfoService {
         if ("(".equals(strColumn.toString())) {
             return "";
         }
+        String sourceTableNameEn = StringUtils.isEmpty(sourceInfoDeriveTableColumnDto.getSourceTableNameEn()) ? "" : sourceInfoDeriveTableColumnDto.getSourceTableNameEn();
         strColumn = new StringBuilder(strColumn.substring(0, strColumn.length() - 2));
         strColumn.append(")\r\n");
         str.append(strColumn).append("select \r\n");
         strSelect = new StringBuilder(strSelect.substring(0, strSelect.length() - 1));
-        str.append(strSelect).append("\r\n from " + dbName + "." + sourceInfoDeriveTableColumnDto.getSourceTableNameEn()).append(";");
+        str.append(strSelect).append("\r\n from ").append(dbName).append(".").append(sourceTableNameEn).append(";");
         return str.toString();
     }
 
