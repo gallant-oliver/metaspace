@@ -1860,7 +1860,7 @@ public class DataManageService {
         }
     }
 
-    private Column getAndRemoveColumn(AtlasEntity entity, String typeKey) {
+    private Column getAndRemoveColumn(AtlasEntity entity, String typeKey, int sort) {
         AtlasRelatedObjectId table = (AtlasRelatedObjectId) entity.getRelationshipAttribute("table");
         String tableGuid = table.getGuid();
         AtlasEntity.AtlasEntityWithExtInfo info = atlasEntityStore.getById(table.getGuid());
@@ -1881,6 +1881,7 @@ public class DataManageService {
         column.setType(type);
         column.setStatus(status);
         column.setDisplayNameUpdateTime(updateTime);
+        column.setSort(sort);
         if (comment != null) {
             column.setDescription(comment.toString());
         }
@@ -2154,6 +2155,7 @@ public class DataManageService {
 
     private void createOrUpdateEntities(List<AtlasEntity> entities, SyncTaskDefinition definition, KafkaConnector.Config config, Boolean enableEmail) throws Exception {
         Boolean hiveAtlasEntityAll = getHiveAtlasEntityAll(entities);
+        int sort = 1;
         for (AtlasEntity entity : entities) {
             String typeName = entity.getTypeName();
             String dbType = null;
@@ -2202,11 +2204,11 @@ public class DataManageService {
                     if(this.getOutputFromProcesses(entity) && hiveAtlasEntityAll){
                         continue;
                     }
-                    Column column = getAndRemoveColumn(entity, "type");
+                    Column column = getAndRemoveColumn(entity, "type", sort++);
                     addOrUpdateColumn(column);
                     break;
                 case "rdbms_column":
-                    column = getAndRemoveColumn(entity, "data_type");
+                    column = getAndRemoveColumn(entity, "data_type", sort++);
                     addOrUpdateColumn(column);
                     break;
             }
