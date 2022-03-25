@@ -37,16 +37,17 @@ public interface ColumnDAO {
 
 
     @Insert({"<script>",
-            "insert into column_info(column_guid,column_name,table_guid,type,display_name,display_operator,display_updatetime,status,description)values",
+            "insert into column_info(column_guid,column_name,table_guid,type,display_name,display_operator,display_updatetime,status,description,sort)values",
             "<foreach collection='columnList' item='columnInfo' index='index'  separator=','>",
-            "(#{columnInfo.columnId},#{columnInfo.columnName},#{columnInfo.tableId},#{columnInfo.type},#{columnInfo.displayName},#{columnInfo.displayNameOperator},#{columnInfo.displayNameUpdateTime},#{columnInfo.status},#{columnInfo.description})",
+            "(#{columnInfo.columnId},#{columnInfo.columnName},#{columnInfo.tableId},#{columnInfo.type},#{columnInfo.displayName},#{columnInfo.displayNameOperator}," +
+                    "#{columnInfo.displayNameUpdateTime},#{columnInfo.status},#{columnInfo.description},#{columnInfo.sort})",
             "</foreach>",
             "</script>"})
     public int addColumnDisplayInfo(@Param("columnList")List<Column> columnList);
 
-    @Insert("insert into column_info(column_guid,column_name,table_guid,type,display_name,display_operator,display_updatetime,status,description,partition_field)values" +
+    @Insert("insert into column_info(column_guid,column_name,table_guid,type,display_name,display_operator,display_updatetime,status,description,partition_field,sort)values" +
             "(#{column.columnId},#{column.columnName},#{column.tableId},#{column.type},#{column.displayName},#{column.displayNameOperator}," +
-            "#{column.displayNameUpdateTime},#{column.status},#{column.description},#{column.isPartitionKey})")
+            "#{column.displayNameUpdateTime},#{column.status},#{column.description},#{column.isPartitionKey},#{column.sort})")
     void addColumn(@Param("column")Column column);
 
     @Select("select count(*) from column_info where table_guid=#{tableGuid} and status='ACTIVE'")
@@ -56,7 +57,7 @@ public interface ColumnDAO {
 
     @Update({" <script>",
              " update column_info set column_name = #{columnInfo.columnName}, display_name=#{columnInfo.displayName},display_operator=#{columnInfo.displayNameOperator},display_updatetime=#{columnInfo.displayNameUpdateTime}," +
-             " status = #{columnInfo.status}, type = #{columnInfo.type}, partition_field = #{columnInfo.isPartitionKey}, description = #{columnInfo.description}",
+             " status = #{columnInfo.status}, type = #{columnInfo.type}, partition_field = #{columnInfo.isPartitionKey}, description = #{columnInfo.description}, sort = #{columnInfo.sort}",
              " where ",
              " column_guid=#{columnInfo.columnId}",
              " </script>"})
@@ -66,7 +67,7 @@ public interface ColumnDAO {
     @Select("select column_guid as columnId,column_name as columnName,type from column_info where table_guid=#{tableGuid} and status='ACTIVE'")
     public List<Column> getColumnInfoList(@Param("tableGuid")String tableGuid);
 
-    @Select("select column_guid as columnId,column_name as columnName,type,description from column_info where table_guid=#{tableGuid} and status='ACTIVE' ORDER BY column_name")
+    @Select("select column_guid as columnId,column_name as columnName,type,description from column_info where table_guid=#{tableGuid} and status='ACTIVE' ORDER BY sort")
     List<Column> getColumnInfoListByTableGuid(@Param("tableGuid")String tableGuid);
 
     @Select("select column_guid as columnId,column_name as columnName,type,description from column_info where column_guid=#{columnGuid} and status='ACTIVE' ")
@@ -86,7 +87,7 @@ public interface ColumnDAO {
     @Update("delete from column_info where column_guid=#{columnGuid}")
     void deleteColumn(@Param("columnGuid")String columnGuid);
 
-    @Select("select column_name as columnName, display_name as displayName from column_info where table_guid=#{tableGuid} and status='ACTIVE' order by column_name")
+    @Select("select column_name as columnName, display_name as displayName from column_info where table_guid=#{tableGuid} and status='ACTIVE' order by sort")
     public List<Column> getColumnNameWithDisplayList(@Param("tableGuid")String tableGuid);
 
     @Update("update tableInfo set display_name=#{displayName},display_operator=#{displayOperator}, display_updatetime=#{displayUpdateTime} where tableGuid=#{tableGuid}")
