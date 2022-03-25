@@ -1918,11 +1918,19 @@ public class DataManageService {
     }
 
     private String getTableType(AtlasEntity entity){
+        //hive获取数据类型
         String type = getEntityAttribute(entity, "tableType");
         if(StringUtils.isBlank(type)){
-            return "table";
+            //关系型数据库获取数据类型
+            type = getEntityAttribute(entity, "type");
+            if(StringUtils.isBlank(type)){
+                return "table";
+            }
         }
         if("VIRTUAL_VIEW".equalsIgnoreCase(type)){
+            return "view";
+        }
+        if("VIEW".equalsIgnoreCase(type)){
             return "view";
         }
         return "table";
