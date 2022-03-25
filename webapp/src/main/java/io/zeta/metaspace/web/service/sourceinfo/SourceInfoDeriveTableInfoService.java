@@ -1046,17 +1046,27 @@ public class SourceInfoDeriveTableInfoService {
      * 构造DDL
      */
     private String createDDL(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String dbName) {
+        //oracle数据库，字段和表名需用“”修饰；hive使用``
+        String tableFiled = "";
+        if (Constant.HIVE.equals(sourceInfoDeriveTableColumnDto.getDbType().toUpperCase())) {
+            tableFiled = "`";
+        }
+        if (Constant.ORACLE.equals(sourceInfoDeriveTableColumnDto.getDbType().toUpperCase())) {
+            tableFiled = "\"";
+        }
         // 必须有长度的拼接长度
         String lengthStr = "(255)";
         String tableNameEn = sourceInfoDeriveTableColumnDto.getTableNameEn();
         String dbType = sourceInfoDeriveTableColumnDto.getDbType();
-        StringBuilder tableDDL = new StringBuilder("CREATE TABLE ").append(dbName).append(".").append(tableNameEn).append("(\r\n");
+        StringBuilder tableDDL = new StringBuilder("CREATE TABLE ").append(tableFiled).append(dbName).append(tableFiled).append(".").
+                append(tableFiled).append(tableNameEn).append(tableFiled).append("(\r\n");
 
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
         addTimeField(sourceInfoDeriveColumnInfos);
         StringBuilder columnDDL = new StringBuilder();
         StringBuilder commentDDL = new StringBuilder();
-        StringBuilder primaryKeyDDLHeader = new StringBuilder("ALTER TABLE ").append(tableNameEn).append(" ADD PRIMARY KEY (");
+        StringBuilder primaryKeyDDLHeader = new StringBuilder("ALTER TABLE ").append(tableFiled).append(tableNameEn).
+                append(tableFiled).append(" ADD PRIMARY KEY (");
         StringBuilder primaryKeyField = new StringBuilder();
         for (int i = 0; i < sourceInfoDeriveColumnInfos.size(); i++) {
             SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo = sourceInfoDeriveColumnInfos.get(i);
@@ -1070,7 +1080,7 @@ public class SourceInfoDeriveTableInfoService {
                 dataType = stringStringMap.getOrDefault(dataType, dataType);
             }
             // 最后一个字段不用拼接逗号
-            columnDDL.append(columnNameEn).append(" ").append(dataType);
+            columnDDL.append(tableFiled).append(columnNameEn).append(tableFiled).append(" ").append(dataType);
 
             // 有中文名添加注释
             String columnNameZh = sourceInfoDeriveColumnInfo.getColumnNameZh();
@@ -1078,7 +1088,8 @@ public class SourceInfoDeriveTableInfoService {
                 if (Arrays.asList(Constant.HIVE, Constant.MYSQL).contains(dbType.toUpperCase())) {
                     columnDDL.append(" COMMENT '").append(columnNameZh).append("'");
                 } else {
-                    commentDDL.append("COMMENT ON COLUMN ").append(tableNameEn).append(".").append(columnNameEn).append(" IS '").append(columnNameZh).append("';\r\n");
+                    commentDDL.append("COMMENT ON COLUMN ").append(tableFiled).append(tableNameEn).append(tableFiled).
+                            append(".").append(tableFiled).append(columnNameEn).append(tableFiled).append(" IS '").append(columnNameZh).append("';\r\n");
                 }
             }
             if (i < sourceInfoDeriveColumnInfos.size() - 1) {
@@ -1111,7 +1122,7 @@ public class SourceInfoDeriveTableInfoService {
         }
         tableDDL.append(commentDDL);
         removeTimeField(sourceInfoDeriveColumnInfos);
-        return tableDDL.toString().toUpperCase();
+        return tableDDL.toString().toUpperCase().replaceFirst(dbName.toUpperCase(), dbName);
     }
 
 
