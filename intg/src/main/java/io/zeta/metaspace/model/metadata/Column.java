@@ -34,6 +34,7 @@ public class Column implements Serializable {
     private Integer columnPrivilegeGuid;
     private String columnPrivilege;
     private String displayName;
+    private Integer sort;
     private List<ColumnTag> tags;
     private String displayNameUpdateTime;
     @JsonIgnore
@@ -167,6 +168,14 @@ public class Column implements Serializable {
 
     public void setDisplayNameUpdateTime(String displayNameUpdateTime) {
         this.displayNameUpdateTime = displayNameUpdateTime;
+    }
+
+    public Integer getSort() {
+        return sort;
+    }
+
+    public void setSort(Integer sort) {
+        this.sort = sort;
     }
 
     public String getDisplayNameOperator() {
