@@ -19,7 +19,7 @@ public class TableSourceDataBasePO {
     /**
      * 查询的数据库端口
      */
-    private Integer port;
+    private String port;
     /**
      * 查询的数据库名称
      */

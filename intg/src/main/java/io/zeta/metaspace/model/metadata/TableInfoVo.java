@@ -25,7 +25,7 @@ public class TableInfoVo {
      * 查询的数据库端口
      */
     @NotNull
-    private Integer port;
+    private String port;
     /**
      * 查询的数据库名称
      */
@@ -52,4 +52,8 @@ public class TableInfoVo {
      * 血缘方向（INPUT, OUTPUT, BOTH）
      */
     private String direction;
+    /**
+     * 指向当前guid的描述id
+     */
+    private String descGuid;
 }

@@ -1556,13 +1556,13 @@ public class MetaDataService {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getTableLineage({}, {}, {})", guid, direction, depth);
         }
-        try {
-            if (StringUtils.isEmpty(guid)) {
-                throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取表血缘关系失败");
-            }
-            TableSourceDataBasePO dataBasePO = tableDAO.selectSourceDbByGuid(guid);
-            TableLineageInfo info = new TableLineageInfo();
-            if (dataBasePO == null || dataBasePO.getTable().equalsIgnoreCase("hive")) {
+        if (StringUtils.isEmpty(guid)) {
+            throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取表血缘关系失败");
+        }
+        TableSourceDataBasePO dataBasePO = tableDAO.selectSourceDbByGuid(guid);
+        TableLineageInfo info = new TableLineageInfo();
+        if (dataBasePO == null || dataBasePO.getTable().equalsIgnoreCase("hive")) {
+            try {
                 AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, direction, depth);
                 if (Objects.isNull(lineageInfo)) {
                     throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取表血缘关系失败");
@@ -1588,17 +1588,41 @@ public class MetaDataService {
                 CompletableFuture.allOf(completableFutureList.toArray(new CompletableFuture[]{})).get(30, TimeUnit.SECONDS);
                 info.setEntities(lineageEntities);
                 info.setRelations(lineageRelations);
-            } else {
-                TableInfoVo tableInfo = new TableInfoVo();
-                org.springframework.beans.BeanUtils.copyProperties(dataBasePO, tableInfo);
-                tableInfo.setDepth(depth);
-                tableInfo.setDirection(direction.toString());
-                info = getRelationTableLineage(token, tableInfo);
+            } catch (AtlasBaseException | InterruptedException | TimeoutException | ExecutionException e) {
+                log.error("获取表血缘关系失败: " + e.getMessage());
+                Thread.currentThread().interrupt();
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表血缘关系失败");
             }
-            return info;
-        } catch (AtlasBaseException | InterruptedException | TimeoutException | ExecutionException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表血缘关系失败");
+        } else {
+            TableInfoVo tableInfo = new TableInfoVo();
+            org.springframework.beans.BeanUtils.copyProperties(dataBasePO, tableInfo);
+            tableInfo.setDepth(depth);
+            tableInfo.setDirection(direction.toString());
+            TableInfoVo tableInfoVo = judgeSourceDB(tableInfo);
+            info = getRelationTableLineage(token, tableInfoVo);
         }
+        return info;
+    }
+
+    /**
+     * 对不同数据库类型进行元数据采集与任务调度数据库名统一
+     *
+     * @param tableInfoVo 元数据采集的配置信息
+     * @return 任务调度的配置信息
+     */
+    public TableInfoVo judgeSourceDB(TableInfoVo tableInfoVo) {
+        if (StringUtils.isNotBlank(tableInfoVo.getType())) {
+            String database;
+            switch (tableInfoVo.getType()) {
+                case "POSTGRESQL":
+                    database = "postgres." + tableInfoVo.getDatabase();
+                    tableInfoVo.setDatabase(database);
+                    break;
+                case "SQLSERVER":
+                    break;
+            }
+        }
+        return tableInfoVo;
     }
 
     public TableLineageInfo getRelationTableLineage(String token, TableInfoVo tableInfoVo) throws AtlasBaseException {
@@ -1631,6 +1655,9 @@ public class MetaDataService {
             } else {
                 return tableLineageInfo;
             }
+            if (CollectionUtils.isEmpty(simpleTaskNodes)) {
+                return tableLineageInfo;
+            }
             // 限定血缘层级 小于1大于6 默认为3
             if (tableInfoVo.getDepth() < 1) {
                 tableInfoVo.setDepth(3);
@@ -1645,6 +1672,15 @@ public class MetaDataService {
             List<TableInfoVo> tableInfoVosCache = new ArrayList<>();
             List<SimpleTaskNode> taskNodeCache = new ArrayList<>();
             if (!org.springframework.util.StringUtils.isEmpty(tableInfoVo.getDirection())) {
+                // 将任务调度获取的数据库名数据处理为元数据采集的数据库名
+                MetaDateRelationalDateService.unifyDataBase(simpleTaskNodes);
+                // 映射元数据采集的数据
+                List<TableInfoVo> allTableInfo = new ArrayList<>();
+                allTableInfo.addAll(simpleTaskNodes.stream().map(SimpleTaskNode::getInputTable).collect(Collectors.toList()));
+                allTableInfo.addAll(simpleTaskNodes.stream().map(SimpleTaskNode::getOutputTable).collect(Collectors.toList()));
+                List<TableSourceDataBasePO> basePOS = tableDAO.selectSourceDbByListName(allTableInfo);
+                MetaDateRelationalDateService.updateExistTableGuid(simpleTaskNodes, basePOS);
+                // 选择遍历方式
                 if (CommonConstant.INPUT_DIRECTION.equals(tableInfoVo.getDirection())) {
                     MetaDateRelationalDateService.upTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
                             lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
@@ -1666,11 +1702,13 @@ public class MetaDataService {
                 //过滤重复数据
                 tableLineageInfo.setEntities(lineageEntities.stream()
                         .filter(distinctByKey(TableLineageInfo.LineageEntity::getGuid)).collect(Collectors.toList()));
+                tableLineageInfo.setRelations(lineageTraceSet.stream().collect(Collectors.collectingAndThen(Collectors.toCollection(() ->
+                        new TreeSet<>(Comparator.comparing(o -> o.getFromEntityId() + ";" + o.getToEntityId()))), HashSet::new)));
             }
-            tableLineageInfo.setRelations(lineageTraceSet);
             return tableLineageInfo;
         } catch (AtlasBaseException | AtlasException e) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表血缘关系失败");
+            log.error("获取关系表血缘失败: " + e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关系表血缘失败数据出现死循环！");
         }
     }
 
@@ -1759,7 +1797,7 @@ public class MetaDataService {
 
         String guid = tableInfoVo.getGuid();
         String host = tableInfoVo.getHost();
-        Integer port = tableInfoVo.getPort();
+        String port = tableInfoVo.getPort();
         String database = tableInfoVo.getDatabase();
         String table = tableInfoVo.getTable();
 
@@ -1796,7 +1834,11 @@ public class MetaDataService {
         }
         try {
             LineageDepthInfo lineageDepthEntity = new LineageDepthInfo();
-            AtlasEntity entity = getEntityInfoByGuid(guid).getEntity();
+            AtlasEntity.AtlasEntityWithExtInfo entityInfoByGuid = getEntityInfoByGuid(guid);
+            if (Objects.isNull(entityInfoByGuid)) {
+                return null;
+            }
+            AtlasEntity entity = entityInfoByGuid.getEntity();
             if (Objects.nonNull(entity)) {
                 String hdfs = "hdfs";
                 if (entity.getTypeName().contains(tableAttribute) || entity.getTypeName().contains(hdfs)) {

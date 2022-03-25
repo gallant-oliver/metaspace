@@ -799,7 +799,7 @@ public class QuartzJob implements Job {
                     case EMPTY_VALUE_NUM_CHANGE_RATIO:
                     case EMPTY_VALUE_NUM_RATIO:
                         writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath);
-                        sql = String.format(query, sqlDbName, tableName, columnName);
+                        sql = String.format(query, sqlDbName, tableName, columnName, columnName);
                         break;
                     default:
                         sql = String.format(query, columnName, sqlDbName, tableName);
@@ -873,7 +873,7 @@ public class QuartzJob implements Job {
             case EMPTY_VALUE_NUM_CHANGE:
             case EMPTY_VALUE_NUM_CHANGE_RATIO:
             case EMPTY_VALUE_NUM_RATIO:
-                sql = String.format(errDataSql, sqlDbName, tableName, columnName);
+                sql = String.format(errDataSql, sqlDbName, tableName, columnName, columnName);
                 break;
             default:
                 sql = String.format(errDataSql, columnName, sqlDbName, tableName);
@@ -890,6 +890,9 @@ public class QuartzJob implements Job {
                     LinkedHashMap<String, Object> map = new LinkedHashMap<>();
                     for (int i = 1; i <= columnCount; i++) {
                         String column = metaData.getColumnName(i);
+                        if(column.contains(".")){
+                            column = column.substring(column.lastIndexOf(".") + 1, column.length());
+                        }
                         Object value = resultSet.getObject(column);
                         if (value instanceof Clob) {
                             Clob clob = (Clob) value;

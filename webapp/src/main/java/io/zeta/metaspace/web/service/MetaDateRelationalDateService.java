@@ -4,15 +4,13 @@ import io.zeta.metaspace.model.metadata.LineageTrace;
 import io.zeta.metaspace.model.metadata.SimpleTaskNode;
 import io.zeta.metaspace.model.metadata.TableInfoVo;
 import io.zeta.metaspace.model.metadata.TableLineageInfo;
+import io.zeta.metaspace.model.po.tableinfo.TableSourceDataBasePO;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -20,6 +18,57 @@ import java.util.stream.Collectors;
  */
 public class MetaDateRelationalDateService {
 
+    /**
+     * 将任务调度获取的数据库名数据处理为元数据采集的数据库名
+     *
+     * @param simpleTaskNodes
+     */
+    public static void unifyDataBase(List<SimpleTaskNode> simpleTaskNodes) {
+        if (CollectionUtils.isNotEmpty(simpleTaskNodes)) {
+            simpleTaskNodes.forEach(p -> {
+                if ("POSTGRESQL".equals(p.getInputTable().getType())) {
+                    String database = p.getInputTable().getDatabase();
+                    p.getInputTable().setDatabase(
+                            database.substring(database.lastIndexOf('.') + 1)
+                    );
+                }
+                if ("POSTGRESQL".equals(p.getOutputTable().getType())) {
+                    String database = p.getOutputTable().getDatabase();
+                    p.getOutputTable().setDatabase(
+                            database.substring(database.lastIndexOf('.') + 1)
+                    );
+                }
+            });
+        }
+    }
+
+    /**
+     * 任务调度映射元数据信息（获取对应的guid）
+     * @param simpleTaskNodes 任务调度节点
+     * @param basePOS 元数据信息
+     */
+    public static void updateExistTableGuid(List<SimpleTaskNode> simpleTaskNodes, List<TableSourceDataBasePO> basePOS) {
+        if (CollectionUtils.isNotEmpty(simpleTaskNodes)) {
+            if (CollectionUtils.isNotEmpty(basePOS)) {
+                // k,v存储元数据采集过的表，值为对应的表Guid
+                Map<String, String> mapGuid = basePOS.stream().collect(Collectors.toMap(t -> t.getHost() + ";" + t.getPort() + ";"
+                        + t.getDatabase() + ";" + t.getTable(), TableSourceDataBasePO::getGuid, (key1, key2) -> key1));
+
+                simpleTaskNodes.forEach(f -> {
+                    String inputKey = f.getInputTable().getHost() + ";" + f.getInputTable().getPort() + ";"
+                            + f.getInputTable().getDatabase() + ";" + f.getInputTable().getTable();
+                    String outputKey = f.getOutputTable().getHost() + ";" + f.getOutputTable().getPort() + ";"
+                            + f.getOutputTable().getDatabase() + ";" + f.getOutputTable().getTable();
+                    if (mapGuid.containsKey(inputKey)) {
+                        f.getInputTable().setGuid(mapGuid.get(inputKey));
+                    }
+                    if (mapGuid.containsKey(outputKey)) {
+                        f.getOutputTable().setGuid(mapGuid.get(outputKey));
+                    }
+                });
+            }
+        }
+    }
 
     /**
      * 向上递归遍历血缘
@@ -40,6 +89,8 @@ public class MetaDateRelationalDateService {
         List<TableInfoVo> outputTableInfoVos = new ArrayList<>();
 
         for (TableInfoVo infoVo : tableInfoVo) {
+            // 一个节点对应一个详细描述
+            String descGuid = UUID.randomUUID().toString();
             List<SimpleTaskNode> taskNodes = simpleTaskNodes.stream().filter(r -> {
                 TableInfoVo outputTable = r.getOutputTable();
                 if (outputTable != null && outputTable.getHost().equals(infoVo.getHost()) && outputTable.getPort().equals(infoVo.getPort())
@@ -51,7 +102,6 @@ public class MetaDateRelationalDateService {
                 LineageTrace inLineageTrace = new LineageTrace();
                 LineageTrace outLineageTrace = new LineageTrace();
                 String tableGuid = UUID.randomUUID().toString();
-                String descGuid = UUID.randomUUID().toString();
 
                 // 判断是否出现死循环血缘
                 judgeInfiniteLoop(taskNodeCache, r);
@@ -69,11 +119,15 @@ public class MetaDateRelationalDateService {
                         if (CollectionUtils.isNotEmpty(inputCache)) {
                             r.getInputTable().setGuid(inputCache.get(0).getGuid());
                         } else {
-                            r.getInputTable().setGuid(tableGuid);
+                            if (StringUtils.isEmpty(r.getInputTable().getGuid())) {
+                                r.getInputTable().setGuid(tableGuid);
+                            }
                             inputTableInfoVosCache.add(r.getInputTable());
                         }
                     } else {
-                        r.getInputTable().setGuid(tableGuid);
+                        if (StringUtils.isEmpty(r.getInputTable().getGuid())) {
+                            r.getInputTable().setGuid(tableGuid);
+                        }
                         inputTableInfoVosCache.add(r.getInputTable());
                     }
 
@@ -81,7 +135,7 @@ public class MetaDateRelationalDateService {
                         // 添加缓存
                         taskNodeCache.add(r);
                         // 血缘
-                        inLineageTrace.setFromEntityId(tableGuid);
+                        inLineageTrace.setFromEntityId(r.getInputTable().getGuid());
                         inLineageTrace.setToEntityId(descGuid);
                         lineageTraceSet.add(inLineageTrace);
                         outLineageTrace.setFromEntityId(descGuid);
@@ -153,12 +207,19 @@ public class MetaDateRelationalDateService {
                         }).collect(Collectors.toList());
                         if (CollectionUtils.isNotEmpty(outputCache)) {
                             r.getOutputTable().setGuid(outputCache.get(0).getGuid());
+                            descGuid = outputCache.get(0).getDescGuid();
                         } else {
-                            r.getOutputTable().setGuid(tableGuid);
+                            r.getOutputTable().setDescGuid(descGuid);
+                            if (StringUtils.isEmpty(r.getOutputTable().getGuid())) {
+                                r.getOutputTable().setGuid(tableGuid);
+                            }
                             outputTableInfoVosCache.add(r.getOutputTable());
                         }
                     } else {
-                        r.getOutputTable().setGuid(tableGuid);
+                        r.getOutputTable().setDescGuid(descGuid);
+                        if (StringUtils.isEmpty(r.getOutputTable().getGuid())) {
+                            r.getOutputTable().setGuid(tableGuid);
+                        }
                         outputTableInfoVosCache.add(r.getOutputTable());
                     }
 
@@ -170,7 +231,7 @@ public class MetaDateRelationalDateService {
                         inLineageTrace.setToEntityId(descGuid);
                         lineageTraceSet.add(inLineageTrace);
                         outLineageTrace.setFromEntityId(descGuid);
-                        outLineageTrace.setToEntityId(tableGuid);
+                        outLineageTrace.setToEntityId(r.getOutputTable().getGuid());
                         lineageTraceSet.add(outLineageTrace);
 
                         setLineageTableInfoVo(r, lineageEntities, descGuid);
@@ -218,6 +279,9 @@ public class MetaDateRelationalDateService {
         } else if (StringUtils.isEmpty(r.getSql()) && !StringUtils.isEmpty(r.getDesc())) {
             mediLineageEntity.setTableName(r.getDesc());
             mediLineageEntity.setDisplayText(r.getDesc());
+        } else {
+            mediLineageEntity.setTableName("");
+            mediLineageEntity.setDisplayText("");
         }
         lineageEntities.add(mediLineageEntity);
         // 添加输出类
@@ -255,7 +319,7 @@ public class MetaDateRelationalDateService {
                 return false;
             }).collect(Collectors.toList());
             if (CollectionUtils.isNotEmpty(nodes)) {
-                throw new AtlasBaseException(AtlasErrorCode.INVALID_STRUCT_VALUE, "表结构数据异常，获取表血缘关系失败");
+                throw new AtlasBaseException(AtlasErrorCode.INVALID_STRUCT_VALUE, "表结构数据异常，血缘出现死循环");
             }
             List<TableInfoVo> tableInfos = new ArrayList<>();
             tableInfos.add(simpleTaskNode.getInputTable());
@@ -278,13 +342,13 @@ public class MetaDateRelationalDateService {
                 }).collect(Collectors.toList());
                 // 存在则死循环
                 if (CollectionUtils.isNotEmpty(info)) {
-                    throw new AtlasBaseException(AtlasErrorCode.INVALID_STRUCT_VALUE, "表结构数据异常，获取表血缘关系失败");
+                    throw new AtlasBaseException(AtlasErrorCode.INVALID_STRUCT_VALUE, "表结构数据异常，血缘出现死循环");
                 }
                 tableInfos = tableCache.stream().filter(MetaDataService.distinctByKey(TableInfoVo::getGuid)).collect(Collectors.toList());
                 // 是否死循环
                 ++flag;
                 if (flag > 100) {
-                    throw new AtlasBaseException(AtlasErrorCode.INVALID_STRUCT_VALUE, "表结构数据异常，获取表血缘关系失败");
+                    throw new AtlasBaseException(AtlasErrorCode.INVALID_STRUCT_VALUE, "表结构数据异常，血缘出现死循环");
                 }
             }
         }

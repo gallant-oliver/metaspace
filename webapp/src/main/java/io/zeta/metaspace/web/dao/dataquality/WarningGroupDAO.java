@@ -395,18 +395,19 @@ public interface WarningGroupDAO {
                     "            , 'EMAIL' AS alertType" +
                     "            FROM (" +
                     "                    select t3.id, users.username" +
-                    "                    from data_quality_task t1" +
-                    "                    join data_quality_task_execute t2 on t1.id = t2.task_id" +
-                    "                    join data_quality_task_rule_execute t3 on t2.id = t3.task_execute_id join data_quality_sub_task t4 on (t3.subtask_id = t4.id and t4.delete = false)" +
+                    "                    from data_quality_task_rule_execute t3 " +
+                    "                    join data_quality_sub_task t4 on (t3.subtask_id = t4.id and t4.delete = false) " +
+                    "                    join data_quality_task_execute t2 on t2.id = t3.task_execute_id " +
+                    "                    join data_quality_task t1 on t1.id = t2.task_id and t1.delete=false" +
                     "                    join data_quality_sub_task_rule t5 on (t3.subtask_rule_id = t5.id and t5.delete = false)" +
                     "                    join data_quality_rule_template t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid and t6.delete = false)" +
                     "                    left join data_quality_task2warning_group t7 on t1.id = t7.task_id" +
                     "                    left join warning_group wg on wg.id = t7.warning_group_id AND wg.delete = false" +
                     "                    left join users on users.userid = ANY(string_to_array(wg.contacts,','))" +
-                    "                    where t1.delete=false" +
+                    "                    where (t3.red_warning_check_status = 1 or t3.orange_warning_check_status = 1 or t3.general_warning_check_status = 1)  " +
                     "        <if test='keyword != null and keyword != \"\"'>" +
                     "            and (t1.name like concat('%',#{keyword},'%') ESCAPE '/'" +
-                    "                   or concat(t6.name,'校验') like concat('%',#{keyword},'%') ESCAPE '/')" +
+                    "                   or t6.name like concat('%',#{keyword},'%') ESCAPE '/')" +
                     "        </if>" +
                     "        <if test='startTime != null'>" +
                     "            and t3.create_time &gt; #{startTime}" +
@@ -424,18 +425,22 @@ public interface WarningGroupDAO {
                     "        ) t" +
                     "    GROUP BY id" +
                     "        )" +
-                    "    select count(*)over() total, t3.id, concat(t6.name,'校验') as content, t1.name as title," +
-                    "    to_char(t3.create_time, 'yyyy-MM-dd HH:mm:SS') as create_time, au.receivers" +
-                    "    from data_quality_task t1" +
-                    "    join data_quality_task_execute t2 on t1.id = t2.task_id" +
-                    "    join data_quality_task_rule_execute t3 on t2.id = t3.task_execute_id join data_quality_sub_task t4 on (t3.subtask_id = t4.id and t4.delete = false)" +
+                    "    select count(*)over() total, t3.id, t1.name as title," +
+                    "    to_char(t3.create_time, 'yyyy-MM-dd HH:mm:SS') as create_time, au.receivers, t3.result, " +
+                    "    t5.check_threshold_max_value as maxValue, t5.check_threshold_min_value as minValue, t3.subtask_object_id as objectId, " +
+                    "    t5.check_expression_type as checkExpressionType, t5.check_type as checkType, t5.check_threshold_unit as unit, " +
+                    "    t6.scope, t6.type " +
+                    "    from data_quality_task_rule_execute t3 " +
+                    "    join data_quality_sub_task t4 on (t3.subtask_id = t4.id and t4.delete = false) " +
+                    "    join data_quality_task_execute t2 on t2.id = t3.task_execute_id " +
+                    "    join data_quality_task t1 on t1.id = t2.task_id and t1.delete=false" +
                     "    join data_quality_sub_task_rule t5 on (t3.subtask_rule_id = t5.id and t5.delete = false)" +
                     "    join data_quality_rule_template t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid and t6.delete = false)" +
                     "    left join all_user au on au.id = t3.id" +
-                    "    where t1.delete=false" +
+                    "    where (t3.red_warning_check_status = 1 or t3.orange_warning_check_status = 1 or t3.general_warning_check_status = 1) " +
                     "        <if test='keyword != null and keyword != \"\"'>" +
                     "    and (t1.name like concat('%',#{keyword},'%') ESCAPE '/'" +
-                    "              or concat(t6.name,'校验') like concat('%',#{keyword},'%') ESCAPE '/')" +
+                    "              or t6.name like concat('%',#{keyword},'%') ESCAPE '/')" +
                     "        </if>" +
                     "        <if test='startTime != null'>" +
                     "            and t3.create_time &gt; #{startTime}" +
@@ -452,5 +457,23 @@ public interface WarningGroupDAO {
                     "        </if>",
             "</script>"})
     List<AlertInfoDTO> getAlerts(@Param("startTime") Timestamp startTime, @Param("endTime") Timestamp endTime,
-                                 @Param("keyword") String keyword, @Param("offset") int offset, @Param("limit") int limit);
+                                 @Param("keyword") String keyword, @Param("offset") Integer offset, @Param("limit") Integer limit);
+
+    @Select({"<script>" +
+                    "    select t7.name" +
+                    "    from data_quality_task t1" +
+                    "    join data_quality_task_execute t2 on t1.id = t2.task_id" +
+                    "    join data_quality_task_rule_execute t3 on t2.id = t3.task_execute_id join data_quality_sub_task t4 on (t3.subtask_id = t4.id and t4.delete = false)" +
+                    "    join data_quality_sub_task_rule t5 on (t3.subtask_rule_id = t5.id and t5.delete = false)" +
+                    "    join data_quality_rule_template t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid and t6.delete = false)" +
+                    "    join tenant t7 on t1.tenantid = t7.id " +
+                    "    where t1.delete=false" +
+                    "        <if test='startTime != null'>" +
+                    "            and t3.create_time &gt; #{startTime}" +
+                    "        </if>" +
+                    "        <if test='endTime != null'>" +
+                    "            and t3.create_time &lt; #{endTime}" +
+                    "        </if>" +
+            "</script>"})
+    List<String> getAlertsTenant(@Param("startTime") Timestamp startTime, @Param("endTime") Timestamp endTime);
 }
