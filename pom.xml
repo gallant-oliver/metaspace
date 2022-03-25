@@ -148,7 +148,7 @@
         <npm.version>6.10.1</npm.version>
         <node-for-v2.version>v4.4.2</node-for-v2.version>
         <slf4j.version>1.7.26</slf4j.version>
-        <jetty.version>9.4.20.v20190813</jetty.version>
+        <jetty.version>9.3.14.v20161028</jetty.version>
         <jetty.jsp.version>9.2.12.v20150709</jetty.jsp.version>
         <jersey.version>1.19</jersey.version>
         <jsr.version>1.1</jsr.version>
@@ -325,21 +325,21 @@
                 <version>${guava.version}</version>
             </dependency>
 
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-jsp</artifactId>
-                <version>${jetty.jsp.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>javax.servlet</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.glassfish</groupId>
-                        <artifactId>javax.el</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>org.eclipse.jetty</groupId>-->
+<!--                <artifactId>jetty-jsp</artifactId>-->
+<!--                <version>${jetty.jsp.version}</version>-->
+<!--                <exclusions>-->
+<!--                    <exclusion>-->
+<!--                        <groupId>javax.servlet</groupId>-->
+<!--                        <artifactId>*</artifactId>-->
+<!--                    </exclusion>-->
+<!--                    <exclusion>-->
+<!--                        <groupId>org.glassfish</groupId>-->
+<!--                        <artifactId>javax.el</artifactId>-->
+<!--                    </exclusion>-->
+<!--                </exclusions>-->
+<!--            </dependency>-->
 
             <dependency>
                 <groupId>org.glassfish</groupId>

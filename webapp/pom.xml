@@ -321,6 +321,10 @@
                     <groupId>javax.servlet.jsp</groupId>
                     <artifactId>jsp-api</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -340,6 +344,10 @@
                 <exclusion>
                     <artifactId>jetty-server</artifactId>
                     <groupId>org.eclipse.jetty</groupId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>*</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -460,10 +468,10 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-jsp</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.eclipse.jetty</groupId>-->
+<!--            <artifactId>jetty-jsp</artifactId>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>org.glassfish</groupId>
@@ -574,20 +582,7 @@
             </exclusions>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.atlas</groupId>
-            <artifactId>atlas-repository</artifactId>
-            <classifier>tests</classifier>
-            <scope>test</scope>
-
-            <exclusions>
-                <exclusion>
-                    <artifactId>snakeyaml</artifactId>
-                    <groupId>org.yaml</groupId>
-                </exclusion>
-            </exclusions>
-
-        </dependency>
+<!--        <SSOFilter.java-->
 
         <dependency>
             <groupId>org.elasticsearch.client</groupId>
