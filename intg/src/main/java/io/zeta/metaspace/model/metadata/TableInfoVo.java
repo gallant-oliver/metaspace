@@ -4,6 +4,8 @@ import lombok.Data;
 import org.hibernate.validator.constraints.NotBlank;
 
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author w
@@ -53,7 +55,7 @@ public class TableInfoVo {
      */
     private String direction;
     /**
-     * 指向当前guid的描述id
+     * 指向当前guid的描述id集合
      */
-    private String descGuid;
+    private List<String> downDescGuids = new ArrayList<>();
 }
