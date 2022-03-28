@@ -20,8 +20,8 @@
 -- Sequence structure for number_seq
 -- ----------------------------
 DROP SEQUENCE IF EXISTS "public"."number_seq";
-CREATE SEQUENCE "public"."number_seq"
-    INCREMENT 1
+CREATE SEQUENCE "public"."number_seq" 
+INCREMENT 1
 MINVALUE  1
 MAXVALUE 9223372036854775807
 START 1
@@ -32,13 +32,13 @@ CACHE 1;
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."annex";
 CREATE TABLE "public"."annex" (
-                                  "annex_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-                                  "file_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                  "file_type" varchar(20) COLLATE "pg_catalog"."default" NOT NULL,
-                                  "path" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                  "create_time" timestamptz(6),
-                                  "modify_time" timestamptz(6),
-                                  "file_size" int8
+  "annex_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "file_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "file_type" varchar(20) COLLATE "pg_catalog"."default" NOT NULL,
+  "path" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamptz(6),
+  "modify_time" timestamptz(6),
+  "file_size" int8
 )
 ;
 COMMENT ON COLUMN "public"."annex"."annex_id" IS '主键';
@@ -55,38 +55,38 @@ COMMENT ON TABLE "public"."annex" IS '附件信息表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."api";
 CREATE TABLE "public"."api" (
-                                "guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                "tableguid" varchar COLLATE "pg_catalog"."default",
-                                "dbguid" varchar COLLATE "pg_catalog"."default",
-                                "version" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                "description" varchar(256) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                "protocol" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                "requestmode" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                "path" varchar(256) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                "creator" varchar COLLATE "pg_catalog"."default",
-                                "createtime" varchar COLLATE "pg_catalog"."default",
-                                "updater" varchar COLLATE "pg_catalog"."default",
-                                "updatetime" varchar COLLATE "pg_catalog"."default",
-                                "categoryguid" varchar COLLATE "pg_catalog"."default",
-                                "status" varchar(255) COLLATE "pg_catalog"."default",
-                                "sourcetype" varchar(255) COLLATE "pg_catalog"."default",
-                                "schemaname" varchar(255) COLLATE "pg_catalog"."default",
-                                "tablename" varchar(255) COLLATE "pg_catalog"."default",
-                                "dbname" varchar(255) COLLATE "pg_catalog"."default",
-                                "sourceid" varchar(255) COLLATE "pg_catalog"."default",
-                                "tenantid" varchar(36) COLLATE "pg_catalog"."default",
-                                "pool" varchar(255) COLLATE "pg_catalog"."default",
-                                "approve" bool DEFAULT false,
-                                "log" bool DEFAULT false,
-                                "version_num" int4 NOT NULL,
-                                "param" json,
-                                "returnparam" json,
-                                "sortparam" json,
-                                "projectid" varchar(255) COLLATE "pg_catalog"."default",
-                                "valid" bool,
-                                "mobius_id" varchar(255) COLLATE "pg_catalog"."default",
-                                "api_poly_entity" jsonb
+  "guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "tableguid" varchar COLLATE "pg_catalog"."default",
+  "dbguid" varchar COLLATE "pg_catalog"."default",
+  "version" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "description" varchar(256) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "protocol" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "requestmode" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "path" varchar(256) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "creator" varchar COLLATE "pg_catalog"."default",
+  "createtime" varchar COLLATE "pg_catalog"."default",
+  "updater" varchar COLLATE "pg_catalog"."default",
+  "updatetime" varchar COLLATE "pg_catalog"."default",
+  "categoryguid" varchar COLLATE "pg_catalog"."default",
+  "status" varchar(255) COLLATE "pg_catalog"."default",
+  "sourcetype" varchar(255) COLLATE "pg_catalog"."default",
+  "schemaname" varchar(255) COLLATE "pg_catalog"."default",
+  "tablename" varchar(255) COLLATE "pg_catalog"."default",
+  "dbname" varchar(255) COLLATE "pg_catalog"."default",
+  "sourceid" varchar(255) COLLATE "pg_catalog"."default",
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default",
+  "pool" varchar(255) COLLATE "pg_catalog"."default",
+  "approve" bool DEFAULT false,
+  "log" bool DEFAULT false,
+  "version_num" int4 NOT NULL,
+  "param" json,
+  "returnparam" json,
+  "sortparam" json,
+  "projectid" varchar(255) COLLATE "pg_catalog"."default",
+  "valid" bool,
+  "mobius_id" varchar(255) COLLATE "pg_catalog"."default",
+  "api_poly_entity" jsonb
 )
 ;
 COMMENT ON COLUMN "public"."api"."guid" IS 'id';
@@ -128,19 +128,19 @@ COMMENT ON TABLE "public"."api" IS '接口信息表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."api_audit";
 CREATE TABLE "public"."api_audit" (
-                                      "id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                      "api_guid" varchar(255) COLLATE "pg_catalog"."default",
-                                      "api_version" varchar(255) COLLATE "pg_catalog"."default",
-                                      "applicant" varchar(255) COLLATE "pg_catalog"."default",
-                                      "create_time" timestamp(6) DEFAULT now(),
-                                      "update_time" timestamp(6) DEFAULT now(),
-                                      "status" varchar(255) COLLATE "pg_catalog"."default",
-                                      "reason" varchar COLLATE "pg_catalog"."default",
-                                      "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
-                                      "applicant_name" varchar(255) COLLATE "pg_catalog"."default",
-                                      "updater" varchar(255) COLLATE "pg_catalog"."default",
-                                      "api_version_num" int4 DEFAULT 1,
-                                      "api_poly_id" text COLLATE "pg_catalog"."default"
+  "id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "api_guid" varchar(255) COLLATE "pg_catalog"."default",
+  "api_version" varchar(255) COLLATE "pg_catalog"."default",
+  "applicant" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6) DEFAULT now(),
+  "update_time" timestamp(6) DEFAULT now(),
+  "status" varchar(255) COLLATE "pg_catalog"."default",
+  "reason" varchar COLLATE "pg_catalog"."default",
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
+  "applicant_name" varchar(255) COLLATE "pg_catalog"."default",
+  "updater" varchar(255) COLLATE "pg_catalog"."default",
+  "api_version_num" int4 DEFAULT 1,
+  "api_poly_id" text COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."api_audit"."id" IS '审核记录 id';
@@ -163,17 +163,17 @@ COMMENT ON TABLE "public"."api_audit" IS '接口审核记录表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."api_category";
 CREATE TABLE "public"."api_category" (
-                                         "guid" text COLLATE "pg_catalog"."default" NOT NULL,
-                                         "description" text COLLATE "pg_catalog"."default",
-                                         "name" text COLLATE "pg_catalog"."default" NOT NULL,
-                                         "upbrothercategoryguid" text COLLATE "pg_catalog"."default",
-                                         "downbrothercategoryguid" text COLLATE "pg_catalog"."default",
-                                         "parentcategoryguid" text COLLATE "pg_catalog"."default",
-                                         "qualifiedname" text COLLATE "pg_catalog"."default",
-                                         "projectid" varchar(225) COLLATE "pg_catalog"."default" NOT NULL,
-                                         "tenantid" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                         "level" int2,
-                                         "createtime" timestamptz(6)
+  "guid" text COLLATE "pg_catalog"."default" NOT NULL,
+  "description" text COLLATE "pg_catalog"."default",
+  "name" text COLLATE "pg_catalog"."default" NOT NULL,
+  "upbrothercategoryguid" text COLLATE "pg_catalog"."default",
+  "downbrothercategoryguid" text COLLATE "pg_catalog"."default",
+  "parentcategoryguid" text COLLATE "pg_catalog"."default",
+  "qualifiedname" text COLLATE "pg_catalog"."default",
+  "projectid" varchar(225) COLLATE "pg_catalog"."default" NOT NULL,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "level" int2,
+  "createtime" timestamptz(6)
 )
 ;
 COMMENT ON COLUMN "public"."api_category"."guid" IS 'id';
@@ -194,18 +194,18 @@ COMMENT ON TABLE "public"."api_category" IS '接口目录表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."api_group";
 CREATE TABLE "public"."api_group" (
-                                      "id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                      "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                      "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                      "creator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                      "approve" json,
-                                      "createtime" timestamptz(6),
-                                      "publish" bool,
-                                      "updater" varchar(255) COLLATE "pg_catalog"."default",
-                                      "updatetime" timestamptz(6),
-                                      "tenantid" varchar(36) COLLATE "pg_catalog"."default" DEFAULT ''::character varying,
-                                      "projectid" varchar(36) COLLATE "pg_catalog"."default",
-                                      "mobius_id" varchar(255) COLLATE "pg_catalog"."default"
+  "id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "creator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "approve" json,
+  "createtime" timestamptz(6),
+  "publish" bool,
+  "updater" varchar(255) COLLATE "pg_catalog"."default",
+  "updatetime" timestamptz(6),
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default" DEFAULT ''::character varying,
+  "projectid" varchar(36) COLLATE "pg_catalog"."default",
+  "mobius_id" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."api_group"."id" IS '分组id';
@@ -227,10 +227,10 @@ COMMENT ON TABLE "public"."api_group" IS '接口分组信息表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."api_group_log";
 CREATE TABLE "public"."api_group_log" (
-                                          "group_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                          "type" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                          "userid" varchar(255) COLLATE "pg_catalog"."default",
-                                          "time" varchar(255) COLLATE "pg_catalog"."default"
+  "group_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "type" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "userid" varchar(255) COLLATE "pg_catalog"."default",
+  "time" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."api_group_log"."group_id" IS '分组id';
@@ -244,10 +244,10 @@ COMMENT ON TABLE "public"."api_group_log" IS '接口分组日志信息表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."api_log";
 CREATE TABLE "public"."api_log" (
-                                    "apiid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                    "type" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                    "userid" varchar(255) COLLATE "pg_catalog"."default",
-                                    "time" varchar(255) COLLATE "pg_catalog"."default"
+  "apiid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "type" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "userid" varchar(255) COLLATE "pg_catalog"."default",
+  "time" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."api_log"."apiid" IS 'apiid';
@@ -261,10 +261,10 @@ COMMENT ON TABLE "public"."api_log" IS '接口操作日志表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."api_module";
 CREATE TABLE "public"."api_module" (
-                                       "path" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                       "method" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                       "module_id" int2,
-                                       "prefix_check" bool
+  "path" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "method" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "module_id" int2,
+  "prefix_check" bool
 )
 ;
 COMMENT ON COLUMN "public"."api_module"."path" IS '接口url';
@@ -278,13 +278,13 @@ COMMENT ON TABLE "public"."api_module" IS '接口模块关联表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."api_poly";
 CREATE TABLE "public"."api_poly" (
-                                     "id" text COLLATE "pg_catalog"."default" NOT NULL,
-                                     "api_id" text COLLATE "pg_catalog"."default",
-                                     "api_version" text COLLATE "pg_catalog"."default",
-                                     "poly" jsonb,
-                                     "status" text COLLATE "pg_catalog"."default",
-                                     "create_time" timestamptz(6),
-                                     "update_time" timestamptz(6)
+  "id" text COLLATE "pg_catalog"."default" NOT NULL,
+  "api_id" text COLLATE "pg_catalog"."default",
+  "api_version" text COLLATE "pg_catalog"."default",
+  "poly" jsonb,
+  "status" text COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6)
 )
 ;
 COMMENT ON COLUMN "public"."api_poly"."id" IS '策略id';
@@ -301,11 +301,11 @@ COMMENT ON TABLE "public"."api_poly" IS '接口策略信息关联信息';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."api_relation";
 CREATE TABLE "public"."api_relation" (
-                                         "apiid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                         "groupid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                         "version" varchar(255) COLLATE "pg_catalog"."default",
-                                         "update_status" bool,
-                                         "update_time" timestamptz(6)
+  "apiid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "groupid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "version" varchar(255) COLLATE "pg_catalog"."default",
+  "update_status" bool,
+  "update_time" timestamptz(6)
 )
 ;
 COMMENT ON COLUMN "public"."api_relation"."apiid" IS 'apiid';
@@ -320,15 +320,15 @@ COMMENT ON TABLE "public"."api_relation" IS '接口分组关联表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."apigroup";
 CREATE TABLE "public"."apigroup" (
-                                     "guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                     "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                     "parentguid" varchar COLLATE "pg_catalog"."default",
-                                     "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                     "generator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                     "generatetime" varchar COLLATE "pg_catalog"."default",
-                                     "updater" varchar COLLATE "pg_catalog"."default",
-                                     "updatetime" varchar COLLATE "pg_catalog"."default",
-                                     "tenantid" varchar(36) COLLATE "pg_catalog"."default"
+  "guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "parentguid" varchar COLLATE "pg_catalog"."default",
+  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "generator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "generatetime" varchar COLLATE "pg_catalog"."default",
+  "updater" varchar COLLATE "pg_catalog"."default",
+  "updatetime" varchar COLLATE "pg_catalog"."default",
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."apigroup"."guid" IS '分组id';
@@ -347,35 +347,35 @@ COMMENT ON TABLE "public"."apigroup" IS '接口分组表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."apiinfo";
 CREATE TABLE "public"."apiinfo" (
-                                    "guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                    "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                    "tableguid" varchar COLLATE "pg_catalog"."default",
-                                    "dbguid" varchar COLLATE "pg_catalog"."default",
-                                    "keeper" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                    "maxrownumber" float8,
-                                    "fields" json,
-                                    "version" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                    "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                    "protocol" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                    "requestmode" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                    "returntype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                    "path" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                    "generatetime" varchar COLLATE "pg_catalog"."default",
-                                    "updater" varchar COLLATE "pg_catalog"."default",
-                                    "updatetime" varchar COLLATE "pg_catalog"."default",
-                                    "groupguid" varchar COLLATE "pg_catalog"."default",
-                                    "star" bool,
-                                    "publish" bool,
-                                    "used_count" int8,
-                                    "manager" varchar(255) COLLATE "pg_catalog"."default",
-                                    "desensitize" bool,
-                                    "sourcetype" varchar(255) COLLATE "pg_catalog"."default",
-                                    "schemaname" varchar(255) COLLATE "pg_catalog"."default",
-                                    "tablename" varchar(255) COLLATE "pg_catalog"."default",
-                                    "dbname" varchar(255) COLLATE "pg_catalog"."default",
-                                    "sourceid" varchar(255) COLLATE "pg_catalog"."default",
-                                    "tenantid" varchar(36) COLLATE "pg_catalog"."default",
-                                    "pool" varchar(255) COLLATE "pg_catalog"."default"
+  "guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "tableguid" varchar COLLATE "pg_catalog"."default",
+  "dbguid" varchar COLLATE "pg_catalog"."default",
+  "keeper" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "maxrownumber" float8,
+  "fields" json,
+  "version" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "protocol" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "requestmode" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "returntype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "path" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "generatetime" varchar COLLATE "pg_catalog"."default",
+  "updater" varchar COLLATE "pg_catalog"."default",
+  "updatetime" varchar COLLATE "pg_catalog"."default",
+  "groupguid" varchar COLLATE "pg_catalog"."default",
+  "star" bool,
+  "publish" bool,
+  "used_count" int8,
+  "manager" varchar(255) COLLATE "pg_catalog"."default",
+  "desensitize" bool,
+  "sourcetype" varchar(255) COLLATE "pg_catalog"."default",
+  "schemaname" varchar(255) COLLATE "pg_catalog"."default",
+  "tablename" varchar(255) COLLATE "pg_catalog"."default",
+  "dbname" varchar(255) COLLATE "pg_catalog"."default",
+  "sourceid" varchar(255) COLLATE "pg_catalog"."default",
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default",
+  "pool" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."apiinfo"."guid" IS 'apiid';
@@ -414,15 +414,15 @@ COMMENT ON TABLE "public"."apiinfo" IS '接口信息表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."approval_group";
 CREATE TABLE "public"."approval_group" (
-                                           "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                           "name" varchar COLLATE "pg_catalog"."default",
-                                           "description" text COLLATE "pg_catalog"."default",
-                                           "creator" varchar COLLATE "pg_catalog"."default",
-                                           "create_time" timestamptz(6),
-                                           "updater" varchar COLLATE "pg_catalog"."default",
-                                           "update_time" timestamptz(6),
-                                           "tenantid" varchar COLLATE "pg_catalog"."default",
-                                           "valid" bool
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar COLLATE "pg_catalog"."default",
+  "description" text COLLATE "pg_catalog"."default",
+  "creator" varchar COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "updater" varchar COLLATE "pg_catalog"."default",
+  "update_time" timestamptz(6),
+  "tenantid" varchar COLLATE "pg_catalog"."default",
+  "valid" bool
 )
 ;
 COMMENT ON COLUMN "public"."approval_group"."id" IS '审批组ID';
@@ -441,8 +441,8 @@ COMMENT ON TABLE "public"."approval_group" IS '审批组信息';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."approval_group_module_relation";
 CREATE TABLE "public"."approval_group_module_relation" (
-                                                           "group_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                           "module_id" varchar COLLATE "pg_catalog"."default" NOT NULL
+  "group_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "module_id" varchar COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."approval_group_module_relation"."group_id" IS '审批组ID';
@@ -454,8 +454,8 @@ COMMENT ON TABLE "public"."approval_group_module_relation" IS '审批组模块�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."approval_group_relation";
 CREATE TABLE "public"."approval_group_relation" (
-                                                    "group_id" varchar(40) COLLATE "pg_catalog"."default",
-                                                    "user_id" varchar(40) COLLATE "pg_catalog"."default"
+  "group_id" varchar(40) COLLATE "pg_catalog"."default",
+  "user_id" varchar(40) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."approval_group_relation"."group_id" IS '审批组ID';
@@ -467,21 +467,21 @@ COMMENT ON TABLE "public"."approval_group_relation" IS '审批组用户关系表
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."approval_item";
 CREATE TABLE "public"."approval_item" (
-                                          "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                          "object_id" varchar COLLATE "pg_catalog"."default",
-                                          "object_name" varchar COLLATE "pg_catalog"."default",
-                                          "business_type" char(1) COLLATE "pg_catalog"."default",
-                                          "approve_type" char(1) COLLATE "pg_catalog"."default",
-                                          "status" char(1) COLLATE "pg_catalog"."default",
-                                          "approve_group" varchar COLLATE "pg_catalog"."default",
-                                          "approver" varchar COLLATE "pg_catalog"."default",
-                                          "approve_time" timestamptz(6),
-                                          "submitter" varchar COLLATE "pg_catalog"."default",
-                                          "commit_time" timestamptz(6),
-                                          "reason" text COLLATE "pg_catalog"."default",
-                                          "module_id" varchar COLLATE "pg_catalog"."default",
-                                          "version" int2,
-                                          "tenant_id" varchar COLLATE "pg_catalog"."default"
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "object_id" varchar COLLATE "pg_catalog"."default",
+  "object_name" varchar COLLATE "pg_catalog"."default",
+  "business_type" char(1) COLLATE "pg_catalog"."default",
+  "approve_type" char(1) COLLATE "pg_catalog"."default",
+  "status" char(1) COLLATE "pg_catalog"."default",
+  "approve_group" varchar COLLATE "pg_catalog"."default",
+  "approver" varchar COLLATE "pg_catalog"."default",
+  "approve_time" timestamptz(6),
+  "submitter" varchar COLLATE "pg_catalog"."default",
+  "commit_time" timestamptz(6),
+  "reason" text COLLATE "pg_catalog"."default",
+  "module_id" varchar COLLATE "pg_catalog"."default",
+  "version" int2,
+  "tenant_id" varchar COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."approval_item"."id" IS '审批项ID';
@@ -506,15 +506,15 @@ COMMENT ON TABLE "public"."approval_item" IS '审批记录表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."atom_indicator";
 CREATE TABLE "public"."atom_indicator" (
-                                           "id" int8 NOT NULL,
-                                           "atom_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
-                                           "atom_indicator_version_id" int8,
-                                           "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                           "create_time" timestamp(6),
-                                           "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                           "update_time" timestamp(6),
-                                           "deleted" int4,
-                                           "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
+  "id" int8 NOT NULL,
+  "atom_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
+  "atom_indicator_version_id" int8,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."atom_indicator"."id" IS '主键id';
@@ -533,18 +533,18 @@ COMMENT ON TABLE "public"."atom_indicator" IS '原子指标表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."atom_indicator_apply";
 CREATE TABLE "public"."atom_indicator_apply" (
-                                                 "id" int8 NOT NULL,
-                                                 "atom_indicator_id" int8,
-                                                 "audit_status" int4,
-                                                 "apply_status" int4,
-                                                 "apply_atom_indicator_id" int8,
-                                                 "apply_group_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                 "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                 "create_time" timestamp(6),
-                                                 "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                 "update_time" timestamp(6),
-                                                 "deleted" int4,
-                                                 "version" int4
+  "id" int8 NOT NULL,
+  "atom_indicator_id" int8,
+  "audit_status" int4,
+  "apply_status" int4,
+  "apply_atom_indicator_id" int8,
+  "apply_group_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "version" int4
 )
 ;
 COMMENT ON COLUMN "public"."atom_indicator_apply"."id" IS '主键id';
@@ -566,22 +566,22 @@ COMMENT ON TABLE "public"."atom_indicator_apply" IS '原子指标申请表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."atom_indicator_logic";
 CREATE TABLE "public"."atom_indicator_logic" (
-                                                 "id" int8 NOT NULL,
-                                                 "atom_indicator_id" int8,
-                                                 "dimension_metadata_relation_id" int8,
-                                                 "logic_type" int4,
-                                                 "indicator_type" varchar(100) COLLATE "pg_catalog"."default",
-                                                 "indicator_measure" int4,
-                                                 "source_field" varchar(255) COLLATE "pg_catalog"."default",
-                                                 "field_alias" varchar(255) COLLATE "pg_catalog"."default",
-                                                 "data_type" varchar(255) COLLATE "pg_catalog"."default",
-                                                 "atom_indicator_sql" text COLLATE "pg_catalog"."default",
-                                                 "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                 "create_time" timestamp(6),
-                                                 "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                 "update_time" timestamp(6),
-                                                 "deleted" int4,
-                                                 "dimension_id" int8
+  "id" int8 NOT NULL,
+  "atom_indicator_id" int8,
+  "dimension_metadata_relation_id" int8,
+  "logic_type" int4,
+  "indicator_type" varchar(100) COLLATE "pg_catalog"."default",
+  "indicator_measure" int4,
+  "source_field" varchar(255) COLLATE "pg_catalog"."default",
+  "field_alias" varchar(255) COLLATE "pg_catalog"."default",
+  "data_type" varchar(255) COLLATE "pg_catalog"."default",
+  "atom_indicator_sql" text COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "dimension_id" int8
 )
 ;
 COMMENT ON COLUMN "public"."atom_indicator_logic"."id" IS '主键id';
@@ -607,29 +607,29 @@ COMMENT ON TABLE "public"."atom_indicator_logic" IS '原子指标逻辑配置表
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."atom_indicator_version";
 CREATE TABLE "public"."atom_indicator_version" (
-                                                   "id" int8 NOT NULL,
-                                                   "atom_indicator_id" int8,
-                                                   "version_id" int4,
-                                                   "atom_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
-                                                   "atom_indicator_name" varchar(100) COLLATE "pg_catalog"."default",
-                                                   "business_indicator_id" int8,
-                                                   "remark" text COLLATE "pg_catalog"."default",
-                                                   "data_source_id" varchar(100) COLLATE "pg_catalog"."default",
-                                                   "data_base_id" varchar(100) COLLATE "pg_catalog"."default",
-                                                   "data_table_id" varchar(100) COLLATE "pg_catalog"."default",
-                                                   "release_status" int4,
-                                                   "version_type" int4,
-                                                   "visible" int4,
-                                                   "release_time" timestamp(6),
-                                                   "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                   "create_time" timestamp(6),
-                                                   "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                   "update_time" timestamp(6),
-                                                   "deleted" int4,
-                                                   "atom_indicator_sql" varchar(4000) COLLATE "pg_catalog"."default",
-                                                   "logic_type" int4,
-                                                   "threshold_setting_id" int8,
-                                                   "business_update_time" timestamp(6)
+  "id" int8 NOT NULL,
+  "atom_indicator_id" int8,
+  "version_id" int4,
+  "atom_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
+  "atom_indicator_name" varchar(100) COLLATE "pg_catalog"."default",
+  "business_indicator_id" int8,
+  "remark" text COLLATE "pg_catalog"."default",
+  "data_source_id" varchar(100) COLLATE "pg_catalog"."default",
+  "data_base_id" varchar(100) COLLATE "pg_catalog"."default",
+  "data_table_id" varchar(100) COLLATE "pg_catalog"."default",
+  "release_status" int4,
+  "version_type" int4,
+  "visible" int4,
+  "release_time" timestamp(6),
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "atom_indicator_sql" varchar(4000) COLLATE "pg_catalog"."default",
+  "logic_type" int4,
+  "threshold_setting_id" int8,
+  "business_update_time" timestamp(6)
 )
 ;
 COMMENT ON COLUMN "public"."atom_indicator_version"."id" IS '主键id';
@@ -662,10 +662,10 @@ COMMENT ON TABLE "public"."atom_indicator_version" IS '原子指标信息版本�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."business2table";
 CREATE TABLE "public"."business2table" (
-                                           "businessid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                           "tableguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                           "relation_type" int2,
-                                           "source_id" varchar(64) COLLATE "pg_catalog"."default"
+  "businessid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "tableguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "relation_type" int2,
+  "source_id" varchar(64) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."business2table"."businessid" IS '业务对象ID';
@@ -679,9 +679,9 @@ COMMENT ON TABLE "public"."business2table" IS '业务对象和数据表映射关
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."business_2_group";
 CREATE TABLE "public"."business_2_group" (
-                                             "business_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                             "group_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                             "read" bool
+  "business_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "group_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "read" bool
 )
 ;
 COMMENT ON COLUMN "public"."business_2_group"."business_id" IS '业务对象id';
@@ -694,18 +694,18 @@ COMMENT ON TABLE "public"."business_2_group" IS '业务对象和用户组权限�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."business_catalog";
 CREATE TABLE "public"."business_catalog" (
-                                             "id" int8 NOT NULL,
-                                             "name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                             "parent_id" int8 NOT NULL,
-                                             "order_id" int4 NOT NULL,
-                                             "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                             "create_time" timestamptz(6),
-                                             "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                             "update_time" timestamptz(6),
-                                             "role_group" varchar(255) COLLATE "pg_catalog"."default",
-                                             "description" varchar(255) COLLATE "pg_catalog"."default",
-                                             "deleted" int2 NOT NULL,
-                                             "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT ''::character varying
+  "id" int8 NOT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "parent_id" int8 NOT NULL,
+  "order_id" int4 NOT NULL,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamptz(6),
+  "role_group" varchar(255) COLLATE "pg_catalog"."default",
+  "description" varchar(255) COLLATE "pg_catalog"."default",
+  "deleted" int2 NOT NULL,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT ''::character varying
 )
 ;
 COMMENT ON COLUMN "public"."business_catalog"."id" IS '主键';
@@ -727,15 +727,15 @@ COMMENT ON TABLE "public"."business_catalog" IS '业务目录表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."business_catalog_log";
 CREATE TABLE "public"."business_catalog_log" (
-                                                 "id" int8 NOT NULL,
-                                                 "operate_dir_id" int8 NOT NULL,
-                                                 "operate_user" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "operate_type" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "operate_time" timestamptz(6) NOT NULL,
-                                                 "audit_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT ''::character varying,
-                                                 "audit_pass_time" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "description" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
+  "id" int8 NOT NULL,
+  "operate_dir_id" int8 NOT NULL,
+  "operate_user" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "operate_type" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "operate_time" timestamptz(6) NOT NULL,
+  "audit_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT ''::character varying,
+  "audit_pass_time" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "description" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."business_catalog_log"."id" IS '主键';
@@ -754,10 +754,10 @@ COMMENT ON TABLE "public"."business_catalog_log" IS '业务目录日志表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."business_index_tag_relations";
 CREATE TABLE "public"."business_index_tag_relations" (
-                                                         "id" int8 NOT NULL,
-                                                         "business_indicator_id" int8 NOT NULL,
-                                                         "tag_id" int8 NOT NULL,
-                                                         "deleted" int4 DEFAULT 1
+  "id" int8 NOT NULL,
+  "business_indicator_id" int8 NOT NULL,
+  "tag_id" int8 NOT NULL,
+  "deleted" int4 DEFAULT 1
 )
 ;
 COMMENT ON COLUMN "public"."business_index_tag_relations"."id" IS '业务指标标签关系表ID';
@@ -771,19 +771,19 @@ COMMENT ON TABLE "public"."business_index_tag_relations" IS '业务指标标签�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."business_indicator_apply";
 CREATE TABLE "public"."business_indicator_apply" (
-                                                     "id" int8 NOT NULL,
-                                                     "business_indicator_id" int8,
-                                                     "audit_status" int4,
-                                                     "apply_status" int4,
-                                                     "apply_group_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                     "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                     "create_time" timestamp(6),
-                                                     "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                     "update_time" timestamp(6),
-                                                     "deleted" int4,
-                                                     "version" int4,
-                                                     "apply_way" int4,
-                                                     "apply_business_indicator_id" int8
+  "id" int8 NOT NULL,
+  "business_indicator_id" int8,
+  "audit_status" int4,
+  "apply_status" int4,
+  "apply_group_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "version" int4,
+  "apply_way" int4,
+  "apply_business_indicator_id" int8
 )
 ;
 COMMENT ON COLUMN "public"."business_indicator_apply"."id" IS '主键id';
@@ -806,41 +806,41 @@ COMMENT ON TABLE "public"."business_indicator_apply" IS '原子指标申请表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."business_indicators";
 CREATE TABLE "public"."business_indicators" (
-                                                "id" int8 NOT NULL,
-                                                "business_indicator_name" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                "business_indicator_coding" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                "indicator_group" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                                "business_indicator_cal" varchar(100) COLLATE "pg_catalog"."default",
-                                                "business_implication" varchar(500) COLLATE "pg_catalog"."default",
-                                                "business_parent_id" int8,
-                                                "business_parent_name" varchar(255) COLLATE "pg_catalog"."default",
-                                                "remark" varchar(500) COLLATE "pg_catalog"."default",
-                                                "design_formulas" varchar(500) COLLATE "pg_catalog"."default",
-                                                "statistical_cycle" varchar(100) COLLATE "pg_catalog"."default",
-                                                "refresh_rate" varchar(100) COLLATE "pg_catalog"."default",
-                                                "statistical_dimension" varchar(100) COLLATE "pg_catalog"."default",
-                                                "technical_indicator" int8,
-                                                "technical_indicator_type" int4,
-                                                "measurement_object" varchar(100) COLLATE "pg_catalog"."default",
-                                                "technical_unit" varchar(100) COLLATE "pg_catalog"."default",
-                                                "data_precision" int4,
-                                                "is_secret" int4,
-                                                "secret_age" int4,
-                                                "is_important" int4,
-                                                "source_type" varchar(100) COLLATE "pg_catalog"."default",
-                                                "data_provider" varchar(100) COLLATE "pg_catalog"."default",
-                                                "attribute_management_department" varchar(100) COLLATE "pg_catalog"."default",
-                                                "operations_people" varchar(100) COLLATE "pg_catalog"."default",
-                                                "state" int4 DEFAULT 0,
-                                                "create_time" timestamp(6),
-                                                "create_user_id" varchar(64) COLLATE "pg_catalog"."default",
-                                                "update_time" timestamp(6),
-                                                "update_user_id" varchar(64) COLLATE "pg_catalog"."default",
-                                                "deleted" int4 NOT NULL DEFAULT 1,
-                                                "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                "temporary_relese" int4,
-                                                "technical_unit_id" int8,
-                                                "operations_people_ids" text[] COLLATE "pg_catalog"."default"
+  "id" int8 NOT NULL,
+  "business_indicator_name" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "business_indicator_coding" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "indicator_group" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "business_indicator_cal" varchar(100) COLLATE "pg_catalog"."default",
+  "business_implication" varchar(500) COLLATE "pg_catalog"."default",
+  "business_parent_id" int8,
+  "business_parent_name" varchar(255) COLLATE "pg_catalog"."default",
+  "remark" varchar(500) COLLATE "pg_catalog"."default",
+  "design_formulas" varchar(500) COLLATE "pg_catalog"."default",
+  "statistical_cycle" varchar(100) COLLATE "pg_catalog"."default",
+  "refresh_rate" varchar(100) COLLATE "pg_catalog"."default",
+  "statistical_dimension" varchar(100) COLLATE "pg_catalog"."default",
+  "technical_indicator" int8,
+  "technical_indicator_type" int4,
+  "measurement_object" varchar(100) COLLATE "pg_catalog"."default",
+  "technical_unit" varchar(100) COLLATE "pg_catalog"."default",
+  "data_precision" int4,
+  "is_secret" int4,
+  "secret_age" int4,
+  "is_important" int4,
+  "source_type" varchar(100) COLLATE "pg_catalog"."default",
+  "data_provider" varchar(100) COLLATE "pg_catalog"."default",
+  "attribute_management_department" varchar(100) COLLATE "pg_catalog"."default",
+  "operations_people" varchar(100) COLLATE "pg_catalog"."default",
+  "state" int4 DEFAULT 0,
+  "create_time" timestamp(6),
+  "create_user_id" varchar(64) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "update_user_id" varchar(64) COLLATE "pg_catalog"."default",
+  "deleted" int4 NOT NULL DEFAULT 1,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
+  "temporary_relese" int4,
+  "technical_unit_id" int8,
+  "operations_people_ids" text[] COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."business_indicators"."id" IS '业务指标ID';
@@ -884,41 +884,41 @@ COMMENT ON TABLE "public"."business_indicators" IS '业务指标表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."business_indicators_history";
 CREATE TABLE "public"."business_indicators_history" (
-                                                        "id" int8 NOT NULL,
-                                                        "business_indicator_name" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                        "business_indicator_coding" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                        "indicator_group" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                                        "business_indicator_cal" varchar(100) COLLATE "pg_catalog"."default",
-                                                        "remark" varchar(500) COLLATE "pg_catalog"."default",
-                                                        "design_formulas" varchar(500) COLLATE "pg_catalog"."default",
-                                                        "statistical_cycle" varchar(100) COLLATE "pg_catalog"."default",
-                                                        "refresh_rate" varchar(100) COLLATE "pg_catalog"."default",
-                                                        "statistical_dimension" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "technical_indicator" int8,
-                                                        "measurement_object" varchar(100) COLLATE "pg_catalog"."default",
-                                                        "technical_unit" varchar(100) COLLATE "pg_catalog"."default",
-                                                        "data_precision" int4,
-                                                        "is_secret" int4,
-                                                        "secret_age" int4,
-                                                        "is_important" int4,
-                                                        "source_type" varchar(100) COLLATE "pg_catalog"."default",
-                                                        "data_provider" varchar(100) COLLATE "pg_catalog"."default",
-                                                        "attribute_management_department" varchar(100) COLLATE "pg_catalog"."default",
-                                                        "operations_people" varchar(100) COLLATE "pg_catalog"."default",
-                                                        "state" int4,
-                                                        "create_time" timestamp(6),
-                                                        "create_user_id" varchar(64) COLLATE "pg_catalog"."default",
-                                                        "update_time" timestamp(6),
-                                                        "update_user_id" varchar(64) COLLATE "pg_catalog"."default",
-                                                        "deleted" int4 NOT NULL DEFAULT 1,
-                                                        "business_implication" varchar(500) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                                        "business_parent_id" int8,
-                                                        "business_parent_name" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "technical_indicator_type" int4,
-                                                        "business_indicator_id" int8 NOT NULL,
-                                                        "is_temporary" int4,
-                                                        "technical_unit_id" int8
+  "id" int8 NOT NULL,
+  "business_indicator_name" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "business_indicator_coding" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "indicator_group" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "business_indicator_cal" varchar(100) COLLATE "pg_catalog"."default",
+  "remark" varchar(500) COLLATE "pg_catalog"."default",
+  "design_formulas" varchar(500) COLLATE "pg_catalog"."default",
+  "statistical_cycle" varchar(100) COLLATE "pg_catalog"."default",
+  "refresh_rate" varchar(100) COLLATE "pg_catalog"."default",
+  "statistical_dimension" varchar(255) COLLATE "pg_catalog"."default",
+  "technical_indicator" int8,
+  "measurement_object" varchar(100) COLLATE "pg_catalog"."default",
+  "technical_unit" varchar(100) COLLATE "pg_catalog"."default",
+  "data_precision" int4,
+  "is_secret" int4,
+  "secret_age" int4,
+  "is_important" int4,
+  "source_type" varchar(100) COLLATE "pg_catalog"."default",
+  "data_provider" varchar(100) COLLATE "pg_catalog"."default",
+  "attribute_management_department" varchar(100) COLLATE "pg_catalog"."default",
+  "operations_people" varchar(100) COLLATE "pg_catalog"."default",
+  "state" int4,
+  "create_time" timestamp(6),
+  "create_user_id" varchar(64) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "update_user_id" varchar(64) COLLATE "pg_catalog"."default",
+  "deleted" int4 NOT NULL DEFAULT 1,
+  "business_implication" varchar(500) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "business_parent_id" int8,
+  "business_parent_name" varchar(255) COLLATE "pg_catalog"."default",
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
+  "technical_indicator_type" int4,
+  "business_indicator_id" int8 NOT NULL,
+  "is_temporary" int4,
+  "technical_unit_id" int8
 )
 ;
 COMMENT ON COLUMN "public"."business_indicators_history"."id" IS '业务指标历史ID';
@@ -963,12 +963,12 @@ COMMENT ON TABLE "public"."business_indicators_history" IS '业务指标历史�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."business_operation_records";
 CREATE TABLE "public"."business_operation_records" (
-                                                       "id" int8 NOT NULL,
-                                                       "business_indicator_id" int8,
-                                                       "operations_records" varchar(500) COLLATE "pg_catalog"."default",
-                                                       "create_user_id" varchar(64) COLLATE "pg_catalog"."default",
-                                                       "create_time" timestamp(0),
-                                                       "create_user_name" varchar(255) COLLATE "pg_catalog"."default"
+  "id" int8 NOT NULL,
+  "business_indicator_id" int8,
+  "operations_records" varchar(500) COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(64) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(0),
+  "create_user_name" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."business_operation_records"."id" IS '业务指标操作记录表ID';
@@ -984,10 +984,10 @@ COMMENT ON TABLE "public"."business_operation_records" IS '业务指标操作记
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."business_relation";
 CREATE TABLE "public"."business_relation" (
-                                              "categoryguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                              "relationshipguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                              "businessid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                              "generatetime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
+  "categoryguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "relationshipguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "businessid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "generatetime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
 COMMENT ON COLUMN "public"."business_relation"."categoryguid" IS '目录id';
@@ -1001,14 +1001,14 @@ COMMENT ON TABLE "public"."business_relation" IS '业务对象关联表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."business_tags";
 CREATE TABLE "public"."business_tags" (
-                                          "id" int8 NOT NULL,
-                                          "tag_name" varchar(255) COLLATE "pg_catalog"."default",
-                                          "create_time" timestamp(6),
-                                          "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                          "update_time" timestamp(6),
-                                          "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                          "deleted" int4,
-                                          "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
+  "id" int8 NOT NULL,
+  "tag_name" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."business_tags"."id" IS '业务标签表ID';
@@ -1026,14 +1026,14 @@ COMMENT ON TABLE "public"."business_tags" IS '业务指标标签表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."business_unit";
 CREATE TABLE "public"."business_unit" (
-                                          "id" int8 NOT NULL,
-                                          "technical_unit" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                          "create_time" timestamp(6),
-                                          "create_user_id" varchar(64) COLLATE "pg_catalog"."default",
-                                          "update_time" timestamp(6),
-                                          "update_user_id" varchar(64) COLLATE "pg_catalog"."default",
-                                          "deleted" int4,
-                                          "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
+  "id" int8 NOT NULL,
+  "technical_unit" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamp(6),
+  "create_user_id" varchar(64) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "update_user_id" varchar(64) COLLATE "pg_catalog"."default",
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."business_unit"."id" IS '业务指标计量单位主键ID';
@@ -1051,35 +1051,35 @@ COMMENT ON TABLE "public"."business_unit" IS '业务指标计量单位表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."businessinfo";
 CREATE TABLE "public"."businessinfo" (
-                                         "businessid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                         "departmentid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "module" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "owner" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "manager" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "maintainer" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "dataassets" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "businesslastupdate" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "businessoperator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "technicallastupdate" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "technicaloperator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "technicalstatus" int2,
-                                         "businessstatus" int2,
-                                         "submitter" varchar COLLATE "pg_catalog"."default",
-                                         "ticketnumber" varchar COLLATE "pg_catalog"."default",
-                                         "submissiontime" varchar COLLATE "pg_catalog"."default",
-                                         "level2categoryid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "trusttable" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "tenantid" varchar(36) COLLATE "pg_catalog"."default",
-                                         "publish" bool,
-                                         "status" varchar(10) COLLATE "pg_catalog"."default",
-                                         "publish_desc" varchar(256) COLLATE "pg_catalog"."default",
-                                         "approve_group_id" varchar(64) COLLATE "pg_catalog"."default",
-                                         "approve_id" varchar(64) COLLATE "pg_catalog"."default",
-                                         "create_mode" int2,
-                                         "private_status" varchar(64) COLLATE "pg_catalog"."default",
-                                         "submitter_read" bool
+  "businessid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "departmentid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "module" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "owner" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "manager" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "maintainer" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "dataassets" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "businesslastupdate" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "businessoperator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "technicallastupdate" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "technicaloperator" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "technicalstatus" int2,
+  "businessstatus" int2,
+  "submitter" varchar COLLATE "pg_catalog"."default",
+  "ticketnumber" varchar COLLATE "pg_catalog"."default",
+  "submissiontime" varchar COLLATE "pg_catalog"."default",
+  "level2categoryid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "trusttable" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default",
+  "publish" bool,
+  "status" varchar(10) COLLATE "pg_catalog"."default",
+  "publish_desc" varchar(256) COLLATE "pg_catalog"."default",
+  "approve_group_id" varchar(64) COLLATE "pg_catalog"."default",
+  "approve_id" varchar(64) COLLATE "pg_catalog"."default",
+  "create_mode" int2,
+  "private_status" varchar(64) COLLATE "pg_catalog"."default",
+  "submitter_read" bool
 )
 ;
 COMMENT ON COLUMN "public"."businessinfo"."businessid" IS '业务对象id';
@@ -1118,27 +1118,27 @@ COMMENT ON TABLE "public"."businessinfo" IS '业务对象表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."category";
 CREATE TABLE "public"."category" (
-                                     "guid" text COLLATE "pg_catalog"."default" NOT NULL,
-                                     "description" text COLLATE "pg_catalog"."default",
-                                     "name" text COLLATE "pg_catalog"."default",
-                                     "upbrothercategoryguid" text COLLATE "pg_catalog"."default",
-                                     "downbrothercategoryguid" text COLLATE "pg_catalog"."default",
-                                     "parentcategoryguid" text COLLATE "pg_catalog"."default",
-                                     "qualifiedname" text COLLATE "pg_catalog"."default",
-                                     "categorytype" int2,
-                                     "level" int2,
-                                     "safe" varchar(255) COLLATE "pg_catalog"."default",
-                                     "tenantid" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                     "createtime" timestamptz(6),
-                                     "updatetime" timestamptz(6),
-                                     "creator" varchar COLLATE "pg_catalog"."default",
-                                     "updater" varchar COLLATE "pg_catalog"."default",
-                                     "code" varchar COLLATE "pg_catalog"."default",
-                                     "sort" int2,
-                                     "private_status" varchar(50) COLLATE "pg_catalog"."default" DEFAULT 'PUBLIC'::character varying,
-                                     "publish" bool,
-                                     "information" text COLLATE "pg_catalog"."default",
-                                     "approval_id" varchar(64) COLLATE "pg_catalog"."default"
+  "guid" text COLLATE "pg_catalog"."default" NOT NULL,
+  "description" text COLLATE "pg_catalog"."default",
+  "name" text COLLATE "pg_catalog"."default",
+  "upbrothercategoryguid" text COLLATE "pg_catalog"."default",
+  "downbrothercategoryguid" text COLLATE "pg_catalog"."default",
+  "parentcategoryguid" text COLLATE "pg_catalog"."default",
+  "qualifiedname" text COLLATE "pg_catalog"."default",
+  "categorytype" int2,
+  "level" int2,
+  "safe" varchar(255) COLLATE "pg_catalog"."default",
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "createtime" timestamptz(6),
+  "updatetime" timestamptz(6),
+  "creator" varchar COLLATE "pg_catalog"."default",
+  "updater" varchar COLLATE "pg_catalog"."default",
+  "code" varchar COLLATE "pg_catalog"."default",
+  "sort" int2,
+  "private_status" varchar(50) COLLATE "pg_catalog"."default" DEFAULT 'PUBLIC'::character varying,
+  "publish" bool,
+  "information" text COLLATE "pg_catalog"."default",
+  "approval_id" varchar(64) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."category"."guid" IS '目录id';
@@ -1169,11 +1169,11 @@ COMMENT ON TABLE "public"."category" IS '目录表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."category_group_relation";
 CREATE TABLE "public"."category_group_relation" (
-                                                    "category_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                                    "group_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                    "read" bool,
-                                                    "edit_category" bool,
-                                                    "edit_item" bool
+  "category_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "group_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "read" bool,
+  "edit_category" bool,
+  "edit_item" bool
 )
 ;
 COMMENT ON COLUMN "public"."category_group_relation"."category_id" IS '目录id';
@@ -1188,8 +1188,8 @@ COMMENT ON TABLE "public"."category_group_relation" IS '目录关联用户组表
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."code_annex_type";
 CREATE TABLE "public"."code_annex_type" (
-                                            "code" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-                                            "action" varchar(50) COLLATE "pg_catalog"."default" NOT NULL
+  "code" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "action" varchar(50) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."code_annex_type"."code" IS '附件类型';
@@ -1201,8 +1201,8 @@ COMMENT ON TABLE "public"."code_annex_type" IS '附件类型表（按模块区�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."code_source_info_status";
 CREATE TABLE "public"."code_source_info_status" (
-                                                    "code" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-                                                    "name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
+  "code" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."code_source_info_status"."code" IS '源信息状态码';
@@ -1214,17 +1214,17 @@ COMMENT ON TABLE "public"."code_source_info_status" IS '源信息字典表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."column_info";
 CREATE TABLE "public"."column_info" (
-                                        "column_guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                        "column_name" varchar COLLATE "pg_catalog"."default",
-                                        "display_name" varchar COLLATE "pg_catalog"."default",
-                                        "display_updatetime" varchar COLLATE "pg_catalog"."default",
-                                        "table_guid" varchar COLLATE "pg_catalog"."default",
-                                        "display_operator" varchar COLLATE "pg_catalog"."default",
-                                        "status" varchar COLLATE "pg_catalog"."default",
-                                        "type" varchar COLLATE "pg_catalog"."default",
-                                        "description" varchar COLLATE "pg_catalog"."default",
-                                        "partition_field" bool,
-                                        "sort" int2
+  "column_guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "column_name" varchar COLLATE "pg_catalog"."default",
+  "display_name" varchar COLLATE "pg_catalog"."default",
+  "display_updatetime" varchar COLLATE "pg_catalog"."default",
+  "table_guid" varchar COLLATE "pg_catalog"."default",
+  "display_operator" varchar COLLATE "pg_catalog"."default",
+  "status" varchar COLLATE "pg_catalog"."default",
+  "type" varchar COLLATE "pg_catalog"."default",
+  "description" varchar COLLATE "pg_catalog"."default",
+  "partition_field" bool,
+  "sort" int2
 )
 ;
 COMMENT ON COLUMN "public"."column_info"."column_guid" IS '字段Id';
@@ -1245,18 +1245,18 @@ COMMENT ON TABLE "public"."column_info" IS '数据列信息';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."column_metadata_history";
 CREATE TABLE "public"."column_metadata_history" (
-                                                    "guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                    "name" varchar COLLATE "pg_catalog"."default",
-                                                    "type" varchar(255) COLLATE "pg_catalog"."default",
-                                                    "table_guid" varchar COLLATE "pg_catalog"."default",
-                                                    "description" varchar(255) COLLATE "pg_catalog"."default",
-                                                    "version" int8 NOT NULL,
-                                                    "status" varchar(255) COLLATE "pg_catalog"."default",
-                                                    "partition_field" bool,
-                                                    "creator" varchar(255) COLLATE "pg_catalog"."default",
-                                                    "updater" varchar COLLATE "pg_catalog"."default",
-                                                    "create_time" timestamptz(6),
-                                                    "update_time" timestamptz(6)
+  "guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar COLLATE "pg_catalog"."default",
+  "type" varchar(255) COLLATE "pg_catalog"."default",
+  "table_guid" varchar COLLATE "pg_catalog"."default",
+  "description" varchar(255) COLLATE "pg_catalog"."default",
+  "version" int8 NOT NULL,
+  "status" varchar(255) COLLATE "pg_catalog"."default",
+  "partition_field" bool,
+  "creator" varchar(255) COLLATE "pg_catalog"."default",
+  "updater" varchar COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6)
 )
 ;
 COMMENT ON COLUMN "public"."column_metadata_history"."guid" IS '字段guid';
@@ -1278,11 +1278,11 @@ COMMENT ON TABLE "public"."column_metadata_history" IS '数据列信息历史记
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."column_tag";
 CREATE TABLE "public"."column_tag" (
-                                       "id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                       "name" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-                                       "tenant_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                       "create_time" timestamp(6) NOT NULL,
-                                       "modify_time" timestamp(6) NOT NULL
+  "id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "tenant_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamp(6) NOT NULL,
+  "modify_time" timestamp(6) NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."column_tag"."id" IS '标签主键';
@@ -1297,9 +1297,9 @@ COMMENT ON TABLE "public"."column_tag" IS '数据列标签表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."column_tag_relation_to_column";
 CREATE TABLE "public"."column_tag_relation_to_column" (
-                                                          "id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                                          "column_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                                          "tag_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL
+  "id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "column_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "tag_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."column_tag_relation_to_column"."id" IS '关联主键';
@@ -1312,15 +1312,15 @@ COMMENT ON TABLE "public"."column_tag_relation_to_column" IS '数据列标签和
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."composite_indicator";
 CREATE TABLE "public"."composite_indicator" (
-                                                "id" int8 NOT NULL,
-                                                "composite_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
-                                                "composite_indicator_version_id" int8,
-                                                "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                "create_time" timestamp(6),
-                                                "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                "update_time" timestamp(6),
-                                                "deleted" int4,
-                                                "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
+  "id" int8 NOT NULL,
+  "composite_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
+  "composite_indicator_version_id" int8,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."composite_indicator"."id" IS '主键id';
@@ -1339,18 +1339,18 @@ COMMENT ON TABLE "public"."composite_indicator" IS '复合指标表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."composite_indicator_apply";
 CREATE TABLE "public"."composite_indicator_apply" (
-                                                      "id" int8 NOT NULL,
-                                                      "composite_indicator_id" int8,
-                                                      "audit_status" int4,
-                                                      "apply_status" int4,
-                                                      "version" int4,
-                                                      "apply_group_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                      "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                      "create_time" timestamp(6),
-                                                      "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                      "update_time" timestamp(6),
-                                                      "deleted" int4,
-                                                      "composite_indicator_version_id" int8
+  "id" int8 NOT NULL,
+  "composite_indicator_id" int8,
+  "audit_status" int4,
+  "apply_status" int4,
+  "version" int4,
+  "apply_group_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "composite_indicator_version_id" int8
 )
 ;
 COMMENT ON COLUMN "public"."composite_indicator_apply"."id" IS '主键id';
@@ -1372,35 +1372,35 @@ COMMENT ON TABLE "public"."composite_indicator_apply" IS '原子指标申请表'
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."composite_indicator_version";
 CREATE TABLE "public"."composite_indicator_version" (
-                                                        "id" int8 NOT NULL,
-                                                        "composite_indicator_id" int8,
-                                                        "version_id" int4,
-                                                        "composite_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
-                                                        "composite_indicator_name" varchar(100) COLLATE "pg_catalog"."default",
-                                                        "business_indicators_id" int8,
-                                                        "remark" varchar(500) COLLATE "pg_catalog"."default",
-                                                        "logic_type" int4,
-                                                        "data_source_id" varchar(100) COLLATE "pg_catalog"."default",
-                                                        "data_base_id" varchar(100) COLLATE "pg_catalog"."default",
-                                                        "dimension_metadata_relation_id" int8[],
-                                                        "expression" jsonb,
-                                                        "composite_indicator_sql" text COLLATE "pg_catalog"."default",
-                                                        "schedule" int4,
-                                                        "schedule_time" varchar(100) COLLATE "pg_catalog"."default",
-                                                        "release_status" int4,
-                                                        "version_type" int4,
-                                                        "visible" int4,
-                                                        "release_time" timestamp(6),
-                                                        "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "create_time" timestamp(6),
-                                                        "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "update_time" timestamp(6),
-                                                        "deleted" int4,
-                                                        "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "dimension_id" int8[],
-                                                        "threshold_setting" int4,
-                                                        "threshold_setting_id" int8,
-                                                        "business_update_time" timestamp(6)
+  "id" int8 NOT NULL,
+  "composite_indicator_id" int8,
+  "version_id" int4,
+  "composite_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
+  "composite_indicator_name" varchar(100) COLLATE "pg_catalog"."default",
+  "business_indicators_id" int8,
+  "remark" varchar(500) COLLATE "pg_catalog"."default",
+  "logic_type" int4,
+  "data_source_id" varchar(100) COLLATE "pg_catalog"."default",
+  "data_base_id" varchar(100) COLLATE "pg_catalog"."default",
+  "dimension_metadata_relation_id" int8[],
+  "expression" jsonb,
+  "composite_indicator_sql" text COLLATE "pg_catalog"."default",
+  "schedule" int4,
+  "schedule_time" varchar(100) COLLATE "pg_catalog"."default",
+  "release_status" int4,
+  "version_type" int4,
+  "visible" int4,
+  "release_time" timestamp(6),
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
+  "dimension_id" int8[],
+  "threshold_setting" int4,
+  "threshold_setting_id" int8,
+  "business_update_time" timestamp(6)
 )
 ;
 COMMENT ON COLUMN "public"."composite_indicator_version"."id" IS '主键id';
@@ -1439,20 +1439,20 @@ COMMENT ON TABLE "public"."composite_indicator_version" IS '复合指标版本�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."connector";
 CREATE TABLE "public"."connector" (
-                                      "id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                      "name" varchar(256) COLLATE "pg_catalog"."default",
-                                      "connector_class" varchar(512) COLLATE "pg_catalog"."default",
-                                      "db_type" varchar(32) COLLATE "pg_catalog"."default",
-                                      "db_ip" varchar(128) COLLATE "pg_catalog"."default",
-                                      "db_port" int4 DEFAULT 0,
-                                      "pdb_name" varchar(128) COLLATE "pg_catalog"."default",
-                                      "db_name" varchar(128) COLLATE "pg_catalog"."default",
-                                      "db_user" varchar(256) COLLATE "pg_catalog"."default",
-                                      "db_password" varchar(256) COLLATE "pg_catalog"."default",
-                                      "is_deleted" bool DEFAULT false,
-                                      "tasks_max" int4 DEFAULT 1,
-                                      "db_fetch_size" int4 DEFAULT 10,
-                                      "start_scn" int8 DEFAULT '-1'::integer
+  "id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar(256) COLLATE "pg_catalog"."default",
+  "connector_class" varchar(512) COLLATE "pg_catalog"."default",
+  "db_type" varchar(32) COLLATE "pg_catalog"."default",
+  "db_ip" varchar(128) COLLATE "pg_catalog"."default",
+  "db_port" int4 DEFAULT 0,
+  "pdb_name" varchar(128) COLLATE "pg_catalog"."default",
+  "db_name" varchar(128) COLLATE "pg_catalog"."default",
+  "db_user" varchar(256) COLLATE "pg_catalog"."default",
+  "db_password" varchar(256) COLLATE "pg_catalog"."default",
+  "is_deleted" bool DEFAULT false,
+  "tasks_max" int4 DEFAULT 1,
+  "db_fetch_size" int4 DEFAULT 10,
+  "start_scn" int8 DEFAULT '-1'::integer
 )
 ;
 COMMENT ON COLUMN "public"."connector"."id" IS 'id';
@@ -1476,24 +1476,24 @@ COMMENT ON TABLE "public"."connector" IS 'oracle连接表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_quality_rule";
 CREATE TABLE "public"."data_quality_rule" (
-                                              "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                              "rule_template_id" varchar COLLATE "pg_catalog"."default",
-                                              "name" varchar COLLATE "pg_catalog"."default",
-                                              "code" varchar COLLATE "pg_catalog"."default",
-                                              "category_id" varchar COLLATE "pg_catalog"."default",
-                                              "enable" bool,
-                                              "description" varchar COLLATE "pg_catalog"."default",
-                                              "check_type" int4,
-                                              "check_expression_type" int4,
-                                              "creator" varchar COLLATE "pg_catalog"."default",
-                                              "create_time" timestamptz(0),
-                                              "update_time" timestamptz(0),
-                                              "delete" bool,
-                                              "check_threshold_min_value" float8,
-                                              "check_threshold_max_value" float8,
-                                              "scope" int2,
-                                              "check_threshold_unit" varchar(255) COLLATE "pg_catalog"."default",
-                                              "tenantid" varchar(36) COLLATE "pg_catalog"."default"
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "rule_template_id" varchar COLLATE "pg_catalog"."default",
+  "name" varchar COLLATE "pg_catalog"."default",
+  "code" varchar COLLATE "pg_catalog"."default",
+  "category_id" varchar COLLATE "pg_catalog"."default",
+  "enable" bool,
+  "description" varchar COLLATE "pg_catalog"."default",
+  "check_type" int4,
+  "check_expression_type" int4,
+  "creator" varchar COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "delete" bool,
+  "check_threshold_min_value" float8,
+  "check_threshold_max_value" float8,
+  "scope" int2,
+  "check_threshold_unit" varchar(255) COLLATE "pg_catalog"."default",
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."data_quality_rule"."id" IS 'id';
@@ -1521,22 +1521,22 @@ COMMENT ON TABLE "public"."data_quality_rule" IS '数据质量规则表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_quality_rule_template";
 CREATE TABLE "public"."data_quality_rule_template" (
-                                                       "name" varchar COLLATE "pg_catalog"."default",
-                                                       "scope" int4,
-                                                       "unit" varchar COLLATE "pg_catalog"."default",
-                                                       "description" varchar COLLATE "pg_catalog"."default",
-                                                       "create_time" timestamptz(0),
-                                                       "update_time" timestamptz(0),
-                                                       "delete" bool,
-                                                       "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                       "rule_type" varchar(36) COLLATE "pg_catalog"."default",
-                                                       "type" int8,
-                                                       "tenantid" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                                       "creator" varchar(36) COLLATE "pg_catalog"."default",
-                                                       "code" varchar(255) COLLATE "pg_catalog"."default",
-                                                       "sql" text COLLATE "pg_catalog"."default",
-                                                       "enable" bool,
-                                                       "data_standard_code" varchar COLLATE "pg_catalog"."default"
+  "name" varchar COLLATE "pg_catalog"."default",
+  "scope" int4,
+  "unit" varchar COLLATE "pg_catalog"."default",
+  "description" varchar COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "delete" bool,
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "rule_type" varchar(36) COLLATE "pg_catalog"."default",
+  "type" int8,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "creator" varchar(36) COLLATE "pg_catalog"."default",
+  "code" varchar(255) COLLATE "pg_catalog"."default",
+  "sql" text COLLATE "pg_catalog"."default",
+  "enable" bool,
+  "data_standard_code" varchar COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."data_quality_rule_template"."name" IS '模板名称';
@@ -1562,15 +1562,15 @@ COMMENT ON TABLE "public"."data_quality_rule_template" IS '数据质量规则模
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_quality_sub_task";
 CREATE TABLE "public"."data_quality_sub_task" (
-                                                  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                  "task_id" varchar COLLATE "pg_catalog"."default",
-                                                  "datasource_type" int4,
-                                                  "sequence" int4,
-                                                  "create_time" timestamptz(0),
-                                                  "update_time" timestamptz(0),
-                                                  "delete" bool,
-                                                  "pool" varchar(255) COLLATE "pg_catalog"."default",
-                                                  "config" varchar COLLATE "pg_catalog"."default"
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "task_id" varchar COLLATE "pg_catalog"."default",
+  "datasource_type" int4,
+  "sequence" int4,
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "delete" bool,
+  "pool" varchar(255) COLLATE "pg_catalog"."default",
+  "config" varchar COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."data_quality_sub_task"."id" IS 'id';
@@ -1589,14 +1589,14 @@ COMMENT ON TABLE "public"."data_quality_sub_task" IS '数据质量子任务';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_quality_sub_task_object";
 CREATE TABLE "public"."data_quality_sub_task_object" (
-                                                         "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                         "subtask_id" varchar COLLATE "pg_catalog"."default",
-                                                         "object_id" varchar COLLATE "pg_catalog"."default",
-                                                         "sequence" int4,
-                                                         "create_time" timestamptz(0),
-                                                         "update_time" timestamptz(0),
-                                                         "delete" bool,
-                                                         "task_id" varchar COLLATE "pg_catalog"."default"
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "subtask_id" varchar COLLATE "pg_catalog"."default",
+  "object_id" varchar COLLATE "pg_catalog"."default",
+  "sequence" int4,
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "delete" bool,
+  "task_id" varchar COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."data_quality_sub_task_object"."id" IS 'id';
@@ -1614,27 +1614,27 @@ COMMENT ON TABLE "public"."data_quality_sub_task_object" IS '数据质量子任�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_quality_sub_task_rule";
 CREATE TABLE "public"."data_quality_sub_task_rule" (
-                                                       "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                       "subtask_id" varchar COLLATE "pg_catalog"."default",
-                                                       "ruleid" varchar COLLATE "pg_catalog"."default",
-                                                       "check_threshold_min_value" float8,
-                                                       "orange_check_type" int4,
-                                                       "orange_check_expression_type" int4,
-                                                       "red_check_type" int4,
-                                                       "red_check_expression_type" int4,
-                                                       "red_warning_groupid" varchar COLLATE "pg_catalog"."default",
-                                                       "sequence" int4,
-                                                       "create_time" timestamptz(0),
-                                                       "update_time" timestamptz(0),
-                                                       "delete" bool,
-                                                       "orange_threshold_min_value" float8,
-                                                       "orange_threshold_max_value" float8,
-                                                       "red_threshold_min_value" float8,
-                                                       "red_threshold_max_value" float8,
-                                                       "check_threshold_max_value" float8,
-                                                       "check_type" int4,
-                                                       "check_expression_type" int4,
-                                                       "check_threshold_unit" varchar(255) COLLATE "pg_catalog"."default"
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "subtask_id" varchar COLLATE "pg_catalog"."default",
+  "ruleid" varchar COLLATE "pg_catalog"."default",
+  "check_threshold_min_value" float8,
+  "orange_check_type" int4,
+  "orange_check_expression_type" int4,
+  "red_check_type" int4,
+  "red_check_expression_type" int4,
+  "red_warning_groupid" varchar COLLATE "pg_catalog"."default",
+  "sequence" int4,
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "delete" bool,
+  "orange_threshold_min_value" float8,
+  "orange_threshold_max_value" float8,
+  "red_threshold_min_value" float8,
+  "red_threshold_max_value" float8,
+  "check_threshold_max_value" float8,
+  "check_type" int4,
+  "check_expression_type" int4,
+  "check_threshold_unit" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."data_quality_sub_task_rule"."id" IS 'id';
@@ -1665,30 +1665,30 @@ COMMENT ON TABLE "public"."data_quality_sub_task_rule" IS '数据质量子任务
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_quality_task";
 CREATE TABLE "public"."data_quality_task" (
-                                              "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                              "name" varchar COLLATE "pg_catalog"."default",
-                                              "level" int4,
-                                              "description" varchar COLLATE "pg_catalog"."default",
-                                              "cron_expression" varchar COLLATE "pg_catalog"."default",
-                                              "enable" bool,
-                                              "start_time" timestamptz(0),
-                                              "end_time" timestamptz(0),
-                                              "create_time" timestamptz(0),
-                                              "update_time" timestamptz(0),
-                                              "creator" varchar COLLATE "pg_catalog"."default",
-                                              "delete" bool,
-                                              "number" int8 NOT NULL DEFAULT nextval('number_seq'::regclass),
-                                              "qrtz_job" varchar(255) COLLATE "pg_catalog"."default",
-                                              "execution_count" int8,
-                                              "orange_warning_total_count" int8,
-                                              "red_warning_total_count" int8,
-                                              "error_total_count" int8,
-                                              "updater" varchar COLLATE "pg_catalog"."default",
-                                              "current_execution_percent" float4,
-                                              "current_execution_status" int2,
-                                              "tenantid" varchar(36) COLLATE "pg_catalog"."default",
-                                              "pool" varchar(255) COLLATE "pg_catalog"."default",
-                                              "general_warning_total_count" int8 DEFAULT 0
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar COLLATE "pg_catalog"."default",
+  "level" int4,
+  "description" varchar COLLATE "pg_catalog"."default",
+  "cron_expression" varchar COLLATE "pg_catalog"."default",
+  "enable" bool,
+  "start_time" timestamptz(0),
+  "end_time" timestamptz(0),
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "creator" varchar COLLATE "pg_catalog"."default",
+  "delete" bool,
+  "number" int8 NOT NULL DEFAULT nextval('number_seq'::regclass),
+  "qrtz_job" varchar(255) COLLATE "pg_catalog"."default",
+  "execution_count" int8,
+  "orange_warning_total_count" int8,
+  "red_warning_total_count" int8,
+  "error_total_count" int8,
+  "updater" varchar COLLATE "pg_catalog"."default",
+  "current_execution_percent" float4,
+  "current_execution_status" int2,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default",
+  "pool" varchar(255) COLLATE "pg_catalog"."default",
+  "general_warning_total_count" int8 DEFAULT 0
 )
 ;
 COMMENT ON COLUMN "public"."data_quality_task"."id" IS '主键id';
@@ -1722,9 +1722,9 @@ COMMENT ON TABLE "public"."data_quality_task" IS '数据质量任务';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_quality_task2warning_group";
 CREATE TABLE "public"."data_quality_task2warning_group" (
-                                                            "task_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                            "warning_group_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                            "warning_type" int2 NOT NULL
+  "task_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "warning_group_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "warning_type" int2 NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."data_quality_task2warning_group"."task_id" IS '任务id';
@@ -1737,24 +1737,24 @@ COMMENT ON TABLE "public"."data_quality_task2warning_group" IS '数据质量任�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_quality_task_execute";
 CREATE TABLE "public"."data_quality_task_execute" (
-                                                      "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                      "task_id" varchar COLLATE "pg_catalog"."default",
-                                                      "percent" float8,
-                                                      "execute_status" int4,
-                                                      "executor" varchar COLLATE "pg_catalog"."default",
-                                                      "error_msg" text COLLATE "pg_catalog"."default",
-                                                      "execute_time" timestamptz(0),
-                                                      "closer" varchar COLLATE "pg_catalog"."default",
-                                                      "close_time" timestamptz(0),
-                                                      "cost_time" int8,
-                                                      "orange_warning_count" int4,
-                                                      "red_warning_count" int4,
-                                                      "rule_error_count" int4,
-                                                      "warning_status" int2,
-                                                      "number" varchar COLLATE "pg_catalog"."default",
-                                                      "counter" int8,
-                                                      "error_status" int2,
-                                                      "general_warning_count" int4
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "task_id" varchar COLLATE "pg_catalog"."default",
+  "percent" float8,
+  "execute_status" int4,
+  "executor" varchar COLLATE "pg_catalog"."default",
+  "error_msg" text COLLATE "pg_catalog"."default",
+  "execute_time" timestamptz(0),
+  "closer" varchar COLLATE "pg_catalog"."default",
+  "close_time" timestamptz(0),
+  "cost_time" int8,
+  "orange_warning_count" int4,
+  "red_warning_count" int4,
+  "rule_error_count" int4,
+  "warning_status" int2,
+  "number" varchar COLLATE "pg_catalog"."default",
+  "counter" int8,
+  "error_status" int2,
+  "general_warning_count" int4
 )
 ;
 COMMENT ON COLUMN "public"."data_quality_task_execute"."id" IS '主键id';
@@ -1782,25 +1782,25 @@ COMMENT ON TABLE "public"."data_quality_task_execute" IS '数据质量任务执�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_quality_task_rule_execute";
 CREATE TABLE "public"."data_quality_task_rule_execute" (
-                                                           "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                           "task_execute_id" varchar COLLATE "pg_catalog"."default",
-                                                           "task_id" varchar COLLATE "pg_catalog"."default",
-                                                           "subtask_id" varchar COLLATE "pg_catalog"."default",
-                                                           "subtask_object_id" varchar COLLATE "pg_catalog"."default",
-                                                           "subtask_rule_id" varchar COLLATE "pg_catalog"."default",
-                                                           "result" float8,
-                                                           "check_status" int4,
-                                                           "waring_send_status" int2,
-                                                           "create_time" timestamptz(0),
-                                                           "update_time" timestamptz(0),
-                                                           "reference_value" float8,
-                                                           "orange_warning_check_status" int2,
-                                                           "red_warning_check_status" int2,
-                                                           "error_msg" text COLLATE "pg_catalog"."default",
-                                                           "warning_status" int2,
-                                                           "error_status" int2,
-                                                           "rule_id" varchar(36) COLLATE "pg_catalog"."default",
-                                                           "general_warning_check_status" int2
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "task_execute_id" varchar COLLATE "pg_catalog"."default",
+  "task_id" varchar COLLATE "pg_catalog"."default",
+  "subtask_id" varchar COLLATE "pg_catalog"."default",
+  "subtask_object_id" varchar COLLATE "pg_catalog"."default",
+  "subtask_rule_id" varchar COLLATE "pg_catalog"."default",
+  "result" float8,
+  "check_status" int4,
+  "waring_send_status" int2,
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "reference_value" float8,
+  "orange_warning_check_status" int2,
+  "red_warning_check_status" int2,
+  "error_msg" text COLLATE "pg_catalog"."default",
+  "warning_status" int2,
+  "error_status" int2,
+  "rule_id" varchar(36) COLLATE "pg_catalog"."default",
+  "general_warning_check_status" int2
 )
 ;
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."id" IS 'id';
@@ -1829,25 +1829,25 @@ COMMENT ON TABLE "public"."data_quality_task_rule_execute" IS '数据质量子�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_source";
 CREATE TABLE "public"."data_source" (
-                                        "source_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "source_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "source_type" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "description" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "create_time" timestamptz(6) NOT NULL,
-                                        "update_time" timestamptz(6) NOT NULL,
-                                        "update_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "ip" varchar(16) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "port" varchar(16) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "username" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "password" varchar(255) COLLATE "pg_catalog"."default",
-                                        "database" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "jdbc_parameter" varchar COLLATE "pg_catalog"."default",
-                                        "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "manager" varchar(255) COLLATE "pg_catalog"."default",
-                                        "isapi" bool,
-                                        "oracle_db" varchar(255) COLLATE "pg_catalog"."default",
-                                        "servicetype" varchar(255) COLLATE "pg_catalog"."default",
-                                        "tenantid" varchar(36) COLLATE "pg_catalog"."default"
+  "source_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "source_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "source_type" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "description" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamptz(6) NOT NULL,
+  "update_time" timestamptz(6) NOT NULL,
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "ip" varchar(16) COLLATE "pg_catalog"."default" NOT NULL,
+  "port" varchar(16) COLLATE "pg_catalog"."default" NOT NULL,
+  "username" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "password" varchar(255) COLLATE "pg_catalog"."default",
+  "database" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "jdbc_parameter" varchar COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "manager" varchar(255) COLLATE "pg_catalog"."default",
+  "isapi" bool,
+  "oracle_db" varchar(255) COLLATE "pg_catalog"."default",
+  "servicetype" varchar(255) COLLATE "pg_catalog"."default",
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."data_source"."source_id" IS '数据源id';
@@ -1876,8 +1876,8 @@ COMMENT ON TABLE "public"."data_source" IS '数据源表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_source_api_authorize";
 CREATE TABLE "public"."data_source_api_authorize" (
-                                                      "source_id" varchar(225) COLLATE "pg_catalog"."default" NOT NULL,
-                                                      "authorize_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
+  "source_id" varchar(225) COLLATE "pg_catalog"."default" NOT NULL,
+  "authorize_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."data_source_api_authorize"."source_id" IS '数据源id';
@@ -1889,8 +1889,8 @@ COMMENT ON TABLE "public"."data_source_api_authorize" IS '数据源api授权表'
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_source_authorize";
 CREATE TABLE "public"."data_source_authorize" (
-                                                  "source_id" varchar(225) COLLATE "pg_catalog"."default" NOT NULL,
-                                                  "authorize_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
+  "source_id" varchar(225) COLLATE "pg_catalog"."default" NOT NULL,
+  "authorize_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."data_source_authorize"."source_id" IS '数据源id';
@@ -1902,23 +1902,23 @@ COMMENT ON TABLE "public"."data_source_authorize" IS '数据源授权表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_standard";
 CREATE TABLE "public"."data_standard" (
-                                          "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                          "number" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                          "description" varchar COLLATE "pg_catalog"."default",
-                                          "createtime" timestamptz(0),
-                                          "updatetime" timestamptz(0),
-                                          "operator" varchar COLLATE "pg_catalog"."default",
-                                          "version" int4 NOT NULL DEFAULT 0,
-                                          "categoryid" varchar COLLATE "pg_catalog"."default",
-                                          "delete" bool,
-                                          "tenantid" varchar(36) COLLATE "pg_catalog"."default",
-                                          "name" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT ''::character varying,
-                                          "standard_type" int4 NOT NULL DEFAULT 2,
-                                          "data_type" varchar(16) COLLATE "pg_catalog"."default",
-                                          "data_length" int4,
-                                          "allowable_value_flag" bool NOT NULL DEFAULT false,
-                                          "allowable_value" varchar COLLATE "pg_catalog"."default",
-                                          "standard_level" int4
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "number" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "description" varchar COLLATE "pg_catalog"."default",
+  "createtime" timestamptz(0),
+  "updatetime" timestamptz(0),
+  "operator" varchar COLLATE "pg_catalog"."default",
+  "version" int4 NOT NULL DEFAULT 0,
+  "categoryid" varchar COLLATE "pg_catalog"."default",
+  "delete" bool,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default",
+  "name" varchar COLLATE "pg_catalog"."default" NOT NULL DEFAULT ''::character varying,
+  "standard_type" int4 NOT NULL DEFAULT 2,
+  "data_type" varchar(16) COLLATE "pg_catalog"."default",
+  "data_length" int4,
+  "allowable_value_flag" bool NOT NULL DEFAULT false,
+  "allowable_value" varchar COLLATE "pg_catalog"."default",
+  "standard_level" int4
 )
 ;
 COMMENT ON COLUMN "public"."data_standard"."id" IS '主键id';
@@ -1945,10 +1945,10 @@ COMMENT ON TABLE "public"."data_standard" IS '数据标准';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_standard2data_quality_rule";
 CREATE TABLE "public"."data_standard2data_quality_rule" (
-                                                            "number" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                            "ruleid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                            "createtime" timestamptz(6),
-                                                            "operator" varchar COLLATE "pg_catalog"."default"
+  "number" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "ruleid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "createtime" timestamptz(6),
+  "operator" varchar COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."data_standard2data_quality_rule"."number" IS '编号';
@@ -1962,10 +1962,10 @@ COMMENT ON TABLE "public"."data_standard2data_quality_rule" IS '数据标准-数
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."data_standard2table";
 CREATE TABLE "public"."data_standard2table" (
-                                                "number" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                "tableguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                "createtime" timestamptz(6),
-                                                "operator" varchar(255) COLLATE "pg_catalog"."default"
+  "number" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "tableguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "createtime" timestamptz(6),
+  "operator" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."data_standard2table"."number" IS '编号';
@@ -1979,10 +1979,10 @@ COMMENT ON TABLE "public"."data_standard2table" IS '数据标准-数据表关联
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."database_group_relation";
 CREATE TABLE "public"."database_group_relation" (
-                                                    "id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                                    "group_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                                    "source_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                                    "database_guid" varchar(36) COLLATE "pg_catalog"."default" NOT NULL
+  "id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "group_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "source_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "database_guid" varchar(36) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."database_group_relation"."id" IS 'id';
@@ -1996,9 +1996,9 @@ COMMENT ON TABLE "public"."database_group_relation" IS '数据源数据库和用
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."datasource_group_relation";
 CREATE TABLE "public"."datasource_group_relation" (
-                                                      "source_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                                      "group_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                      "privilege_code" varchar(36) COLLATE "pg_catalog"."default" NOT NULL
+  "source_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "group_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "privilege_code" varchar(36) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."datasource_group_relation"."source_id" IS '数据源id';
@@ -2011,10 +2011,10 @@ COMMENT ON TABLE "public"."datasource_group_relation" IS '数据源和用户组�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."db_category_relation";
 CREATE TABLE "public"."db_category_relation" (
-                                                 "id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "category_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "db_guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "tenant_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL
+  "id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "category_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "db_guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "tenant_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."db_category_relation"."id" IS 'id';
@@ -2028,13 +2028,13 @@ COMMENT ON TABLE "public"."db_category_relation" IS '数据库和目录关联表
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."db_info";
 CREATE TABLE "public"."db_info" (
-                                    "database_guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                    "database_name" varchar(256) COLLATE "pg_catalog"."default",
-                                    "owner" varchar(256) COLLATE "pg_catalog"."default",
-                                    "db_type" varchar(64) COLLATE "pg_catalog"."default",
-                                    "status" varchar(64) COLLATE "pg_catalog"."default",
-                                    "database_description" varchar(255) COLLATE "pg_catalog"."default",
-                                    "instance_guid" varchar COLLATE "pg_catalog"."default"
+  "database_guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "database_name" varchar(256) COLLATE "pg_catalog"."default",
+  "owner" varchar(256) COLLATE "pg_catalog"."default",
+  "db_type" varchar(64) COLLATE "pg_catalog"."default",
+  "status" varchar(64) COLLATE "pg_catalog"."default",
+  "database_description" varchar(255) COLLATE "pg_catalog"."default",
+  "instance_guid" varchar COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."db_info"."database_guid" IS '唯一标识符';
@@ -2051,16 +2051,16 @@ COMMENT ON TABLE "public"."db_info" IS '数据库信息表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."derive_indicator";
 CREATE TABLE "public"."derive_indicator" (
-                                             "id" int8 NOT NULL,
-                                             "derive_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
-                                             "derive_indicator_name" varchar(100) COLLATE "pg_catalog"."default",
-                                             "derive_indicator_version_id" int8,
-                                             "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                             "create_time" timestamp(6),
-                                             "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                             "update_time" timestamp(6),
-                                             "deleted" int4,
-                                             "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
+  "id" int8 NOT NULL,
+  "derive_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
+  "derive_indicator_name" varchar(100) COLLATE "pg_catalog"."default",
+  "derive_indicator_version_id" int8,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."derive_indicator"."id" IS '主键id';
@@ -2080,18 +2080,18 @@ COMMENT ON TABLE "public"."derive_indicator" IS '衍生指标表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."derive_indicator_apply";
 CREATE TABLE "public"."derive_indicator_apply" (
-                                                   "id" int8 NOT NULL,
-                                                   "derive_indicator_id" int8,
-                                                   "audit_status" int4,
-                                                   "apply_status" int4,
-                                                   "apply_derive_indicator_id" int8,
-                                                   "apply_group_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                   "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                   "create_time" timestamp(6),
-                                                   "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                   "update_time" timestamp(6),
-                                                   "deleted" int4,
-                                                   "version" int4
+  "id" int8 NOT NULL,
+  "derive_indicator_id" int8,
+  "audit_status" int4,
+  "apply_status" int4,
+  "apply_derive_indicator_id" int8,
+  "apply_group_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "version" int4
 )
 ;
 COMMENT ON COLUMN "public"."derive_indicator_apply"."id" IS '主键id';
@@ -2113,18 +2113,18 @@ COMMENT ON TABLE "public"."derive_indicator_apply" IS '原子指标申请表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."derive_indicator_qualifier";
 CREATE TABLE "public"."derive_indicator_qualifier" (
-                                                       "id" int8 NOT NULL,
-                                                       "derive_indicator_id" int8,
-                                                       "qualifier_id" int8,
-                                                       "condition_id" int8,
-                                                       "qualifier_field_type" int4,
-                                                       "qualifier_field_id" varchar(100) COLLATE "pg_catalog"."default",
-                                                       "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                       "create_time" timestamp(6),
-                                                       "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                       "update_time" timestamp(6),
-                                                       "deleted" int4,
-                                                       "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
+  "id" int8 NOT NULL,
+  "derive_indicator_id" int8,
+  "qualifier_id" int8,
+  "condition_id" int8,
+  "qualifier_field_type" int4,
+  "qualifier_field_id" varchar(100) COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."derive_indicator_qualifier"."id" IS '主键id';
@@ -2146,38 +2146,38 @@ COMMENT ON TABLE "public"."derive_indicator_qualifier" IS '衍生指标修饰词
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."derive_indicator_version";
 CREATE TABLE "public"."derive_indicator_version" (
-                                                     "id" int8 NOT NULL,
-                                                     "derive_indicator_id" int8,
-                                                     "version_id" int4,
-                                                     "derive_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
-                                                     "derive_indicator_name" varchar(100) COLLATE "pg_catalog"."default",
-                                                     "business_indicators_id" int8,
-                                                     "remark" varchar(500) COLLATE "pg_catalog"."default",
-                                                     "logic_type" int4,
-                                                     "higher_level_indicator_id" int8,
-                                                     "technical_indicator_type" int4,
-                                                     "dimension_metadata_relation_id" int8[],
-                                                     "time_limit_id" int8,
-                                                     "time_limit_field_type" int4,
-                                                     "time_limit_field_id" varchar(100) COLLATE "pg_catalog"."default",
-                                                     "common_qualifier_id" int8[],
-                                                     "exclusive_qualifier" jsonb,
-                                                     "expression" jsonb,
-                                                     "derive_indicator_sql" text COLLATE "pg_catalog"."default",
-                                                     "release_status" int4,
-                                                     "version_type" int4,
-                                                     "visible" int4,
-                                                     "release_time" timestamp(6),
-                                                     "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                     "create_time" timestamp(6),
-                                                     "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                     "update_time" timestamp(6),
-                                                     "deleted" int4,
-                                                     "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                     "threshold_setting" int4,
-                                                     "dimension_id" int8[],
-                                                     "threshold_setting_id" int8,
-                                                     "business_update_time" timestamp(6)
+  "id" int8 NOT NULL,
+  "derive_indicator_id" int8,
+  "version_id" int4,
+  "derive_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
+  "derive_indicator_name" varchar(100) COLLATE "pg_catalog"."default",
+  "business_indicators_id" int8,
+  "remark" varchar(500) COLLATE "pg_catalog"."default",
+  "logic_type" int4,
+  "higher_level_indicator_id" int8,
+  "technical_indicator_type" int4,
+  "dimension_metadata_relation_id" int8[],
+  "time_limit_id" int8,
+  "time_limit_field_type" int4,
+  "time_limit_field_id" varchar(100) COLLATE "pg_catalog"."default",
+  "common_qualifier_id" int8[],
+  "exclusive_qualifier" jsonb,
+  "expression" jsonb,
+  "derive_indicator_sql" text COLLATE "pg_catalog"."default",
+  "release_status" int4,
+  "version_type" int4,
+  "visible" int4,
+  "release_time" timestamp(6),
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
+  "threshold_setting" int4,
+  "dimension_id" int8[],
+  "threshold_setting_id" int8,
+  "business_update_time" timestamp(6)
 )
 ;
 COMMENT ON COLUMN "public"."derive_indicator_version"."id" IS '主键id';
@@ -2219,16 +2219,16 @@ COMMENT ON TABLE "public"."derive_indicator_version" IS '衍生指标版本表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."desensitization_rule";
 CREATE TABLE "public"."desensitization_rule" (
-                                                 "id" text COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "name" text COLLATE "pg_catalog"."default",
-                                                 "description" text COLLATE "pg_catalog"."default",
-                                                 "type" text COLLATE "pg_catalog"."default",
-                                                 "params" text COLLATE "pg_catalog"."default",
-                                                 "enable" bool,
-                                                 "creator_id" text COLLATE "pg_catalog"."default",
-                                                 "create_time" timestamptz(6),
-                                                 "update_time" timestamptz(6),
-                                                 "tenant_id" text COLLATE "pg_catalog"."default"
+  "id" text COLLATE "pg_catalog"."default" NOT NULL,
+  "name" text COLLATE "pg_catalog"."default",
+  "description" text COLLATE "pg_catalog"."default",
+  "type" text COLLATE "pg_catalog"."default",
+  "params" text COLLATE "pg_catalog"."default",
+  "enable" bool,
+  "creator_id" text COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6),
+  "tenant_id" text COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."desensitization_rule"."id" IS '脱敏规则id';
@@ -2247,22 +2247,22 @@ COMMENT ON TABLE "public"."desensitization_rule" IS '脱敏规则表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."dimension";
 CREATE TABLE "public"."dimension" (
-                                      "id" int8 NOT NULL,
-                                      "name" varchar(255) COLLATE "pg_catalog"."default",
-                                      "code" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                      "describe" varchar(255) COLLATE "pg_catalog"."default",
-                                      "data_type" int4,
-                                      "explain_people" varchar(255) COLLATE "pg_catalog"."default",
-                                      "note" varchar(255) COLLATE "pg_catalog"."default",
-                                      "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                      "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                      "create_time" timestamp(6),
-                                      "update_time" timestamp(6),
-                                      "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
-                                      "deleted" int4,
-                                      "dimension_id" int8,
-                                      "source_id" varchar(255) COLLATE "pg_catalog"."default",
-                                      "database_id" varchar(255) COLLATE "pg_catalog"."default"
+  "id" int8 NOT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default",
+  "code" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "describe" varchar(255) COLLATE "pg_catalog"."default",
+  "data_type" int4,
+  "explain_people" varchar(255) COLLATE "pg_catalog"."default",
+  "note" varchar(255) COLLATE "pg_catalog"."default",
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_time" timestamp(6),
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
+  "deleted" int4,
+  "dimension_id" int8,
+  "source_id" varchar(255) COLLATE "pg_catalog"."default",
+  "database_id" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."dimension"."id" IS '主键id';
@@ -2288,14 +2288,14 @@ COMMENT ON TABLE "public"."dimension" IS '维度表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."dimension_history";
 CREATE TABLE "public"."dimension_history" (
-                                              "id" int8 NOT NULL,
-                                              "dimension_id" int8,
-                                              "content" text COLLATE "pg_catalog"."default",
-                                              "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                              "create_time" timestamp(6),
-                                              "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                              "update_time" timestamp(6),
-                                              "deleted" int4
+  "id" int8 NOT NULL,
+  "dimension_id" int8,
+  "content" text COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4
 )
 ;
 COMMENT ON COLUMN "public"."dimension_history"."id" IS '主键id';
@@ -2313,18 +2313,18 @@ COMMENT ON TABLE "public"."dimension_history" IS '指标纬度修改历史';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."dimension_metadata_relation";
 CREATE TABLE "public"."dimension_metadata_relation" (
-                                                        "id" int8 NOT NULL,
-                                                        "target_field" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "note" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "create_time" timestamp(6),
-                                                        "update_time" timestamp(6),
-                                                        "dimension_id" int8 NOT NULL,
-                                                        "deleted" int4 NOT NULL,
-                                                        "table_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                        "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "database_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "datasource_id" varchar(255) COLLATE "pg_catalog"."default"
+  "id" int8 NOT NULL,
+  "target_field" varchar(255) COLLATE "pg_catalog"."default",
+  "note" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_time" timestamp(6),
+  "dimension_id" int8 NOT NULL,
+  "deleted" int4 NOT NULL,
+  "table_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "database_id" varchar(255) COLLATE "pg_catalog"."default",
+  "datasource_id" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."dimension_metadata_relation"."id" IS '主键id';
@@ -2346,12 +2346,12 @@ COMMENT ON TABLE "public"."dimension_metadata_relation" IS '指标维度和元�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."group_table_relation";
 CREATE TABLE "public"."group_table_relation" (
-                                                 "id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "derive_table_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "importance_privilege" bool,
-                                                 "security_privilege" bool,
-                                                 "user_group_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "tenant_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL
+  "id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "derive_table_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "importance_privilege" bool,
+  "security_privilege" bool,
+  "user_group_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "tenant_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."group_table_relation"."id" IS '主键';
@@ -2367,30 +2367,30 @@ COMMENT ON TABLE "public"."group_table_relation" IS '用户组和衍生表关系
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."index_atomic_info";
 CREATE TABLE "public"."index_atomic_info" (
-                                              "index_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "index_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "index_identification" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "description" varchar(600) COLLATE "pg_catalog"."default",
-                                              "central" bool NOT NULL DEFAULT false,
-                                              "index_field_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "approval_group_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "index_state" int2 NOT NULL,
-                                              "version" int2,
-                                              "source_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "db_name" varchar COLLATE "pg_catalog"."default",
-                                              "table_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "column_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "business_caliber" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "business_leader" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "technical_caliber" varchar(255) COLLATE "pg_catalog"."default",
-                                              "technical_leader" varchar(255) COLLATE "pg_catalog"."default",
-                                              "creator" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "create_time" timestamptz(6) NOT NULL,
-                                              "updater" varchar(255) COLLATE "pg_catalog"."default",
-                                              "update_time" timestamptz(6),
-                                              "publisher" varchar(255) COLLATE "pg_catalog"."default",
-                                              "publish_time" timestamptz(6)
+  "index_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "index_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "index_identification" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "description" varchar(600) COLLATE "pg_catalog"."default",
+  "central" bool NOT NULL DEFAULT false,
+  "index_field_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "approval_group_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "index_state" int2 NOT NULL,
+  "version" int2,
+  "source_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "db_name" varchar COLLATE "pg_catalog"."default",
+  "table_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "column_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "business_caliber" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "business_leader" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "technical_caliber" varchar(255) COLLATE "pg_catalog"."default",
+  "technical_leader" varchar(255) COLLATE "pg_catalog"."default",
+  "creator" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamptz(6) NOT NULL,
+  "updater" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamptz(6),
+  "publisher" varchar(255) COLLATE "pg_catalog"."default",
+  "publish_time" timestamptz(6)
 )
 ;
 COMMENT ON COLUMN "public"."index_atomic_info"."index_id" IS '指标id';
@@ -2424,27 +2424,27 @@ COMMENT ON TABLE "public"."index_atomic_info" IS '原子指标信息表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."index_composite_info";
 CREATE TABLE "public"."index_composite_info" (
-                                                 "index_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "index_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "index_identification" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "description" varchar(600) COLLATE "pg_catalog"."default",
-                                                 "central" bool NOT NULL DEFAULT false,
-                                                 "index_field_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "approval_group_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "index_state" int2 NOT NULL,
-                                                 "version" int2,
-                                                 "expression" text COLLATE "pg_catalog"."default",
-                                                 "business_caliber" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "business_leader" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "technical_caliber" varchar(255) COLLATE "pg_catalog"."default",
-                                                 "technical_leader" varchar(255) COLLATE "pg_catalog"."default",
-                                                 "creator" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "create_time" timestamptz(6) NOT NULL,
-                                                 "updater" varchar(255) COLLATE "pg_catalog"."default",
-                                                 "update_time" timestamptz(6),
-                                                 "publisher" varchar(255) COLLATE "pg_catalog"."default",
-                                                 "publish_time" timestamptz(6)
+  "index_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "index_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "index_identification" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "description" varchar(600) COLLATE "pg_catalog"."default",
+  "central" bool NOT NULL DEFAULT false,
+  "index_field_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "approval_group_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "index_state" int2 NOT NULL,
+  "version" int2,
+  "expression" text COLLATE "pg_catalog"."default",
+  "business_caliber" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "business_leader" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "technical_caliber" varchar(255) COLLATE "pg_catalog"."default",
+  "technical_leader" varchar(255) COLLATE "pg_catalog"."default",
+  "creator" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamptz(6) NOT NULL,
+  "updater" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamptz(6),
+  "publisher" varchar(255) COLLATE "pg_catalog"."default",
+  "publish_time" timestamptz(6)
 )
 ;
 COMMENT ON COLUMN "public"."index_composite_info"."index_id" IS '指标id';
@@ -2475,8 +2475,8 @@ COMMENT ON TABLE "public"."index_composite_info" IS '复合指标信息表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."index_derive_composite_relation";
 CREATE TABLE "public"."index_derive_composite_relation" (
-                                                            "derive_index_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                            "composite_index_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
+  "derive_index_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "composite_index_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."index_derive_composite_relation"."derive_index_id" IS '派生指标id';
@@ -2488,28 +2488,28 @@ COMMENT ON TABLE "public"."index_derive_composite_relation" IS '派生指标和�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."index_derive_info";
 CREATE TABLE "public"."index_derive_info" (
-                                              "index_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "index_atomic_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "time_limit_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "index_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "index_identification" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "description" varchar(600) COLLATE "pg_catalog"."default",
-                                              "central" bool NOT NULL DEFAULT false,
-                                              "index_field_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "approval_group_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "index_state" int2 NOT NULL,
-                                              "version" int2,
-                                              "business_caliber" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "business_leader" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "technical_caliber" varchar(255) COLLATE "pg_catalog"."default",
-                                              "technical_leader" varchar(255) COLLATE "pg_catalog"."default",
-                                              "creator" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "create_time" timestamptz(6) NOT NULL,
-                                              "updater" varchar(255) COLLATE "pg_catalog"."default",
-                                              "update_time" timestamptz(6),
-                                              "publisher" varchar(255) COLLATE "pg_catalog"."default",
-                                              "publish_time" timestamptz(6)
+  "index_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "index_atomic_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "time_limit_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "index_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "index_identification" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "description" varchar(600) COLLATE "pg_catalog"."default",
+  "central" bool NOT NULL DEFAULT false,
+  "index_field_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "approval_group_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "index_state" int2 NOT NULL,
+  "version" int2,
+  "business_caliber" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "business_leader" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "technical_caliber" varchar(255) COLLATE "pg_catalog"."default",
+  "technical_leader" varchar(255) COLLATE "pg_catalog"."default",
+  "creator" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamptz(6) NOT NULL,
+  "updater" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamptz(6),
+  "publisher" varchar(255) COLLATE "pg_catalog"."default",
+  "publish_time" timestamptz(6)
 )
 ;
 COMMENT ON COLUMN "public"."index_derive_info"."index_id" IS '指标id';
@@ -2541,8 +2541,8 @@ COMMENT ON TABLE "public"."index_derive_info" IS '派生指标信息表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."index_derive_modifier_relation";
 CREATE TABLE "public"."index_derive_modifier_relation" (
-                                                           "derive_index_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                           "modifier_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
+  "derive_index_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "modifier_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."index_derive_modifier_relation"."derive_index_id" IS '派生指标id';
@@ -2554,10 +2554,10 @@ COMMENT ON TABLE "public"."index_derive_modifier_relation" IS '派生指标修�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."indicator_lineage_trace";
 CREATE TABLE "public"."indicator_lineage_trace" (
-                                                    "id" int8 NOT NULL,
-                                                    "business_type" char(4) COLLATE "pg_catalog"."default",
-                                                    "business_id" int8 NOT NULL,
-                                                    "parent_id" int8
+  "id" int8 NOT NULL,
+  "business_type" char(4) COLLATE "pg_catalog"."default",
+  "business_id" int8 NOT NULL,
+  "parent_id" int8
 )
 ;
 COMMENT ON COLUMN "public"."indicator_lineage_trace"."id" IS '指标血缘关系主键ID';
@@ -2571,17 +2571,17 @@ COMMENT ON TABLE "public"."indicator_lineage_trace" IS '指标血源关系表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."indicator_ref";
 CREATE TABLE "public"."indicator_ref" (
-                                          "id" int8 NOT NULL,
-                                          "gvp_id" varchar(64) COLLATE "pg_catalog"."default",
-                                          "indicator_id" int8,
-                                          "indicator_type" int4,
-                                          "indicator_name" varchar(100) COLLATE "pg_catalog"."default",
-                                          "dashboard" varchar(100) COLLATE "pg_catalog"."default",
-                                          "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                          "create_time" timestamp(6),
-                                          "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                          "update_time" timestamp(6),
-                                          "deleted" int4
+  "id" int8 NOT NULL,
+  "gvp_id" varchar(64) COLLATE "pg_catalog"."default",
+  "indicator_id" int8,
+  "indicator_type" int4,
+  "indicator_name" varchar(100) COLLATE "pg_catalog"."default",
+  "dashboard" varchar(100) COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4
 )
 ;
 COMMENT ON COLUMN "public"."indicator_ref"."id" IS '主键id';
@@ -2602,11 +2602,11 @@ COMMENT ON TABLE "public"."indicator_ref" IS '指标引用表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."indicator_relation";
 CREATE TABLE "public"."indicator_relation" (
-                                               "id" int8 NOT NULL,
-                                               "indicator_version_id" int8,
-                                               "indicator_id" int8,
-                                               "indicator_type" int4,
-                                               "indicator_version_type" int4
+  "id" int8 NOT NULL,
+  "indicator_version_id" int8,
+  "indicator_id" int8,
+  "indicator_type" int4,
+  "indicator_version_type" int4
 )
 ;
 COMMENT ON COLUMN "public"."indicator_relation"."id" IS '主键id';
@@ -2621,15 +2621,15 @@ COMMENT ON TABLE "public"."indicator_relation" IS '指标关系表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."indicator_status";
 CREATE TABLE "public"."indicator_status" (
-                                             "id" int8 NOT NULL,
-                                             "indicator_id" int8,
-                                             "indicator_type" int8,
-                                             "status" int8,
-                                             "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                             "create_time" timestamp(6),
-                                             "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                             "update_time" timestamp(6),
-                                             "deleted" int4
+  "id" int8 NOT NULL,
+  "indicator_id" int8,
+  "indicator_type" int8,
+  "status" int8,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4
 )
 ;
 COMMENT ON COLUMN "public"."indicator_status"."id" IS '主键id';
@@ -2648,17 +2648,17 @@ COMMENT ON TABLE "public"."indicator_status" IS '指标状态表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."indicator_threshold_log";
 CREATE TABLE "public"."indicator_threshold_log" (
-                                                    "indicator_id" int8 NOT NULL,
-                                                    "indicator_type" int4 NOT NULL,
-                                                    "result" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                    "content" text COLLATE "pg_catalog"."default",
-                                                    "create_time" timestamp(6) NOT NULL,
-                                                    "id" int8 NOT NULL,
-                                                    "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                                    "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                    "update_time" timestamp(6),
-                                                    "deleted" int4,
-                                                    "actual_value" varchar COLLATE "pg_catalog"."default"
+  "indicator_id" int8 NOT NULL,
+  "indicator_type" int4 NOT NULL,
+  "result" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "content" text COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6) NOT NULL,
+  "id" int8 NOT NULL,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "actual_value" varchar COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."indicator_threshold_log"."indicator_id" IS '指标id';
@@ -2679,26 +2679,26 @@ COMMENT ON TABLE "public"."indicator_threshold_log" IS '指标阈值检测信息
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."indicator_threshold_setting";
 CREATE TABLE "public"."indicator_threshold_setting" (
-                                                        "id" int8 NOT NULL,
-                                                        "indicator_id" int8,
-                                                        "indicator_type" int4,
-                                                        "left_operator" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "left_operate_value" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "warning_group" varchar(255)[] COLLATE "pg_catalog"."default",
-                                                        "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "create_time" timestamp(6),
-                                                        "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "update_time" timestamp(6),
-                                                        "deleted" int4,
-                                                        "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "right_operate_value" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "right_operator" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "check_frequency" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "check_time" timestamptz(6),
-                                                        "enable" bool,
-                                                        "day_of_check_frequency" int4,
-                                                        "indicator_version_id" int8,
-                                                        "is_current_version" bool
+  "id" int8 NOT NULL,
+  "indicator_id" int8,
+  "indicator_type" int4,
+  "left_operator" varchar(255) COLLATE "pg_catalog"."default",
+  "left_operate_value" varchar(255) COLLATE "pg_catalog"."default",
+  "warning_group" varchar(255)[] COLLATE "pg_catalog"."default",
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
+  "right_operate_value" varchar(255) COLLATE "pg_catalog"."default",
+  "right_operator" varchar(255) COLLATE "pg_catalog"."default",
+  "check_frequency" varchar(255) COLLATE "pg_catalog"."default",
+  "check_time" timestamptz(6),
+  "enable" bool,
+  "day_of_check_frequency" int4,
+  "indicator_version_id" int8,
+  "is_current_version" bool
 )
 ;
 COMMENT ON COLUMN "public"."indicator_threshold_setting"."id" IS '主键id';
@@ -2728,16 +2728,16 @@ COMMENT ON TABLE "public"."indicator_threshold_setting" IS '指标阈值设置�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."ip_restriction";
 CREATE TABLE "public"."ip_restriction" (
-                                           "id" text COLLATE "pg_catalog"."default" NOT NULL,
-                                           "name" text COLLATE "pg_catalog"."default",
-                                           "description" text COLLATE "pg_catalog"."default",
-                                           "type" text COLLATE "pg_catalog"."default",
-                                           "ip_list" text COLLATE "pg_catalog"."default",
-                                           "enable" bool,
-                                           "creator_id" text COLLATE "pg_catalog"."default",
-                                           "create_time" timestamptz(6),
-                                           "update_time" timestamptz(6),
-                                           "tenant_id" text COLLATE "pg_catalog"."default"
+  "id" text COLLATE "pg_catalog"."default" NOT NULL,
+  "name" text COLLATE "pg_catalog"."default",
+  "description" text COLLATE "pg_catalog"."default",
+  "type" text COLLATE "pg_catalog"."default",
+  "ip_list" text COLLATE "pg_catalog"."default",
+  "enable" bool,
+  "creator_id" text COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6),
+  "tenant_id" text COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."ip_restriction"."id" IS '黑白名单ID';
@@ -2757,9 +2757,9 @@ COMMENT ON TABLE "public"."ip_restriction" IS '黑白名单';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."metadata_subscribe";
 CREATE TABLE "public"."metadata_subscribe" (
-                                               "user_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                               "table_guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                               "create_time" timestamptz(6)
+  "user_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "table_guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamptz(6)
 )
 ;
 COMMENT ON COLUMN "public"."metadata_subscribe"."user_id" IS '用户id';
@@ -2772,9 +2772,9 @@ COMMENT ON TABLE "public"."metadata_subscribe" IS '用户及表关联关系信�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."module";
 CREATE TABLE "public"."module" (
-                                   "moduleid" int4 NOT NULL,
-                                   "modulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                   "type" int4
+  "moduleid" int4 NOT NULL,
+  "modulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "type" int4
 )
 ;
 COMMENT ON COLUMN "public"."module"."moduleid" IS '权限id';
@@ -2787,16 +2787,16 @@ COMMENT ON TABLE "public"."module" IS '模块表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."operate_log";
 CREATE TABLE "public"."operate_log" (
-                                        "id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "number" varchar(20) COLLATE "pg_catalog"."default",
-                                        "userid" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "type" varchar(20) COLLATE "pg_catalog"."default",
-                                        "module" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "content" varchar COLLATE "pg_catalog"."default",
-                                        "result" varchar(20) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "ip" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "createtime" timestamptz(0) NOT NULL,
-                                        "tenantid" varchar(36) COLLATE "pg_catalog"."default"
+  "id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "number" varchar(20) COLLATE "pg_catalog"."default",
+  "userid" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "type" varchar(20) COLLATE "pg_catalog"."default",
+  "module" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "content" varchar COLLATE "pg_catalog"."default",
+  "result" varchar(20) COLLATE "pg_catalog"."default" NOT NULL,
+  "ip" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "createtime" timestamptz(0) NOT NULL,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."operate_log"."id" IS '主键id';
@@ -2816,18 +2816,18 @@ COMMENT ON TABLE "public"."operate_log" IS '操作日志表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."organization";
 CREATE TABLE "public"."organization" (
-                                         "checked" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                         "disable" varchar COLLATE "pg_catalog"."default",
-                                         "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                         "isopen" bool,
-                                         "isvm" int8,
-                                         "name" text COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "open" bool,
-                                         "pid" varchar COLLATE "pg_catalog"."default",
-                                         "pkid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                         "ptype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "type" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "updatetime" varchar COLLATE "pg_catalog"."default"
+  "checked" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "disable" varchar COLLATE "pg_catalog"."default",
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "isopen" bool,
+  "isvm" int8,
+  "name" text COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "open" bool,
+  "pid" varchar COLLATE "pg_catalog"."default",
+  "pkid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "ptype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "type" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "updatetime" varchar COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."organization"."checked" IS '是否校验';
@@ -2849,12 +2849,12 @@ COMMENT ON TABLE "public"."organization" IS '组织表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."privilege";
 CREATE TABLE "public"."privilege" (
-                                      "privilegeid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                      "privilegename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                      "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                      "createtime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                      "edit" int2,
-                                      "delete" int2
+  "privilegeid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "privilegename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "description" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "createtime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "edit" int2,
+  "delete" int2
 )
 ;
 COMMENT ON COLUMN "public"."privilege"."privilegeid" IS '方案id';
@@ -2870,8 +2870,8 @@ COMMENT ON TABLE "public"."privilege" IS '方案表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."privilege2module";
 CREATE TABLE "public"."privilege2module" (
-                                             "privilegeid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                             "moduleid" int4 NOT NULL
+  "privilegeid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "moduleid" int4 NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."privilege2module"."privilegeid" IS '方案id';
@@ -2883,14 +2883,14 @@ COMMENT ON TABLE "public"."privilege2module" IS '方案模块关联表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."project";
 CREATE TABLE "public"."project" (
-                                    "id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                    "name" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                    "creator" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                    "description" varchar(256) COLLATE "pg_catalog"."default" NOT NULL,
-                                    "createtime" timestamptz(6) NOT NULL,
-                                    "manager" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                    "tenantid" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                    "valid" bool NOT NULL
+  "id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "creator" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "description" varchar(256) COLLATE "pg_catalog"."default" NOT NULL,
+  "createtime" timestamptz(6) NOT NULL,
+  "manager" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "valid" bool NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."project"."id" IS '项目id';
@@ -2908,8 +2908,8 @@ COMMENT ON TABLE "public"."project" IS '项目表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."project_group_relation";
 CREATE TABLE "public"."project_group_relation" (
-                                                   "project_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                                   "group_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL
+  "project_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "group_id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."project_group_relation"."project_id" IS '项目id';
@@ -2921,10 +2921,10 @@ COMMENT ON TABLE "public"."project_group_relation" IS '项目用户组关联表'
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_blob_triggers";
 CREATE TABLE "public"."qrtz_blob_triggers" (
-                                               "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                               "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                               "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                               "blob_data" bytea
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "blob_data" bytea
 )
 ;
 COMMENT ON COLUMN "public"."qrtz_blob_triggers"."sched_name" IS '计划任务名';
@@ -2938,9 +2938,9 @@ COMMENT ON TABLE "public"."qrtz_blob_triggers" IS '计划调度表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_calendars";
 CREATE TABLE "public"."qrtz_calendars" (
-                                           "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                           "calendar_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                           "calendar" bytea NOT NULL
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "calendar_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "calendar" bytea NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."qrtz_calendars"."sched_name" IS '计划任务名';
@@ -2953,11 +2953,11 @@ COMMENT ON TABLE "public"."qrtz_calendars" IS '计划日程表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_cron_triggers";
 CREATE TABLE "public"."qrtz_cron_triggers" (
-                                               "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                               "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                               "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                               "cron_expression" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                               "time_zone_id" varchar(80) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "cron_expression" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "time_zone_id" varchar(80) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
 COMMENT ON COLUMN "public"."qrtz_cron_triggers"."sched_name" IS '计划任务名';
@@ -2972,19 +2972,19 @@ COMMENT ON TABLE "public"."qrtz_cron_triggers" IS '计划调度规则表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_fired_triggers";
 CREATE TABLE "public"."qrtz_fired_triggers" (
-                                                "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                                "entry_id" varchar(95) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                                "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                                "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                                "instance_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                                "fired_time" int8 NOT NULL,
-                                                "sched_time" int8 NOT NULL,
-                                                "priority" int4 NOT NULL,
-                                                "state" varchar(16) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                                "job_name" varchar(200) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                                "job_group" varchar(200) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                                "is_nonconcurrent" bool,
-                                                "requests_recovery" bool
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "entry_id" varchar(95) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "instance_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "fired_time" int8 NOT NULL,
+  "sched_time" int8 NOT NULL,
+  "priority" int4 NOT NULL,
+  "state" varchar(16) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "job_name" varchar(200) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "job_group" varchar(200) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "is_nonconcurrent" bool,
+  "requests_recovery" bool
 )
 ;
 COMMENT ON COLUMN "public"."qrtz_fired_triggers"."sched_name" IS '计划任务名';
@@ -3007,16 +3007,16 @@ COMMENT ON TABLE "public"."qrtz_fired_triggers" IS '计划调度触发表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_job_details";
 CREATE TABLE "public"."qrtz_job_details" (
-                                             "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                             "job_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                             "job_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                             "description" varchar(250) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                             "job_class_name" varchar(250) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                             "is_durable" bool NOT NULL,
-                                             "is_nonconcurrent" bool NOT NULL,
-                                             "is_update_data" bool NOT NULL,
-                                             "requests_recovery" bool NOT NULL,
-                                             "job_data" bytea
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "job_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "job_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "description" varchar(250) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "job_class_name" varchar(250) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "is_durable" bool NOT NULL,
+  "is_nonconcurrent" bool NOT NULL,
+  "is_update_data" bool NOT NULL,
+  "requests_recovery" bool NOT NULL,
+  "job_data" bytea
 )
 ;
 COMMENT ON COLUMN "public"."qrtz_job_details"."sched_name" IS '计划任务名';
@@ -3036,8 +3036,8 @@ COMMENT ON TABLE "public"."qrtz_job_details" IS '计划任务详情表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_locks";
 CREATE TABLE "public"."qrtz_locks" (
-                                       "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                       "lock_name" varchar(40) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "lock_name" varchar(40) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
 COMMENT ON COLUMN "public"."qrtz_locks"."sched_name" IS '计划任务名';
@@ -3049,8 +3049,8 @@ COMMENT ON TABLE "public"."qrtz_locks" IS '计划调度锁定表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_paused_trigger_grps";
 CREATE TABLE "public"."qrtz_paused_trigger_grps" (
-                                                     "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                                     "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
 COMMENT ON COLUMN "public"."qrtz_paused_trigger_grps"."sched_name" IS '计划任务名';
@@ -3062,10 +3062,10 @@ COMMENT ON TABLE "public"."qrtz_paused_trigger_grps" IS '计划调度器分组�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_scheduler_state";
 CREATE TABLE "public"."qrtz_scheduler_state" (
-                                                 "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                                 "instance_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                                 "last_checkin_time" int8 NOT NULL,
-                                                 "checkin_interval" int8 NOT NULL
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "instance_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "last_checkin_time" int8 NOT NULL,
+  "checkin_interval" int8 NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."qrtz_scheduler_state"."sched_name" IS '计划任务名';
@@ -3079,12 +3079,12 @@ COMMENT ON TABLE "public"."qrtz_scheduler_state" IS '计划执行时间记录表
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_simple_triggers";
 CREATE TABLE "public"."qrtz_simple_triggers" (
-                                                 "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                                 "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                                 "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                                 "repeat_count" int8 NOT NULL,
-                                                 "repeat_interval" int8 NOT NULL,
-                                                 "times_triggered" int8 NOT NULL
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "repeat_count" int8 NOT NULL,
+  "repeat_interval" int8 NOT NULL,
+  "times_triggered" int8 NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."qrtz_simple_triggers"."sched_name" IS '计划任务名';
@@ -3100,20 +3100,20 @@ COMMENT ON TABLE "public"."qrtz_simple_triggers" IS '存储SimpleTrigger';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_simprop_triggers";
 CREATE TABLE "public"."qrtz_simprop_triggers" (
-                                                  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                                  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                                  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                                  "str_prop_1" varchar(512) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                                  "str_prop_2" varchar(512) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                                  "str_prop_3" varchar(512) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                                  "int_prop_1" int4,
-                                                  "int_prop_2" int4,
-                                                  "long_prop_1" int8,
-                                                  "long_prop_2" int8,
-                                                  "dec_prop_1" numeric(13,4) DEFAULT NULL::numeric,
-                                                  "dec_prop_2" numeric(13,4) DEFAULT NULL::numeric,
-                                                  "bool_prop_1" bool,
-                                                  "bool_prop_2" bool
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "str_prop_1" varchar(512) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "str_prop_2" varchar(512) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "str_prop_3" varchar(512) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "int_prop_1" int4,
+  "int_prop_2" int4,
+  "long_prop_1" int8,
+  "long_prop_2" int8,
+  "dec_prop_1" numeric(13,4) DEFAULT NULL::numeric,
+  "dec_prop_2" numeric(13,4) DEFAULT NULL::numeric,
+  "bool_prop_1" bool,
+  "bool_prop_2" bool
 )
 ;
 COMMENT ON COLUMN "public"."qrtz_simprop_triggers"."sched_name" IS '计划任务名';
@@ -3137,22 +3137,22 @@ COMMENT ON TABLE "public"."qrtz_simprop_triggers" IS '存储CalendarIntervalTrig
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qrtz_triggers";
 CREATE TABLE "public"."qrtz_triggers" (
-                                          "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                          "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                          "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                          "job_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                          "job_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                          "description" varchar(250) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                          "next_fire_time" int8,
-                                          "prev_fire_time" int8,
-                                          "priority" int4,
-                                          "trigger_state" varchar(16) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                          "trigger_type" varchar(8) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                          "start_time" int8 NOT NULL,
-                                          "end_time" int8,
-                                          "calendar_name" varchar(200) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                          "misfire_instr" int2,
-                                          "job_data" bytea
+  "sched_name" varchar(120) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "job_name" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "job_group" varchar(200) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "description" varchar(250) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "next_fire_time" int8,
+  "prev_fire_time" int8,
+  "priority" int4,
+  "trigger_state" varchar(16) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "trigger_type" varchar(8) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "start_time" int8 NOT NULL,
+  "end_time" int8,
+  "calendar_name" varchar(200) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "misfire_instr" int2,
+  "job_data" bytea
 )
 ;
 COMMENT ON COLUMN "public"."qrtz_triggers"."sched_name" IS '计划任务名';
@@ -3178,16 +3178,16 @@ COMMENT ON TABLE "public"."qrtz_triggers" IS '存储定义的trigger';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qualifier";
 CREATE TABLE "public"."qualifier" (
-                                      "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                      "name" varchar COLLATE "pg_catalog"."default",
-                                      "mark" varchar COLLATE "pg_catalog"."default",
-                                      "creator" varchar COLLATE "pg_catalog"."default",
-                                      "create_time" timestamptz(6),
-                                      "update_user" varchar COLLATE "pg_catalog"."default",
-                                      "update_time" timestamptz(6),
-                                      "desc" text COLLATE "pg_catalog"."default",
-                                      "tenantid" varchar COLLATE "pg_catalog"."default",
-                                      "typeid" varchar COLLATE "pg_catalog"."default"
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar COLLATE "pg_catalog"."default",
+  "mark" varchar COLLATE "pg_catalog"."default",
+  "creator" varchar COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_user" varchar COLLATE "pg_catalog"."default",
+  "update_time" timestamptz(6),
+  "desc" text COLLATE "pg_catalog"."default",
+  "tenantid" varchar COLLATE "pg_catalog"."default",
+  "typeid" varchar COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."qualifier"."id" IS '主键id';
@@ -3207,20 +3207,20 @@ COMMENT ON TABLE "public"."qualifier" IS '修饰词表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qualifier_ind";
 CREATE TABLE "public"."qualifier_ind" (
-                                          "id" int8 NOT NULL,
-                                          "name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                          "mark" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                          "description" varchar(255) COLLATE "pg_catalog"."default",
-                                          "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                          "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                          "create_time" timestamptz(6),
-                                          "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                          "update_time" timestamptz(6),
-                                          "deleted" int2 NOT NULL DEFAULT 1,
-                                          "content" varchar(1000) COLLATE "pg_catalog"."default" NOT NULL,
-                                          "create_name" varchar(255) COLLATE "pg_catalog"."default",
-                                          "update_name" varchar(255) COLLATE "pg_catalog"."default",
-                                          "content_view" varchar(255) COLLATE "pg_catalog"."default"
+  "id" int8 NOT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "mark" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "description" varchar(255) COLLATE "pg_catalog"."default",
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamptz(6),
+  "deleted" int2 NOT NULL DEFAULT 1,
+  "content" varchar(1000) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_name" varchar(255) COLLATE "pg_catalog"."default",
+  "update_name" varchar(255) COLLATE "pg_catalog"."default",
+  "content_view" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."qualifier_ind"."id" IS '主键id';
@@ -3243,16 +3243,16 @@ COMMENT ON COLUMN "public"."qualifier_ind"."content_view" IS '前端展示修饰
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qualifier_ind_log";
 CREATE TABLE "public"."qualifier_ind_log" (
-                                              "id" int8 NOT NULL,
-                                              "log_id" int8 NOT NULL,
-                                              "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "change" varchar(2000) COLLATE "pg_catalog"."default" NOT NULL,
-                                              "log_time" timestamptz(6) NOT NULL,
-                                              "create_time" timestamptz(6),
-                                              "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                              "update_time" timestamptz(6),
-                                              "deleted" int2 DEFAULT 1,
-                                              "create_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
+  "id" int8 NOT NULL,
+  "log_id" int8 NOT NULL,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "change" varchar(2000) COLLATE "pg_catalog"."default" NOT NULL,
+  "log_time" timestamptz(6) NOT NULL,
+  "create_time" timestamptz(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamptz(6),
+  "deleted" int2 DEFAULT 1,
+  "create_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."qualifier_ind_log"."id" IS '主键id';
@@ -3267,15 +3267,15 @@ COMMENT ON COLUMN "public"."qualifier_ind_log"."create_name" IS '创建者名字
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."qualifier_type";
 CREATE TABLE "public"."qualifier_type" (
-                                           "type_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                           "type_name" varchar COLLATE "pg_catalog"."default",
-                                           "type_mark" varchar COLLATE "pg_catalog"."default",
-                                           "creator" varchar COLLATE "pg_catalog"."default",
-                                           "create_time" timestamptz(6),
-                                           "update_user" varchar COLLATE "pg_catalog"."default",
-                                           "update_time" timestamptz(6),
-                                           "type_desc" text COLLATE "pg_catalog"."default",
-                                           "tenantid" varchar COLLATE "pg_catalog"."default"
+  "type_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "type_name" varchar COLLATE "pg_catalog"."default",
+  "type_mark" varchar COLLATE "pg_catalog"."default",
+  "creator" varchar COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_user" varchar COLLATE "pg_catalog"."default",
+  "update_time" timestamptz(6),
+  "type_desc" text COLLATE "pg_catalog"."default",
+  "tenantid" varchar COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."qualifier_type"."type_id" IS '修饰词类型ID';
@@ -3294,17 +3294,17 @@ COMMENT ON TABLE "public"."qualifier_type" IS '修饰词类型';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."report";
 CREATE TABLE "public"."report" (
-                                   "reportid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                   "reportname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                   "templatename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                   "periodcron" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                   "orangealerts" int8,
-                                   "redalerts" int8,
-                                   "source" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                   "buildtype" int4,
-                                   "reportproducedate" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                   "templateid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                   "alert" int2
+  "reportid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "reportname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "templatename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "periodcron" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "orangealerts" int8,
+  "redalerts" int8,
+  "source" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "buildtype" int4,
+  "reportproducedate" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "templateid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "alert" int2
 )
 ;
 COMMENT ON COLUMN "public"."report"."reportid" IS '报告id';
@@ -3325,10 +3325,10 @@ COMMENT ON TABLE "public"."report" IS '报告表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."report2ruletemplate";
 CREATE TABLE "public"."report2ruletemplate" (
-                                                "rule_template_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                "data_quality_execute_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                "creator" varchar(255) COLLATE "pg_catalog"."default",
-                                                "create_time" timestamptz(6)
+  "rule_template_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "data_quality_execute_id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "creator" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6)
 )
 ;
 COMMENT ON COLUMN "public"."report2ruletemplate"."rule_template_id" IS '规则模板id';
@@ -3342,13 +3342,13 @@ COMMENT ON TABLE "public"."report2ruletemplate" IS '报告模板';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."report_error";
 CREATE TABLE "public"."report_error" (
-                                         "errorid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                         "templateid" varchar COLLATE "pg_catalog"."default",
-                                         "reportid" varchar COLLATE "pg_catalog"."default",
-                                         "ruleid" varchar COLLATE "pg_catalog"."default",
-                                         "content" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                         "generatetime" varchar COLLATE "pg_catalog"."default",
-                                         "retrycount" int2
+  "errorid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "templateid" varchar COLLATE "pg_catalog"."default",
+  "reportid" varchar COLLATE "pg_catalog"."default",
+  "ruleid" varchar COLLATE "pg_catalog"."default",
+  "content" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "generatetime" varchar COLLATE "pg_catalog"."default",
+  "retrycount" int2
 )
 ;
 COMMENT ON COLUMN "public"."report_error"."errorid" IS '报告错误id';
@@ -3365,21 +3365,21 @@ COMMENT ON TABLE "public"."report_error" IS '报告错误信息';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."report_userrule";
 CREATE TABLE "public"."report_userrule" (
-                                            "reportid" varchar COLLATE "pg_catalog"."default",
-                                            "reportrulevalue" float8,
-                                            "reportrulestatus" int2,
-                                            "ruleid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                            "ruletype" int4,
-                                            "rulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                            "ruleinfo" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                            "rulecolumnname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                            "rulecolumntype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                            "rulechecktype" int4,
-                                            "rulecheckexpression" int4,
-                                            "rulecheckthresholdunit" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                            "refvalue" float8,
-                                            "templateruleid" varchar COLLATE "pg_catalog"."default",
-                                            "generatetime" float8
+  "reportid" varchar COLLATE "pg_catalog"."default",
+  "reportrulevalue" float8,
+  "reportrulestatus" int2,
+  "ruleid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "ruletype" int4,
+  "rulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "ruleinfo" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "rulecolumnname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "rulecolumntype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "rulechecktype" int4,
+  "rulecheckexpression" int4,
+  "rulecheckthresholdunit" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "refvalue" float8,
+  "templateruleid" varchar COLLATE "pg_catalog"."default",
+  "generatetime" float8
 )
 ;
 COMMENT ON COLUMN "public"."report_userrule"."reportid" IS '报告id';
@@ -3401,8 +3401,8 @@ COMMENT ON TABLE "public"."report_userrule" IS '用户规则';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."report_userrule2threshold";
 CREATE TABLE "public"."report_userrule2threshold" (
-                                                      "thresholdvalue" float8 NOT NULL,
-                                                      "ruleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
+  "thresholdvalue" float8 NOT NULL,
+  "ruleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
 COMMENT ON COLUMN "public"."report_userrule2threshold"."thresholdvalue" IS '阈值';
@@ -3414,26 +3414,26 @@ COMMENT ON TABLE "public"."report_userrule2threshold" IS '用户规则阈值记�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."requirements";
 CREATE TABLE "public"."requirements" (
-                                         "guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                         "name" varchar(255) COLLATE "pg_catalog"."default",
-                                         "num" varchar(255) COLLATE "pg_catalog"."default",
-                                         "resource_type" int2,
-                                         "version" varchar(255) COLLATE "pg_catalog"."default",
-                                         "agreement" varchar(100) COLLATE "pg_catalog"."default",
-                                         "request_mode" varchar(100) COLLATE "pg_catalog"."default",
-                                         "aiming_field" text COLLATE "pg_catalog"."default",
-                                         "file_name" varchar(255) COLLATE "pg_catalog"."default",
-                                         "file_path" varchar(255) COLLATE "pg_catalog"."default",
-                                         "description" text COLLATE "pg_catalog"."default",
-                                         "business_id" varchar(255) COLLATE "pg_catalog"."default",
-                                         "table_id" varchar(255) COLLATE "pg_catalog"."default",
-                                         "source_id" varchar(255) COLLATE "pg_catalog"."default",
-                                         "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
-                                         "creator" varchar(255) COLLATE "pg_catalog"."default",
-                                         "status" int2,
-                                         "create_time" timestamptz(6),
-                                         "update_time" timestamptz(6),
-                                         "delete" int2
+  "guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default",
+  "num" varchar(255) COLLATE "pg_catalog"."default",
+  "resource_type" int2,
+  "version" varchar(255) COLLATE "pg_catalog"."default",
+  "agreement" varchar(100) COLLATE "pg_catalog"."default",
+  "request_mode" varchar(100) COLLATE "pg_catalog"."default",
+  "aiming_field" text COLLATE "pg_catalog"."default",
+  "file_name" varchar(255) COLLATE "pg_catalog"."default",
+  "file_path" varchar(255) COLLATE "pg_catalog"."default",
+  "description" text COLLATE "pg_catalog"."default",
+  "business_id" varchar(255) COLLATE "pg_catalog"."default",
+  "table_id" varchar(255) COLLATE "pg_catalog"."default",
+  "source_id" varchar(255) COLLATE "pg_catalog"."default",
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
+  "creator" varchar(255) COLLATE "pg_catalog"."default",
+  "status" int2,
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6),
+  "delete" int2
 )
 ;
 COMMENT ON COLUMN "public"."requirements"."guid" IS '主键id';
@@ -3463,14 +3463,14 @@ COMMENT ON TABLE "public"."requirements" IS '需求管理表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."requirements_api";
 CREATE TABLE "public"."requirements_api" (
-                                             "guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                             "requirements_id" varchar(64) COLLATE "pg_catalog"."default",
-                                             "project_id" varchar(64) COLLATE "pg_catalog"."default",
-                                             "category_id" varchar(64) COLLATE "pg_catalog"."default",
-                                             "api_id" varchar(64) COLLATE "pg_catalog"."default",
-                                             "description" text COLLATE "pg_catalog"."default",
-                                             "create_time" timestamptz(6),
-                                             "update_time" timestamptz(6)
+  "guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "requirements_id" varchar(64) COLLATE "pg_catalog"."default",
+  "project_id" varchar(64) COLLATE "pg_catalog"."default",
+  "category_id" varchar(64) COLLATE "pg_catalog"."default",
+  "api_id" varchar(64) COLLATE "pg_catalog"."default",
+  "description" text COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6)
 )
 ;
 COMMENT ON COLUMN "public"."requirements_api"."guid" IS '主键id';
@@ -3488,16 +3488,16 @@ COMMENT ON TABLE "public"."requirements_api" IS '需求反馈结果表-api';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."requirements_column";
 CREATE TABLE "public"."requirements_column" (
-                                                "guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                                "requirements_id" varchar(64) COLLATE "pg_catalog"."default",
-                                                "table_id" varchar(64) COLLATE "pg_catalog"."default",
-                                                "column_id" varchar(64) COLLATE "pg_catalog"."default",
-                                                "operator" varchar(50) COLLATE "pg_catalog"."default",
-                                                "sample_data" varchar(255) COLLATE "pg_catalog"."default",
-                                                "description" varchar(255) COLLATE "pg_catalog"."default",
-                                                "create_time" timestamptz(6),
-                                                "update_time" timestamptz(6),
-                                                "delete" int2
+  "guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "requirements_id" varchar(64) COLLATE "pg_catalog"."default",
+  "table_id" varchar(64) COLLATE "pg_catalog"."default",
+  "column_id" varchar(64) COLLATE "pg_catalog"."default",
+  "operator" varchar(50) COLLATE "pg_catalog"."default",
+  "sample_data" varchar(255) COLLATE "pg_catalog"."default",
+  "description" varchar(255) COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6),
+  "delete" int2
 )
 ;
 COMMENT ON COLUMN "public"."requirements_column"."guid" IS '主键id';
@@ -3517,17 +3517,17 @@ COMMENT ON TABLE "public"."requirements_column" IS '需求管理-字段映射关
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."requirements_database";
 CREATE TABLE "public"."requirements_database" (
-                                                  "guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                                  "requirements_id" varchar(64) COLLATE "pg_catalog"."default",
-                                                  "middle_type" varchar(255) COLLATE "pg_catalog"."default",
-                                                  "database" varchar(255) COLLATE "pg_catalog"."default",
-                                                  "table_name_en" varchar(255) COLLATE "pg_catalog"."default",
-                                                  "table_name_ch" varchar(255) COLLATE "pg_catalog"."default",
-                                                  "status" int2,
-                                                  "description" text COLLATE "pg_catalog"."default",
-                                                  "create_time" timestamptz(6),
-                                                  "update_time" timestamptz(6),
-                                                  "creator" varchar(255) COLLATE "pg_catalog"."default"
+  "guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "requirements_id" varchar(64) COLLATE "pg_catalog"."default",
+  "middle_type" varchar(255) COLLATE "pg_catalog"."default",
+  "database" varchar(255) COLLATE "pg_catalog"."default",
+  "table_name_en" varchar(255) COLLATE "pg_catalog"."default",
+  "table_name_ch" varchar(255) COLLATE "pg_catalog"."default",
+  "status" int2,
+  "description" text COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6),
+  "creator" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."requirements_database"."guid" IS '主键id';
@@ -3548,16 +3548,16 @@ COMMENT ON TABLE "public"."requirements_database" IS '数据管理反馈结果-�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."requirements_mq";
 CREATE TABLE "public"."requirements_mq" (
-                                            "guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                            "requirements_id" varchar(64) COLLATE "pg_catalog"."default",
-                                            "mq_name_en" varchar(255) COLLATE "pg_catalog"."default",
-                                            "mq_name_ch" varchar(255) COLLATE "pg_catalog"."default",
-                                            "format" varchar(255) COLLATE "pg_catalog"."default",
-                                            "status" int2,
-                                            "description" text COLLATE "pg_catalog"."default",
-                                            "create_time" timestamptz(6),
-                                            "update_time" timestamptz(6),
-                                            "creator" varchar(255) COLLATE "pg_catalog"."default"
+  "guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "requirements_id" varchar(64) COLLATE "pg_catalog"."default",
+  "mq_name_en" varchar(255) COLLATE "pg_catalog"."default",
+  "mq_name_ch" varchar(255) COLLATE "pg_catalog"."default",
+  "format" varchar(255) COLLATE "pg_catalog"."default",
+  "status" int2,
+  "description" text COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6),
+  "creator" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."requirements_mq"."guid" IS '主键id';
@@ -3577,14 +3577,14 @@ COMMENT ON TABLE "public"."requirements_mq" IS '需求反馈结果表-消息队�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."requirements_result";
 CREATE TABLE "public"."requirements_result" (
-                                                "guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                                "requirements_id" varchar(64) COLLATE "pg_catalog"."default",
-                                                "type" int2,
-                                                "group_id" varchar(64) COLLATE "pg_catalog"."default",
-                                                "user_id" varchar(64) COLLATE "pg_catalog"."default",
-                                                "description" text COLLATE "pg_catalog"."default",
-                                                "create_time" timestamptz(6),
-                                                "update_time" timestamptz(6)
+  "guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "requirements_id" varchar(64) COLLATE "pg_catalog"."default",
+  "type" int2,
+  "group_id" varchar(64) COLLATE "pg_catalog"."default",
+  "user_id" varchar(64) COLLATE "pg_catalog"."default",
+  "description" text COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6)
 )
 ;
 COMMENT ON COLUMN "public"."requirements_result"."guid" IS '主键id';
@@ -3602,8 +3602,8 @@ COMMENT ON TABLE "public"."requirements_result" IS '需求处理结果表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."rule2buildtype";
 CREATE TABLE "public"."rule2buildtype" (
-                                           "ruleid" int2 NOT NULL,
-                                           "buildtype" int2 NOT NULL
+  "ruleid" int2 NOT NULL,
+  "buildtype" int2 NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."rule2buildtype"."ruleid" IS '规则Id';
@@ -3615,8 +3615,8 @@ COMMENT ON TABLE "public"."rule2buildtype" IS '规则与生成方式表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."rule2checktype";
 CREATE TABLE "public"."rule2checktype" (
-                                           "ruleid" int2 NOT NULL,
-                                           "checktype" int2 NOT NULL
+  "ruleid" int2 NOT NULL,
+  "checktype" int2 NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."rule2checktype"."ruleid" IS '规则Id';
@@ -3628,8 +3628,8 @@ COMMENT ON TABLE "public"."rule2checktype" IS '规则与检测方式关系表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."rule2datatype";
 CREATE TABLE "public"."rule2datatype" (
-                                          "ruleid" int2 NOT NULL,
-                                          "datatype" int2 NOT NULL
+  "ruleid" int2 NOT NULL,
+  "datatype" int2 NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."rule2datatype"."ruleid" IS '规则Id';
@@ -3641,9 +3641,9 @@ COMMENT ON TABLE "public"."rule2datatype" IS '规则与数据类型关系表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."source_db";
 CREATE TABLE "public"."source_db" (
-                                      "id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                      "source_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                      "db_guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL
+  "id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "source_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "db_guid" varchar(64) COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."source_db"."source_id" IS '数据源id';
@@ -3655,41 +3655,41 @@ COMMENT ON TABLE "public"."source_db" IS '数据源和数据库关系表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."source_info";
 CREATE TABLE "public"."source_info" (
-                                        "id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "category_id" varchar(64) COLLATE "pg_catalog"."default",
-                                        "database_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "database_alias" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "planning_package_code" varchar(255) COLLATE "pg_catalog"."default",
-                                        "planning_package_name" varchar(255) COLLATE "pg_catalog"."default",
-                                        "extract_tool" varchar(255) COLLATE "pg_catalog"."default",
-                                        "extract_cycle" varchar(255) COLLATE "pg_catalog"."default",
-                                        "security" bool,
-                                        "security_cycle" varchar(255) COLLATE "pg_catalog"."default",
-                                        "importance" bool,
-                                        "description" text COLLATE "pg_catalog"."default",
-                                        "approve_id" varchar(50) COLLATE "pg_catalog"."default",
-                                        "approve_group_id" varchar(64) COLLATE "pg_catalog"."default",
-                                        "updater" varchar(255) COLLATE "pg_catalog"."default",
-                                        "creator" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "status" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "annex_id" varchar(64) COLLATE "pg_catalog"."default",
-                                        "bo_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "bo_department_name" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "bo_email" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "bo_tel" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "to_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "to_department_name" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "to_email" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "to_tel" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "technical_leader" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "business_leader" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "tenant_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-                                        "version" int8 NOT NULL,
-                                        "update_time" timestamptz(6),
-                                        "record_time" timestamptz(6) NOT NULL,
-                                        "create_time" timestamptz(6) NOT NULL,
-                                        "modify_time" timestamptz(6) NOT NULL,
-                                        "data_source_id" varchar(64) COLLATE "pg_catalog"."default"
+  "id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "category_id" varchar(64) COLLATE "pg_catalog"."default",
+  "database_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "database_alias" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "planning_package_code" varchar(255) COLLATE "pg_catalog"."default",
+  "planning_package_name" varchar(255) COLLATE "pg_catalog"."default",
+  "extract_tool" varchar(255) COLLATE "pg_catalog"."default",
+  "extract_cycle" varchar(255) COLLATE "pg_catalog"."default",
+  "security" bool,
+  "security_cycle" varchar(255) COLLATE "pg_catalog"."default",
+  "importance" bool,
+  "description" text COLLATE "pg_catalog"."default",
+  "approve_id" varchar(50) COLLATE "pg_catalog"."default",
+  "approve_group_id" varchar(64) COLLATE "pg_catalog"."default",
+  "updater" varchar(255) COLLATE "pg_catalog"."default",
+  "creator" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "status" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "annex_id" varchar(64) COLLATE "pg_catalog"."default",
+  "bo_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "bo_department_name" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "bo_email" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "bo_tel" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "to_name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "to_department_name" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "to_email" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "to_tel" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "technical_leader" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "business_leader" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "tenant_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "version" int8 NOT NULL,
+  "update_time" timestamptz(6),
+  "record_time" timestamptz(6) NOT NULL,
+  "create_time" timestamptz(6) NOT NULL,
+  "modify_time" timestamptz(6) NOT NULL,
+  "data_source_id" varchar(64) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."source_info"."category_id" IS '数据层/区Id';
@@ -3733,29 +3733,29 @@ COMMENT ON TABLE "public"."source_info" IS '源信息登记表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."source_info_derive_column_info";
 CREATE TABLE "public"."source_info_derive_column_info" (
-                                                           "id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL DEFAULT ''::character varying,
-                                                           "column_guid" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                           "column_name_en" varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
-                                                           "column_name_zh" varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
-                                                           "data_type" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                           "source_column_guid" varchar(100) COLLATE "pg_catalog"."default",
-                                                           "primary_key" bool NOT NULL,
-                                                           "remove_sensitive" bool NOT NULL,
-                                                           "mapping_rule" varchar(512) COLLATE "pg_catalog"."default",
-                                                           "mapping_describe" varchar(512) COLLATE "pg_catalog"."default",
-                                                           "group_field" bool NOT NULL,
-                                                           "secret" bool NOT NULL,
-                                                           "secret_period" varchar(64) COLLATE "pg_catalog"."default",
-                                                           "important" bool NOT NULL,
-                                                           "remark" text COLLATE "pg_catalog"."default",
-                                                           "tenant_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                           "table_guid" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                           "permission_field" bool NOT NULL,
-                                                           "sort" int4 DEFAULT 0,
-                                                           "tags" text COLLATE "pg_catalog"."default",
-                                                           "desensitization_rules" varchar(255) COLLATE "pg_catalog"."default",
-                                                           "source_table_guid" varchar(255) COLLATE "pg_catalog"."default",
-                                                           "custom" bool
+  "id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL DEFAULT ''::character varying,
+  "column_guid" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "column_name_en" varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
+  "column_name_zh" varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
+  "data_type" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "source_column_guid" varchar(100) COLLATE "pg_catalog"."default",
+  "primary_key" bool NOT NULL,
+  "remove_sensitive" bool NOT NULL,
+  "mapping_rule" varchar(512) COLLATE "pg_catalog"."default",
+  "mapping_describe" varchar(512) COLLATE "pg_catalog"."default",
+  "group_field" bool NOT NULL,
+  "secret" bool NOT NULL,
+  "secret_period" varchar(64) COLLATE "pg_catalog"."default",
+  "important" bool NOT NULL,
+  "remark" text COLLATE "pg_catalog"."default",
+  "tenant_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "table_guid" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "permission_field" bool NOT NULL,
+  "sort" int4 DEFAULT 0,
+  "tags" text COLLATE "pg_catalog"."default",
+  "desensitization_rules" varchar(255) COLLATE "pg_catalog"."default",
+  "source_table_guid" varchar(255) COLLATE "pg_catalog"."default",
+  "custom" bool
 )
 ;
 COMMENT ON COLUMN "public"."source_info_derive_column_info"."id" IS '主键id';
@@ -3788,10 +3788,10 @@ COMMENT ON TABLE "public"."source_info_derive_column_info" IS '衍生表对应�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."source_info_derive_table_column_relation";
 CREATE TABLE "public"."source_info_derive_table_column_relation" (
-                                                                     "id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                                     "table_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                                     "column_guid" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                                     "table_guid" varchar(100) COLLATE "pg_catalog"."default"
+  "id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "table_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "column_guid" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "table_guid" varchar(100) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."source_info_derive_table_column_relation"."id" IS '主键id';
@@ -3805,38 +3805,38 @@ COMMENT ON TABLE "public"."source_info_derive_table_column_relation" IS '衍生�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."source_info_derive_table_info";
 CREATE TABLE "public"."source_info_derive_table_info" (
-                                                          "id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL DEFAULT ''::character varying,
-                                                          "table_guid" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                          "table_name_en" varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
-                                                          "table_name_zh" varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
-                                                          "procedure" varchar(256) COLLATE "pg_catalog"."default",
-                                                          "category_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                          "db_type" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                          "db_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                          "source_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                          "business_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                          "update_frequency" varchar(256) COLLATE "pg_catalog"."default",
-                                                          "etl_policy" varchar(256) COLLATE "pg_catalog"."default",
-                                                          "incre_standard" varchar(256) COLLATE "pg_catalog"."default",
-                                                          "clean_rule" varchar(256) COLLATE "pg_catalog"."default",
-                                                          "filter" varchar(256) COLLATE "pg_catalog"."default",
-                                                          "tenant_id" varchar(100) COLLATE "pg_catalog"."default",
-                                                          "remark" text COLLATE "pg_catalog"."default",
-                                                          "version" int4 NOT NULL,
-                                                          "source_table_guid" varchar(100) COLLATE "pg_catalog"."default",
-                                                          "creator" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                          "create_time" timestamp(0) NOT NULL,
-                                                          "updater" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                          "update_time" timestamp(0) NOT NULL,
-                                                          "ddl" text COLLATE "pg_catalog"."default",
-                                                          "dml" text COLLATE "pg_catalog"."default",
-                                                          "state" int4 NOT NULL,
-                                                          "importance" bool,
-                                                          "security" bool,
-                                                          "incremental_field" varchar(255) COLLATE "pg_catalog"."default",
-                                                          "operator" varchar(100) COLLATE "pg_catalog"."default",
-                                                          "file_name" varchar(255) COLLATE "pg_catalog"."default",
-                                                          "file_path" varchar(255) COLLATE "pg_catalog"."default"
+  "id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL DEFAULT ''::character varying,
+  "table_guid" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "table_name_en" varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
+  "table_name_zh" varchar(128) COLLATE "pg_catalog"."default" NOT NULL,
+  "procedure" varchar(256) COLLATE "pg_catalog"."default",
+  "category_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "db_type" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "db_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "source_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "business_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "update_frequency" varchar(256) COLLATE "pg_catalog"."default",
+  "etl_policy" varchar(256) COLLATE "pg_catalog"."default",
+  "incre_standard" varchar(256) COLLATE "pg_catalog"."default",
+  "clean_rule" varchar(256) COLLATE "pg_catalog"."default",
+  "filter" varchar(256) COLLATE "pg_catalog"."default",
+  "tenant_id" varchar(100) COLLATE "pg_catalog"."default",
+  "remark" text COLLATE "pg_catalog"."default",
+  "version" int4 NOT NULL,
+  "source_table_guid" varchar(100) COLLATE "pg_catalog"."default",
+  "creator" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamp(0) NOT NULL,
+  "updater" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "update_time" timestamp(0) NOT NULL,
+  "ddl" text COLLATE "pg_catalog"."default",
+  "dml" text COLLATE "pg_catalog"."default",
+  "state" int4 NOT NULL,
+  "importance" bool,
+  "security" bool,
+  "incremental_field" varchar(255) COLLATE "pg_catalog"."default",
+  "operator" varchar(100) COLLATE "pg_catalog"."default",
+  "file_name" varchar(255) COLLATE "pg_catalog"."default",
+  "file_path" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."source_info_derive_table_info"."id" IS '主键id';
@@ -3878,10 +3878,10 @@ COMMENT ON TABLE "public"."source_info_derive_table_info" IS '衍生表信息表
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."source_info_relation2parent_category";
 CREATE TABLE "public"."source_info_relation2parent_category" (
-                                                                 "source_info_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                                 "parent_category_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
-                                                                 "create_time" timestamptz(6),
-                                                                 "modify_time" timestamptz(6)
+  "source_info_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "parent_category_id" varchar(100) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamptz(6),
+  "modify_time" timestamptz(6)
 )
 ;
 COMMENT ON COLUMN "public"."source_info_relation2parent_category"."source_info_id" IS '源信息id';
@@ -3895,11 +3895,11 @@ COMMENT ON TABLE "public"."source_info_relation2parent_category" IS '源信息�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."statistical";
 CREATE TABLE "public"."statistical" (
-                                        "statisticalid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                        "date" int8,
-                                        "statistical" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                        "statisticaltypeid" int4,
-                                        "tenantid" varchar(36) COLLATE "pg_catalog"."default"
+  "statisticalid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "date" int8,
+  "statistical" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "statisticaltypeid" int4,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."statistical"."statisticalid" IS '主键';
@@ -3914,8 +3914,8 @@ COMMENT ON TABLE "public"."statistical" IS '统计结果表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."statisticaltype";
 CREATE TABLE "public"."statisticaltype" (
-                                            "statisticaltypeid" int4 NOT NULL,
-                                            "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
+  "statisticaltypeid" int4 NOT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
 COMMENT ON COLUMN "public"."statisticaltype"."statisticaltypeid" IS '统计类型id';
@@ -3927,21 +3927,21 @@ COMMENT ON TABLE "public"."statisticaltype" IS '统计类型名';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."sync_task_definition";
 CREATE TABLE "public"."sync_task_definition" (
-                                                 "id" text COLLATE "pg_catalog"."default" NOT NULL,
-                                                 "name" text COLLATE "pg_catalog"."default",
-                                                 "creator" text COLLATE "pg_catalog"."default",
-                                                 "create_time" timestamptz(6),
-                                                 "update_time" timestamptz(6),
-                                                 "enable" bool,
-                                                 "cron_start_time" timestamptz(6),
-                                                 "cron_end_time" timestamptz(6),
-                                                 "crontab" text COLLATE "pg_catalog"."default",
-                                                 "data_source_id" text COLLATE "pg_catalog"."default",
-                                                 "sync_all" bool,
-                                                 "schemas" text COLLATE "pg_catalog"."default",
-                                                 "tenant_id" text COLLATE "pg_catalog"."default",
-                                                 "description" text COLLATE "pg_catalog"."default",
-                                                 "category_guid" text COLLATE "pg_catalog"."default"
+  "id" text COLLATE "pg_catalog"."default" NOT NULL,
+  "name" text COLLATE "pg_catalog"."default",
+  "creator" text COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6),
+  "enable" bool,
+  "cron_start_time" timestamptz(6),
+  "cron_end_time" timestamptz(6),
+  "crontab" text COLLATE "pg_catalog"."default",
+  "data_source_id" text COLLATE "pg_catalog"."default",
+  "sync_all" bool,
+  "schemas" text COLLATE "pg_catalog"."default",
+  "tenant_id" text COLLATE "pg_catalog"."default",
+  "description" text COLLATE "pg_catalog"."default",
+  "category_guid" text COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."sync_task_definition"."id" IS 'id';
@@ -3966,14 +3966,14 @@ COMMENT ON TABLE "public"."sync_task_definition" IS '同步任务定义表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."sync_task_instance";
 CREATE TABLE "public"."sync_task_instance" (
-                                               "id" text COLLATE "pg_catalog"."default" NOT NULL,
-                                               "name" text COLLATE "pg_catalog"."default",
-                                               "executor" text COLLATE "pg_catalog"."default",
-                                               "status" text COLLATE "pg_catalog"."default",
-                                               "start_time" timestamptz(6),
-                                               "update_time" timestamptz(6),
-                                               "log" text COLLATE "pg_catalog"."default" DEFAULT ''::text,
-                                               "definition_id" text COLLATE "pg_catalog"."default"
+  "id" text COLLATE "pg_catalog"."default" NOT NULL,
+  "name" text COLLATE "pg_catalog"."default",
+  "executor" text COLLATE "pg_catalog"."default",
+  "status" text COLLATE "pg_catalog"."default",
+  "start_time" timestamptz(6),
+  "update_time" timestamptz(6),
+  "log" text COLLATE "pg_catalog"."default" DEFAULT ''::text,
+  "definition_id" text COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."sync_task_instance"."id" IS 'id';
@@ -3991,11 +3991,11 @@ COMMENT ON TABLE "public"."sync_task_instance" IS '同步任务实例表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."systemrule";
 CREATE TABLE "public"."systemrule" (
-                                       "ruleid" int2 NOT NULL,
-                                       "rulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                       "ruleinfo" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                       "ruletype" int2,
-                                       "rulecheckthresholdunit" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
+  "ruleid" int2 NOT NULL,
+  "rulename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "ruleinfo" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "ruletype" int2,
+  "rulecheckthresholdunit" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
 COMMENT ON COLUMN "public"."systemrule"."ruleid" IS '主键';
@@ -4010,11 +4010,11 @@ COMMENT ON TABLE "public"."systemrule" IS '系统规则信息表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."table2owner";
 CREATE TABLE "public"."table2owner" (
-                                        "tableguid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                        "ownerid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                        "keeper" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                        "generatetime" varchar COLLATE "pg_catalog"."default",
-                                        "pkid" varchar COLLATE "pg_catalog"."default" NOT NULL
+  "tableguid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "ownerid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "keeper" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "generatetime" varchar COLLATE "pg_catalog"."default",
+  "pkid" varchar COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."table2owner"."tableguid" IS '数据表id';
@@ -4029,8 +4029,8 @@ COMMENT ON TABLE "public"."table2owner" IS '数据表owner';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."table2tag";
 CREATE TABLE "public"."table2tag" (
-                                      "tagid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                      "tableguid" varchar COLLATE "pg_catalog"."default" NOT NULL
+  "tagid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "tableguid" varchar COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."table2tag"."tagid" IS '标签id';
@@ -4042,13 +4042,13 @@ COMMENT ON TABLE "public"."table2tag" IS '表与标签关系表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."table_data_source_relation";
 CREATE TABLE "public"."table_data_source_relation" (
-                                                       "id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                                       "category_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                                       "table_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                                       "data_source_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                                       "tenant_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                                       "create_time" timestamptz(6) NOT NULL,
-                                                       "update_time" timestamptz(6)
+  "id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "category_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "table_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "data_source_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "tenant_id" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamptz(6) NOT NULL,
+  "update_time" timestamptz(6)
 )
 ;
 COMMENT ON COLUMN "public"."table_data_source_relation"."id" IS '主键id';
@@ -4065,20 +4065,20 @@ COMMENT ON TABLE "public"."table_data_source_relation" IS '数据源和表的关
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."table_metadata_history";
 CREATE TABLE "public"."table_metadata_history" (
-                                                   "guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                                   "name" varchar COLLATE "pg_catalog"."default",
-                                                   "creator" varchar(255) COLLATE "pg_catalog"."default",
-                                                   "updater" varchar COLLATE "pg_catalog"."default",
-                                                   "create_time" timestamptz(6),
-                                                   "update_time" timestamptz(6),
-                                                   "database_name" varchar(255) COLLATE "pg_catalog"."default",
-                                                   "table_type" varchar(255) COLLATE "pg_catalog"."default",
-                                                   "partition_table" bool,
-                                                   "table_format" varchar(255) COLLATE "pg_catalog"."default",
-                                                   "store_location" varchar(255) COLLATE "pg_catalog"."default",
-                                                   "description" varchar(255) COLLATE "pg_catalog"."default",
-                                                   "status" varchar(255) COLLATE "pg_catalog"."default",
-                                                   "version" int8 NOT NULL
+  "guid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar COLLATE "pg_catalog"."default",
+  "creator" varchar(255) COLLATE "pg_catalog"."default",
+  "updater" varchar COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6),
+  "database_name" varchar(255) COLLATE "pg_catalog"."default",
+  "table_type" varchar(255) COLLATE "pg_catalog"."default",
+  "partition_table" bool,
+  "table_format" varchar(255) COLLATE "pg_catalog"."default",
+  "store_location" varchar(255) COLLATE "pg_catalog"."default",
+  "description" varchar(255) COLLATE "pg_catalog"."default",
+  "status" varchar(255) COLLATE "pg_catalog"."default",
+  "version" int8 NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."table_metadata_history"."guid" IS '主键id';
@@ -4102,11 +4102,11 @@ COMMENT ON TABLE "public"."table_metadata_history" IS '数据表元数据历史�
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."table_relation";
 CREATE TABLE "public"."table_relation" (
-                                           "relationshipguid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                           "categoryguid" varchar COLLATE "pg_catalog"."default",
-                                           "tableguid" varchar COLLATE "pg_catalog"."default",
-                                           "generatetime" varchar COLLATE "pg_catalog"."default",
-                                           "tenant_id" varchar(64) COLLATE "pg_catalog"."default"
+  "relationshipguid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "categoryguid" varchar COLLATE "pg_catalog"."default",
+  "tableguid" varchar COLLATE "pg_catalog"."default",
+  "generatetime" varchar COLLATE "pg_catalog"."default",
+  "tenant_id" varchar(64) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."table_relation"."relationshipguid" IS '唯一标识';
@@ -4121,27 +4121,27 @@ COMMENT ON TABLE "public"."table_relation" IS '表与目录关系表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."tableinfo";
 CREATE TABLE "public"."tableinfo" (
-                                      "tableguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                      "tablename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                      "dbname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                      "status" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                      "createtime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                      "dataowner" json,
-                                      "databaseguid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                      "databasestatus" varchar(255) COLLATE "pg_catalog"."default",
-                                      "subordinatesystem" varchar COLLATE "pg_catalog"."default",
-                                      "subordinatedatabase" varchar COLLATE "pg_catalog"."default",
-                                      "systemadmin" varchar COLLATE "pg_catalog"."default",
-                                      "datawarehouseadmin" varchar COLLATE "pg_catalog"."default",
-                                      "datawarehousedescription" varchar COLLATE "pg_catalog"."default",
-                                      "catalogadmin" varchar COLLATE "pg_catalog"."default",
-                                      "display_name" varchar COLLATE "pg_catalog"."default",
-                                      "display_updatetime" varchar COLLATE "pg_catalog"."default",
-                                      "display_operator" varchar COLLATE "pg_catalog"."default",
-                                      "description" varchar COLLATE "pg_catalog"."default",
-                                      "source_id" text COLLATE "pg_catalog"."default",
-                                      "type" varchar(32) COLLATE "pg_catalog"."default" DEFAULT 'table'::character varying,
-                                      "owner" varchar(32) COLLATE "pg_catalog"."default"
+  "tableguid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "tablename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "dbname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "status" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "createtime" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "dataowner" json,
+  "databaseguid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "databasestatus" varchar(255) COLLATE "pg_catalog"."default",
+  "subordinatesystem" varchar COLLATE "pg_catalog"."default",
+  "subordinatedatabase" varchar COLLATE "pg_catalog"."default",
+  "systemadmin" varchar COLLATE "pg_catalog"."default",
+  "datawarehouseadmin" varchar COLLATE "pg_catalog"."default",
+  "datawarehousedescription" varchar COLLATE "pg_catalog"."default",
+  "catalogadmin" varchar COLLATE "pg_catalog"."default",
+  "display_name" varchar COLLATE "pg_catalog"."default",
+  "display_updatetime" varchar COLLATE "pg_catalog"."default",
+  "display_operator" varchar COLLATE "pg_catalog"."default",
+  "description" varchar COLLATE "pg_catalog"."default",
+  "source_id" text COLLATE "pg_catalog"."default",
+  "type" varchar(32) COLLATE "pg_catalog"."default" DEFAULT 'table'::character varying,
+  "owner" varchar(32) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."tableinfo"."tableguid" IS '表id';
@@ -4172,9 +4172,9 @@ COMMENT ON TABLE "public"."tableinfo" IS '数据表信息表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."tag";
 CREATE TABLE "public"."tag" (
-                                "tagid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                "tagname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                "tenantid" varchar(36) COLLATE "pg_catalog"."default"
+  "tagid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "tagname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."tag"."tagid" IS '标签id';
@@ -4187,19 +4187,19 @@ COMMENT ON TABLE "public"."tag" IS '数据表标签表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."template";
 CREATE TABLE "public"."template" (
-                                     "templateid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                     "tableid" varchar COLLATE "pg_catalog"."default",
-                                     "buildtype" int2,
-                                     "periodcron" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                     "starttime" varchar COLLATE "pg_catalog"."default",
-                                     "templatestatus" int2,
-                                     "templatename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                     "tablerulesnum" int2,
-                                     "columnrulesnum" int2,
-                                     "source" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                     "finishedpercent" numeric(53,2) DEFAULT NULL::numeric,
-                                     "shutdown" bool,
-                                     "generatetime" float8
+  "templateid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "tableid" varchar COLLATE "pg_catalog"."default",
+  "buildtype" int2,
+  "periodcron" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "starttime" varchar COLLATE "pg_catalog"."default",
+  "templatestatus" int2,
+  "templatename" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "tablerulesnum" int2,
+  "columnrulesnum" int2,
+  "source" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "finishedpercent" numeric(53,2) DEFAULT NULL::numeric,
+  "shutdown" bool,
+  "generatetime" float8
 )
 ;
 COMMENT ON COLUMN "public"."template"."templateid" IS '主键id';
@@ -4222,8 +4222,8 @@ COMMENT ON TABLE "public"."template" IS '数据表模板表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."template2qrtz_job";
 CREATE TABLE "public"."template2qrtz_job" (
-                                              "templateid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                              "qrtz_job" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
+  "templateid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "qrtz_job" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
 COMMENT ON COLUMN "public"."template2qrtz_job"."templateid" IS '模板id';
@@ -4235,19 +4235,19 @@ COMMENT ON TABLE "public"."template2qrtz_job" IS '模板任务表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."template_userrule";
 CREATE TABLE "public"."template_userrule" (
-                                              "ruleid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                              "rulename" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                              "ruleinfo" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                              "rulecolumnname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                              "rulecolumntype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                              "rulechecktype" int2,
-                                              "rulecheckexpression" int2,
-                                              "rulecheckthresholdunit" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                              "templateid" varchar COLLATE "pg_catalog"."default",
-                                              "datatype" int2,
-                                              "ruletype" int2,
-                                              "systemruleid" varchar COLLATE "pg_catalog"."default",
-                                              "generatetime" float8
+  "ruleid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "rulename" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "ruleinfo" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "rulecolumnname" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "rulecolumntype" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "rulechecktype" int2,
+  "rulecheckexpression" int2,
+  "rulecheckthresholdunit" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "templateid" varchar COLLATE "pg_catalog"."default",
+  "datatype" int2,
+  "ruletype" int2,
+  "systemruleid" varchar COLLATE "pg_catalog"."default",
+  "generatetime" float8
 )
 ;
 COMMENT ON COLUMN "public"."template_userrule"."rulename" IS '规则名';
@@ -4269,8 +4269,8 @@ COMMENT ON TABLE "public"."template_userrule" IS '模板用户规则表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."template_userrule2threshold";
 CREATE TABLE "public"."template_userrule2threshold" (
-                                                        "thresholdvalue" float8 NOT NULL,
-                                                        "ruleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
+  "thresholdvalue" float8 NOT NULL,
+  "ruleid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying
 )
 ;
 COMMENT ON COLUMN "public"."template_userrule2threshold"."thresholdvalue" IS '阈值';
@@ -4282,8 +4282,8 @@ COMMENT ON TABLE "public"."template_userrule2threshold" IS '模板规则阈值';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."tenant";
 CREATE TABLE "public"."tenant" (
-                                   "id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
-                                   "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
+  "id" varchar(36) COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying
 )
 ;
 COMMENT ON COLUMN "public"."tenant"."id" IS '租户id';
@@ -4295,16 +4295,16 @@ COMMENT ON TABLE "public"."tenant" IS '租户表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."threshold_setting";
 CREATE TABLE "public"."threshold_setting" (
-                                              "id" int8 NOT NULL,
-                                              "indicator_id" int8,
-                                              "indicator_type" int4,
-                                              "operator" varchar(255) COLLATE "pg_catalog"."default",
-                                              "operate_values" jsonb,
-                                              "create_time" timestamp(6),
-                                              "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                              "update_time" timestamp(6),
-                                              "deleted" int4,
-                                              "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
+  "id" int8 NOT NULL,
+  "indicator_id" int8,
+  "indicator_type" int4,
+  "operator" varchar(255) COLLATE "pg_catalog"."default",
+  "operate_values" jsonb,
+  "create_time" timestamp(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamp(6),
+  "deleted" int4,
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."threshold_setting"."id" IS '主键id';
@@ -4323,25 +4323,25 @@ COMMENT ON TABLE "public"."threshold_setting" IS '指标阈值设置表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."time_limit";
 CREATE TABLE "public"."time_limit" (
-                                       "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                       "name" varchar COLLATE "pg_catalog"."default",
-                                       "description" text COLLATE "pg_catalog"."default",
-                                       "grade" char(1) COLLATE "pg_catalog"."default",
-                                       "start_time" timestamptz(6),
-                                       "end_time" timestamptz(6),
-                                       "creator" varchar COLLATE "pg_catalog"."default",
-                                       "updater" varchar COLLATE "pg_catalog"."default",
-                                       "state" varchar COLLATE "pg_catalog"."default",
-                                       "version" int4 NOT NULL,
-                                       "delete" bool,
-                                       "create_time" timestamptz(6),
-                                       "update_time" timestamptz(6),
-                                       "tenantid" varchar COLLATE "pg_catalog"."default",
-                                       "publisher" varchar COLLATE "pg_catalog"."default",
-                                       "approveid" varchar COLLATE "pg_catalog"."default",
-                                       "mark" varchar COLLATE "pg_catalog"."default",
-                                       "time_type" varchar COLLATE "pg_catalog"."default",
-                                       "time_range" int4
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar COLLATE "pg_catalog"."default",
+  "description" text COLLATE "pg_catalog"."default",
+  "grade" char(1) COLLATE "pg_catalog"."default",
+  "start_time" timestamptz(6),
+  "end_time" timestamptz(6),
+  "creator" varchar COLLATE "pg_catalog"."default",
+  "updater" varchar COLLATE "pg_catalog"."default",
+  "state" varchar COLLATE "pg_catalog"."default",
+  "version" int4 NOT NULL,
+  "delete" bool,
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6),
+  "tenantid" varchar COLLATE "pg_catalog"."default",
+  "publisher" varchar COLLATE "pg_catalog"."default",
+  "approveid" varchar COLLATE "pg_catalog"."default",
+  "mark" varchar COLLATE "pg_catalog"."default",
+  "time_type" varchar COLLATE "pg_catalog"."default",
+  "time_range" int4
 )
 ;
 COMMENT ON COLUMN "public"."time_limit"."id" IS '主键id';
@@ -4370,23 +4370,23 @@ COMMENT ON TABLE "public"."time_limit" IS '时间限定表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."time_limit_ind";
 CREATE TABLE "public"."time_limit_ind" (
-                                           "id" int8 NOT NULL,
-                                           "name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                           "mark" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                           "description" varchar(255) COLLATE "pg_catalog"."default",
-                                           "start_time" date,
-                                           "end_time" date,
-                                           "deleted" int2 NOT NULL DEFAULT 1,
-                                           "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                           "create_time" timestamptz(6) NOT NULL,
-                                           "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                           "update_time" timestamptz(6),
-                                           "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                           "time_type" varchar(32) COLLATE "pg_catalog"."default",
-                                           "time_range" varchar(32) COLLATE "pg_catalog"."default",
-                                           "create_name" varchar(255) COLLATE "pg_catalog"."default",
-                                           "update_name" varchar(255) COLLATE "pg_catalog"."default",
-                                           "to_now" bool DEFAULT false
+  "id" int8 NOT NULL,
+  "name" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "mark" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "description" varchar(255) COLLATE "pg_catalog"."default",
+  "start_time" date,
+  "end_time" date,
+  "deleted" int2 NOT NULL DEFAULT 1,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "create_time" timestamptz(6) NOT NULL,
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamptz(6),
+  "tenant_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "time_type" varchar(32) COLLATE "pg_catalog"."default",
+  "time_range" varchar(32) COLLATE "pg_catalog"."default",
+  "create_name" varchar(255) COLLATE "pg_catalog"."default",
+  "update_name" varchar(255) COLLATE "pg_catalog"."default",
+  "to_now" bool DEFAULT false
 )
 ;
 COMMENT ON COLUMN "public"."time_limit_ind"."id" IS '主键id';
@@ -4412,16 +4412,16 @@ COMMENT ON COLUMN "public"."time_limit_ind"."to_now" IS '至今';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."time_limit_ind_log";
 CREATE TABLE "public"."time_limit_ind_log" (
-                                               "id" int8 NOT NULL,
-                                               "log_id" int8 NOT NULL,
-                                               "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
-                                               "change" varchar(2000) COLLATE "pg_catalog"."default" NOT NULL,
-                                               "log_time" timestamptz(6) NOT NULL,
-                                               "create_time" timestamptz(6),
-                                               "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                               "update_time" timestamptz(6),
-                                               "deleted" int2 DEFAULT 1,
-                                               "log_name" varchar(255) COLLATE "pg_catalog"."default"
+  "id" int8 NOT NULL,
+  "log_id" int8 NOT NULL,
+  "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
+  "change" varchar(2000) COLLATE "pg_catalog"."default" NOT NULL,
+  "log_time" timestamptz(6) NOT NULL,
+  "create_time" timestamptz(6),
+  "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
+  "update_time" timestamptz(6),
+  "deleted" int2 DEFAULT 1,
+  "log_name" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."time_limit_ind_log"."id" IS '主键id';
@@ -4441,8 +4441,8 @@ COMMENT ON TABLE "public"."time_limit_ind_log" IS '时间限定日志表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."user2apistar";
 CREATE TABLE "public"."user2apistar" (
-                                         "apiguid" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                         "userid" varchar COLLATE "pg_catalog"."default" NOT NULL
+  "apiguid" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "userid" varchar COLLATE "pg_catalog"."default" NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."user2apistar"."apiguid" IS 'api主键';
@@ -4454,16 +4454,16 @@ COMMENT ON TABLE "public"."user2apistar" IS '用户api关系表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."user_group";
 CREATE TABLE "public"."user_group" (
-                                       "id" varchar(255) COLLATE "pg_catalog"."default",
-                                       "tenant" varchar(255) COLLATE "pg_catalog"."default",
-                                       "name" varchar(64) COLLATE "pg_catalog"."default",
-                                       "creator" varchar(40) COLLATE "pg_catalog"."default",
-                                       "description" varchar(256) COLLATE "pg_catalog"."default",
-                                       "createtime" timestamptz(6),
-                                       "updatetime" timestamptz(6),
-                                       "valid" bool,
-                                       "authorize_user" varchar(255) COLLATE "pg_catalog"."default",
-                                       "authorize_time" timestamptz(6)
+  "id" varchar(255) COLLATE "pg_catalog"."default",
+  "tenant" varchar(255) COLLATE "pg_catalog"."default",
+  "name" varchar(64) COLLATE "pg_catalog"."default",
+  "creator" varchar(40) COLLATE "pg_catalog"."default",
+  "description" varchar(256) COLLATE "pg_catalog"."default",
+  "createtime" timestamptz(6),
+  "updatetime" timestamptz(6),
+  "valid" bool,
+  "authorize_user" varchar(255) COLLATE "pg_catalog"."default",
+  "authorize_time" timestamptz(6)
 )
 ;
 COMMENT ON COLUMN "public"."user_group"."id" IS '主键';
@@ -4483,8 +4483,8 @@ COMMENT ON TABLE "public"."user_group" IS '用户组';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."user_group_relation";
 CREATE TABLE "public"."user_group_relation" (
-                                                "group_id" varchar(40) COLLATE "pg_catalog"."default",
-                                                "user_id" varchar(40) COLLATE "pg_catalog"."default"
+  "group_id" varchar(40) COLLATE "pg_catalog"."default",
+  "user_id" varchar(40) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."user_group_relation"."group_id" IS '用户组id';
@@ -4496,11 +4496,11 @@ COMMENT ON TABLE "public"."user_group_relation" IS '用户和用户组关联表'
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."user_permission";
 CREATE TABLE "public"."user_permission" (
-                                            "user_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
-                                            "username" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                            "account" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
-                                            "permissions" bool NOT NULL DEFAULT false,
-                                            "create_time" timestamp(6) NOT NULL
+  "user_id" varchar(50) COLLATE "pg_catalog"."default" NOT NULL,
+  "username" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "account" varchar(64) COLLATE "pg_catalog"."default" NOT NULL,
+  "permissions" bool NOT NULL DEFAULT false,
+  "create_time" timestamp(6) NOT NULL
 )
 ;
 COMMENT ON COLUMN "public"."user_permission"."user_id" IS '用户id';
@@ -4515,13 +4515,13 @@ COMMENT ON TABLE "public"."user_permission" IS '用户权限表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."users";
 CREATE TABLE "public"."users" (
-                                  "userid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
-                                  "username" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                  "account" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                  "roleid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
-                                  "create_time" timestamptz(6),
-                                  "update_time" timestamptz(6),
-                                  "valid" bool
+  "userid" varchar(255) COLLATE "pg_catalog"."default" NOT NULL DEFAULT NULL::character varying,
+  "username" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "account" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "roleid" varchar(255) COLLATE "pg_catalog"."default" DEFAULT NULL::character varying,
+  "create_time" timestamptz(6),
+  "update_time" timestamptz(6),
+  "valid" bool
 )
 ;
 COMMENT ON COLUMN "public"."users"."userid" IS '用户id';
@@ -4538,17 +4538,17 @@ COMMENT ON TABLE "public"."users" IS '用户表';
 -- ----------------------------
 DROP TABLE IF EXISTS "public"."warning_group";
 CREATE TABLE "public"."warning_group" (
-                                          "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
-                                          "name" varchar COLLATE "pg_catalog"."default",
-                                          "type" int4,
-                                          "contacts" varchar COLLATE "pg_catalog"."default",
-                                          "category_id" varchar COLLATE "pg_catalog"."default",
-                                          "description" varchar COLLATE "pg_catalog"."default",
-                                          "create_time" timestamptz(0),
-                                          "update_time" timestamptz(0),
-                                          "creator" varchar COLLATE "pg_catalog"."default",
-                                          "delete" bool,
-                                          "tenantid" varchar(36) COLLATE "pg_catalog"."default"
+  "id" varchar COLLATE "pg_catalog"."default" NOT NULL,
+  "name" varchar COLLATE "pg_catalog"."default",
+  "type" int4,
+  "contacts" varchar COLLATE "pg_catalog"."default",
+  "category_id" varchar COLLATE "pg_catalog"."default",
+  "description" varchar COLLATE "pg_catalog"."default",
+  "create_time" timestamptz(0),
+  "update_time" timestamptz(0),
+  "creator" varchar COLLATE "pg_catalog"."default",
+  "delete" bool,
+  "tenantid" varchar(36) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."warning_group"."id" IS '主键';
@@ -4569,14 +4569,14 @@ COMMENT ON TABLE "public"."warning_group" IS '告警组';
 -- ----------------------------
 DROP VIEW IF EXISTS "public"."test_tenant_group_user_relation";
 CREATE VIEW "public"."test_tenant_group_user_relation" AS  SELECT tenant.id AS tenant_id,
-                                                                  tenant.name AS tenant_name,
-                                                                  user_group.id AS user_group_id,
-                                                                  user_group.name AS user_group_name,
-                                                                  users.userid AS user_id,
-                                                                  users.username AS user_name,
-                                                                  users.account AS user_account
-                                                           FROM (((tenant
-                                                               JOIN user_group ON ((((user_group.tenant)::text = (tenant.id)::text) AND (user_group.valid = true))))
+    tenant.name AS tenant_name,
+    user_group.id AS user_group_id,
+    user_group.name AS user_group_name,
+    users.userid AS user_id,
+    users.username AS user_name,
+    users.account AS user_account
+   FROM (((tenant
+     JOIN user_group ON ((((user_group.tenant)::text = (tenant.id)::text) AND (user_group.valid = true))))
      JOIN user_group_relation ON (((user_group_relation.group_id)::text = (user_group.id)::text)))
      JOIN users ON ((((users.userid)::text = (user_group_relation.user_id)::text) AND (users.valid = true))));
 
@@ -4585,31 +4585,31 @@ CREATE VIEW "public"."test_tenant_group_user_relation" AS  SELECT tenant.id AS t
 -- ----------------------------
 DROP VIEW IF EXISTS "public"."technical_indicator";
 CREATE VIEW "public"."technical_indicator" AS  SELECT b.id AS business_indicator_id,
-                                                      a.id AS technical_indicator_id,
-                                                      a.atom_indicator_name AS technical_indicator_name,
-                                                      a.atom_indicator_code AS technical_indicator_code,
-                                                      1 AS type
-                                               FROM (business_indicators b
-                                                        JOIN atom_indicator_version a ON ((a.id = b.technical_indicator)))
-                                               WHERE ((a.release_status = 1) AND (a.deleted = 1) AND (b.deleted = 1))
-                                               UNION
-                                               SELECT b.id AS business_indicator_id,
-                                                      d.id AS technical_indicator_id,
-                                                      d.derive_indicator_name AS technical_indicator_name,
-                                                      d.derive_indicator_code AS technical_indicator_code,
-                                                      2 AS type
-                                               FROM (business_indicators b
-                                                        JOIN derive_indicator_version d ON ((d.id = b.technical_indicator)))
-                                               WHERE ((d.release_status = 1) AND (d.deleted = 1) AND (b.deleted = 1))
-                                               UNION
-                                               SELECT b.id AS business_indicator_id,
-                                                      c.id AS technical_indicator_id,
-                                                      c.composite_indicator_name AS technical_indicator_name,
-                                                      c.composite_indicator_code AS technical_indicator_code,
-                                                      3 AS type
-                                               FROM (business_indicators b
-                                                        JOIN composite_indicator_version c ON ((c.id = b.technical_indicator)))
-                                               WHERE ((c.release_status = 1) AND (c.deleted = 1) AND (b.deleted = 1));
+    a.id AS technical_indicator_id,
+    a.atom_indicator_name AS technical_indicator_name,
+    a.atom_indicator_code AS technical_indicator_code,
+    1 AS type
+   FROM (business_indicators b
+     JOIN atom_indicator_version a ON ((a.id = b.technical_indicator)))
+  WHERE ((a.release_status = 1) AND (a.deleted = 1) AND (b.deleted = 1))
+UNION
+ SELECT b.id AS business_indicator_id,
+    d.id AS technical_indicator_id,
+    d.derive_indicator_name AS technical_indicator_name,
+    d.derive_indicator_code AS technical_indicator_code,
+    2 AS type
+   FROM (business_indicators b
+     JOIN derive_indicator_version d ON ((d.id = b.technical_indicator)))
+  WHERE ((d.release_status = 1) AND (d.deleted = 1) AND (b.deleted = 1))
+UNION
+ SELECT b.id AS business_indicator_id,
+    c.id AS technical_indicator_id,
+    c.composite_indicator_name AS technical_indicator_name,
+    c.composite_indicator_code AS technical_indicator_code,
+    3 AS type
+   FROM (business_indicators b
+     JOIN composite_indicator_version c ON ((c.id = b.technical_indicator)))
+  WHERE ((c.release_status = 1) AND (c.deleted = 1) AND (b.deleted = 1));
 
 -- ----------------------------
 -- Alter sequences owned by
