@@ -5,6 +5,7 @@ import io.zeta.metaspace.model.metadata.SimpleTaskNode;
 import io.zeta.metaspace.model.metadata.TableInfoVo;
 import io.zeta.metaspace.model.metadata.TableLineageInfo;
 import io.zeta.metaspace.model.po.tableinfo.TableSourceDataBasePO;
+import io.zeta.metaspace.web.model.CommonConstant;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections.CollectionUtils;
@@ -44,8 +45,9 @@ public class MetaDateRelationalDateService {
 
     /**
      * 任务调度映射元数据信息（获取对应的guid）
+     *
      * @param simpleTaskNodes 任务调度节点
-     * @param basePOS 元数据信息
+     * @param basePOS         元数据信息
      */
     public static void updateExistTableGuid(List<SimpleTaskNode> simpleTaskNodes, List<TableSourceDataBasePO> basePOS) {
         if (CollectionUtils.isNotEmpty(simpleTaskNodes)) {
@@ -80,17 +82,19 @@ public class MetaDateRelationalDateService {
      * @param lineageEntities        对应表节点集合（sql与描述也封装为一个节点）
      * @param inputTableInfoVosCache 获取上级表inputTable集合（用于判定唯一guid）
      * @param taskNodeCache          记录遍历过的节点缓存（用于判定是否存在死循环）
+     * @param map                    记录遍历的节点层级数
      */
     public static void upTaskNode(List<SimpleTaskNode> simpleTaskNodes, List<TableInfoVo> tableInfoVo, int depth, Set<LineageTrace> lineageTraceSet,
-                                  List<TableLineageInfo.LineageEntity> lineageEntities, List<TableInfoVo> inputTableInfoVosCache, List<SimpleTaskNode> taskNodeCache) {
+                                  List<TableLineageInfo.LineageEntity> lineageEntities, List<TableInfoVo> inputTableInfoVosCache,
+                                  List<SimpleTaskNode> taskNodeCache, Map<String, Integer> map) {
         if (depth < 1) {
             return;
         }
         List<TableInfoVo> outputTableInfoVos = new ArrayList<>();
 
         for (TableInfoVo infoVo : tableInfoVo) {
-            // 一个节点对应一个详细描述
-            String descGuid = UUID.randomUUID().toString();
+            // 遍历上级描述节点区别与下级（下级总的放在对应实体类中）
+            List<String> descGuids = new ArrayList<>();
             List<SimpleTaskNode> taskNodes = simpleTaskNodes.stream().filter(r -> {
                 TableInfoVo outputTable = r.getOutputTable();
                 if (outputTable != null && outputTable.getHost().equals(infoVo.getHost()) && outputTable.getPort().equals(infoVo.getPort())
@@ -102,6 +106,8 @@ public class MetaDateRelationalDateService {
                 LineageTrace inLineageTrace = new LineageTrace();
                 LineageTrace outLineageTrace = new LineageTrace();
                 String tableGuid = UUID.randomUUID().toString();
+                // 一个节点对应一个详细描述
+                String descGuid;
 
                 // 判断是否出现死循环血缘
                 judgeInfiniteLoop(taskNodeCache, r);
@@ -130,7 +136,10 @@ public class MetaDateRelationalDateService {
                         }
                         inputTableInfoVosCache.add(r.getInputTable());
                     }
-
+                    // 判断描述节点存在相同的值指向输出节点
+                    descGuid = judgeDesc(r, descGuids, lineageEntities);
+                    // 记录遍历节点层级
+                    judgeLayers(r, map, CommonConstant.INPUT_DIRECTION);
                     if (!judgeAlike(taskNodeCache, r)) {
                         // 添加缓存
                         taskNodeCache.add(r);
@@ -156,7 +165,7 @@ public class MetaDateRelationalDateService {
         if (CollectionUtils.isNotEmpty(outputTableInfoVos)) {
             outputTableInfoVos = outputTableInfoVos.stream().filter(MetaDataService.distinctByKey(TableInfoVo::getGuid)).collect(Collectors.toList());
         }
-        upTaskNode(simpleTaskNodes, outputTableInfoVos, --depth, lineageTraceSet, lineageEntities, inputTableInfoVosCache, taskNodeCache);
+        upTaskNode(simpleTaskNodes, outputTableInfoVos, --depth, lineageTraceSet, lineageEntities, inputTableInfoVosCache, taskNodeCache, map);
     }
 
 
@@ -172,7 +181,8 @@ public class MetaDateRelationalDateService {
      * @param taskNodeCache           记录遍历过的节点缓存（用于判定是否存在死循环）
      */
     public static void downTaskNode(List<SimpleTaskNode> simpleTaskNodes, List<TableInfoVo> tableInfoVo, int depth, Set<LineageTrace> lineageTraceSet,
-                                    List<TableLineageInfo.LineageEntity> lineageEntities, List<TableInfoVo> outputTableInfoVosCache, List<SimpleTaskNode> taskNodeCache) {
+                                    List<TableLineageInfo.LineageEntity> lineageEntities, List<TableInfoVo> outputTableInfoVosCache, List<SimpleTaskNode> taskNodeCache,
+                                    Map<String, Integer> map) {
         if (depth < 1) {
             return;
         }
@@ -207,22 +217,24 @@ public class MetaDateRelationalDateService {
                         }).collect(Collectors.toList());
                         if (CollectionUtils.isNotEmpty(outputCache)) {
                             r.getOutputTable().setGuid(outputCache.get(0).getGuid());
-                            descGuid = outputCache.get(0).getDescGuid();
+                            // 判断描述节点存在相同的值指向输出节点
+                            descGuid = judgeDesc(r, outputCache.get(0).getDownDescGuids(), lineageEntities);
                         } else {
-                            r.getOutputTable().setDescGuid(descGuid);
+                            r.getOutputTable().getDownDescGuids().add(descGuid);
                             if (StringUtils.isEmpty(r.getOutputTable().getGuid())) {
                                 r.getOutputTable().setGuid(tableGuid);
                             }
                             outputTableInfoVosCache.add(r.getOutputTable());
                         }
                     } else {
-                        r.getOutputTable().setDescGuid(descGuid);
+                        r.getOutputTable().getDownDescGuids().add(descGuid);
                         if (StringUtils.isEmpty(r.getOutputTable().getGuid())) {
                             r.getOutputTable().setGuid(tableGuid);
                         }
                         outputTableInfoVosCache.add(r.getOutputTable());
                     }
-
+                    // 记录遍历节点层级
+                    judgeLayers(r, map, CommonConstant.OUTPUT_DIRECTION);
                     if (!judgeAlike(taskNodeCache, r)) {
                         // 添加缓存
                         taskNodeCache.add(r);
@@ -248,7 +260,7 @@ public class MetaDateRelationalDateService {
         if (CollectionUtils.isNotEmpty(inputTableInfoVos)) {
             inputTableInfoVos = inputTableInfoVos.stream().filter(MetaDataService.distinctByKey(TableInfoVo::getGuid)).collect(Collectors.toList());
         }
-        downTaskNode(simpleTaskNodes, inputTableInfoVos, --depth, lineageTraceSet, lineageEntities, outputTableInfoVosCache, taskNodeCache);
+        downTaskNode(simpleTaskNodes, inputTableInfoVos, --depth, lineageTraceSet, lineageEntities, outputTableInfoVosCache, taskNodeCache, map);
     }
 
     /**
@@ -383,4 +395,191 @@ public class MetaDateRelationalDateService {
         }
         return false;
     }
+
+    /**
+     * 判断描述
+     * 指向同一个节点的描述是否相同
+     * 相同者合并，负责新加一个描述节点
+     *
+     * @param node            当前节点
+     * @param descGuids       指向的当前节点
+     * @param lineageEntities 已遍历的所有节点
+     * @return 返回对应的描述节点guid
+     */
+    public static String judgeDesc(SimpleTaskNode node, List<String> descGuids, List<TableLineageInfo.LineageEntity> lineageEntities) {
+        String descGuid = UUID.randomUUID().toString();
+        String desc;
+        if (!StringUtils.isEmpty(node.getSql())) {
+            desc = node.getSql();
+        } else if (StringUtils.isEmpty(node.getSql()) && !StringUtils.isEmpty(node.getDesc())) {
+            desc = node.getDesc();
+        } else {
+            desc = "";
+        }
+        List<String> descGuidList = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(descGuids)) {
+            for (String guid : descGuids) {
+                List<String> collect = lineageEntities.stream().filter(r -> guid.equals(r.getGuid()) && desc.equals(r.getTableName()))
+                        .map(TableLineageInfo.LineageEntity::getGuid).collect(Collectors.toList());
+                descGuidList.addAll(collect);
+            }
+        }
+        if (CollectionUtils.isNotEmpty(descGuidList)) {
+            descGuid = descGuidList.get(0);
+        } else {
+            descGuids.add(descGuid);
+        }
+        return descGuid;
+    }
+
+    /**
+     * 判断并遍历添加层级
+     *
+     * @param s         当前任务调度节点
+     * @param map       map对应的key为guid与value
+     * @param direction 遍历的方向
+     */
+    public static void judgeLayers(SimpleTaskNode s, Map<String, Integer> map, String direction) {
+        // 向上判断
+        if (CommonConstant.INPUT_DIRECTION.equals(direction)) {
+            // 如果输出表已存在
+            Integer out = map.get(s.getOutputTable().getGuid());
+            int sum = out + 1;
+            if (!map.containsKey(s.getInputTable().getGuid())) {
+                map.put(s.getInputTable().getGuid(), sum);
+            } else {
+                Integer in = map.get(s.getInputTable().getGuid());
+                if (sum > in) {
+                    map.put(s.getInputTable().getGuid(), sum);
+                }
+            }
+        }
+        // 向下判断
+        if (CommonConstant.OUTPUT_DIRECTION.equals(direction)) {
+            // 如果输入表已存在
+            Integer in = map.get(s.getInputTable().getGuid());
+            int sum = in + 1;
+            if (map.containsKey(s.getOutputTable().getGuid())) {
+                Integer out = map.get(s.getOutputTable().getGuid());
+                if (sum > out) {
+                    map.put(s.getOutputTable().getGuid(), sum);
+                }
+            } else {
+                map.put(s.getOutputTable().getGuid(), ++in);
+            }
+        }
+    }
+
+    /**
+     * 删除多余层级
+     *
+     * @param tableLineageInfo 所有遍历过的（关联会超过指定层级）
+     * @param map              map对应的key为guid与value
+     * @param tableInfo        开始节点
+     * @param direction        遍历的层级
+     */
+    public static void removeExtraLayers(TableLineageInfo tableLineageInfo, Map<String, Integer> map, TableInfoVo tableInfo, String direction) {
+        Iterator it = map.entrySet().iterator();
+        List<String> beginList = new ArrayList<>();
+        while (it.hasNext()) {
+            Map.Entry entry = (Map.Entry) it.next();
+            String key = (String) entry.getKey();
+            Object value = entry.getValue();
+            if (value.equals(tableInfo.getDepth())) {
+                beginList.add(key);
+            }
+        }
+        Set<LineageTrace> relations = tableLineageInfo.getRelations();
+        // 获取超过当前层级的guid
+        if (CollectionUtils.isNotEmpty(beginList)) {
+            while (CollectionUtils.isNotEmpty(beginList)) {
+                // 遍历删除描述前部分
+                beginList = fristExtraLayer(beginList, relations, direction);
+                if (CollectionUtils.isEmpty(beginList)) {
+                    break;
+                }
+                // 遍历删除描述后部分
+                List<LineageTrace> all = lineageTraceList(beginList, relations, direction);
+                if (CollectionUtils.isEmpty(all)) {
+                    break;
+                }
+                List<String> entity = null;
+                if (CommonConstant.INPUT_DIRECTION.equals(direction)) {
+                    entity = all.stream().map(LineageTrace::getFromEntityId).collect(Collectors.toList());
+                    tableLineageInfo.getRelations().removeAll(all);
+                }
+                if (CommonConstant.OUTPUT_DIRECTION.equals(direction)) {
+                    entity = all.stream().map(LineageTrace::getToEntityId).collect(Collectors.toList());
+                    tableLineageInfo.getRelations().removeAll(all);
+                }
+                beginList = entity;
+            }
+        }
+    }
+
+    /**
+     * 获取描述节点前要删除的关系
+     *
+     * @param beginList 开始
+     * @param relations 对应关联数组
+     * @param direction 对应的遍历方向
+     * @return 描述节点集合
+     */
+    public static List<String> fristExtraLayer(List<String> beginList, Set<LineageTrace> relations, String direction) {
+        List<LineageTrace> fristAll = lineageTraceList(beginList, relations, direction);
+        List<LineageTrace> oneAll = new ArrayList<>();
+        List<String> oneList = null;
+        if (CommonConstant.INPUT_DIRECTION.equals(direction)) {
+            if (CollectionUtils.isNotEmpty(fristAll)) {
+                oneList = fristAll.stream().map(LineageTrace::getFromEntityId)
+                        .filter(MetaDataService.distinctByKey(String::toString)).collect(Collectors.toList());
+                for (String guid : oneList) {
+                    List<LineageTrace> collect = relations.stream().filter(r -> r.getFromEntityId().equals(guid)).collect(Collectors.toList());
+                    oneAll.addAll(collect);
+                }
+                relations.removeAll(oneAll);
+            }
+
+        }
+        if (CommonConstant.OUTPUT_DIRECTION.equals(direction)) {
+            if (CollectionUtils.isNotEmpty(fristAll)) {
+                oneList = fristAll.stream().map(LineageTrace::getToEntityId)
+                        .filter(MetaDataService.distinctByKey(String::toString)).collect(Collectors.toList());
+                for (String guid : oneList) {
+                    List<LineageTrace> collect = relations.stream().filter(r -> r.getToEntityId().equals(guid)).collect(Collectors.toList());
+                    if (CollectionUtils.isNotEmpty(collect)) {
+                        oneAll.addAll(collect);
+                    }
+                }
+                relations.removeAll(oneAll);
+            }
+        }
+        return oneList;
+    }
+
+    /**
+     * 遍历关联数组
+     *
+     * @param beginList 包含的guid数组
+     * @param relations 总的关联数组
+     * @param direction 对应的遍历方向
+     * @return 对应遍历方向的下一层所有节点段
+     */
+    public static List<LineageTrace> lineageTraceList(List<String> beginList, Set<LineageTrace> relations, String direction) {
+        List<LineageTrace> all = new ArrayList<>();
+        if (CommonConstant.INPUT_DIRECTION.equals(direction)) {
+            for (String guid : beginList) {
+                List<LineageTrace> collect = relations.stream().filter(r -> r.getToEntityId().equals(guid)).collect(Collectors.toList());
+                all.addAll(collect);
+            }
+        }
+        if (CommonConstant.OUTPUT_DIRECTION.equals(direction)) {
+            for (String guid : beginList) {
+                List<LineageTrace> collect = relations.stream().filter(r -> r.getFromEntityId().equals(guid)).collect(Collectors.toList());
+                all.addAll(collect);
+            }
+        }
+        return all;
+    }
+
 }
