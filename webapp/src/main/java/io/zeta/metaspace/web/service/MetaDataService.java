@@ -1671,6 +1671,10 @@ public class MetaDataService {
             List<TableLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
             List<TableInfoVo> tableInfoVosCache = new ArrayList<>();
             List<SimpleTaskNode> taskNodeCache = new ArrayList<>();
+            HashMap<String, Integer> upDescMap = new HashMap<>();
+            HashMap<String, Integer> downDescMap = new HashMap<>();
+            upDescMap.put(tableInfoVo.getGuid(), 0);
+            downDescMap.put(tableInfoVo.getGuid(), 0);
             if (!org.springframework.util.StringUtils.isEmpty(tableInfoVo.getDirection())) {
                 // 将任务调度获取的数据库名数据处理为元数据采集的数据库名
                 MetaDateRelationalDateService.unifyDataBase(simpleTaskNodes);
@@ -1683,15 +1687,15 @@ public class MetaDataService {
                 // 选择遍历方式
                 if (CommonConstant.INPUT_DIRECTION.equals(tableInfoVo.getDirection())) {
                     MetaDateRelationalDateService.upTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
-                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
+                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache, upDescMap);
                 } else if (CommonConstant.OUTPUT_DIRECTION.equals(tableInfoVo.getDirection())) {
                     MetaDateRelationalDateService.downTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
-                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
+                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache, downDescMap);
                 } else if (CommonConstant.BOTH_DIRECTION.equals(tableInfoVo.getDirection())) {
                     MetaDateRelationalDateService.upTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
-                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
+                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache, upDescMap);
                     MetaDateRelationalDateService.downTaskNode(simpleTaskNodes, tableInfoVos, tableInfoVo.getDepth(),
-                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
+                            lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache, downDescMap);
                 } else {
                     throw new AtlasBaseException(AtlasErrorCode.INSTANCE_LINEAGE_INVALID_PARAMS, "direction", tableInfoVo.getDirection());
                 }
@@ -1705,6 +1709,8 @@ public class MetaDataService {
                 tableLineageInfo.setRelations(lineageTraceSet.stream().collect(Collectors.collectingAndThen(Collectors.toCollection(() ->
                         new TreeSet<>(Comparator.comparing(o -> o.getFromEntityId() + ";" + o.getToEntityId()))), HashSet::new)));
             }
+            MetaDateRelationalDateService.removeExtraLayers(tableLineageInfo, upDescMap, tableInfoVo, CommonConstant.INPUT_DIRECTION);
+            MetaDateRelationalDateService.removeExtraLayers(tableLineageInfo, downDescMap, tableInfoVo, CommonConstant.OUTPUT_DIRECTION);
             return tableLineageInfo;
         } catch (AtlasBaseException | AtlasException e) {
             log.error("获取关系表血缘失败: " + e.getMessage());

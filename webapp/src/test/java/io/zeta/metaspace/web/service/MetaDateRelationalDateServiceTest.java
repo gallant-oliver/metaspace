@@ -13,10 +13,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.testng.Assert.*;
 
@@ -149,7 +146,9 @@ public class MetaDateRelationalDateServiceTest {
             List<TableLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
             List<TableInfoVo> tableInfoVosCache = new ArrayList<>();
             List<SimpleTaskNode> taskNodeCache = new ArrayList<>();
-            MetaDateRelationalDateService.upTaskNode(simpleTaskNodes, tableInfoVos, 3, lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
+            HashMap<String, Integer> upDescMap = new HashMap<>();
+            upDescMap.put(ta.getGuid(), 0);
+            MetaDateRelationalDateService.upTaskNode(simpleTaskNodes, tableInfoVos, 3, lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache, upDescMap);
         } catch (Exception e) {
             fail();
         }
@@ -170,7 +169,9 @@ public class MetaDateRelationalDateServiceTest {
             List<TableLineageInfo.LineageEntity> lineageEntities = new ArrayList<>();
             List<TableInfoVo> tableInfoVosCache = new ArrayList<>();
             List<SimpleTaskNode> taskNodeCache = new ArrayList<>();
-            MetaDateRelationalDateService.downTaskNode(simpleTaskNodes, tableInfoVos, 3, lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache);
+            HashMap<String, Integer> downDescMap = new HashMap<>();
+            downDescMap.put(ta.getGuid(), 0);
+            MetaDateRelationalDateService.downTaskNode(simpleTaskNodes, tableInfoVos, 3, lineageTraceSet, lineageEntities, tableInfoVosCache, taskNodeCache, downDescMap);
         } catch (Exception e) {
             fail();
         }
