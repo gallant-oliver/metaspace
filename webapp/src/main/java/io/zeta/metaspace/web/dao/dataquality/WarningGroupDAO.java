@@ -444,14 +444,10 @@ public interface WarningGroupDAO {
                                  @Param("keyword") String keyword, @Param("offset") Integer offset, @Param("limit") Integer limit);
 
     @Select({"<script>" +
-                    "    select t7.name" +
-                    "    from data_quality_task t1" +
-                    "    join data_quality_task_execute t2 on t1.id = t2.task_id" +
-                    "    join data_quality_task_rule_execute t3 on t2.id = t3.task_execute_id join data_quality_sub_task t4 on (t3.subtask_id = t4.id and t4.delete = false)" +
-                    "    join data_quality_sub_task_rule t5 on (t3.subtask_rule_id = t5.id and t5.delete = false)" +
-                    "    join data_quality_rule_template t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid and t6.delete = false)" +
-                    "    join tenant t7 on t1.tenantid = t7.id " +
-                    "    where t1.delete=false" +
+                    "    select distinct t3.id, t7.name" +
+                    "    from data_quality_task_rule_execute t3 " +
+                    "    join (select * from data_quality_task where delete = false) t1 on t1.id = t3.task_id" +
+                    "    where 1=1 and " +
                     "        <if test='startTime != null'>" +
                     "            and t3.create_time &gt; #{startTime}" +
                     "        </if>" +
