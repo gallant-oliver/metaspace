@@ -488,7 +488,7 @@ public class WarningGroupService {
         sb.append("阈值为:").append((alert.getCheckType() == 0 ?
                 "固定值" + CheckExpressionEnum.getDescByCode(alert.getCheckExpressionType()) + alert.getMaxValue()
                 : "波动值" + alert.getMinValue() + "~" + alert.getMaxValue()));
-        sb.append("，实际为：" + alert.getResult() + sb.append(alert.getUnit()));
+        sb.append("，实际为：").append(alert.getResult()).append(alert.getUnit());
     }
 
     public PagedModel<AlertInfoDTO> getAlert(AlertRequest request){
