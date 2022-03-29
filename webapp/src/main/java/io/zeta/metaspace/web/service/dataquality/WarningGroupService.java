@@ -438,9 +438,9 @@ public class WarningGroupService {
                     offset, limit);
             alerts.forEach(alert -> {
                 if (StringUtils.isNotBlank(alert.getObjectId())) {
+                    StringBuilder sb = new StringBuilder();
                     if (alert.getScope() == 0 || alert.getScope() == 1) {
                         CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(alert.getObjectId(), CustomizeParam.class);
-                        StringBuilder sb = new StringBuilder();
                         sb.append("检测对象：");
                         if (StringUtils.isNotBlank(paramInfo.getDataSourceName())) {
                             sb.append(paramInfo.getDataSourceName()).append("-");
@@ -456,26 +456,24 @@ public class WarningGroupService {
                         }
                         sb = sb.deleteCharAt(sb.length() - 1).append("，");
                         appendValueDescribe(sb, alert);
-                        alert.setContent(sb.toString());
                     }
                     else if (alert.getScope() == 2 && alert.getType() == 31) {
                         List<ConsistencyParam> params = GsonUtils.getInstance().fromJson(alert.getObjectId(), new TypeToken<List<ConsistencyParam>>() {
                         }.getType());
                         ConsistencyParam standard = params.stream().filter(p -> p.isStandard()).collect(Collectors.toList()).get(0);
                         List<ConsistencyParam> compare = params.stream().filter(p -> !p.isStandard()).collect(Collectors.toList());
-                        StringBuilder sb = new StringBuilder();
                         sb.append("一致性校验中基准字段").append(standard.getSchema()).append("-").append(standard.getTable())
                                 .append(String.join("和", standard.getJoinFields()));
                         String compareContent = compare.stream().map(param -> {
                             return param.getSchema() + "-" + param.getTable() + "-" + String.join("和", param.getCompareFields());
                         }).collect(Collectors.joining("或"));
-                        alert.setContent(sb.toString() + "与对比字段" + compareContent + "结果不一");
+                        sb.append("与对比字段").append(compareContent).append("结果不一");
                     }
                     else {
-                        StringBuilder sb = new StringBuilder("自定义规则校验失败，");
+                        sb.append("自定义规则校验失败，");
                         appendValueDescribe(sb, alert);
-                        alert.setContent(sb.toString());
                     }
+                    alert.setContent(sb.toString());
 
                 }
             });
@@ -491,7 +489,6 @@ public class WarningGroupService {
                 "固定值" + CheckExpressionEnum.getDescByCode(alert.getCheckExpressionType()) + alert.getMaxValue()
                 : "波动值" + alert.getMinValue() + "~" + alert.getMaxValue()));
         sb.append("，实际为：" + alert.getResult() + sb.append(alert.getUnit()));
-        alert.setContent(sb.toString());
     }
 
     public PagedModel<AlertInfoDTO> getAlert(AlertRequest request){
