@@ -394,17 +394,17 @@ public interface WarningGroupDAO {
                     "            SELECT id, array_to_string(array_agg(username), ',') AS receivers" +
                     "            , 'EMAIL' AS alertType" +
                     "            FROM (" +
-                    "                    select t3.id, users.username" +
+                    "                    select distinct t3.id, users.username, t3.create_time" +
                     "                    from data_quality_task_rule_execute t3 " +
-                    "                    join data_quality_sub_task t4 on (t3.subtask_id = t4.id and t4.delete = false) " +
+                    "                    join (select * from data_quality_sub_task where delete = false) t4 on t3.subtask_id = t4.id " +
                     "                    join data_quality_task_execute t2 on t2.id = t3.task_execute_id " +
-                    "                    join data_quality_task t1 on t1.id = t2.task_id and t1.delete=false" +
-                    "                    join data_quality_sub_task_rule t5 on (t3.subtask_rule_id = t5.id and t5.delete = false)" +
-                    "                    join data_quality_rule_template t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid and t6.delete = false)" +
+                    "                    join (select * from data_quality_task where delete = false) t1 on t1.id = t2.task_id" +
+                    "                    join (select * from data_quality_sub_task_rule where delete = false) t5 on t3.subtask_rule_id = t5.id" +
+                    "                    join (select * from data_quality_rule_template where delete = false) t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid)" +
                     "                    left join data_quality_task2warning_group t7 on t1.id = t7.task_id" +
                     "                    left join warning_group wg on wg.id = t7.warning_group_id AND wg.delete = false" +
                     "                    left join users on users.userid = ANY(string_to_array(wg.contacts,','))" +
-                    "                    where (t3.red_warning_check_status = 1 or t3.orange_warning_check_status = 1 or t3.general_warning_check_status = 1)  " +
+                    "                    where (t3.red_warning_check_status = 1 or t3.orange_warning_check_status = 1)  " +
                     "        <if test='keyword != null and keyword != \"\"'>" +
                     "            and (t1.name like concat('%',#{keyword},'%') ESCAPE '/'" +
                     "                   or t6.name like concat('%',#{keyword},'%') ESCAPE '/')" +
@@ -427,17 +427,20 @@ public interface WarningGroupDAO {
                     "        )" +
                     "    select count(*)over() total, t3.id, t1.name as title," +
                     "    to_char(t3.create_time, 'yyyy-MM-dd HH:mm:SS') as create_time, au.receivers, t3.result, " +
-                    "    t5.check_threshold_max_value as maxValue, t5.check_threshold_min_value as minValue, t3.subtask_object_id as objectId, " +
-                    "    t5.check_expression_type as checkExpressionType, t5.check_type as checkType, t5.check_threshold_unit as unit, " +
-                    "    t6.scope, t6.type " +
+                    "    case when t3.red_warning_check_status = 1 then t5.red_threshold_max_value else t5.orange_threshold_max_value end as maxValue, " +
+                    "    case when t3.red_warning_check_status = 1 then t5.red_threshold_min_value else t5.orange_threshold_min_value end as minValue, " +
+                    "    case when t3.red_warning_check_status = 1 then t5.red_check_expression_type else t5.orange_check_expression_type end as checkExpressionType, " +
+                    "    case when t3.red_warning_check_status = 1 then t5.red_check_type else t5.orange_check_type end as checkType, t5.check_threshold_unit as unit, " +
+                    "    case when t3.red_warning_check_status = 1 then '1级' else '2级' end as alertLevel," +
+                    "    t3.subtask_object_id as objectId, t6.scope, t6.type" +
                     "    from data_quality_task_rule_execute t3 " +
-                    "    join data_quality_sub_task t4 on (t3.subtask_id = t4.id and t4.delete = false) " +
+                    "    join (select * from data_quality_sub_task where delete = false) t4 on t3.subtask_id = t4.id " +
                     "    join data_quality_task_execute t2 on t2.id = t3.task_execute_id " +
-                    "    join data_quality_task t1 on t1.id = t2.task_id and t1.delete=false" +
-                    "    join data_quality_sub_task_rule t5 on (t3.subtask_rule_id = t5.id and t5.delete = false)" +
-                    "    join data_quality_rule_template t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid and t6.delete = false)" +
+                    "    join (select * from data_quality_task where delete = false) t1 on t1.id = t2.task_id" +
+                    "    join (select * from data_quality_sub_task_rule where delete = false) t5 on t3.subtask_rule_id = t5.id" +
+                    "    join (select * from data_quality_rule_template where delete = false) t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid)" +
                     "    left join all_user au on au.id = t3.id" +
-                    "    where (t3.red_warning_check_status = 1 or t3.orange_warning_check_status = 1 or t3.general_warning_check_status = 1) " +
+                    "    where (t3.red_warning_check_status = 1 or t3.orange_warning_check_status = 1) " +
                     "        <if test='keyword != null and keyword != \"\"'>" +
                     "    and (t1.name like concat('%',#{keyword},'%') ESCAPE '/'" +
                     "              or t6.name like concat('%',#{keyword},'%') ESCAPE '/')" +
