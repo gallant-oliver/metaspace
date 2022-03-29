@@ -57,6 +57,7 @@ import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
@@ -575,9 +576,9 @@ public class DataShareREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Permission({ModuleEnum.TASKMANAGE})
-    public PageResult getSchemaList(@PathParam("sourceId") String sourceId, ColumnParameters parameters,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
+    public PageResult<Map<String, Object>> getSchemaList(@PathParam("sourceId") String sourceId, ColumnParameters parameters, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
-            return shareService.getTaskDataList(null, DataShareService.SEARCH_TYPE.SCHEMA, parameters,tenantId, sourceId);
+            return shareService.getDbDataList(parameters,tenantId, sourceId);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"获取数据源schema失败，请检查数据源配置或者确认查询schema存在");
         }
