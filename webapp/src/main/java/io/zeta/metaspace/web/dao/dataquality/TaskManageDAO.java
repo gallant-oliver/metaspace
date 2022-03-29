@@ -970,7 +970,7 @@ public interface TaskManageDAO {
             "FROM sync_task_definition d " +
             "join data_source db on db.source_id = d.data_source_id " +
             "WHERE d.tenant_id = #{tenantId} and d.data_source_id = #{sourceId} " +
-            "order by .did")
+            "order by d.id")
     List<SyncTaskDefinition> getTaskSchemas(@Param("tenantId") String tenantId, @Param("sourceId") String sourceId);
 
 
