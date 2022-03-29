@@ -953,9 +953,7 @@ public class MetaDataService {
         return table;
     }
 
-
-    @Cacheable(value = "RDBMSColumnCache", key = "#query.guid + #query.columnFilter.columnName + #query.columnFilter.type + #query.columnFilter.description", condition = "#refreshCache==false")
-    public RDBMSColumnAndIndexAndForeignKey getRDBMSColumnInfoById(ColumnQuery query, Boolean refreshCache) throws AtlasBaseException {
+    public RDBMSColumnAndIndexAndForeignKey getRDBMSColumnInfoById(ColumnQuery query) throws AtlasBaseException {
         if (DEBUG_ENABLED) {
             LOG.debug("==> MetaDataService.getRDBMSColumnInfoById({})", query);
         }
@@ -976,8 +974,8 @@ public class MetaDataService {
             columns = extractRDBMSColumnInfo(info, guid, relatedDB, relatedInstance);
             //filter
             columns = filterRDBMSColumn(query, columns);
-            foreignKeys = extractRDBMSForeignKeyInfo(info, guid, relatedDB, relatedInstance, columns, refreshCache);
-            indexes = extractRDBMSIndexInfo(info, guid, relatedDB, relatedInstance, columns, refreshCache);
+            foreignKeys = extractRDBMSForeignKeyInfo(info, guid, relatedDB, relatedInstance, columns);
+            indexes = extractRDBMSIndexInfo(info, guid, relatedDB, relatedInstance, columns);
             cik.setColumns(columns);
             cik.setForeignKeys(foreignKeys);
             cik.setIndexes(indexes);
@@ -1004,8 +1002,8 @@ public class MetaDataService {
             columns = extractRDBMSColumnInfo(info, guid, relatedDB, relatedInstance);
             //filter
             columns = filterRDBMSColumn(query, columns);
-            foreignKeys = extractRDBMSForeignKeyInfo(info, guid, relatedDB, relatedInstance, columns, refreshCache);
-            indexes = extractRDBMSIndexInfo(info, guid, relatedDB, relatedInstance, columns, refreshCache);
+            foreignKeys = extractRDBMSForeignKeyInfo(info, guid, relatedDB, relatedInstance, columns);
+            indexes = extractRDBMSIndexInfo(info, guid, relatedDB, relatedInstance, columns);
             cik.setColumns(columns);
             cik.setForeignKeys(foreignKeys);
             cik.setIndexes(indexes);
@@ -1055,7 +1053,7 @@ public class MetaDataService {
         return columns;
     }
 
-    public List<RDBMSIndex> extractRDBMSIndexInfo(AtlasEntity.AtlasEntityWithExtInfo info, String guid, AtlasRelatedObjectId relatedDB, AtlasRelatedObjectId relatedInstance, List<RDBMSColumn> columns, Boolean refreshCache) throws AtlasBaseException {
+    public List<RDBMSIndex> extractRDBMSIndexInfo(AtlasEntity.AtlasEntityWithExtInfo info, String guid, AtlasRelatedObjectId relatedDB, AtlasRelatedObjectId relatedInstance, List<RDBMSColumn> columns) throws AtlasBaseException {
         Map<String, AtlasEntity> referredEntities = info.getReferredEntities();
         AtlasEntity entity = info.getEntity();
         List<RDBMSIndex> indexes = new ArrayList<>();
@@ -1116,7 +1114,7 @@ public class MetaDataService {
         return indexes;
     }
 
-    public List<RDBMSForeignKey> extractRDBMSForeignKeyInfo(AtlasEntity.AtlasEntityWithExtInfo info, String guid, AtlasRelatedObjectId relatedDB, AtlasRelatedObjectId relatedInstance, List<RDBMSColumn> columns, Boolean refreshCache) throws AtlasBaseException {
+    public List<RDBMSForeignKey> extractRDBMSForeignKeyInfo(AtlasEntity.AtlasEntityWithExtInfo info, String guid, AtlasRelatedObjectId relatedDB, AtlasRelatedObjectId relatedInstance, List<RDBMSColumn> columns) throws AtlasBaseException {
         Map<String, AtlasEntity> referredEntities = info.getReferredEntities();
         AtlasEntity entity = info.getEntity();
         List<RDBMSForeignKey> foreignKeys = new ArrayList<>();
@@ -1399,15 +1397,7 @@ public class MetaDataService {
                     query.getColumnFilter().setDescription(description.replaceAll("%", "/%").replaceAll("_", "/_"));
                 }
             }
-            List<Column> columns = columnDAO.selectListByGuidOrLike(query.getGuid(), query.getColumnFilter().getColumnName(), query.getColumnFilter().getType(), query.getColumnFilter().getDescription());
-//          TODO: 2021/8/24 缺少分区查询功能
-
-//            AtlasEntity.AtlasEntityWithExtInfo info = getEntityInfoByGuid(guid, false);
-//            //columns
-//            columns = extractColumnInfo(info, guid);
-//            //filter
-//            columns = filterColumn(query, columns);
-            return columns;
+            return columnDAO.selectListByGuidOrLike(query.getGuid(), query.getColumnFilter().getColumnName(), query.getColumnFilter().getType(), query.getColumnFilter().getDescription());
         } catch (AtlasBaseException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询条件异常，未找到表字段信息");
         }

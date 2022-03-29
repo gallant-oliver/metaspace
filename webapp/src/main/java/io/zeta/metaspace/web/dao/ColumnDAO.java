@@ -173,7 +173,7 @@ public interface ColumnDAO {
             " <if test=\"description != null and description != '' \">" +
             "    AND co.description like concat('%',#{description},'%')" +
             " </if>" +
-            " ORDER BY columnName" +
+            " ORDER BY co.sort" +
             "</script>")
     List<Column> selectListByGuidOrLike(@Param("tableGuid") String tableGuid, @Param("columnName") String columnName, @Param("type") String type, @Param("description") String description);
 
