@@ -23,6 +23,7 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RuleParameters;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
+import io.zeta.metaspace.model.usergroup.DBInfo;
 import io.zeta.metaspace.web.typeHandler.ListStringTypeHandler;
 import org.apache.ibatis.annotations.*;
 
@@ -971,6 +972,13 @@ public interface TaskManageDAO {
             "WHERE d.tenant_id = #{tenantId} and d.data_source_id = #{sourceId} " +
             "order by d.id")
     List<SyncTaskDefinition> getTaskSchemas(@Param("tenantId") String tenantId, @Param("sourceId") String sourceId);
+
+
+    @Select("SELECT DISTINCT db.database_guid,db.database_name FROM database_group_relation dgr " +
+            "INNER JOIN user_group ug ON dgr.group_id = ug.id " +
+            "INNER JOIN db_info db ON dgr.database_guid = db.database_guid AND db.status = 'ACTIVE'" +
+            "WHERE ug.tenant = #{tenantId} AND dgr.source_id =  #{sourceId}")
+    List<DBInfo> getUserGroupDatabase(@Param("tenantId") String tenantId, @Param("sourceId") String sourceId);
 
 
     @Select("<script>"+

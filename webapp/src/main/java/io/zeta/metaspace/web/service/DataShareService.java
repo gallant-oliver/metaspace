@@ -60,6 +60,7 @@ import io.zeta.metaspace.model.share.*;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserIdAndName;
+import io.zeta.metaspace.model.usergroup.DBInfo;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.DateUtils;
@@ -1519,6 +1520,31 @@ public class DataShareService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据源元数据失败");
         }
     }
+
+    /**
+     * 根据配置的用户组权限获取数据库
+     * @param parameters
+     * @param tenantId
+     * @param sourceId
+     * @return
+     */
+    public PageResult<Map<String, Object>> getDbDataList(ColumnParameters parameters, String tenantId, String sourceId){
+        List<DBInfo> dbInfoList = taskManageDAO.getUserGroupDatabase(tenantId, sourceId);
+        PageResult<Map<String, Object>> schemaPage = new PageResult<>();
+        List<Map<String, Object>> schemaNameList = dbInfoList.stream()
+                .skip(parameters.getOffset())
+                .limit(parameters.getLimit())
+                .map(db -> {
+                    Map<String, Object> schemaName = new HashMap<>();
+                    schemaName.put("schemaName", db.getDatabaseName());
+                    return schemaName;
+                }).collect(Collectors.toList());
+        schemaPage.setLists(schemaNameList);
+        schemaPage.setCurrentSize(schemaNameList.size());
+        schemaPage.setTotalSize(dbInfoList.size());
+        return schemaPage;
+    }
+
 
     public enum SEARCH_TYPE {
         SCHEMA, TABLE, COLUMN
