@@ -1289,14 +1289,14 @@ public class MetaDataREST {
     @Path("/rdbms/table/column/")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public RDBMSColumnAndIndexAndForeignKey getRDBMSColumnInfoById(@HeaderParam("tenantId")String tenantId, ColumnQuery query, @DefaultValue("false") @QueryParam("refreshCache") Boolean refreshCache) throws AtlasBaseException {
+    public RDBMSColumnAndIndexAndForeignKey getRDBMSColumnInfoById(@HeaderParam("tenantId")String tenantId, ColumnQuery query) throws AtlasBaseException {
         Servlets.validateQueryParamLength("guid", query.getGuid());
         AtlasPerfTracer perf = null;
         try {
             if (AtlasPerfTracer.isPerfTraceEnabled(PERF_LOG)) {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "MetaDataREST.getColumnInfoById");
             }
-            RDBMSColumnAndIndexAndForeignKey key= metadataService.getRDBMSColumnInfoById(query, refreshCache);
+            RDBMSColumnAndIndexAndForeignKey key= metadataService.getRDBMSColumnInfoById(query);
             List<RDBMSColumn> columnsWithTags=columnTagService.buildTagsInfoRDBMSColumn(key.getColumns(),tenantId);
             Map<String,List<ColumnTag>> map = columnsWithTags.stream().collect(Collectors.toMap(RDBMSColumn::getColumnId,RDBMSColumn::getTags,(key1,key2)->key1));
             key.getColumns().forEach(column -> {
