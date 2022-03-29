@@ -1311,9 +1311,10 @@ public interface UserGroupDAO {
             " from database_group_relation dgr " +
             " left join data_source d  " +
             " on d.source_id=dgr.source_id " +
-            " join db_info di  " +
+            " inner join db_info di  " +
             " on di.database_guid=dgr.database_guid " +
             " where dgr.group_id = #{groupId} " +
+            " and di.status='ACTIVE' " +
             "<if test='sourceId!=null'>" +
             " and dgr.source_id =#{sourceId}" +
             "</if>"+
@@ -1328,6 +1329,50 @@ public interface UserGroupDAO {
             "</if>" +
             "</script>")
     public List<UserGroupDatabaseResult> getDatabaseBySearch(@Param("groupId") String groupId, @Param("offset") int offset, @Param("limit") int limit, @Param("sourceId") String sourceId,@Param("search") String search);
+
+    @Select("<script>" +
+            "select count(*)over() totalSize, id, databaseName,source_name,source_type from(" +
+            " select dgr.id, di.database_name databaseName,source_name,source_type " +
+            " from database_group_relation dgr " +
+            "  left join data_source d  " +
+            "  on d.source_id=dgr.source_id " +
+            "  inner join db_info di  " +
+            "  on di.database_guid=dgr.database_guid " +
+            "  where dgr.group_id = #{groupId} " +
+            "  and di.status='ACTIVE' and dgr.source_id != 'hive' " +
+            "  and d.source_id is not null" +
+            "  <if test='sourceId!=null'>" +
+            "   and dgr.source_id =#{sourceId}" +
+            "  </if>"+
+            "  <if test='search!=null'>" +
+            "   and di.database_name like concat('%',#{search},'%') ESCAPE '/' " +
+            "  </if>" +
+            " union " +
+            " select dgr.id, di.database_name databaseName, " +
+            "  case when dgr.source_id = 'hive' then 'hive' else d.source_name end as sourceName, " +
+            "  case when dgr.source_id = 'hive' then 'HIVE' else d.source_type end as sourceType " +
+            "  from database_group_relation dgr  " +
+            "   left join data_source d   " +
+            "   on d.source_id=dgr.source_id  " +
+            "   inner join db_info di   " +
+            "   on di.database_guid=dgr.database_guid  " +
+            "   where dgr.group_id = #{groupId}  " +
+            "   and di.status='ACTIVE' and dgr.source_id = 'hive' "+
+            "  <if test='sourceId!=null'>" +
+            "   and dgr.source_id =#{sourceId}" +
+            "  </if>"+
+            "  <if test='search!=null'>" +
+            "   and di.database_name like concat('%',#{search},'%') ESCAPE '/' " +
+            "  </if>" +
+            " )as A " +
+            "<if test='limit!=-1'>" +
+            " limit ${limit} " +
+            "</if>" +
+            "<if test='offset!=0'>" +
+            " offset ${offset} " +
+            "</if>" +
+            "</script>")
+    public List<UserGroupDatabaseResult> getDatabaseBySearchStr(@Param("groupId") String groupId, @Param("offset") int offset, @Param("limit") int limit, @Param("sourceId") String sourceId,@Param("search") String search);
 
     @Insert("insert into database_group_relation (id,group_id,source_id,database_guid) values (#{id},#{groupId},#{sourceId},#{databaseGuid})")
     public Integer addDataBaseByGroupId(@Param("id") String id, @Param("groupId") String groupId,@Param("sourceId") String sourceId,@Param("databaseGuid") String databaseGuid);
