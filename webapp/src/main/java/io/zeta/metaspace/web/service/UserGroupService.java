@@ -1806,7 +1806,7 @@ public class UserGroupService {
         if (search != null) {
             search = search.replaceAll("%", "/%").replaceAll("_", "/_");
         }
-        List<UserGroupDatabaseResult> lists = userGroupDAO.getDatabaseBySearch(groupId, offset, limit,sourceId, search);
+        List<UserGroupDatabaseResult> lists = userGroupDAO.getDatabaseBySearchStr(groupId, offset, limit,sourceId, search);
         if (lists == null || lists.size() == 0) {
             return commonResult;
         }
