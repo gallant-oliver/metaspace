@@ -390,74 +390,55 @@ public interface WarningGroupDAO {
     List<WarningGroup> getByIds(@Param("ids") String[] toList);
 
     @Select({"<script>",
-            "with all_user AS (" +
+                    "with task_rule AS (" +
+                            "    select count(*)over() total, t3.id, t1.name as title," +
+                            "    to_char(t3.create_time, 'yyyy-MM-dd HH:mm:SS') as create_time, t3.result, " +
+                            "    case when t3.red_warning_check_status = 1 then t5.red_threshold_max_value else t5.orange_threshold_max_value end as maxValue, " +
+                            "    case when t3.red_warning_check_status = 1 then t5.red_threshold_min_value else t5.orange_threshold_min_value end as minValue, " +
+                            "    case when t3.red_warning_check_status = 1 then t5.red_check_expression_type else t5.orange_check_expression_type end as checkExpressionType, " +
+                            "    case when t3.red_warning_check_status = 1 then t5.red_check_type else t5.orange_check_type end as checkType, t5.check_threshold_unit as unit, " +
+                            "    case when t3.red_warning_check_status = 1 then '1级' else '2级' end as alertLevel," +
+                            "    t3.subtask_object_id as objectId, t6.scope, t6.type, t1.id as task_id" +
+                            "    from data_quality_task_rule_execute t3 " +
+                            "    join (select * from data_quality_sub_task where delete = false) t4 on t3.subtask_id = t4.id " +
+                            "    join data_quality_task_execute t2 on t2.id = t3.task_execute_id " +
+                            "    join (select * from data_quality_task where delete = false) t1 on t1.id = t2.task_id" +
+                            "    join (select * from data_quality_sub_task_rule where delete = false) t5 on t3.subtask_rule_id = t5.id" +
+                            "    join (select * from data_quality_rule_template where delete = false) t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid)" +
+                            "    where (t3.red_warning_check_status = 1 or t3.orange_warning_check_status = 1) " +
+                            "        <if test='keyword != null and keyword != \"\"'>" +
+                            "    and (t1.name like concat('%',#{keyword},'%') ESCAPE '/'" +
+                            "              or t6.name like concat('%',#{keyword},'%') ESCAPE '/')" +
+                            "        </if>" +
+                            "        <if test='startTime != null'>" +
+                            "            and t3.create_time &gt; #{startTime}" +
+                            "        </if>" +
+                            "        <if test='endTime != null'>" +
+                            "            and t3.create_time &lt; #{endTime}" +
+                            "        </if>" +
+                            "    order by t3.create_time desc" +
+                            "        <if test='limit!=null and limit!= -1'>" +
+                            "    limit #{limit}" +
+                            "        </if>" +
+                            "        <if test='offset!=null'>" +
+                            "    offset #{offset}" +
+                            "        </if>" +
+                            "), " +
+                    "all_user AS (" +
                     "            SELECT id, array_to_string(array_agg(username), ',') AS receivers" +
                     "            , 'EMAIL' AS alertType" +
                     "            FROM (" +
-                    "                    select distinct t3.id, users.username, t3.create_time" +
-                    "                    from data_quality_task_rule_execute t3 " +
-                    "                    join (select * from data_quality_sub_task where delete = false) t4 on t3.subtask_id = t4.id " +
-                    "                    join data_quality_task_execute t2 on t2.id = t3.task_execute_id " +
-                    "                    join (select * from data_quality_task where delete = false) t1 on t1.id = t2.task_id" +
-                    "                    join (select * from data_quality_sub_task_rule where delete = false) t5 on t3.subtask_rule_id = t5.id" +
-                    "                    join (select * from data_quality_rule_template where delete = false) t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid)" +
-                    "                    left join data_quality_task2warning_group t7 on t1.id = t7.task_id" +
+                    "                    select distinct tr.id, users.username" +
+                    "                    from task_rule tr " +
+                    "                    left join data_quality_task2warning_group t7 on tr.task_id = t7.task_id" +
                     "                    left join warning_group wg on wg.id = t7.warning_group_id AND wg.delete = false" +
                     "                    left join users on users.userid = ANY(string_to_array(wg.contacts,','))" +
-                    "                    where (t3.red_warning_check_status = 1 or t3.orange_warning_check_status = 1)  " +
-                    "        <if test='keyword != null and keyword != \"\"'>" +
-                    "            and (t1.name like concat('%',#{keyword},'%') ESCAPE '/'" +
-                    "                   or t6.name like concat('%',#{keyword},'%') ESCAPE '/')" +
-                    "        </if>" +
-                    "        <if test='startTime != null'>" +
-                    "            and t3.create_time &gt; #{startTime}" +
-                    "        </if>" +
-                    "        <if test='endTime != null'>" +
-                    "            and t3.create_time &lt; #{endTime}" +
-                    "        </if>" +
-                    "        order by t3.create_time desc" +
-                    "        <if test='limit!=null and limit!= -1'>" +
-                    "           limit #{limit}" +
-                    "        </if>" +
-                    "        <if test='offset!=null'>" +
-                    "           offset #{offset}" +
-                    "        </if>" +
+
                     "        ) t" +
                     "    GROUP BY id" +
                     "        )" +
-                    "    select count(*)over() total, t3.id, t1.name as title," +
-                    "    to_char(t3.create_time, 'yyyy-MM-dd HH:mm:SS') as create_time, au.receivers, t3.result, " +
-                    "    case when t3.red_warning_check_status = 1 then t5.red_threshold_max_value else t5.orange_threshold_max_value end as maxValue, " +
-                    "    case when t3.red_warning_check_status = 1 then t5.red_threshold_min_value else t5.orange_threshold_min_value end as minValue, " +
-                    "    case when t3.red_warning_check_status = 1 then t5.red_check_expression_type else t5.orange_check_expression_type end as checkExpressionType, " +
-                    "    case when t3.red_warning_check_status = 1 then t5.red_check_type else t5.orange_check_type end as checkType, t5.check_threshold_unit as unit, " +
-                    "    case when t3.red_warning_check_status = 1 then '1级' else '2级' end as alertLevel," +
-                    "    t3.subtask_object_id as objectId, t6.scope, t6.type" +
-                    "    from data_quality_task_rule_execute t3 " +
-                    "    join (select * from data_quality_sub_task where delete = false) t4 on t3.subtask_id = t4.id " +
-                    "    join data_quality_task_execute t2 on t2.id = t3.task_execute_id " +
-                    "    join (select * from data_quality_task where delete = false) t1 on t1.id = t2.task_id" +
-                    "    join (select * from data_quality_sub_task_rule where delete = false) t5 on t3.subtask_rule_id = t5.id" +
-                    "    join (select * from data_quality_rule_template where delete = false) t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid)" +
-                    "    left join all_user au on au.id = t3.id" +
-                    "    where (t3.red_warning_check_status = 1 or t3.orange_warning_check_status = 1) " +
-                    "        <if test='keyword != null and keyword != \"\"'>" +
-                    "    and (t1.name like concat('%',#{keyword},'%') ESCAPE '/'" +
-                    "              or t6.name like concat('%',#{keyword},'%') ESCAPE '/')" +
-                    "        </if>" +
-                    "        <if test='startTime != null'>" +
-                    "            and t3.create_time &gt; #{startTime}" +
-                    "        </if>" +
-                    "        <if test='endTime != null'>" +
-                    "            and t3.create_time &lt; #{endTime}" +
-                    "        </if>" +
-                    "    order by t3.create_time desc" +
-                    "        <if test='limit!=null and limit!= -1'>" +
-                    "    limit #{limit}" +
-                    "        </if>" +
-                    "        <if test='offset!=null'>" +
-                    "    offset #{offset}" +
-                    "        </if>",
+                    "    select tr.*,au.receivers from task_rule tr " +
+                    "    left join all_user au on au.id = tr.id" +
             "</script>"})
     List<AlertInfoDTO> getAlerts(@Param("startTime") Timestamp startTime, @Param("endTime") Timestamp endTime,
                                  @Param("keyword") String keyword, @Param("offset") Integer offset, @Param("limit") Integer limit);
