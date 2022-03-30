@@ -406,9 +406,10 @@ public interface WarningGroupDAO {
                             "    join (select * from data_quality_task where delete = false) t1 on t1.id = t2.task_id" +
                             "    join (select * from data_quality_sub_task_rule where delete = false) t5 on t3.subtask_rule_id = t5.id" +
                             "    join (select * from data_quality_rule_template where delete = false) t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid)" +
-                            "    where (t3.red_warning_check_status = 1 or t3.orange_warning_check_status = 1) " +
+                            "    where 1=1 " +
                             "        <if test='keyword != null and keyword != \"\"'>" +
                             "    and (t1.name like concat('%',#{keyword},'%') ESCAPE '/'" +
+                            "              or t3.id like concat('%',#{keyword},'%') ESCAPE '/'" +
                             "              or t6.name like concat('%',#{keyword},'%') ESCAPE '/')" +
                             "        </if>" +
                             "        <if test='startTime != null'>" +
@@ -417,6 +418,19 @@ public interface WarningGroupDAO {
                             "        <if test='endTime != null'>" +
                             "            and t3.create_time &lt; #{endTime}" +
                             "        </if>" +
+                            "        <choose>" +
+                            "            <when test='alertLevel != null and alertLevel != \"\"'>" +
+                            "                <if test='alertLevel == \"1级\"'>" +
+                            "                    and t3.red_warning_check_status = 1" +
+                            "                </if>" +
+                            "                <if test='alertLevel != \"1级\"'>" +
+                            "                    and t3.orange_warning_check_status = 1" +
+                            "                </if>" +
+                            "            </when>" +
+                            "            <otherwise> " +
+                            "                and (t3.red_warning_check_status = 1 or t3.orange_warning_check_status = 1)" +
+                            "            </otherwise>" +
+                            "        </choose>" +
                             "    order by t3.create_time desc" +
                             "        <if test='limit!=null and limit!= -1'>" +
                             "    limit #{limit}" +
@@ -443,7 +457,8 @@ public interface WarningGroupDAO {
                     "    order by tr.create_time desc" +
             "</script>"})
     List<AlertInfoDTO> getAlerts(@Param("startTime") Timestamp startTime, @Param("endTime") Timestamp endTime,
-                                 @Param("keyword") String keyword, @Param("offset") Integer offset, @Param("limit") Integer limit);
+                                 @Param("keyword") String keyword, @Param("offset") Integer offset, @Param("limit") Integer limit,
+                                 @Param("alertLevel") String alertLevel);
 
     @Select({"<script>" +
                     "    select distinct t3.id, t7.name" +
