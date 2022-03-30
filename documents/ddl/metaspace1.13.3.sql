@@ -5352,3 +5352,13 @@ CREATE INDEX "re_result_idx_requirements_id" ON "public"."requirements_result" U
 -- Primary Key structure for table requirements_result
 -- ----------------------------
 ALTER TABLE "public"."requirements_result" ADD CONSTRAINT "requirements_result_pkey" PRIMARY KEY ("guid");
+
+INSERT INTO "public"."code_source_info_status" VALUES ('2', '发布审核不通过');
+INSERT INTO "public"."code_source_info_status" VALUES ('3', '发布审核通过');
+INSERT INTO "public"."code_source_info_status" VALUES ('1', '待审批');
+INSERT INTO "public"."code_source_info_status" VALUES ('0', '待发布');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('png', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('pdf', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('doc', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('xls', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('xlsx', 'sourceInfo');

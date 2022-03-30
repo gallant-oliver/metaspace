@@ -5091,3 +5091,13 @@ ALTER TABLE data_quality_rule_template
     ADD data_standard_code VARCHAR;
 
 COMMENT ON COLUMN data_quality_rule_template.data_standard_code IS '参照数据标准编码: data_standard.number';
+
+INSERT INTO "public"."code_source_info_status" VALUES ('2', '发布审核不通过');
+INSERT INTO "public"."code_source_info_status" VALUES ('3', '发布审核通过');
+INSERT INTO "public"."code_source_info_status" VALUES ('1', '待审批');
+INSERT INTO "public"."code_source_info_status" VALUES ('0', '待发布');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('png', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('pdf', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('doc', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('xls', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('xlsx', 'sourceInfo');

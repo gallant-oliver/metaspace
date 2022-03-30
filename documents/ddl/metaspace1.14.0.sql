@@ -5506,3 +5506,13 @@ ALTER TABLE "public"."qrtz_triggers" ADD CONSTRAINT "qrtz_triggers_sched_name_fk
 -- ----------------------------
 ALTER TABLE "public"."source_info" ADD CONSTRAINT "fk_source_info_status" FOREIGN KEY ("status") REFERENCES "public"."code_source_info_status" ("code") ON DELETE NO ACTION ON UPDATE CASCADE;
 ALTER TABLE "public"."source_info" ADD CONSTRAINT "fk_source_info_tenant_id" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenant" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+INSERT INTO "public"."code_source_info_status" VALUES ('2', '发布审核不通过');
+INSERT INTO "public"."code_source_info_status" VALUES ('3', '发布审核通过');
+INSERT INTO "public"."code_source_info_status" VALUES ('1', '待审批');
+INSERT INTO "public"."code_source_info_status" VALUES ('0', '待发布');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('png', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('pdf', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('doc', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('xls', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('xlsx', 'sourceInfo');
