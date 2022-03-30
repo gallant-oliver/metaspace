@@ -424,7 +424,7 @@ public interface WarningGroupDAO {
                             "                    and t3.red_warning_check_status = 1" +
                             "                </if>" +
                             "                <if test='alertLevel != \"1级\"'>" +
-                            "                    and t3.orange_warning_check_status = 1 and t3.red_warning_check_status != 1" +
+                            "                    and t3.orange_warning_check_status = 1 and (t3.red_warning_check_status is null or t3.red_warning_check_status != 1 )" +
                             "                </if>" +
                             "            </when>" +
                             "            <otherwise> " +
