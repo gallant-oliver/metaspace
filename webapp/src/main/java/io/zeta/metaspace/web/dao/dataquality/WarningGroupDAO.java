@@ -393,7 +393,7 @@ public interface WarningGroupDAO {
     @Select({"<script>",
                     "with task_rule AS (" +
                             "    select count(*)over() total, t3.id, t1.name as title," +
-                            "    to_char(t3.create_time, 'yyyy-MM-dd HH:mm:SS') as create_time, t3.result, " +
+                            "    to_char(t3.create_time, 'YYYY-MM-DD hh24:mi:ss') as create_time, t3.result, " +
                             "    case when t3.red_warning_check_status = 1 then t5.red_threshold_max_value else t5.orange_threshold_max_value end as maxValue, " +
                             "    case when t3.red_warning_check_status = 1 then t5.red_threshold_min_value else t5.orange_threshold_min_value end as minValue, " +
                             "    case when t3.red_warning_check_status = 1 then t5.red_check_expression_type else t5.orange_check_expression_type end as checkExpressionType, " +
@@ -424,7 +424,7 @@ public interface WarningGroupDAO {
                             "                    and t3.red_warning_check_status = 1" +
                             "                </if>" +
                             "                <if test='alertLevel != \"1级\"'>" +
-                            "                    and t3.orange_warning_check_status = 1" +
+                            "                    and t3.orange_warning_check_status = 1 and t3.red_warning_check_status != 1" +
                             "                </if>" +
                             "            </when>" +
                             "            <otherwise> " +
