@@ -22,10 +22,10 @@
 DROP SEQUENCE IF EXISTS "public"."number_seq";
 CREATE SEQUENCE "public"."number_seq"
     INCREMENT 1
-MINVALUE  1
-MAXVALUE 9223372036854775807
-START 1
-CACHE 1;
+    MINVALUE  1
+    MAXVALUE 9223372036854775807
+    START 1
+    CACHE 1;
 
 -- ----------------------------
 -- Table structure for annex
@@ -4577,8 +4577,8 @@ CREATE VIEW "public"."test_tenant_group_user_relation" AS  SELECT tenant.id AS t
                                                                   users.account AS user_account
                                                            FROM (((tenant
                                                                JOIN user_group ON ((((user_group.tenant)::text = (tenant.id)::text) AND (user_group.valid = true))))
-     JOIN user_group_relation ON (((user_group_relation.group_id)::text = (user_group.id)::text)))
-     JOIN users ON ((((users.userid)::text = (user_group_relation.user_id)::text) AND (users.valid = true))));
+                                                               JOIN user_group_relation ON (((user_group_relation.group_id)::text = (user_group.id)::text)))
+                                                                    JOIN users ON ((((users.userid)::text = (user_group_relation.user_id)::text) AND (users.valid = true))));
 
 -- ----------------------------
 -- View structure for technical_indicator
@@ -4910,8 +4910,8 @@ ALTER TABLE "public"."indicator_threshold_setting" ADD CONSTRAINT "threshold_set
 -- Indexes structure for table ip_restriction
 -- ----------------------------
 CREATE UNIQUE INDEX "ip_restriction_id_uindex" ON "public"."ip_restriction" USING btree (
-  "id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                                         "id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 
 -- ----------------------------
 -- Primary Key structure for table ip_restriction
@@ -4977,32 +4977,32 @@ ALTER TABLE "public"."qrtz_cron_triggers" ADD CONSTRAINT "qrtz_cron_triggers_pke
 -- Indexes structure for table qrtz_fired_triggers
 -- ----------------------------
 CREATE INDEX "idx_qrtz_ft_inst_job_req_rcvry" ON "public"."qrtz_fired_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "instance_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "requests_recovery" "pg_catalog"."bool_ops" ASC NULLS LAST
-);
+                                                                                             "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                                             "instance_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                                             "requests_recovery" "pg_catalog"."bool_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_ft_j_g" ON "public"."qrtz_fired_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "job_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "job_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                              "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                              "job_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                              "job_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_ft_jg" ON "public"."qrtz_fired_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "job_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                             "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                             "job_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_ft_t_g" ON "public"."qrtz_fired_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "trigger_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "trigger_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                              "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                              "trigger_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                              "trigger_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_ft_tg" ON "public"."qrtz_fired_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "trigger_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                             "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                             "trigger_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_ft_trig_inst_name" ON "public"."qrtz_fired_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "instance_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                                         "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                                         "instance_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 
 -- ----------------------------
 -- Primary Key structure for table qrtz_fired_triggers
@@ -5013,13 +5013,13 @@ ALTER TABLE "public"."qrtz_fired_triggers" ADD CONSTRAINT "qrtz_fired_triggers_p
 -- Indexes structure for table qrtz_job_details
 -- ----------------------------
 CREATE INDEX "idx_qrtz_j_grp" ON "public"."qrtz_job_details" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "job_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                          "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                          "job_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_j_req_recovery" ON "public"."qrtz_job_details" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "requests_recovery" "pg_catalog"."bool_ops" ASC NULLS LAST
-);
+                                                                                   "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                                   "requests_recovery" "pg_catalog"."bool_ops" ASC NULLS LAST
+    );
 
 -- ----------------------------
 -- Primary Key structure for table qrtz_job_details
@@ -5055,64 +5055,64 @@ ALTER TABLE "public"."qrtz_simprop_triggers" ADD CONSTRAINT "qrtz_simprop_trigge
 -- Indexes structure for table qrtz_triggers
 -- ----------------------------
 CREATE INDEX "idx_qrtz_t_c" ON "public"."qrtz_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "calendar_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                     "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                     "calendar_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_t_g" ON "public"."qrtz_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "trigger_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                     "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                     "trigger_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_t_j" ON "public"."qrtz_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "job_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "job_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                     "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                     "job_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                     "job_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_t_jg" ON "public"."qrtz_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "job_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                      "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                      "job_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_t_n_g_state" ON "public"."qrtz_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "trigger_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "trigger_state" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                             "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                             "trigger_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                             "trigger_state" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_t_n_state" ON "public"."qrtz_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "trigger_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "trigger_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "trigger_state" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                           "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                           "trigger_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                           "trigger_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                           "trigger_state" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_t_next_fire_time" ON "public"."qrtz_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "next_fire_time" "pg_catalog"."int8_ops" ASC NULLS LAST
-);
+                                                                                  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                                  "next_fire_time" "pg_catalog"."int8_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_t_nft_misfire" ON "public"."qrtz_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "misfire_instr" "pg_catalog"."int2_ops" ASC NULLS LAST,
-  "next_fire_time" "pg_catalog"."int8_ops" ASC NULLS LAST
-);
+                                                                               "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                               "misfire_instr" "pg_catalog"."int2_ops" ASC NULLS LAST,
+                                                                               "next_fire_time" "pg_catalog"."int8_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_t_nft_st" ON "public"."qrtz_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "trigger_state" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "next_fire_time" "pg_catalog"."int8_ops" ASC NULLS LAST
-);
+                                                                          "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                          "trigger_state" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                          "next_fire_time" "pg_catalog"."int8_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_t_nft_st_misfire" ON "public"."qrtz_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "misfire_instr" "pg_catalog"."int2_ops" ASC NULLS LAST,
-  "next_fire_time" "pg_catalog"."int8_ops" ASC NULLS LAST,
-  "trigger_state" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                                  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                                  "misfire_instr" "pg_catalog"."int2_ops" ASC NULLS LAST,
+                                                                                  "next_fire_time" "pg_catalog"."int8_ops" ASC NULLS LAST,
+                                                                                  "trigger_state" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_t_nft_st_misfire_grp" ON "public"."qrtz_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "misfire_instr" "pg_catalog"."int2_ops" ASC NULLS LAST,
-  "next_fire_time" "pg_catalog"."int8_ops" ASC NULLS LAST,
-  "trigger_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "trigger_state" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                                      "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                                      "misfire_instr" "pg_catalog"."int2_ops" ASC NULLS LAST,
+                                                                                      "next_fire_time" "pg_catalog"."int8_ops" ASC NULLS LAST,
+                                                                                      "trigger_group" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                                      "trigger_state" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_qrtz_t_state" ON "public"."qrtz_triggers" USING btree (
-  "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "trigger_state" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                         "sched_name" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                         "trigger_state" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 
 -- ----------------------------
 -- Primary Key structure for table qrtz_triggers
@@ -5168,14 +5168,14 @@ ALTER TABLE "public"."report_userrule2threshold" ADD CONSTRAINT "report_threshol
 -- Indexes structure for table requirements
 -- ----------------------------
 CREATE INDEX "re_idx_business_id" ON "public"."requirements" USING btree (
-  "business_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                          "business_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "re_idx_creator" ON "public"."requirements" USING btree (
-  "creator" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                      "creator" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "re_idx_tenant_id" ON "public"."requirements" USING btree (
-  "tenant_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                        "tenant_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 
 -- ----------------------------
 -- Primary Key structure for table requirements
@@ -5186,8 +5186,8 @@ ALTER TABLE "public"."requirements" ADD CONSTRAINT "requirements_pkey" PRIMARY K
 -- Indexes structure for table requirements_api
 -- ----------------------------
 CREATE INDEX "re_api_requirements_id" ON "public"."requirements_api" USING btree (
-  "requirements_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                                  "requirements_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 
 -- ----------------------------
 -- Primary Key structure for table requirements_api
@@ -5198,11 +5198,11 @@ ALTER TABLE "public"."requirements_api" ADD CONSTRAINT "requirements_api_pkey" P
 -- Indexes structure for table requirements_column
 -- ----------------------------
 CREATE INDEX "re_column_idx_column_id" ON "public"."requirements_column" USING btree (
-  "column_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                                      "column_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 CREATE INDEX "re_column_idx_requirements_id" ON "public"."requirements_column" USING btree (
-  "requirements_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                                            "requirements_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 
 -- ----------------------------
 -- Primary Key structure for table requirements_column
@@ -5213,8 +5213,8 @@ ALTER TABLE "public"."requirements_column" ADD CONSTRAINT "requirements_column_p
 -- Indexes structure for table requirements_database
 -- ----------------------------
 CREATE INDEX "re_database_requirements_id" ON "public"."requirements_database" USING btree (
-  "requirements_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                                            "requirements_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 
 -- ----------------------------
 -- Primary Key structure for table requirements_database
@@ -5225,8 +5225,8 @@ ALTER TABLE "public"."requirements_database" ADD CONSTRAINT "requirements_databa
 -- Indexes structure for table requirements_mq
 -- ----------------------------
 CREATE INDEX "re_mq_requirements_id" ON "public"."requirements_mq" USING btree (
-  "requirements_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                                "requirements_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 
 -- ----------------------------
 -- Primary Key structure for table requirements_mq
@@ -5237,8 +5237,8 @@ ALTER TABLE "public"."requirements_mq" ADD CONSTRAINT "requirements_mq_pkey" PRI
 -- Indexes structure for table requirements_result
 -- ----------------------------
 CREATE INDEX "re_result_idx_requirements_id" ON "public"."requirements_result" USING btree (
-  "requirements_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                                            "requirements_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 
 -- ----------------------------
 -- Primary Key structure for table requirements_result
@@ -5269,12 +5269,12 @@ ALTER TABLE "public"."source_db" ADD CONSTRAINT "source_db_pkey" PRIMARY KEY ("i
 -- Indexes structure for table source_info
 -- ----------------------------
 CREATE INDEX "index_database_alias" ON "public"."source_info" USING btree (
-  "database_alias" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                           "database_alias" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 COMMENT ON INDEX "public"."index_database_alias" IS '中文名索引';
 CREATE INDEX "index_status" ON "public"."source_info" USING btree (
-  "status" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
-);
+                                                                   "status" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
+    );
 COMMENT ON INDEX "public"."index_status" IS '状态索引';
 
 -- ----------------------------
@@ -5296,14 +5296,14 @@ ALTER TABLE "public"."source_info_derive_column_info" ADD CONSTRAINT "pk_derive_
 -- Indexes structure for table source_info_derive_table_column_relation
 -- ----------------------------
 CREATE INDEX "idx_drive_table_column_relation_column_guid" ON "public"."source_info_derive_table_column_relation" USING hash (
-  "column_guid" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
-);
+                                                                                                                              "column_guid" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
+    );
 CREATE INDEX "idx_drive_table_column_relation_table_id" ON "public"."source_info_derive_table_column_relation" USING hash (
-  "table_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
-);
+                                                                                                                           "table_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
+    );
 CREATE INDEX "idx_drive_table_column_relation_yable_guid" ON "public"."source_info_derive_table_column_relation" USING hash (
-  "table_guid" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
-);
+                                                                                                                             "table_guid" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
+    );
 
 -- ----------------------------
 -- Primary Key structure for table source_info_derive_table_column_relation
@@ -5314,21 +5314,21 @@ ALTER TABLE "public"."source_info_derive_table_column_relation" ADD CONSTRAINT "
 -- Indexes structure for table source_info_derive_table_info
 -- ----------------------------
 CREATE INDEX "idx_derive_table_create_time" ON "public"."source_info_derive_table_info" USING btree (
-  "create_time" "pg_catalog"."timestamp_ops" ASC NULLS LAST
-);
+                                                                                                     "create_time" "pg_catalog"."timestamp_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_derive_table_guid_version" ON "public"."source_info_derive_table_info" USING btree (
-  "table_guid" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
-  "version" "pg_catalog"."int4_ops" ASC NULLS LAST
-);
+                                                                                                      "table_guid" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST,
+                                                                                                      "version" "pg_catalog"."int4_ops" ASC NULLS LAST
+    );
 CREATE INDEX "idx_derive_table_name_en" ON "public"."source_info_derive_table_info" USING hash (
-  "table_name_en" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
-);
+                                                                                                "table_name_en" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
+    );
 CREATE INDEX "idx_derive_table_name_zh" ON "public"."source_info_derive_table_info" USING hash (
-  "table_name_zh" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
-);
+                                                                                                "table_name_zh" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
+    );
 CREATE INDEX "idx_derive_table_tenant_id" ON "public"."source_info_derive_table_info" USING hash (
-  "tenant_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
-);
+                                                                                                  "tenant_id" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops"
+    );
 
 -- ----------------------------
 -- Primary Key structure for table source_info_derive_table_info
@@ -5506,3 +5506,13 @@ ALTER TABLE "public"."qrtz_triggers" ADD CONSTRAINT "qrtz_triggers_sched_name_fk
 -- ----------------------------
 ALTER TABLE "public"."source_info" ADD CONSTRAINT "fk_source_info_status" FOREIGN KEY ("status") REFERENCES "public"."code_source_info_status" ("code") ON DELETE NO ACTION ON UPDATE CASCADE;
 ALTER TABLE "public"."source_info" ADD CONSTRAINT "fk_source_info_tenant_id" FOREIGN KEY ("tenant_id") REFERENCES "public"."tenant" ("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+INSERT INTO "public"."code_source_info_status" VALUES ('2', '发布审核不通过');
+INSERT INTO "public"."code_source_info_status" VALUES ('3', '发布审核通过');
+INSERT INTO "public"."code_source_info_status" VALUES ('1', '待审批');
+INSERT INTO "public"."code_source_info_status" VALUES ('0', '待发布');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('png', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('pdf', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('doc', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('xls', 'sourceInfo');
+INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('xlsx', 'sourceInfo');
