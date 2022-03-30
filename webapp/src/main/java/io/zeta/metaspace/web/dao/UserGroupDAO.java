@@ -1349,11 +1349,9 @@ public interface UserGroupDAO {
             "  </if>" +
             " union " +
             " select dgr.id, di.database_name databaseName, " +
-            "  case when dgr.source_id = 'hive' then 'hive' else d.source_name end as sourceName, " +
-            "  case when dgr.source_id = 'hive' then 'HIVE' else d.source_type end as sourceType " +
+            "  'hive' as sourceName, " +
+            "  'HIVE' as sourceType " +
             "  from database_group_relation dgr  " +
-            "   left join data_source d   " +
-            "   on d.source_id=dgr.source_id  " +
             "   inner join db_info di   " +
             "   on di.database_guid=dgr.database_guid  " +
             "   where dgr.group_id = #{groupId}  " +
