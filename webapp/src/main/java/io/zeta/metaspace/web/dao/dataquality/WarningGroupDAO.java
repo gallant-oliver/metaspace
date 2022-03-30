@@ -447,6 +447,7 @@ public interface WarningGroupDAO {
                     "    select distinct t3.id, t7.name" +
                     "    from data_quality_task_rule_execute t3 " +
                     "    join (select * from data_quality_task where delete = false) t1 on t1.id = t3.task_id" +
+                    "    join tenant t7 on t1.tenantid = t7.id " +
                     "    where 1=1 " +
                     "        <if test='startTime != null'>" +
                     "            and t3.create_time &gt; #{startTime}" +
