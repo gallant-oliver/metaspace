@@ -440,6 +440,7 @@ public interface WarningGroupDAO {
                     "        )" +
                     "    select tr.*,au.receivers from task_rule tr " +
                     "    left join all_user au on au.id = tr.id" +
+                    "    order by tr.create_time desc" +
             "</script>"})
     List<AlertInfoDTO> getAlerts(@Param("startTime") Timestamp startTime, @Param("endTime") Timestamp endTime,
                                  @Param("keyword") String keyword, @Param("offset") Integer offset, @Param("limit") Integer limit);
