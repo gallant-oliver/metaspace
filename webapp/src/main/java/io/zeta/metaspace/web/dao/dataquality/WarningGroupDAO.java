@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.dao.dataquality;
 import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.datasource.DataSource;
 import io.zeta.metaspace.model.dto.AlertInfoDTO;
+import io.zeta.metaspace.model.dto.TenantDTO;
 import io.zeta.metaspace.model.metadata.Parameters;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -456,5 +457,5 @@ public interface WarningGroupDAO {
                     "            and t3.create_time &lt; #{endTime}" +
                     "        </if>" +
             "</script>"})
-    List<String> getAlertsTenant(@Param("startTime") Timestamp startTime, @Param("endTime") Timestamp endTime);
+    List<TenantDTO> getAlertsTenant(@Param("startTime") Timestamp startTime, @Param("endTime") Timestamp endTime);
 }

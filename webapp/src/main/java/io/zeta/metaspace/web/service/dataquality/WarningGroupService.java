@@ -18,6 +18,7 @@ import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.datasource.DataSource;
 import io.zeta.metaspace.model.dto.AlertInfoDTO;
 import io.zeta.metaspace.model.dto.AlertRequest;
+import io.zeta.metaspace.model.dto.TenantDTO;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
@@ -610,8 +611,8 @@ public class WarningGroupService {
                 Date endDate = format.parse(request.getEndTime());
                 realEndDate = new Timestamp(endDate.getTime() + 86400000);
             }
-            List<String> alertsTenant = warningGroupDAO.getAlertsTenant(startDate, realEndDate);
-            return alertsTenant.stream().collect(Collectors.groupingBy(name -> name, Collectors.counting()));
+            List<TenantDTO> alertsTenant = warningGroupDAO.getAlertsTenant(startDate, realEndDate);
+            return alertsTenant.stream().collect(Collectors.groupingBy(TenantDTO::getName, Collectors.counting()));
         } catch (ParseException e) {
             throw new AtlasBaseException("时间格式不正确");
         }
