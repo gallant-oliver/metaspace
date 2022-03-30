@@ -1823,6 +1823,7 @@ COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."error_status" IS '�
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."rule_id" IS '规则id';
 COMMENT ON COLUMN "public"."data_quality_task_rule_execute"."general_warning_check_status" IS '一般告警：0-无告警,1-有告警，2-已关闭';
 COMMENT ON TABLE "public"."data_quality_task_rule_execute" IS '数据质量子任务执行结果';
+CREATE INDEX data_quality_task_rule_execute_create_time_idx ON public.data_quality_task_rule_execute (create_time);
 
 -- ----------------------------
 -- Table structure for data_source
