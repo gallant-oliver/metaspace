@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.dao.dataquality;
 import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.datasource.DataSource;
 import io.zeta.metaspace.model.dto.AlertInfoDTO;
+import io.zeta.metaspace.model.dto.TenantDTO;
 import io.zeta.metaspace.model.metadata.Parameters;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -392,7 +393,7 @@ public interface WarningGroupDAO {
     @Select({"<script>",
                     "with task_rule AS (" +
                             "    select count(*)over() total, t3.id, t1.name as title," +
-                            "    to_char(t3.create_time, 'yyyy-MM-dd HH:mm:SS') as create_time, t3.result, " +
+                            "    to_char(t3.create_time, 'YYYY-MM-DD hh24:mi:ss') as create_time, t3.result, " +
                             "    case when t3.red_warning_check_status = 1 then t5.red_threshold_max_value else t5.orange_threshold_max_value end as maxValue, " +
                             "    case when t3.red_warning_check_status = 1 then t5.red_threshold_min_value else t5.orange_threshold_min_value end as minValue, " +
                             "    case when t3.red_warning_check_status = 1 then t5.red_check_expression_type else t5.orange_check_expression_type end as checkExpressionType, " +
@@ -405,9 +406,10 @@ public interface WarningGroupDAO {
                             "    join (select * from data_quality_task where delete = false) t1 on t1.id = t2.task_id" +
                             "    join (select * from data_quality_sub_task_rule where delete = false) t5 on t3.subtask_rule_id = t5.id" +
                             "    join (select * from data_quality_rule_template where delete = false) t6 on (ruleid = t6.id and t6.tenantid = t1.tenantid)" +
-                            "    where (t3.red_warning_check_status = 1 or t3.orange_warning_check_status = 1) " +
+                            "    where 1=1 " +
                             "        <if test='keyword != null and keyword != \"\"'>" +
                             "    and (t1.name like concat('%',#{keyword},'%') ESCAPE '/'" +
+                            "              or t3.id like concat('%',#{keyword},'%') ESCAPE '/'" +
                             "              or t6.name like concat('%',#{keyword},'%') ESCAPE '/')" +
                             "        </if>" +
                             "        <if test='startTime != null'>" +
@@ -416,6 +418,19 @@ public interface WarningGroupDAO {
                             "        <if test='endTime != null'>" +
                             "            and t3.create_time &lt; #{endTime}" +
                             "        </if>" +
+                            "        <choose>" +
+                            "            <when test='alertLevel != null and alertLevel != \"\"'>" +
+                            "                <if test='alertLevel == \"1级\"'>" +
+                            "                    and t3.red_warning_check_status = 1" +
+                            "                </if>" +
+                            "                <if test='alertLevel != \"1级\"'>" +
+                            "                    and t3.orange_warning_check_status = 1 and (t3.red_warning_check_status is null or t3.red_warning_check_status != 1 )" +
+                            "                </if>" +
+                            "            </when>" +
+                            "            <otherwise> " +
+                            "                and (t3.red_warning_check_status = 1 or t3.orange_warning_check_status = 1)" +
+                            "            </otherwise>" +
+                            "        </choose>" +
                             "    order by t3.create_time desc" +
                             "        <if test='limit!=null and limit!= -1'>" +
                             "    limit #{limit}" +
@@ -439,15 +454,18 @@ public interface WarningGroupDAO {
                     "        )" +
                     "    select tr.*,au.receivers from task_rule tr " +
                     "    left join all_user au on au.id = tr.id" +
+                    "    order by tr.create_time desc" +
             "</script>"})
     List<AlertInfoDTO> getAlerts(@Param("startTime") Timestamp startTime, @Param("endTime") Timestamp endTime,
-                                 @Param("keyword") String keyword, @Param("offset") Integer offset, @Param("limit") Integer limit);
+                                 @Param("keyword") String keyword, @Param("offset") Integer offset, @Param("limit") Integer limit,
+                                 @Param("alertLevel") String alertLevel);
 
     @Select({"<script>" +
                     "    select distinct t3.id, t7.name" +
                     "    from data_quality_task_rule_execute t3 " +
                     "    join (select * from data_quality_task where delete = false) t1 on t1.id = t3.task_id" +
-                    "    where 1=1 and " +
+                    "    join tenant t7 on t1.tenantid = t7.id " +
+                    "    where (t3.red_warning_check_status = 1 or t3.orange_warning_check_status = 1) " +
                     "        <if test='startTime != null'>" +
                     "            and t3.create_time &gt; #{startTime}" +
                     "        </if>" +
@@ -455,5 +473,5 @@ public interface WarningGroupDAO {
                     "            and t3.create_time &lt; #{endTime}" +
                     "        </if>" +
             "</script>"})
-    List<String> getAlertsTenant(@Param("startTime") Timestamp startTime, @Param("endTime") Timestamp endTime);
+    List<TenantDTO> getAlertsTenant(@Param("startTime") Timestamp startTime, @Param("endTime") Timestamp endTime);
 }

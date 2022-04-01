@@ -18,6 +18,7 @@ import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.datasource.DataSource;
 import io.zeta.metaspace.model.dto.AlertInfoDTO;
 import io.zeta.metaspace.model.dto.AlertRequest;
+import io.zeta.metaspace.model.dto.TenantDTO;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.utils.DateUtils;
@@ -421,7 +422,7 @@ public class WarningGroupService {
         return getDetails(parameters, errors, error -> error.getWarnNo());
     }
 
-    public List<AlertInfoDTO> getAlert(String startTime, String endTime, String keyword, Integer limit, Integer offset){
+    public List<AlertInfoDTO> getAlert(String startTime, String endTime, String keyword, Integer limit, Integer offset, String alertLevel){
         DateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         try {
             Timestamp startDate = null;
@@ -435,7 +436,7 @@ public class WarningGroupService {
                 realEndDate = new Timestamp(endDate.getTime() + 86400000);
             }
             List<AlertInfoDTO> alerts = warningGroupDAO.getAlerts(startDate, realEndDate, keyword,
-                    offset, limit);
+                    offset, limit, alertLevel);
             alerts.forEach(alert -> {
                 if (StringUtils.isNotBlank(alert.getObjectId())) {
                     StringBuilder sb = new StringBuilder();
@@ -493,7 +494,7 @@ public class WarningGroupService {
 
     public PagedModel<AlertInfoDTO> getAlert(AlertRequest request){
         List<AlertInfoDTO> alerts = getAlert(request.getStartTime(), request.getEndTime(), request.getKeyword(),
-                request.getPageSize(), request.getPageSize() * (request.getPageNo() - 1));
+                request.getPageSize(), request.getPageSize() * (request.getPageNo() - 1), request.getAlertLevel());
 
         if (CollectionUtils.isEmpty(alerts)) {
             return new PagedModel<>();
@@ -575,7 +576,7 @@ public class WarningGroupService {
     }
 
     public Workbook getAlertDownloadWorkbook(String startTime, String endTime) {
-        List<AlertInfoDTO> alerts = getAlert(startTime, endTime, null, null, null);
+        List<AlertInfoDTO> alerts = getAlert(startTime, endTime, null, null, null, null);
 
         Workbook workbook = new XSSFWorkbook();
         List<String> headers = Arrays.asList("编号", "告警名称", "告警来源", "告警等级", "告警内容", "告警类型", "通知渠道", "通知人", "告警时间");
@@ -610,8 +611,8 @@ public class WarningGroupService {
                 Date endDate = format.parse(request.getEndTime());
                 realEndDate = new Timestamp(endDate.getTime() + 86400000);
             }
-            List<String> alertsTenant = warningGroupDAO.getAlertsTenant(startDate, realEndDate);
-            return alertsTenant.stream().collect(Collectors.groupingBy(name -> name, Collectors.counting()));
+            List<TenantDTO> alertsTenant = warningGroupDAO.getAlertsTenant(startDate, realEndDate);
+            return alertsTenant.stream().collect(Collectors.groupingBy(TenantDTO::getName, Collectors.counting()));
         } catch (ParseException e) {
             throw new AtlasBaseException("时间格式不正确");
         }

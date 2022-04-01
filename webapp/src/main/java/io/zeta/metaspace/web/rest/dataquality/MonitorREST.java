@@ -87,10 +87,6 @@ public class MonitorREST {
             return new RestReturn<PagedModel>().success(new PagedModel());
         }
 
-        if (StringUtils.isNotBlank(request.getAlertLevel()) && !"2级".equals(request.getAlertLevel())) {
-            return new RestReturn<PagedModel>().success(new PagedModel());
-        }
-
         return new RestReturn<PagedModel>().success(warningGroupService.getAlert(request));
     }
 
