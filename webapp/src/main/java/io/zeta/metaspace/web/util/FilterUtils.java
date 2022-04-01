@@ -17,46 +17,43 @@ public class FilterUtils {
     private static final List<String> SPECIAL_CONDITIONS = Lists.newArrayList("update", "update ", " update", " update ",
             "create", "create ", " create", " create ");
 
-    private static List<String> skipUrl;
+    private static List<String> skipUrl = new ArrayList<>();
 
-    private static List<String> permissionUrl;
+    private static List<String> permissionUrl = new ArrayList<>();
 
     static {
-        skipUrl = new ArrayList<String>() {{
-            add("v2/entity/uniqueAttribute/type/");
-            add("api/metaspace/v2/entity/");
-            add("/api/metaspace/admin/status");
-            add("api/metaspace/v2/entity");
-            add("api/metaspace/metadata/supplementTable");
-            add("api/metaspace/metadata/business/trust");
-            add("api/metaspace/market/business");
-            add("api/metaspace/metadata/refreshcache");
-            add("api/metaspace/api");
-            add("/api/metaspace/tenant");
-            add("/api/metaspace/admin/version");
-            add("/api/metaspace/cache");
-            add("api/metaspace/metadata/update/supplementTable");
-        }};
+        skipUrl.add("v2/entity/uniqueAttribute/type/");
+        skipUrl.add("api/metaspace/v2/entity/");
+        skipUrl.add("/api/metaspace/admin/status");
+        skipUrl.add("api/metaspace/v2/entity");
+        skipUrl.add("api/metaspace/metadata/supplementTable");
+        skipUrl.add("api/metaspace/metadata/business/trust");
+        skipUrl.add("api/metaspace/market/business");
+        skipUrl.add("api/metaspace/metadata/refreshcache");
+        skipUrl.add("api/metaspace/api");
+        skipUrl.add("/api/metaspace/tenant");
+        skipUrl.add("/api/metaspace/admin/version");
+        skipUrl.add("/api/metaspace/cache");
+        skipUrl.add("api/metaspace/metadata/update/supplementTable");
 
-        permissionUrl = new ArrayList<String>() {{
-            add("api/metaspace/health/check");
-            add("api/metaspace/health/check/password");
-            add("api/metaspace/businesses/excel/file/template");
-            add("api/metaspace/businesses/excel/category/template");
-            add("api/metaspace/businesses/excel/allcategory/template");
-            add("api/metaspace/public/tenant/requirements/download/file");
-            add("api/metaspace/info/deriveTable/exportById");
-            add("api/metaspace/info/deriveTable/importTemplate");
-        }};
+        permissionUrl.add("api/metaspace/health/check");
+        permissionUrl.add("api/metaspace/health/check/password");
+        permissionUrl.add("api/metaspace/businesses/excel/file/template");
+        permissionUrl.add("api/metaspace/businesses/excel/category/template");
+        permissionUrl.add("api/metaspace/businesses/excel/allcategory/template");
+        permissionUrl.add("api/metaspace/public/tenant/requirements/download/file");
+        permissionUrl.add("api/metaspace/info/deriveTable/exportById");
+        permissionUrl.add("api/metaspace/info/deriveTable/importTemplate");
     }
 
     /**
      * 这种实现方式存在风险，而且粒度也不好控制
+     *
      * @param requestURL
      * @return
      */
     public static boolean isSkipUrl(String requestURL) {
-        return skipUrl.stream().anyMatch(url -> requestURL.contains(url));
+        return skipUrl.stream().anyMatch(requestURL::contains);
     }
 
     public static boolean isDataService(String requestURL) {
