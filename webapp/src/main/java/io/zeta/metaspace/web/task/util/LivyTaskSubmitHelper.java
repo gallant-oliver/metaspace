@@ -28,6 +28,7 @@ import io.zeta.metaspace.model.measure.Measure;
 import io.zeta.metaspace.model.measure.MeasureLivyResult;
 import io.zeta.metaspace.utils.GsonUtils;
 import io.zeta.metaspace.web.task.quartz.QuartzJob;
+import io.zeta.metaspace.web.util.AdminUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -139,6 +140,7 @@ public class LivyTaskSubmitHelper {
 
     private Map<String, Object> buildLivyArgs(Measure measure, String pool, Map<String, Object> config) throws IOException {
         Map<String, Object> livyArgs = new HashMap<>(SparkConfig);
+        replaceRealUser(config);
         livyArgs.putAll(config);
 
         if (pool != null && !pool.isEmpty()) {
@@ -261,5 +263,12 @@ public class LivyTaskSubmitHelper {
         } catch (Exception e) {
             log.error("删除 spark 任务失败", e);
         }
+    }
+
+    /**
+     * 把sprakConfig里的realuser替换为当前sso用户，不然无法通过spark的用户认证
+     */
+    private void replaceRealUser(Map<String, Object> config) {
+        ((Map<String, Object>) config.get("conf")).put("spark.sql.hive.real.user", AdminUtils.getUserName());
     }
 }
