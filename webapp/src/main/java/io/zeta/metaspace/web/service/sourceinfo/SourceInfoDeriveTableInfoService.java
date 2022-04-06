@@ -1,6 +1,6 @@
 package io.zeta.metaspace.web.service.sourceinfo;
 
-import com.alibaba.excel.EasyExcel;
+import com.alibaba.excel.EasyExcelFactory;
 import com.alibaba.excel.ExcelWriter;
 import com.alibaba.excel.write.metadata.WriteSheet;
 import io.zeta.metaspace.model.Result;
@@ -35,12 +35,10 @@ import io.zeta.metaspace.web.rest.BusinessREST;
 import io.zeta.metaspace.web.rest.TechnicalREST;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.HdfsService;
-import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.DeriveTableExportUtil;
-import io.zeta.metaspace.web.util.PoiExcelUtils;
-import io.zeta.metaspace.web.util.ReturnUtil;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.commons.collections.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -76,10 +74,6 @@ import java.util.stream.Collectors;
 public class SourceInfoDeriveTableInfoService {
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceInfoDeriveTableInfoService.class);
-
-    public final int BUSINESS_CATEGORY_TYPE = 1;
-
-    public final int TECHNIACL_CATEGORY_TYPE = 0;
 
     @Autowired
     private HdfsService hdfsService;
@@ -211,7 +205,7 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveTableColumnRelationService.saveBatch(sourceInfoDeriveTableColumnRelationList);
 
             // 标签同步到column_tag_relation_to_column表
-            preserveTags(sourceInfoDeriveTableInfo.getTableGuid(), sourceInfoDeriveColumnInfos);
+            ProxyUtil.getProxy(SourceInfoDeriveTableInfoService.class).preserveTags(sourceInfoDeriveTableInfo.getTableGuid(), sourceInfoDeriveColumnInfos);
         }
 
         // 提交：新增业务对象-表关系(关联类型：0通过业务对象挂载功能挂载到该业务对象的表；1通过衍生表登记模块登记关联到该业务对象上的表)
@@ -243,23 +237,26 @@ public class SourceInfoDeriveTableInfoService {
     public void preserveTags(String tableGuid, List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos) {
         List<Column> columnInfoList = columnDAO.getColumnInfoList(tableGuid);
         List<ColumnTagRelationToColumn> columnTagRelationToColumns = new ArrayList<>();
-        if (!CollectionUtils.isEmpty(columnInfoList) && !CollectionUtils.isEmpty(sourceInfoDeriveColumnInfos)) {
-            List<String> columnGuids = columnInfoList.stream().map(Column::getColumnId).collect(Collectors.toList());
-            for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
-                for (Column column : columnInfoList) {
-                    if (sourceInfoDeriveColumnInfo.getColumnNameEn().equalsIgnoreCase(column.getColumnName())) {
-                        List<ColumnTagRelationToColumn> columnTagRelations = packTags(column.getColumnId(), sourceInfoDeriveColumnInfo.getTags());
-                        if (columnTagRelations != null && columnTagRelations.size() > 0) {
-                            columnTagRelationToColumns.addAll(columnTagRelations);
-                        }
-                        break;
-                    }
+        if (CollectionUtils.isEmpty(columnInfoList) || CollectionUtils.isEmpty(sourceInfoDeriveColumnInfos)) {
+            return;
+        }
+        Map<String, Object> columnMap = columnInfoList.stream().collect(Collectors.toMap(Column::getColumnName, Column::getColumnId, (key1, key2) -> key1));
+        // key列名不区分大小写
+        CaseInsensitiveMap result = new CaseInsensitiveMap();
+        result.putAll(columnMap);
+        List<String> columnGuids = columnInfoList.stream().map(Column::getColumnId).collect(Collectors.toList());
+        for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
+            if (result.containsKey(sourceInfoDeriveColumnInfo.getColumnNameEn())) {
+                List<ColumnTagRelationToColumn> columnTagRelations = packTags(result.get(sourceInfoDeriveColumnInfo.getColumnNameEn()).toString(),
+                        sourceInfoDeriveColumnInfo.getTags());
+                if (!CollectionUtils.isEmpty(columnTagRelations)) {
+                    columnTagRelationToColumns.addAll(columnTagRelations);
                 }
             }
-            columnTagDao.deleteRelationAll(columnGuids);
-            if (!CollectionUtils.isEmpty(columnTagRelationToColumns)) {
-                sourceInfoDeriveTableInfoDao.addPreserveTags(columnTagRelationToColumns);
-            }
+        }
+        columnTagDao.deleteRelationAll(columnGuids);
+        if (!CollectionUtils.isEmpty(columnTagRelationToColumns)) {
+            sourceInfoDeriveTableInfoDao.addPreserveTags(columnTagRelationToColumns);
         }
 
     }
@@ -274,7 +271,7 @@ public class SourceInfoDeriveTableInfoService {
     public List<ColumnTagRelationToColumn> packTags(String columnGuid, String strTags) {
         List<ColumnTagRelationToColumn> columnTagRelationToColumns = new ArrayList<>();
         if (StringUtils.isBlank(strTags) || StringUtils.isBlank(columnGuid)) {
-            return null;
+            return columnTagRelationToColumns;
         }
         String[] tags = strTags.split(",");
         if (tags.length > 0) {
@@ -387,6 +384,23 @@ public class SourceInfoDeriveTableInfoService {
         }
         sourceInfoDeriveTableInfo.setImportance(important);
         sourceInfoDeriveTableInfo.setSecurity(security);
+        if (!submitWay(sourceInfoDeriveTableColumnDto, tenantId, tableId, tableGuid, sourceInfoDeriveTableInfo, sourceInfoDeriveColumnInfos)) {
+            tableFieldRelationship(sourceInfoDeriveTableColumnDto, tenantId, oldSourceInfoDeriveTableInfo, sourceInfoDeriveTableInfo, sourceInfoDeriveColumnInfos);
+        }
+        return true;
+    }
+
+    /**
+     * 提交方式
+     * @param sourceInfoDeriveTableColumnDto 衍生表列DTO
+     * @param tenantId 当前租户id
+     * @param tableId 表id
+     * @param tableGuid 表guid
+     * @param sourceInfoDeriveTableInfo 衍生表信息
+     * @param sourceInfoDeriveColumnInfos 衍生表列信息
+     * @return 是否执行下一步
+     */
+    private boolean submitWay(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String tenantId, String tableId, String tableGuid, SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo, List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos) {
         // 操作保存
         if (!sourceInfoDeriveTableColumnDto.isSubmit()) {
             // 如果上次是已提交
@@ -443,6 +457,18 @@ public class SourceInfoDeriveTableInfoService {
             }
 
         }
+        return false;
+    }
+
+    /**
+     * 操作表-字段关系
+     * @param sourceInfoDeriveTableColumnDto 衍生表列DTO
+     * @param tenantId 当前租户id
+     * @param oldSourceInfoDeriveTableInfo 老的衍生表详情
+     * @param sourceInfoDeriveTableInfo 新的衍生表详情
+     * @param sourceInfoDeriveColumnInfos 衍生表列详情
+     */
+    private void tableFieldRelationship(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String tenantId, SourceInfoDeriveTableInfo oldSourceInfoDeriveTableInfo, SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo, List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos) {
         // 表-字段关系
         List<SourceInfoDeriveTableColumnRelation> sourceInfoDeriveTableColumnRelationList = new ArrayList<>(sourceInfoDeriveColumnInfos.size());
 
@@ -451,7 +477,8 @@ public class SourceInfoDeriveTableInfoService {
 
         // 已存在的将ID设置为null，稍后要进行剔除，relation中添加已存在的guid
         // 不存在的重新设置id和guid。
-        sourceInfoDeriveColumnInfos = sourceInfoDeriveColumnInfos.stream().peek(deriveColumnInfo -> {
+        List<SourceInfoDeriveColumnInfo> list = new ArrayList<>();
+        for (SourceInfoDeriveColumnInfo deriveColumnInfo : sourceInfoDeriveColumnInfos) {
             deriveColumnInfo.setTenantId(tenantId);
             deriveColumnInfo.setTableGuid(sourceInfoDeriveTableInfo.getTableGuid());
             List<SourceInfoDeriveColumnInfo> collect = deriveColumnInfoListByTableGuid.stream().filter(e -> e.equals(deriveColumnInfo)).collect(Collectors.toList());
@@ -469,7 +496,11 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveTableColumnRelation.setTableId(sourceInfoDeriveTableInfo.getId());
             sourceInfoDeriveTableColumnRelation.setTableGuid(sourceInfoDeriveTableInfo.getTableGuid());
             sourceInfoDeriveTableColumnRelationList.add(sourceInfoDeriveTableColumnRelation);
-        }).filter(deriveColumnInfo -> StringUtils.isNotBlank(deriveColumnInfo.getId())).collect(Collectors.toList());
+            if (StringUtils.isNotBlank(deriveColumnInfo.getId())) {
+                list.add(deriveColumnInfo);
+            }
+        }
+        sourceInfoDeriveColumnInfos = list;
 
         this.saveOrUpdate(sourceInfoDeriveTableInfo);
         // 有新增的列入库
@@ -477,7 +508,7 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveColumnInfoService.saveOrUpdateBatch(sourceInfoDeriveColumnInfos);
         }
         // 标签同步到column_tag_relation_to_column表
-        preserveTags(sourceInfoDeriveTableInfo.getTableGuid(), sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos());
+        ProxyUtil.getProxy(SourceInfoDeriveTableInfoService.class).preserveTags(sourceInfoDeriveTableInfo.getTableGuid(), sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos());
         sourceInfoDeriveTableColumnRelationService.saveOrUpdateBatch(sourceInfoDeriveTableColumnRelationList);
 
 
@@ -495,7 +526,6 @@ public class SourceInfoDeriveTableInfoService {
                 businessDAO.insertDerivedTableRelation(sourceInfoDeriveTableInfo.getBusinessId(), sourceInfoDeriveTableInfo.getTableGuid(), 1, sourceInfoDeriveTableInfo.getSourceId());
             }
         }
-        return true;
     }
 
     boolean checkUpdateHasModify(SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo, List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos, String tenantId) {
@@ -515,11 +545,8 @@ public class SourceInfoDeriveTableInfoService {
             deriveColumnInfo.setTenantId(tenantId);
             deriveColumnInfo.setTableGuid(sourceInfoDeriveTableInfo.getTableGuid());
         });
-        if (!deriveColumnInfoListByTableId.containsAll(sourceInfoDeriveColumnInfos) ||
-                !sourceInfoDeriveColumnInfos.containsAll(deriveColumnInfoListByTableId)) {
-            return true;
-        }
-        return false;
+        return !deriveColumnInfoListByTableId.containsAll(sourceInfoDeriveColumnInfos) ||
+                !sourceInfoDeriveColumnInfos.containsAll(deriveColumnInfoListByTableId);
     }
 
 
@@ -549,13 +576,11 @@ public class SourceInfoDeriveTableInfoService {
         List<SourceInfoDeriveTableInfo> sourceInfoDeriveTableInfos = sourceInfoDeriveTableInfoDao.queryDeriveTableList(tenantId, tableName, state, offset, limit);
 
         // 获取租户下所有的技术目录guid - path
-        int TECHNIACL_CATEGORY_TYPE = 0;
-        Map<String, String> technicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE, null);
+        Map<String, String> technicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, CommonConstant.TECHNICAL_CATEGORY_TYPE, null);
         // 获取该租户下所有的业务目录guid - path
-        int BUSINESS_CATEGORY_TYPE = 1;
-        Map<String, String> businessCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, BUSINESS_CATEGORY_TYPE, null);
+        Map<String, String> businessCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, CommonConstant.BUSINESS_CATEGORY_TYPE, null);
 
-        List<SourceInfoDeriveTableVO> sourceInfoDeriveTableVOS = sourceInfoDeriveTableInfos.stream().map(sourceInfoDeriveTableInfo -> {
+        return sourceInfoDeriveTableInfos.stream().map(sourceInfoDeriveTableInfo -> {
             SourceInfoDeriveTableVO sourceInfoDeriveTableVO = new SourceInfoDeriveTableVO();
             BeanUtils.copyProperties(sourceInfoDeriveTableInfo, sourceInfoDeriveTableVO);
             sourceInfoDeriveTableVO.setUpdateTime(sourceInfoDeriveTableInfo.getUpdateTimeStr());
@@ -565,7 +590,6 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveTableVO.setQueryDDL(StringUtils.isNotBlank(sourceInfoDeriveTableInfo.getDdl()));
             return sourceInfoDeriveTableVO;
         }).collect(Collectors.toList());
-        return sourceInfoDeriveTableVOS;
     }
 
     private boolean updateVersionByTableId(String tableId, int version) {
@@ -881,8 +905,7 @@ public class SourceInfoDeriveTableInfoService {
             SourceInfoDeriveTableInfo tableInfo = deriveTableInfoOpt.get();
             SourceInfoDeriveTableColumnVO info = new SourceInfoDeriveTableColumnVO();
             BeanUtils.copyProperties(tableInfo, info);
-            int TECHNIACL_CATEGORY_TYPE = 0;
-            Map<String, String> technicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE, info.getCategoryId());
+            Map<String, String> technicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, CommonConstant.TECHNICAL_CATEGORY_TYPE, info.getCategoryId());
             info.setCategory(technicalCategoryGuidPathMap.getOrDefault(info.getCategoryId(), ""));
 
             BusinessInfo businessInfo = businessDAO.queryBusinessByBusinessId(info.getBusinessId());
@@ -890,8 +913,7 @@ public class SourceInfoDeriveTableInfoService {
                 info.setBusiness(businessInfo.getName());
                 info.setBusinessHeaderId(businessInfo.getDepartmentId());
                 // 获取该租户下所有的业务目录guid - path
-                int BUSINESS_CATEGORY_TYPE = 1;
-                Map<String, String> businessCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, BUSINESS_CATEGORY_TYPE, businessInfo.getDepartmentId());
+                Map<String, String> businessCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, CommonConstant.BUSINESS_CATEGORY_TYPE, businessInfo.getDepartmentId());
                 info.setBusinessHeader(businessCategoryGuidPathMap.getOrDefault(businessInfo.getDepartmentId(), ""));
             }
 
@@ -915,7 +937,7 @@ public class SourceInfoDeriveTableInfoService {
      * @param tableId
      * @return
      */
-    public SourceInfoDeriveTableColumnVO getDeriveTableColumnDetail(String tenantId, String tableId) throws SQLException {
+    public SourceInfoDeriveTableColumnVO getDeriveTableColumnDetail(String tenantId, String tableId) {
         // 根据主键id查询衍生表
         SourceInfoDeriveTableInfo byId = this.getByIdAndTenantId(tableId, tenantId);
         if (null == byId) {
@@ -930,7 +952,7 @@ public class SourceInfoDeriveTableInfoService {
         BusinessInfo businessInfo = businessDAO.queryBusinessByBusinessId(sourceInfoDeriveTableColumnVO.getBusinessId());
         if (null != businessInfo) {
             // 获取该租户下所有的业务目录guid - path
-            Map<String, String> businessCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, BUSINESS_CATEGORY_TYPE, businessInfo.getDepartmentId());
+            Map<String, String> businessCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, CommonConstant.BUSINESS_CATEGORY_TYPE, businessInfo.getDepartmentId());
             sourceInfoDeriveTableColumnVO.setBusiness(businessInfo.getName());
             sourceInfoDeriveTableColumnVO.setBusinessHeaderId(businessInfo.getDepartmentId());
             sourceInfoDeriveTableColumnVO.setBusinessHeader(businessCategoryGuidPathMap.getOrDefault(businessInfo.getDepartmentId(), ""));
@@ -938,7 +960,7 @@ public class SourceInfoDeriveTableInfoService {
 
         // 设置表的技术目录和业务目录
         // 获取租户下所有的技术目录guid - path
-        Map<String, String> technicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE, sourceInfoDeriveTableColumnVO.getCategoryId());
+        Map<String, String> technicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, CommonConstant.TECHNICAL_CATEGORY_TYPE, sourceInfoDeriveTableColumnVO.getCategoryId());
 
         sourceInfoDeriveTableColumnVO.setCategory(technicalCategoryGuidPathMap.getOrDefault(sourceInfoDeriveTableColumnVO.getCategoryId(), ""));
 
@@ -962,7 +984,7 @@ public class SourceInfoDeriveTableInfoService {
             }
 
             String sourceCategoryId = categoryDAO.queryCategoryIdByGuidByDBId(sourceTableInfo.getDatabaseGuid(), tenantId);
-            Map<String, String> sourceTechnicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, TECHNIACL_CATEGORY_TYPE, sourceCategoryId);
+            Map<String, String> sourceTechnicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, CommonConstant.TECHNICAL_CATEGORY_TYPE, sourceCategoryId);
             sourceInfoDeriveTableColumnVO.setSourceTable(sourceTableInfo.getTableName());
             // 获取源数据层、库
             sourceInfoDeriveTableColumnVO.setSourceDbGuid(sourceCategoryId);
@@ -989,9 +1011,9 @@ public class SourceInfoDeriveTableInfoService {
         if (!CollectionUtils.isEmpty(sourceDbGuidList)) {
             tableDataSourceRelationPOList = sourceInfoDAO.selectListByTenantIdAndDbId(tenantId, sourceDbGuidList);
         }
-        Map<String, Column> columnMap = columnList.stream().collect(Collectors.toMap(Column::getColumnId, Column -> Column));
-        Map<String, TableInfo> tableMap = tableInfoList.stream().collect(Collectors.toMap(TableInfo::getTableGuid, TableInfo -> TableInfo));
-        Map<String, TableDataSourceRelationPO> sourceInfoMap = tableDataSourceRelationPOList.stream().collect(Collectors.toMap(TableDataSourceRelationPO::getDatabaseId, TableDataSourceRelationPO -> TableDataSourceRelationPO));
+        Map<String, Column> columnMap = columnList.stream().collect(Collectors.toMap(Column::getColumnId, column -> column));
+        Map<String, TableInfo> tableMap = tableInfoList.stream().collect(Collectors.toMap(TableInfo::getTableGuid, tableInfo -> tableInfo));
+        Map<String, TableDataSourceRelationPO> sourceInfoMap = tableDataSourceRelationPOList.stream().collect(Collectors.toMap(TableDataSourceRelationPO::getDatabaseId, tableDataSourceRelationPO -> tableDataSourceRelationPO));
         sourceInfoDeriveTableColumnVO.setSourceInfoDeriveColumnVOS(deriveColumnInfoListByTableId.stream().map(e -> {
             SourceInfoDeriveColumnVO sourceInfoDeriveColumnVO = new SourceInfoDeriveColumnVO();
             BeanUtils.copyProperties(e, sourceInfoDeriveColumnVO);
@@ -1048,10 +1070,10 @@ public class SourceInfoDeriveTableInfoService {
     private String createDDL(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String dbName) {
         //oracle数据库，字段和表名需用“”修饰；hive使用``
         String tableFiled = "";
-        if (Constant.HIVE.equals(sourceInfoDeriveTableColumnDto.getDbType().toUpperCase())) {
+        if (Constant.HIVE.equalsIgnoreCase(sourceInfoDeriveTableColumnDto.getDbType())) {
             tableFiled = "`";
         }
-        if (Constant.ORACLE.equals(sourceInfoDeriveTableColumnDto.getDbType().toUpperCase())) {
+        if (Constant.ORACLE.equalsIgnoreCase(sourceInfoDeriveTableColumnDto.getDbType())) {
             tableFiled = "\"";
         }
         // 必须有长度的拼接长度
@@ -1133,9 +1155,7 @@ public class SourceInfoDeriveTableInfoService {
      * @return
      */
     private String createDML(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String sourceDbName, String targetDbName) {
-        String dbType = sourceInfoDeriveTableColumnDto.getDbType();
         // 数据库类型获取数据类型-替换值
-        Map<String, Object> stringObjectMap = Constant.REPLACE_DATE_MAP.get(dbType);
         String tableNameEn = sourceInfoDeriveTableColumnDto.getTableNameEn();
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
         addTimeField(sourceInfoDeriveColumnInfos);
@@ -1179,7 +1199,7 @@ public class SourceInfoDeriveTableInfoService {
     private void addTimeField(List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos) {
         SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo = new SourceInfoDeriveColumnInfo();
         sourceInfoDeriveColumnInfo.setId("delete");
-        sourceInfoDeriveColumnInfo.setColumnNameEn("etl_date");
+        sourceInfoDeriveColumnInfo.setColumnNameEn(CommonConstant.ETL_DATE);
         sourceInfoDeriveColumnInfo.setColumnNameZh("抽数时间");
         sourceInfoDeriveColumnInfo.setDataType("timestamp");
         sourceInfoDeriveColumnInfo.setMappingDescribe("每行的抽取时间");
@@ -1190,7 +1210,7 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveColumnInfos.removeIf(e -> Objects.equals("delete", e.getId()));
     }
 
-    public Result checkAddOrEditDeriveTableEntity(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String tenantId) throws SQLException {
+    public Result checkAddOrEditDeriveTableEntity(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String tenantId) {
         if (!checkTableNameDump(sourceInfoDeriveTableColumnDto.getTableNameEn(), sourceInfoDeriveTableColumnDto.getDbId(), sourceInfoDeriveTableColumnDto.getId())) {
             return ReturnUtil.error("400", "目标库下表英文名已存在");
         }
@@ -1203,7 +1223,7 @@ public class SourceInfoDeriveTableInfoService {
         String sourceInfoDbTypeKey = "dbr";
 
         // 默认的时间字段
-        String timeField = "etl_date";
+        String timeField = CommonConstant.ETL_DATE;
 
         String dbType = sourceInfoDeriveTableColumnDto.getDbType();
         if (StringUtils.isEmpty(dbType)) {
@@ -1212,7 +1232,7 @@ public class SourceInfoDeriveTableInfoService {
         // 校验数据源类型
         List<DataSourceTypeInfo> dataSourceType = dataSourceService.getDataSourceType(sourceInfoDbTypeKey);
         if (dataSourceType.stream().noneMatch(e -> e.getName().equalsIgnoreCase(dbType))) {
-            return ReturnUtil.error("400", "数据源类型不符合规范");
+            return ReturnUtil.error("400", CommonConstant.DATA_SOURCE_NOT_PROPERLY_DESCRIBED);
         }
 
         // 检验表英文名
@@ -1261,9 +1281,7 @@ public class SourceInfoDeriveTableInfoService {
             return ReturnUtil.error("400", "数据库或数据源不存在");
         }
         // 校验源表
-//        if (!checkSourceTableByGuid(sourceInfoDeriveTableColumnDto.getSourceTableGuid())) {
-//            return ReturnUtil.error("400", "源表不存在");
-//        }
+
         // 校验源字段
         List<String> sourceColumnIds = sourceInfoDeriveColumnInfos.stream().map(SourceInfoDeriveColumnInfo::getSourceColumnGuid).filter(StringUtils::isNotBlank).collect(Collectors.toList());
         if (!CollectionUtils.isEmpty(sourceColumnIds) && !checkSourceColumnsByGuid(sourceColumnIds)) {
@@ -1383,11 +1401,11 @@ public class SourceInfoDeriveTableInfoService {
         // 校验数据源类型，支持
         List<DataSourceTypeInfo> dataSourceType = dataSourceService.getDataSourceType(sourceInfoDbTypeKey);
         if (dataSourceType.stream().noneMatch(e -> e.getName().equalsIgnoreCase(dbType))) {
-            return ReturnUtil.error("400", "数据源类型不符合规范");
+            return ReturnUtil.error("400", CommonConstant.DATA_SOURCE_NOT_PROPERLY_DESCRIBED);
         }
         List<String> list = Constant.DATA_TYPE_MAP.get(dbType);
         if (CollectionUtils.isEmpty(list)) {
-            return ReturnUtil.error("400", "数据源类型不符合规范");
+            return ReturnUtil.error("400", CommonConstant.DATA_SOURCE_NOT_PROPERLY_DESCRIBED);
         }
         return ReturnUtil.success(list);
     }
@@ -1432,9 +1450,8 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveTableColumnDTO.setSubmit(true);
             sourceInfoDeriveTableColumnDTO.setFileName(fileName);
             sourceInfoDeriveTableColumnDTO.setFilePath(filePath);
-            return this.createSaveAndSubmitDeriveTableInfo(sourceInfoDeriveTableColumnDTO, tenantId);
+            return ProxyUtil.getProxy(SourceInfoDeriveTableInfoService.class).createSaveAndSubmitDeriveTableInfo(sourceInfoDeriveTableColumnDTO, tenantId);
         } catch (Exception e) {
-            LOG.error("fileUploadSubmit exception is {}", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
@@ -1470,7 +1487,7 @@ public class SourceInfoDeriveTableInfoService {
         String sourceInfoDbTypeKey = "dbr";
 
         // 默认的时间字段
-        String timeField = "etl_date";
+        String timeField = CommonConstant.ETL_DATE;
 
         String dbType = sourceInfoDeriveTableColumnDto.getDbType();
         if (StringUtils.isEmpty(dbType)) {
@@ -1479,7 +1496,7 @@ public class SourceInfoDeriveTableInfoService {
         // 校验数据源类型
         List<DataSourceTypeInfo> dataSourceType = dataSourceService.getDataSourceType(sourceInfoDbTypeKey);
         if (dataSourceType.stream().noneMatch(e -> e.getName().equalsIgnoreCase(dbType))) {
-            return ReturnUtil.error("400", "数据源类型不符合规范");
+            return ReturnUtil.error("400", CommonConstant.DATA_SOURCE_NOT_PROPERLY_DESCRIBED);
         }
 
         // 检验表英文名
@@ -1560,7 +1577,7 @@ public class SourceInfoDeriveTableInfoService {
     private void checkColumn(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDTO, String tenantId) {
         List<String> dataTypeList = (List<String>) this.getDataTypeByDbType(sourceInfoDeriveTableColumnDTO.getDbType()).getData();
         if (CollectionUtils.isEmpty(dataTypeList)) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源类型不符合规范");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, CommonConstant.DATA_SOURCE_NOT_PROPERLY_DESCRIBED);
         }
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDTO.getSourceInfoDeriveColumnInfos();
         List<TechnicalCategory> technicalCategoryList = this.getTechnicalCategory(true, tenantId);
@@ -1787,7 +1804,15 @@ public class SourceInfoDeriveTableInfoService {
         if (StringUtils.isNotBlank(sourceInfoDeriveTableColumnDTO.getRemark()) && sourceInfoDeriveTableColumnDTO.getRemark().length() > 512) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "备注不能超过512位");
         }
-        List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDTO.getSourceInfoDeriveColumnInfos();
+        fileCheckColumnLength(sourceInfoDeriveTableColumnDTO.getSourceInfoDeriveColumnInfos());
+    }
+
+    /**
+     * 验证文件列长度
+     *
+     * @param sourceInfoDeriveColumnInfos 衍生表文件列信息
+     */
+    private void fileCheckColumnLength(List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos) {
         for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
             if (sourceInfoDeriveColumnInfo.getColumnNameEn().length() > CommonConstant.LENGTH) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目标字段英文名不能超过128位");
@@ -1856,50 +1881,29 @@ public class SourceInfoDeriveTableInfoService {
                 sourceInfoDeriveColumnInfo.setSourceTableNameZh(list.get(i)[5]);
                 sourceInfoDeriveColumnInfo.setSourceColumnNameEn(list.get(i)[6]);
                 sourceInfoDeriveColumnInfo.setPrimaryKeyName(list.get(i)[10]);
-                if ("是".equals(list.get(i)[10])) {
-                    sourceInfoDeriveColumnInfo.setPrimaryKey(true);
-                } else {
-                    sourceInfoDeriveColumnInfo.setPrimaryKey(false);
-                }
+                sourceInfoDeriveColumnInfo.setPrimaryKey("是".equals(list.get(i)[10]));
                 sourceInfoDeriveColumnInfo.setMappingRule(list.get(i)[11]);
                 sourceInfoDeriveColumnInfo.setMappingDescribe(list.get(i)[12]);
                 sourceInfoDeriveColumnInfo.setSecretName(list.get(i)[13]);
-                if ("是".equals(list.get(i)[13])) {
-                    sourceInfoDeriveColumnInfo.setSecret(true);
-                } else {
-                    sourceInfoDeriveColumnInfo.setSecret(false);
-                }
+                sourceInfoDeriveColumnInfo.setSecret("是".equals(list.get(i)[13]));
                 sourceInfoDeriveColumnInfo.setSecretPeriod(list.get(i)[14]);
                 sourceInfoDeriveColumnInfo.setImportantName(list.get(i)[15]);
-                if ("是".equals(list.get(i)[15])) {
-                    sourceInfoDeriveColumnInfo.setImportant(true);
-                } else {
-                    sourceInfoDeriveColumnInfo.setImportant(false);
-                }
+                sourceInfoDeriveColumnInfo.setImportant("是".equals(list.get(i)[15]));
                 sourceInfoDeriveColumnInfo.setDesensitizationRules(list.get(i)[16]);
                 sourceInfoDeriveColumnInfo.setTagsName(list.get(i)[17]);
-                if ("是".equals(list.get(i)[18])) {
-                    sourceInfoDeriveColumnInfo.setPermissionField(true);
-                } else {
-                    sourceInfoDeriveColumnInfo.setPermissionField(false);
-                }
+                sourceInfoDeriveColumnInfo.setPermissionField("是".equals(list.get(i)[18]));
                 sourceInfoDeriveColumnInfo.setRemark(list.get(i)[19]);
                 sourceInfoDeriveColumnInfoList.add(sourceInfoDeriveColumnInfo);
             }
             sourceInfoDeriveTableColumnDto.setSourceInfoDeriveColumnInfos(sourceInfoDeriveColumnInfoList);
         } catch (Exception e) {
-            LOG.error("getDeriveDataFile exception is {}", e);
+            LOG.error("getDeriveDataFile exception is {0}", e);
         }
         return sourceInfoDeriveTableColumnDto;
     }
 
     public void exportById(HttpServletResponse response, String tenantId, String tableId) {
-        SourceInfoDeriveTableColumnVO deriveTableColumnDetail = null;
-        try {
-            deriveTableColumnDetail = getDeriveTableColumnDetail(tenantId, tableId);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        SourceInfoDeriveTableColumnVO deriveTableColumnDetail = getDeriveTableColumnDetail(tenantId, tableId);
         if (deriveTableColumnDetail == null) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "该衍生表不存在");
         }
@@ -1907,23 +1911,22 @@ public class SourceInfoDeriveTableInfoService {
         String templateName = DeriveTableExportUtil.deriveTableTemplate();
         String exportTableName = DeriveTableExportUtil.deriveTableExcelPathName(deriveTableColumnDetail.getTableNameZh());
 
-        ExcelWriter excelWriter = EasyExcel.write(exportTableName).withTemplate(templateName).build();
-        WriteSheet writeSheet = EasyExcel.writerSheet().build();
+        ExcelWriter excelWriter = EasyExcelFactory.write(exportTableName).withTemplate(templateName).build();
+        WriteSheet writeSheet = EasyExcelFactory.writerSheet().build();
         excelWriter.fill(deriveTableColumnDetail, writeSheet);
         excelWriter.fill(list, writeSheet);
         excelWriter.finish();
         String fileName = null;
         try {
             fileName = java.net.URLEncoder.encode(DeriveTableExportUtil.
-                    deriveTableExcelName(deriveTableColumnDetail.getTableNameZh()), "UTF-8");
+                    deriveTableExcelName(deriveTableColumnDetail.getTableNameZh()), CommonConstant.CHARACTER_CODE_UTF);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
         File file = DeriveTableExportUtil.deriveTableExport(exportTableName);
-        try {
-            InputStream inputStream = new FileInputStream(file);
-            Workbook workbook = WorkbookFactory.create(inputStream);
-            response.setCharacterEncoding("UTF-8");
+        try (InputStream inputStream = new FileInputStream(file);
+             Workbook workbook = WorkbookFactory.create(inputStream)) {
+            response.setCharacterEncoding(CommonConstant.CHARACTER_CODE_UTF);
             response.setHeader("content-Type", "application/vnd.ms-excel");
             response.addHeader("Content-Disposition", "attachment;filename=" + fileName);
             workbook.write(response.getOutputStream());
@@ -1939,12 +1942,10 @@ public class SourceInfoDeriveTableInfoService {
 
     public void downloadTemplate(HttpServletResponse response) {
         File file = DeriveTableExportUtil.deriveTableImportTemplate();
-        try {
-            InputStream input = new FileInputStream(file);
-            Workbook workbook = WorkbookFactory.create(input);
+        try (InputStream input = new FileInputStream(file); Workbook workbook = WorkbookFactory.create(input)) {
             String fileName = DeriveTableExportUtil.getDeriveImportTemplate();
-            fileName = java.net.URLEncoder.encode(fileName, "UTF-8");
-            response.setCharacterEncoding("UTF-8");
+            fileName = java.net.URLEncoder.encode(fileName, CommonConstant.CHARACTER_CODE_UTF);
+            response.setCharacterEncoding(CommonConstant.CHARACTER_CODE_UTF);
             response.setHeader("content-Type", "application/vnd.ms-excel");
             response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
             workbook.write(response.getOutputStream());
