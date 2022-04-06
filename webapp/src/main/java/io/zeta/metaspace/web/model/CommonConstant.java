@@ -1,5 +1,9 @@
 package io.zeta.metaspace.web.model;
 
+/**
+ * 业务操作公共属性值
+ * @author g
+ */
 public class CommonConstant {
     
     /**
@@ -21,6 +25,8 @@ public class CommonConstant {
      * 业务目录类型
      */
     public static final Integer BUSINESS_CATEGORY_TYPE = 1;
+
+    public static final int TECHNICAL_CATEGORY_TYPE = 0;
 
     /**
      * 需求状态-待下发
@@ -86,4 +92,17 @@ public class CommonConstant {
      * 默认血缘深度
      */
     public static final String DEFAULT_DEPTH = "-1";
+    /**
+     * 默认时间字段
+     * 生成DDL或DML
+     */
+    public static final String ETL_DATE = "etl_date";
+    /**
+     * 数据源类型不符合规范提示
+     */
+    public static final String DATA_SOURCE_NOT_PROPERLY_DESCRIBED = "数据源类型不符合规范";
+    /**
+     * UTF-8编码字符串
+     */
+    public static final String CHARACTER_CODE_UTF = "UTF-8";
 }
