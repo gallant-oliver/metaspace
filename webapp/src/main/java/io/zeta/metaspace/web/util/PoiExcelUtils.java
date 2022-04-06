@@ -82,7 +82,7 @@ public class PoiExcelUtils {
         // 获得工作簿对象
         Workbook workbook = getWorkBook(excelFile);
         // 创建返回对象，把每行中的值作为一个数组，所有的行作为一个集合返回
-        return ReadFileToList(workbook, startRow, ALL);
+        return readFileToList(workbook, startRow, ALL);
     }
 
     /**
@@ -99,7 +99,7 @@ public class PoiExcelUtils {
         // 获得工作簿对象
         Workbook workbook = getWorkBookFile(inputStream, fileName);
         // 创建返回对象，把每行中的值作为一个数组，所有的行作为一个集合返回
-        return ReadFileToList(workbook, startRow, lastCellNum);
+        return readFileToList(workbook, startRow, lastCellNum);
     }
 
 
@@ -116,7 +116,7 @@ public class PoiExcelUtils {
         // 获得工作簿对象
         Workbook workbook = getWorkBookFile(file);
         // 创建返回对象，把每行中的值作为一个数组，所有的行作为一个集合返回
-        return ReadFileToList(workbook, startRow, lastCellNum);
+        return readFileToList(workbook, startRow, lastCellNum);
     }
 
     public static List<String[]> readExcelFile(Workbook workbook) {
@@ -285,7 +285,7 @@ public class PoiExcelUtils {
         }
     }
 
-    private synchronized static void convertListToMap(List<List<String>> lists) {
+    private  static synchronized void convertListToMap(List<List<String>> lists) {
         dataMap.clear();
         for (List<String> list : lists) {
             String columnName = list.get(0);
@@ -384,9 +384,7 @@ public class PoiExcelUtils {
         String fileName = file.getName();
         // 创建Workbook工作簿对象，表示整个excel
         Workbook workbook = null;
-        try {
-            // 获得excel文件的io流
-            InputStream is = new FileInputStream(file);
+        try (InputStream is = new FileInputStream(file)) {
             // 根据文件后缀名不同(xls和xlsx)获得不同的workbook实现类对象
             if (fileName.endsWith(XLS)) {
                 // 2003版本
@@ -429,12 +427,6 @@ public class PoiExcelUtils {
             }
         } catch (IOException e) {
             logger.error("getWorkBookFile exception is ", e);
-        } finally {
-            try {
-                workbook.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
         return workbook;
     }
@@ -698,14 +690,14 @@ public class PoiExcelUtils {
                 lastRow, firstCol, lastCol);
         // 数据有效性对象
         // 绑定
-        XSSFDataValidation data_validation_list = (XSSFDataValidation) dvHelper.createValidation(dvConstraint, regions);
-        data_validation_list.setEmptyCellAllowed(false);
-        data_validation_list.setSuppressDropDownArrow(true);
-        data_validation_list.setShowErrorBox(true);
+        XSSFDataValidation dataValidationList = (XSSFDataValidation) dvHelper.createValidation(dvConstraint, regions);
+        dataValidationList.setEmptyCellAllowed(false);
+        dataValidationList.setSuppressDropDownArrow(true);
+        dataValidationList.setShowErrorBox(true);
         // 设置输入信息提示信息
-        data_validation_list.createPromptBox("下拉选择提示", "请使用下拉方式选择合适的值！");
+        dataValidationList.createPromptBox("下拉选择提示", "请使用下拉方式选择合适的值！");
         // 设置输入错误提示信息
-        return data_validation_list;
+        return dataValidationList;
     }
 
     /**
@@ -744,7 +736,10 @@ public class PoiExcelUtils {
     }
 
     //读取excel返回list
-    private static List<String[]> ReadFileToList(Workbook workbook, int startRow, int lastCellNum) {
+    private static List<String[]> readFileToList(Workbook workbook, int startRow, int lastCellNum) {
+        if (workbook == null) {
+            throw new ReadExcelException("workbook为空，读取失败");
+        }
         List<String[]> list = new ArrayList<>();
         // 获取当前sheet工作表
         Sheet sheet = workbook.getSheetAt(0);
@@ -758,7 +753,7 @@ public class PoiExcelUtils {
         }
         for (int rowNum = startRow; rowNum <= lastRowNum; rowNum++) {
             String[] cells = getCells(rowNum, sheet, lastCellNum);
-            if (cells != null && cells.length > 0) {
+            if (cells.length > 0) {
                 list.add(cells);
             }
         }
@@ -775,7 +770,7 @@ public class PoiExcelUtils {
         // 获得当前行
         Row row = sheet.getRow(rowNum);
         if (row == null) {
-            return null;
+            return new String[]{};
         }
         // 获得当前行的开始列
         int firstCellNum = row.getFirstCellNum();
