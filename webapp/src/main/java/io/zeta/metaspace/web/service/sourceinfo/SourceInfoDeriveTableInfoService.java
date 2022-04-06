@@ -252,7 +252,6 @@ public class SourceInfoDeriveTableInfoService {
                 if (!CollectionUtils.isEmpty(columnTagRelations)) {
                     columnTagRelationToColumns.addAll(columnTagRelations);
                 }
-                break;
             }
         }
         columnTagDao.deleteRelationAll(columnGuids);
