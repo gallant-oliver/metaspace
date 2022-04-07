@@ -1569,6 +1569,23 @@ public class SourceInfoDeriveTableInfoService {
     }
 
     /**
+     * 是否包含数据类型
+     * @param dataTypeList
+     * @param dataType
+     * @return
+     */
+    private Boolean checkDataType(List<String> dataTypeList, SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo){
+        if (dataTypeList.contains(sourceInfoDeriveColumnInfo.getDataType())) {
+            return true;
+        }
+        if(sourceInfoDeriveColumnInfo.getDataType().contains("decimal") && dataTypeList.contains("decimal")){
+            sourceInfoDeriveColumnInfo.setDataType("decimal");
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * 校验字段信息
      *
      * @param sourceInfoDeriveTableColumnDTO
@@ -1586,7 +1603,7 @@ public class SourceInfoDeriveTableInfoService {
         List<String> dbNameList = new ArrayList<>();
         List<String> tableNameList = new ArrayList<>();
         for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
-            if (!dataTypeList.contains(sourceInfoDeriveColumnInfo.getDataType())) {
+            if (!this.checkDataType(dataTypeList, sourceInfoDeriveColumnInfo)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中目标字段类型所填写的内容在系统中不存在:" + sourceInfoDeriveColumnInfo.getDataType());
             }
             dbNameList.add(sourceInfoDeriveColumnInfo.getSourceDbName());
@@ -1618,14 +1635,26 @@ public class SourceInfoDeriveTableInfoService {
             if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceDbName()) && StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceTableNameEn())) {
                 continue;
             }
-            List<TableInfoDerivePO> collect = tableInfoDerivePOList.stream().filter(p -> p.getDatabaseName().equals(sourceInfoDeriveColumnInfo.getSourceDbName()) &&
-                    p.getTableName().equals(sourceInfoDeriveColumnInfo.getSourceTableNameEn()) &&
-                    p.getColumnName().equals(sourceInfoDeriveColumnInfo.getSourceColumnNameEn())).collect(Collectors.toList());
+            List<TableInfoDerivePO> collect = tableInfoDerivePOList.stream().filter(p -> p.getDatabaseName().equalsIgnoreCase(sourceInfoDeriveColumnInfo.getSourceDbName()) &&
+                    p.getTableName().equalsIgnoreCase(sourceInfoDeriveColumnInfo.getSourceTableNameEn()) &&
+                    p.getColumnName().equalsIgnoreCase(sourceInfoDeriveColumnInfo.getSourceColumnNameEn())).collect(Collectors.toList());
             if (CollectionUtils.isEmpty(collect)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中源库英文名、源表英文名或者源字段英文名所填写的内容在系统中不存在:" + sourceInfoDeriveColumnInfo.getSourceDbName());
+                StringBuilder str = new StringBuilder();
+                str.append("[").append(sourceInfoDeriveColumnInfo.getSourceDbName()).append("][").append(sourceInfoDeriveColumnInfo.getSourceTableNameEn()).append("][").append(sourceInfoDeriveColumnInfo.getSourceColumnNameEn()).append("]");
+                LOG.warn("文件中源库英文名、源表英文名或者源字段英文名所填写的内容在系统中不存在:" + str.toString());
+                sourceInfoDeriveColumnInfo.setSourceTableGuid("");
+                sourceInfoDeriveColumnInfo.setSourceColumnGuid("");
+                sourceInfoDeriveColumnInfo.setSourceColumnNameEn("");
+                return;
             }
             if (collect.size() > 1) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中源库英文名、源表英文名或者源字段英文名所填写的内容在系统中存在多个:" + sourceInfoDeriveColumnInfo.getSourceDbName());
+                StringBuilder str = new StringBuilder();
+                str.append("[").append(sourceInfoDeriveColumnInfo.getSourceDbName()).append("][").append(sourceInfoDeriveColumnInfo.getSourceTableNameEn()).append("][").append(sourceInfoDeriveColumnInfo.getSourceColumnNameEn()).append("]");
+                LOG.warn("文件中源库英文名、源表英文名或者源字段英文名所填写的内容在系统中存在多个:" + str.toString());
+                sourceInfoDeriveColumnInfo.setSourceTableGuid("");
+                sourceInfoDeriveColumnInfo.setSourceColumnGuid("");
+                sourceInfoDeriveColumnInfo.setSourceColumnNameEn("");
+                return;
             }
             sourceInfoDeriveColumnInfo.setSourceTableGuid(collect.get(0).getTableGuid());
             sourceInfoDeriveColumnInfo.setSourceColumnGuid(collect.get(0).getColumnGuid());
@@ -1833,8 +1862,8 @@ public class SourceInfoDeriveTableInfoService {
             if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getSourceColumnNameEn()) && sourceInfoDeriveColumnInfo.getSourceColumnNameEn().length() > CommonConstant.LENGTH) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "源字段英文名不能超过128位");
             }
-            if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getMappingRule()) && sourceInfoDeriveColumnInfo.getMappingRule().length() > CommonConstant.LENGTH) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "映射规则不能超过128位");
+            if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getMappingRule()) && sourceInfoDeriveColumnInfo.getMappingRule().length() > CommonConstant.LENGTH_1000) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "映射规则不能超过1000位");
             }
             if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getMappingDescribe()) && sourceInfoDeriveColumnInfo.getMappingDescribe().length() > CommonConstant.LENGTH) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "映射说明不能超过128位");

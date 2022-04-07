@@ -2,20 +2,21 @@ package io.zeta.metaspace.web.model;
 
 /**
  * 业务操作公共属性值
+ *
  * @author g
  */
 public class CommonConstant {
-    
+
     /**
      * 正常
      */
     public static final String UP = "UP";
-    
+
     /**
      * 异常
      */
     public static final String DOWN = "DOWN";
-    
+
     /**
      * 请求头参数: 租户ID
      */
@@ -55,12 +56,12 @@ public class CommonConstant {
     /**
      * 座机号正则表达式
      */
-    public static final  String REGEX_MOBILE = "^[0][0-9]{2,3}-[0-9]{5,10}$";
+    public static final String REGEX_MOBILE = "^[0][0-9]{2,3}-[0-9]{5,10}$";
 
     /**
      * 手机号正则表达式
      */
-    public static final  String REGEX_PHONE = "^(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\\d{8}$";
+    public static final String REGEX_PHONE = "^(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\\d{8}$";
 
     public final static int ALL = 0;
 
@@ -105,4 +106,9 @@ public class CommonConstant {
      * UTF-8编码字符串
      */
     public static final String CHARACTER_CODE_UTF = "UTF-8";
+
+    /**
+     * 字段长度
+     */
+    public static final int LENGTH_1000 = 1000;
 }
