@@ -5514,6 +5514,37 @@ INSERT INTO "public"."code_annex_type" ("code", "action") VALUES ('xlsx', 'sourc
 
 -- 指标图书馆
 
+DROP TABLE IF EXISTS "public"."business_tags";
+DROP TABLE IF EXISTS "public"."business_unit";
+DROP TABLE IF EXISTS "public"."business_indicator_apply";
+DROP TABLE IF EXISTS "public"."business_operation_records";
+DROP TABLE IF EXISTS "public"."business_indicators" CASCADE;
+DROP TABLE IF EXISTS "public"."business_index_tag_relations";
+DROP TABLE IF EXISTS "public"."indicator_threshold_setting";
+DROP TABLE IF EXISTS "public"."indicator_threshold_log";
+DROP TABLE IF EXISTS "public"."dimension_history";
+DROP TABLE IF EXISTS "public"."indicator_relation";
+DROP TABLE IF EXISTS "public"."time_limit_ind_log";
+DROP TABLE IF EXISTS "public"."time_limit_ind";
+DROP TABLE IF EXISTS "public"."composite_indicator_apply";
+DROP TABLE IF EXISTS "public"."composite_indicator_version";
+DROP TABLE IF EXISTS "public"."composite_indicator";
+DROP TABLE IF EXISTS "public"."derive_indicator_apply";
+DROP TABLE IF EXISTS "public"."derive_indicator_qualifier";
+DROP TABLE IF EXISTS "public"."derive_indicator_version";
+DROP TABLE IF EXISTS "public"."derive_indicator";
+DROP TABLE IF EXISTS "public"."business_indicators_history";
+DROP TABLE IF EXISTS "public"."qualifier_ind_log";
+DROP TABLE IF EXISTS "public"."qualifier_ind";
+DROP TABLE IF EXISTS "public"."dimension_metadata_relation";
+DROP TABLE IF EXISTS "public"."dimension";
+DROP TABLE IF EXISTS "public"."business_catalog_log";
+DROP TABLE IF EXISTS "public"."business_catalog";
+DROP TABLE IF EXISTS "public"."atom_indicator_apply";
+DROP TABLE IF EXISTS "public"."atom_indicator_version" CASCADE;
+DROP TABLE IF EXISTS "public"."atom_indicator_logic";
+DROP TABLE IF EXISTS "public"."atom_indicator";
+
 CREATE TABLE "public"."atom_indicator" (
   "id" int8 NOT NULL,
   "atom_indicator_code" varchar(100) COLLATE "pg_catalog"."default",
