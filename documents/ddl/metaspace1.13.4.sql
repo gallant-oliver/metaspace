@@ -5652,6 +5652,7 @@ CREATE TABLE "public"."atom_indicator_version" (
   "create_time" timestamp(6),
   "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
   "update_time" timestamp(6),
+  "business_update_time" timestamp(6),
   "deleted" int4,
   "atom_indicator_sql" varchar(4000),
   "logic_type" int4,
@@ -5676,6 +5677,7 @@ COMMENT ON COLUMN "public"."atom_indicator_version"."create_user_id" IS '创建�
 COMMENT ON COLUMN "public"."atom_indicator_version"."create_time" IS '创建时间';
 COMMENT ON COLUMN "public"."atom_indicator_version"."update_user_id" IS '更新人';
 COMMENT ON COLUMN "public"."atom_indicator_version"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."atom_indicator_version"."business_update_time" IS '业务数据更新时间';
 COMMENT ON COLUMN "public"."atom_indicator_version"."deleted" IS '逻辑删除位(0已删除 1未删除)';
 COMMENT ON COLUMN "public"."atom_indicator_version"."logic_type" IS '逻辑配置类型（1基于原子指标配置 2自定义sql）';
 COMMENT ON COLUMN "public"."atom_indicator_version"."atom_indicator_sql" IS '原子指标自定义sql';
@@ -5881,6 +5883,7 @@ CREATE TABLE "public"."business_indicators" (
   "data_provider" varchar(100) COLLATE "pg_catalog"."default",
   "attribute_management_department" varchar(100) COLLATE "pg_catalog"."default",
   "operations_people" varchar(100) COLLATE "pg_catalog"."default",
+  "operations_people_ids" text[] COLLATE "pg_catalog"."default",
   "state" int4 NOT NULL DEFAULT 0,
   "create_time" timestamp(6),
   "create_user_id" varchar(64) COLLATE "pg_catalog"."default",
@@ -5917,6 +5920,7 @@ COMMENT ON COLUMN "public"."business_indicators"."source_type" IS '指标来源�
 COMMENT ON COLUMN "public"."business_indicators"."data_provider" IS '数据提供方';
 COMMENT ON COLUMN "public"."business_indicators"."attribute_management_department" IS '业务归口管理部门';
 COMMENT ON COLUMN "public"."business_indicators"."operations_people" IS '运维负责人';
+COMMENT ON COLUMN "public"."business_indicators"."operations_people_ids" IS '运维负责人ID列表';
 COMMENT ON COLUMN "public"."business_indicators"."state" IS '状态（已成功1，未发布0，审核中2）';
 COMMENT ON COLUMN "public"."business_indicators"."create_time" IS '创建时间';
 COMMENT ON COLUMN "public"."business_indicators"."create_user_id" IS '创建的用户ID';
@@ -6240,6 +6244,7 @@ CREATE TABLE "public"."derive_indicator_version" (
   "create_time" timestamp(6),
   "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
   "update_time" timestamp(6),
+  "business_update_time" timestamp(6),
   "deleted" int4,
   "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
   "threshold_setting" int4,
@@ -6273,6 +6278,7 @@ COMMENT ON COLUMN "public"."derive_indicator_version"."create_user_id" IS '创�
 COMMENT ON COLUMN "public"."derive_indicator_version"."create_time" IS '创建时间';
 COMMENT ON COLUMN "public"."derive_indicator_version"."update_user_id" IS '更新人';
 COMMENT ON COLUMN "public"."derive_indicator_version"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."derive_indicator_version"."business_update_time" IS '业务数据更新时间';
 COMMENT ON COLUMN "public"."derive_indicator_version"."deleted" IS '逻辑删除位(0已删除 1未删除)';
 COMMENT ON COLUMN "public"."derive_indicator_version"."tenant_id" IS '租户id';
 COMMENT ON COLUMN "public"."derive_indicator_version"."threshold_setting_id" IS '阈值设置ID';
@@ -6360,6 +6366,7 @@ CREATE TABLE "public"."composite_indicator_version" (
   "create_time" timestamp(6),
   "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
   "update_time" timestamp(6),
+  "business_update_time" timestamp(6),
   "deleted" int4,
   "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
   "dimension_id" int8[],
@@ -6390,6 +6397,7 @@ COMMENT ON COLUMN "public"."composite_indicator_version"."create_user_id" IS '�
 COMMENT ON COLUMN "public"."composite_indicator_version"."create_time" IS '创建时间';
 COMMENT ON COLUMN "public"."composite_indicator_version"."update_user_id" IS '更新人';
 COMMENT ON COLUMN "public"."composite_indicator_version"."update_time" IS '更新时间';
+COMMENT ON COLUMN "public"."composite_indicator_version"."business_update_time" IS '业务数据更新时间';
 COMMENT ON COLUMN "public"."composite_indicator_version"."deleted" IS '逻辑删除位(0已删除 1未删除)';
 COMMENT ON COLUMN "public"."composite_indicator_version"."tenant_id" IS '租户id';
 COMMENT ON COLUMN "public"."composite_indicator_version"."dimension_id" IS '指标维度ID';
@@ -6519,7 +6527,8 @@ CREATE TABLE "public"."indicator_threshold_log" (
                                                     "create_user_id" varchar(255) COLLATE "pg_catalog"."default" NOT NULL,
                                                     "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
                                                     "update_time" timestamp(6),
-                                                    "deleted" int4
+                                                    "deleted" int4,
+                                                    "actual_value" varchar(255) COLLATE "pg_catalog"."default"
 )
 ;
 COMMENT ON COLUMN "public"."indicator_threshold_log"."indicator_id" IS '指标id';
@@ -6532,32 +6541,34 @@ COMMENT ON COLUMN "public"."indicator_threshold_log"."create_user_id" IS '创建
 COMMENT ON COLUMN "public"."indicator_threshold_log"."update_user_id" IS '更新人';
 COMMENT ON COLUMN "public"."indicator_threshold_log"."update_time" IS '更新时间';
 COMMENT ON COLUMN "public"."indicator_threshold_log"."deleted" IS '逻辑删除位(0已删除 1未删除)';
+COMMENT ON COLUMN "public"."indicator_threshold_log"."actual_value" IS '阈值检测的实际值';
 
 -- ----------------------------
 -- Primary Key structure for table indicator_threshold_log
 -- ----------------------------
-ALTER TABLE "public"."indicator_threshold_log" ADD PRIMARY KEY ("id");
+ ALTER TABLE "public"."indicator_threshold_log" ADD PRIMARY KEY ("id");
 
-
-CREATE TABLE "public"."indicator_threshold_setting" (
-                                                        "id" int8 NOT NULL,
-                                                        "indicator_id" int8,
-                                                        "indicator_type" int4,
-                                                        "left_operator" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "left_operate_value" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "warning_group" varchar(255)[] COLLATE "pg_catalog"."default",
-                                                        "create_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "create_time" timestamp(6),
-                                                        "update_user_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "update_time" timestamp(6),
-                                                        "deleted" int4,
-                                                        "tenant_id" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "right_operate_value" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "right_operator" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "check_frequency" varchar(255) COLLATE "pg_catalog"."default",
-                                                        "check_time" timestamp(6),
-                                                        "enable" bool,
-                                                        "day_of_check_frequency" int4
+CREATE TABLE public.indicator_threshold_setting (
+	id int8 NOT NULL,
+	indicator_id int8 NULL,
+	"indicator_type" int4 NULL,
+	left_operator varchar(255) NULL,
+	left_operate_value varchar(255) NULL,
+	warning_group _varchar NULL,
+	create_user_id varchar(255) NULL,
+	create_time timestamp(6) NULL,
+	update_user_id varchar(255) NULL,
+	update_time timestamp(6) NULL,
+	deleted int4 NULL,
+	tenant_id varchar(255) NULL,
+	right_operate_value varchar(255) NULL,
+	right_operator varchar(255) NULL,
+	check_frequency varchar(255) NULL,
+	check_time timestamptz(6) NULL,
+	"enable" bool NULL,
+	day_of_check_frequency int4 NULL,
+	indicator_version_id int8 NULL,
+	is_current_version bool NULL
 )
 ;
 COMMENT ON COLUMN "public"."indicator_threshold_setting"."id" IS '主键id';

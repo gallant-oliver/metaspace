@@ -39,10 +39,27 @@ WHERE
   AND tc.table_guid = t1.table_guid
   AND tc.column_guid = c1.column_guid
   AND t1.version = - 1;
-	
-UPDATE source_info_derive_column_info 
-SET custom = FALSE 
+
+UPDATE source_info_derive_column_info
+SET custom = FALSE
 WHERE
 	custom IS NULL
 
 UPDATE source_info_derive_table_info SET operator = creator;
+
+-- 指标图书馆
+
+ALTER TABLE public.indicator_threshold_log ADD actual_value varchar(32) NULL;
+COMMENT ON COLUMN public.indicator_threshold_log.actual_value IS '实际值';
+
+ALTER TABLE public.indicator_threshold_log ADD threshold_setting_id int8 NULL;
+COMMENT ON COLUMN public.indicator_threshold_log.threshold_setting_id IS '阈值设置id';
+
+alter table public.indicator_threshold_setting add indicator_version_id int8 NULL
+COMMENT ON COLUMN public.indicator_threshold_setting.indicator_version_id IS '指标版本id';
+
+alter table public.indicator_threshold_setting add is_current_version bool NULL
+COMMENT ON COLUMN public.indicator_threshold_setting.is_current_version IS '是否当前版本';
+
+ALTER TABLE "public"."business_indicators" add "operations_people_ids" text[] COLLATE "pg_catalog"."default";
+COMMENT ON COLUMN "public"."business_indicators"."operations_people_ids" IS '运维负责人ID列表';
