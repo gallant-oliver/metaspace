@@ -71,7 +71,7 @@ public final class ApplicationProperties extends PropertiesConfiguration {
                     instance = get(APPLICATION_PROPERTIES);
                     boolean isApollo = instance.getBoolean("metaspace.apollo", false);
                     if (isApollo){
-                        ApolloConfig.getConfig(instance);
+                        ApolloConfig.getConfig((org.apache.commons.configuration2.Configuration) instance);
                     }
                     InMemoryJAASConfiguration.init(instance);
                 }

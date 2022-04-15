@@ -366,11 +366,10 @@ public class TaskManageService {
                 // 资源池
                 dataQualitySubTask.setPool(subTask.getPool());
                 // spark配置
-                String config = null;
-                if (subTask.getConfig() != null) {
-                    config = GsonUtils.getInstance().toJson(subTask.getConfig());
-                }
-                dataQualitySubTask.setConfig(config);
+                Map<String, Object> sparkConfig = subTask.getConfig() != null ? subTask.getConfig() : new HashMap<>();
+                subTask.setConfig(sparkConfig);
+                addRealUser(sparkConfig);
+                dataQualitySubTask.setConfig(GsonUtils.getInstance().toJson(subTask.getConfig()));
                 //subTaskRule
                 List<TaskInfo.SubTaskRule> subTaskRuleList = subTask.getSubTaskRuleList();
                 addDataQualitySubTaskRule(guid, currentTime, subTaskRuleList, tenantId);
@@ -384,6 +383,17 @@ public class TaskManageService {
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "添加任务失败");
         }
+    }
+
+    /**
+     * 添加realuser和proxyuser为当前sso用户，才能通过spark的用户认证
+     */
+    private void addRealUser(Map<String, Object> config) {
+        Map<String, Object> conf = new HashMap<>();
+        String username = AdminUtils.getUserName();
+        conf.put("spark.sql.hive.real.user", username);
+        config.put("conf", conf);
+        config.put("proxyUser", username);
     }
 
     public void addDataQualitySubTaskObject(String taskId, String subTaskId, Timestamp currentTime, List<String> objectIdList) throws AtlasBaseException {
