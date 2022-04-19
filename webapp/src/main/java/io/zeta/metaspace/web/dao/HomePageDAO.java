@@ -231,14 +231,14 @@ public interface HomePageDAO {
             "")
     public long getProjectCount(@Param("tenantId") String tenantId, @Param("userId") String userId);
 
-    @Select("SELECT SUM " +
-            " ( cute.red_warning_count ) redCount, " +
-            " SUM ( cute.orange_warning_count ) orangeCount, " +
-            " SUM ( cute.general_warning_count ) generalCount  " +
-            "FROM " +
-            " \"data_quality_task_execute\" cute " +
-            " INNER JOIN data_quality_task task ON cute.task_id = task.\"id\"  " +
-            "WHERE " +
-            " task.tenantid = #{tenantId}")
+    @Select("SELECT SUM  \n" +
+            "             ( cute.red_warning_count ) redCount,  \n" +
+            "             SUM ( cute.orange_warning_count ) orangeCount,  \n" +
+            "             SUM ( cute.general_warning_count ) generalCount   \n" +
+            "            FROM  \n" +
+            "             data_quality_task_execute cute  \n" +
+            "             INNER JOIN data_quality_task task ON cute.task_id = task.id\n" +
+            "            WHERE  \n" +
+            "             task.tenantid =#{tenantId}  and task.delete=false")
     public HomeTaskInfo getTaskInfo(@Param("tenantId") String tenantId);
 }
