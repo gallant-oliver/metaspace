@@ -368,7 +368,7 @@ public class PoiExcelUtils {
                 workbook = new XSSFWorkbook(is);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("read from " + fileName + " failed", e);
         }
         return workbook;
     }
@@ -760,7 +760,7 @@ public class PoiExcelUtils {
         try {
             workbook.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error("close workbook failed");
         }
         return list;
     }

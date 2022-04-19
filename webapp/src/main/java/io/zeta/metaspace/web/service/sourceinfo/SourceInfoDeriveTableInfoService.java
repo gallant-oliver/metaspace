@@ -1950,7 +1950,7 @@ public class SourceInfoDeriveTableInfoService {
             fileName = java.net.URLEncoder.encode(DeriveTableExportUtil.
                     deriveTableExcelName(deriveTableColumnDetail.getTableNameZh()), CommonConstant.CHARACTER_CODE_UTF);
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            LOG.error("url encode failed", e);
         }
         File file = DeriveTableExportUtil.deriveTableExport(exportTableName);
         try (InputStream inputStream = new FileInputStream(file);
@@ -1960,7 +1960,7 @@ public class SourceInfoDeriveTableInfoService {
             response.addHeader("Content-Disposition", "attachment;filename=" + fileName);
             workbook.write(response.getOutputStream());
         } catch (IOException | InvalidFormatException e) {
-            e.printStackTrace();
+            LOG.error("write workbook failed", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导出失败");
         } finally {
             if (file.exists() && !file.delete()) {
@@ -1979,7 +1979,7 @@ public class SourceInfoDeriveTableInfoService {
             response.setHeader("Content-Disposition", "attachment;filename=" + fileName);
             workbook.write(response.getOutputStream());
         } catch (IOException | InvalidFormatException e) {
-            e.printStackTrace();
+            LOG.error("downloadTemplate failed", e);
             throw new AtlasBaseException("导出失败");
         }
     }
