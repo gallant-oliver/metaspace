@@ -8,7 +8,7 @@
   "driverMemory": "3g",
   "executorMemory": "5g",
   "conf": {
-    "spark.sql.hive.real.user":"metaspace"
+    "spark.sql.hive.real.user":"user"
   },
   "files": [
   ]
