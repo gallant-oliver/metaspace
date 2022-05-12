@@ -34,7 +34,7 @@
     <!-- log4j 2.9 and later are multi-release jars for Java 9. Our Jetty version don't support
     that. Therefore, we have to use log4j 2.8 in integration test -->
 
-    <hive.version>1.2.1</hive.version>
+    <hive.version>3.1.2</hive.version>
     <log4j.version>2.8</log4j.version>
   </properties>
 

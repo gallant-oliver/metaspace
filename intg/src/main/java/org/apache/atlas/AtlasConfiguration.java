@@ -18,6 +18,7 @@
 
 package org.apache.atlas;
 
+
 import org.apache.commons.configuration.Configuration;
 
 import java.util.function.Function;
