@@ -813,6 +813,10 @@
                     <artifactId>jackson-module-jaxb-annotations</artifactId>
                     <groupId>com.fasterxml.jackson.module</groupId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>avatica</artifactId>
+                    <groupId>org.apache.calcite.avatica</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
