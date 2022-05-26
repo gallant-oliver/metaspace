@@ -1,0 +1,10 @@
+{
+  "sourceType": "OSCAR",
+  "description": "",
+  "ip": "127.0.0.1",
+  "port": "2003",
+  "userName": "SYSDBA",
+  "password": "",
+  "database": "osrdb",
+  "jdbcParameter": ""
+}

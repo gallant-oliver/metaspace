@@ -763,6 +763,10 @@ public class SearchService {
                 String columnName = metaData.getColumnName(i);
                 columns.add(columnName);
             }
+            // 神通数据库查表数据的时候需过滤分页字段ROWNUM
+            if ("OSCAR".equals(dataSourceInfo.getSourceType()) && columns.contains("TEMP_COLUMN_RNUM")){
+                columns.remove("TEMP_COLUMN_RNUM");
+            }
             while (resultSet.next()) {
                 Map<String, String> map = new HashMap<>();
                 for (String column : columns) {
