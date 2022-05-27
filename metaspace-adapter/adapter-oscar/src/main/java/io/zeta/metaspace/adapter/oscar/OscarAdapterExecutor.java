@@ -152,7 +152,7 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
 
     @Override
     public float getTableSize(String db, String tableName, String pool) {
-        String querySQL = "select sum(num_rows * avg_row_len) data_length from ALL_TABLES where table_name = '%s' and owner='%s'";
+        String querySQL = "select s.size*1024 as data_length from sys_class c, v_segment_info s, sys_tablespace ts, v_sys_user u where c.oid = s.relid and c.relname='%s' and s.fileid = ts.tsid and u.usesysid = c.relowner and u.usename='%s' and rownum = 1 order by s.size desc";
         db=db.replaceAll("'","''");
         tableName=tableName.replaceAll("'","''");
         querySQL=String.format(querySQL,tableName,db);
@@ -175,7 +175,7 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
     public String getCreateTableSql(String schema, String table) {
         String tableName=table.replaceAll("\"","");
         String schemaName=schema.replaceAll("\"","");
-        String querySql = "select dbms_metadata.get_ddl('TABLE','" + tableName + "','" + schemaName + "') from dual";
+        String querySql = "select sys_get_tabledef from v_sys_table where tableowner = '" + schemaName + "' and tablename = '" + tableName + "'";
         return queryResult(querySql, resultSet -> {
             try {
                 String sql = null;
