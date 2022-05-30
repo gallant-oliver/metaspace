@@ -35,13 +35,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class OscarAdapterExecutor extends AbstractAdapterExecutor {
 
-    public static final Map<String, String> BRACKETS = new HashMap<String, String>() {{
-        put("[", "]");
-        put("{", "}");
-        put("<", ">");
-        put("(", ")");
-    }};
-
     public OscarAdapterExecutor(AdapterSource adapterSource) {
         super(adapterSource);
     }
@@ -68,86 +61,6 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
     @Override
     public boolean isIgnoreColumn(String columnName) {
         return super.isIgnoreColumn(columnName) || AdapterTransformer.TEMP_COLUMN_RNUM.equalsIgnoreCase(columnName);
-    }
-
-    @Override
-    public PageResult<LinkedHashMap<String, Object>> getSchemaPage(Parameters parameters) {
-        if (parameters.getQuery()==null){
-            parameters.setQuery("");
-        }
-        SelectQuery query = new SelectQuery()
-                .addCustomColumns(new AliasedObject(new CustomSql("USERNAME"), "\"schemaName\""))
-                .addCustomFromTable(new CustomSql("ALL_USERS"))
-                .addCondition(BinaryCondition.like(new CustomSql("USERNAME"), new CustomSql("'%" + parameters.getQuery() + "%'")));
-        query = getAdapter().getAdapterTransformer().addTotalCount(query);
-        query = getAdapter().getAdapterTransformer().addLimit(query, parameters.getLimit(), parameters.getOffset());
-        log.info("schema sql:" + query.toString());
-        return queryResult(query.toString(), this::extractResultSetToPageResult);
-    }
-
-    @Override
-    public PageResult<LinkedHashMap<String, Object>> getSchemaPage(Parameters parameters, String proxyUser) {
-        return getSchemaPage(parameters);
-    }
-
-    @Override
-    public PageResult<LinkedHashMap<String, Object>> getTablePage(String schemaName, Parameters parameters) {
-        schemaName = addAlternativeQuoting(schemaName);
-        if (parameters.getQuery()==null){
-            parameters.setQuery("");
-        }
-        SelectQuery query = new SelectQuery()
-                .addCustomColumns(new AliasedObject(new CustomSql("TABLE_NAME"), "\"tableName\""))
-                .addCustomFromTable(new CustomSql("ALL_TABLES"))
-                .addCondition(BinaryCondition.equalTo(new CustomSql("OWNER"), new CustomSql(schemaName)))
-                .addCondition(BinaryCondition.like(new CustomSql("TABLE_NAME"), new CustomSql("'%" + parameters.getQuery() + "%'")));
-        query = getAdapter().getAdapterTransformer().addTotalCount(query);
-        query = getAdapter().getAdapterTransformer().addLimit(query, parameters.getLimit(), parameters.getOffset());
-        log.info("table sql:" + query.toString());
-        return queryResult(query.toString(), this::extractResultSetToPageResult);
-    }
-
-    @Override
-    public PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, Parameters parameters,boolean isNum) {
-        schemaName = addAlternativeQuoting(schemaName);
-        tableName = addAlternativeQuoting(tableName);
-        if (parameters.getQuery()==null){
-            parameters.setQuery("");
-        }
-        SelectQuery query = new SelectQuery()
-                .addCustomColumns(new AliasedObject(new CustomSql("COLUMN_NAME"), "\"columnName\""))
-                .addCustomColumns(new AliasedObject(new CustomSql("DATA_TYPE"), "\"type\""))
-                .addCustomFromTable(new CustomSql("ALL_TAB_COLS"))
-                .addCondition(BinaryCondition.like(new CustomSql("COLUMN_NAME"), new CustomSql("'%" + parameters.getQuery() + "%'")))
-                .addCondition(ComboCondition.and().addConditions(BinaryCondition.equalTo(new CustomSql("OWNER"), new CustomSql(schemaName)), BinaryCondition.equalTo(new CustomSql("TABLE_NAME"), new CustomSql(tableName))));
-        query = getAdapter().getAdapterTransformer().addTotalCount(query);
-        query = getAdapter().getAdapterTransformer().addLimit(query, parameters.getLimit(), parameters.getOffset())
-                .addCondition(BinaryCondition.like(new CustomSql("\"columnName\""), new CustomSql("'%" + parameters.getQuery() + "%'")));
-
-        // 过滤数值型字段
-        if (isNum){
-            List<String> columnType = Arrays.stream(HiveNumericType.values()).filter(type-> type.getCode() != 7).map(HiveNumericType::getName).collect(Collectors.toList());
-            query.addCondition(new InCondition(new FunctionCall("lower").addCustomParams(new CustomSql("DATA_TYPE")),columnType));
-        }
-        log.info("column sql:" + query.toString());
-        return queryResult(query.toString(), this::extractResultSetToPageResult);
-    }
-
-    /**
-     * 处理包含单引号的表名库名
-     * https://livesql.oracle.com/apex/livesql/file/content_CIREYU9EA54EOKQ7LAMZKRF6P.html
-     * 注意 jdbc 不支持执行 q'(str))'
-     */
-    private String addAlternativeQuoting(String str) {
-        if (StringUtils.isNotEmpty(str) && str.contains("'")) {
-            Map.Entry<String, String> entry = BRACKETS.entrySet().stream().filter(e ->
-                    (!str.contains(e.getKey()) && !str.contains(e.getValue()) || (!str.contains(e.getKey() + "'") && !str.contains(e.getValue() + "'") && !str.endsWith(e.getValue())))
-            ).findAny().orElse(null);
-            if (entry != null) {
-                return "q'" + entry.getKey() + str + entry.getValue() + "'";
-            }
-        }
-        return "'" + str + "'";
     }
 
     @Override
