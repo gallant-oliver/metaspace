@@ -3,11 +3,11 @@ package io.zeta.metaspace.adapter.oscar;
 import io.zeta.metaspace.adapter.AbstractAdapter;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.adapter.AdapterTransformer;
-import io.zeta.metaspace.model.TableSchema;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.datasource.DataSourcePool;
 import org.pf4j.PluginDescriptor;
-import schemacrawler.schemacrawler.*;
+import schemacrawler.schemacrawler.InclusionRule;
+import schemacrawler.schemacrawler.RegularExpressionExclusionRule;
 
 public class OscarAdapter extends AbstractAdapter {
 

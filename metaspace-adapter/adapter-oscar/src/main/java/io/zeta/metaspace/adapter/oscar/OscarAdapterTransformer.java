@@ -6,10 +6,7 @@ import com.healthmarketscience.sqlbuilder.SelectQuery;
 import com.healthmarketscience.sqlbuilder.Subquery;
 import io.zeta.metaspace.adapter.AbstractAdapterTransformer;
 import io.zeta.metaspace.adapter.Adapter;
-import org.apache.atlas.exception.AtlasBaseException;
 
-import java.sql.Blob;
-import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,7 +17,7 @@ public class OscarAdapterTransformer extends AbstractAdapterTransformer {
     }
 
     /**
-     * 使用 ROWNUM 方式提供 oracle 分页
+     * 使用 ROWNUM 方式提供 oscar 分页
      */
     @Override
     public SelectQuery addLimit(SelectQuery originSQL, long limit, long offset) {

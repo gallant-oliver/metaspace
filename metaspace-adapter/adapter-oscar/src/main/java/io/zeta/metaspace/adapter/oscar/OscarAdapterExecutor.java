@@ -1,35 +1,21 @@
 package io.zeta.metaspace.adapter.oscar;
 
-import com.healthmarketscience.sqlbuilder.*;
 import io.zeta.metaspace.adapter.AbstractAdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.adapter.AdapterTransformer;
-import io.zeta.metaspace.model.TableSchema;
-import io.zeta.metaspace.model.dataquality2.HiveNumericType;
-import io.zeta.metaspace.model.metadata.MetaDataInfo;
-import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerColumn;
-import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerForeignKey;
-import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerIndex;
-import io.zeta.metaspace.model.schemacrawler.SchemaCrawlerTable;
 import io.zeta.metaspace.utils.DateUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.util.CollectionUtils;
-import schemacrawler.schema.Catalog;
-import schemacrawler.schema.IndexType;
-import schemacrawler.schemacrawler.SchemaCrawlerOptions;
-import schemacrawler.utility.SchemaCrawlerUtility;
-import sf.util.Utility;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
