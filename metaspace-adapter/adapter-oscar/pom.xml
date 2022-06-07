@@ -9,29 +9,24 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>adapter-impala</artifactId>
-
+    <artifactId>adapter-oscar</artifactId>
+    <packaging>jar</packaging>
 
     <properties>
-        <impala.version>2.5.34-cdh5.7.2</impala.version>
+        <jdbc.oscar.version>1.0.0</jdbc.oscar.version>
 
-        <plugin.id>IMPALA</plugin.id>
-        <plugin.class>io.zeta.metaspace.adapter.impala.ImpalaComponent</plugin.class>
+        <plugin.id>OSCAR</plugin.id>
+        <plugin.class>io.zeta.metaspace.adapter.oscar.OscarComponent</plugin.class>
         <plugin.version>${project.version}</plugin.version>
         <plugin.assembly.build>false</plugin.assembly.build>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>com.cloudera.impala</groupId>
-            <artifactId>impala-jdbc</artifactId>
-            <version>${impala.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>slf4j-log4j12</artifactId>
-                    <groupId>org.slf4j</groupId>
-                </exclusion>
-            </exclusions>
+            <groupId>com.oscar.jdbc</groupId>
+            <artifactId>oscarJDBC16</artifactId>
+            <version>${jdbc.oscar.version}</version>
         </dependency>
     </dependencies>
+
 </project>

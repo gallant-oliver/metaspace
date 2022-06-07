@@ -12,7 +12,8 @@ public enum DataSourceType {
     ORACLE("ORACLE",1521),
     DB2("DB2",50000),
     SQLSERVER("SQLSERVER",1433),
-    HBASE("HBASE",2181);
+    HBASE("HBASE",2181),
+    OSCAR("OSCAR",2003);
 
     private final String name;
     private final int defaultPort;
