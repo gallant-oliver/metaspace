@@ -102,6 +102,10 @@ public class SearchService {
     private PublicService publicService;
     @Autowired
     private DbDAO dbDAO;
+    // 神通数据库类型
+    private static final String OSCAR_TYPE = "OSCAR";
+    // 神通数据库分页字段
+    private static final String OSCAR_PAGE_COLUMN = "TEMP_COLUMN_RNUM";
 
     public PageResult<Database> queryDatabases(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount,boolean isPublic) {
         PageResult<Database> databasePageResult = null;
@@ -762,6 +766,10 @@ public class SearchService {
             for (int i = 1; i <= metaData.getColumnCount(); i++) {
                 String columnName = metaData.getColumnName(i);
                 columns.add(columnName);
+            }
+            // 神通数据库查表数据的时候需过滤分页字段ROWNUM
+            if (OSCAR_TYPE.equals(dataSourceInfo.getSourceType()) && columns.contains(OSCAR_PAGE_COLUMN)){
+                columns.remove(OSCAR_PAGE_COLUMN);
             }
             while (resultSet.next()) {
                 Map<String, String> map = new HashMap<>();
