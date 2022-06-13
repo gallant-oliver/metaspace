@@ -51,10 +51,10 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
 
     @Override
     public float getTableSize(String db, String tableName, String pool) {
-        String querySQL = "select s.size*1024 as data_length from sys_class c, v_segment_info s, sys_tablespace ts, v_sys_user u where c.oid = s.relid and c.relname='%s' and s.fileid = ts.tsid and u.usesysid = c.relowner and u.usename='%s' and rownum = 1 order by s.size desc";
-        db=db.replaceAll("'","''");
-        tableName=tableName.replaceAll("'","''");
-        querySQL=String.format(querySQL,tableName,db);
+        String querySQL = "select s.size as data_length from sys_class c join v_segment_info s on c.oid = s.relid where c.relname='%s' and c.relnamespace = (select oid from sys_namespace n where n.nspname = '%s');";
+        db = db.replaceAll("'", "''");
+        tableName = tableName.replaceAll("'", "''");
+        querySQL = String.format(querySQL, tableName, db);
         Connection connection = getAdapterSource().getConnection();
         return queryResult(connection, querySQL, resultSet -> {
             try {
@@ -72,9 +72,9 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
 
     @Override
     public String getCreateTableSql(String schema, String table) {
-        String tableName=table.replaceAll("\"","");
-        String schemaName=schema.replaceAll("\"","");
-        String querySql = "select sys_get_tabledef from v_sys_table where tableowner = '" + schemaName + "' and tablename = '" + tableName + "'";
+        String tableName = table.replaceAll("\"", "");
+        String schemaName = schema.replaceAll("\"", "");
+        String querySql = "select sys_get_tabledef from v_sys_table where schemaname = '" + schemaName + "' and tablename = '" + tableName + "'";
         return queryResult(querySql, resultSet -> {
             try {
                 String sql = null;
@@ -91,17 +91,17 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
     @Override
     public Map<String, String> getUserObject(String schemaName, List<String> tableNameList) {
         Map<String, String> result = new HashMap<>();
-        if(CollectionUtils.isEmpty(tableNameList)){
+        if (CollectionUtils.isEmpty(tableNameList)) {
             return result;
         }
         List<String> tableList = tableNameList.stream()
-                .map(v->v.contains(".") ? v.substring(v.lastIndexOf(".")+1) : v).collect(Collectors.toList());
+                .map(v -> v.contains(".") ? v.substring(v.lastIndexOf(".") + 1) : v).collect(Collectors.toList());
         StringBuilder sql = new StringBuilder(" Select owner,object_name,object_type From all_objects Where object_name in ( ");
         int length = tableNameList.size();
-        for(int i = 0;i < length;i++){
-            if(i == length-1){
+        for (int i = 0; i < length; i++) {
+            if (i == length - 1) {
                 sql.append("?");
-            }else{
+            } else {
                 sql.append("?,");
             }
         }
@@ -110,7 +110,7 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
         try (Connection connection = getAdapterSource().getConnection()) {
             PreparedStatement statement = connection.prepareStatement(sql.toString());
             int index = 1;
-            for (String tableName : tableList){
+            for (String tableName : tableList) {
                 statement.setString(index++, tableName.toUpperCase());
             }
             ResultSet resultSet = statement.executeQuery();
@@ -119,7 +119,7 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
                 String objectName = resultSet.getString("object_name");
                 String objectType = resultSet.getString("object_type"); //TABLE VIEW
 
-                result.put(objectName,objectType);
+                result.put(objectName, objectType);
             }
         } catch (SQLException e) {
             throw new AtlasBaseException(e);

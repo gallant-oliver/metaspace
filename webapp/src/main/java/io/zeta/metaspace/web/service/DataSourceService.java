@@ -42,6 +42,7 @@ import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.metadata.BaseFields;
 import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
 import io.zeta.metaspace.web.util.*;
+import net.bull.javamelody.internal.common.LOG;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -79,7 +80,6 @@ public class DataSourceService {
     protected AtlasGraph graph;
     @Autowired
     private UserDAO userDAO;
-
     @Autowired
     private DataSourceDAO datasourceDAO;
     @Autowired
@@ -106,8 +106,9 @@ public class DataSourceService {
     @Autowired
     private SearchService searchService;
 
-
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
+
+    private static final String JDBC_PREFIX = "jdbc:oscar://";
 
     /**
      * 记录检索次数和检索时长
@@ -244,7 +245,7 @@ public class DataSourceService {
         }
     }
 
-    public List<String> getSourceNameForSourceIds(List<String> sourceIds) throws AtlasBaseException{
+    public List<String> getSourceNameForSourceIds(List<String> sourceIds) throws AtlasBaseException {
         try {
             return dataSourceDAO.getSourceNameForSourceIds(sourceIds);
         } catch (Exception e) {
@@ -299,13 +300,13 @@ public class DataSourceService {
     public DataSourceInfo getAnyDataSourceInfoByTableId(String sourceId, String tableId) {
         try {
             DataSourceInfo dataSourceInfo = null;
-            if(StringUtils.isNotBlank(sourceId)){
+            if (StringUtils.isNotBlank(sourceId)) {
                 dataSourceInfo = dataSourceDAO.getDataSourceInfo(sourceId);
             }
-            if(Objects.isNull(dataSourceInfo) && StringUtils.isNotBlank(tableId)){
+            if (Objects.isNull(dataSourceInfo) && StringUtils.isNotBlank(tableId)) {
                 dataSourceInfo = dataSourceDAO.getAnyDataSourceInfoByTableGuid(tableId);
             }
-            if(Objects.isNull(dataSourceInfo)){
+            if (Objects.isNull(dataSourceInfo)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "库表" + tableId + "没有匹配到数据源");
             }
             dataSourceInfo.setPassword(AESUtils.aesDecode(dataSourceInfo.getPassword()));
@@ -320,7 +321,7 @@ public class DataSourceService {
         try {
             DataSourceInfo dataSourceInfo = dataSourceDAO.getAnyOneDataSourceByDbGuid(dbGuid);
             if (Objects.isNull(dataSourceInfo)) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有找到与数据库"+dbGuid+"相关联的数据源");
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有找到与数据库" + dbGuid + "相关联的数据源");
             }
             dataSourceInfo.setPassword(AESUtils.aesDecode(dataSourceInfo.getPassword()));
             return dataSourceInfo;
@@ -362,14 +363,46 @@ public class DataSourceService {
      */
     public boolean testConnection(DataSourceConnection dataSourceConnection) throws AtlasBaseException {
         dataSourceConnection = resetDataSourceConnection(dataSourceConnection);
+        Long startTime = null;
+        Long endTime = null;
         try {
-            Connection con = getConnection(dataSourceConnection);
-            con.close();
+            startTime = System.currentTimeMillis();
+            if (DataSourceType.OSCAR.getName().equals(dataSourceConnection.getSourceType())) {
+                return getOscarConnectionForDriver(dataSourceConnection);
+            } else {
+                Connection con = getConnection(dataSourceConnection);
+                con.close();
+            }
             return true;
         } catch (Exception e) {
             LOG.error("连接异常", e);
             return false;
+        } finally {
+            endTime = System.currentTimeMillis();
+            LOG.info("连接时间为：{}", (endTime - startTime) / 1000);
         }
+    }
+
+    /**
+     * 防止网关超时，手动设置数据库登录超时时间
+     *
+     * @param dataSourceConnection
+     * @return
+     */
+    public boolean getOscarConnectionForDriver(DataSourceConnection dataSourceConnection) {
+        boolean flag = false;
+        try {
+            Class.forName("com.oscar.Driver");
+            // 设置登陆超时时间为2秒,本地1秒能快速响应连接，但测试环境没本地快，放缓2秒，后续按需调整
+            DriverManager.setLoginTimeout(2);
+            String jdbc = JDBC_PREFIX + dataSourceConnection.getIp() + ":" + dataSourceConnection.getPort() + "/" + dataSourceConnection.getDatabase();
+            LOG.info("oscar_jdbc值为--" + jdbc);
+            Connection con = DriverManager.getConnection(jdbc, dataSourceConnection.getUserName(), dataSourceConnection.getPassword());
+            flag = true;
+        } catch (Exception e) {
+            LOG.error("连接报错{}", e);
+        }
+        return flag;
     }
 
     public boolean testConnection(String sourceId) throws AtlasBaseException {
@@ -412,7 +445,7 @@ public class DataSourceService {
      */
     public PageResult<DataSourceHead> searchDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId) throws AtlasBaseException {
         try {
-            PageResult<DataSourceHead> pageResult = getDataSources(limit,  offset,  sortby,  order,  sourceName,  sourceType,  createTime,  updateTime,  updateUserName,  isApi,  tenantId,false);
+            PageResult<DataSourceHead> pageResult = getDataSources(limit, offset, sortby, order, sourceName, sourceType, createTime, updateTime, updateUserName, isApi, tenantId, false);
             return pageResult;
         } catch (Exception e) {
             LOG.error("查询数据源失败", e);
@@ -433,7 +466,7 @@ public class DataSourceService {
 
     public PageResult<DataSourceHead> searchNotHiveDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId) throws AtlasBaseException {
         try {
-            PageResult<DataSourceHead> pageResult = getNotHiveDataSources(limit,  offset,  sortby,  order,  sourceName,  sourceType,  createTime,  updateTime,  updateUserName,  isApi,  tenantId,true);
+            PageResult<DataSourceHead> pageResult = getNotHiveDataSources(limit, offset, sortby, order, sourceName, sourceType, createTime, updateTime, updateUserName, isApi, tenantId, true);
             return pageResult;
         } catch (Exception e) {
             LOG.error("查询数据源失败", e);
@@ -442,14 +475,14 @@ public class DataSourceService {
     }
 
 
-    private PageResult<DataSourceHead> getDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId,boolean isGlobalConfig) throws AtlasBaseException {
+    private PageResult<DataSourceHead> getDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId, boolean isGlobalConfig) throws AtlasBaseException {
         PageResult<DataSourceHead> pageResult = new PageResult<>();
-        if("hive".equalsIgnoreCase(sourceType)){
+        if ("hive".equalsIgnoreCase(sourceType)) {
             DataSourceHead dataSourceHead = new DataSourceHead();
             dataSourceHead.setSourceId("hive");
             dataSourceHead.setSourceName("hive");
             dataSourceHead.setSourceType("HIVE");
-            dataSourceHead.setBizTreeId(EntityUtil.generateBusinessId(tenantId,"hive","",""));
+            dataSourceHead.setBizTreeId(EntityUtil.generateBusinessId(tenantId, "hive", "", ""));
             List<DataSourceHead> list = new ArrayList<>();
             list.add(dataSourceHead);
             pageResult.setTotalSize(list.size());
@@ -501,7 +534,7 @@ public class DataSourceService {
             }
             String sourceId = head.getSourceId();
             head.setRely(false);
-            head.setBizTreeId(EntityUtil.generateBusinessId(head.getTenantId(),sourceId,"",""));
+            head.setBizTreeId(EntityUtil.generateBusinessId(head.getTenantId(), sourceId, "", ""));
             UserPrivilegeDataSource userPrivilegeDataSource = getUserPrivilegesDataSource(userId, sourceId);
             if (UserPrivilegeDataSource.MANAGER.getPrivilegeName().equals(userPrivilegeDataSource.getPrivilegeName())) {
                 head.setEditManager(true);
@@ -533,6 +566,7 @@ public class DataSourceService {
 
     /**
      * 公共租户
+     *
      * @param limit
      * @param offset
      * @param sortby
@@ -545,12 +579,12 @@ public class DataSourceService {
      */
     private PageResult<DataSourceHead> getDataSourcesGlobal(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String tenantId) throws AtlasBaseException {
         PageResult<DataSourceHead> pageResult = new PageResult<>();
-        if("hive".equalsIgnoreCase(sourceType)){
+        if ("hive".equalsIgnoreCase(sourceType)) {
             DataSourceHead dataSourceHead = new DataSourceHead();
             dataSourceHead.setSourceId("hive");
             dataSourceHead.setSourceName("hive");
             dataSourceHead.setSourceType("HIVE");
-            dataSourceHead.setBizTreeId(EntityUtil.generateBusinessId(tenantId,"hive","",""));
+            dataSourceHead.setBizTreeId(EntityUtil.generateBusinessId(tenantId, "hive", "", ""));
             List<DataSourceHead> list = new ArrayList<>();
             list.add(dataSourceHead);
             pageResult.setTotalSize(list.size());
@@ -587,9 +621,9 @@ public class DataSourceService {
         String userId = AdminUtils.getUserData().getUserId();
 
         List<DataSourceHead> list;
-        if(publicService.isGlobal()){
+        if (publicService.isGlobal()) {
             list = dataSourceDAO.searchGlobalApiDataSources(parameters, dataSourceSearch, tenantId);
-        }else{
+        } else {
             list = dataSourceDAO.searchApiDataSourcesGlobal(parameters, dataSourceSearch, userId, tenantId);
         }
 
@@ -603,7 +637,7 @@ public class DataSourceService {
             }
             String sourceId = head.getSourceId();
             head.setRely(false);
-            head.setBizTreeId(EntityUtil.generateBusinessId(head.getTenantId(),sourceId,"",""));
+            head.setBizTreeId(EntityUtil.generateBusinessId(head.getTenantId(), sourceId, "", ""));
             UserPrivilegeDataSource userPrivilegeDataSource = getUserPrivilegesDataSource(userId, sourceId);
             if (UserPrivilegeDataSource.MANAGER.getPrivilegeName().equals(userPrivilegeDataSource.getPrivilegeName())) {
                 head.setEditManager(true);
@@ -636,7 +670,7 @@ public class DataSourceService {
      * @Author fanjiajia
      * @Description 数据源管理数据源列表展示
      **/
-    private PageResult<DataSourceHead> getNotHiveDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId,boolean isGlobalConfig) throws AtlasBaseException {
+    private PageResult<DataSourceHead> getNotHiveDataSources(int limit, int offset, String sortby, String order, String sourceName, String sourceType, String createTime, String updateTime, String updateUserName, boolean isApi, String tenantId, boolean isGlobalConfig) throws AtlasBaseException {
         PageResult<DataSourceHead> pageResult = new PageResult<>();
         DataSourceSearch dataSourceSearch = new DataSourceSearch(sourceName, sourceType, createTime, updateTime, updateUserName);
         Parameters parameters = new Parameters();
@@ -671,7 +705,7 @@ public class DataSourceService {
             }
             String sourceId = head.getSourceId();
             head.setRely(false);
-            head.setBizTreeId(EntityUtil.generateBusinessId(head.getTenantId(),sourceId,"",""));
+            head.setBizTreeId(EntityUtil.generateBusinessId(head.getTenantId(), sourceId, "", ""));
             UserPrivilegeDataSource userPrivilegeDataSource = getUserPrivilegesDataSource(userId, sourceId);
             if (UserPrivilegeDataSource.MANAGER.getPrivilegeName().equals(userPrivilegeDataSource.getPrivilegeName())) {
                 head.setEditManager(true);
@@ -953,8 +987,7 @@ public class DataSourceService {
         } catch (Exception e) {
             LOG.error("导出Excel失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导出Excel失败");
-        }
-        finally {
+        } finally {
             if (workbook != null) {
                 workbook.close();
             }
@@ -1058,7 +1091,7 @@ public class DataSourceService {
 
     //把excel文档导入到一个list里
     public List<DataSourceBody> convertExceltoMap(File file) throws AtlasBaseException {
-        try(Workbook workbook = new WorkbookFactory().create(file)) {
+        try (Workbook workbook = new WorkbookFactory().create(file)) {
             Sheet sheet = workbook.getSheetAt(0);
             int rowNum = sheet.getLastRowNum() + 1;
 
@@ -1568,7 +1601,7 @@ public class DataSourceService {
 
     public List<DataBaseDTO> getOptionalDb(String sourceId, String tenantId) {
         List<String> dbList;
-        List<Database> databaseList=new ArrayList<>();
+        List<Database> databaseList = new ArrayList<>();
         List<DataBaseDTO> dataBaseDTOS = new ArrayList<>();
         //获取当前租户下用户所属用户组
         User user = AdminUtils.getUserData();
@@ -1581,7 +1614,7 @@ public class DataSourceService {
             }
             databaseList = databaseInfoDAO.selectByHive(dbList, -1l, 0l);
         } else {
-            databaseList = databaseInfoDAO.selectDataBaseBySourceId(sourceId,groupIds, -1l, 0l);
+            databaseList = databaseInfoDAO.selectDataBaseBySourceId(sourceId, groupIds, -1l, 0l);
         }
         if (!CollectionUtils.isEmpty(databaseList)) {
             dataBaseDTOS = databaseList.stream().map(x -> BeanMapper.map(x, DataBaseDTO.class)).collect(Collectors.toList());
@@ -1604,42 +1637,41 @@ public class DataSourceService {
         return tableDTOS;
     }
 
-    public List<ColumnDTO> getOptionalColumn(String sourceId,String tableId) throws IOException, SQLException {
-        GuidCount guidCount=new GuidCount();
+    public List<ColumnDTO> getOptionalColumn(String sourceId, String tableId) throws IOException, SQLException {
+        GuidCount guidCount = new GuidCount();
         guidCount.setCount(100);//指标纬度管理编辑纬度映射字段预览量由5改为100
         guidCount.setGuid(tableId);
         guidCount.setSourceId(sourceId);
         TableShow tableShow = searchService.getTableShow(guidCount, false);
-        List<Map<String,String>> lines = tableShow.getLines();
-        TableInfo tableInfo=tableDAO.getTableInfoByTableguid(tableId);
-        String tableName=tableInfo.getTableName();
+        List<Map<String, String>> lines = tableShow.getLines();
+        TableInfo tableInfo = tableDAO.getTableInfoByTableguid(tableId);
+        String tableName = tableInfo.getTableName();
         List<Column> columnInfoList = columnDAO.getColumnInfoList(tableId);
         List<ColumnDTO> columnDTOS = new ArrayList<>();
         if (!CollectionUtils.isEmpty(columnInfoList)) {
             columnDTOS = columnInfoList.stream().map(x -> BeanMapper.map(x, ColumnDTO.class)).collect(Collectors.toList());
         }
-        if(columnDTOS.size()>0){
-           for(ColumnDTO columnDTO:columnDTOS) {
-               List<String> values=new ArrayList<>();
-               if(lines.size()>0)
-               {
-                  for(Map<String,String> map:lines){
-                      String param=columnDTO.getColumnName();
-                      if("hive".equals(sourceId)){
-                          param=tableName+"."+columnDTO.getColumnName();
-                      }
-                      String value=map.get(param);
-                      if(!"NULL".equals(value)){
-                        if(StringUtils.isNotBlank(value)) {
-                            values.add(value);
+        if (columnDTOS.size() > 0) {
+            for (ColumnDTO columnDTO : columnDTOS) {
+                List<String> values = new ArrayList<>();
+                if (lines.size() > 0) {
+                    for (Map<String, String> map : lines) {
+                        String param = columnDTO.getColumnName();
+                        if ("hive".equals(sourceId)) {
+                            param = tableName + "." + columnDTO.getColumnName();
                         }
-                      }
-                  }
-                   columnDTO.setColumnValues(values);
-               }else{
-                   columnDTO.setColumnValues(values);
-               }
-           }
+                        String value = map.get(param);
+                        if (!"NULL".equals(value)) {
+                            if (StringUtils.isNotBlank(value)) {
+                                values.add(value);
+                            }
+                        }
+                    }
+                    columnDTO.setColumnValues(values);
+                } else {
+                    columnDTO.setColumnValues(values);
+                }
+            }
         }
         return columnDTOS;
     }
