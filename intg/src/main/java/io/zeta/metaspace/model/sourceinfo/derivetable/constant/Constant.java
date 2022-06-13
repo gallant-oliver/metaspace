@@ -17,6 +17,7 @@ public class Constant {
     public static final String HIVE = "HIVE";
     public static final String ORACLE = "ORACLE";
     public static final String MYSQL = "MYSQL";
+    public static final String OSCAR = "OSCAR";
 
 
     // 表英文名和字段英文名校验规则：包含英文字母、下划线和数字，不能以下划线开头
@@ -37,12 +38,20 @@ public class Constant {
             "mediumtext", "multilinestring", "multipoint", "multipolygon", "numeric", "point", "polygon", "real", "set", "smallint", "time", "timestamp",
             "tinyblob", "tinyint", "tinytext", "varbinary", "varchar", "year");
 
+    // OSCAR数据类型
+    private static final List<String> OSCAR_DATA_TYPE = Arrays.asList("_aclitem", "_bool", "_bpchar", "_bytea", "_char", "_date", "_float4", "_float8", "_int2",
+            "_int2vector", "_int4", "_int8", "_name", "_oid", "_oidvector", "_regproc", "_text", "_time", "_timestamp", "_varchar",
+            "abstime", "aclitem", "bool", "bpchar", "bytea", "char", "date", "float4", "float8", "int1", "int2", "int2vector",
+            "int4", "int8", "name", "oid", "oidvector", "regproc","set", "sys_attribute", "sys_class", "sys_proc", "sys_segment", "sys_type", "text", "time", "timestamp",
+            "timestamptz", "unknown", "varchar");
+
 
     public static final Map<String, List<String>> DATA_TYPE_MAP = new HashMap<String, List<String>>() {
         {
             put(HIVE, HIVE_DATA_TYPE);
             put(ORACLE, ORACLE_DATA_TYPE);
             put(MYSQL, MYSQL_DATA_TYPE);
+            put(OSCAR, OSCAR_DATA_TYPE);
         }
     };
 
