@@ -28,18 +28,26 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
     @Override
     public LocalDateTime getTableCreateTime(String schemaName, String tableName) {
         String sql = "SELECT o.created AS create_time from all_objects o where o.object_name=? and o.owner=?";
-
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
         try (Connection connection = getAdapterSource().getConnection()) {
-            PreparedStatement statement = connection.prepareStatement(sql);
+            statement = connection.prepareStatement(sql);
             statement.setString(1, tableName);
             statement.setString(2, schemaName);
-            ResultSet resultSet = statement.executeQuery();
+            resultSet = statement.executeQuery();
             if (resultSet.next()) {
                 String time = resultSet.getString("create_time");
                 return DateUtils.parseDateTime(time);
             }
         } catch (SQLException e) {
             throw new AtlasBaseException(e);
+        } finally {
+            try {
+                statement.close();
+                resultSet.close();
+            } catch (Exception e){
+                throw new AtlasBaseException(e);
+            }
         }
         return null;
     }
@@ -65,6 +73,12 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
                 return totalSize;
             } catch (SQLException e) {
                 throw new AtlasBaseException("查询表大小失败", e);
+            } finally {
+                try {
+                    connection.close();
+                } catch (Exception e){
+                    throw new AtlasBaseException("关闭神通数据库连接报错", e);
+                }
             }
         });
     }

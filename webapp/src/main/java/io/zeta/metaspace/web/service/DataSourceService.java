@@ -389,18 +389,25 @@ public class DataSourceService {
      * @param dataSourceConnection
      * @return
      */
-    public boolean getOscarConnectionForDriver(DataSourceConnection dataSourceConnection) {
+    public boolean getOscarConnectionForDriver(DataSourceConnection dataSourceConnection){
         boolean flag = false;
+        Connection con = null;
         try {
             Class.forName("com.oscar.Driver");
             // 设置登陆超时时间为2秒,本地1秒能快速响应连接，但测试环境没本地快，放缓2秒，后续按需调整
             DriverManager.setLoginTimeout(2);
             String jdbc = JDBC_PREFIX + dataSourceConnection.getIp() + ":" + dataSourceConnection.getPort() + "/" + dataSourceConnection.getDatabase();
             LOG.info("oscar_jdbc值为--" + jdbc);
-            Connection con = DriverManager.getConnection(jdbc, dataSourceConnection.getUserName(), dataSourceConnection.getPassword());
+            con = DriverManager.getConnection(jdbc, dataSourceConnection.getUserName(), dataSourceConnection.getPassword());
             flag = true;
         } catch (Exception e) {
             LOG.error("连接报错{}", e);
+        } finally {
+            try {
+                con.close();
+            } catch (Exception e){
+                LOG.error("连接报错{}", e);
+            }
         }
         return flag;
     }
