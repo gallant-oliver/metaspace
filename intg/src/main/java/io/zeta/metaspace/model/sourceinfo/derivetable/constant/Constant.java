@@ -64,11 +64,15 @@ public class Constant {
     // MYSQL必须要加长度的数据类型
     private static final List<String> MYSQL_DATA_LENGTH_TYPE = Arrays.asList("varbinary", "varchar");
 
+    // OSCAR必须要加长度的数据类型
+    private static final List<String> OSCAR_DATA_LENGTH_TYPE = Arrays.asList("varchar2", "varchar", "char");
+
     public static final Map<String, List<String>> DATA_LENGTH_TYPE_MAP = new HashMap<String, List<String>>() {
         {
             put(HIVE, HIVE_DATA_LENGTH_TYPE);
             put(ORACLE, ORACLE_DATA_LENGTH_TYPE);
             put(MYSQL, MYSQL_DATA_LENGTH_TYPE);
+            put(OSCAR, OSCAR_DATA_LENGTH_TYPE);
         }
     };
 

@@ -1095,8 +1095,9 @@ public class SourceInfoDeriveTableInfoService {
             String columnNameEn = sourceInfoDeriveColumnInfo.getColumnNameEn();
             String dataType = sourceInfoDeriveColumnInfo.getDataType();
             // 对特殊的dbType进行拼接长度
-
-            dataType = Constant.DATA_LENGTH_TYPE_MAP.get(dbType).contains(dataType) ? dataType.concat(lengthStr) : dataType;
+            if (Constant.DATA_LENGTH_TYPE_MAP.get(dbType) != null){
+                dataType = Constant.DATA_LENGTH_TYPE_MAP.get(dbType).contains(dataType) ? dataType.concat(lengthStr) : dataType;
+            }
             Map<String, String> stringStringMap = Constant.REPLACE_TYPE_MAP.get(dbType);
             if (!CollectionUtils.isEmpty(stringStringMap)) {
                 dataType = stringStringMap.getOrDefault(dataType, dataType);

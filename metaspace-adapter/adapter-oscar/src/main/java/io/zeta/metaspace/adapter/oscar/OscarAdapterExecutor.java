@@ -45,7 +45,7 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
             try {
                 statement.close();
                 resultSet.close();
-            } catch (Exception e){
+            } catch (Exception e) {
                 throw new AtlasBaseException(e);
             }
         }
@@ -76,7 +76,7 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
             } finally {
                 try {
                     connection.close();
-                } catch (Exception e){
+                } catch (Exception e) {
                     throw new AtlasBaseException("关闭神通数据库连接报错", e);
                 }
             }
@@ -121,13 +121,15 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
         }
         sql.append(")");
 
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
         try (Connection connection = getAdapterSource().getConnection()) {
-            PreparedStatement statement = connection.prepareStatement(sql.toString());
+            statement = connection.prepareStatement(sql.toString());
             int index = 1;
             for (String tableName : tableList) {
                 statement.setString(index++, tableName.toUpperCase());
             }
-            ResultSet resultSet = statement.executeQuery();
+            resultSet = statement.executeQuery();
             if (resultSet.next()) {
                 String owner = resultSet.getString("owner");
                 String objectName = resultSet.getString("object_name");
@@ -137,6 +139,13 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
             }
         } catch (SQLException e) {
             throw new AtlasBaseException(e);
+        } finally {
+            try {
+                statement.close();
+                resultSet.close();
+            } catch (SQLException e) {
+                throw new AtlasBaseException(e);
+            }
         }
         return result;
     }

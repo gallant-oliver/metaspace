@@ -429,9 +429,10 @@ public class QuartzJob implements Job {
                     break;
                 case CUSTOMIZE:
                     measure = builderCustomizeMeasure(task, task.getTimeStamp());
-                    if (Objects.nonNull(measure)) {
+                    otherRuleCheck(task, measure);
+                    /*if (Objects.nonNull(measure)) {
                         otherRuleCheck(task, measure);
-                    }
+                    }*/
                     break;
                 default:
                     break;
@@ -517,10 +518,10 @@ public class QuartzJob implements Job {
         List<CustomizeParam> tables = customizeParam.stream().filter(param -> param.getId().toLowerCase().contains("table")).collect(Collectors.toList());
         List<CustomizeParam> columns = customizeParam.stream().filter(param -> param.getId().toLowerCase().contains("column")).collect(Collectors.toList());
         // 神通数据库不走livy提交规则，通过jdbc执行自定义规则sql语句
-        if (isOscarType(task)) {
+        /*if (isOscarType(task)) {
             oscarCustomHandle(task, tables, columns);
             return null;
-        }
+        }*/
         Map<String, MeasureDataSource> dataSourceMap = new HashMap<>();
         for (CustomizeParam table : tables) {
             MeasureConnector connector = null;
