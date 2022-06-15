@@ -22,6 +22,11 @@ public class IndexCounterUtils {
     public static final String METASPACE_METADATA_TASK_SQLSERVER_SUCCESS_COUNT = "metaspace_metadata_task_sqlserver_success_count";
 
     /**
+     * oscar类型数据源采集任务成功数
+     */
+    public static final String METASPACE_METADATA_TASK_OSCAR_SUCCESS_COUNT = "metaspace_metadata_task_oscar_success_count";
+
+    /**
      * db2类型数据源采集任务成功数
      */
     public static final String METASPACE_METADATA_TASK_DB2_SUCCESS_COUNT = "metaspace_metadata_task_db2_success_count";
@@ -60,6 +65,11 @@ public class IndexCounterUtils {
      * oracle类型数据源采集任务失败数
      */
     public static final String METASPACE_METADATA_TASK_ORACLE_FAIL_COUNT = "metaspace_metadata_task_oracle_fail_count";
+
+    /**
+     * oracle类型数据源采集任务失败数
+     */
+    public static final String METASPACE_METADATA_TASK_OSCAR_FAIL_COUNT = "metaspace_metadata_task_oscar_fail_count";
 
     /**
      * postgresql类型数据源采集任务失败数
@@ -115,12 +125,14 @@ public class IndexCounterUtils {
             put(METASPACE_METADATA_TASK_SQLSERVER_SUCCESS_COUNT, new AtomicLong());
             put(METASPACE_METADATA_TASK_DB2_SUCCESS_COUNT, new AtomicLong());
             put(METASPACE_METADATA_TASK_ORACLE_SUCCESS_COUNT, new AtomicLong());
+            put(METASPACE_METADATA_TASK_OSCAR_SUCCESS_COUNT, new AtomicLong());
             put(METASPACE_METADATA_TASK_POSTGRESQL_SUCCESS_COUNT, new AtomicLong());
             put(METASPACE_METADATA_TASK_MYSQL_SUCCESS_COUNT, new AtomicLong());
             put(METASPACE_METADATA_TASK_HIVE_SUCCESS_COUNT, new AtomicLong());
             put(METASPACE_METADATA_TASK_SQLSERVER_FAIL_COUNT, new AtomicLong());
             put(METASPACE_METADATA_TASK_DB2_FAIL_COUNT, new AtomicLong());
             put(METASPACE_METADATA_TASK_ORACLE_FAIL_COUNT, new AtomicLong());
+            put(METASPACE_METADATA_TASK_OSCAR_FAIL_COUNT, new AtomicLong());
             put(METASPACE_METADATA_TASK_POSTGRESQL_FAIL_COUNT, new AtomicLong());
             put(METASPACE_METADATA_TASK_MYSQL_FAIL_COUNT, new AtomicLong());
             put(METASPACE_METADATA_TASK_HIVE_FAIL_COUNT, new AtomicLong());
@@ -143,6 +155,7 @@ public class IndexCounterUtils {
             put("ORACLE", METASPACE_METADATA_TASK_ORACLE_SUCCESS_COUNT);
             put("DB2", METASPACE_METADATA_TASK_DB2_SUCCESS_COUNT);
             put("SQLSERVER", METASPACE_METADATA_TASK_SQLSERVER_SUCCESS_COUNT);
+            put("OSCAR", METASPACE_METADATA_TASK_SQLSERVER_SUCCESS_COUNT);
         }
     };
 
@@ -156,6 +169,7 @@ public class IndexCounterUtils {
             put("ORACLE", METASPACE_METADATA_TASK_ORACLE_FAIL_COUNT);
             put("DB2", METASPACE_METADATA_TASK_DB2_FAIL_COUNT);
             put("SQLSERVER", METASPACE_METADATA_TASK_SQLSERVER_FAIL_COUNT);
+            put("OSCAR", METASPACE_METADATA_TASK_OSCAR_FAIL_COUNT);
         }
     };
 }

@@ -695,7 +695,7 @@ public interface DataSourceDAO {
     List<DataSourceBody> getDataSourcesByGroups(@Param("groupIds") List<String> groupIds,@Param("tenantId") String tenantId);
 
     @Select({" <script> ",
-            " select d.* from data_source d join datasource_group_relation dgr on d.source_id=dgr.source_id where d.tenantid=#{tenantId} and d.source_type='ORACLE' and dgr.group_id in  ",
+            " select d.* from data_source d join datasource_group_relation dgr on d.source_id=dgr.source_id where d.tenantid=#{tenantId} and d.source_type in ('ORACLE','OSCAR') and dgr.group_id in  ",
             " <foreach item='groupId' index='index' collection='groupIds' separator=',' open='(' close=')'>",
             " #{groupId} ",
             " </foreach>",

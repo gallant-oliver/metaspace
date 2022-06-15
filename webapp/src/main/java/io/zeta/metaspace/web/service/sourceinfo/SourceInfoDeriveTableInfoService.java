@@ -122,6 +122,7 @@ public class SourceInfoDeriveTableInfoService {
     public SourceInfoDeriveTableInfoService() {
 
     }
+
     /**
      * 新建-保存或保存并提交
      *
@@ -151,10 +152,10 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveTableInfo.setTableGuid(UUID.randomUUID().toString());
         }
 
-        if(StringUtils.isBlank(sourceInfoDeriveTableInfo.getCreator())){
+        if (StringUtils.isBlank(sourceInfoDeriveTableInfo.getCreator())) {
             sourceInfoDeriveTableInfo.setCreator(user.getUserId());
         }
-        if(StringUtils.isBlank(sourceInfoDeriveTableInfo.getOperator())){
+        if (StringUtils.isBlank(sourceInfoDeriveTableInfo.getOperator())) {
             sourceInfoDeriveTableInfo.setOperator(user.getUserId());
         }
         sourceInfoDeriveTableInfo.setCreateTime(LocalDateTime.now());
@@ -392,12 +393,13 @@ public class SourceInfoDeriveTableInfoService {
 
     /**
      * 提交方式
+     *
      * @param sourceInfoDeriveTableColumnDto 衍生表列DTO
-     * @param tenantId 当前租户id
-     * @param tableId 表id
-     * @param tableGuid 表guid
-     * @param sourceInfoDeriveTableInfo 衍生表信息
-     * @param sourceInfoDeriveColumnInfos 衍生表列信息
+     * @param tenantId                       当前租户id
+     * @param tableId                        表id
+     * @param tableGuid                      表guid
+     * @param sourceInfoDeriveTableInfo      衍生表信息
+     * @param sourceInfoDeriveColumnInfos    衍生表列信息
      * @return 是否执行下一步
      */
     private boolean submitWay(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String tenantId, String tableId, String tableGuid, SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo, List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos) {
@@ -462,11 +464,12 @@ public class SourceInfoDeriveTableInfoService {
 
     /**
      * 操作表-字段关系
+     *
      * @param sourceInfoDeriveTableColumnDto 衍生表列DTO
-     * @param tenantId 当前租户id
-     * @param oldSourceInfoDeriveTableInfo 老的衍生表详情
-     * @param sourceInfoDeriveTableInfo 新的衍生表详情
-     * @param sourceInfoDeriveColumnInfos 衍生表列详情
+     * @param tenantId                       当前租户id
+     * @param oldSourceInfoDeriveTableInfo   老的衍生表详情
+     * @param sourceInfoDeriveTableInfo      新的衍生表详情
+     * @param sourceInfoDeriveColumnInfos    衍生表列详情
      */
     private void tableFieldRelationship(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto, String tenantId, SourceInfoDeriveTableInfo oldSourceInfoDeriveTableInfo, SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo, List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos) {
         // 表-字段关系
@@ -1028,7 +1031,7 @@ public class SourceInfoDeriveTableInfoService {
             Column column = columnMap.get(e.getSourceColumnGuid());
             // 列获取源数据层、库
             TableDataSourceRelationPO tableDataSourceRelationPO = sourceInfoMap.get(tableInfo.getDatabaseGuid());
-            if(tableDataSourceRelationPO != null){
+            if (tableDataSourceRelationPO != null) {
                 sourceInfoDeriveColumnVO.setSourceDbGuid(tableDataSourceRelationPO.getCategoryId());
             }
             sourceInfoDeriveColumnVO.setDataBaseName(tableInfo.getDbName());
@@ -1095,8 +1098,9 @@ public class SourceInfoDeriveTableInfoService {
             String columnNameEn = sourceInfoDeriveColumnInfo.getColumnNameEn();
             String dataType = sourceInfoDeriveColumnInfo.getDataType();
             // 对特殊的dbType进行拼接长度
-
-            dataType = Constant.DATA_LENGTH_TYPE_MAP.get(dbType).contains(dataType) ? dataType.concat(lengthStr) : dataType;
+            if (Constant.DATA_LENGTH_TYPE_MAP.get(dbType) != null) {
+                dataType = Constant.DATA_LENGTH_TYPE_MAP.get(dbType).contains(dataType) ? dataType.concat(lengthStr) : dataType;
+            }
             Map<String, String> stringStringMap = Constant.REPLACE_TYPE_MAP.get(dbType);
             if (!CollectionUtils.isEmpty(stringStringMap)) {
                 dataType = stringStringMap.getOrDefault(dataType, dataType);
@@ -1412,6 +1416,7 @@ public class SourceInfoDeriveTableInfoService {
 
     public List<DeriveFileDTO> fileUploadDeriveBatch(List<DeriveFileDTO> deriveFileDTOList, String tenantId) {
         for (DeriveFileDTO fileDTO : deriveFileDTOList) {
+            fileDTO.setPath("D:\\衍生表登记模板 (11).xlsx");
             Result result = this.fileUploadDerive(fileDTO.getFileName(), fileDTO.getPath(), tenantId);
             fileDTO.setDescription(result.getMessage());
         }
@@ -1570,15 +1575,16 @@ public class SourceInfoDeriveTableInfoService {
 
     /**
      * 是否包含数据类型
+     *
      * @param dataTypeList
-     * @param dataType
+     * @param
      * @return
      */
-    private Boolean checkDataType(List<String> dataTypeList, SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo){
+    private Boolean checkDataType(List<String> dataTypeList, SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo) {
         if (dataTypeList.contains(sourceInfoDeriveColumnInfo.getDataType())) {
             return true;
         }
-        if(sourceInfoDeriveColumnInfo.getDataType().contains("decimal") && dataTypeList.contains("decimal")){
+        if (sourceInfoDeriveColumnInfo.getDataType().contains("decimal") && dataTypeList.contains("decimal")) {
             sourceInfoDeriveColumnInfo.setDataType("decimal");
             return true;
         }
@@ -1602,7 +1608,9 @@ public class SourceInfoDeriveTableInfoService {
         technicalCategoryList.stream().forEach(p -> dbIdList.add(p.getDbId()));
         List<String> dbNameList = new ArrayList<>();
         List<String> tableNameList = new ArrayList<>();
-        for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
+        // 排除i为0的数据，表头不参与判断
+        for (int i = 1; i < sourceInfoDeriveColumnInfos.size(); i++) {
+            SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo = sourceInfoDeriveColumnInfos.get(i);
             if (!this.checkDataType(dataTypeList, sourceInfoDeriveColumnInfo)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中目标字段类型所填写的内容在系统中不存在:" + sourceInfoDeriveColumnInfo.getDataType());
             }
@@ -1618,7 +1626,9 @@ public class SourceInfoDeriveTableInfoService {
         if (!CollectionUtils.isEmpty(columnTags)) {
             mapColumn = columnTags.stream().collect(Collectors.toMap(ColumnTag::getName, ColumnTag::getId));
         }
-        for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
+        // 不把i=0的表头数据带入校验
+        for (int i = 1; i < sourceInfoDeriveColumnInfos.size(); i++) {
+            SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo = sourceInfoDeriveColumnInfos.get(i);
             if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getTagsName())) {
                 List<String> tagIdList = new ArrayList<>();
                 for (String value : sourceInfoDeriveColumnInfo.getTagsName().split(",")) {
@@ -1660,12 +1670,13 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveColumnInfo.setSourceColumnGuid(collect.get(0).getColumnGuid());
             sourceInfoDeriveColumnInfo.setSourceColumnNameEn(collect.get(0).getColumnName());
         }
+
     }
 
     private void getBusinessId(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDTO, String tenantId) {
         List<SourceBusinessInfo> businessByCategoryId = this.getBusinessByCategoryId(sourceInfoDeriveTableColumnDTO.getBusinessCategoryId(), tenantId);
         List<SourceBusinessInfo> list = businessByCategoryId.stream().filter(p -> p.getName().equals(sourceInfoDeriveTableColumnDTO.getBusinessName())).collect(Collectors.toList());
-        if(CollectionUtils.isEmpty(list)){
+        if (CollectionUtils.isEmpty(list)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中业务对象所填写的内容在系统中不存在:" + sourceInfoDeriveTableColumnDTO.getBusinessName());
         }
         sourceInfoDeriveTableColumnDTO.setBusinessId(list.get(0).getBusinessId());
@@ -1883,7 +1894,8 @@ public class SourceInfoDeriveTableInfoService {
     public SourceInfoDeriveTableColumnDTO getDeriveDataFile(String fileName, String filePath) {
         SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto = new SourceInfoDeriveTableColumnDTO();
         try {
-            InputStream input = hdfsService.getFileInputStream(filePath);
+//            InputStream input = hdfsService.getFileInputStream(filePath);
+            InputStream input = new FileInputStream(new File(filePath));
             List<String[]> list = PoiExcelUtils.readExcelFile(input, fileName, 0, 20);
             sourceInfoDeriveTableColumnDto.setTableNameEn(list.get(1)[1]);
             sourceInfoDeriveTableColumnDto.setTableNameZh(list.get(1)[3]);
