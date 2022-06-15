@@ -949,6 +949,10 @@ public class SourceInfoDeriveTableInfoService {
 
         // 查询主键id查询列
         List<SourceInfoDeriveColumnInfo> deriveColumnInfoListByTableId = sourceInfoDeriveColumnInfoService.getDeriveColumnInfoListByTableId(tableId);
+        // 除了表头至少存在一行数据,执行过滤表头行操作
+        if (!CollectionUtils.isEmpty(deriveColumnInfoListByTableId) && deriveColumnInfoListByTableId.size() > 1){
+            deriveColumnInfoListByTableId = deriveColumnInfoListByTableId.stream().skip(1).collect(Collectors.toList());
+        }
         SourceInfoDeriveTableColumnVO sourceInfoDeriveTableColumnVO = new SourceInfoDeriveTableColumnVO();
         BeanUtils.copyProperties(byId, sourceInfoDeriveTableColumnVO);
 
