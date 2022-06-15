@@ -1093,7 +1093,7 @@ public class SourceInfoDeriveTableInfoService {
         StringBuilder primaryKeyDDLHeader = new StringBuilder("ALTER TABLE ").append(tableFiled).append(tableNameEn).
                 append(tableFiled).append(" ADD PRIMARY KEY (");
         StringBuilder primaryKeyField = new StringBuilder();
-        for (int i = 0; i < sourceInfoDeriveColumnInfos.size(); i++) {
+        for (int i = 1; i < sourceInfoDeriveColumnInfos.size(); i++) {
             SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo = sourceInfoDeriveColumnInfos.get(i);
             String columnNameEn = sourceInfoDeriveColumnInfo.getColumnNameEn();
             String dataType = sourceInfoDeriveColumnInfo.getDataType();
@@ -1162,6 +1162,8 @@ public class SourceInfoDeriveTableInfoService {
         // 数据库类型获取数据类型-替换值
         String tableNameEn = sourceInfoDeriveTableColumnDto.getTableNameEn();
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
+        // 跳过表头数据
+        sourceInfoDeriveColumnInfos = sourceInfoDeriveColumnInfos.stream().skip(1).collect(Collectors.toList());
         addTimeField(sourceInfoDeriveColumnInfos);
         StringBuilder columnBuilder = new StringBuilder("insert into ").append(targetDbName).append(".").append(tableNameEn).append("\r\n");
         removeTimeField(sourceInfoDeriveColumnInfos);
@@ -1181,7 +1183,7 @@ public class SourceInfoDeriveTableInfoService {
         StringBuilder strColumn = new StringBuilder();
         StringBuilder strSelect = new StringBuilder();
         strColumn.append("(");
-        for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos()) {
+        for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos().stream().skip(1).collect(Collectors.toList())) {
             if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceColumnNameEn())) {
                 continue;
             }
