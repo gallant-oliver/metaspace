@@ -217,8 +217,8 @@ public class SourceInfoFileService {
                     }
                 }
                 if("数据库类型".equals(fieldName) && StringUtils.isNotBlank(v)
-                        && "oracle".equalsIgnoreCase(v) && StringUtils.isBlank(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库实例",-1))) ){
-                    String errMsg = "数据库类型oracle的数据库实例不能为空";
+                        && ("oracle".equalsIgnoreCase(v) || "oscar".equalsIgnoreCase(v)) && StringUtils.isBlank(getElementOrDefault(array,MapUtils.getIntValue(map,"数据库实例",-1))) ){
+                    String errMsg = "数据库类型oracle或oscar的数据库实例不能为空";
                     results.add(setAnalyticResult(errMsg,array, map));
                     break;
                 }
@@ -411,7 +411,7 @@ public class SourceInfoFileService {
             // 判断具体数据库类型下的英文名是否存在
             List<String[]> unExistExcelInfo = CollectionUtils.isEmpty(excelDataList) ? new ArrayList<>() : excelDataList.stream()
                     .filter(p -> dbInfoExistList.stream().filter(v -> {
-                                if ("ORACLE".equals(v.getDbType())) {
+                                if ("ORACLE".equals(v.getDbType()) || "OSCAR".equals(v.getDbType())) {
                                     return v.getDbType().equalsIgnoreCase(p[dbTypeIndex]) && v.getDatabaseName().equalsIgnoreCase(p[dbEnIndex]) && v.getDatabase().equalsIgnoreCase(p[databaseIndex]) && v.getSourceName().equals(p[dataSourceIndex]);
                                 } else {
                                     return v.getDbType().equalsIgnoreCase(p[dbTypeIndex]) && v.getDatabaseName().equalsIgnoreCase(p[dbEnIndex]) && v.getSourceName().equals(p[dataSourceIndex]);
@@ -422,7 +422,7 @@ public class SourceInfoFileService {
             excelDataList = CollectionUtils.isEmpty(excelDataList) ? new ArrayList<>() : excelDataList.stream()
                     .filter(p -> dbInfoExistList.stream().anyMatch(v ->
                             {
-                                if ("ORACLE".equals(v.getDbType())) {
+                                if ("ORACLE".equals(v.getDbType()) || "OSCAR".equals(v.getDbType())) {
                                     return v.getDbType().equalsIgnoreCase(p[dbTypeIndex]) && v.getDatabaseName().equalsIgnoreCase(p[dbEnIndex]) && v.getDatabase().equalsIgnoreCase(p[databaseIndex]) && v.getSourceName().equals(p[dataSourceIndex]);
                                 } else {
                                     return v.getDbType().equalsIgnoreCase(p[dbTypeIndex]) && v.getDatabaseName().equalsIgnoreCase(p[dbEnIndex]) && v.getSourceName().equals(p[dataSourceIndex]);
@@ -464,7 +464,7 @@ public class SourceInfoFileService {
 
         List<String[]> finalExcelDataList = excelDataList;
         return dbInfoExistList.stream().filter(databaseInfoForDb -> finalExcelDataList.stream().filter(strings -> {
-            if ("ORACLE".equals(databaseInfoForDb.getDbType())) {
+            if ("ORACLE".equals(databaseInfoForDb.getDbType()) || "OSCAR".equals(databaseInfoForDb.getDbType())) {
                 return databaseInfoForDb.getDbType().equalsIgnoreCase(strings[dbTypeIndex]) && databaseInfoForDb.getDatabaseName().equalsIgnoreCase(strings[dbEnIndex]) && databaseInfoForDb.getDatabase().equalsIgnoreCase(strings[databaseIndex]) && databaseInfoForDb.getSourceName().equals(strings[dataSourceIndex]);
             } else {
                 return databaseInfoForDb.getDbType().equalsIgnoreCase(strings[dbTypeIndex]) && databaseInfoForDb.getDatabaseName().equalsIgnoreCase(strings[dbEnIndex]) && databaseInfoForDb.getSourceName().equals(strings[dataSourceIndex]);
@@ -711,7 +711,7 @@ public class SourceInfoFileService {
             DatabaseInfoForDb databaseInfoForDb = null;
             if(dbEnIndex != -1){
                 Optional<DatabaseInfoForDb> itemOpt = dbList.stream().filter(p->{
-                    if ("ORACLE".equals(p.getDbType())) {
+                    if ("ORACLE".equals(p.getDbType()) || "OSCAR".equals(p.getDbType())) {
                         return p.getDbType().equalsIgnoreCase(array[dbTypeIndex]) && p.getDatabaseName().equalsIgnoreCase(array[dbEnIndex]) && p.getDatabase().equalsIgnoreCase(array[databaseIndex]) && p.getSourceName().equals(array[dataSourceIndex]);
                     } else {
                         return p.getDbType().equalsIgnoreCase(array[dbTypeIndex]) && p.getDatabaseName().equalsIgnoreCase(array[dbEnIndex]) && p.getSourceName().equals(array[dataSourceIndex]);
@@ -725,11 +725,11 @@ public class SourceInfoFileService {
             databaseInfo.setDatabaseId(databaseId);
             String dbSourceId = "";
             String dbType = getElementOrDefault(array,MapUtils.getIntValue(map,"数据库类型",-1));
-            if("oracle".equalsIgnoreCase(dbType) ){
+            if("oracle".equalsIgnoreCase(dbType) || "oscar".equalsIgnoreCase(dbType)){
                 String instance = getElementOrDefault(array,MapUtils.getIntValue(map,"数据库实例",-1));
                 if(StringUtils.isBlank(instance)){
                     return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
-                            AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("oracel数据库类型下的数据库实例"));
+                            AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("oracel或oscar数据库类型下的数据库实例"));
                 }
             }
 
