@@ -1510,6 +1510,7 @@ public class SourceInfoDeriveTableInfoService {
         }
         // 字段
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
+        sourceInfoDeriveColumnInfos = sourceInfoDeriveColumnInfos.stream().skip(1).collect(Collectors.toList());
 
         // 校验是否有etl_date
         if (sourceInfoDeriveColumnInfos.stream().anyMatch(e -> Objects.equals(timeField, e.getColumnNameEn()))) {
@@ -1777,6 +1778,8 @@ public class SourceInfoDeriveTableInfoService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "缺少必填信息：字段映射");
         }
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDTO.getSourceInfoDeriveColumnInfos();
+        // 过滤表头行
+        sourceInfoDeriveColumnInfos = sourceInfoDeriveColumnInfos.stream().skip(1).collect(Collectors.toList());
         for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
             if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getColumnNameEn())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "缺少必填字段：目标字段英文名");
