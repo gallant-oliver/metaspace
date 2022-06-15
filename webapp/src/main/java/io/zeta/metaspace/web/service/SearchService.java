@@ -8,6 +8,7 @@ import io.zeta.metaspace.adapter.AdapterTransformer;
 import io.zeta.metaspace.discovery.MetaspaceGremlinQueryService;
 import io.zeta.metaspace.model.business.TechnologyInfo;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
+import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
 import io.zeta.metaspace.model.pojo.TableInfo;
@@ -102,6 +103,8 @@ public class SearchService {
     private PublicService publicService;
     @Autowired
     private DbDAO dbDAO;
+    // 神通数据库分页字段
+    private static final String OSCAR_PAGE_COLUMN = "TEMP_COLUMN_RNUM";
 
     public PageResult<Database> queryDatabases(String sourceId, Long offset, Long limit, String query, String tenantId, Boolean queryCount,boolean isPublic) {
         PageResult<Database> databasePageResult = null;
@@ -762,6 +765,10 @@ public class SearchService {
             for (int i = 1; i <= metaData.getColumnCount(); i++) {
                 String columnName = metaData.getColumnName(i);
                 columns.add(columnName);
+            }
+            // 神通数据库查表数据的时候需过滤分页字段ROWNUM
+            if (DataSourceType.OSCAR.getName().equals(dataSourceInfo.getSourceType()) && columns.contains(OSCAR_PAGE_COLUMN)){
+                columns.remove(OSCAR_PAGE_COLUMN);
             }
             while (resultSet.next()) {
                 Map<String, String> map = new HashMap<>();

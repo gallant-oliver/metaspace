@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.task.quartz;
 
 
+import com.google.gson.JsonArray;
 import com.google.gson.reflect.TypeToken;
 import com.healthmarketscience.sqlbuilder.*;
 import io.zeta.metaspace.MetaspaceConfig;
@@ -28,18 +29,17 @@ import io.zeta.metaspace.model.dataquality.RuleCheckType;
 import io.zeta.metaspace.model.dataquality.TaskType;
 import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
+import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.measure.*;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.GsonUtils;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.service.DataSourceService;
+import io.zeta.metaspace.web.service.dataquality.TaskManageService;
 import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
 import io.zeta.metaspace.web.task.util.LivyTaskSubmitHelper;
 import io.zeta.metaspace.web.task.util.QuartQueryProvider;
-import io.zeta.metaspace.web.util.DateUtils;
-import io.zeta.metaspace.web.util.HdfsUtils;
-import io.zeta.metaspace.web.util.IndexCounterUtils;
-import io.zeta.metaspace.web.util.QualityEngine;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
@@ -47,12 +47,14 @@ import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
+import org.mortbay.util.ajax.JSON;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -76,35 +78,37 @@ import static io.zeta.metaspace.model.dataquality.RuleCheckType.FLU;
 
 public class QuartzJob implements Job {
     private static final Logger LOG = LoggerFactory.getLogger(QuartzJob.class);
-    
+
     @Autowired
     private QuartzManager quartzManager;
     @Autowired
     private TaskManageDAO taskManageDAO;
+    @Autowired
+    private TaskManageService taskManageService;
     @Autowired
     private DataSourceService dataSourceService;
     @Autowired
     private LivyTaskSubmitHelper livyTaskSubmitHelper;
     @Autowired
     private IndexCounter indexCounter;
-    
+
     private final int RETRY = 3;
     private Map<String, Float> columnType2Result = new HashMap<>();
     private static Configuration conf;
     private static String engine;
-    
+
     public static final Map<String, Boolean> STATE_MAP = new HashMap<>();
     public static final String hiveId = "hive";
     public static final String EXECUTE_ID = "executeId";
-    
+
     static {
         try {
             conf = ApplicationProperties.get();
         } catch (Exception e) {
-        
+
         }
     }
-    
+
     private String initExecuteInfo(String taskId, String taskExecuteId) {
         String userId = taskManageDAO.getTaskUpdater(taskId);
         DataQualityTaskExecute taskExecute = new DataQualityTaskExecute();
@@ -132,9 +136,9 @@ public class QuartzJob implements Job {
         taskManageDAO.updateTaskExecuteStatus(taskId, 1);
         taskManageDAO.updateTaskStatus(taskId, 1);
         return id;
-        
+
     }
-    
+
     private boolean canceled(String taskId, String taskExecuteId) {
         if (STATE_MAP.get(taskId)) {
             taskManageDAO.updateTaskExecuteStatus(taskExecuteId, 4);
@@ -145,7 +149,7 @@ public class QuartzJob implements Job {
         }
         return false;
     }
-    
+
     @Override
     public void execute(JobExecutionContext jobExecutionContext) {
         String taskId = "";
@@ -158,7 +162,7 @@ public class QuartzJob implements Job {
                 //任务正在运行中，跳过本次执行
                 return;
             }
-    
+
             taskExecuteId = (String) jobExecutionContext.getJobDetail()
                     .getJobDataMap()
                     .getOrDefault(EXECUTE_ID, StringUtils.EMPTY);
@@ -166,7 +170,7 @@ public class QuartzJob implements Job {
             STATE_MAP.put(taskId, false);
             EditionTaskInfo taskInfo = taskManageDAO.getTaskInfo(taskId);
             String tenantId = taskInfo.getTenantId();
-    
+
             if (canceled(taskId, taskExecuteId)) {
                 return;
             }
@@ -198,7 +202,7 @@ public class QuartzJob implements Job {
             STATE_MAP.remove(taskId);
         }
     }
-    
+
     private void completeTaskInformation(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList) throws AtlasBaseException {
         try {
             for (AtomicTaskExecution taskExecution : taskList) {
@@ -241,14 +245,14 @@ public class QuartzJob implements Job {
                 } else {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的任务类型");
                 }
-                
+
             }
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e);
         }
     }
-    
-    
+
+
     private void executeAtomicTaskList(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList, String tenantId) throws Exception {
         engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf, String::valueOf);
         LOG.info("query engine:" + engine);
@@ -310,7 +314,7 @@ public class QuartzJob implements Job {
         }
         taskManageDAO.updateDataTaskCostTime(taskExecuteId, System.currentTimeMillis() - startTime);
     }
-    
+
     private void error(String taskId, AtomicTaskExecution task, Exception e) {
         taskManageDAO.updateTaskExecutionErrorMsg(task.getTaskExecuteId(), e.toString());
         taskManageDAO.updateTaskExecuteRuleErrorNum(task.getTaskExecuteId());
@@ -318,7 +322,7 @@ public class QuartzJob implements Job {
         taskManageDAO.updateTaskExecuteErrorStatus(task.getTaskExecuteId(), WarningStatus.WARNING.code);
         taskManageDAO.updateRuleExecuteErrorStatus(task.getId(), WarningStatus.WARNING.code);
     }
-    
+
     private void recordExecutionInfo(AtomicTaskExecution task, String errorMsg, String tenantId) {
         String dbName = task.getDbName();
         String tableName = task.getTableName();
@@ -349,17 +353,17 @@ public class QuartzJob implements Job {
         } else {
             logInfoStatus = "INFO";
         }
-        
+
         StringJoiner logJoiner = new StringJoiner(" ");
         logJoiner.add(currentTime);
         logJoiner.add(logInfoStatus);
         logJoiner.add(source);
         logJoiner.add(checkMsg);
         logJoiner.add(Objects.isNull(errorMsg) ? "SUCCESS" : errorMsg);
-        
+
         taskManageDAO.updateRuleExecuteErrorMsg(task.getId(), logJoiner.toString());
     }
-    
+
     private void runJob(AtomicTaskExecution task) throws Exception {
         try {
             TaskType jobType = TaskType.getTaskByCode(task.getTaskType());
@@ -426,6 +430,9 @@ public class QuartzJob implements Job {
                 case CUSTOMIZE:
                     measure = builderCustomizeMeasure(task, task.getTimeStamp());
                     otherRuleCheck(task, measure);
+                    /*if (Objects.nonNull(measure)) {
+                        otherRuleCheck(task, measure);
+                    }*/
                     break;
                 default:
                     break;
@@ -435,7 +442,7 @@ public class QuartzJob implements Job {
             throw e;
         }
     }
-    
+
     /**
      * 其他规则校验
      * <p>
@@ -506,11 +513,15 @@ public class QuartzJob implements Job {
      * @param timestamp
      * @return
      */
-    public Measure builderCustomizeMeasure(AtomicTaskExecution task, Long timestamp) {
+    public Measure builderCustomizeMeasure(AtomicTaskExecution task, Long timestamp) throws Exception {
         List<CustomizeParam> customizeParam = task.getCustomizeParam();
         List<CustomizeParam> tables = customizeParam.stream().filter(param -> param.getId().toLowerCase().contains("table")).collect(Collectors.toList());
         List<CustomizeParam> columns = customizeParam.stream().filter(param -> param.getId().toLowerCase().contains("column")).collect(Collectors.toList());
-
+        // 神通数据库不走livy提交规则，通过jdbc执行自定义规则sql语句
+        /*if (isOscarType(task)) {
+            oscarCustomHandle(task, tables, columns);
+            return null;
+        }*/
         Map<String, MeasureDataSource> dataSourceMap = new HashMap<>();
         for (CustomizeParam table : tables) {
             MeasureConnector connector = null;
@@ -541,7 +552,7 @@ public class QuartzJob implements Job {
         String sql = task.getSql();
         if (tables != null) {
             for (CustomizeParam table : tables) {
-                sql = sql.replaceAll("\\$\\{" + table.getId() + "\\}",table.getId());
+                sql = sql.replaceAll("\\$\\{" + table.getId() + "\\}", table.getId());
             }
         }
         if (columns != null) {
@@ -568,7 +579,7 @@ public class QuartzJob implements Job {
 
         return measure;
     }
-    
+
     /**
      * 一致性生成Measure
      *
@@ -581,8 +592,8 @@ public class QuartzJob implements Job {
         if (consistencyParams == null || consistencyParams.isEmpty() || consistencyParams.size() < 2) {
             throw new AtlasBaseException("一致性校验的数据源必须大于一个");
         }
-        
-        
+
+
         ConsistencyParam standard = null;
         List<ConsistencyParam> contrasts = new ArrayList<>();
         Map<String, MeasureDataSource> dataSourceMap = new HashMap<>();
@@ -890,7 +901,7 @@ public class QuartzJob implements Job {
                     LinkedHashMap<String, Object> map = new LinkedHashMap<>();
                     for (int i = 1; i <= columnCount; i++) {
                         String column = metaData.getColumnName(i);
-                        if(column.contains(".")){
+                        if (column.contains(".")) {
                             column = column.substring(column.lastIndexOf(".") + 1, column.length());
                         }
                         Object value = resultSet.getObject(column);
@@ -1168,26 +1179,9 @@ public class QuartzJob implements Job {
                     resultValue, referenceValue, Objects.isNull(checkStatus) ? 2 : checkStatus.getCode(), Objects.isNull(orangeWarningcheckStatus) ? null : orangeWarningcheckStatus.getCode(),
                     Objects.isNull(redWarningcheckStatus) ? null : redWarningcheckStatus.getCode(), WarningMessageStatus.WAITING.getCode(), currentTime, currentTime);
 
-            taskManageDAO.updateRuleExecutionWarningInfo(taskRuleExecute);
+            // 数据库更新告警信息
+            taskManageService.updateWarningInfo(task, checkStatus, orangeWarningcheckStatus, redWarningcheckStatus, taskRuleExecute);
 
-            //普通告警数量
-            if (Objects.nonNull(checkStatus) && checkStatus == RuleExecuteStatus.WARNING) {
-                taskManageDAO.updateTaskExecuteGeneralWarningNum(task.getTaskExecuteId());
-                taskManageDAO.updateTaskGeneralWarningCount(task.getTaskId());
-                taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
-            }
-            //橙色告警数量
-            if (Objects.nonNull(orangeWarningcheckStatus) && orangeWarningcheckStatus == RuleExecuteStatus.WARNING) {
-                taskManageDAO.updateTaskExecuteOrangeWarningNum(task.getTaskExecuteId());
-                taskManageDAO.updateTaskOrangeWarningCount(task.getTaskId());
-                taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
-            }
-            //红色告警数量
-            if (Objects.nonNull(redWarningcheckStatus) && redWarningcheckStatus == RuleExecuteStatus.WARNING) {
-                taskManageDAO.updateTaskExecuteRedWarningNum(task.getTaskExecuteId());
-                taskManageDAO.updateTaskRedWarningCount(task.getTaskId());
-                taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
-            }
             //计算异常数量
 
         } catch (Exception e) {
@@ -1266,5 +1260,92 @@ public class QuartzJob implements Job {
             LOG.info(e.toString());
         }
         return ruleStatus;
+    }
+
+    public float oscarCustomHandle(AtomicTaskExecution task, List<CustomizeParam> tables, List<CustomizeParam> columns) throws Exception {
+        Float resultValue = 0.0f;
+        try {
+            AdapterSource adapterSource = getOscarAdapterSource(task);
+            String sql = buildExecuteSql(task, tables, columns);
+            Connection connection = adapterSource.getConnection(MetaspaceConfig.getHiveAdmin(), task.getDbName(), task.getPool());
+            AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
+            resultValue = adapterExecutor.queryResult(connection, sql, resultSet -> {
+                try {
+                    Float value = 0.0f;
+                    if (Objects.nonNull(resultSet)) {
+                        while (resultSet.next()) {
+                            Object object = resultSet.getObject(1);
+                            if (Objects.nonNull(object)) {
+                                value = Float.valueOf(object.toString());
+                            }
+                        }
+                    }
+                    return value;
+                } catch (Exception e) {
+                    throw new AtlasBaseException(e);
+                }
+            });
+            return resultValue;
+        } catch (Exception e) {
+            LOG.error("oscarCustomHandle fail:{}", e);
+            throw e;
+        } finally {
+            checkResult(task, resultValue, resultValue);
+        }
+    }
+
+    private AdapterSource getOscarAdapterSource(AtomicTaskExecution task) throws Exception {
+        String json = task.getObjectId();
+        if (StringUtils.isEmpty(json)) {
+            new AtlasBaseException("自定义规则动态参数字符串串不能为空！");
+        }
+        JsonArray jsonArray = JsonUtils.toJsonArray(json);
+        AdapterSource adapterSource = null;
+        Optional.ofNullable(jsonArray).orElseThrow(() -> new AtlasBaseException("自定义规则动态参数数组不能为空！"));
+        if (jsonArray.size() > 0) {
+            String item = jsonArray.get(0).toString();
+            String datasourceId = String.valueOf(JsonUtils.toJsonObject(item).get("dataSourceId")).replaceAll("\"", "");
+            DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(datasourceId);
+            adapterSource = AdapterUtils.getAdapterSource(dataSourceInfo);
+        }
+        return adapterSource;
+    }
+
+    private String buildExecuteSql(AtomicTaskExecution task, List<CustomizeParam> tables, List<CustomizeParam> columns) throws Exception {
+        String sql = task.getSql();
+        if (tables != null) {
+            for (CustomizeParam table : tables) {
+                StringJoiner tableJoiner = new StringJoiner(".");
+                sql = sql.replaceAll("\\$\\{" + table.getId() + "\\}", tableJoiner.add(table.getSchema()).add(table.getTable()).toString());
+            }
+        }
+        if (columns != null) {
+            for (CustomizeParam column : columns) {
+                StringJoiner columnJoiner = new StringJoiner(".");
+                sql = sql.replaceAll("\\$\\{" + column.getId() + "\\}", columnJoiner.add(column.getSchema()).add(column.getTable()).add(column.getColumn()).toString());
+            }
+        }
+        return sql;
+    }
+
+    public boolean isOscarType(AtomicTaskExecution task) throws Exception {
+        boolean isOscar = false;
+        String json = task.getObjectId();
+        if (StringUtils.isEmpty(json)) {
+            new AtlasBaseException("自定义规则动态参数字符串串不能为空！");
+        }
+        JsonArray jsonArray = JsonUtils.toJsonArray(json);
+        AdapterSource adapterSource = null;
+        Optional.ofNullable(jsonArray).orElseThrow(() -> new AtlasBaseException("自定义规则动态参数数组不能为空！"));
+        if (jsonArray.size() > 0) {
+            String item = jsonArray.get(0).toString();
+            String datasourceId = String.valueOf(JsonUtils.toJsonObject(item).get("dataSourceId")).replaceAll("\"", "");
+            DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(datasourceId);
+            String sourceType = dataSourceInfo.getSourceType();
+            if (DataSourceType.OSCAR.getName().equals(sourceType)) {
+                isOscar = true;
+            }
+        }
+        return isOscar;
     }
 }

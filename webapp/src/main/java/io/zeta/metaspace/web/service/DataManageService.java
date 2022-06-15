@@ -1148,10 +1148,10 @@ public class DataManageService {
             List<RelationEntityV2> list = new ArrayList<>();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
             if (StringUtils.isNotEmpty(tableName)) {
-                tableName = tableName.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
+                tableName = tableName.replaceAll("%", "/%").replaceAll("_", "/_");
             }
             if (StringUtils.isNotEmpty(tag)) {
-                tag = tag.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
+                tag = tag.replaceAll("%", "/%").replaceAll("_", "/_");
             }
 
             List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId);
