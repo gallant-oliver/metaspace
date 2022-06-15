@@ -1416,6 +1416,7 @@ public class SourceInfoDeriveTableInfoService {
 
     public List<DeriveFileDTO> fileUploadDeriveBatch(List<DeriveFileDTO> deriveFileDTOList, String tenantId) {
         for (DeriveFileDTO fileDTO : deriveFileDTOList) {
+            fileDTO.setPath("D:\\衍生表登记模板 (11).xlsx");
             Result result = this.fileUploadDerive(fileDTO.getFileName(), fileDTO.getPath(), tenantId);
             fileDTO.setDescription(result.getMessage());
         }
@@ -1625,7 +1626,9 @@ public class SourceInfoDeriveTableInfoService {
         if (!CollectionUtils.isEmpty(columnTags)) {
             mapColumn = columnTags.stream().collect(Collectors.toMap(ColumnTag::getName, ColumnTag::getId));
         }
-        for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
+        // 不把i=0的表头数据带入校验
+        for (int i = 1; i < sourceInfoDeriveColumnInfos.size(); i++) {
+            SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo = sourceInfoDeriveColumnInfos.get(i);
             if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getTagsName())) {
                 List<String> tagIdList = new ArrayList<>();
                 for (String value : sourceInfoDeriveColumnInfo.getTagsName().split(",")) {
@@ -1667,6 +1670,7 @@ public class SourceInfoDeriveTableInfoService {
             sourceInfoDeriveColumnInfo.setSourceColumnGuid(collect.get(0).getColumnGuid());
             sourceInfoDeriveColumnInfo.setSourceColumnNameEn(collect.get(0).getColumnName());
         }
+
     }
 
     private void getBusinessId(SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDTO, String tenantId) {
@@ -1890,7 +1894,8 @@ public class SourceInfoDeriveTableInfoService {
     public SourceInfoDeriveTableColumnDTO getDeriveDataFile(String fileName, String filePath) {
         SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto = new SourceInfoDeriveTableColumnDTO();
         try {
-            InputStream input = hdfsService.getFileInputStream(filePath);
+//            InputStream input = hdfsService.getFileInputStream(filePath);
+            InputStream input = new FileInputStream(new File(filePath));
             List<String[]> list = PoiExcelUtils.readExcelFile(input, fileName, 0, 20);
             sourceInfoDeriveTableColumnDto.setTableNameEn(list.get(1)[1]);
             sourceInfoDeriveTableColumnDto.setTableNameZh(list.get(1)[3]);
