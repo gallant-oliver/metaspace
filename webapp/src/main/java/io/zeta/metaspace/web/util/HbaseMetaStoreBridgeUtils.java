@@ -39,7 +39,7 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.NamespaceDescriptor;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -104,7 +104,7 @@ public class HbaseMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
     private static final String HBASE_NAMESPACE_QUALIFIED_NAME            = "%s@%s";
     private static final String HBASE_TABLE_QUALIFIED_NAME_FORMAT         = "%s:%s@%s";
     private static final String HBASE_COLUMN_FAMILY_QUALIFIED_NAME_FORMAT = "%s:%s.%s@%s";
-    private final HBaseAdmin hbaseAdmin;
+    private final Admin admin;
 
     @Inject
     public HbaseMetaStoreBridgeUtils(AtlasTypeRegistry typeRegistry,AtlasEntityStore atlasEntityStore,AtlasGraph atlasGraph) throws Exception {
@@ -118,11 +118,11 @@ public class HbaseMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
         LOG.info("checking HBase availability..");
 
-        HBaseAdmin.checkHBaseAvailable(conf);
+        HBaseAdmin.available(conf);
 
         LOG.info("HBase is available");
-
-        hbaseAdmin = new HBaseAdmin(conf);
+        Connection connection = ConnectionFactory.createConnection(conf);
+        admin = connection.getAdmin();
     }
 
 
@@ -131,7 +131,7 @@ public class HbaseMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
 
         byte[]                 nsByte       = htd.getTableName().getNamespace();
         String                 nsName       = new String(nsByte);
-        NamespaceDescriptor    nsDescriptor = hbaseAdmin.getNamespaceDescriptor(nsName);
+        NamespaceDescriptor    nsDescriptor = admin.getNamespaceDescriptor(nsName);
         AtlasEntity.AtlasEntityWithExtInfo entity       = createOrUpdateNameSpace(nsDescriptor, definition);
         HColumnDescriptor[]    hcdts        = htd.getColumnFamilies();
 
@@ -405,9 +405,9 @@ public class HbaseMetaStoreBridgeUtils extends MetaStoreBridgeUtils {
         updatedTables = new AtomicInteger(0);
         startTime = new AtomicLong(System.currentTimeMillis());
         endTime = new AtomicLong(0);
-        NamespaceDescriptor[] namespaceDescriptors = hbaseAdmin.listNamespaceDescriptors();
+        NamespaceDescriptor[] namespaceDescriptors = admin.listNamespaceDescriptors();
         List<String> namespaceNames = Arrays.stream(namespaceDescriptors).map(namespaceDescriptor -> namespaceDescriptor.getName()).collect(Collectors.toList());
-        HTableDescriptor[] htds = hbaseAdmin.listTables();
+        HTableDescriptor[] htds = admin.listTables();
         List<String> tableNames = Arrays.stream(htds).map(htd -> htd.getTableName().getNameAsString()).collect(Collectors.toList());
         totalTables = new AtomicInteger(namespaceDescriptors.length+htds.length);
         String databaseQuery = String.format(gremlinQueryProvider.getQuery(MetaspaceGremlin3QueryProvider.MetaspaceGremlinQuery.FULL_HBASE_NS_BY_STATE), AtlasEntity.Status.ACTIVE);

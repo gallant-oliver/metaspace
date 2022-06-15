@@ -83,7 +83,7 @@ import java.util.zip.ZipOutputStream;
 
 @Service
 public class TaskManageService {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(TaskManageService.class);
     private static final String JOB_GROUP_NAME = "METASPACE_JOBGROUP";
     private static final String TRIGGER_NAME = "METASPACE_TRIGGER";
@@ -92,7 +92,7 @@ public class TaskManageService {
     private static String engine;
     private static Configuration conf;
     private static Cache<String, List<String>> errorDataCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(30, TimeUnit.MINUTES).build();
-    
+
     static {
         try {
             conf = ApplicationProperties.get();
@@ -100,10 +100,10 @@ public class TaskManageService {
             LOG.error(e.toString());
         }
     }
-    
+
     @Autowired
     private TaskManageDAO taskManageDAO;
-    
+
     @Autowired
     private RuleService ruleService;
     @Autowired
@@ -149,8 +149,8 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取任务列表失败");
         }
     }
-    
-    
+
+
     public List<TaskDTO> listEnableTasks(String tenantId) {
         return taskManageDAO.queryEnableTasks(tenantId)
                 .stream()
@@ -161,12 +161,12 @@ public class TaskManageService {
                         .build())
                 .collect(Collectors.toList());
     }
-    
+
     public PageResult getTableList(String dbName, Parameters parameters) throws AtlasBaseException {
         try {
             String databaseId = taskManageDAO.getDbIdByDbName(dbName);
             PageResult<Table> pageResult = metaspaceEntityService.getTableByDB(databaseId, true, parameters.getOffset(), parameters.getLimit());
-            
+
             List<Table> tableList = pageResult.getLists();
             if (Objects.nonNull(tableList) && tableList.size() > 0) {
                 Table tmpTable = taskManageDAO.getDbAndTableName(tableList.get(0).getTableId());
@@ -257,7 +257,7 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组列表失败");
         }
     }
-    
+
     public List<TaskWarningHeader.WarningGroupHeader> getAllWarningGroup(String tenantId) throws AtlasBaseException {
         try {
             return taskManageDAO.getAllWarningGroup(tenantId);
@@ -266,18 +266,18 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组列表失败");
         }
     }
-    
+
     @Transactional(rollbackFor = Exception.class)
     public void addDataQualityTask(TaskInfo taskInfo, String tenantId) throws AtlasBaseException {
         try {
             Timestamp currentTime = DateUtils.currentTimestamp();
             DataQualityTask dataQualityTask = new DataQualityTask();
-            
+
             List<String> dataQualityTaskByName = taskManageDAO.getDataQualityTaskByName(taskInfo.getTaskName(), tenantId);
             if (dataQualityTaskByName != null && dataQualityTaskByName.size() > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务名称已经存在");
             }
-            
+
             //id
             String guid = UUID.randomUUID().toString();
             dataQualityTask.setId(guid);
@@ -366,11 +366,10 @@ public class TaskManageService {
                 // 资源池
                 dataQualitySubTask.setPool(subTask.getPool());
                 // spark配置
-                String config = null;
-                if (subTask.getConfig() != null) {
-                    config = GsonUtils.getInstance().toJson(subTask.getConfig());
-                }
-                dataQualitySubTask.setConfig(config);
+                Map<String, Object> sparkConfig = subTask.getConfig() != null ? subTask.getConfig() : new HashMap<>();
+                subTask.setConfig(sparkConfig);
+                addRealUser(sparkConfig);
+                dataQualitySubTask.setConfig(GsonUtils.getInstance().toJson(subTask.getConfig()));
                 //subTaskRule
                 List<TaskInfo.SubTaskRule> subTaskRuleList = subTask.getSubTaskRuleList();
                 addDataQualitySubTaskRule(guid, currentTime, subTaskRuleList, tenantId);
@@ -384,6 +383,17 @@ public class TaskManageService {
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "添加任务失败");
         }
+    }
+
+    /**
+     * 添加realuser和proxyuser为当前sso用户，才能通过spark的用户认证
+     */
+    private void addRealUser(Map<String, Object> config) {
+        Map<String, Object> conf = new HashMap<>();
+        String username = AdminUtils.getUserName();
+        conf.put("spark.sql.hive.real.user", username);
+        config.put("conf", conf);
+        config.put("proxyUser", username);
     }
 
     public void addDataQualitySubTaskObject(String taskId, String subTaskId, Timestamp currentTime, List<String> objectIdList) throws AtlasBaseException {
@@ -510,7 +520,7 @@ public class TaskManageService {
                 List<EditionTaskInfo.SubTaskRule> subTaskRuleList = taskManageDAO.getSubTaskRule(subTaskId, tenantId);
                 String sparkConfig = taskManageDAO.geSparkConfig(subTaskId);
                 if (sparkConfig != null && sparkConfig.length() != 0) {
-                    Map<String, Integer> configMap = GsonUtils.getInstance().fromJson(sparkConfig, new TypeToken<Map<String, Integer>>() {
+                    Map<String, Object> configMap = GsonUtils.getInstance().fromJson(sparkConfig, new TypeToken<Map<String, Object>>() {
                     }.getType());
                     subTask.setConfig(configMap);
                 }
@@ -608,9 +618,9 @@ public class TaskManageService {
             LOG.error("获取任务信息失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取任务信息失败");
         }
-    
+
     }
-    
+
     public void enableTask(String taskId) throws AtlasBaseException {
         try {
             String qrtzName = taskManageDAO.getQrtzJobByTaskId(taskId);
@@ -628,7 +638,7 @@ public class TaskManageService {
                 } else {
                     addQuartzJob(taskId, qrtzName);
                 }
-                
+
             }
             //设置任务状态为【启用】
             taskManageDAO.updateTaskEnableStatus(taskId, true);
@@ -637,7 +647,7 @@ public class TaskManageService {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "开启任务失败");
         }
     }
-    
+
     public void disableTask(String taskId) throws AtlasBaseException {
         try {
             String jobName = taskManageDAO.getQrtzJobByTaskId(taskId);
@@ -650,7 +660,7 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭模板失败");
         }
     }
-    
+
     public String startTaskNow(String taskId) throws AtlasBaseException {
         if (QuartzJob.STATE_MAP.containsKey(taskId)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务正在执行中");
