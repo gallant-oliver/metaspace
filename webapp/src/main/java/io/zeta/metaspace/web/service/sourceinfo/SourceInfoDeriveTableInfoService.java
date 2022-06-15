@@ -1416,7 +1416,6 @@ public class SourceInfoDeriveTableInfoService {
 
     public List<DeriveFileDTO> fileUploadDeriveBatch(List<DeriveFileDTO> deriveFileDTOList, String tenantId) {
         for (DeriveFileDTO fileDTO : deriveFileDTOList) {
-            fileDTO.setPath("D:\\衍生表登记模板 (11).xlsx");
             Result result = this.fileUploadDerive(fileDTO.getFileName(), fileDTO.getPath(), tenantId);
             fileDTO.setDescription(result.getMessage());
         }
@@ -1897,8 +1896,7 @@ public class SourceInfoDeriveTableInfoService {
     public SourceInfoDeriveTableColumnDTO getDeriveDataFile(String fileName, String filePath) {
         SourceInfoDeriveTableColumnDTO sourceInfoDeriveTableColumnDto = new SourceInfoDeriveTableColumnDTO();
         try {
-//            InputStream input = hdfsService.getFileInputStream(filePath);
-            InputStream input = new FileInputStream(new File(filePath));
+            InputStream input = hdfsService.getFileInputStream(filePath);
             List<String[]> list = PoiExcelUtils.readExcelFile(input, fileName, 0, 20);
             sourceInfoDeriveTableColumnDto.setTableNameEn(list.get(1)[1]);
             sourceInfoDeriveTableColumnDto.setTableNameZh(list.get(1)[3]);
