@@ -29,11 +29,13 @@ import io.zeta.metaspace.model.dataquality.RuleCheckType;
 import io.zeta.metaspace.model.dataquality.TaskType;
 import io.zeta.metaspace.model.dataquality2.*;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
+import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.measure.*;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.GsonUtils;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.service.DataSourceService;
+import io.zeta.metaspace.web.service.dataquality.TaskManageService;
 import io.zeta.metaspace.web.service.indexmanager.IndexCounter;
 import io.zeta.metaspace.web.task.util.LivyTaskSubmitHelper;
 import io.zeta.metaspace.web.task.util.QuartQueryProvider;
@@ -52,6 +54,7 @@ import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -80,6 +83,8 @@ public class QuartzJob implements Job {
     private QuartzManager quartzManager;
     @Autowired
     private TaskManageDAO taskManageDAO;
+    @Autowired
+    private TaskManageService taskManageService;
     @Autowired
     private DataSourceService dataSourceService;
     @Autowired
@@ -424,9 +429,10 @@ public class QuartzJob implements Job {
                     break;
                 case CUSTOMIZE:
                     measure = builderCustomizeMeasure(task, task.getTimeStamp());
-                    if (measure != null) {
+                    otherRuleCheck(task, measure);
+                    /*if (Objects.nonNull(measure)) {
                         otherRuleCheck(task, measure);
-                    }
+                    }*/
                     break;
                 default:
                     break;
@@ -507,16 +513,15 @@ public class QuartzJob implements Job {
      * @param timestamp
      * @return
      */
-    public Measure builderCustomizeMeasure(AtomicTaskExecution task, Long timestamp) {
+    public Measure builderCustomizeMeasure(AtomicTaskExecution task, Long timestamp) throws Exception {
         List<CustomizeParam> customizeParam = task.getCustomizeParam();
         List<CustomizeParam> tables = customizeParam.stream().filter(param -> param.getId().toLowerCase().contains("table")).collect(Collectors.toList());
         List<CustomizeParam> columns = customizeParam.stream().filter(param -> param.getId().toLowerCase().contains("column")).collect(Collectors.toList());
         // 神通数据库不走livy提交规则，通过jdbc执行自定义规则sql语句
-        if (isOscarType(task)){
+        /*if (isOscarType(task)) {
             oscarCustomHandle(task, tables, columns);
             return null;
-        }
-
+        }*/
         Map<String, MeasureDataSource> dataSourceMap = new HashMap<>();
         for (CustomizeParam table : tables) {
             MeasureConnector connector = null;
@@ -1174,26 +1179,9 @@ public class QuartzJob implements Job {
                     resultValue, referenceValue, Objects.isNull(checkStatus) ? 2 : checkStatus.getCode(), Objects.isNull(orangeWarningcheckStatus) ? null : orangeWarningcheckStatus.getCode(),
                     Objects.isNull(redWarningcheckStatus) ? null : redWarningcheckStatus.getCode(), WarningMessageStatus.WAITING.getCode(), currentTime, currentTime);
 
-            taskManageDAO.updateRuleExecutionWarningInfo(taskRuleExecute);
+            // 数据库更新告警信息
+            taskManageService.updateWarningInfo(task, checkStatus, orangeWarningcheckStatus, redWarningcheckStatus, taskRuleExecute);
 
-            //普通告警数量
-            if (Objects.nonNull(checkStatus) && checkStatus == RuleExecuteStatus.WARNING) {
-                taskManageDAO.updateTaskExecuteGeneralWarningNum(task.getTaskExecuteId());
-                taskManageDAO.updateTaskGeneralWarningCount(task.getTaskId());
-                taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
-            }
-            //橙色告警数量
-            if (Objects.nonNull(orangeWarningcheckStatus) && orangeWarningcheckStatus == RuleExecuteStatus.WARNING) {
-                taskManageDAO.updateTaskExecuteOrangeWarningNum(task.getTaskExecuteId());
-                taskManageDAO.updateTaskOrangeWarningCount(task.getTaskId());
-                taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
-            }
-            //红色告警数量
-            if (Objects.nonNull(redWarningcheckStatus) && redWarningcheckStatus == RuleExecuteStatus.WARNING) {
-                taskManageDAO.updateTaskExecuteRedWarningNum(task.getTaskExecuteId());
-                taskManageDAO.updateTaskRedWarningCount(task.getTaskId());
-                taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
-            }
             //计算异常数量
 
         } catch (Exception e) {
@@ -1274,29 +1262,11 @@ public class QuartzJob implements Job {
         return ruleStatus;
     }
 
-    public float oscarCustomHandle(AtomicTaskExecution task, List<CustomizeParam> tables, List<CustomizeParam> columns){
+    public float oscarCustomHandle(AtomicTaskExecution task, List<CustomizeParam> tables, List<CustomizeParam> columns) throws Exception {
         Float resultValue = 0.0f;
         try {
-            String json = task.getObjectId();
-            JsonArray jsonArray = JsonUtils.toJsonArray(json);
-            AdapterSource adapterSource = null;
-            if (jsonArray != null && jsonArray.size() > 0) {
-                String item = jsonArray.get(0).toString();
-                String datasourceId = String.valueOf(JsonUtils.toJsonObject(item).get("dataSourceId")).replaceAll("\"", "");
-                DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(datasourceId);
-                adapterSource = AdapterUtils.getAdapterSource(dataSourceInfo);
-            }
-            String sql = task.getSql();
-            if (tables != null) {
-                for (CustomizeParam table : tables) {
-                    sql = sql.replaceAll("\\$\\{" + table.getId() + "\\}", table.getSchema() + "." + table.getTable());
-                }
-            }
-            if (columns != null) {
-                for (CustomizeParam column : columns) {
-                    sql = sql.replaceAll("\\$\\{" + column.getId() + "\\}", column.getSchema() + "." + column.getTable() + "." + column.getColumn());
-                }
-            }
+            AdapterSource adapterSource = getOscarAdapterSource(task);
+            String sql = buildExecuteSql(task, tables, columns);
             Connection connection = adapterSource.getConnection(MetaspaceConfig.getHiveAdmin(), task.getDbName(), task.getPool());
             AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
             resultValue = adapterExecutor.queryResult(connection, sql, resultSet -> {
@@ -1317,29 +1287,62 @@ public class QuartzJob implements Job {
             });
             return resultValue;
         } catch (Exception e) {
-            LOG.info(e.toString());
+            LOG.error("oscarCustomHandle fail:{}", e);
             throw e;
         } finally {
-            try {
-                checkResult(task, resultValue, resultValue);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            checkResult(task, resultValue, resultValue);
         }
-
     }
 
-    public boolean isOscarType(AtomicTaskExecution task){
-        boolean isOscar = false;
+    private AdapterSource getOscarAdapterSource(AtomicTaskExecution task) throws Exception {
         String json = task.getObjectId();
+        if (StringUtils.isEmpty(json)) {
+            new AtlasBaseException("自定义规则动态参数字符串串不能为空！");
+        }
         JsonArray jsonArray = JsonUtils.toJsonArray(json);
         AdapterSource adapterSource = null;
-        if (jsonArray != null && jsonArray.size() > 0) {
+        Optional.ofNullable(jsonArray).orElseThrow(() -> new AtlasBaseException("自定义规则动态参数数组不能为空！"));
+        if (jsonArray.size() > 0) {
+            String item = jsonArray.get(0).toString();
+            String datasourceId = String.valueOf(JsonUtils.toJsonObject(item).get("dataSourceId")).replaceAll("\"", "");
+            DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(datasourceId);
+            adapterSource = AdapterUtils.getAdapterSource(dataSourceInfo);
+        }
+        return adapterSource;
+    }
+
+    private String buildExecuteSql(AtomicTaskExecution task, List<CustomizeParam> tables, List<CustomizeParam> columns) throws Exception {
+        String sql = task.getSql();
+        if (tables != null) {
+            for (CustomizeParam table : tables) {
+                StringJoiner tableJoiner = new StringJoiner(".");
+                sql = sql.replaceAll("\\$\\{" + table.getId() + "\\}", tableJoiner.add(table.getSchema()).add(table.getTable()).toString());
+            }
+        }
+        if (columns != null) {
+            for (CustomizeParam column : columns) {
+                StringJoiner columnJoiner = new StringJoiner(".");
+                sql = sql.replaceAll("\\$\\{" + column.getId() + "\\}", columnJoiner.add(column.getSchema()).add(column.getTable()).add(column.getColumn()).toString());
+            }
+        }
+        return sql;
+    }
+
+    public boolean isOscarType(AtomicTaskExecution task) throws Exception {
+        boolean isOscar = false;
+        String json = task.getObjectId();
+        if (StringUtils.isEmpty(json)) {
+            new AtlasBaseException("自定义规则动态参数字符串串不能为空！");
+        }
+        JsonArray jsonArray = JsonUtils.toJsonArray(json);
+        AdapterSource adapterSource = null;
+        Optional.ofNullable(jsonArray).orElseThrow(() -> new AtlasBaseException("自定义规则动态参数数组不能为空！"));
+        if (jsonArray.size() > 0) {
             String item = jsonArray.get(0).toString();
             String datasourceId = String.valueOf(JsonUtils.toJsonObject(item).get("dataSourceId")).replaceAll("\"", "");
             DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(datasourceId);
             String sourceType = dataSourceInfo.getSourceType();
-            if ("OSCAR".equals(sourceType)){
+            if (DataSourceType.OSCAR.getName().equals(sourceType)) {
                 isOscar = true;
             }
         }

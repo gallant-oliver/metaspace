@@ -1352,6 +1352,38 @@ public class TaskManageService {
             }
         }
     }
+
+    /**
+     * 数据库更新告警信息
+     * @param task
+     * @param checkStatus
+     * @param orangeWarningcheckStatus
+     * @param redWarningcheckStatus
+     * @param taskRuleExecute
+     */
+    @Transactional(rollbackFor=Exception.class)
+    public void updateWarningInfo(AtomicTaskExecution task, RuleExecuteStatus checkStatus, RuleExecuteStatus orangeWarningcheckStatus, RuleExecuteStatus redWarningcheckStatus, DataQualityTaskRuleExecute taskRuleExecute) throws Exception{
+        taskManageDAO.updateRuleExecutionWarningInfo(taskRuleExecute);
+
+        //普通告警数量
+        if (Objects.nonNull(checkStatus) && checkStatus == RuleExecuteStatus.WARNING) {
+            taskManageDAO.updateTaskExecuteGeneralWarningNum(task.getTaskExecuteId());
+            taskManageDAO.updateTaskGeneralWarningCount(task.getTaskId());
+            taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
+        }
+        //橙色告警数量
+        if (Objects.nonNull(orangeWarningcheckStatus) && orangeWarningcheckStatus == RuleExecuteStatus.WARNING) {
+            taskManageDAO.updateTaskExecuteOrangeWarningNum(task.getTaskExecuteId());
+            taskManageDAO.updateTaskOrangeWarningCount(task.getTaskId());
+            taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
+        }
+        //红色告警数量
+        if (Objects.nonNull(redWarningcheckStatus) && redWarningcheckStatus == RuleExecuteStatus.WARNING) {
+            taskManageDAO.updateTaskExecuteRedWarningNum(task.getTaskExecuteId());
+            taskManageDAO.updateTaskRedWarningCount(task.getTaskId());
+            taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
+        }
+    }
     
     
 }
