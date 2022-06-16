@@ -1097,7 +1097,7 @@ public class SourceInfoDeriveTableInfoService {
         StringBuilder primaryKeyDDLHeader = new StringBuilder("ALTER TABLE ").append(tableFiled).append(tableNameEn).
                 append(tableFiled).append(" ADD PRIMARY KEY (");
         StringBuilder primaryKeyField = new StringBuilder();
-        for (int i = 1; i < sourceInfoDeriveColumnInfos.size(); i++) {
+        for (int i = 0; i < sourceInfoDeriveColumnInfos.size(); i++) {
             SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo = sourceInfoDeriveColumnInfos.get(i);
             String columnNameEn = sourceInfoDeriveColumnInfo.getColumnNameEn();
             String dataType = sourceInfoDeriveColumnInfo.getDataType();
@@ -1166,8 +1166,6 @@ public class SourceInfoDeriveTableInfoService {
         // 数据库类型获取数据类型-替换值
         String tableNameEn = sourceInfoDeriveTableColumnDto.getTableNameEn();
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
-        // 跳过表头数据
-        sourceInfoDeriveColumnInfos = sourceInfoDeriveColumnInfos.stream().skip(1).collect(Collectors.toList());
         addTimeField(sourceInfoDeriveColumnInfos);
         StringBuilder columnBuilder = new StringBuilder("insert into ").append(targetDbName).append(".").append(tableNameEn).append("\r\n");
         removeTimeField(sourceInfoDeriveColumnInfos);
@@ -1187,7 +1185,7 @@ public class SourceInfoDeriveTableInfoService {
         StringBuilder strColumn = new StringBuilder();
         StringBuilder strSelect = new StringBuilder();
         strColumn.append("(");
-        for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos().stream().skip(1).collect(Collectors.toList())) {
+        for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos()) {
             if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceColumnNameEn())) {
                 continue;
             }
@@ -1515,7 +1513,6 @@ public class SourceInfoDeriveTableInfoService {
         }
         // 字段
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
-        sourceInfoDeriveColumnInfos = sourceInfoDeriveColumnInfos.stream().skip(1).collect(Collectors.toList());
 
         // 校验是否有etl_date
         if (sourceInfoDeriveColumnInfos.stream().anyMatch(e -> Objects.equals(timeField, e.getColumnNameEn()))) {
@@ -1614,8 +1611,7 @@ public class SourceInfoDeriveTableInfoService {
         technicalCategoryList.stream().forEach(p -> dbIdList.add(p.getDbId()));
         List<String> dbNameList = new ArrayList<>();
         List<String> tableNameList = new ArrayList<>();
-        // 排除i为0的数据，表头不参与判断
-        for (int i = 1; i < sourceInfoDeriveColumnInfos.size(); i++) {
+        for (int i = 0; i < sourceInfoDeriveColumnInfos.size(); i++) {
             SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo = sourceInfoDeriveColumnInfos.get(i);
             if (!this.checkDataType(dataTypeList, sourceInfoDeriveColumnInfo)) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件中目标字段类型所填写的内容在系统中不存在:" + sourceInfoDeriveColumnInfo.getDataType());
@@ -1632,8 +1628,7 @@ public class SourceInfoDeriveTableInfoService {
         if (!CollectionUtils.isEmpty(columnTags)) {
             mapColumn = columnTags.stream().collect(Collectors.toMap(ColumnTag::getName, ColumnTag::getId));
         }
-        // 不把i=0的表头数据带入校验
-        for (int i = 1; i < sourceInfoDeriveColumnInfos.size(); i++) {
+        for (int i = 0; i < sourceInfoDeriveColumnInfos.size(); i++) {
             SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo = sourceInfoDeriveColumnInfos.get(i);
             if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getTagsName())) {
                 List<String> tagIdList = new ArrayList<>();
@@ -1783,8 +1778,6 @@ public class SourceInfoDeriveTableInfoService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "缺少必填信息：字段映射");
         }
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDTO.getSourceInfoDeriveColumnInfos();
-        // 过滤表头行
-        sourceInfoDeriveColumnInfos = sourceInfoDeriveColumnInfos.stream().skip(1).collect(Collectors.toList());
         for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
             if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getColumnNameEn())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "缺少必填字段：目标字段英文名");
