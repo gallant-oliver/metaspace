@@ -780,11 +780,15 @@ public class PoiExcelUtils {
         }
         // 获得当前行的列数
         String[] cells = new String[lastCellNum];
+        boolean isBlank = false;
         // 循环当前行
         for (int cellNum = firstCellNum; cellNum < lastCellNum; cellNum++) {
             Cell cell = row.getCell(cellNum);
             String value = getCellValue(cell);
             cells[cellNum] = value;
+            if(!(!isBlank && StringUtils.isNotBlank(value))){
+                return new String[0];
+            }
         }
         return cells;
     }
