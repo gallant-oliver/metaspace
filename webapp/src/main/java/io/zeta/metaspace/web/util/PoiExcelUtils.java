@@ -786,9 +786,12 @@ public class PoiExcelUtils {
             Cell cell = row.getCell(cellNum);
             String value = getCellValue(cell);
             cells[cellNum] = value;
-            if(!(!isBlank && StringUtils.isNotBlank(value))){
-                return new String[0];
+            if(!isBlank && StringUtils.isNotBlank(value)){
+                isBlank = true;
             }
+        }
+        if (!isBlank){
+            return new String[0];
         }
         return cells;
     }
