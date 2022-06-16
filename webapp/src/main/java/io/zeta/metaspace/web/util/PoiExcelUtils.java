@@ -146,17 +146,18 @@ public class PoiExcelUtils {
             int lastCellNum = row.getLastCellNum();
             // 获得当前行的列数
             String[] cells = new String[lastCellNum];
+            boolean isBlank = false;
             // 循环当前行
             for (int cellNum = firstCellNum; cellNum < lastCellNum; cellNum++) {
                 Cell cell = row.getCell(cellNum);
                 cells[cellNum] = getCellValue(cell);
+                if (!isBlank && StringUtils.isNotBlank(cells[cellNum])){
+                    isBlank = true;
+                }
             }
-            //整行数据都为空，则不加入
-            boolean isEmptyRow = Stream.of(cells).allMatch(StringUtils::isBlank);
-            if (isEmptyRow) {
-                continue;
+            if (isBlank){
+                list.add(cells);
             }
-            list.add(cells);
         }
 
         return list;
