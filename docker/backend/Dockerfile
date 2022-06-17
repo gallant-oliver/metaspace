@@ -5,7 +5,7 @@ LABEL describe="数据管理后端镜像"
 #代码仓库项目名称
 ARG project=metaspace
 #代码分支, 构建时指定--build-arg branch=release-1.5.3
-ARG branch=release-1.15.0-gdp3
+ARG branch=docker-1.15.0-3
 WORKDIR /usr/local/${project}
 #编译打包
 RUN git fetch && git checkout ${branch} && git pull && \
