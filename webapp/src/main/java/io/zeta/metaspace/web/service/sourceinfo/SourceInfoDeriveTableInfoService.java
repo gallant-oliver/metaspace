@@ -950,7 +950,7 @@ public class SourceInfoDeriveTableInfoService {
         // 查询主键id查询列
         List<SourceInfoDeriveColumnInfo> deriveColumnInfoListByTableId = sourceInfoDeriveColumnInfoService.getDeriveColumnInfoListByTableId(tableId);
         // 除了表头至少存在一行数据,执行过滤表头行操作
-        if (!CollectionUtils.isEmpty(deriveColumnInfoListByTableId) && deriveColumnInfoListByTableId.size() > 1){
+        if (!CollectionUtils.isEmpty(deriveColumnInfoListByTableId) && deriveColumnInfoListByTableId.size() > 1) {
             deriveColumnInfoListByTableId = deriveColumnInfoListByTableId.stream().skip(1).collect(Collectors.toList());
         }
         SourceInfoDeriveTableColumnVO sourceInfoDeriveTableColumnVO = new SourceInfoDeriveTableColumnVO();
@@ -1185,13 +1185,24 @@ public class SourceInfoDeriveTableInfoService {
         StringBuilder strColumn = new StringBuilder();
         StringBuilder strSelect = new StringBuilder();
         strColumn.append("(");
-        for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos()) {
-            if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceColumnNameEn())) {
-                continue;
+        String db = "";
+        String table = "";
+        List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
+        if (!CollectionUtils.isEmpty(sourceInfoDeriveColumnInfos) && sourceInfoDeriveColumnInfos.size() > 0) {
+            for (int i = 0; i < sourceInfoDeriveColumnInfos.size(); i++) {
+                SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo = sourceInfoDeriveColumnInfos.get(i);
+                if (i == 0) {
+                    db = sourceInfoDeriveColumnInfo.getSourceDbName();
+                    table = sourceInfoDeriveColumnInfo.getSourceTableNameEn();
+                }
+                if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceColumnNameEn())) {
+                    continue;
+                }
+                strColumn.append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(", ");
+                strSelect.append(sourceInfoDeriveColumnInfo.getSourceColumnNameEn()).append(" as ").append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(",");
             }
-            strColumn.append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(", ");
-            strSelect.append(sourceInfoDeriveColumnInfo.getSourceColumnNameEn()).append(" as ").append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(",");
         }
+
         if ("(".equals(strColumn.toString())) {
             return "";
         }
@@ -1200,7 +1211,13 @@ public class SourceInfoDeriveTableInfoService {
         strColumn.append(")\r\n");
         str.append(strColumn).append("select \r\n");
         strSelect = new StringBuilder(strSelect.substring(0, strSelect.length() - 1));
-        str.append(strSelect).append("\r\n from ").append(dbName).append(".").append(sourceTableNameEn).append(";");
+        // 导入衍生表需要从行内容读取源数据库和表
+        if (StringUtils.isBlank(dbName) && StringUtils.isBlank(sourceTableNameEn)){
+            str.append(strSelect).append("\r\n from ").append(db).append(".").append(table).append(";");
+        }else{
+            str.append(strSelect).append("\r\n from ").append(dbName).append(".").append(sourceTableNameEn).append(";");
+        }
+
         return str.toString();
     }
 
