@@ -173,7 +173,7 @@ public interface DataSourceDAO {
             "order by ds.#{parameters.sortby} " +
             "</if>" +
             "<if test='parameters.order!=null and parameters.sortby!=null'>" +
-            "${parameters.order} " +
+            "#{parameters.order} " +
             "</if>" +
             "<if test='parameters.limit!=-1'>" +
             "limit #{parameters.limit} " +
