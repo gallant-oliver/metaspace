@@ -170,10 +170,29 @@ public interface DataSourceDAO {
             "and us.username like concat('%',#{dataSourceSearch.updateUserName},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='parameters.sortby!=null'>" +
-            "order by ds.${parameters.sortby} " +
+            "<if test='parameters.sortby=='source_name''>" +
+            "order by ds.source_name " +
+            "</if>" +
+            "<if test='parameters.sortby=='sourceType''>" +
+            "order by ds.sourceType " +
+            "</if>" +
+            "<if test='parameters.sortby=='createTime''>" +
+            "order by ds.createTime " +
+            "</if>" +
+            "<if test='parameters.sortby=='updateTime''>" +
+            "order by ds.updateTime " +
+            "</if>" +
+            "<if test='parameters.sortby==null'>" +
+            "order by ds.source_name " +
+            "</if>" +
             "</if>" +
             "<if test='parameters.order!=null and parameters.sortby!=null'>" +
-            "${parameters.order} " +
+            "<if test='parameters.order=='desc''>" +
+            "desc " +
+            "</if>" +
+            "<if test='parameters.order=='asc''>" +
+            "asc " +
+            "</if>" +
             "</if>" +
             "<if test='parameters.limit!=-1'>" +
             "limit #{parameters.limit} " +
@@ -250,10 +269,29 @@ public interface DataSourceDAO {
             "and us.username like concat('%',#{dataSourceSearch.updateUserName},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='parameters.sortby!=null'>" +
-            "order by ds.#{parameters.sortby} " +
+            "<if test='parameters.sortby=='source_name''>" +
+            "order by ds.source_name " +
+            "</if>" +
+            "<if test='parameters.sortby=='sourceType''>" +
+            "order by ds.sourceType " +
+            "</if>" +
+            "<if test='parameters.sortby=='createTime''>" +
+            "order by ds.createTime " +
+            "</if>" +
+            "<if test='parameters.sortby=='updateTime''>" +
+            "order by ds.updateTime " +
+            "</if>" +
+            "<if test='parameters.sortby==null'>" +
+            "order by ds.source_name " +
+            "</if>" +
             "</if>" +
             "<if test='parameters.order!=null and parameters.sortby!=null'>" +
-            "#{parameters.order} " +
+            "<if test='parameters.order=='desc''>" +
+            "desc " +
+            "</if>" +
+            "<if test='parameters.order=='asc''>" +
+            "asc " +
+            "</if>" +
             "</if>" +
             "<if test='parameters.limit!=-1'>" +
             "limit #{parameters.limit} " +
