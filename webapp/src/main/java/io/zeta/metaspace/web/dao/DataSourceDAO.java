@@ -170,10 +170,10 @@ public interface DataSourceDAO {
             "and us.username like concat('%',#{dataSourceSearch.updateUserName},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='parameters.sortby!=null'>" +
-            "order by ds.#{parameters.sortby} " +
+            "order by ds.${parameters.sortby} " +
             "</if>" +
             "<if test='parameters.order!=null and parameters.sortby!=null'>" +
-            "#{parameters.order} " +
+            "${parameters.order} " +
             "</if>" +
             "<if test='parameters.limit!=-1'>" +
             "limit #{parameters.limit} " +
