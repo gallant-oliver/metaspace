@@ -170,29 +170,33 @@ public interface DataSourceDAO {
             "and us.username like concat('%',#{dataSourceSearch.updateUserName},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='parameters.sortby!=null'>" +
-            "<if test='parameters.sortby=='source_name''>" +
+            "<choose>" +
+            "<when test='parameters.sortby==&quot;source_name&quot;'>" +
             "order by ds.source_name " +
-            "</if>" +
-            "<if test='parameters.sortby=='sourceType''>" +
-            "order by ds.sourceType " +
-            "</if>" +
-            "<if test='parameters.sortby=='createTime''>" +
-            "order by ds.createTime " +
-            "</if>" +
-            "<if test='parameters.sortby=='updateTime''>" +
-            "order by ds.updateTime " +
+            "</when>" +
+            "<when test='parameters.sortby==&quot;sourceType&quot;'>" +
+            "order by ds.source_type " +
+            "</when>" +
+            "<when test='parameters.sortby==&quot;createTime&quot;'>" +
+            "order by ds.create_time " +
+            "</when>" +
+            "<when test='parameters.sortby==&quot;updateTime&quot;'>" +
+            "order by ds.update_time " +
+            "</when>" +
+            "</choose>" +
             "</if>" +
             "<if test='parameters.sortby==null'>" +
             "order by ds.source_name " +
             "</if>" +
-            "</if>" +
             "<if test='parameters.order!=null and parameters.sortby!=null'>" +
-            "<if test='parameters.order=='desc''>" +
+            "<choose>" +
+            "<when test='parameters.order==&quot;desc&quot;'>" +
             "desc " +
-            "</if>" +
-            "<if test='parameters.order=='asc''>" +
+            "</when>" +
+            "<otherwise>" +
             "asc " +
-            "</if>" +
+            "</otherwise>" +
+            "</choose>" +
             "</if>" +
             "<if test='parameters.limit!=-1'>" +
             "limit #{parameters.limit} " +
@@ -269,29 +273,33 @@ public interface DataSourceDAO {
             "and us.username like concat('%',#{dataSourceSearch.updateUserName},'%') ESCAPE '/'" +
             "</if>" +
             "<if test='parameters.sortby!=null'>" +
-            "<if test='parameters.sortby=='source_name''>" +
+            "<choose>" +
+            "<when test='parameters.sortby==&quot;source_name&quot;'>" +
             "order by ds.source_name " +
-            "</if>" +
-            "<if test='parameters.sortby=='sourceType''>" +
-            "order by ds.sourceType " +
-            "</if>" +
-            "<if test='parameters.sortby=='createTime''>" +
-            "order by ds.createTime " +
-            "</if>" +
-            "<if test='parameters.sortby=='updateTime''>" +
-            "order by ds.updateTime " +
+            "</when>" +
+            "<when test='parameters.sortby==&quot;sourceType&quot;'>" +
+            "order by ds.source_type " +
+            "</when>" +
+            "<when test='parameters.sortby==&quot;createTime&quot;'>" +
+            "order by ds.create_time " +
+            "</when>" +
+            "<when test='parameters.sortby==&quot;updateTime&quot;'>" +
+            "order by ds.update_time " +
+            "</when>" +
+            "</choose>" +
             "</if>" +
             "<if test='parameters.sortby==null'>" +
             "order by ds.source_name " +
             "</if>" +
-            "</if>" +
             "<if test='parameters.order!=null and parameters.sortby!=null'>" +
-            "<if test='parameters.order=='desc''>" +
+            "<choose>" +
+            "<when test='parameters.order==&quot;desc&quot;'>" +
             "desc " +
-            "</if>" +
-            "<if test='parameters.order=='asc''>" +
+            "</when>" +
+            "<otherwise>" +
             "asc " +
-            "</if>" +
+            "</otherwise>" +
+            "</choose>" +
             "</if>" +
             "<if test='parameters.limit!=-1'>" +
             "limit #{parameters.limit} " +
