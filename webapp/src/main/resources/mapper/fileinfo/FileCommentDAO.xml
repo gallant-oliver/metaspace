@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.zeta.metaspace.web.dao.fileinfo.FileCommentDAO">
+    <resultMap id="BaseResultMap" type="io.zeta.metaspace.model.fileinfo.FileComment">
+        <id column="id" jdbcType="VARCHAR" property="id"/>
+        <result column="file_id" jdbcType="VARCHAR" property="fileId"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="create_user" jdbcType="VARCHAR" property="createUser"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        id
+        , file_id, "name", create_time, create_user
+    </sql>
+    <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from "file_comment"
+        where id = #{id,jdbcType=VARCHAR}
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+        delete
+        from "file_comment"
+        where id = #{id,jdbcType=VARCHAR}
+    </delete>
+    <insert id="insert" keyColumn="id" keyProperty="id" parameterType="io.zeta.metaspace.model.fileinfo.FileComment"
+            useGeneratedKeys="true">
+        insert into "file_comment" (file_id, "name", create_time,
+                                    create_user)
+        values (#{fileId,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP},
+                #{createUser,jdbcType=VARCHAR})
+    </insert>
+    <insert id="insertSelective" keyColumn="id" keyProperty="id"
+            parameterType="io.zeta.metaspace.model.fileinfo.FileComment" useGeneratedKeys="true">
+        insert into "file_comment"
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="fileId != null">
+                file_id,
+            </if>
+            <if test="name != null">
+                "name",
+            </if>
+            <if test="createTime != null">
+                create_time,
+            </if>
+            <if test="createUser != null">
+                create_user,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="fileId != null">
+                #{fileId,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null">
+                #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null">
+                #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="createUser != null">
+                #{createUser,jdbcType=VARCHAR},
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="io.zeta.metaspace.model.fileinfo.FileComment">
+        update "file_comment"
+        <set>
+            <if test="fileId != null">
+                file_id = #{fileId,jdbcType=VARCHAR},
+            </if>
+            <if test="name != null">
+                "name" = #{name,jdbcType=VARCHAR},
+            </if>
+            <if test="createTime != null">
+                create_time = #{createTime,jdbcType=TIMESTAMP},
+            </if>
+            <if test="createUser != null">
+                create_user = #{createUser,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where id = #{id,jdbcType=VARCHAR}
+    </update>
+    <update id="updateByPrimaryKey" parameterType="io.zeta.metaspace.model.fileinfo.FileComment">
+        update "file_comment"
+        set file_id     = #{fileId,jdbcType=VARCHAR},
+            "name"      = #{name,jdbcType=VARCHAR},
+            create_time = #{createTime,jdbcType=TIMESTAMP},
+            create_user = #{createUser,jdbcType=VARCHAR}
+        where id = #{id,jdbcType=VARCHAR}
+    </update>
+</mapper>
