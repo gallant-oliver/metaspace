@@ -3514,15 +3514,17 @@ public class DataShareService {
             if (StringUtils.isNotEmpty(apiKey)) {
                 headerMap.put("apiKey", apiKey);
             }
-            for (ApiInfoV2.FieldV2 par : param) {
-                if (CommonConstant.HEADER_PARAM.equals(par.getPlace())) {
-                    headerMap.put(par.getName(), par.getValue());
-                }
-                if (CommonConstant.PATH_PARAM.equals(par.getPlace())) {
-                    path.append("/").append("{").append(par.getValue()).append("}");
-                }
-                if (CommonConstant.QUERY_PARAM.equals(par.getPlace())) {
-                    paramMap.put(par.getName(), par.getValue());
+            if (CollectionUtils.isNotEmpty(param)) {
+                for (ApiInfoV2.FieldV2 par : param) {
+                    if (CommonConstant.HEADER_PARAM.equals(par.getPlace())) {
+                        headerMap.put(par.getName(), par.getValue());
+                    }
+                    if (CommonConstant.PATH_PARAM.equals(par.getPlace())) {
+                        path.append("/").append("{").append(par.getValue()).append("}");
+                    }
+                    if (CommonConstant.QUERY_PARAM.equals(par.getPlace())) {
+                        paramMap.put(par.getName(), par.getValue());
+                    }
                 }
             }
             return OKHttpClient.doPost(path.toString(), headerMap, paramMap, null);
@@ -3540,15 +3542,17 @@ public class DataShareService {
             if (StringUtils.isNotEmpty(apiKey)) {
                 headerMap.put("apiKey", apiKey);
             }
-            for (ApiInfoV2.FieldV2 par : param) {
-                if (CommonConstant.HEADER_PARAM.equals(par.getPlace())) {
-                    headerMap.put(par.getName(), par.getValue().toString());
-                }
-                if (CommonConstant.PATH_PARAM.equals(par.getPlace())) {
-                    path.append("/").append("{").append(par.getValue()).append("}");
-                }
-                if (CommonConstant.QUERY_PARAM.equals(par.getPlace())) {
-                    paramMap.put(par.getName(), par.getValue().toString());
+            if (CollectionUtils.isNotEmpty(param)) {
+                for (ApiInfoV2.FieldV2 par : param) {
+                    if (CommonConstant.HEADER_PARAM.equals(par.getPlace())) {
+                        headerMap.put(par.getName(), par.getValue().toString());
+                    }
+                    if (CommonConstant.PATH_PARAM.equals(par.getPlace())) {
+                        path.append("/").append("{").append(par.getValue()).append("}");
+                    }
+                    if (CommonConstant.QUERY_PARAM.equals(par.getPlace())) {
+                        paramMap.put(par.getName(), par.getValue().toString());
+                    }
                 }
             }
             return OKHttpClient.doGet(path.toString(), paramMap, headerMap);
