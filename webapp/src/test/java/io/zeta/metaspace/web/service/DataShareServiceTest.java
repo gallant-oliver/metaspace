@@ -27,8 +27,8 @@ public class DataShareServiceTest {
     @Test
     public void testApi() throws AtlasException {
         ApiTestInfoVO apiTestInfoVO = new ApiTestInfoVO();
-        apiTestInfoVO.setPageSize(10L);
-        apiTestInfoVO.setPageNum(1L);
+        apiTestInfoVO.setPageSize(10);
+        apiTestInfoVO.setPageNum(1);
         apiTestInfoVO.setApiId("api_id");
         apiTestInfoVO.setVersion("1.1");
         Result result = new Result();

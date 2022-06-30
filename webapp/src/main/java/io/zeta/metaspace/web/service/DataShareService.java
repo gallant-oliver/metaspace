@@ -3458,20 +3458,19 @@ public class DataShareService {
         List<ApiTestDTO> apiAndGroupInfoStatus = shareDAO.getApiAndGroupInfoStatus(apiTestInfoVO.getVersion(), apiTestInfoVO.getApiId());
         ApiTestDTO apiTestDTO = apiAndGroupInfoStatus.get(0);
         ApiStatusEnum anEnum = ApiStatusEnum.getEnum(apiTestDTO.getApiStatus());
-        ApiTestResult data = new ApiTestResult();
         switch (anEnum) {
             case DRAFT:
             case DOWN:
             case AUDIT:
                 return ReturnUtil.success("api处于" + anEnum.getStr() + "状态，api测试不通过！");
             case UP:
-                data = mobiusTestApi(apiInfo, apiTestInfoVO.getPageNum(), apiTestInfoVO.getPageSize());
+                mobiusTestApi(apiInfo, apiTestInfoVO.getPageNum(), apiTestInfoVO.getPageSize());
                 break;
         }
-        return ReturnUtil.success(CollectionUtils.isEmpty(data.getData())?data.getDatas():data.getData());
+        return ReturnUtil.success("api测试成功");
     }
 
-    private ApiTestResult mobiusTestApi(ApiInfoV2 apiInfo, long pageNum, long pageSize) throws AtlasException {
+    private void mobiusTestApi(ApiInfoV2 apiInfo, long pageNum, long pageSize) throws AtlasException {
         String domainName = "";
         //旧api访问直接ip为当前host，新api则是云平台域名
         StringBuilder path = new StringBuilder();
@@ -3499,13 +3498,11 @@ public class DataShareService {
         if (response == null) {
             throw new AtlasException("api测试失败");
         }
-        ApiTestResult apiTestResult;
         try {
-            apiTestResult = JsonUtils.fromJson(response, ApiTestResult.class);
+            JsonUtils.fromJson(response, ApiTestResult.class);
         } catch (Exception e) {
             throw new AtlasException("测试api失败");
         }
-        return apiTestResult;
 }
 
     private String postTest(StringBuilder path, List<ApiInfoV2.FieldV2> param, String apiKey, long pageNum, long pageSize) throws AtlasException {

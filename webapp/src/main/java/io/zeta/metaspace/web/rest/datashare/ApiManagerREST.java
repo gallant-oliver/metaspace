@@ -830,6 +830,12 @@ public class ApiManagerREST {
     public Result testApi2(@HeaderParam("tenantId") String tenantId,
                            @RequestBody @Valid ApiTestInfoVO apiTestInfoVO) {
         try {
+            if (apiTestInfoVO.getPageNum() == null) {
+                apiTestInfoVO.setPageNum(0);
+            }
+            if (apiTestInfoVO.getPageSize() == null) {
+                apiTestInfoVO.setPageSize(10);
+            }
             return shareService.testApi(apiTestInfoVO);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "api测试失败");
