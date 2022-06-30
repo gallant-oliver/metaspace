@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.service;
 
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dto.api.ApiTestInfoVO;
+import org.apache.atlas.AtlasException;
 import org.mockito.Mock;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -24,7 +25,7 @@ public class DataShareServiceTest {
     private DataShareService dataShareService;
 
     @Test
-    public void testApi() {
+    public void testApi() throws AtlasException {
         ApiTestInfoVO apiTestInfoVO = new ApiTestInfoVO();
         apiTestInfoVO.setPageSize(10L);
         apiTestInfoVO.setPageNum(1L);

@@ -45,6 +45,7 @@ import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
@@ -828,18 +829,11 @@ public class ApiManagerREST {
     @Path("/testApi")
     public Result testApi2(@HeaderParam("tenantId") String tenantId,
                            @RequestBody @Valid ApiTestInfoVO apiTestInfoVO) {
-
-        long limit = 10;
-        long offset = 0;
-        if (apiTestInfoVO.getPageSize() != null) {
-            limit = apiTestInfoVO.getPageSize();
+        try {
+            return shareService.testApi(apiTestInfoVO);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "api测试失败");
         }
-        if (apiTestInfoVO.getPageNum() != null && apiTestInfoVO.getPageNum() > 0) {
-            offset = (apiTestInfoVO.getPageNum() - 1) * limit;
-        }
-        apiTestInfoVO.setPageNum(offset);
-        apiTestInfoVO.setPageSize(limit);
-        return shareService.testApi(apiTestInfoVO);
     }
 
     @PUT

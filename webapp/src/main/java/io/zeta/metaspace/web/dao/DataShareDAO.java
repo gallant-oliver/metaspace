@@ -795,8 +795,8 @@ public interface DataShareDAO {
     @Select("select projectid from api_category where guid=#{id}")
     public String getProjectIdByCategory(@Param("id")String id);
 
-    @Update("update api set mobius_id=#{mobiusId} where guid=#{guid}  and version=#{version}")
-    public int updateApiMobiusId(@Param("guid")String guid, @Param("version")String version,@Param("mobiusId")String mobiusId);
+    @Update("update api set mobius_id=#{mobiusId},api_key=#{apiKey} where guid=#{guid}  and version=#{version}")
+    public int updateApiMobiusId(@Param("guid")String guid, @Param("version")String version,@Param("apiKey")String apiKey,@Param("mobiusId")String mobiusId);
 
     @Select("select mobius_id from api where guid=#{id} and valid=true")
     public List<String> getApiMobiusIds(@Param("id")String id);
