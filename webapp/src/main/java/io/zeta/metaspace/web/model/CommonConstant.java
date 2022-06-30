@@ -111,4 +111,12 @@ public class CommonConstant {
      * 字段长度
      */
     public static final int LENGTH_1000 = 1000;
+
+    /**
+     * 数据服务api参数类型
+     */
+    public static final String HEADER_PARAM="HEADER";
+    public static final String QUERY_PARAM = "QUERY";
+    public static final String PATH_PARAM = "PATH";
+    public static final String API_PATH = "metaspace";
 }

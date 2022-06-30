@@ -43,6 +43,7 @@ import io.zeta.metaspace.model.desensitization.ApiDesensitization;
 import io.zeta.metaspace.model.desensitization.DesensitizationRule;
 import io.zeta.metaspace.model.dto.api.ApiTestDTO;
 import io.zeta.metaspace.model.dto.api.ApiTestInfoVO;
+import io.zeta.metaspace.model.dto.api.ApiTestResult;
 import io.zeta.metaspace.model.ip.restriction.ApiIpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
@@ -62,12 +63,11 @@ import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.model.usergroup.DBInfo;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
-import io.zeta.metaspace.utils.AdapterUtils;
+import io.zeta.metaspace.utils.*;
 import io.zeta.metaspace.utils.DateUtils;
-import io.zeta.metaspace.utils.OKHttpClient;
-import io.zeta.metaspace.utils.SqlBuilderUtils;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasConfiguration;
@@ -3452,40 +3452,111 @@ public class DataShareService {
         getNextCateName(guid, cateMap, cateNameList);
     }
 
-    public Result testApi(ApiTestInfoVO apiTestInfoVO) {
+    public Result testApi(ApiTestInfoVO apiTestInfoVO) throws AtlasException {
         ApiInfoV2 apiInfo = getApiInfoByVersion(apiTestInfoVO.getApiId(), apiTestInfoVO.getVersion());
         apiInfo.setParam(apiTestInfoVO.getParam());
-        testAPI(UUID.randomUUID().toString(), apiInfo, apiTestInfoVO.getPageSize(), apiTestInfoVO.getPageNum());
         List<ApiTestDTO> apiAndGroupInfoStatus = shareDAO.getApiAndGroupInfoStatus(apiTestInfoVO.getVersion(), apiTestInfoVO.getApiId());
         ApiTestDTO apiTestDTO = apiAndGroupInfoStatus.get(0);
         ApiStatusEnum anEnum = ApiStatusEnum.getEnum(apiTestDTO.getApiStatus());
-        String message = "测试通过！";
-        String success = message;
+        ApiTestResult data = new ApiTestResult();
         switch (anEnum) {
             case DRAFT:
             case DOWN:
             case AUDIT:
-                message = "api处于" + anEnum.getStr() + "状态，api测试不通过！";
-                break;
+                return ReturnUtil.success("api处于" + anEnum.getStr() + "状态，api测试不通过！");
             case UP:
-                message = "该版本api未存在于已发布的分组中，api测试不通过！";
-                for (ApiTestDTO apiTestDTO1:apiAndGroupInfoStatus) {
-                    //存在组id，且组上线即可
-                    if (apiTestDTO1.getApiGroupId() != null && apiTestDTO1.isApiGroupPublish()) {
-                        //如果api和apigroup的mobiusId为空则数据有误
-                        if (StringUtils.isEmpty(apiTestDTO1.getApiMobiusId()) ||
-                                StringUtils.isEmpty(apiTestDTO1.getApiGroupIdMobiusId())) {
-                            throw new AtlasBaseException("API信息存在错误，请联系运维人员");
-                        }
-                        message = "测试通过！";
-                    }
-                }
+                data = mobiusTestApi(apiInfo, apiTestInfoVO.getPageNum(), apiTestInfoVO.getPageSize());
                 break;
         }
-        if (message.equals(success)) {
-            return new Result("200",message,null,null);
+        return ReturnUtil.success(CollectionUtils.isEmpty(data.getData())?data.getDatas():data.getData());
+    }
+
+    private ApiTestResult mobiusTestApi(ApiInfoV2 apiInfo, long pageNum, long pageSize) throws AtlasException {
+        String domainName = "";
+        //旧api访问直接ip为当前host，新api则是云平台域名
+        StringBuilder path = new StringBuilder();
+        if (StringUtils.isEmpty(apiInfo.getApiKey())) {
+            domainName = apiInfo.getProtocol().toLowerCase() + "://" + getMetaspaceHost();
         } else {
-            return ReturnUtil.error("400", message);
+            path.append("http://");
+            Configuration configuration = ApplicationProperties.get();
+            domainName = configuration.getString("metaspace.mobius.domain.name")+"/";
+        }
+        path.append(domainName);
+        //新api地址多一个path
+        if (StringUtils.isNotEmpty(apiInfo.getApiKey())) {
+            path.append(CommonConstant.API_PATH);
+        }
+        path.append(ApiNewPathUtil.getNewPath(apiInfo));
+        String requestMode = apiInfo.getRequestMode();
+        String response = null;
+        if (requestMode.equals("POST")) {
+            response = postTest(path, apiInfo.getParam(), apiInfo.getApiKey(), pageNum, pageSize);
+        }
+        if (requestMode.equals("GET")) {
+            response = getTest(path, apiInfo.getParam(), apiInfo.getApiKey(), pageNum, pageSize);
+        }
+        if (response == null) {
+            throw new AtlasException("api测试失败");
+        }
+        ApiTestResult apiTestResult;
+        try {
+            apiTestResult = JsonUtils.fromJson(response, ApiTestResult.class);
+        } catch (Exception e) {
+            throw new AtlasException("测试api失败");
+        }
+        return apiTestResult;
+}
+
+    private String postTest(StringBuilder path, List<ApiInfoV2.FieldV2> param, String apiKey, long pageNum, long pageSize) throws AtlasException {
+        try {
+            Map<String, Object> headerMap = new HashMap<>();
+            Map<String, Object> paramMap = new HashMap<>();
+            paramMap.put("page_num", pageNum);
+            paramMap.put("page_size", pageSize);
+            if (StringUtils.isNotEmpty(apiKey)) {
+                headerMap.put("apiKey", apiKey);
+            }
+            for (ApiInfoV2.FieldV2 par : param) {
+                if (CommonConstant.HEADER_PARAM.equals(par.getPlace())) {
+                    headerMap.put(par.getName(), par.getValue());
+                }
+                if (CommonConstant.PATH_PARAM.equals(par.getPlace())) {
+                    path.append("/").append("{").append(par.getValue()).append("}");
+                }
+                if (CommonConstant.QUERY_PARAM.equals(par.getPlace())) {
+                    paramMap.put(par.getName(), par.getValue());
+                }
+            }
+            return OKHttpClient.doPost(path.toString(), headerMap, paramMap, null);
+        } catch (AtlasBaseException e) {
+            throw new AtlasException("测试api失败", e);
+        }
+    }
+
+    private String getTest(StringBuilder path, List<ApiInfoV2.FieldV2> param, String apiKey, long pageNum, long pageSize) throws AtlasException {
+        try {
+            Map<String, String> headerMap = new HashMap<>();
+            Map<String, String> paramMap = new HashMap<>();
+            paramMap.put("page_num", pageNum + "");
+            paramMap.put("page_size", pageSize + "");
+            if (StringUtils.isNotEmpty(apiKey)) {
+                headerMap.put("apiKey", apiKey);
+            }
+            for (ApiInfoV2.FieldV2 par : param) {
+                if (CommonConstant.HEADER_PARAM.equals(par.getPlace())) {
+                    headerMap.put(par.getName(), par.getValue().toString());
+                }
+                if (CommonConstant.PATH_PARAM.equals(par.getPlace())) {
+                    path.append("/").append("{").append(par.getValue()).append("}");
+                }
+                if (CommonConstant.QUERY_PARAM.equals(par.getPlace())) {
+                    paramMap.put(par.getName(), par.getValue().toString());
+                }
+            }
+            return OKHttpClient.doGet(path.toString(), paramMap, headerMap);
+        } catch (AtlasBaseException e) {
+            throw new AtlasException("测试api失败", e);
         }
     }
 }
