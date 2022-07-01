@@ -3498,12 +3498,12 @@ public class DataShareService {
         if (response == null) {
             throw new AtlasException("api测试失败");
         }
-        try {
-            JsonUtils.fromJson(response, ApiTestResult.class);
-        } catch (Exception e) {
+        //response类型：1.正常数据（datas,totalCount）;2.{errorCode,errorMessage};3:云平台返回字符串
+        ApiTestResult apiTestResult = JsonUtils.fromJson(response, ApiTestResult.class);
+        if (apiTestResult.getErrorCode() != null) {
             throw new AtlasException("测试api失败");
         }
-}
+    }
 
     private String postTest(StringBuilder path, List<ApiInfoV2.FieldV2> param, String apiKey, long pageNum, long pageSize) throws AtlasException {
         try {

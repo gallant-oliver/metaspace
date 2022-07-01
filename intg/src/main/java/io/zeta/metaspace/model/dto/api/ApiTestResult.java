@@ -14,4 +14,6 @@ public class ApiTestResult {
     private List<Object> data;
     private String totalCount;
     private List<Object> datas;
+    private String errorCode;
+    private String errorMessage;
 }
