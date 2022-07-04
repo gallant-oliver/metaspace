@@ -179,9 +179,10 @@ public class AuditService {
                         apiInfoV2.setStatus(ApiStatusEnum.DOWN.getName());
                         dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(), apiAudit.getApiVersion(), ApiStatusEnum.DOWN.getName(), updateTime);
                     }
+                    apiInfoV2.setApiKey(UUID.randomUUID().toString());
                     apiGroupDAO.updateApiRelationByApi(apiInfoV2.getGuid(), updateTime);
                     String apiId = mobiusCreateApi(apiInfoV2);
-                    dataShareDAO.updateApiMobiusId(apiInfoV2.getGuid(), apiAudit.getApiVersion(), apiId);
+                    dataShareDAO.updateApiMobiusId(apiInfoV2.getGuid(), apiAudit.getApiVersion(),apiInfoV2.getApiKey(),apiId);
                 } else {
                     dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(), apiAudit.getApiVersion(), ApiStatusEnum.DRAFT.getName(), updateTime);
                 }
@@ -242,6 +243,7 @@ public class AuditService {
         }else{
             api.setStatus("release");
         }
+        api.setToken(apiInfoV2.getApiKey());
         Gson gson = new Gson();
         String jsonStr = gson.toJson(api, MoebiusApi.class);
         int retries = 3;
@@ -292,7 +294,7 @@ public class AuditService {
         return response;
     }
 
-    public MoebiusApi setMoebiusApiParam(ApiInfoV2 apiInfoV2,MoebiusApi api){
+    private MoebiusApi setMoebiusApiParam(ApiInfoV2 apiInfoV2, MoebiusApi api){
         getParam(apiInfoV2.getGuid(),apiInfoV2,apiInfoV2.getVersion());
         List<ApiInfoV2.FieldV2> params = apiInfoV2.getParam();
         List<MoebiusApiParam.HeaderParam> headerParamList = new ArrayList<>();
