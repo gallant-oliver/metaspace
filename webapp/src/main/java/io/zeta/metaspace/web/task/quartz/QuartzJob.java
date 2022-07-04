@@ -226,7 +226,7 @@ public class QuartzJob implements Job {
                 } else if (2 == taskExecution.getScope()) {
                     String sparkConfig = taskManageDAO.geSparkConfig(taskExecution.getSubTaskId());
                     if (sparkConfig != null && sparkConfig.length() != 0) {
-                        Map<String, Object> configMap = GsonUtils.getInstance().fromJson(sparkConfig, new TypeToken<Map<String, Integer>>() {
+                        Map<String, Object> configMap = GsonUtils.getInstance().fromJson(sparkConfig, new TypeToken<Map<String, Object>>() {
                         }.getType());
                         taskExecution.setConfig(configMap);
                     }
