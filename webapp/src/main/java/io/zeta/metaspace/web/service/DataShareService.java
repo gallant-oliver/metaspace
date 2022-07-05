@@ -95,9 +95,8 @@ import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer;
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.lang.reflect.Type;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
+import java.sql.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -3454,7 +3453,8 @@ public class DataShareService {
 
     public Result testApi(ApiTestInfoVO apiTestInfoVO) throws AtlasException {
         ApiInfoV2 apiInfo = getApiInfoByVersion(apiTestInfoVO.getApiId(), apiTestInfoVO.getVersion());
-        apiInfo.setParam(apiTestInfoVO.getParam());
+        //默认参数
+        completeParam(apiInfo);
         List<ApiTestDTO> apiAndGroupInfoStatus = shareDAO.getApiAndGroupInfoStatus(apiTestInfoVO.getVersion(), apiTestInfoVO.getApiId());
         ApiTestDTO apiTestDTO = apiAndGroupInfoStatus.get(0);
         ApiStatusEnum anEnum = ApiStatusEnum.getEnum(apiTestDTO.getApiStatus());
@@ -3498,12 +3498,12 @@ public class DataShareService {
         if (response == null) {
             throw new AtlasException("api测试失败");
         }
-        try {
-            JsonUtils.fromJson(response, ApiTestResult.class);
-        } catch (Exception e) {
-            throw new AtlasException("测试api失败");
+        //response类型：1.正常数据（datas,totalCount）;2.{errorCode,errorMessage};3:云平台返回字符串
+        ApiTestResult apiTestResult = JsonUtils.fromJson(response, ApiTestResult.class);
+        if (apiTestResult.getErrorCode() != null) {
+            throw new AtlasException(apiTestResult.getErrorMessage() != null ? apiTestResult.getErrorMessage() : "api测试失败");
         }
-}
+    }
 
     private String postTest(StringBuilder path, List<ApiInfoV2.FieldV2> param, String apiKey, long pageNum, long pageSize) throws AtlasException {
         try {
@@ -3559,6 +3559,90 @@ public class DataShareService {
         } catch (AtlasBaseException e) {
             throw new AtlasException("测试api失败", e);
         }
+    }
+
+    private void completeParam(ApiInfoV2 apiInfo){
+        List<ApiInfoV2.FieldV2> param = apiInfo.getParam();
+        if(CollectionUtils.isEmpty(param)){
+            return;
+        }
+        for (ApiInfoV2.FieldV2 par:param) {
+            DataType dataType = DataType.convertType(par.getColumnType().toUpperCase());
+            Object defaultValue = getDefaultValue(dataType,Integer.parseInt(par.getMinSize()),Integer.parseInt(par.getMaxSize()));
+            par.setValue(defaultValue);
+        }
+    }
+
+    private Object getDefaultValue(DataType dataType,int min,int max){
+        StringBuilder str = new StringBuilder();
+        Object value = null;
+        switch (dataType){
+            case DATE:
+                value = new Date(2021,12,12);
+                break;
+            case BOOLEAN:
+                value = true;
+                break;
+            case TIMESTAMP:
+                value = new Timestamp(2021, 12, 12, 12, 12, 12, 12);
+                break;
+            case TIME:
+                value = new Time(12, 12, 12);
+                break;
+            case STRING:
+                str.append("a");
+                if (min != 0) {
+                    while (str.length() <= min) {
+                        str.append("a");
+                    }
+                }
+                value = str.toString();
+                break;
+            case INT:
+            case BIGINT:
+                str.append("1");
+                if (min != 0) {
+                    while (str.length() <= min) {
+                        str.append("1");
+                    }
+                }
+                value = Long.valueOf(str.toString());
+                break;
+            case CLOB:
+                return new Clob[]{};
+            case DOUBLE:
+            case DECIMAL:
+                str.append(1.1);
+                if (min != 0) {
+                    while (str.length() <= min) {
+                        str.append("1");
+                    }
+                }
+                value = Double.valueOf(str.toString());
+                break;
+            case FLOAT:
+                str.append(1.1);
+                if (min != 0) {
+                    while (str.length() <= min) {
+                        str.append("1");
+                    }
+                }
+                value = Float.valueOf(str.toString());
+                break;
+            default:
+                value = "str1";
+        }
+        //固定长度的参数类型，不该有不合理的长度限制
+        if (dataType.equals(DataType.TIME) || dataType.equals(DataType.DATE) || dataType.equals(DataType.TIMESTAMP) ||
+                dataType.equals(DataType.BOOLEAN)) {
+            if (min != 0 && value.toString().length() < min) {
+                throw new AtlasBaseException("参数最小长度不合理");
+            }
+            if (max != 0 && value.toString().length() > max) {
+                throw new AtlasBaseException("参数最大长度不合理");
+            }
+        }
+        return value;
     }
 }
 
