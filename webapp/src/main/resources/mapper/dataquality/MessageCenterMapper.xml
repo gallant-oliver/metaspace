@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.zeta.metaspace.web.dao.MessageCenterDAO">
+
+    <!--根据类型查询未读消息数量-->
+    <sql id="select_count_by_type">
+        select
+        count(*) as #{countRemark}
+        from
+        message_center
+        where
+        status = 0
+        <if test='type!=-1'>
+            and type = #{type}
+        </if>
+    </sql>
+
+    <!-- 新增消息列 -->
+    <sql id="insert_message_column_List">
+        id, name, type, module, status, tenantid, create_user, operation_time, create_time, update_time
+    </sql>
+
+    <!--获取消息分页列表-->
+    <select id="getMyMessageList" resultType="java.util.Map">
+        select
+        m.id,
+        m.name,
+        m.to_timestamp(operationTime,'YYYY-MM-DD HH24:MI:SS') as operationTime,
+        ( CASE
+        WHEN m.type = 0 THEN '资源审核信息'
+        WHEN m.type = 1 THEN '用户组信息'
+        WHEN m.type = 2 THEN '数据服务'
+        WHEN m.type = 3 THEN '需求审批'
+        END ) type,
+        count(*)over() total
+        from
+        message_center m
+        left join
+        users u
+        on
+        m.create_user = u.account
+        <where>
+            m.delete = false
+            <if test='type!=null'>
+                and m.type = #{type}
+            </if>
+            <if test='status!=null'>
+                and m.status = #{status}
+            </if>
+            <if test="search!=null and search !=''">
+                and ( m.name like CONCAT('%', #{search}, '%') or m.status like CONCAT('%', #{search}, '%') )
+            </if>
+            <if test="tenantId!=null and tenantId !=''">
+                and m.tenantId = #{tenantId}
+            </if>
+            <if test="userId!=null and tenantId !=''">
+                and u.userid = #{userId}
+            </if>
+        </where>
+        order by m.create_time desc
+        <if test='offset!=null'>
+            m.offset #{offset}
+        </if>
+        <if test='limit!=null and limit!= -1'>
+            m.limit #{limit}
+        </if>
+    </select>
+
+    <!--获取消息详情-->
+    <select id="getMessageDetail" resultType="java.util.Map">
+        select
+        m.name,
+        m.module,
+        ( CASE
+        WHEN m.type = 0 THEN '资源审核信息'
+        WHEN m.type = 1 THEN '用户组信息'
+        WHEN m.type = 2 THEN '数据服务'
+        WHEN m.type = 3 THEN '需求审批'
+        END ) type,
+        m.status,
+        m.to_timestamp(operationTime,'YYYY-MM-DD HH24:MI:SS') as operationTime,
+        u.username as operator,
+        t.name as tenantName
+        from
+        message_center m
+        left join
+        users u
+        on
+        m.create_user = u.account
+        left join
+        tenant t
+        on
+        m.tenantId = t.id
+        where
+        m.delete = false
+        <if test="tenantId!=null and tenantId !=''">
+            and m.tenantId = #{tenantId}
+        </if>
+        <if test="userId!=null and tenantId !=''">
+            and u.userid = #{userId}
+        </if>
+    </select>
+
+    <!--获取未读消息数量-->
+    <select id="getUnReadNum" resultType="java.util.Map">
+        select
+        <include refid="select_count_by_type">
+            <property name="type" value="0"/>
+            <property name="countRemark" value="resourceCount"/>
+        </include>
+        ,
+        <include refid="select_count_by_type">
+            <property name="type" value="1"/>
+            <property name="countRemark" value="userGroupCount"/>
+        </include>
+        ,
+        <include refid="select_count_by_type">
+            <property name="type" value="2"/>
+            <property name="countRemark" value="dataCount"/>
+        </include>
+        ,
+        <include refid="select_count_by_type">
+            <property name="type" value="3"/>
+            <property name="countRemark" value="needCount"/>
+        </include>
+        ,
+        <include refid="select_count_by_type">
+            <property name="type" value="-1"/>
+            <property name="countRemark" value="allCount"/>
+        </include>
+        from
+        message_center m
+        left join
+        users u
+        on
+        m.create_user = u.account
+        where
+        m.delete = false
+        <if test="tenantId!=null and tenantId !=''">
+            and m.tenantId = #{tenantId}
+        </if>
+        <if test="userId!=null and userId !=''">
+            and u.userid = #{userId}
+        </if>
+    </select>
+
+    <!--批量标记已读-->
+    <update id="batchToRead">
+        update message_center set status=1
+        where id in
+        <foreach collection="list" index="index" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <!--批量删除消息-->
+    <update id="batchDelte">
+        update message_center set delete=true
+        where
+        <choose>
+            <when test="delAll!=null and delAll !='true'">
+                id in
+                <foreach collection="list" index="index" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </when>
+            <otherwise>
+                id in (select
+                m.id
+                from
+                message_center m
+                left join
+                users u
+                on
+                m.create_user = u.account
+                where
+                m.delete = false
+                and
+                m.status = 1
+                <if test="tenantId!=null and tenantId !=''">
+                    and m.tenantId = #{tenantId}
+                </if>
+                <if test="userId!=null and userId !=''">
+                    and u.userid = #{userId}
+                </if>)
+            </otherwise>
+        </choose>
+    </update>
+
+    <!--新增消息-->
+    <insert id="addMessage" parameterType="io.zeta.metaspace.model.entities.MessageEntity">
+        insert into message_center
+        (
+        <include refid="insert_message_column_List"/>
+        )
+        values
+        (
+        #{message.id},
+        #{message.name},
+        #{message.type},
+        #{message.module},
+        0,
+        #{message.tenantid},
+        #{message.create_user},
+        now(),
+        now(),
+        now()
+        )
+    </insert>
+
+
+</mapper>
