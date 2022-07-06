@@ -10,6 +10,7 @@ import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.dto.sourceinfo.DeriveFileDTO;
 import io.zeta.metaspace.model.dto.sourceinfo.SourceInfoDeriveTableColumnDTO;
+import io.zeta.metaspace.model.enums.TableColumnContrast;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
@@ -903,13 +904,17 @@ public class SourceInfoDeriveTableInfoService {
         if (org.apache.commons.collections.CollectionUtils.isEmpty(deriveTableInfoList)) {
             return null;
         }
-        Optional<SourceInfoDeriveTableInfo> deriveTableInfoOpt = deriveTableInfoList.stream().sorted(Comparator.comparing(SourceInfoDeriveTableInfo::getVersion).reversed()).findFirst();
+        // 过滤返回已发布的
+        Optional<SourceInfoDeriveTableInfo> deriveTableInfoOpt = deriveTableInfoList.stream()
+                .filter(f -> "1".equals(f.getState().toString()))
+                .min(Comparator.comparing(SourceInfoDeriveTableInfo::getVersion));
         if (deriveTableInfoOpt.isPresent()) {
             SourceInfoDeriveTableInfo tableInfo = deriveTableInfoOpt.get();
             SourceInfoDeriveTableColumnVO info = new SourceInfoDeriveTableColumnVO();
             BeanUtils.copyProperties(tableInfo, info);
             Map<String, String> technicalCategoryGuidPathMap = getCategoryGuidPathMap(tenantId, CommonConstant.TECHNICAL_CATEGORY_TYPE, info.getCategoryId());
             info.setCategory(technicalCategoryGuidPathMap.getOrDefault(info.getCategoryId(), ""));
+            info.setCreateTime(tableInfo.getCreateTimeStr());
 
             BusinessInfo businessInfo = businessDAO.queryBusinessByBusinessId(info.getBusinessId());
             if (null != businessInfo) {
@@ -931,6 +936,99 @@ public class SourceInfoDeriveTableInfoService {
             return info;
         }
         return null;
+    }
+
+    /**
+     * 获取衍生表差异对比
+     *
+     * @param tenantId  租户ID
+     * @param tableGuid 衍生表GUID
+     * @return 返回对应的比较
+     */
+    public SourceInfoDeriveTableColumnContrastVO queryDeriveTableContrastInfo(String tenantId, String tableGuid) {
+        try {
+            SourceInfoDeriveTableInfo deriveTableInfo = sourceInfoDeriveTableInfoDao.queryDeriveTableInfoByGuid(tenantId, tableGuid);
+            if (deriveTableInfo == null) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "没有找到对应的衍生表登记信息");
+            }
+            List<SourceInfoDeriveColumnInfo> deriveColumnInfoList = sourceInfoDeriveColumnInfoService.getDeriveColumnInfoListByTableId(deriveTableInfo.getId());
+            List<Column> columnInfoList = columnDAO.getColumnInfoListByTableGuid(tableGuid);
+            if (org.apache.commons.collections.CollectionUtils.isEmpty(deriveColumnInfoList)
+                    || org.apache.commons.collections.CollectionUtils.isEmpty(columnInfoList)) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "衍生表字段为空");
+            }
+            return deriveContrast(deriveColumnInfoList, columnInfoList);
+        } catch (Exception e) {
+            LOG.error("对比衍生表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "对比衍生表失败");
+        }
+    }
+
+    /**
+     * 衍生表比较逻辑
+     *
+     * @param deriveColumnInfoList 衍生表字段列表
+     * @param columnInfoList       数据表字段列表
+     * @return 返回比较差异
+     */
+    public SourceInfoDeriveTableColumnContrastVO deriveContrast(List<SourceInfoDeriveColumnInfo> deriveColumnInfoList, List<Column> columnInfoList) {
+        SourceInfoDeriveTableColumnContrastVO contrast = new SourceInfoDeriveTableColumnContrastVO();
+        Map<String, SourceInfoDeriveColumnInfo> deriveMap = deriveColumnInfoList.stream().collect(Collectors.toMap(f -> f.getColumnNameEn().toLowerCase(), e -> e, (key1, key2) -> key2));
+        Map<String, Column> dataColumnMap = columnInfoList.stream().collect(Collectors.toMap(f -> f.getColumnName().toLowerCase(), e -> e, (key1, key2) -> key2));
+        List<DeriveTableColumnContrastVO> currentMetadata = new ArrayList<>();
+        List<DeriveTableColumnContrastVO> oldMetadata = new ArrayList<>();
+        // 以数据表作为参照
+        for (Column column : columnInfoList) {
+            DeriveTableColumnContrastVO current = new DeriveTableColumnContrastVO();
+            DeriveTableColumnContrastVO old = new DeriveTableColumnContrastVO();
+            current.setColumnName(column.getColumnName());
+            current.setType(column.getType());
+            current.setDescription(column.getDescription());
+            // 字段相同
+            if (deriveMap.containsKey(column.getColumnName().toLowerCase())) {
+                SourceInfoDeriveColumnInfo deriveColumn = deriveMap.get(column.getColumnName().toLowerCase());
+                old.setColumnName(deriveColumn.getColumnNameEn());
+                old.setType(deriveColumn.getDataType());
+                old.setDescription(deriveColumn.getColumnNameZh());
+                if (column.getType().equalsIgnoreCase(deriveColumn.getDataType())) {
+                    current.setHasChange(false);
+                    old.setHasChange(false);
+                } else {
+                    // 字段类型不相同
+                    current.setHasChange(true);
+                    current.setContrast(TableColumnContrast.FIELD_TYPE_CHANGE.getCode());
+                    old.setHasChange(true);
+                    old.setContrast(TableColumnContrast.FIELD_TYPE_CHANGE.getCode());
+                }
+            } else {
+                // 字段不相同为新增
+                current.setHasChange(true);
+                current.setContrast(TableColumnContrast.FIELD_ADD.getCode());
+            }
+            currentMetadata.add(current);
+            oldMetadata.add(old);
+        }
+        // 衍生表登记存在数据表中字段缺失
+        List<SourceInfoDeriveColumnInfo> deficiencyList = deriveColumnInfoList.stream().filter(f -> !dataColumnMap.containsKey(f.getColumnNameEn().toLowerCase())).collect(Collectors.toList());
+        for (SourceInfoDeriveColumnInfo deficiency : deficiencyList) {
+            DeriveTableColumnContrastVO current = new DeriveTableColumnContrastVO();
+            DeriveTableColumnContrastVO old = new DeriveTableColumnContrastVO();
+            current.setColumnName(deficiency.getColumnNameEn());
+            current.setType(deficiency.getDataType());
+            current.setDescription(deficiency.getColumnNameZh());
+            current.setHasChange(true);
+            current.setContrast(TableColumnContrast.FIELD_DELETE.getCode());
+            old.setColumnName(deficiency.getColumnNameEn());
+            old.setType(deficiency.getDataType());
+            old.setDescription(deficiency.getColumnNameZh());
+            old.setHasChange(true);
+            old.setContrast(TableColumnContrast.FIELD_DELETE.getCode());
+            currentMetadata.add(current);
+            oldMetadata.add(old);
+        }
+        contrast.setCurrentMetadata(currentMetadata);
+        contrast.setOldMetadata(oldMetadata);
+        return contrast;
     }
 
     /**

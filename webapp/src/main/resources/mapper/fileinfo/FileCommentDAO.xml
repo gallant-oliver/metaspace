@@ -9,8 +9,7 @@
         <result column="create_user" jdbcType="VARCHAR" property="createUser"/>
     </resultMap>
     <sql id="Base_Column_List">
-        id
-        , file_id, "name", create_time, create_user
+        id, file_id, "name", create_time, create_user
     </sql>
     <select id="selectByPrimaryKey" parameterType="java.lang.String" resultMap="BaseResultMap">
         select
@@ -18,16 +17,20 @@
         from "file_comment"
         where id = #{id,jdbcType=VARCHAR}
     </select>
+    <select id="selectByFileId" parameterType="java.lang.String" resultType="io.zeta.metaspace.model.fileinfo.FileCommentVO">
+        select
+        <include refid="Base_Column_List"/>
+        from "file_comment"
+        where file_id = #{fileId,jdbcType=VARCHAR}
+    </select>
     <delete id="deleteByPrimaryKey" parameterType="java.lang.String">
         delete
         from "file_comment"
         where id = #{id,jdbcType=VARCHAR}
     </delete>
-    <insert id="insert" keyColumn="id" keyProperty="id" parameterType="io.zeta.metaspace.model.fileinfo.FileComment"
-            useGeneratedKeys="true">
-        insert into "file_comment" (file_id, "name", create_time,
-                                    create_user)
-        values (#{fileId,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP},
+    <insert id="insert" keyColumn="id" keyProperty="id" parameterType="io.zeta.metaspace.model.fileinfo.FileComment">
+        insert into "file_comment" (id, file_id, "name", create_time, create_user)
+        values (#{id,jdbcType=VARCHAR}, #{fileId,jdbcType=VARCHAR}, #{name,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP},
                 #{createUser,jdbcType=VARCHAR})
     </insert>
     <insert id="insertSelective" keyColumn="id" keyProperty="id"
