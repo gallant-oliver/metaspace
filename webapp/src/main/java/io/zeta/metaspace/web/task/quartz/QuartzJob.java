@@ -53,6 +53,7 @@ import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -66,6 +67,7 @@ import java.util.stream.Stream;
 
 import static io.zeta.metaspace.model.dataquality.RuleCheckType.FIX;
 import static io.zeta.metaspace.model.dataquality.RuleCheckType.FLU;
+import static io.zeta.metaspace.model.dataquality.TaskType.EMPTY_VALUE_NUM_TABLE_REMAKR;
 
 /*
  * @description
@@ -764,15 +766,19 @@ public class QuartzJob implements Job {
             String columnName = null;
             String user = MetaspaceConfig.getHiveAdmin();
             AdapterSource adapterSource;
+            String sourceType;
             if (task.getDataSourceId() == null || hiveId.equals(task.getDataSourceId())) {
                 if (Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
                     adapterSource = AdapterUtils.getImpalaAdapterSource();
+                    sourceType = "IMPALA";
                 } else {
                     adapterSource = AdapterUtils.getHiveAdapterSource();
+                    sourceType = "HIVE";
                 }
             } else {
                 DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(task.getDataSourceId());
                 adapterSource = AdapterUtils.getAdapterSource(dataSourceInfo);
+                sourceType = dataSourceInfo.getSourceType();
             }
 
             //表名列名转义
@@ -792,14 +798,14 @@ public class QuartzJob implements Job {
                     case UNIQUE_VALUE_NUM_CHANGE:
                     case UNIQUE_VALUE_NUM_CHANGE_RATIO:
                     case UNIQUE_VALUE_NUM_RATIO:
-                        writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath);
+                        writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath, sourceType, null);
                         sql = String.format(query, sqlDbName, tableName, columnName, columnName, sqlDbName, tableName, columnName);
                         break;
                     case DUP_VALUE_NUM:
                     case DUP_VALUE_NUM_CHANGE:
                     case DUP_VALUE_NUM_CHANGE_RATIO:
                     case DUP_VALUE_NUM_RATIO:
-                        writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath);
+                        writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath, sourceType, null);
 
                         sql = String.format(query, columnName, sqlDbName, tableName, columnName, columnName, sqlDbName, tableName, columnName);
                         break;
@@ -807,9 +813,14 @@ public class QuartzJob implements Job {
                     case EMPTY_VALUE_NUM_CHANGE:
                     case EMPTY_VALUE_NUM_CHANGE_RATIO:
                     case EMPTY_VALUE_NUM_RATIO:
-                        writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath);
+                        writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath, sourceType, null);
                         sql = String.format(query, sqlDbName, tableName, columnName, columnName);
                         break;
+                    case EMPTY_VALUE_NUM_TABLE_REMAKR:
+                        HashMap<String, Object> map = new HashMap<>();
+                        resultValue =  AdapterUtils.getAdapterExecutor(adapterSource.getDataSourceInfo()).getTblRemarkCountByDb(dbName, pool, map);
+                        writeErrorData(jobType, tableName, columnName, dbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath, sourceType, map);
+                        return resultValue;
                     default:
                         sql = String.format(query, columnName, sqlDbName, tableName);
                         break;
@@ -863,9 +874,30 @@ public class QuartzJob implements Job {
         }
     }
 
-    public void writeErrorData(TaskType jobType, String tableName, String columnName, String sqlDbName, AdapterSource adapterSource, Connection connection, String hdfsOutPath) {
-        String errDataSql = QuartQueryProvider.getErrData(jobType);
+    public void writeErrorData(TaskType jobType, String tableName, String columnName, String sqlDbName, AdapterSource adapterSource, Connection connection, String hdfsOutPath, String sourceType, Map<String, Object> mapVal) {
+        String errDataSql = QuartQueryProvider.getErrData(jobType, sourceType);
         String sql;
+        HdfsUtils hdfsUtils = new HdfsUtils();
+        try (BufferedWriter fileBufferWriter = hdfsUtils.getFileBufferWriter(hdfsOutPath);) {
+            if (jobType == EMPTY_VALUE_NUM_TABLE_REMAKR){
+                if (sourceType.equalsIgnoreCase("IMPALA") || sourceType.equalsIgnoreCase("HIVE")){
+                    List<String> emptyTblNameList = (List<String>) mapVal.get("emptyTblNameList");
+                    if (!CollectionUtils.isEmpty(emptyTblNameList)){
+                        for (String item : emptyTblNameList){
+                            LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+                            map.put("TABLE_NAME", item);
+                            fileBufferWriter.write(GsonUtils.getInstance().toJson(map) + "\n");
+                        }
+                        fileBufferWriter.flush();
+                    }
+                    return;
+                }
+            }
+        } catch (Exception e){
+            throw new AdapterBaseException("解析查询结果失败", e);
+        }
+
+
         switch (jobType) {
             case UNIQUE_VALUE_NUM:
             case UNIQUE_VALUE_NUM_CHANGE:
@@ -884,14 +916,16 @@ public class QuartzJob implements Job {
             case EMPTY_VALUE_NUM_RATIO:
                 sql = String.format(errDataSql, sqlDbName, tableName, columnName, columnName);
                 break;
+            case EMPTY_VALUE_NUM_TABLE_REMAKR:
+                sql = String.format(errDataSql, sqlDbName);
+                break;
             default:
-                sql = String.format(errDataSql, columnName, sqlDbName, tableName);
+                sql = sql = String.format(errDataSql, sqlDbName, tableName, columnName, columnName);
                 break;
         }
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
         LOG.info("query sql = " + sql);
         adapterExecutor.queryResultByFetchSize(connection, sql, resultSet -> {
-            HdfsUtils hdfsUtils = new HdfsUtils();
             try (BufferedWriter fileBufferWriter = hdfsUtils.getFileBufferWriter(hdfsOutPath);) {
                 ResultSetMetaData metaData = resultSet.getMetaData();
                 int columnCount = metaData.getColumnCount();
