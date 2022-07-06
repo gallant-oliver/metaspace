@@ -17,6 +17,7 @@ import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.DataSourceHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.CategoryRelationUtils;
 import io.zeta.metaspace.web.service.DataManageService;
@@ -516,7 +517,7 @@ public class TechnicalREST {
                                  @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
         File file = null;
         try {
-            String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            String name = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), name);
             file = ExportDataPathUtils.fileCheck(name, fileInputStream);
             String upload;
@@ -528,6 +529,7 @@ public class TechnicalREST {
             HashMap<String, String> map = new HashMap<String, String>() {{
                 put("upload", upload);
             }};
+            CommonConstant.FILE_CONCURRENT_HASH_MAP.put(upload,name);
             return ReturnUtil.success(map);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");

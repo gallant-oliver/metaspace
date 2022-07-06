@@ -28,15 +28,47 @@
         from "file_info"
         where id = #{id,jdbcType=VARCHAR}
     </delete>
+
     <insert id="insert" keyColumn="id" keyProperty="id" parameterType="io.zeta.metaspace.model.fileinfo.FileInfo"
             useGeneratedKeys="true">
-        insert into "file_info" (file_name, file_type, file_size,
+        insert into "file_info" (id,file_name, file_type, file_size,
                                  file_path, create_time, update_time,
                                  create_user, "delete")
-        values (#{fileName,jdbcType=VARCHAR}, #{fileType,jdbcType=VARCHAR}, #{fileSize,jdbcType=BIGINT},
+        values (#{id,jdbcType=VARCHAR},#{fileName,jdbcType=VARCHAR}, #{fileType,jdbcType=VARCHAR}, #{fileSize,jdbcType=BIGINT},
                 #{filePath,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}, #{updateTime,jdbcType=TIMESTAMP},
                 #{createUser,jdbcType=VARCHAR}, #{delete,jdbcType=BOOLEAN})
     </insert>
+
+    <select id="getFileInfoList" resultType="io.zeta.metaspace.model.fileinfo.FileInfoVO">
+    SELECT
+	f2.NAME newComment,
+	fi.*,
+    count(*) over() total
+    FROM
+	"file_info" fi
+	LEFT JOIN (
+	SELECT
+		*
+	FROM
+		(
+		SELECT
+			fc1.file_id,
+			fc1.NAME,
+			RANK ( ) OVER ( PARTITION BY fc1.file_id ORDER BY fc1.create_time DESC )
+		FROM
+			file_comment fc1
+		) f
+	WHERE
+		f.RANK = 1
+	) f2 ON f2.file_id = fi.ID
+    <where>
+    <if test="name!=null and name!=''">
+        fi.file_name ~ #{name}
+    </if>
+    </where>
+	LIMIT #{limit} OFFSET #{offset}
+    </select>
+
     <insert id="insertSelective" keyColumn="id" keyProperty="id"
             parameterType="io.zeta.metaspace.model.fileinfo.FileInfo" useGeneratedKeys="true">
         insert into "file_info"

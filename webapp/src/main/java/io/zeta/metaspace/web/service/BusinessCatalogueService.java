@@ -889,8 +889,6 @@ public class BusinessCatalogueService implements Approvable {
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "禁止不同类型的目录互相导入，请选择正确的文件导入");
         }
-
-        fileInputStream.delete();
     }
 
 

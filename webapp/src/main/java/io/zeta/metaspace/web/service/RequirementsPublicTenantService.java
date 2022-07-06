@@ -20,6 +20,7 @@ import io.zeta.metaspace.web.dao.TenantDAO;
 import io.zeta.metaspace.web.dao.requirements.RequirementsMapper;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.model.CommonConstant;
+import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.JsonUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -61,6 +63,8 @@ public class RequirementsPublicTenantService {
     private TenantDAO tenantDAO;
     @Autowired
     private CategoryDAO categoryDAO;
+    @Autowired
+    private FileInfoService fileInfoService;
 
     /**
      * 查询数据表关联的已反馈需求下的资源
@@ -133,7 +137,7 @@ public class RequirementsPublicTenantService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public String createdRequirement(RequirementDTO dto) {
+    public String createdRequirement(RequirementDTO dto) throws IOException {
         // 校验字段
         verifyRequirementDTO(dto);
         Assert.isTrue(StringUtils.isNotBlank(dto.getTenantId()), "需求关联的数据表所在的租户的ID不能为空");
@@ -164,6 +168,7 @@ public class RequirementsPublicTenantService {
         // 存储过滤条件
         List<FilterConditionDTO> filterConditions = dto.getFilterConditions();
         columnService.batchInsert(po.getGuid(), po.getTableId(), filterConditions);
+        fileInfoService.createFileuploadRecord(dto.getFilePath(),dto.getFileName());
         return po.getGuid();
     }
     
@@ -197,7 +202,7 @@ public class RequirementsPublicTenantService {
         BeanUtils.copyProperties(dto, newPo, "guid", "resourceType");
 
         requirementsMapper.updateByPrimaryKey(newPo);
-
+        fileInfoService.createFileuploadRecord(dto.getFilePath(),dto.getFileName());
         //  修改需求的过滤条件字段
         columnService.batchUpdate(oldPo.getGuid(), oldPo.getTableId(), dto.getFilterConditions());
     }

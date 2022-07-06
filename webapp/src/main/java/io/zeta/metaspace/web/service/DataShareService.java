@@ -68,6 +68,7 @@ import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.model.CommonConstant;
+import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasConfiguration;
@@ -156,6 +157,8 @@ public class DataShareService {
     private DesensitizationDAO desensitizationDAO;
     @Autowired
     private IpRestrictionDAO ipRestrictionDAO;
+    @Autowired
+    private FileInfoService fileInfoService;
 
     Map<String, CompletableFuture> taskMap = new HashMap<>();
 
@@ -3379,6 +3382,7 @@ public class DataShareService {
         }
         ArrayList<CategoryEntityV2> categoryEntityV2s = new ArrayList<>(newCategorys.values());
         shareDAO.addAll(categoryEntityV2s, projectId, tenantId);
+        fileInfoService.uploadFile(fileInputStream,tenantId);
     }
 
     /**

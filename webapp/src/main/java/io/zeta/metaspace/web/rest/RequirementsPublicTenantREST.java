@@ -23,6 +23,8 @@ import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
@@ -32,6 +34,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -56,6 +59,8 @@ public class RequirementsPublicTenantREST {
     private RequirementsPublicTenantService publicTenantService;
     @Autowired
     private HdfsService hdfsService;
+
+    private static final Logger LOG = LoggerFactory.getLogger(RequirementsPublicTenantREST.class);
 
     @POST
     @Path("/paged/resource")
@@ -127,9 +132,14 @@ public class RequirementsPublicTenantREST {
     @OperateType(OperateTypeEnum.INSERT)
     public Result createdRequirement(RequirementDTO requirementDTO) {
         Assert.notNull(requirementDTO, "需求对象为空");
-        String resourceId = publicTenantService.createdRequirement(requirementDTO);
-        HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), requirementDTO.getName());
-        return ReturnUtil.success((Object) resourceId);
+        try {
+            String resourceId = publicTenantService.createdRequirement(requirementDTO);
+            HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), requirementDTO.getName());
+            return ReturnUtil.success((Object) resourceId);
+        } catch (IOException e) {
+            LOG.error("添加需求失败",e);
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "添加需求失败");
+        }
     }
 
     @PUT
@@ -137,8 +147,13 @@ public class RequirementsPublicTenantREST {
     @OperateType(OperateTypeEnum.UPDATE)
     public void editedRequirement(RequirementDTO requirementDTO) {
         Assert.notNull(requirementDTO, "需求对象为空");
-        publicTenantService.editedRequirement(requirementDTO);
-        HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), requirementDTO.getGuid());
+        try {
+            HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), requirementDTO.getGuid());
+            publicTenantService.editedRequirement(requirementDTO);
+        } catch (Exception e) {
+            LOG.error("修改需求失败",e);
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "修改需求失败");
+        }
     }
 
     @GET

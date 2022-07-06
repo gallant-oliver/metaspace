@@ -17,6 +17,8 @@ import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +41,8 @@ public class FileInfoController {
     @Autowired
     private FileCommentService fileCommentService;
 
+    private static final Logger LOG = LoggerFactory.getLogger(FileInfoController.class);
+
     /**
      * 查询文件归档列表
      *
@@ -50,7 +54,12 @@ public class FileInfoController {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult getFileInfo(@QueryParam("limit") int limit, @QueryParam("offset") int offset,
                                   @QueryParam("query") String query) {
-        return null;
+        try {
+            return fileInfoService.getList(query, limit, offset);
+        } catch (Exception e) {
+            LOG.error("文件归档列表查询失败", e);
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件归档列表查询失败");
+        }
     }
 
     /**

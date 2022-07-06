@@ -1,18 +1,18 @@
 package io.zeta.metaspace.model.fileinfo;
 
-import java.io.Serializable;
-import java.sql.Timestamp;
-
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
+import java.sql.Timestamp;
+
 /**
- * file_info文件归档详情
- *
- * @author w
+ * @author huangrongwen
+ * @Description: 前端列表VO
+ * @date 2022/7/69:37
  */
 @Data
-public class FileInfo implements Serializable {
+public class FileInfoVO {
     /**
      * id
      */
@@ -51,14 +51,12 @@ public class FileInfo implements Serializable {
     private Timestamp updateTime;
 
     /**
-     * 创建人（邮箱）
+     * 最新备注
      */
-    private String createUser;
-
+    private String newComment;
     /**
-     * 是否删除
+     * 总数
      */
-    private Boolean delete;
-
-    private static final long serialVersionUID = 1L;
+    @JsonIgnore
+    private Long total;
 }
