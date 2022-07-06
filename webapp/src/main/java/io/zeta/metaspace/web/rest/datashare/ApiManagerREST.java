@@ -38,6 +38,7 @@ import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.share.*;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -965,12 +966,13 @@ public class ApiManagerREST {
                                  @FormDataParam("projectId") String projectId) {
         File file = null;
         try {
-            String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            String name = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
             file = ExportDataPathUtils.fileCheck(name, fileInputStream);
             String upload = shareService.uploadApiCategory(file, projectId, tenantId);
             HashMap<String, String> map = new HashMap<String, String>() {{
                 put("upload", upload);
             }};
+            CommonConstant.FILE_CONCURRENT_HASH_MAP.put(upload,file.getName());
             return ReturnUtil.success(map);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导入失败:" + e.getMessage());

@@ -31,6 +31,7 @@ import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataStandardService;
@@ -443,7 +444,7 @@ public class RuleREST {
                                  @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
         File file = null;
         try {
-            String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            String name = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
             HttpRequestContext.get().auditLog(ModuleEnum.RULEMANAGE.getAlias(), name);
             file = ExportDataPathUtils.fileCheck(name, fileInputStream);
             String upload;
@@ -452,6 +453,7 @@ public class RuleREST {
             } else {
                 upload = dataManageService.uploadCategory(categoryId, direction, file, CATEGORY_RULE, tenantId);
             }
+            CommonConstant.FILE_CONCURRENT_HASH_MAP.put(upload,name);
             HashMap<String, String> map = new HashMap<String, String>() {
                 private static final long serialVersionUID = 2618267072797185578L;
         

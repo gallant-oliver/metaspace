@@ -36,6 +36,7 @@ import io.zeta.metaspace.web.rest.BusinessREST;
 import io.zeta.metaspace.web.rest.TechnicalREST;
 import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.HdfsService;
+import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -98,7 +99,8 @@ public class SourceInfoDeriveTableInfoService {
     private DataSourceService dataSourceService;
     private GroupDeriveTableRelationDAO relationDAO;
     private ColumnTagDAO columnTagDao;
-
+    @Autowired
+    private FileInfoService fileInfoService;
     @Autowired
     public SourceInfoDeriveTableInfoService(SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao, GroupDeriveTableRelationDAO relationDAO, DbDAO dbDao, BusinessDAO businessDAO,
                                             TableDAO tableDAO, ColumnDAO columnDAO, BusinessREST businessREST, TechnicalREST technicalREST,
@@ -1549,6 +1551,7 @@ public class SourceInfoDeriveTableInfoService {
         for (DeriveFileDTO deriveFileDTO : deriveFileDTOList) {
             try {
                 this.fileUploadSubmit(deriveFileDTO.getFileName(), deriveFileDTO.getPath(), tenantId);
+                fileInfoService.createFileuploadRecord(deriveFileDTO.getPath(),deriveFileDTO.getFileName());
             } catch (Exception e) {
                 error = e.getMessage();
             }

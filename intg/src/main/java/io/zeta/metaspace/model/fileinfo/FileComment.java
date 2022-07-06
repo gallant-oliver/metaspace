@@ -2,7 +2,6 @@ package io.zeta.metaspace.model.fileinfo;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
-import java.util.Date;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
