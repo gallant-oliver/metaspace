@@ -61,12 +61,11 @@ public class MessageCenterService {
             if (StringUtils.isNotBlank(search)) {
                 search = search.replaceAll("_", "/_").replaceAll("%", "/%");
             }
-            List<Map<String, Object>> list;
-            list = messageCenterDAO.getMyMessageList(type, tenantId, userId, status, search, offset, limit);
+            List<Map<String, Object>> list = messageCenterDAO.getMyMessageList(type, tenantId, userId, status, search, offset, limit);
 
             long totalSize = 0;
             if (list.size() != 0) {
-                totalSize = (long) (list.get(0).get("total"));
+                totalSize = Long.parseLong(list.get(0).get("total").toString());
             }
             PageResult<Map<String, Object>> pageResult = new PageResult<>();
             pageResult.setTotalSize(totalSize);
@@ -81,8 +80,9 @@ public class MessageCenterService {
 
     public Result getMessageDetail(String id, String tenantId) {
         try {
-            if (StringUtils.isBlank(id)){
-                return ReturnUtil.error("500", "id is null!");
+            if (StringUtils.isBlank(id)) {
+                return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                        AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("id"));
             }
             String userId = AdminUtils.getUserData().getUserId();
             Map<String, Object> message = messageCenterDAO.getMessageDetail(id, tenantId, userId);
@@ -92,7 +92,7 @@ public class MessageCenterService {
             return ReturnUtil.success(message);
         } catch (Exception e) {
             LOG.error("获取消息分页列表失败", e);
-            return ReturnUtil.error("500", "获取消息详情失败", e);
+            return ReturnUtil.error(AtlasErrorCode.MESSAGE_DETAIL_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("获取消息详情失败"), e);
         }
     }
 
@@ -108,63 +108,66 @@ public class MessageCenterService {
                         map.put("resourceCount", num);
                         break;
                     case 1:
-                        map.put("resourceCount", num);
+                        map.put("userGroupCount", num);
                         break;
                     case 2:
-                        map.put("resourceCount", num);
+                        map.put("dataCount", num);
                         break;
                     case 3:
-                        map.put("resourceCount", num);
+                        map.put("needCount", num);
                         break;
                     case -1:
                         map.put("allCount", num);
                         break;
                     default:
-                        return ReturnUtil.error("500", "getUnReadNum fail!");
+                        return ReturnUtil.error(AtlasErrorCode.MESSAGE_URREAD_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("获取未读消息数量失败"));
                 }
             }
             return ReturnUtil.success(map);
         } catch (Exception e) {
             LOG.error("获取未读消息数量失败", e);
-            return ReturnUtil.error("500", "获取未读消息数量失败", e);
+            return ReturnUtil.error(AtlasErrorCode.MESSAGE_URREAD_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("获取未读消息数量失败"));
         }
     }
 
     public Result batchToRead(List<String> ids) {
         try {
             if (CollectionUtils.isEmpty(ids)) {
-                return ReturnUtil.error("500", "ids is null!");
+                return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                        AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("ids"));
             }
             int count = messageCenterDAO.batchToRead(ids);
             if (count > 0) {
                 return ReturnUtil.success(count);
             } else {
-                return ReturnUtil.error("500", "update count is zero!");
+                return ReturnUtil.error(AtlasErrorCode.MESSAGE_UPDATE_COUNT_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("消息更新数量为0"));
             }
         } catch (Exception e) {
             LOG.error("批量标记已读失败", e);
-            return ReturnUtil.error("500", "批量标记已读失败", e);
+            return ReturnUtil.error(AtlasErrorCode.MESSAGE_UPDATE_COUNT_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("批量已读失败"));
         }
     }
 
     public Result batchDelte(List<String> ids, String delAll, String tenantId) {
         try {
             if (CollectionUtils.isEmpty(ids)) {
-                return ReturnUtil.error("500", "ids is null!");
+                return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                        AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("ids"));
             }
             if (StringUtils.isBlank(delAll)) {
-                return ReturnUtil.error("500", "delAll is null!");
+                return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
+                        AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("delAll"));
             }
             String userId = AdminUtils.getUserData().getUserId();
             int count = messageCenterDAO.batchDelte(ids, tenantId, userId, delAll);
             if (count > 0) {
                 return ReturnUtil.success(count);
             } else {
-                return ReturnUtil.error("500", "update count is zero!");
+                return ReturnUtil.error(AtlasErrorCode.MESSAGE_UPDATE_COUNT_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("消息更新数量为0"));
             }
         } catch (Exception e) {
             LOG.error("批量删除消息失败", e);
-            return ReturnUtil.error("500", "批量删除消息失败", e);
+            return ReturnUtil.error(AtlasErrorCode.MESSAGE_BATCH_DELETE_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("批量删除失败"));
         }
     }
 
@@ -178,7 +181,7 @@ public class MessageCenterService {
             return ReturnUtil.success();
         } catch (Exception e) {
             LOG.error("新增消息失败", e);
-            return ReturnUtil.error("500", "新增消息失败", e);
+            return ReturnUtil.error(AtlasErrorCode.MESSAGE_ADD_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("新增消息失败"));
         }
     }
 

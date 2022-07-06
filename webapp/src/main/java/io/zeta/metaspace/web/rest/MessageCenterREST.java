@@ -85,7 +85,7 @@ public class MessageCenterREST {
      * @return
      * @throws AtlasBaseException
      */
-    @POST
+    @GET
     @Path("/unreadnum")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)

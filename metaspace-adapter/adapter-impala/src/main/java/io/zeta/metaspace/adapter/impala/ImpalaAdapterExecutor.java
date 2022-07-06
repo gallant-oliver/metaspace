@@ -76,6 +76,12 @@ public class ImpalaAdapterExecutor extends AbstractAdapterExecutor {
         // 拿到指定数据库所有表
         map.put("emptyTblNameList", tableNameList);
         AdapterTransformer adapterTransformer = getAdapter().getAdapterTransformer();
+        // 计算空描述表个数
+        extracted(map, emptyCount, connection, tableNameList, adapterTransformer);
+        return (Float) map.get("emptyCount");
+    }
+
+    private void extracted(Map<String, Object> map, float emptyCount, Connection connection, List<String> tableNameList, AdapterTransformer adapterTransformer) {
         for (String tableName : tableNameList){
             String querySQL = "DESCRIBE FORMATTED " + adapterTransformer.caseSensitive(tableName);
             queryResult(connection, querySQL, resultSet -> {
@@ -100,7 +106,6 @@ public class ImpalaAdapterExecutor extends AbstractAdapterExecutor {
                 }
             });
         }
-        return (Float) map.get("emptyCount");
     }
 
     /**

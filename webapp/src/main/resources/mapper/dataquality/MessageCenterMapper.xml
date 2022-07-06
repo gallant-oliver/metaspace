@@ -17,7 +17,7 @@
         ( CASE
         WHEN m.type = 0 THEN '资源审核信息'
         WHEN m.type = 1 THEN '用户组信息'
-        WHEN m.type = 2 THEN '数据服务'
+        WHEN m.type = 2 THEN '数据服务审核'
         WHEN m.type = 3 THEN '需求审批'
         END ) typeCn,
         count(*)over() total
@@ -36,7 +36,7 @@
                 and m.status = #{status}
             </if>
             <if test="search!=null and search !=''">
-                and ( m.name like CONCAT('%', #{search}, '%') or m.status like CONCAT('%', #{search}, '%') )
+                and m.name like CONCAT('%', #{search}, '%')
             </if>
             <if test="tenantId!=null and tenantId !=''">
                 and m.tenantId = #{tenantId}
@@ -62,7 +62,7 @@
         ( CASE
         WHEN m.type = 0 THEN '资源审核信息'
         WHEN m.type = 1 THEN '用户组信息'
-        WHEN m.type = 2 THEN '数据服务'
+        WHEN m.type = 2 THEN '数据服务审核'
         WHEN m.type = 3 THEN '需求审批'
         END ) typeCn,
         m.status,

@@ -104,7 +104,7 @@ public class HiveAdapterExecutor extends AbstractAdapterExecutor {
                             map.put("emptyCount", (Float)(map.get("emptyCount")) + 1);
 
                         } else {
-                            // 非空描述的表不保留
+                            // 1.15.0的表不保留
                             map.remove(tableName);
                         }
                     }
