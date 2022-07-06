@@ -99,7 +99,10 @@ public enum ModuleEnum {
     //数据资产检索
     DATAASSERTSEARCH(12, "数据资产检索", "数据资产检索", 56, "数据资产检索", "dataAssertSearch", "dataAssertSearch", 1, 56),
     //公共租户-需求管理
-    REQUIREMENTMANAGEMENTPUBLIC(13, "需求管理", "需求管理", 60, "需求管理", "requirementManagementPublic", "requirementManagementPublic", 1, 60);
+    REQUIREMENTMANAGEMENTPUBLIC(13, "需求管理", "需求管理", 60, "需求管理", "requirementManagementPublic", "requirementManagementPublic", 1, 60),
+
+    //文件归档
+    ARCHIVEDFILE(14,"文件归档","文件归档",70,"文件归档", "archivedFile", "archivedFile",1, 70);
 
     private int id;
     private String name;
