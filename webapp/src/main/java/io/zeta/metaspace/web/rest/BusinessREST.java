@@ -930,9 +930,6 @@ public class BusinessREST {
                 categoryPrivileges = businessCatalogueService.importCategory(categoryId, importCategory.getDirection(), file, importCategory.isAuthorized(), importCategory.getType(), tenantId);
             }
             fileInfoService.uploadFile(file, tenantId);
-            if (importCategory.isAll()) {
-                file.delete();
-            }
             return ReturnUtil.success(categoryPrivileges);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败:"+e.getMessage());
