@@ -67,7 +67,7 @@ public interface MessageCenterDAO {
      * @return
      * @throws SQLException
      */
-    Map<String, Object> getUnReadNum(@Param("tenantId") String tenantId, @Param("userId") String userId) throws SQLException;
+    int getUnReadNum(@Param("type") Integer type, @Param("tenantId") String tenantId, @Param("userId") String userId) throws SQLException;
 
     /**
      * 批量标记已读

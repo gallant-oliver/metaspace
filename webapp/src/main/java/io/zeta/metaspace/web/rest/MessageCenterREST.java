@@ -58,9 +58,8 @@ public class MessageCenterREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public PageResult<Map<String, Object>> getMyMessageList(@QueryParam("type") Integer type, @HeaderParam("tenantId") String tenantId,
                                                             @QueryParam("status") Integer status, @QueryParam("search") String search,
-                                                            @QueryParam("offset") long offset, @QueryParam("limit") long limit,
-                                                            @QueryParam("userId") String userId) throws AtlasBaseException {
-        return messageCenterService.getMyMessageList(userId, type, tenantId, status, search, offset, limit);
+                                                            @QueryParam("offset") long offset, @QueryParam("limit") long limit) throws AtlasBaseException {
+        return messageCenterService.getMyMessageList(type, tenantId, status, search, offset, limit);
     }
 
     /**
@@ -75,8 +74,8 @@ public class MessageCenterREST {
     @Path("/detail/{id}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getMessageDetail(@PathParam("id") String id, @HeaderParam("tenantId") String tenantId, @QueryParam("userId") String userId) throws AtlasBaseException {
-        return messageCenterService.getMessageDetail(userId, id, tenantId);
+    public Result getMessageDetail(@PathParam("id") String id, @HeaderParam("tenantId") String tenantId) {
+        return messageCenterService.getMessageDetail(id, tenantId);
     }
 
     /**
@@ -90,8 +89,8 @@ public class MessageCenterREST {
     @Path("/unreadnum")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getMessageDetail(@HeaderParam("tenantId") String tenantId, @QueryParam("userId") String userId) throws AtlasBaseException {
-        return messageCenterService.getUnReadNum(tenantId, userId);
+    public Result getUnReadNum(@HeaderParam("tenantId") String tenantId) {
+        return messageCenterService.getUnReadNum(tenantId);
     }
 
     /**
@@ -105,8 +104,8 @@ public class MessageCenterREST {
     @Path("/batch/toread")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result batchToRead(List<String> ids, @QueryParam("userId") String userId) throws AtlasBaseException {
-        return messageCenterService.batchToRead(ids, userId);
+    public Result batchToRead(List<String> ids) {
+        return messageCenterService.batchToRead(ids);
     }
 
     /**
@@ -120,8 +119,8 @@ public class MessageCenterREST {
     @Path("/delete")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result batchDelte(List<String> ids, @QueryParam("delAll") String delAll, @HeaderParam("tenantId") String tenantId, @QueryParam("userId") String userId) throws AtlasBaseException {
-        return messageCenterService.batchDelte(ids, delAll, tenantId, userId);
+    public Result batchDelte(List<String> ids, @QueryParam("delAll") String delAll, @HeaderParam("tenantId") String tenantId) {
+        return messageCenterService.batchDelte(ids, delAll, tenantId);
     }
 
     /**
@@ -135,8 +134,8 @@ public class MessageCenterREST {
     @Path("/add")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result batchDelte(MessageEntity message, @HeaderParam("tenantId") String tenantId, @QueryParam("userId") String userId) throws AtlasBaseException {
-        return messageCenterService.addMessage(message, tenantId, userId);
+    public Result batchDelte(MessageEntity message, @HeaderParam("tenantId") String tenantId) {
+        return messageCenterService.addMessage(message, tenantId);
     }
 
 }

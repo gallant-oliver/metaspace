@@ -2,22 +2,10 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="io.zeta.metaspace.web.dao.MessageCenterDAO">
 
-    <!--根据类型查询未读消息数量-->
-    <sql id="select_count_by_type">
-        select
-        count(*) as #{countRemark}
-        from
-        message_center
-        where
-        status = 0
-        <if test='type!=-1'>
-            and type = #{type}
-        </if>
-    </sql>
-
     <!-- 新增消息列 -->
     <sql id="insert_message_column_List">
-        id, name, type, module, status, tenantid, create_user, operation_time, create_time, update_time
+        id
+        , name, type, module, status, tenantid, create_user, operation_time, create_time, update_time
     </sql>
 
     <!--获取消息分页列表-->
@@ -25,13 +13,13 @@
         select
         m.id,
         m.name,
-        m.to_timestamp(operationTime,'YYYY-MM-DD HH24:MI:SS') as operationTime,
+        to_timestamp(m.operation_time::text,'YYYY-MM-DD HH24:MI:SS') as operationTime,
         ( CASE
         WHEN m.type = 0 THEN '资源审核信息'
         WHEN m.type = 1 THEN '用户组信息'
         WHEN m.type = 2 THEN '数据服务'
         WHEN m.type = 3 THEN '需求审批'
-        END ) type,
+        END ) typeCn,
         count(*)over() total
         from
         message_center m
@@ -59,10 +47,10 @@
         </where>
         order by m.create_time desc
         <if test='offset!=null'>
-            m.offset #{offset}
+            offset #{offset}
         </if>
         <if test='limit!=null and limit!= -1'>
-            m.limit #{limit}
+            limit #{limit}
         </if>
     </select>
 
@@ -76,9 +64,9 @@
         WHEN m.type = 1 THEN '用户组信息'
         WHEN m.type = 2 THEN '数据服务'
         WHEN m.type = 3 THEN '需求审批'
-        END ) type,
+        END ) typeCn,
         m.status,
-        m.to_timestamp(operationTime,'YYYY-MM-DD HH24:MI:SS') as operationTime,
+        to_timestamp(m.operation_time::text,'YYYY-MM-DD HH24:MI:SS') as operationTime,
         u.username as operator,
         t.name as tenantName
         from
@@ -93,6 +81,9 @@
         m.tenantId = t.id
         where
         m.delete = false
+        <if test="id!=null and id !=''">
+            and m.id = #{id}
+        </if>
         <if test="tenantId!=null and tenantId !=''">
             and m.tenantId = #{tenantId}
         </if>
@@ -102,32 +93,9 @@
     </select>
 
     <!--获取未读消息数量-->
-    <select id="getUnReadNum" resultType="java.util.Map">
+    <select id="getUnReadNum" resultType="java.lang.Integer">
         select
-        <include refid="select_count_by_type">
-            <property name="type" value="0"/>
-            <property name="countRemark" value="resourceCount"/>
-        </include>
-        ,
-        <include refid="select_count_by_type">
-            <property name="type" value="1"/>
-            <property name="countRemark" value="userGroupCount"/>
-        </include>
-        ,
-        <include refid="select_count_by_type">
-            <property name="type" value="2"/>
-            <property name="countRemark" value="dataCount"/>
-        </include>
-        ,
-        <include refid="select_count_by_type">
-            <property name="type" value="3"/>
-            <property name="countRemark" value="needCount"/>
-        </include>
-        ,
-        <include refid="select_count_by_type">
-            <property name="type" value="-1"/>
-            <property name="countRemark" value="allCount"/>
-        </include>
+        count(*) as num
         from
         message_center m
         left join
@@ -136,6 +104,11 @@
         m.create_user = u.account
         where
         m.delete = false
+        and
+        status = 0
+        <if test="type!=null and type !=-1">
+            and m.type = #{type}
+        </if>
         <if test="tenantId!=null and tenantId !=''">
             and m.tenantId = #{tenantId}
         </if>
@@ -201,7 +174,7 @@
         #{message.module},
         0,
         #{message.tenantid},
-        #{message.create_user},
+        #{message.createUser},
         now(),
         now(),
         now()

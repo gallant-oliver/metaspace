@@ -43,9 +43,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -57,19 +55,15 @@ public class MessageCenterService {
     private MessageCenterDAO messageCenterDAO;
 
 
-    public PageResult<Map<String, Object>> getMyMessageList(String userId, int type, String tenantId, int status, String search, long offset, long limit) throws AtlasBaseException {
+    public PageResult<Map<String, Object>> getMyMessageList(Integer type, String tenantId, Integer status, String search, long offset, long limit) throws AtlasBaseException {
         try {
-            //String userId = AdminUtils.getUserData().getUserId();
+            String userId = AdminUtils.getUserData().getUserId();
             if (StringUtils.isNotBlank(search)) {
                 search = search.replaceAll("_", "/_").replaceAll("%", "/%");
             }
             List<Map<String, Object>> list;
-            try {
-                list = messageCenterDAO.getMyMessageList(type, tenantId, userId, status, search, offset, limit);
-            } catch (SQLException e) {
-                LOG.error("SQL执行异常", e);
-                list = new ArrayList<>();
-            }
+            list = messageCenterDAO.getMyMessageList(type, tenantId, userId, status, search, offset, limit);
+
             long totalSize = 0;
             if (list.size() != 0) {
                 totalSize = (long) (list.get(0).get("total"));
@@ -85,57 +79,67 @@ public class MessageCenterService {
         }
     }
 
-    public Result getMessageDetail(String userId, String id, String tenantId) throws AtlasBaseException {
+    public Result getMessageDetail(String id, String tenantId) {
         try {
-//            String userId = AdminUtils.getUserData().getUserId();
-            try {
-                Map<String, Object> message = messageCenterDAO.getMessageDetail(id, tenantId, userId);
-                List<String> idList = new ArrayList<>();
-                idList.add(id);
-                messageCenterDAO.batchToRead(idList);
-                return ReturnUtil.success(message);
-            } catch (SQLException e) {
-                LOG.error("SQL执行异常", e);
-                return ReturnUtil.error("500", "SQL执行异常", e);
+            if (StringUtils.isBlank(id)){
+                return ReturnUtil.error("500", "id is null!");
             }
+            String userId = AdminUtils.getUserData().getUserId();
+            Map<String, Object> message = messageCenterDAO.getMessageDetail(id, tenantId, userId);
+            List<String> idList = new ArrayList<>();
+            idList.add(id);
+            messageCenterDAO.batchToRead(idList);
+            return ReturnUtil.success(message);
         } catch (Exception e) {
             LOG.error("获取消息分页列表失败", e);
-            return ReturnUtil.error("500", "获取消息分页列表失败", e);
+            return ReturnUtil.error("500", "获取消息详情失败", e);
         }
     }
 
-    public Result getUnReadNum(String tenantId, String userId) throws AtlasBaseException {
+    public Result getUnReadNum(String tenantId) {
         try {
-//            String userId = AdminUtils.getUserData().getUserId();
-            try {
-                Map<String, Object> message = messageCenterDAO.getUnReadNum(tenantId, userId);
-                return ReturnUtil.success(message);
-            } catch (SQLException e) {
-                LOG.error("SQL执行异常", e);
-                return ReturnUtil.error("500", "SQL执行异常", e);
+            String userId = AdminUtils.getUserData().getUserId();
+            List<Integer> typeList = new ArrayList<>(Arrays.asList(0, 1, 2, 3, -1));
+            Map<String, Object> map = new HashMap<>();
+            for (Integer type : typeList) {
+                int num = messageCenterDAO.getUnReadNum(type, tenantId, userId);
+                switch (type) {
+                    case 0:
+                        map.put("resourceCount", num);
+                        break;
+                    case 1:
+                        map.put("resourceCount", num);
+                        break;
+                    case 2:
+                        map.put("resourceCount", num);
+                        break;
+                    case 3:
+                        map.put("resourceCount", num);
+                        break;
+                    case -1:
+                        map.put("allCount", num);
+                        break;
+                    default:
+                        return ReturnUtil.error("500", "getUnReadNum fail!");
+                }
             }
+            return ReturnUtil.success(map);
         } catch (Exception e) {
             LOG.error("获取未读消息数量失败", e);
             return ReturnUtil.error("500", "获取未读消息数量失败", e);
         }
     }
 
-    public Result batchToRead(List<String> ids, String userId) throws AtlasBaseException {
+    public Result batchToRead(List<String> ids) {
         try {
             if (CollectionUtils.isEmpty(ids)) {
                 return ReturnUtil.error("500", "ids is null!");
             }
-//            String userId = AdminUtils.getUserData().getUserId();
-            try {
-                int count = messageCenterDAO.batchToRead(ids);
-                if (count > 0) {
-                    return ReturnUtil.success(count);
-                } else {
-                    return ReturnUtil.error("500", "update count is zero!");
-                }
-            } catch (SQLException e) {
-                LOG.error("SQL执行异常", e);
-                return ReturnUtil.error("500", "SQL执行异常", e);
+            int count = messageCenterDAO.batchToRead(ids);
+            if (count > 0) {
+                return ReturnUtil.success(count);
+            } else {
+                return ReturnUtil.error("500", "update count is zero!");
             }
         } catch (Exception e) {
             LOG.error("批量标记已读失败", e);
@@ -143,22 +147,20 @@ public class MessageCenterService {
         }
     }
 
-    public Result batchDelte(List<String> ids, String delAll, String tenantId, String userId) throws AtlasBaseException {
+    public Result batchDelte(List<String> ids, String delAll, String tenantId) {
         try {
             if (CollectionUtils.isEmpty(ids)) {
                 return ReturnUtil.error("500", "ids is null!");
             }
-            //String userId = AdminUtils.getUserData().getUserId();
-            try {
-                int count = messageCenterDAO.batchDelte(ids, tenantId, userId, delAll);
-                if (count > 0) {
-                    return ReturnUtil.success(count);
-                } else {
-                    return ReturnUtil.error("500", "update count is zero!");
-                }
-            } catch (SQLException e) {
-                LOG.error("SQL执行异常", e);
-                return ReturnUtil.error("500", "SQL执行异常", e);
+            if (StringUtils.isBlank(delAll)) {
+                return ReturnUtil.error("500", "delAll is null!");
+            }
+            String userId = AdminUtils.getUserData().getUserId();
+            int count = messageCenterDAO.batchDelte(ids, tenantId, userId, delAll);
+            if (count > 0) {
+                return ReturnUtil.success(count);
+            } else {
+                return ReturnUtil.error("500", "update count is zero!");
             }
         } catch (Exception e) {
             LOG.error("批量删除消息失败", e);
@@ -166,18 +168,14 @@ public class MessageCenterService {
         }
     }
 
-    public Result addMessage(MessageEntity message, String tenantId, String userId) throws AtlasBaseException {
+    public Result addMessage(MessageEntity message, String tenantId) {
         try {
             message.setId(UUIDUtils.uuid());
             message.setTenantid(tenantId);
-            //message.setCreateUser(AdminUtils.getUserData().getAccount());
-            try {
-                messageCenterDAO.addMessage(message);
-                return ReturnUtil.success();
-            } catch (SQLException e) {
-                LOG.error("SQL执行异常", e);
-                return ReturnUtil.error("500", "SQL执行异常", e);
-            }
+            message.setDelete(false);
+            message.setCreateUser(AdminUtils.getUserData().getAccount());
+            messageCenterDAO.addMessage(message);
+            return ReturnUtil.success();
         } catch (Exception e) {
             LOG.error("新增消息失败", e);
             return ReturnUtil.error("500", "新增消息失败", e);

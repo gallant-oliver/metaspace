@@ -67,6 +67,7 @@ import java.util.stream.Stream;
 
 import static io.zeta.metaspace.model.dataquality.RuleCheckType.FIX;
 import static io.zeta.metaspace.model.dataquality.RuleCheckType.FLU;
+import static io.zeta.metaspace.model.dataquality.TaskType.EMPTY_VALUE_NUM_TABLE_REMAKR;
 
 /*
  * @description
@@ -878,18 +879,19 @@ public class QuartzJob implements Job {
         String sql;
         HdfsUtils hdfsUtils = new HdfsUtils();
         try (BufferedWriter fileBufferWriter = hdfsUtils.getFileBufferWriter(hdfsOutPath);) {
-            if (sourceType.equalsIgnoreCase("IMPALA") || sourceType.equalsIgnoreCase("HIVE")){
-                List<String> emptyTblNameList = (List<String>) mapVal.get("emptyTblNameList");
-                if (!CollectionUtils.isEmpty(emptyTblNameList)){
-                    for (String item : emptyTblNameList){
-                        LinkedHashMap<String, Object> map = new LinkedHashMap<>();
-                        map.put("TABLE_NAME", item);
-                        fileBufferWriter.write(GsonUtils.getInstance().toJson(map) + "\n");
+            if (jobType == EMPTY_VALUE_NUM_TABLE_REMAKR){
+                if (sourceType.equalsIgnoreCase("IMPALA") || sourceType.equalsIgnoreCase("HIVE")){
+                    List<String> emptyTblNameList = (List<String>) mapVal.get("emptyTblNameList");
+                    if (!CollectionUtils.isEmpty(emptyTblNameList)){
+                        for (String item : emptyTblNameList){
+                            LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+                            map.put("TABLE_NAME", item);
+                            fileBufferWriter.write(GsonUtils.getInstance().toJson(map) + "\n");
+                        }
+                        fileBufferWriter.flush();
                     }
-                    fileBufferWriter.flush();
-
+                    return;
                 }
-                return;
             }
         } catch (Exception e){
             throw new AdapterBaseException("解析查询结果失败", e);
