@@ -11,7 +11,7 @@ import lombok.Getter;
 public enum TableColumnContrast {
     FIELD_ADD("ADD", "字段新增"),
     FIELD_DELETE("DELETE", "字段缺失"),
-    FIELD_TYPE_CHANGE("TYPECHANGE ", "字段类型变更");
+    FIELD_TYPE_CHANGE("TYPECHANGE", "字段类型变更");
 
     private String code;
     @Getter
