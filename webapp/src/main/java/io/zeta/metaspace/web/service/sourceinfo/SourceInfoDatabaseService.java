@@ -9,6 +9,7 @@ import io.zeta.metaspace.model.approve.ApproveParas;
 import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.dto.indices.ApprovalGroupMember;
 import io.zeta.metaspace.model.dto.sourceinfo.DatabaseInfoDTO;
+import io.zeta.metaspace.model.entities.MessageEntity;
 import io.zeta.metaspace.model.enums.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.po.sourceinfo.DatabaseInfoPO;
@@ -20,14 +21,13 @@ import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForCategory;
 import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForList;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
-import io.zeta.metaspace.web.dao.ApproveDAO;
-import io.zeta.metaspace.web.dao.CategoryDAO;
-import io.zeta.metaspace.web.dao.UserGroupDAO;
+import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.service.Approve.Approvable;
 import io.zeta.metaspace.web.service.Approve.ApproveService;
 import io.zeta.metaspace.web.service.DataManageService;
+import io.zeta.metaspace.web.service.MessageCenterService;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -46,6 +46,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static io.zeta.metaspace.model.enums.MessagePush.RESOURCE_AUDIT_INFO_DATABASE;
 
 @Service
 public class SourceInfoDatabaseService implements Approvable {
@@ -76,6 +78,15 @@ public class SourceInfoDatabaseService implements Approvable {
 
     @Autowired
     DataManageService dataManageService;
+
+    @Autowired
+    ApproveGroupDAO approveGroupDAO;
+
+    @Autowired
+    MessageCenterService messageCenterService;
+
+    @Autowired
+    UserDAO userDAO;
 
 
     /**
@@ -173,6 +184,15 @@ public class SourceInfoDatabaseService implements Approvable {
 
         databaseInfoDAO.updateStatusByIds(idList,Status.AUDITING.getIntValue()+"");
         this.approveItems(tenantId,databaseInfoList,approveGroupId);
+
+        // 审核消息推送审核人
+        List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroupId);
+        List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
+        MessageEntity message = new MessageEntity(RESOURCE_AUDIT_INFO_DATABASE.type, RESOURCE_AUDIT_INFO_DATABASE.name, RESOURCE_AUDIT_INFO_DATABASE.module);
+        for (String userEmail : userEmailList){
+            message.setCreateUser(userEmail);
+            messageCenterService.addMessage(message, tenantId);
+        }
 
         return ReturnUtil.success();
     }

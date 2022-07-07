@@ -94,4 +94,10 @@ public class MessageEntity {
     @JsonIgnore
     private int total;
 
+    public MessageEntity(Integer type, String name, String module){
+        this.type = type;
+        this.name = name;
+        this.module = module;
+    }
+
 }

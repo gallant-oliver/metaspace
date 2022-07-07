@@ -173,7 +173,6 @@ public class MessageCenterService {
             message.setId(UUIDUtils.uuid());
             message.setTenantid(tenantId);
             message.setDelete(false);
-            message.setCreateUser(AdminUtils.getUserData().getAccount());
             messageCenterDAO.addMessage(message);
             return ReturnUtil.success();
         } catch (Exception e) {
