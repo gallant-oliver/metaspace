@@ -43,6 +43,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -91,7 +92,7 @@ public class MessageCenterService {
             messageCenterDAO.batchToRead(idList);
             return ReturnUtil.success(message);
         } catch (Exception e) {
-            LOG.error("获取消息分页列表失败", e);
+            LOG.error("获取消息详情失败", e);
             return ReturnUtil.error(AtlasErrorCode.MESSAGE_DETAIL_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("获取消息详情失败"), e);
         }
     }
@@ -120,13 +121,13 @@ public class MessageCenterService {
                         map.put("allCount", num);
                         break;
                     default:
-                        return ReturnUtil.error(AtlasErrorCode.MESSAGE_URREAD_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("获取未读消息数量失败"));
+                        return ReturnUtil.error(AtlasErrorCode.MESSAGE_URREAD_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_URREAD_RESULT.getFormattedErrorMessage("获取未读消息数量失败"));
                 }
             }
             return ReturnUtil.success(map);
         } catch (Exception e) {
             LOG.error("获取未读消息数量失败", e);
-            return ReturnUtil.error(AtlasErrorCode.MESSAGE_URREAD_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("获取未读消息数量失败"));
+            return ReturnUtil.error(AtlasErrorCode.MESSAGE_URREAD_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_URREAD_RESULT.getFormattedErrorMessage("获取未读消息数量失败"));
         }
     }
 
@@ -140,20 +141,16 @@ public class MessageCenterService {
             if (count > 0) {
                 return ReturnUtil.success(count);
             } else {
-                return ReturnUtil.error(AtlasErrorCode.MESSAGE_UPDATE_COUNT_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("消息更新数量为0"));
+                return ReturnUtil.error(AtlasErrorCode.MESSAGE_UPDATE_COUNT_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_UPDATE_COUNT_RESULT.getFormattedErrorMessage("消息更新数量为0"));
             }
         } catch (Exception e) {
             LOG.error("批量标记已读失败", e);
-            return ReturnUtil.error(AtlasErrorCode.MESSAGE_UPDATE_COUNT_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("批量已读失败"));
+            return ReturnUtil.error(AtlasErrorCode.MESSAGE_BATCH_READ_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_BATCH_READ_RESULT.getFormattedErrorMessage("批量已读失败"));
         }
     }
 
     public Result batchDelte(List<String> ids, String delAll, String tenantId) {
         try {
-            if (CollectionUtils.isEmpty(ids)) {
-                return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
-                        AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("ids"));
-            }
             if (StringUtils.isBlank(delAll)) {
                 return ReturnUtil.error(AtlasErrorCode.EMPTY_PARAMS.getErrorCode(),
                         AtlasErrorCode.EMPTY_PARAMS.getFormattedErrorMessage("delAll"));
@@ -163,11 +160,11 @@ public class MessageCenterService {
             if (count > 0) {
                 return ReturnUtil.success(count);
             } else {
-                return ReturnUtil.error(AtlasErrorCode.MESSAGE_UPDATE_COUNT_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("消息更新数量为0"));
+                return ReturnUtil.error(AtlasErrorCode.MESSAGE_UPDATE_COUNT_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_UPDATE_COUNT_RESULT.getFormattedErrorMessage("消息更新数量为0"));
             }
         } catch (Exception e) {
             LOG.error("批量删除消息失败", e);
-            return ReturnUtil.error(AtlasErrorCode.MESSAGE_BATCH_DELETE_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("批量删除失败"));
+            return ReturnUtil.error(AtlasErrorCode.MESSAGE_BATCH_DELETE_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_BATCH_DELETE_RESULT.getFormattedErrorMessage("批量删除失败"));
         }
     }
 
@@ -181,7 +178,7 @@ public class MessageCenterService {
             return ReturnUtil.success();
         } catch (Exception e) {
             LOG.error("新增消息失败", e);
-            return ReturnUtil.error(AtlasErrorCode.MESSAGE_ADD_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_DETAIL_RESULT.getFormattedErrorMessage("新增消息失败"));
+            return ReturnUtil.error(AtlasErrorCode.MESSAGE_ADD_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_ADD_RESULT.getFormattedErrorMessage("新增消息失败"));
         }
     }
 

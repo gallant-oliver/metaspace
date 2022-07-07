@@ -13,13 +13,14 @@
         select
         m.id,
         m.name,
-        to_timestamp(m.operation_time::text,'YYYY-MM-DD HH24:MI:SS') as operationTime,
+        m.status,
+        to_timestamp(m.operation_time::text,'YYYY-MM-DD HH24:MI:SS') as "operationTime",
         ( CASE
         WHEN m.type = 0 THEN '资源审核信息'
         WHEN m.type = 1 THEN '用户组信息'
         WHEN m.type = 2 THEN '数据服务审核'
         WHEN m.type = 3 THEN '需求审批'
-        END ) typeCn,
+        END ) "typeCn",
         count(*)over() total
         from
         message_center m
@@ -64,11 +65,11 @@
         WHEN m.type = 1 THEN '用户组信息'
         WHEN m.type = 2 THEN '数据服务审核'
         WHEN m.type = 3 THEN '需求审批'
-        END ) typeCn,
+        END ) "typeCn",
         m.status,
-        to_timestamp(m.operation_time::text,'YYYY-MM-DD HH24:MI:SS') as operationTime,
+        to_timestamp(m.operation_time::text,'YYYY-MM-DD HH24:MI:SS') as "operationTime",
         u.username as operator,
-        t.name as tenantName
+        t.name as "tenantName"
         from
         message_center m
         left join
