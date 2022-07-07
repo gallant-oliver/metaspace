@@ -37,6 +37,7 @@ import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.HdfsService;
 import io.zeta.metaspace.web.service.SourceService;
+import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.service.sourceinfo.AnnexService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoFileService;
@@ -101,6 +102,9 @@ public class SourceInfoDatabaseREST {
     @Autowired
     private SourceInfoFileService sourceInfoFileService;
     private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.SourceInfoDatabaseREST");
+
+    @Autowired
+    private FileInfoService fileInfoService;
 
     @POST
     @Path("database")
@@ -380,6 +384,7 @@ public class SourceInfoDatabaseREST {
             }
             // 跟source_info、db-info对比获取比对结果
             Result result = sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
+            fileInfoService.createFileuploadRecord(annex);
             HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"文件导入成功！");
             return result;
         }catch (Exception e){

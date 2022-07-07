@@ -116,6 +116,7 @@ public enum DataType {
                 break;
             case "LONG":
             case "BIGINT":
+            case "INT8":
                 typeGroup = DataType.BIGINT;
                 break;
             case "NUMBER":
@@ -130,6 +131,8 @@ public enum DataType {
             case "INTEGER":
             case "SMALLINT":
             case "TINYINT":
+            case "INT2":
+            case "INT4":
             case "INT UNSIGNED":
                 typeGroup = DataType.INT;
                 break;
