@@ -40,8 +40,10 @@ import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.service.Approve.Approvable;
 import io.zeta.metaspace.web.service.Approve.ApproveService;
+import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -129,6 +131,8 @@ public class BusinessService implements Approvable {
 
     @Autowired
     private DataManageService dataManageService;
+    @Autowired
+    private FileInfoService fileInfoService;
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
 
@@ -1731,6 +1735,7 @@ public class BusinessService implements Approvable {
             map = new HashMap<String, Object>() {{
                 put("upload", upload);
             }};
+            CommonConstant.FILE_CONCURRENT_HASH_MAP.put(upload,fileInputStream.getName());
         } else {
             StringBuilder detail = new StringBuilder();
             for (String err : error) {
@@ -1854,6 +1859,7 @@ public class BusinessService implements Approvable {
             return;
         }
         insertBusinesses(business, categoryId, tenantId);
+        fileInfoService.uploadFile(fileInputStream,tenantId);
     }
 
     @Transactional(rollbackFor = Exception.class)

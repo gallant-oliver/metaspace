@@ -14,7 +14,7 @@
       "name":"HDFS",
       "type": "HDFS",
       "config": {
-        "path": "hdfs:///tmp/griffin"
+        "path": "hdfs:///apps/metaspace/project/griffin"
       }
     }
   ],

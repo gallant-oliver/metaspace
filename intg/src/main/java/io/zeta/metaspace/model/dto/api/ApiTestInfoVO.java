@@ -19,7 +19,7 @@ public class ApiTestInfoVO {
     @NotNull
     String version;
     @DefaultValue("1")
-    Long pageNum;
+    Integer pageNum;
     @DefaultValue("10")
-    Long pageSize;
+    Integer pageSize;
 }

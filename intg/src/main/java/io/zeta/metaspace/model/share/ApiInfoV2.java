@@ -72,7 +72,10 @@ public class ApiInfoV2 {
     private Object returnParams;
     @JsonIgnore
     private Object sortParams;
-
+    /**
+     * api一键测试id
+     */
+    private String apiKey;
 
     @Data
     public static class FieldV2 {

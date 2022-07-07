@@ -27,6 +27,7 @@ import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataStandardService;
@@ -475,7 +476,7 @@ public class DataStandardREST {
                                  @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
         File file = null;
         try {
-            String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            String name = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
             HttpRequestContext.get().auditLog(ModuleEnum.DATASTANDARD.getAlias(), name);
             file = ExportDataPathUtils.fileCheck(name, fileInputStream);
             String upload;
@@ -491,6 +492,7 @@ public class DataStandardREST {
                     put("upload", upload);
                 }
             };
+            CommonConstant.FILE_CONCURRENT_HASH_MAP.put(upload,name);
             return ReturnUtil.success(map);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"导入失败");

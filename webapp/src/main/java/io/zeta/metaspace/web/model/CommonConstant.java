@@ -1,5 +1,7 @@
 package io.zeta.metaspace.web.model;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * 业务操作公共属性值
  *
@@ -111,4 +113,16 @@ public class CommonConstant {
      * 字段长度
      */
     public static final int LENGTH_1000 = 1000;
+
+    /**
+     * 数据服务api参数类型
+     */
+    public static final String HEADER_PARAM="HEADER";
+    public static final String QUERY_PARAM = "QUERY";
+    public static final String PATH_PARAM = "PATH";
+    public static final String API_PATH = "metaspace";
+    /**
+     * 文件归档临时保存文件名
+     */
+    public static final ConcurrentHashMap<String, String> FILE_CONCURRENT_HASH_MAP = new ConcurrentHashMap<>();
 }

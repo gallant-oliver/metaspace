@@ -1,7 +1,8 @@
 package io.zeta.metaspace.web.cache;
 
 import org.apache.atlas.ApplicationProperties;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -17,12 +18,15 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.RedisClusterConfiguration;
+import org.springframework.data.redis.connection.RedisNode;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import redis.clients.jedis.JedisPoolConfig;
 
-import org.slf4j.Logger;
+import java.util.HashSet;
+import java.util.Set;
 
 /*
  * @description
@@ -33,48 +37,82 @@ import org.slf4j.Logger;
 @EnableCaching
 public class CacheConfig extends CachingConfigurerSupport {
 
-    private static String hostName;
+    private static String[] hostName;
     private static int port;
     private static String engine;
     private static int expiration;
     private final static String CACHE_ON_REDIS = "redis";
     private static String password;
     private static int maxClient;
+    private static int database;
+    /**
+     * redis部署模式0：单节点 1：哨兵 2：集群
+     */
+    private static Integer mode;
 
     static {
         try {
             org.apache.commons.configuration.Configuration configuration = ApplicationProperties.get();
-            engine = configuration.getString("metaspace.cache.type",CACHE_ON_REDIS);
-            hostName = configuration.getString("metaspace.cache.redis.host","127.0.0.1");
-            port = configuration.getInt("metaspace.cache.redis.port",6379);
-            expiration = configuration.getInt("metaspace.cache.redis.expiration",300);
+            engine = configuration.getString("metaspace.cache.type", CACHE_ON_REDIS);
+            hostName = configuration.getStringArray("metaspace.cache.redis.host");
+            port = configuration.getInt("metaspace.cache.redis.port", 6379);
+            expiration = configuration.getInt("metaspace.cache.redis.expiration", 300);
             password = configuration.getString("metaspace.cache.redis.password");
-            maxClient = configuration.getInt("metaspace.cache.redis.client.max",128);
+            maxClient = configuration.getInt("metaspace.cache.redis.client.max", 128);
+            database = configuration.getInt("metaspace.cache.redis.database", 0);
+            mode = configuration.getInt("metaspace.cache.redis.mode", 0);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     @Bean
-    public JedisConnectionFactory redisConnectionFactory() {
-        JedisConnectionFactory redisConnectionFactory = new JedisConnectionFactory();
+    public JedisConnectionFactory jedisConnectionFactory() {
         JedisPoolConfig config = new JedisPoolConfig();
         config.setMaxTotal(maxClient);
-        // Defaults
-        redisConnectionFactory.setHostName(hostName);
-        redisConnectionFactory.setPort(port);
-        if(StringUtils.isNotBlank(password)) {
-            redisConnectionFactory.setPassword(password);
+        //单节点和哨兵
+        if (mode.equals(0) || mode.equals(1)) {
+            JedisConnectionFactory redisConnectionFactory = new JedisConnectionFactory();
+            // Defaults
+            redisConnectionFactory.setHostName(String.valueOf(hostName));
+            redisConnectionFactory.setPort(port);
+            if (StringUtils.isNotBlank(password)) {
+                redisConnectionFactory.setPassword(password);
+            }
+            redisConnectionFactory.setDatabase(database);
+            redisConnectionFactory.setPoolConfig(config);
+            return redisConnectionFactory;
         }
-        redisConnectionFactory.setPoolConfig(config);
-        return redisConnectionFactory;
+        //集群
+        RedisClusterConfiguration redisClusterConfiguration = new RedisClusterConfiguration();
+        Set<RedisNode> hostAndPorts = new HashSet<>();
+        for (String value : hostName) {
+            if (StringUtils.isBlank(value)) {
+                continue;
+            }
+            hostAndPorts.add(new RedisNode(value, port));
+        }
+        redisClusterConfiguration.setClusterNodes(hostAndPorts);
+        JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory(redisClusterConfiguration, config);
+        if (StringUtils.isNotBlank(password)) {
+            jedisConnectionFactory.setPassword(password);
+        }
+        jedisConnectionFactory.setDatabase(database);
+        return jedisConnectionFactory;
     }
 
     @Bean
-    public RedisTemplate<String, String> redisTemplate(RedisConnectionFactory cf) {
-        RedisTemplate<String, String> redisTemplate = new RedisTemplate<String, String>();
+    public RedisTemplate redisTemplate(JedisConnectionFactory cf) {
+        RedisTemplate redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(cf);
         return redisTemplate;
+    }
+
+    @Bean
+    public StringRedisTemplate stringRedisTemplate(JedisConnectionFactory cf) {
+        StringRedisTemplate stringRedisTemplate = new StringRedisTemplate();
+        stringRedisTemplate.setConnectionFactory(cf);
+        return stringRedisTemplate;
     }
 
     @Bean("customKeyGenerator")
@@ -85,7 +123,7 @@ public class CacheConfig extends CachingConfigurerSupport {
 
     @Bean
     public CacheManager cacheManager(RedisTemplate redisTemplate) {
-        if(CACHE_ON_REDIS.equals(engine)) {
+        if (CACHE_ON_REDIS.equals(engine)) {
             RedisCacheManager cacheManager = new RedisCacheManager(redisTemplate);
             cacheManager.setDefaultExpiration(expiration);
             return cacheManager;

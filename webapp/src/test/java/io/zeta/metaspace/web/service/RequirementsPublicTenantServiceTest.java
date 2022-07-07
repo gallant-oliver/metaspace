@@ -13,6 +13,7 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.UUID;
 
@@ -66,7 +67,7 @@ public class RequirementsPublicTenantServiceTest {
     }
     
     @Test()
-    public void testCreatedApiRequirement() {
+    public void testCreatedApiRequirement() throws IOException {
         requirementDTO.setName("unit_test_creat");
         requirementDTO.setNum("unit_test_creat");
         requirementDTO.setResourceType(ResourceType.API);

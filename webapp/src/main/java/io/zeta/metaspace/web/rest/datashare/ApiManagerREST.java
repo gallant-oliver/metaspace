@@ -38,6 +38,7 @@ import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.share.*;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.*;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -45,6 +46,7 @@ import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
@@ -828,18 +830,17 @@ public class ApiManagerREST {
     @Path("/testApi")
     public Result testApi2(@HeaderParam("tenantId") String tenantId,
                            @RequestBody @Valid ApiTestInfoVO apiTestInfoVO) {
-
-        long limit = 10;
-        long offset = 0;
-        if (apiTestInfoVO.getPageSize() != null) {
-            limit = apiTestInfoVO.getPageSize();
+        try {
+            if (apiTestInfoVO.getPageNum() == null) {
+                apiTestInfoVO.setPageNum(0);
+            }
+            if (apiTestInfoVO.getPageSize() == null) {
+                apiTestInfoVO.setPageSize(10);
+            }
+            return shareService.testApi(apiTestInfoVO);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "api测试失败");
         }
-        if (apiTestInfoVO.getPageNum() != null && apiTestInfoVO.getPageNum() > 0) {
-            offset = (apiTestInfoVO.getPageNum() - 1) * limit;
-        }
-        apiTestInfoVO.setPageNum(offset);
-        apiTestInfoVO.setPageSize(limit);
-        return shareService.testApi(apiTestInfoVO);
     }
 
     @PUT
@@ -965,12 +966,13 @@ public class ApiManagerREST {
                                  @FormDataParam("projectId") String projectId) {
         File file = null;
         try {
-            String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            String name = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
             file = ExportDataPathUtils.fileCheck(name, fileInputStream);
             String upload = shareService.uploadApiCategory(file, projectId, tenantId);
             HashMap<String, String> map = new HashMap<String, String>() {{
                 put("upload", upload);
             }};
+            CommonConstant.FILE_CONCURRENT_HASH_MAP.put(upload,file.getName());
             return ReturnUtil.success(map);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导入失败:" + e.getMessage());
