@@ -16,28 +16,26 @@
  */
 package io.zeta.metaspace.model.enums;
 
+import java.text.MessageFormat;
+import java.util.Arrays;
+
 public enum MessagePush {
 
+
     // 资源审核信息——推送
-    RESOURCE_AUDIT_INFO_DATABASE(0, "资源审核信息", "您有名称为【数据库登记名称】的数据库登记发布待审批" , "数据资产/数据库登记"),
-    RESOURCE_AUDIT_INFO_BUSINESS_DIR_RELEASE(0, "资源审核信息", "您有名称为【业务目录名称】的业务目录【发布】待审批" , "数据资产/业务目录"),
-    RESOURCE_AUDIT_INFO_BUSINESS_DIR_OFFLINE(0, "资源审核信息", "您有名称为【业务目录名称】的业务目录【下线】待审批" , "数据资产/业务目录"),
-    RESOURCE_AUDIT_INFO_BUSINESS_OBJECT_RELEASE(0, "资源审核信息", "您有名称为【业务对象名称】的业务对象【发布】待审批" , "数据资产/业务目录/业务对象"),
-    RESOURCE_AUDIT_INFO_BUSINESS_OBJECT_OFFLINE(0, "资源审核信息", "您有名称为【业务对象名称】的业务对象【下线】待审批" , "数据资产/业务目录/业务对象"),
-    RESOURCE_AUDIT_INFO_BUSINESS_INDEX_RELEASE(0, "资源审核信息", "您有名称为【业务指标名称】的业务指标【发布】待审批" , "数据资产/业务指标"),
-    RESOURCE_AUDIT_INFO_BUSINESS_INDEX_OFFLINE(0, "资源审核信息", "您有名称为【业务指标名称】的业务指标【下线】待审批" , "数据资产/业务指标"),
-    RESOURCE_AUDIT_INFO_ATOM_INDEX_RELEASE(0, "资源审核信息", "您有名称为【原子指标名称】的原子指标【发布】待审批" , "数据资产/原子指标"),
-    RESOURCE_AUDIT_INFO_ATOM_INDEX_OFFLINE(0, "资源审核信息", "您有名称为【原子指标名称】的原子指标【下线】待审批" , "数据资产/原子指标"),
-    RESOURCE_AUDIT_INFO_DERIVATIVE_INDEX_RELEASE(0, "资源审核信息", "您有名称为【衍生表名称】的衍生指标【发布】待审批" , "数据资产/业务指标/衍生表指标"),
-    RESOURCE_AUDIT_INFO_DERIVATIVE_INDEX_OFFLINE(0, "资源审核信息", "您有名称为【衍生表名称】的衍生指标【下线】待审批" , "数据资产/业务指标/衍生表指标"),
-    RESOURCE_AUDIT_INFO_REVIEW_INDEX_RELEASE(0, "资源审核信息", "您有名称为【复合指标名称】的复合指标【发布】待审批" , "数据资产/业务指标/复合指标"),
-    RESOURCE_AUDIT_INFO_REVIEW_INDEX_OFFLINE(0, "资源审核信息", "您有名称为【复合指标名称】的复合指标【下线】待审批" , "数据资产/业务指标/复合指标"),
-    RESOURCE_AUDIT_INFO_INDEX_DIR_RELEASE(0, "资源审核信息", "您有名称为【指标目录名称】的指标目录【发布】待审批" , "数据资产/指标目录"),
-    RESOURCE_AUDIT_INFO_INDEX_DIR_OFFLINE(0, "资源审核信息", "您有名称为【指标目录名称】的指标目录【下线】待审批" , "数据资产/指标目录"),
+    RESOURCE_AUDIT_INFO_DATABASE(0, "资源审核信息", "您有名称为【%s】的数据库登记发布待审批", "数据资产/数据库登记"),
+    RESOURCE_AUDIT_INFO_BUSINESS_DIR(0, "资源审核信息", "您有名称为【%s】的业务目录【%s】待审批", "数据资产/业务目录"),
+    RESOURCE_AUDIT_INFO_BUSINESS_OBJECT(0, "资源审核信息", "您有名称为【%s】的业务对象【%s】待审批", "数据资产/业务目录/业务对象"),
+    RESOURCE_AUDIT_INFO_INDEX_DESIGN(0, "资源审核信息", "您有名称为【%s】的【%s】-【%s】审批【%s】", "指标设计/%s"),
 
 
+    // 数据服务审核——推送
+    DATA_SERVICE_AUDIT_START(2, "数据服务审核", "您有一条【%s】的API待审核", "数据服务/API项目管理/API管理"),
+    DATA_SERVICE_AUDIT_FINISH(2, "数据服务审核", "您创建的【%s】的API已由管理员审核【%s】", "数据服务/API项目管理/API管理"),
 
-    USER_GROUP_INFO_(0, "资源审核信息", "您有名称为【数据库登记名称】的数据库登记发布待审批" , "数据资产/数据库登记");
+    NEED_AUDIT_START_MANAGER(3, "需求审批", "您有一条【%s】的需求待处理", "数据服务/需求管理"),
+    NEED_AUDIT_DEAL_PEOPLE(3, "需求审批", "您有一条【%s】的需求需要进行处理", "数据服务/需求管理"),
+    NEED_AUDIT_FINISH(3, "需求审批", "您发起的【%s】的需求已有相关人员处理并反馈", "数据服务/需求管理");
     /**
      * 消息类型数字编号
      */
@@ -54,6 +52,11 @@ public enum MessagePush {
      * 所属模块
      */
     public String module;
+
+    public final static String PASS = "通过";
+    public final static String REJECT = "被驳回";
+    public final static String RELEASE = "发布";
+    public final static String OFFLINE = "下线";
 
     MessagePush(int type, String typeCn, String name, String module) {
         this.type = type;
@@ -93,5 +96,25 @@ public enum MessagePush {
 
     public void setModule(String module) {
         this.module = module;
+    }
+
+    public static String getFormattedMessageName(String name, String parameter) {
+
+        return String.format(name, parameter);
+    }
+
+    public static String getFormattedMessageName(String name, String parameter, String parameter1) {
+
+        return String.format(name, parameter, parameter1);
+    }
+
+    public static String getFormattedMessageName(String name, String parameter, String parameter1, String parameter2) {
+
+        return String.format(name, parameter, parameter1, parameter2);
+    }
+
+    public static String getFormattedMessageName(String name, String parameter, String parameter1, String parameter2, String parameter3, String parameter4) {
+
+        return String.format(name, parameter, parameter1, parameter2, parameter3, parameter4);
     }
 }

@@ -186,15 +186,6 @@ public class SourceInfoDatabaseService implements Approvable {
         databaseInfoDAO.updateStatusByIds(idList,Status.AUDITING.getIntValue()+"");
         this.approveItems(tenantId,databaseInfoList,approveGroupId);
 
-        // 审核消息推送审核人
-        List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroupId);
-        List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
-        MessageEntity message = new MessageEntity(RESOURCE_AUDIT_INFO_DATABASE.type, RESOURCE_AUDIT_INFO_DATABASE.name, RESOURCE_AUDIT_INFO_DATABASE.module);
-        for (String userEmail : userEmailList){
-            message.setCreateUser(userEmail);
-            messageCenterService.addMessage(message, tenantId);
-        }
-
         return ReturnUtil.success();
     }
 
@@ -389,6 +380,15 @@ public class SourceInfoDatabaseService implements Approvable {
             databaseInfoDAO.updateApproveIdAndApproveGroupIdById(databaseInfo.getId(),approveItem.getId(),approveGroupId);
             databaseInfoDAO.insertHistoryVersion(approveItem.getObjectId());
             approveServiceImp.addApproveItem(approveItem);
+
+            // 审核消息推送审核人
+            List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroupId);
+            List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
+            MessageEntity message = new MessageEntity(RESOURCE_AUDIT_INFO_DATABASE.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_DATABASE.name, databaseInfo.getDatabaseAlias()), RESOURCE_AUDIT_INFO_DATABASE.module);
+            for (String userEmail : userEmailList){
+                message.setCreateUser(userEmail);
+                messageCenterService.addMessage(message, tenantId);
+            }
         }
         HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),this.convertStringFromList(databaseInfos.stream().map(DatabaseInfo::getDatabaseAlias).collect(Collectors.toList())));
 
