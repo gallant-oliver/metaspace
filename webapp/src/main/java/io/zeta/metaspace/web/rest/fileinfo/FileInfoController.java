@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
@@ -59,6 +60,25 @@ public class FileInfoController {
         } catch (Exception e) {
             LOG.error("文件归档列表查询失败", e);
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件归档列表查询失败");
+        }
+    }
+
+    /**
+     * 查询文件归档列表
+     *
+     * @return 返回文件归档列表
+     */
+    @POST
+    @Path("indicators/upload")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result createFileInfo(@QueryParam("fileName") String fileName, @QueryParam("path") String path) {
+        try {
+            fileInfoService.createFileuploadRecord(path, fileName);
+            return ReturnUtil.success();
+        } catch (Exception e) {
+            LOG.error("文件归档添加失败", e);
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件归档添加失败");
         }
     }
 
