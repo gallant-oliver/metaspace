@@ -242,6 +242,11 @@ public class QuartzJob implements Job {
                     } else {
                         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的任务类型");
                     }
+                } else if (3 == taskExecution.getScope()) {
+                    CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
+                    taskExecution.setDataSourceId(paramInfo.getDataSourceId());
+                    taskExecution.setDbName(paramInfo.getSchema());
+                    taskExecution.setObjectName(paramInfo.getSchema());
                 } else {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的任务类型");
                 }
@@ -253,7 +258,8 @@ public class QuartzJob implements Job {
     }
 
 
-    private void executeAtomicTaskList(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList, String tenantId) throws Exception {
+    private void executeAtomicTaskList(String taskId, String
+            taskExecuteId, List<AtomicTaskExecution> taskList, String tenantId) throws Exception {
         engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf, String::valueOf);
         LOG.info("query engine:" + engine);
         int totalStep = taskList.size();
@@ -784,7 +790,9 @@ public class QuartzJob implements Job {
 
             //表名列名转义
             AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
-            tableName = adapterExecutor.addEscapeChar(tableName);
+            if (StringUtils.isNotBlank(tableName)) {
+                tableName = adapterExecutor.addEscapeChar(tableName);
+            }
             String sqlDbName = adapterExecutor.addSchemaEscapeChar(dbName);
             TaskType jobType = TaskType.getTaskByCode(task.getTaskType());
             String query = QuartQueryProvider.getQuery(jobType);
@@ -880,7 +888,9 @@ public class QuartzJob implements Job {
         }
     }
 
-    public void writeErrorData(TaskType jobType, String tableName, String columnName, String sqlDbName, AdapterSource adapterSource, Connection connection, String hdfsOutPath, String sourceType, Map<String, Object> mapVal) {
+    public void writeErrorData(TaskType jobType, String tableName, String columnName, String
+            sqlDbName, AdapterSource adapterSource, Connection connection, String hdfsOutPath, String
+                                       sourceType, Map<String, Object> mapVal) {
         String errDataSql = QuartQueryProvider.getErrData(jobType, sourceType);
         String sql;
         HdfsUtils hdfsUtils = new HdfsUtils();
@@ -984,7 +994,8 @@ public class QuartzJob implements Job {
     }
 
     //规则值变化
-    public Float ruleResultValueChange(AtomicTaskExecution task, boolean record, boolean columnRule) throws Exception {
+    public Float ruleResultValueChange(AtomicTaskExecution task, boolean record, boolean columnRule) throws
+            Exception {
         Float nowValue = null;
         Float valueChange = null;
         try {
@@ -1004,7 +1015,8 @@ public class QuartzJob implements Job {
     }
 
     //规则值变化率
-    public Float ruleResultChangeRatio(AtomicTaskExecution task, boolean record, boolean columnRule) throws Exception {
+    public Float ruleResultChangeRatio(AtomicTaskExecution task, boolean record, boolean columnRule) throws
+            Exception {
         Float ratio = null;
         Float ruleValueChange = 0F;
         Float lastValue = 0F;
@@ -1166,7 +1178,8 @@ public class QuartzJob implements Job {
      * @param resultValue
      * @return
      */
-    public RuleExecuteStatus checkResult(AtomicTaskExecution task, Float resultValue, Float referenceValue) throws Exception {
+    public RuleExecuteStatus checkResult(AtomicTaskExecution task, Float resultValue, Float referenceValue) throws
+            Exception {
         RuleExecuteStatus checkStatus = null;
         try {
             DataQualitySubTaskRule subTaskRule = taskManageDAO.getSubTaskRuleInfo(task.getSubTaskRuleId());
@@ -1238,7 +1251,8 @@ public class QuartzJob implements Job {
         return checkStatus;
     }
 
-    public RuleExecuteStatus checkResultStatus(RuleCheckType ruleCheckType, CheckExpression checkExpression, Float resultValue, Float checkThresholdMinValue, Float checkThresholdMaxValue) {
+    public RuleExecuteStatus checkResultStatus(RuleCheckType ruleCheckType, CheckExpression checkExpression, Float
+            resultValue, Float checkThresholdMinValue, Float checkThresholdMaxValue) {
         RuleExecuteStatus ruleStatus = null;
         try {
             if (FIX == ruleCheckType) {
@@ -1307,7 +1321,8 @@ public class QuartzJob implements Job {
         return ruleStatus;
     }
 
-    public float oscarCustomHandle(AtomicTaskExecution task, List<CustomizeParam> tables, List<CustomizeParam> columns) throws Exception {
+    public float oscarCustomHandle(AtomicTaskExecution
+                                           task, List<CustomizeParam> tables, List<CustomizeParam> columns) throws Exception {
         Float resultValue = 0.0f;
         try {
             AdapterSource adapterSource = getOscarAdapterSource(task);
@@ -1356,7 +1371,8 @@ public class QuartzJob implements Job {
         return adapterSource;
     }
 
-    private String buildExecuteSql(AtomicTaskExecution task, List<CustomizeParam> tables, List<CustomizeParam> columns) throws Exception {
+    private String buildExecuteSql(AtomicTaskExecution
+                                           task, List<CustomizeParam> tables, List<CustomizeParam> columns) throws Exception {
         String sql = task.getSql();
         if (tables != null) {
             for (CustomizeParam table : tables) {
