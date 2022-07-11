@@ -10,6 +10,7 @@
                u.username AS businessOwner,
                ti.dbname  AS database,
                si.tenant_id,
+               si.business_leader AS userId,
                t.name     AS tenantName
         FROM source_info AS si
                  INNER JOIN tableinfo ti

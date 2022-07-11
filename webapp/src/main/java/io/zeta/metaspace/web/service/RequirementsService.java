@@ -2,7 +2,9 @@ package io.zeta.metaspace.web.service;
 
 import com.google.gson.Gson;
 import io.zeta.metaspace.model.dto.requirements.*;
+import io.zeta.metaspace.model.entities.MessageEntity;
 import io.zeta.metaspace.model.enums.FilterOperation;
+import io.zeta.metaspace.model.enums.MessagePush;
 import io.zeta.metaspace.model.enums.ResourceType;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -11,9 +13,7 @@ import io.zeta.metaspace.model.po.requirements.*;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.ApiHead;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.web.dao.ColumnDAO;
-import io.zeta.metaspace.web.dao.DataShareDAO;
-import io.zeta.metaspace.web.dao.TableDAO;
+import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.requirements.*;
 import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.util.AdminUtils;
@@ -29,10 +29,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+
+import static io.zeta.metaspace.model.enums.MessagePush.NEED_AUDIT_DEAL_PEOPLE;
+import static io.zeta.metaspace.model.enums.MessagePush.NEED_AUDIT_FINISH;
 
 @Service
 @Slf4j
@@ -65,6 +65,15 @@ public class RequirementsService {
     @Autowired
     DataShareDAO shareDAO;
 
+    @Autowired
+    ApproveGroupDAO approveGroupDAO;
+
+    @Autowired
+    MessageCenterService messageCenterService;
+
+    @Autowired
+    UserDAO userDAO;
+
     /**
      * 需求关联表是否为重要表、保密表
      *
@@ -87,8 +96,8 @@ public class RequirementsService {
      * @param
      * @throws
      */
-    @Transactional(rollbackFor=Exception.class)
-    public void handle(RequirementsHandleDTO resultDTO) {
+    @Transactional(rollbackFor = Exception.class)
+    public void handle(RequirementsHandleDTO resultDTO, String tenantId) {
         List<String> guids = resultDTO.getGuids();
         if (CollectionUtils.isNotEmpty(guids)) {
             // 创建时间
@@ -97,6 +106,7 @@ public class RequirementsService {
 
             List<RequirementsResultPO> resultPOS = new ArrayList<>();
             DealDetailDTO result = resultDTO.getResult();
+            List<String> needNameList = new ArrayList<>();
             for (String requirementsId : guids) {
                 RequirementsResultPO resultPO = new RequirementsResultPO();
                 BeanUtils.copyProperties(result, resultPO);
@@ -110,6 +120,15 @@ public class RequirementsService {
                 resultPO.setUpdateTime(currentTime);
 
                 resultPOS.add(resultPO);
+
+                // 批量需求处理—获取所有需求处理名称
+                RequirementsPO po = requirementsMapper.getRequirementById(requirementsId);
+                if (po != null) {
+                    if (StringUtils.isNotEmpty(po.getName())) {
+                        needNameList.add(po.getName());
+                    }
+                }
+
             }
 
             requirementsResultMapper.batchInsert(resultPOS);
@@ -118,10 +137,27 @@ public class RequirementsService {
             Integer type = result.getResult(); // 1同意；2拒绝
             if (type == 1) {
                 requirementsMapper.batchUpdateStatusByIds(guids, 3);
-            }
-            else {
+
+                // 审核消息推送给业务人员
+                String userId = resultDTO.getResult().getUserId();
+                if (StringUtils.isNotEmpty(userId)) {
+                    List<String> userEmailList = userDAO.getUsersEmailByIds(new ArrayList<>(Arrays.asList(userId)));
+                    MessageEntity message = null;
+                    for (String needName : needNameList) {
+                        message = new MessageEntity(NEED_AUDIT_DEAL_PEOPLE.type, MessagePush.getFormattedMessageName(NEED_AUDIT_DEAL_PEOPLE.name, needName), NEED_AUDIT_DEAL_PEOPLE.module);
+                        for (String userEmail : userEmailList) {
+                            message.setCreateUser(userEmail);
+                            messageCenterService.addMessage(message, tenantId);
+                        }
+                    }
+
+                }
+
+
+            } else {
                 requirementsMapper.batchUpdateStatusByIds(guids, -1);
             }
+
         }
     }
 
@@ -136,7 +172,7 @@ public class RequirementsService {
         result.setResourceType(resourceType);
 
         //资源类型 1：API 2：中间库 3：消息队列
-        switch (resourceType){
+        switch (resourceType) {
             case 1:
                 RequirementsApiPO apiInfo = requirementsApiMapper.selectByRequirementId(requirementId);
                 RequirementsApiDetailDTO api = new RequirementsApiDetailDTO();
@@ -165,7 +201,7 @@ public class RequirementsService {
                 result.setMq(mq);
                 break;
             default:
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"资源类型错误：1-API 2-中间库 3-消息队列");
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "资源类型错误：1-API 2-中间库 3-消息队列");
         }
 
         return result;
@@ -359,10 +395,24 @@ public class RequirementsService {
         List<String> guids = new ArrayList<>();
         guids.add(requirementsId);
         requirementsMapper.batchUpdateStatusByIds(guids, 4);
+
+        // 审核消息推送需求发起人
+        RequirementsPO requirementById = requirementsMapper.getRequirementById(requirementsId);
+        String creator = requirementById.getCreator();
+        if (StringUtils.isNotEmpty(creator)){
+            List<String> userEmailList = userDAO.getUsersEmailByIds(new ArrayList<>(Arrays.asList(creator)));
+            MessageEntity message = new MessageEntity(NEED_AUDIT_FINISH.type, MessagePush.getFormattedMessageName(NEED_AUDIT_FINISH.name, requirementById.getName()), NEED_AUDIT_FINISH.module);
+            for (String userEmail : userEmailList){
+                message.setCreateUser(userEmail);
+                messageCenterService.addMessage(message, requirementById.getTenantId());
+            }
+        }
+
     }
 
     /**
      * 需求处理列表
+     *
      * @param requireListParam
      * @param tenantId
      * @return
@@ -411,6 +461,7 @@ public class RequirementsService {
 
     /**
      * 需求反馈列表接口
+     *
      * @param requireListParam
      * @param tenantId
      * @return

@@ -28,8 +28,10 @@ import io.zeta.metaspace.model.approve.ApproveOperate;
 import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.business.BussinessCatalogueInput;
 import io.zeta.metaspace.model.dto.CategoryPrivilegeDTO;
+import io.zeta.metaspace.model.entities.MessageEntity;
 import io.zeta.metaspace.model.enums.BusinessType;
 import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
+import io.zeta.metaspace.model.enums.MessagePush;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.CategoryExport;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
@@ -69,6 +71,8 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.zeta.metaspace.model.enums.MessagePush.*;
+
 
 @Service
 public class BusinessCatalogueService implements Approvable {
@@ -99,6 +103,12 @@ public class BusinessCatalogueService implements Approvable {
 
 
     int dataStandType = 3;
+
+    @Autowired
+    ApproveGroupDAO approveGroupDAO;
+
+    @Autowired
+    MessageCenterService messageCenterService;
 
     /**
      * 创建业务目录
@@ -362,6 +372,19 @@ public class BusinessCatalogueService implements Approvable {
         approveItem.setTenantId(tenantId);
         approveServiceImp.addApproveItem(approveItem);
 
+        // 审核消息推送审核人
+        List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroupId);
+        List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
+        MessageEntity message = null;
+        if ("1".equals(approveType)){
+             message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_DIR.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_DIR.name, entity.getName(), RELEASE), RESOURCE_AUDIT_INFO_BUSINESS_DIR.module);
+        } else if ("2".equals(approveType)){
+             message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_DIR.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_DIR.name, entity.getName(), OFFLINE), RESOURCE_AUDIT_INFO_BUSINESS_DIR.module);
+        }
+        for (String userEmail : userEmailList){
+            message.setCreateUser(userEmail);
+            messageCenterService.addMessage(message, tenantId);
+        }
     }
 
     /**

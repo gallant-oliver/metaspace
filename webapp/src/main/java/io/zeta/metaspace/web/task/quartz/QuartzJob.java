@@ -370,6 +370,7 @@ public class QuartzJob implements Job {
             Measure measure = null;
             switch (jobType) {
                 case TABLE_ROW_NUM:
+                case EMPTY_VALUE_NUM_TABLE_REMAKR:
                     ruleResultValue(task, true, false);
                     break;
                 case TABLE_ROW_NUM_CHANGE:
@@ -816,17 +817,22 @@ public class QuartzJob implements Job {
                         writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath, sourceType, null);
                         sql = String.format(query, sqlDbName, tableName, columnName, columnName);
                         break;
-                    case EMPTY_VALUE_NUM_TABLE_REMAKR:
-                        HashMap<String, Object> map = new HashMap<>();
-                        resultValue =  AdapterUtils.getAdapterExecutor(adapterSource.getDataSourceInfo()).getTblRemarkCountByDb(dbName, pool, map);
-                        writeErrorData(jobType, tableName, columnName, dbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath, sourceType, map);
-                        return resultValue;
+
                     default:
                         sql = String.format(query, columnName, sqlDbName, tableName);
                         break;
                 }
             } else {
-                sql = String.format(query, sqlDbName, tableName);
+                switch (jobType) {
+                    case EMPTY_VALUE_NUM_TABLE_REMAKR:
+                        HashMap<String, Object> map = new HashMap<>();
+                        resultValue = adapterExecutor.getTblRemarkCountByDb(adapterSource, user, dbName, pool, map);
+                        writeErrorData(jobType, tableName, columnName, dbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath, sourceType, map);
+                        return resultValue;
+                    default:
+                        sql = String.format(query, sqlDbName, tableName);
+                        break;
+                }
             }
 
             String columnTypeKey = null;
@@ -879,11 +885,11 @@ public class QuartzJob implements Job {
         String sql;
         HdfsUtils hdfsUtils = new HdfsUtils();
         try (BufferedWriter fileBufferWriter = hdfsUtils.getFileBufferWriter(hdfsOutPath);) {
-            if (jobType == EMPTY_VALUE_NUM_TABLE_REMAKR){
-                if (sourceType.equalsIgnoreCase("IMPALA") || sourceType.equalsIgnoreCase("HIVE")){
+            if (jobType == EMPTY_VALUE_NUM_TABLE_REMAKR) {
+                if (sourceType.equalsIgnoreCase("IMPALA") || sourceType.equalsIgnoreCase("HIVE")) {
                     List<String> emptyTblNameList = (List<String>) mapVal.get("emptyTblNameList");
-                    if (!CollectionUtils.isEmpty(emptyTblNameList)){
-                        for (String item : emptyTblNameList){
+                    if (!CollectionUtils.isEmpty(emptyTblNameList)) {
+                        for (String item : emptyTblNameList) {
                             LinkedHashMap<String, Object> map = new LinkedHashMap<>();
                             map.put("TABLE_NAME", item);
                             fileBufferWriter.write(GsonUtils.getInstance().toJson(map) + "\n");
@@ -893,7 +899,7 @@ public class QuartzJob implements Job {
                     return;
                 }
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new AdapterBaseException("解析查询结果失败", e);
         }
 
@@ -917,7 +923,7 @@ public class QuartzJob implements Job {
                 sql = String.format(errDataSql, sqlDbName, tableName, columnName, columnName);
                 break;
             case EMPTY_VALUE_NUM_TABLE_REMAKR:
-                sql = String.format(errDataSql, sqlDbName);
+                sql = getSql(errDataSql, sqlDbName, sourceType);
                 break;
             default:
                 sql = sql = String.format(errDataSql, sqlDbName, tableName, columnName, columnName);
@@ -968,6 +974,13 @@ public class QuartzJob implements Job {
 
         });
 
+    }
+
+    private String getSql(String errDataSql, String sqlDbName, String sourceType) {
+        if (!sourceType.equalsIgnoreCase("POSTGRESQL")) {
+            errDataSql = String.format(errDataSql, sqlDbName);
+        }
+        return errDataSql;
     }
 
     //规则值变化
