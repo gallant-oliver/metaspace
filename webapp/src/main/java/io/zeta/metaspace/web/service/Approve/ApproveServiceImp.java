@@ -137,9 +137,9 @@ public class ApproveServiceImp implements ApproveService {
                 List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
                 MessageEntity message = null;
                 if ("1".equals(item.getApproveType())) {
-                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.RELEASE, MessagePush.PASS, item.getBusinessTypeText()), RESOURCE_AUDIT_INFO_INDEX_DESIGN.module);
+                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.RELEASE, MessagePush.PASS), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()));
                 } else if ("2".equals(item.getApproveType())) {
-                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.OFFLINE, MessagePush.PASS, item.getBusinessTypeText()), RESOURCE_AUDIT_INFO_INDEX_DESIGN.module);
+                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.OFFLINE, MessagePush.PASS), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()));
                 }
 
                 for (String userEmail : userEmailList) {
@@ -169,9 +169,9 @@ public class ApproveServiceImp implements ApproveService {
                 List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
                 MessageEntity message = null;
                 if ("1".equals(item.getApproveType())) {
-                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.RELEASE, MessagePush.REJECT, item.getBusinessTypeText()), RESOURCE_AUDIT_INFO_INDEX_DESIGN.module);
+                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.RELEASE, MessagePush.REJECT), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()));
                 } else if ("2".equals(item.getApproveType())) {
-                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.OFFLINE, MessagePush.REJECT, item.getBusinessTypeText()), RESOURCE_AUDIT_INFO_INDEX_DESIGN.module);
+                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.OFFLINE, MessagePush.REJECT), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()));
                 }
 
                 for (String userEmail : userEmailList) {

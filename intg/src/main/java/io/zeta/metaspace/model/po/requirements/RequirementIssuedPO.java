@@ -32,4 +32,8 @@ public class RequirementIssuedPO {
      * 业务责任人：数据库登记的业务负责人信息
      */
     private String businessOwner;
+    /**
+     * 业务责任人用户ID
+     */
+    private String userId;
 }

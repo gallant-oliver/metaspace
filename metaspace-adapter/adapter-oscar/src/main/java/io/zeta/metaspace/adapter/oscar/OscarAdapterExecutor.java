@@ -59,7 +59,7 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
 
     @Override
     public float getTableSize(String db, String tableName, String pool) {
-        String querySQL = "select s.size as data_length from sys_class c join v_segment_info s on c.oid = s.relid where c.relname='%s' and c.relnamespace = (select oid from sys_namespace n where n.nspname = '%s');";
+            String querySQL = "select s.size as data_length from sys_class c join v_segment_info s on c.oid = s.relid where c.relname='%s' and c.relnamespace = (select oid from sys_namespace n where n.nspname = '%s');";
         db = db.replaceAll("'", "''");
         tableName = tableName.replaceAll("'", "''");
         querySQL = String.format(querySQL, tableName, db);
@@ -78,6 +78,37 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
                     connection.close();
                 } catch (Exception e) {
                     throw new AtlasBaseException("关闭神通数据库连接报错", e);
+                }
+            }
+        });
+    }
+
+    /**
+     * 获取指定数据库表描述为空的表总个数
+     *
+     * @param db
+     * @param pool
+     * @return
+     */
+    public float getTblRemarkCountByDb(AdapterSource adapterSource, String user, String db, String pool, Map<String, Object> map) {
+        String querySQL = "select count(distinct table_name) as emptyCount from all_tab_comments where (comments is null or comments = '') and table_name in (select varchar(c.relname) from sys_class c where c.relkind = 'r' and c.relnamespace = (select oid from sys_namespace n where n.nspname = '%s')) and owner = 'SYSDBA'";
+        querySQL = String.format(querySQL, db);
+        Connection connection = adapterSource.getConnection(user, db, pool);
+        return queryResult(connection, querySQL, resultSet -> {
+            try {
+                float emptyCount = 0;
+                while (resultSet.next()) {
+                    emptyCount = resultSet.getLong("emptyCount");
+                }
+                return emptyCount;
+            } catch (SQLException e) {
+                throw new AtlasBaseException("获取指定数据库表描述为空的表总个数失败", e);
+            } finally {
+                try {
+                    resultSet.close();
+                    connection.close();
+                } catch (Exception e) {
+                    throw new AtlasBaseException("关闭表连接失败", e);
                 }
             }
         });

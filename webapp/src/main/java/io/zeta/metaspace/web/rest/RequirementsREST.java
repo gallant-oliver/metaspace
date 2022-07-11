@@ -85,9 +85,9 @@ public class RequirementsREST {
     @Path("/handle")
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @Consumes(Servlets.JSON_MEDIA_TYPE)
-    public Result handle(RequirementsHandleDTO resultDTO) {
+    public Result handle(RequirementsHandleDTO resultDTO, @HeaderParam("tenantId") String tenantId) {
         try {
-            requirementsService.handle(resultDTO);
+            requirementsService.handle(resultDTO, tenantId);
             return ReturnUtil.success();
         }
         catch (Exception e) {

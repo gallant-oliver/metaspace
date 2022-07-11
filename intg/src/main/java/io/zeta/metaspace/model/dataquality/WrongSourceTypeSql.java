@@ -24,9 +24,22 @@ public enum WrongSourceTypeSql {
     // ORACLE类型获取异常数据sql
     ORACEL_WRONG_SQL("ORACLE", "select table_name from all_tab_comments where (comments is null or comments = '') and owner = '%s'"),
 
-
     // MYSQL类型获取异常数据sql
-    MYSQL_WRONG_SQL("MYSQL", "select table_name from information_schema.tables where (table_comment is null or table_comment = '') and table_schema = '%s'");
+    MYSQL_WRONG_SQL("MYSQL", "select table_name from information_schema.tables where (table_comment is null or table_comment = '') and table_schema = '%s'"),
+
+    // PGSQL类型获取异常数据sql
+    POSTGRESQL_WRONG_SQL("POSTGRESQL", "select t.relname as table_name from (select relname,cast(obj_description(relfilenode,'pg_class') as varchar) as comment from pg_class c where  relkind = 'r' and relname not like 'pg_%' and relname not like 'sql_%' order by relname) t where t.comment is null or t.comment = ''"),
+
+    // DB2类型获取异常数据sql
+    DB2_WRONG_SQL("DB2", "select varchar(tabname,50) as table_name from syscat.tables where (remarks is null or remarks = '') and tabschema = '%s' and type = 'T'"),
+
+    // SQLSERVER类型获取异常数据sql
+    SQLSERVER_WRONG_SQL("SQLSERVER", "select obj.name as table_name from sys.objects obj left join [sys].[extended_properties] se on obj.object_id = se.major_id and se.minor_id = 0 join sys.schemas s on obj.schema_id=s.schema_id where obj.type = 'u' and (se.value is null or se.value = '') and s.name = '%s'"),
+
+    // OSCAR类型获取异常数据sql
+    OSCAR_WRONG_SQL("OSCAR", "select distinct table_name from all_tab_comments where (comments is null or comments = '') and table_name in (select varchar(c.relname) from sys_class c where c.relkind = 'r' and c.relnamespace = (select oid from sys_namespace n where n.nspname = '%s')) and owner = 'SYSDBA'");
+
+
 
     // 数据源类型
     public String sourceType;

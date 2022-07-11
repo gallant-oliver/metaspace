@@ -113,8 +113,8 @@ public enum MessagePush {
         return String.format(name, parameter, parameter1, parameter2);
     }
 
-    public static String getFormattedMessageName(String name, String parameter, String parameter1, String parameter2, String parameter3, String parameter4) {
+    public static String getFormattedMessageName(String name, String parameter, String parameter1, String parameter2, String parameter3) {
 
-        return String.format(name, parameter, parameter1, parameter2, parameter3, parameter4);
+        return String.format(name, parameter, parameter1, parameter2, parameter3);
     }
 }
