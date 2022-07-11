@@ -64,9 +64,8 @@ public class FileInfoController {
     }
 
     /**
-     * 查询文件归档列表
+     * 指标图书馆文件归档入口
      *
-     * @return 返回文件归档列表
      */
     @POST
     @Path("indicators/upload")
