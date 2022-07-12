@@ -5,6 +5,7 @@ import io.zeta.metaspace.model.dto.requirements.*;
 import io.zeta.metaspace.model.entities.MessageEntity;
 import io.zeta.metaspace.model.enums.FilterOperation;
 import io.zeta.metaspace.model.enums.MessagePush;
+import io.zeta.metaspace.model.enums.ProcessEnum;
 import io.zeta.metaspace.model.enums.ResourceType;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -144,7 +145,7 @@ public class RequirementsService {
                     List<String> userEmailList = userDAO.getUsersEmailByIds(new ArrayList<>(Arrays.asList(userId)));
                     MessageEntity message = null;
                     for (String needName : needNameList) {
-                        message = new MessageEntity(NEED_AUDIT_DEAL_PEOPLE.type, MessagePush.getFormattedMessageName(NEED_AUDIT_DEAL_PEOPLE.name, needName), NEED_AUDIT_DEAL_PEOPLE.module);
+                        message = new MessageEntity(NEED_AUDIT_DEAL_PEOPLE.type, MessagePush.getFormattedMessageName(NEED_AUDIT_DEAL_PEOPLE.name, needName), NEED_AUDIT_DEAL_PEOPLE.module, ProcessEnum.PROCESS_APPROVED_NOT_DEAL.code);
                         for (String userEmail : userEmailList) {
                             message.setCreateUser(userEmail);
                             messageCenterService.addMessage(message, tenantId);
@@ -401,7 +402,7 @@ public class RequirementsService {
         String creator = requirementById.getCreator();
         if (StringUtils.isNotEmpty(creator)){
             List<String> userEmailList = userDAO.getUsersEmailByIds(new ArrayList<>(Arrays.asList(creator)));
-            MessageEntity message = new MessageEntity(NEED_AUDIT_FINISH.type, MessagePush.getFormattedMessageName(NEED_AUDIT_FINISH.name, requirementById.getName()), NEED_AUDIT_FINISH.module);
+            MessageEntity message = new MessageEntity(NEED_AUDIT_FINISH.type, MessagePush.getFormattedMessageName(NEED_AUDIT_FINISH.name, requirementById.getName()), NEED_AUDIT_FINISH.module, ProcessEnum.PROCESS_APPROVED_FEEDBACK.code);
             for (String userEmail : userEmailList){
                 message.setCreateUser(userEmail);
                 messageCenterService.addMessage(message, requirementById.getTenantId());

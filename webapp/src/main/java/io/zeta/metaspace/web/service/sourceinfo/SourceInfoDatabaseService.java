@@ -384,7 +384,7 @@ public class SourceInfoDatabaseService implements Approvable {
             // 审核消息推送审核人
             List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroupId);
             List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
-            MessageEntity message = new MessageEntity(RESOURCE_AUDIT_INFO_DATABASE.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_DATABASE.name, databaseInfo.getDatabaseAlias()), RESOURCE_AUDIT_INFO_DATABASE.module);
+            MessageEntity message = new MessageEntity(RESOURCE_AUDIT_INFO_DATABASE.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_DATABASE.name, databaseInfo.getDatabaseAlias()), RESOURCE_AUDIT_INFO_DATABASE.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
             for (String userEmail : userEmailList){
                 message.setCreateUser(userEmail);
                 messageCenterService.addMessage(message, tenantId);

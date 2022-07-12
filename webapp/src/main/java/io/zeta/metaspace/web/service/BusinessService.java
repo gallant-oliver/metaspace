@@ -26,6 +26,7 @@ import io.zeta.metaspace.model.dataquality2.HiveNumericType;
 import io.zeta.metaspace.model.entities.MessageEntity;
 import io.zeta.metaspace.model.enums.BusinessType;
 import io.zeta.metaspace.model.enums.MessagePush;
+import io.zeta.metaspace.model.enums.ProcessEnum;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
@@ -2137,9 +2138,9 @@ public class BusinessService implements Approvable {
         List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
         MessageEntity message = null;
         if ("1".equalsIgnoreCase(approveType)){
-            message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.name, info.getName(), RELEASE), RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.module);
+            message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.name, info.getName(), RELEASE), RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
         } else if ("2".equalsIgnoreCase(approveType)){
-            message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.name, info.getName(), OFFLINE), RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.module);
+            message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.name, info.getName(), OFFLINE), RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
         }
         for (String userEmail : userEmailList){
             message.setCreateUser(userEmail);

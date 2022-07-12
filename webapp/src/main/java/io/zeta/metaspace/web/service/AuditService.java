@@ -8,6 +8,7 @@ import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.entities.MessageEntity;
 import io.zeta.metaspace.model.enums.MessagePush;
+import io.zeta.metaspace.model.enums.ProcessEnum;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.moebius.MoebiusApi;
 import io.zeta.metaspace.model.moebius.MoebiusApiData;
@@ -212,9 +213,9 @@ public class AuditService {
             // 审核消息推送审核人
             MessageEntity message = null;
             if (AuditStatusEnum.AGREE.equals(status)) {
-                message = new MessageEntity(DATA_SERVICE_AUDIT_FINISH.type, MessagePush.getFormattedMessageName(DATA_SERVICE_AUDIT_FINISH.name, apiInfoV2.getName(), MessagePush.PASS), DATA_SERVICE_AUDIT_FINISH.module);
+                message = new MessageEntity(DATA_SERVICE_AUDIT_FINISH.type, MessagePush.getFormattedMessageName(DATA_SERVICE_AUDIT_FINISH.name, apiInfoV2.getName(), MessagePush.PASS), DATA_SERVICE_AUDIT_FINISH.module, ProcessEnum.PROCESS_APPROVED.code);
             } else if (AuditStatusEnum.DISAGREE.equals(status)) {
-                message = new MessageEntity(DATA_SERVICE_AUDIT_FINISH.type, MessagePush.getFormattedMessageName(DATA_SERVICE_AUDIT_FINISH.name, apiInfoV2.getName(), MessagePush.REJECT), DATA_SERVICE_AUDIT_FINISH.module);
+                message = new MessageEntity(DATA_SERVICE_AUDIT_FINISH.type, MessagePush.getFormattedMessageName(DATA_SERVICE_AUDIT_FINISH.name, apiInfoV2.getName(), MessagePush.REJECT), DATA_SERVICE_AUDIT_FINISH.module, ProcessEnum.PROCESS_APPROVED.code);
             }
             message.setCreateUser(apiAudit.getApplicant());
             messageCenterService.addMessage(message, tenantId);

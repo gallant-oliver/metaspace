@@ -37,7 +37,7 @@ public enum WrongSourceTypeSql {
     SQLSERVER_WRONG_SQL("SQLSERVER", "select obj.name as table_name from sys.objects obj left join [sys].[extended_properties] se on obj.object_id = se.major_id and se.minor_id = 0 join sys.schemas s on obj.schema_id=s.schema_id where obj.type = 'u' and (se.value is null or se.value = '') and s.name = '%s'"),
 
     // OSCAR类型获取异常数据sql
-    OSCAR_WRONG_SQL("OSCAR", "select distinct table_name from all_tab_comments where (comments is null or comments = '') and table_name in (select varchar(c.relname) from sys_class c where c.relkind = 'r' and c.relnamespace = (select oid from sys_namespace n where n.nspname = '%s')) and owner = 'SYSDBA'");
+    OSCAR_WRONG_SQL("OSCAR", "select distinct table_name from all_tab_comments where (comments is null or comments = '') and table_name in (select varchar(c.relname) from sys_class c where c.relkind = 'r' and c.relnamespace = (select oid from sys_namespace n where n.nspname = '%s')) and owner = (select schem_owner from schemata where schem_name = '%s')");
 
 
 
