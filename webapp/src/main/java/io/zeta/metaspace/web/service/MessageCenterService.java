@@ -22,8 +22,6 @@ package io.zeta.metaspace.web.service;
  * @date 2022/7/5 10:29
  */
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.entities.MessageEntity;
@@ -40,6 +38,7 @@ import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
+import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
@@ -202,135 +201,36 @@ public class MessageCenterService {
 
     //数据源，数据库，项目，保密表，重要表消息推送
     public void perAddMessage(int operateType, int type, String groupId, List<String> ids, String tenantId) {
-        List<String> name = new ArrayList<>();
-        ProcessEnum processEnum = null;
-        if (operateType == CommonConstant.ADD || operateType == CommonConstant.CHANGE) {
-            processEnum = ProcessEnum.PROCESS_APPROVED_AUTHORIZED;
-        }
-        if (operateType == CommonConstant.REMOVE) {
-            processEnum = ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED;
-        }
-        if (processEnum == null) {
-            return;
-        }
-        List<String> user = userGroupDAO.getAllUserByGroupId(groupId);
-        if (CollectionUtils.isEmpty(user)) {
-            return;
-        }
-        List<String> accounts = user.stream().distinct().collect(Collectors.toList());
-        if (CollectionUtils.isEmpty(ids)) {
-            return;
-        }
-        String groupName = userGroupDAO.getUserGroupByID(groupId).getName();
-        MessagePush messagePush = null;
-        if (type == CommonConstant.DATA_SOURCE) {
-            name = dataSourceDAO.getSourceNameForSourceIds(ids);
-            if (CollectionUtils.isEmpty(name)) {
+        try {
+            List<String> user = userGroupDAO.getAllUserByGroupId(groupId);
+            List<String> accounts = user.stream().distinct().collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(ids)) {
                 return;
             }
-            if (operateType == CommonConstant.ADD) {
-                messagePush = MessagePush.USER_GROUP_PERMISSION_DATA_SOURCE_ADD;
+            String groupName = userGroupDAO.getUserGroupByID(groupId).getName();
+            MessagePush messagePush = perGetMessagePush(type, operateType);
+            ProcessEnum processEnum = getProcess(operateType);
+            List<String> name = getMessageName(type, operateType, ids, tenantId);
+            for (String n : name) {
+                for (String account : accounts) {
+                    MessageEntity messageEntity = new MessageEntity(messagePush, MessagePush.getFormattedMessageName(messagePush.name, groupName, n)
+                            , processEnum.code);
+                    messageEntity.setCreateUser(account);
+                    addMessage(messageEntity, tenantId);
+                }
             }
-            if (operateType == CommonConstant.CHANGE) {
-                messagePush = MessagePush.USER_GROUP_PERMISSION_DATA_SOURCE_CHANGE;
-            }
-            if (operateType == CommonConstant.REMOVE) {
-                messagePush = MessagePush.USER_GROUP_PERMISSION_DATA_SOURCE_REMOVE;
-            }
-        }
-        if (type == CommonConstant.DATA_BASE) {
-            name = databaseDAO.getDbName(ids);
-            if (CollectionUtils.isEmpty(name)) {
-                return;
-            }
-            if (operateType == CommonConstant.ADD) {
-                messagePush = MessagePush.USER_GROUP_PERMISSION_DATA_BASE_ADD;
-            }
-            if (operateType == CommonConstant.REMOVE) {
-                messagePush = MessagePush.USER_GROUP_PERMISSION_DATA_BASE_REMOVE;
-            }
-        }
-        if (type == CommonConstant.PROJECT) {
-            name = dataShareDAO.getProjectName(ids, tenantId);
-            if (CollectionUtils.isEmpty(name)) {
-                return;
-            }
-            if (operateType == CommonConstant.ADD) {
-                messagePush = MessagePush.USER_GROUP_PERMISSION_API_PROJECT_BASE_ADD;
-            }
-            if (operateType == CommonConstant.REMOVE) {
-                messagePush = MessagePush.USER_GROUP_PERMISSION_API_PROJECT_REMOVE;
-            }
-        }
-        if (type == CommonConstant.IMPORT_TABLE && operateType == CommonConstant.ADD) {
-            name = groupDeriveTableRelationDAO.getDeriveNameInfoByIds(ids);
-            if (CollectionUtils.isEmpty(name)) {
-                return;
-            }
-            messagePush = MessagePush.USER_GROUP_PERMISSION_IMPORT_TABLE_ADD;
-        }
-
-        if (type == CommonConstant.SECURITY_TABLE && operateType == CommonConstant.ADD) {
-            name = groupDeriveTableRelationDAO.getDeriveNameInfoByIds(ids);
-            if (CollectionUtils.isEmpty(name)) {
-                return;
-            }
-            messagePush = MessagePush.USER_GROUP_PERMISSION_SECURITY_TABLE_ADD;
-        }
-        if (messagePush == null) {
-            return;
-        }
-
-        for (String n : name) {
-            for (String account : accounts) {
-                MessageEntity messageEntity = new MessageEntity(messagePush, MessagePush.getFormattedMessageName(messagePush.name, groupName, n)
-                        , processEnum.code);
-                messageEntity.setCreateUser(account);
-                addMessage(messageEntity, tenantId);
-            }
+        } catch (AtlasBaseException e) {
+            throw new AtlasBaseException("消息推送失败",e);
         }
     }
 
     //业务目录，技术目录，指标目录权限分配消息推送
     public void directoryMessagePush(int type, int operateType, String userGroupName, List<String> userAccounts, String category, String tenantId) {
         try {
-            if (org.apache.commons.collections4.CollectionUtils.isEmpty(userAccounts)) {
+            if (CollectionUtils.isEmpty(userAccounts)) {
                 return;
             }
-            MessageEntity messageEntity = null;
-            if (type == 0 && operateType == CommonConstant.CHANGE) {
-                messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_CHANGE, MessagePush.
-                        getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_CHANGE.name, userGroupName, category),
-                        ProcessEnum.PROCESS_APPROVED_AUTHORIZED.code);
-            }
-            if (type == 0 && operateType == CommonConstant.REMOVE) {
-                messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_REMOVE, MessagePush.
-                        getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_REMOVE.name, userGroupName, category),
-                        ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
-            }
-            if (type == 1 && operateType == CommonConstant.CHANGE) {
-                messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_BUSINESS_CATEGORY_CHANGE, MessagePush.
-                        getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_CHANGE.name, userGroupName, category),
-                        ProcessEnum.PROCESS_APPROVED_AUTHORIZED.code);
-            }
-            if (type == 1 && operateType == CommonConstant.REMOVE) {
-                messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_BUSINESS_CATEGORY_REMOVE, MessagePush.
-                        getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_REMOVE.name, userGroupName, category),
-                        ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
-            }
-            if (type == 5 && operateType == CommonConstant.CHANGE) {
-                messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_INDICATOR_CATEGORY_CHANGE, MessagePush.
-                        getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_INDICATOR_CATEGORY_CHANGE.name, userGroupName, category),
-                        ProcessEnum.PROCESS_APPROVED_AUTHORIZED.code);
-            }
-            if (type == 5 && operateType == CommonConstant.REMOVE) {
-                messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_INDICATOR_CATEGORY_REMOVE, MessagePush.
-                        getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_INDICATOR_CATEGORY_REMOVE.name, userGroupName, category)
-                        , ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
-            }
-            if (messageEntity == null) {
-                return;
-            }
+            MessageEntity messageEntity = getMessageEntityByType(type, operateType, userGroupName, category);
             for (String account : userAccounts) {
                 messageEntity.setCreateUser(account);
                 addMessage(messageEntity, tenantId);
@@ -344,65 +244,174 @@ public class MessageCenterService {
     public void tableDelMessagePush(List<String> ids) {
         try {
             List<GroupDeriveTableRelationDTO> deriveInfoByIds = groupDeriveTableRelationDAO.getDeriveInfoByIds(ids);
-            if (CollectionUtils.isEmpty(deriveInfoByIds)) {
-                return;
-            }
             List<String> users = userGroupDAO.getAllUserByGroupId(deriveInfoByIds.get(0).getUserGroupId());
-            if (CollectionUtils.isEmpty(users)) {
-                return;
-            }
             for (GroupDeriveTableRelationDTO dto : deriveInfoByIds) {
-                if (dto.getImportancePrivilege() != null && dto.getImportancePrivilege()) {
-                    MessageEntity messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_IMPORT_TABLE_REMOVE, MessagePush.
-                            getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_IMPORT_TABLE_REMOVE.name, dto.getUserGroupName(),
-                                    dto.getTableName()), ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
-                    for (String account : users) {
-                        messageEntity.setCreateUser(account);
-                        addMessage(messageEntity, dto.getTenantId());
-                    }
-                }
-                if (dto.getSecurityPrivilege() != null && dto.getSecurityPrivilege()) {
-                    MessageEntity messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_SECURITY_TABLE_REMOVE, MessagePush.
-                            getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_SECURITY_TABLE_REMOVE.name, dto.getUserGroupName(),
-                                    dto.getTableName()), ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
-                    for (String account : users) {
-                        messageEntity.setCreateUser(account);
-                        addMessage(messageEntity, dto.getTenantId());
-                    }
-                }
+                tableDelMessagePush(dto,users);
             }
         } catch (Exception e) {
-            throw new AtlasBaseException("衍生表权限分配信息推送失败", e);
+            throw new AtlasBaseException("消息推送失败", e);
         }
     }
 
     public void userGroupMessage(int operateType, String groupId, List<String> users, String tenantId) {
-        if (CollectionUtils.isEmpty(users)) {
-            return;
+        try {
+            if (CollectionUtils.isEmpty(users)) {
+                return;
+            }
+            String groupName = userGroupDAO.getUserGroupByID(groupId).getName();
+            if (groupName == null) {
+                return;
+            }
+            MessageEntity messageEntity = userGroupGetMessageEntity(operateType, groupName);
+            List<User> usersByIds = userDAO.getUsersByIds(users);
+            for (User user : usersByIds) {
+                messageEntity.setCreateUser(user.getAccount());
+                addMessage(messageEntity, tenantId);
+            }
+        } catch (AtlasException e) {
+            throw new AtlasBaseException("消息推送失败",e);
         }
-        String groupName = userGroupDAO.getUserGroupByID(groupId).getName();
-        if (groupName == null) {
-            return;
-        }
+    }
+
+    private MessageEntity getMessageEntityByType(int type,int operateType,String userGroupName, String category){
         MessageEntity messageEntity = null;
+        if (type == 0 && operateType == CommonConstant.CHANGE) {
+            messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_CHANGE, MessagePush.
+                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_CHANGE.name, userGroupName, category),
+                    ProcessEnum.PROCESS_APPROVED_AUTHORIZED.code);
+        }
+        if (type == 0 && operateType == CommonConstant.REMOVE) {
+            messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_REMOVE, MessagePush.
+                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_REMOVE.name, userGroupName, category),
+                    ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
+        }
+        if (type == 1 && operateType == CommonConstant.CHANGE) {
+            messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_BUSINESS_CATEGORY_CHANGE, MessagePush.
+                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_CHANGE.name, userGroupName, category),
+                    ProcessEnum.PROCESS_APPROVED_AUTHORIZED.code);
+        }
+        if (type == 1 && operateType == CommonConstant.REMOVE) {
+            messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_BUSINESS_CATEGORY_REMOVE, MessagePush.
+                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_REMOVE.name, userGroupName, category),
+                    ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
+        }
+        if (type == 5 && operateType == CommonConstant.CHANGE) {
+            messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_INDICATOR_CATEGORY_CHANGE, MessagePush.
+                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_INDICATOR_CATEGORY_CHANGE.name, userGroupName, category),
+                    ProcessEnum.PROCESS_APPROVED_AUTHORIZED.code);
+        }
+        if (type == 5 && operateType == CommonConstant.REMOVE) {
+            messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_INDICATOR_CATEGORY_REMOVE, MessagePush.
+                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_INDICATOR_CATEGORY_REMOVE.name, userGroupName, category)
+                    , ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
+        }
+        return messageEntity;
+    }
+
+    private void tableDelMessagePush(GroupDeriveTableRelationDTO dto,List<String> users){
+        //重要表推送
+        if (dto.getImportancePrivilege() != null && dto.getImportancePrivilege()) {
+            MessageEntity messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_IMPORT_TABLE_REMOVE, MessagePush.
+                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_IMPORT_TABLE_REMOVE.name, dto.getUserGroupName(),
+                            dto.getTableName()), ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
+            for (String account : users) {
+                messageEntity.setCreateUser(account);
+                addMessage(messageEntity, dto.getTenantId());
+            }
+        }
+        //私密表推送
+        if (dto.getSecurityPrivilege() != null && dto.getSecurityPrivilege()) {
+            MessageEntity messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_SECURITY_TABLE_REMOVE, MessagePush.
+                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_SECURITY_TABLE_REMOVE.name, dto.getUserGroupName(),
+                            dto.getTableName()), ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
+            for (String account : users) {
+                messageEntity.setCreateUser(account);
+                addMessage(messageEntity, dto.getTenantId());
+            }
+        }
+    }
+
+    private ProcessEnum getProcess(int operateType) throws AtlasBaseException{
+        if (operateType == CommonConstant.ADD || operateType == CommonConstant.CHANGE) {
+            return ProcessEnum.PROCESS_APPROVED_AUTHORIZED;
+        }
+        if (operateType == CommonConstant.REMOVE) {
+            return ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED;
+        }
+        throw new AtlasBaseException("非法操作类型");
+    }
+
+    private MessagePush perGetMessagePush(int type,int operateType){
+        if (type == CommonConstant.DATA_SOURCE) {
+            if (operateType == CommonConstant.ADD) {
+                return MessagePush.USER_GROUP_PERMISSION_DATA_SOURCE_ADD;
+            }
+            if (operateType == CommonConstant.CHANGE) {
+                return MessagePush.USER_GROUP_PERMISSION_DATA_SOURCE_CHANGE;
+            }
+            if (operateType == CommonConstant.REMOVE) {
+                return MessagePush.USER_GROUP_PERMISSION_DATA_SOURCE_REMOVE;
+            }
+        }
+        if (type == CommonConstant.DATA_BASE) {
+            if (operateType == CommonConstant.ADD) {
+                return MessagePush.USER_GROUP_PERMISSION_DATA_BASE_ADD;
+            }
+            if (operateType == CommonConstant.REMOVE) {
+                return MessagePush.USER_GROUP_PERMISSION_DATA_BASE_REMOVE;
+            }
+        }
+        if (type == CommonConstant.PROJECT) {
+            if (operateType == CommonConstant.ADD) {
+                return MessagePush.USER_GROUP_PERMISSION_API_PROJECT_BASE_ADD;
+            }
+            if (operateType == CommonConstant.REMOVE) {
+                return MessagePush.USER_GROUP_PERMISSION_API_PROJECT_REMOVE;
+            }
+        }
+        if (type == CommonConstant.IMPORT_TABLE && operateType == CommonConstant.ADD) {
+            return MessagePush.USER_GROUP_PERMISSION_IMPORT_TABLE_ADD;
+        }
+
+        if (type == CommonConstant.SECURITY_TABLE && operateType == CommonConstant.ADD) {
+            return MessagePush.USER_GROUP_PERMISSION_SECURITY_TABLE_ADD;
+        }
+        throw new AtlasBaseException("存在非法类型");
+    }
+
+    private List<String> getMessageName(int type,int operateType,List<String> ids,String tenantId){
+        List<String> name = new ArrayList<>();
+        if (type == CommonConstant.DATA_SOURCE) {
+            name = dataSourceDAO.getSourceNameForSourceIds(ids);
+        }
+        if (type == CommonConstant.DATA_BASE) {
+            name = databaseDAO.getDbName(ids);
+        }
+        if (type == CommonConstant.PROJECT) {
+            name = dataShareDAO.getProjectName(ids, tenantId);
+        }
+        if (type == CommonConstant.IMPORT_TABLE && operateType == CommonConstant.ADD) {
+            name = groupDeriveTableRelationDAO.getDeriveNameInfoByIds(ids);
+        }
+
+        if (type == CommonConstant.SECURITY_TABLE && operateType == CommonConstant.ADD) {
+            name = groupDeriveTableRelationDAO.getDeriveNameInfoByIds(ids);
+        }
+        return name;
+    }
+
+    private MessageEntity userGroupGetMessageEntity(int operateType,String groupName) throws AtlasException {
         if (operateType == CommonConstant.ADD) {
-            messageEntity = new MessageEntity(MessagePush.USER_GROUP_USER_MEMBER_ADD.type, MessagePush.
+            return new MessageEntity(MessagePush.USER_GROUP_USER_MEMBER_ADD.type, MessagePush.
                     getFormattedMessageName(MessagePush.USER_GROUP_USER_MEMBER_ADD.name, groupName), MessagePush.
                     USER_GROUP_USER_MEMBER_ADD.module, ProcessEnum.PROCESS_APPROVED_AUTHORIZED.code);
         }
         if (operateType == CommonConstant.REMOVE) {
-            messageEntity = new MessageEntity(MessagePush.USER_GROUP_USER_MEMBER_REMOVE.type, MessagePush.
+            return new MessageEntity(MessagePush.USER_GROUP_USER_MEMBER_REMOVE.type, MessagePush.
                     getFormattedMessageName(MessagePush.USER_GROUP_USER_MEMBER_REMOVE.name, groupName), MessagePush.
                     USER_GROUP_USER_MEMBER_REMOVE.module, ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
         }
-        if (messageEntity == null) {
-            return;
-        }
-        List<User> usersByIds = userDAO.getUsersByIds(users);
-        for (User user : usersByIds) {
-            messageEntity.setCreateUser(user.getAccount());
-            addMessage(messageEntity, tenantId);
-        }
+        throw new AtlasException("存在非法类型");
     }
 
 }
