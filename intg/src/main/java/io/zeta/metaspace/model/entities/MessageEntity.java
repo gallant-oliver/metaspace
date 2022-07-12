@@ -66,6 +66,11 @@ public class MessageEntity {
     private String createUser;
 
     /**
+     * 流程进度(0-已审批、1-未审批、2-已授权、3-已移除、4-已处理、5-已反馈、6-待处理
+     */
+    private Integer process;
+
+    /**
      * 操作时间
      */
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
@@ -98,6 +103,13 @@ public class MessageEntity {
         this.type = type;
         this.name = name;
         this.module = module;
+    }
+
+    public MessageEntity(Integer type, String name, String module, Integer process){
+        this.type = type;
+        this.name = name;
+        this.module = module;
+        this.process = process;
     }
 
 }

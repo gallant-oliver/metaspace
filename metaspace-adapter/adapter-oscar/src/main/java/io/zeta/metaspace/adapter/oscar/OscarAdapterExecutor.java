@@ -91,8 +91,8 @@ public class OscarAdapterExecutor extends AbstractAdapterExecutor {
      * @return
      */
     public float getTblRemarkCountByDb(AdapterSource adapterSource, String user, String db, String pool, Map<String, Object> map) {
-        String querySQL = "select count(distinct table_name) as emptyCount from all_tab_comments where (comments is null or comments = '') and table_name in (select varchar(c.relname) from sys_class c where c.relkind = 'r' and c.relnamespace = (select oid from sys_namespace n where n.nspname = '%s')) and owner = 'SYSDBA'";
-        querySQL = String.format(querySQL, db);
+        String querySQL = "select count(distinct table_name) as emptyCount from all_tab_comments where (comments is null or comments = '') and table_name in (select varchar(c.relname) from sys_class c where c.relkind = 'r' and c.relnamespace = (select oid from sys_namespace n where n.nspname = '%s')) and owner = (select schem_owner from schemata where schem_name = '%s')";
+        querySQL = String.format(querySQL, db, db);
         Connection connection = adapterSource.getConnection(user, db, pool);
         return queryResult(connection, querySQL, resultSet -> {
             try {

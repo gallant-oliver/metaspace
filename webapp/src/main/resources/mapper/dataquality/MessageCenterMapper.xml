@@ -69,6 +69,15 @@
         m.status,
         to_timestamp(m.operation_time::text,'YYYY-MM-DD HH24:MI:SS') as "operationTime",
         u.username as operator,
+        ( CASE
+        WHEN m.process = 0 THEN '已审批'
+        WHEN m.process = 1 THEN '未审批'
+        WHEN m.process = 2 THEN '已授权'
+        WHEN m.process = 3 THEN '已移除'
+        WHEN m.process = 4 THEN '已处理'
+        WHEN m.process = 5 THEN '已反馈'
+        WHEN m.process = 6 THEN '待处理'
+        END ) "processCn",
         t.name as "tenantName"
         from
         message_center m

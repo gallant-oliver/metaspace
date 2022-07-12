@@ -46,6 +46,7 @@ import io.zeta.metaspace.model.dto.api.ApiTestInfoVO;
 import io.zeta.metaspace.model.dto.api.ApiTestResult;
 import io.zeta.metaspace.model.entities.MessageEntity;
 import io.zeta.metaspace.model.enums.MessagePush;
+import io.zeta.metaspace.model.enums.ProcessEnum;
 import io.zeta.metaspace.model.ip.restriction.ApiIpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
@@ -2538,7 +2539,7 @@ public class DataShareService {
             List<String> userIdList = new ArrayList<>(Arrays.asList(manage));
             List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
             MessageEntity message = null;
-            message = new MessageEntity(DATA_SERVICE_AUDIT_START.type, MessagePush.getFormattedMessageName(DATA_SERVICE_AUDIT_START.name, apiInfo.getName()), DATA_SERVICE_AUDIT_START.module);
+            message = new MessageEntity(DATA_SERVICE_AUDIT_START.type, MessagePush.getFormattedMessageName(DATA_SERVICE_AUDIT_START.name, apiInfo.getName()), DATA_SERVICE_AUDIT_START.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
             for (String userEmail : userEmailList) {
                 message.setCreateUser(userEmail);
                 messageCenterService.addMessage(message, tenantId);

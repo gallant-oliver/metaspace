@@ -52,6 +52,10 @@ public enum MessagePush {
      * 所属模块
      */
     public String module;
+    /**
+     * 流程进度(0-已审批、1-未审批、2-已授权、3-已移除、4-已处理、5-已反馈、6-待处理
+     */
+    public int process;
 
     public final static String PASS = "通过";
     public final static String REJECT = "被驳回";

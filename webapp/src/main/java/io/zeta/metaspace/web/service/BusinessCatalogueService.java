@@ -29,10 +29,7 @@ import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.business.BussinessCatalogueInput;
 import io.zeta.metaspace.model.dto.CategoryPrivilegeDTO;
 import io.zeta.metaspace.model.entities.MessageEntity;
-import io.zeta.metaspace.model.enums.BusinessType;
-import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
-import io.zeta.metaspace.model.enums.MessagePush;
-import io.zeta.metaspace.model.enums.Status;
+import io.zeta.metaspace.model.enums.*;
 import io.zeta.metaspace.model.metadata.CategoryExport;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -377,9 +374,9 @@ public class BusinessCatalogueService implements Approvable {
         List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
         MessageEntity message = null;
         if ("1".equals(approveType)){
-             message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_DIR.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_DIR.name, entity.getName(), RELEASE), RESOURCE_AUDIT_INFO_BUSINESS_DIR.module);
+             message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_DIR.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_DIR.name, entity.getName(), RELEASE), RESOURCE_AUDIT_INFO_BUSINESS_DIR.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
         } else if ("2".equals(approveType)){
-             message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_DIR.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_DIR.name, entity.getName(), OFFLINE), RESOURCE_AUDIT_INFO_BUSINESS_DIR.module);
+             message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_DIR.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_DIR.name, entity.getName(), OFFLINE), RESOURCE_AUDIT_INFO_BUSINESS_DIR.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
         }
         for (String userEmail : userEmailList){
             message.setCreateUser(userEmail);

@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.service;
 import io.zeta.metaspace.model.dto.requirements.*;
 import io.zeta.metaspace.model.entities.MessageEntity;
 import io.zeta.metaspace.model.enums.MessagePush;
+import io.zeta.metaspace.model.enums.ProcessEnum;
 import io.zeta.metaspace.model.enums.ResourceState;
 import io.zeta.metaspace.model.enums.ResourceType;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -134,7 +135,7 @@ public class RequirementsPublicTenantService {
         String tenantId = result.getTenantId();
         if (po != null && StringUtils.isNotBlank(po.getUserId())){
             List<String> userEmailList = userDAO.getUsersEmailByIds(new ArrayList<>(Arrays.asList(po.getUserId())));
-            MessageEntity message =  new MessageEntity(NEED_AUDIT_START_MANAGER.type, MessagePush.getFormattedMessageName(NEED_AUDIT_START_MANAGER.name, result.getName()), NEED_AUDIT_START_MANAGER.module);
+            MessageEntity message =  new MessageEntity(NEED_AUDIT_START_MANAGER.type, MessagePush.getFormattedMessageName(NEED_AUDIT_START_MANAGER.name, result.getName()), NEED_AUDIT_START_MANAGER.module, ProcessEnum.PROCESS_APPROVED_NOT_DEAL.code);
             for (String userEmail : userEmailList) {
                 message.setCreateUser(userEmail);
                 messageCenterService.addMessage(message, tenantId);
