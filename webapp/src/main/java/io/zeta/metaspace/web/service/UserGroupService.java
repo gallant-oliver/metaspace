@@ -33,6 +33,7 @@ import io.zeta.metaspace.model.usergroup.*;
 import io.zeta.metaspace.model.usergroup.result.*;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.model.HiveConstant;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
@@ -81,6 +82,11 @@ public class UserGroupService {
 
     @Autowired
     private BusinessDAO businessDAO;
+    @Autowired
+    private UserDAO userDAO;
+    @Autowired
+    private MessageCenterService messageCenterService;
+
 
     private static final Logger LOG = LoggerFactory.getLogger(UserGroupService.class);
     public PageResult<UserGroupListAndSearchResult> getUserGroupListAndSearch(String tenantId, int offset, int limit, String sortBy, String order, String query) throws AtlasBaseException {
@@ -278,15 +284,16 @@ public class UserGroupService {
     /**
      * 七.用户组添加成员
      */
-
-    public void addUserGroupByID(String groupId, List<String> userIds) {
-        if (userIds == null||userIds.size()==0) {
+    @Transactional(rollbackFor = Exception.class)
+    public void addUserGroupByID(String groupId, List<String> userIds, String tenantId) {
+        if (CollectionUtils.isEmpty(userIds)) {
             return;
         }
         List<String> userIdByUserGroup = userGroupDAO.getUserIdByUserGroup(groupId);
         List<String> filterUserIds = userIds.stream().filter(s -> !userIdByUserGroup.contains(s)).collect(Collectors.toList());
-        if (filterUserIds!=null&&filterUserIds.size()!=0){
+        if (CollectionUtils.isNotEmpty(filterUserIds)) {
             userGroupDAO.addUserGroupByID(groupId, filterUserIds);
+            messageCenterService.userGroupMessage(CommonConstant.ADD, groupId, userIds, tenantId);
         }
     }
 
@@ -294,12 +301,13 @@ public class UserGroupService {
     /**
      * 八.用户组移除成员
      */
-    public void deleteUserByGroupId(String groupId, List<String> userIds) {
-        if (userIds == null|| userIds.size()==0) {
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteUserByGroupId(String groupId, List<String> userIds, String tenantId) {
+        if (CollectionUtils.isEmpty(userIds)) {
             return;
         }
         userGroupDAO.deleteUserByGroupId(groupId, userIds);
-
+        messageCenterService.userGroupMessage(CommonConstant.REMOVE, groupId, userIds, tenantId);
     }
 
 
@@ -801,11 +809,12 @@ public class UserGroupService {
      * @return
      * @throws AtlasBaseException
      */
-    public void addDataSourceByGroupId(String groupId, UserGroupPrivileges privileges) {
-        if (privileges.getSourceIds()==null||privileges.getSourceIds().size()==0){
+    public void addDataSourceByGroupId(String groupId, UserGroupPrivileges privileges, String tenantId) {
+        if (privileges.getSourceIds() == null || privileges.getSourceIds().size() == 0) {
             return;
         }
-        userGroupDAO.addDataSourceByGroupId(groupId, privileges.getSourceIds(),privileges.getPrivilegeCode());
+        messageCenterService.perAddMessage(CommonConstant.ADD, CommonConstant.DATA_SOURCE, groupId, privileges.getSourceIds(), tenantId);
+        userGroupDAO.addDataSourceByGroupId(groupId, privileges.getSourceIds(), privileges.getPrivilegeCode());
     }
 
     /**
@@ -815,10 +824,11 @@ public class UserGroupService {
      * @return
      * @throws AtlasBaseException
      */
-    public void updateDataSourceByGroupId(String groupId, UserGroupPrivileges privileges) {
+    public void updateDataSourceByGroupId(String groupId, UserGroupPrivileges privileges,String tenantId) {
         if (privileges.getSourceIds()==null||privileges.getSourceIds().size()==0){
             return;
         }
+        messageCenterService.perAddMessage(CommonConstant.CHANGE, CommonConstant.DATA_SOURCE, groupId, privileges.getSourceIds(), tenantId);
         userGroupDAO.updateDataSourceByGroupId(groupId,privileges);
     }
 
@@ -828,18 +838,20 @@ public class UserGroupService {
      * @return
      * @throws AtlasBaseException
      */
-    public void deleteDataSourceByGroupId(String groupId, List<String> sourceIds) {
-        if (sourceIds == null||sourceIds.size()==0) {
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteDataSourceByGroupId(String groupId, List<String> sourceIds, String tenantId) {
+        if (sourceIds == null || sourceIds.size() == 0) {
             return;
         }
-        for(String sourceId:sourceIds){
-         int num=userGroupDAO.getDatabaseGroupRelationNum(sourceId,groupId);
-         if(num>0){
-             String name=userGroupDAO.getSourceName(sourceId);
-             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"数据源["+name+"]下存在已赋权的数据库，不允许删除");
-         }
+        for (String sourceId : sourceIds) {
+            int num = userGroupDAO.getDatabaseGroupRelationNum(sourceId, groupId);
+            if (num > 0) {
+                String name = userGroupDAO.getSourceName(sourceId);
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源[" + name + "]下存在已赋权的数据库，不允许删除");
+            }
         }
         userGroupDAO.deleteDataSourceByGroupId(groupId, sourceIds);
+        messageCenterService.perAddMessage(CommonConstant.REMOVE, CommonConstant.DATA_SOURCE, groupId, sourceIds, tenantId);
     }
 
     /**
@@ -910,11 +922,12 @@ public class UserGroupService {
      * @return
      * @throws AtlasBaseException
      */
-    public void addProjectByGroupId(String groupId, List<String> projectIds) {
+    public void addProjectByGroupId(String groupId, List<String> projectIds,String tenantId) {
         if (projectIds==null||projectIds.size()==0){
             return;
         }
         userGroupDAO.addProjectByGroupId(groupId, projectIds);
+        messageCenterService.perAddMessage(CommonConstant.ADD,CommonConstant.PROJECT,groupId,projectIds,tenantId);
     }
 
     /**
@@ -951,9 +964,11 @@ public class UserGroupService {
      * @param userGroupId
      * @throws AtlasBaseException
      */
-    public void deleteProject(List<String> projects,String userGroupId) throws AtlasBaseException {
-        if (projects!=null&&projects.size()!=0){
-            userGroupDAO.deleteProjectToUserGroup(userGroupId,projects);
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteProject(List<String> projects,String userGroupId,String tenantId) throws AtlasBaseException {
+        if (projects != null && projects.size() != 0) {
+            userGroupDAO.deleteProjectToUserGroup(userGroupId, projects);
+            messageCenterService.perAddMessage(CommonConstant.REMOVE, CommonConstant.PROJECT, userGroupId, projects, tenantId);
         }
     }
 
@@ -1049,22 +1064,27 @@ public class UserGroupService {
             }
         }
         if (categorys.size() != 0 && !categorys.get(0).getRead()) {
+            List<String> collect;
             if (isChild) {
                 for (CategoryPrivilegeV2 childCategory : childCategoriesPrivileges) {
                     childCategory.setRead(false);
                     childCategory.setEditCategory(false);
                     childCategory.setEditItem(false);
                 }
+                collect = childCategoriesPrivileges.stream().map(CategoryPrivilegeV2::getName).collect(Collectors.toList());
                 userGroupDAO.deleteCategoryPrivilege(childIds, userGroupId);
+                delCategoryMessagePush(collect, userGroupId, categoryType, tenantId);
                 return childCategoriesPrivileges;
             } else {
                 userGroupDAO.deleteCategoryPrivilege(guids, userGroupId);
+                collect = categoryDAO.categoryName(guids, tenantId);
+                delCategoryMessagePush(collect, userGroupId, categoryType, tenantId);
                 return categorys;
             }
         }
         List<String> updateCategory = new ArrayList<>();
         List<String> insertCategory = new ArrayList<>();
-        if (categorys.size() >0 && categorys != null) {
+        if (categorys.size() > 0) {
             for (CategoryPrivilegeV2 childCategory : childCategoriesPrivileges) {
                 // 若在“分配权限”弹窗中勾选多个目录，所勾选的目录含有手动创建和数据库登记的目录，目录的编辑权限针对数据登记生成的目录不生效。
                 if (allRegisteredGuids.contains(childCategory.getGuid())) {
@@ -1117,6 +1137,14 @@ public class UserGroupService {
             insertCategory.removeAll(DEFAULT_CATEGORY_GUID);
             categoryList.removeAll(DEFAULT_CATEGORY_GUID);
 
+            //目录权限变更消息通知
+            List<String> allCategory = new ArrayList<>();
+            allCategory.addAll(updateCategory);
+            allCategory.addAll(insertCategory);
+            allCategory.addAll(categoryList);
+            List<String> list = categoryDAO.categoryName(allCategory, tenantId);
+            changeCategoryMessagePush(list,userGroupId,categoryType,tenantId);
+
             if (updateCategory.size() != 0) {
                 if (isChild) {
                     userGroupDAO.updateMandatoryChildCategoryPrivileges(updateCategory, userGroupId, categorys.get(0));
@@ -1135,6 +1163,28 @@ public class UserGroupService {
         Timestamp currentTime = new Timestamp(System.currentTimeMillis());
         userGroupDAO.updateCategory(userGroupId, currentTime, AdminUtils.getUserData().getUserId());
         return childCategoriesPrivileges;
+    }
+
+    private void delCategoryMessagePush(List<String> category, String userGroupId, int type, String tenantId) {
+        if (CollectionUtils.isEmpty(category)) {
+            return;
+        }
+        UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
+        List<String> userAccount = userGroupDAO.getAllUserByGroupId(userGroupId);
+        for (String cate : category) {
+            messageCenterService.directoryMessagePush(type, CommonConstant.REMOVE, userGroupByID.getName(), userAccount, cate, tenantId);
+        }
+    }
+
+    private void changeCategoryMessagePush(List<String> category, String userGroupId, int type, String tenantId) {
+        if (CollectionUtils.isEmpty(category)) {
+            return;
+        }
+        UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
+        List<String> collect = userGroupDAO.getAllUserByGroupId(userGroupId);
+        for (String cate : category) {
+            messageCenterService.directoryMessagePush(type, CommonConstant.CHANGE, userGroupByID.getName(), collect, cate, tenantId);
+        }
     }
 
     /**
@@ -1162,37 +1212,34 @@ public class UserGroupService {
             }
         });
         categorIdList.removeAll(removeCategoryId);
-
+        CategoryPrivilegeV2 categoryPrivilege = new CategoryPrivilegeV2(category);
         for (String userGroupId : userGroupIdList) {
+            UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
+            List<String> collect = userGroupDAO.getAllUserByGroupId(userGroupId);
             List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getParentCategoriesPrivileges(categorIdList, userGroupId, category.getType(), tenantId);
+            List<String> updateCategory = new ArrayList<>();
+            List<String> insertCategory = new ArrayList<>();
             for (CategoryPrivilegeV2 childCategory : childCategoriesPrivileges) {
-                List<String> updateCategory = new ArrayList<>();
-                List<String> insertCategory = new ArrayList<>();
                 if (childCategory.getRead() == null) {
                     insertCategory.add(childCategory.getGuid());
                 } else {
                     updateCategory.add(childCategory.getGuid());
                 }
-
-                // 1-贴源层、2-基础层、4-通用层、5-应用层不需要分配权限
-                updateCategory.removeAll(DEFAULT_CATEGORY_GUID);
-                insertCategory.removeAll(DEFAULT_CATEGORY_GUID);
-                //categorList.removeAll(DEFAULT_CATEGORY_GUID);
-
-                CategoryPrivilegeV2 categoryPrivilege = new CategoryPrivilegeV2(category);
-                if (updateCategory.size() != 0) {
-                    userGroupDAO.updateChildCategoryPrivileges(updateCategory, userGroupId, categoryPrivilege);
+                if (!DEFAULT_CATEGORY_GUID.contains(childCategory.getGuid())) {
+                    messageCenterService.directoryMessagePush(category.getType(), CommonConstant.CHANGE, userGroupByID.getName(), collect, childCategory.getName(), tenantId);
                 }
-                if (insertCategory.size() != 0) {
-                    userGroupDAO.addCategoryPrivileges(insertCategory, userGroupId, categoryPrivilege);
-                }
-                Timestamp currentTime = new Timestamp(System.currentTimeMillis());
-                userGroupDAO.updateCategory(userGroupId, currentTime, AdminUtils.getUserData().getUserId());
-
-                /* if (categorList.size() != 0) {
-                    userGroupDAO.updateCategoryPrivileges(categorList, userGroupId, categoryPrivilege);
-                }*/
             }
+            // 1-贴源层、2-基础层、4-通用层、5-应用层不需要分配权限
+            updateCategory.removeAll(DEFAULT_CATEGORY_GUID);
+            insertCategory.removeAll(DEFAULT_CATEGORY_GUID);
+            if (updateCategory.size() != 0) {
+                userGroupDAO.updateChildCategoryPrivileges(updateCategory, userGroupId, categoryPrivilege);
+            }
+            if (insertCategory.size() != 0) {
+                userGroupDAO.addCategoryPrivileges(insertCategory, userGroupId, categoryPrivilege);
+            }
+            Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+            userGroupDAO.updateCategory(userGroupId, currentTime, AdminUtils.getUserData().getUserId());
         }
     }
 
@@ -1596,14 +1643,26 @@ public class UserGroupService {
                 }
             }
 
-            ArrayList<String> categorList = Lists.newArrayList(categoryId);
-            List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getChildCategoriesPrivileges(categorList,userGroupId, categoryByGuid.getCategoryType(), tenantId);
+            ArrayList<String> categoryList = Lists.newArrayList(categoryId);
+            List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getChildCategoriesPrivileges(categoryList, userGroupId, categoryByGuid.getCategoryType(), tenantId);
 
-            List<String> ids = childCategoriesPrivileges.stream().map(categoryPrivilegeV2 -> categoryPrivilegeV2.getGuid()).collect(Collectors.toList());
-            userGroupDAO.deleteCategoryPrivilege(ids,userGroupId);
+            List<String> ids = childCategoriesPrivileges.stream().map(CategoryPrivilegeV2::getGuid).collect(Collectors.toList());
+
+            userGroupDAO.deleteCategoryPrivilege(ids, userGroupId);
+            delCategoryMessagePush(ids, userGroupId, tenantId);
         }
         Timestamp currentTime = new Timestamp(System.currentTimeMillis());
         userGroupDAO.updateCategory(userGroupId, currentTime,AdminUtils.getUserData().getUserId());
+    }
+
+    private void delCategoryMessagePush(List<String> ids, String userGroupId, String tenantId) throws SQLException {
+        List<String> list = categoryDAO.categoryName(ids, tenantId);
+        List<String> user = userGroupDAO.getAllUserByGroupId(userGroupId);
+        UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
+        Integer categoryType = categoryDAO.queryByGuid(ids.get(0), tenantId).getCategoryType();
+        for (String cate : list) {
+            messageCenterService.directoryMessagePush(categoryType, CommonConstant.REMOVE, userGroupByID.getName(), user, cate, tenantId);
+        }
     }
 
     /**
@@ -1824,11 +1883,11 @@ public class UserGroupService {
      * @return
      * @throws AtlasBaseException
      */
-    public void addDataBaseByGroupId(String groupId, List<SouceDatabasePrivileges> privilegesList) {
-        if (privilegesList.size()==0){
+    public void addDataBaseByGroupId(String groupId, List<SouceDatabasePrivileges> privilegesList,String tenantId) {
+        if (privilegesList.size() == 0) {
             return;
         }
-        for(SouceDatabasePrivileges database:privilegesList) {
+        for (SouceDatabasePrivileges database : privilegesList) {
             String sourceId = database.getSourceId();
             List<String> idsList = database.getDatabaseIds();
             if (idsList.size() == 0) {
@@ -1836,9 +1895,14 @@ public class UserGroupService {
             }
             for (String id : idsList) {
                 String uuID = UUID.randomUUID().toString();
-                userGroupDAO.addDataBaseByGroupId(uuID,groupId,sourceId,id);
+                userGroupDAO.addDataBaseByGroupId(uuID, groupId, sourceId, id);
             }
         }
+        List<String> list = new ArrayList<>();
+        for (SouceDatabasePrivileges privileges : privilegesList) {
+            list.addAll(privileges.getDatabaseIds());
+        }
+        messageCenterService.perAddMessage(CommonConstant.ADD, CommonConstant.DATA_BASE, groupId, list, tenantId);
     }
 
     /**删除数据库权限
@@ -1846,11 +1910,13 @@ public class UserGroupService {
      * @return
      * @throws AtlasBaseException
      */
-    public void deleteDataBaseByGroupId(List<String> idsList) {
-        if (idsList.size()==0) {
+    public void deleteDataBaseByGroupId(List<String> idsList, String groupId, String tenantId) {
+        if (idsList.size() == 0) {
             return;
         }
+        List<String> dbIds = userGroupDAO.getDbIds(idsList);
         userGroupDAO.deleteDataBaseByGroupId(idsList);
+        messageCenterService.perAddMessage(CommonConstant.REMOVE, CommonConstant.DATA_BASE, groupId, dbIds, tenantId);
     }
 
     /**

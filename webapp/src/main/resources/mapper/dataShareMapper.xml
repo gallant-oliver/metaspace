@@ -35,4 +35,12 @@
         GROUP BY guid
         ) v ON a.guid=v.guid AND a.version_num=v.version_num
     </select>
+
+    <select id="getProjectName" resultType="java.lang.String">
+        SELECT name FROM "project" where id in
+        <foreach collection="ids" index="index" separator="," open="(" close=")" item="id">
+            #{id}
+        </foreach>
+        and tenantId=#{tenantId}
+    </select>
 </mapper>
