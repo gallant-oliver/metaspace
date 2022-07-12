@@ -33,4 +33,12 @@ WHERE
 	AND tb.databasestatus = 'ACTIVE'
 	AND TB.tableguid = #{tableGuid}
     </select>
+
+
+    <select id="getDbName" resultType="java.lang.String">
+        SELECT database_name from db_info where database_guid in
+        <foreach collection="list" item="id" open="(" close=")" separator="," index="index">
+            #{id}
+        </foreach>
+    </select>
 </mapper>

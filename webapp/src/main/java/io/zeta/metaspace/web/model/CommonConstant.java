@@ -31,6 +31,9 @@ public class CommonConstant {
 
     public static final int TECHNICAL_CATEGORY_TYPE = 0;
 
+    public static final int INDICATORS_CATEGORY_TYPE = 5;
+
+
     /**
      * 需求状态-待下发
      */
@@ -125,4 +128,20 @@ public class CommonConstant {
      * 文件归档临时保存文件名
      */
     public static final ConcurrentHashMap<String, String> FILE_CONCURRENT_HASH_MAP = new ConcurrentHashMap<>();
+
+    /**
+     * 消息中心权限变更：新增，变更，移除
+     */
+    public static final int ADD = 1;
+    public static final int CHANGE = 2;
+    public static final int REMOVE = 3;
+
+    /**
+     * 消息中心变更类型：数据源，数据库，衍生表，
+     */
+    public static final int DATA_SOURCE = 1;
+    public static final int DATA_BASE = 2;
+    public static final int IMPORT_TABLE = 3;
+    public static final int PROJECT = 4;
+    public static final int SECURITY_TABLE = 5;
 }

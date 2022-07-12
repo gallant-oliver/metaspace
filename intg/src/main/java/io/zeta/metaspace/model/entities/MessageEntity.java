@@ -18,6 +18,7 @@ package io.zeta.metaspace.model.entities;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.zeta.metaspace.model.enums.MessagePush;
 import lombok.Data;
 
 import java.sql.Timestamp;
@@ -109,6 +110,13 @@ public class MessageEntity {
         this.type = type;
         this.name = name;
         this.module = module;
+        this.process = process;
+    }
+
+    public MessageEntity(MessagePush messagePush,String name,Integer process){
+        this.type = messagePush.type;
+        this.name = name;
+        this.module = messagePush.module;
         this.process = process;
     }
 

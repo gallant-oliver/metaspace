@@ -34,6 +34,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.web.util.Servlets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import javax.inject.Singleton;
 import javax.ws.rs.*;
@@ -191,13 +192,13 @@ public class UserGroupREST {
     @OperateType(UPDATE)
     public Result addUserByGroupId(
             @PathParam("id") String groupId,
-            Map<String,List<String>> map) throws AtlasBaseException {
+            Map<String,List<String>> map, @HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         UserGroup userGroupByID = userGroupService.getUserGroupByID(groupId);
-        HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组添加成员："+userGroupByID.getName());
+        HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), userGroupByID.getName()+"用户组添加成员：");
 
         try {
             List<String> userIds = map.get("userIds");
-            userGroupService.addUserGroupByID(groupId, userIds);
+            userGroupService.addUserGroupByID(groupId, userIds, tenantId);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"用户组添加成员失败");
@@ -214,15 +215,15 @@ public class UserGroupREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result deleteUserByGroupId(@PathParam("id") String groupId,Map<String,List<String>> map) throws AtlasBaseException {
+    public Result deleteUserByGroupId(@PathParam("id") String groupId, Map<String, List<String>> map, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             UserGroup userGroupByID = userGroupService.getUserGroupByID(groupId);
-            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组移除成员："+userGroupByID.getName());
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), userGroupByID.getName() + "用户组移除成员：");
             List<String> userIds = map.get("userIds");
-            userGroupService.deleteUserByGroupId(groupId, userIds);
+            userGroupService.deleteUserByGroupId(groupId, userIds, tenantId);
             return ReturnUtil.success();
-        }catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST, e,"用户组移除成员失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "用户组移除成员失败");
         }
     }
 
@@ -383,14 +384,14 @@ public class UserGroupREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result addDataSourceByGroupId(@PathParam("id") String groupId, UserGroupPrivileges privileges) throws AtlasBaseException {
+    public Result addDataSourceByGroupId(@PathParam("id") String groupId, UserGroupPrivileges privileges, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             UserGroup userGroupByID = userGroupService.getUserGroupByID(groupId);
-            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组添加数据源权限："+userGroupByID.getName());
-            userGroupService.addDataSourceByGroupId(groupId, privileges);
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组添加数据源权限：" + userGroupByID.getName());
+            userGroupService.addDataSourceByGroupId(groupId, privileges, tenantId);
             return ReturnUtil.success();
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"用户组添加数据源失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "用户组添加数据源失败");
         }
     }
 
@@ -406,15 +407,15 @@ public class UserGroupREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result updateDataSourceByGroupId(@PathParam("id") String groupId, UserGroupPrivileges privileges) throws AtlasBaseException {
+    public Result updateDataSourceByGroupId(@PathParam("id") String groupId, UserGroupPrivileges privileges, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
 
         try {
             UserGroup userGroupByID = userGroupService.getUserGroupByID(groupId);
-            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组修改项目权限："+userGroupByID.getName());
-            userGroupService.updateDataSourceByGroupId(groupId, privileges);
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组修改项目权限：" + userGroupByID.getName());
+            userGroupService.updateDataSourceByGroupId(groupId, privileges, tenantId);
             return ReturnUtil.success();
-        }catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"用户组修改项目权限失败");
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "用户组修改项目权限失败");
         }
     }
 
@@ -429,11 +430,11 @@ public class UserGroupREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result deleteDataSourceByGroupId(@PathParam("userGroupId") String groupId, List<String> sourceIds) throws AtlasBaseException {
+    public Result deleteDataSourceByGroupId(@PathParam("userGroupId") String groupId, List<String> sourceIds,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             UserGroup userGroupByID = userGroupService.getUserGroupByID(groupId);
             HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组移除数据源："+userGroupByID.getName());
-            userGroupService.deleteDataSourceByGroupId(groupId, sourceIds);
+            userGroupService.deleteDataSourceByGroupId(groupId, sourceIds,tenantId);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"用户组移除数据源失败");
@@ -470,14 +471,14 @@ public class UserGroupREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result addProjectByGroupId(@PathParam("id") String groupId, List<String> projectIds) throws AtlasBaseException {
+    public Result addProjectByGroupId(@PathParam("id") String groupId, List<String> projectIds, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             UserGroup userGroup = userGroupService.getUserGroupByID(groupId);
-            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "添加用户组项目权限："+userGroup.getName());
-            userGroupService.addProjectByGroupId(groupId, projectIds);
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "添加用户组项目权限：" + userGroup.getName());
+            userGroupService.addProjectByGroupId(groupId, projectIds, tenantId);
             return ReturnUtil.success();
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"用户组添加数据源失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "用户组添加数据源失败");
         }
     }
 
@@ -526,11 +527,11 @@ public class UserGroupREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(OperateTypeEnum.DELETE)
-    public Result deleteProject(List<String> projects,@PathParam("id")String userGroupId) throws AtlasBaseException {
+    public Result deleteProject(List<String> projects,@PathParam("id")String userGroupId,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try{
             UserGroup userGroup = userGroupService.getUserGroupByID(userGroupId);
             HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "删除用户组项目权限："+userGroup.getName());
-            userGroupService.deleteProject(projects,userGroupId);
+            userGroupService.deleteProject(projects,userGroupId,tenantId);
             return ReturnUtil.success();
         }catch (Exception e){
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"删除权限用户组权限失败");
@@ -738,11 +739,11 @@ public class UserGroupREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result addDataBaseByGroupId(@PathParam("id") String groupId, List<SouceDatabasePrivileges> privilegesList) throws AtlasBaseException {
+    public Result addDataBaseByGroupId(@PathParam("id") String groupId, List<SouceDatabasePrivileges> privilegesList,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
             UserGroup userGroupByID = userGroupService.getUserGroupByID(groupId);
             HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组添加数据库权限："+userGroupByID.getName());
-            userGroupService.addDataBaseByGroupId(groupId, privilegesList);
+            userGroupService.addDataBaseByGroupId(groupId, privilegesList,tenantId);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"用户组添加数据库失败");
@@ -760,14 +761,14 @@ public class UserGroupREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    public Result deleteDataBaseByGroupId(@PathParam("userGroupId") String groupId, List<String> idsList) throws AtlasBaseException {
+    public Result deleteDataBaseByGroupId(@PathParam("userGroupId") String groupId, List<String> idsList,@HeaderParam("tenantId")String tenantId) throws AtlasBaseException {
         try {
             UserGroup userGroupByID = userGroupService.getUserGroupByID(groupId);
-            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组移除数据库："+userGroupByID.getName());
-            userGroupService.deleteDataBaseByGroupId(idsList);
+            HttpRequestContext.get().auditLog(ModuleEnum.USERGROUP.getAlias(), "用户组移除数据库：" + userGroupByID.getName());
+            userGroupService.deleteDataBaseByGroupId(idsList, groupId, tenantId);
             return ReturnUtil.success();
         } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"用户组移除数据库失败");
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "用户组移除数据库失败");
         }
     }
 

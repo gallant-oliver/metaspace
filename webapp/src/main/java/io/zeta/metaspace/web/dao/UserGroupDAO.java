@@ -24,6 +24,7 @@ import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.share.ProjectHeader;
 import io.zeta.metaspace.model.table.DataSourceHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
+import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.DBInfo;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
@@ -90,6 +91,10 @@ public interface UserGroupDAO {
      */
     @Select("select name,description from user_group where id=#{id}")
     public UserGroup getUserGroupByID(String id);
+
+    @Select("SELECT u.account from user_group_relation ugr INNER JOIN users u on u.userid=ugr.user_id\n" +
+            "where ugr.group_id=#{id} and u.valid=true")
+    public List<String> getAllUserByGroupId(String id);
 
     /**
      * 二.用户组详情
@@ -1564,4 +1569,7 @@ public interface UserGroupDAO {
             "</foreach>" +
             "</script>")
     List<BusinessInfoHeader> getBusinessesByGroup(@Param("categoryGuids")List<String> categoryGuids, @Param("groupId")String groupId, @Param("tenantId")String tenantId);
+
+
+    List<String> getDbIds(List<String> ids);
 }
