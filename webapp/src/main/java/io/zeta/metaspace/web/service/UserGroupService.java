@@ -810,7 +810,7 @@ public class UserGroupService {
      * @throws AtlasBaseException
      */
     public void addDataSourceByGroupId(String groupId, UserGroupPrivileges privileges, String tenantId) {
-        if (privileges.getSourceIds() == null || privileges.getSourceIds().size() == 0) {
+        if (CollectionUtils.isEmpty(privileges.getSourceIds())) {
             return;
         }
         messageCenterService.perAddMessage(CommonConstant.ADD, CommonConstant.DATA_SOURCE, groupId, privileges.getSourceIds(), tenantId);
