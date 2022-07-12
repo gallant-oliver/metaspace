@@ -275,32 +275,32 @@ public class MessageCenterService {
 
     private MessageEntity getMessageEntityByType(int type,int operateType,String userGroupName, String category){
         MessageEntity messageEntity = null;
-        if (type == 0 && operateType == CommonConstant.CHANGE) {
+        if (type == CommonConstant.TECHNICAL_CATEGORY_TYPE && operateType == CommonConstant.CHANGE) {
             messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_CHANGE, MessagePush.
                     getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_CHANGE.name, userGroupName, category),
                     ProcessEnum.PROCESS_APPROVED_AUTHORIZED.code);
         }
-        if (type == 0 && operateType == CommonConstant.REMOVE) {
+        if (type == CommonConstant.TECHNICAL_CATEGORY_TYPE && operateType == CommonConstant.REMOVE) {
             messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_REMOVE, MessagePush.
                     getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_REMOVE.name, userGroupName, category),
                     ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
         }
-        if (type == 1 && operateType == CommonConstant.CHANGE) {
+        if (type == CommonConstant.BUSINESS_CATEGORY_TYPE && operateType == CommonConstant.CHANGE) {
             messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_BUSINESS_CATEGORY_CHANGE, MessagePush.
                     getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_CHANGE.name, userGroupName, category),
                     ProcessEnum.PROCESS_APPROVED_AUTHORIZED.code);
         }
-        if (type == 1 && operateType == CommonConstant.REMOVE) {
+        if (type == CommonConstant.BUSINESS_CATEGORY_TYPE && operateType == CommonConstant.REMOVE) {
             messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_BUSINESS_CATEGORY_REMOVE, MessagePush.
                     getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_REMOVE.name, userGroupName, category),
                     ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
         }
-        if (type == 5 && operateType == CommonConstant.CHANGE) {
+        if (type == CommonConstant.INDICATORS_CATEGORY_TYPE && operateType == CommonConstant.CHANGE) {
             messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_INDICATOR_CATEGORY_CHANGE, MessagePush.
                     getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_INDICATOR_CATEGORY_CHANGE.name, userGroupName, category),
                     ProcessEnum.PROCESS_APPROVED_AUTHORIZED.code);
         }
-        if (type == 5 && operateType == CommonConstant.REMOVE) {
+        if (type == CommonConstant.INDICATORS_CATEGORY_TYPE && operateType == CommonConstant.REMOVE) {
             messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_INDICATOR_CATEGORY_REMOVE, MessagePush.
                     getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_INDICATOR_CATEGORY_REMOVE.name, userGroupName, category)
                     , ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);

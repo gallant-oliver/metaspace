@@ -31,6 +31,9 @@ public class CommonConstant {
 
     public static final int TECHNICAL_CATEGORY_TYPE = 0;
 
+    public static final int INDICATORS_CATEGORY_TYPE = 5;
+
+
     /**
      * 需求状态-待下发
      */
