@@ -143,9 +143,9 @@
         LEFT JOIN tenant te ON te.id=t.tenantid
         WHERE 1=1
         <if test="query!='' and query !=null">
-            AND ((t.name like concat('%',#{query},'%') ESCAPE '/')
-            OR (t.description like concat('%',#{query},'%') ESCAPE '/')
-            OR (t.businessName like concat('%',#{query},'%') ESCAPE '/')
+            AND ((lower(t.name) like concat('%', lower(#{query}),'%') ESCAPE '/')
+            OR (lower(t.description) like concat('%',lower(#{query}),'%') ESCAPE '/')
+            OR (lower(t.businessName) like concat('%',lower(#{query}),'%') ESCAPE '/')
             )
         </if>
         ORDER BY t.id, t.businessId
@@ -200,8 +200,8 @@
         LEFT JOIN tenant te ON te.id=t.tenantid
         WHERE 1=1
         <if test="query!='' and query !=null">
-            AND ((t.name like concat('%',#{query},'%') ESCAPE '/')
-            OR (t.description like concat('%',#{query},'%') ESCAPE '/')
+            AND ((lower(t.name) like concat('%',lower(#{query}),'%') ESCAPE '/')
+            OR (lower(t.description) like concat('%',lower(#{query}),'%') ESCAPE '/')
             )
         </if>
         ORDER BY t.id
@@ -270,9 +270,9 @@
         LEFT JOIN tenant te ON te.id=t.tenantid
         WHERE 1=1
         <if test="query!='' and query !=null">
-            AND ((t.name like concat('%',#{query},'%') ESCAPE '/')
-            OR (t.description like concat('%',#{query},'%') ESCAPE '/')
-            OR (t.businessName like concat('%',#{query},'%') ESCAPE '/')
+            AND ((lower(t.name) like concat('%',lower(#{query}),'%') ESCAPE '/')
+            OR (lower(t.description) like concat('%',lower(#{query}),'%') ESCAPE '/')
+            OR (lower(t.businessName) like concat('%',lower(#{query}),'%') ESCAPE '/')
             )
         </if>
         ORDER BY t.id, t.businessId

@@ -988,8 +988,8 @@ public interface TaskManageDAO {
             "LEFT JOIN tenant te ON te.id=da.tenantid \n" +
             "where delete=false \n" +
             "    <if test=\"query!='' and query !=null\">\n" +
-            "        AND ((da.name like concat('%',#{query},'%') ESCAPE '/')\n" +
-            "        OR (da.description like concat('%',#{query},'%') ESCAPE '/'))\n" +
+            "        AND ((lower(da.name) like concat('%',lower(#{query}),'%') ESCAPE '/')\n" +
+            "        OR (lower(da.description) like concat('%',lower(#{query}),'%') ESCAPE '/'))\n" +
             "    </if>\n" +
             "    and tenantid=#{tenantId}\n" +
             "limit #{limit} offset #{offset}" +

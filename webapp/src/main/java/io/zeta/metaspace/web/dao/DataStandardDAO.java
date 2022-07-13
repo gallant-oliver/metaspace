@@ -302,8 +302,8 @@ public interface DataStandardDAO {
             "        LEFT JOIN tenant te ON te.id=bi.tenantid \n" +
             "        where delete=false  and bi.version=0 \n" +
             "        <if test=\"query!='' and query !=null\">\n" +
-            "            AND ((bi.name like concat('%',#{query},'%') ESCAPE '/')\n" +
-            "            OR (bi.description like concat('%',#{query},'%') ESCAPE '/'))\n" +
+            "            AND ((lower(bi.name) like concat('%',lower(#{query}),'%') ESCAPE '/')\n" +
+            "            OR (lower(bi.description) like concat('%',lower(#{query}),'%') ESCAPE '/'))\n" +
             "        </if>\n" +
             "       and  tenantid=#{tenantId}\n" +
             "       ORDER BY bi.id\n" +
