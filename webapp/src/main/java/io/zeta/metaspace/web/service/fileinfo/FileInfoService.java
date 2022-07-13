@@ -1,10 +1,10 @@
 package io.zeta.metaspace.web.service.fileinfo;
 
+import io.zeta.metaspace.model.enums.FileInfoPath;
 import io.zeta.metaspace.model.fileinfo.FileInfoVO;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.sourceinfo.Annex;
 import io.zeta.metaspace.web.dao.fileinfo.FileInfoDAO;
-import io.zeta.metaspace.web.model.CommonConstant;
+import io.zeta.metaspace.web.util.RedisUtil;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import io.zeta.metaspace.model.fileinfo.FileInfo;
 import io.zeta.metaspace.web.service.HdfsService;
 import io.zeta.metaspace.web.util.AdminUtils;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
 import java.sql.Timestamp;
@@ -31,53 +32,12 @@ public class FileInfoService {
     private FileInfoDAO fileInfoDAO;
     @Autowired
     private HdfsService hdfsService;
+    @Autowired
+    private RedisUtil redisUtil;
 
-    public void uploadFile(File file, String tenantId) {
-        //1.上传hdfs文件
-        try {
-            String id = UUID.randomUUID().toString();
-            String fileName = CommonConstant.FILE_CONCURRENT_HASH_MAP.get(file.getName());
-            InputStream fileInputStream = new FileInputStream(file);
-            String path = hdfsService.uploadFile(fileInputStream, file.getName(), tenantId);
-            //创建记录
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setId(id);
-            fileInfo.setFileSize(hdfsService.getFileSize(path));
-            fileInfo.setFileName(fileName);
-            fileInfo.setFilePath(path);
-            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            fileInfo.setCreateTime(timestamp);
-            fileInfo.setUpdateTime(timestamp);
-            fileInfo.setDelete(false);
-            fileInfo.setCreateUser(AdminUtils.getUserData().getAccount());
-            fileInfo.setFileType(FilenameUtils.getExtension(fileName));
-            fileInfoDAO.insert(fileInfo);
-            CommonConstant.FILE_CONCURRENT_HASH_MAP.remove(file.getName());
-        } catch (IOException | AtlasBaseException e) {
-            throw new AtlasBaseException(e);
-        }
-    }
 
-    public void createFileuploadRecord(Annex annexParam) {
-        try {
-            FileInfo fileInfo = new FileInfo();
-            fileInfo.setId(UUID.randomUUID().toString());
-            fileInfo.setFileSize(annexParam.getFileSize());
-            fileInfo.setFileName(annexParam.getFileName());
-            fileInfo.setFilePath(annexParam.getPath());
-            Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-            fileInfo.setCreateTime(timestamp);
-            fileInfo.setUpdateTime(timestamp);
-            fileInfo.setDelete(false);
-            fileInfo.setCreateUser(AdminUtils.getUserData().getAccount());
-            fileInfo.setFileType(annexParam.getFileType());
-            fileInfoDAO.insert(fileInfo);
-        } catch (AtlasBaseException e) {
-            throw new AtlasBaseException(e);
-        }
-    }
-
-    public void createFileuploadRecord(String path, String fileName) {
+    @Transactional(rollbackFor = Exception.class)
+    public void createFileuploadRecord(String path, String fileName,FileInfoPath fileInfoPath) {
         try {
             Long fileSize = hdfsService.getFileSize(path);
             FileInfo fileInfo = new FileInfo();
@@ -89,6 +49,7 @@ public class FileInfoService {
             fileInfo.setCreateTime(timestamp);
             fileInfo.setUpdateTime(timestamp);
             fileInfo.setDelete(false);
+            fileInfo.setBusinessPath(fileInfoPath.getPath());
             fileInfo.setCreateUser(AdminUtils.getUserData().getAccount());
             fileInfo.setFileType(FilenameUtils.getExtension(fileName));
             fileInfoDAO.insert(fileInfo);
@@ -105,5 +66,25 @@ public class FileInfoService {
         pageResult.setCurrentSize(fileInfoList.size());
         pageResult.setOffset(offset);
         return pageResult;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public void createFileRecord(String upload, FileInfoPath fileInfoPath,File file) throws IOException {
+        String fileName = redisUtil.get(upload);
+        String path = hdfsService.uploadFile(new FileInputStream(file), fileName, upload);
+        Long fileSize = hdfsService.getFileSize(path);
+        FileInfo fileInfo = new FileInfo();
+        fileInfo.setId(UUID.randomUUID().toString());
+        fileInfo.setFileSize(fileSize);
+        fileInfo.setFileName(fileName);
+        fileInfo.setFilePath(path);
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        fileInfo.setCreateTime(timestamp);
+        fileInfo.setUpdateTime(timestamp);
+        fileInfo.setDelete(false);
+        fileInfo.setCreateUser(AdminUtils.getUserData().getAccount());
+        fileInfo.setBusinessPath(fileInfoPath.getPath());
+        fileInfo.setFileType(FilenameUtils.getExtension(fileName));
+        fileInfoDAO.insert(fileInfo);
     }
 }

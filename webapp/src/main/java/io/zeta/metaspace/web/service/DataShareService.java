@@ -3408,7 +3408,6 @@ public class DataShareService {
         }
         ArrayList<CategoryEntityV2> categoryEntityV2s = new ArrayList<>(newCategorys.values());
         shareDAO.addAll(categoryEntityV2s, projectId, tenantId);
-        fileInfoService.uploadFile(fileInputStream, tenantId);
     }
 
     /**

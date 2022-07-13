@@ -3,6 +3,7 @@ package io.zeta.metaspace.web.rest.fileinfo;
 
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.enums.FileInfoPath;
 import io.zeta.metaspace.model.fileinfo.FileComment;
 import io.zeta.metaspace.model.fileinfo.FileCommentVO;
 import io.zeta.metaspace.model.fileinfo.FileInfo;
@@ -73,7 +74,7 @@ public class FileInfoController {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result createFileInfo(@QueryParam("fileName") String fileName, @QueryParam("path") String path) {
         try {
-            fileInfoService.createFileuploadRecord(path, fileName);
+            fileInfoService.createFileuploadRecord(path, fileName, FileInfoPath.ATOM_TABLE);
             return ReturnUtil.success();
         } catch (Exception e) {
             LOG.error("文件归档添加失败", e);

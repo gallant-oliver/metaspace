@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.cache;
 
 import org.apache.atlas.ApplicationProperties;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
@@ -25,8 +26,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import redis.clients.jedis.JedisPoolConfig;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /*
  * @description
@@ -74,7 +78,8 @@ public class CacheConfig extends CachingConfigurerSupport {
         if (mode.equals(0) || mode.equals(1)) {
             JedisConnectionFactory redisConnectionFactory = new JedisConnectionFactory();
             // Defaults
-            redisConnectionFactory.setHostName(String.valueOf(hostName));
+            List<String> hostNameList = Arrays.stream(hostName).filter(Strings::isNotBlank).collect(Collectors.toList());
+            redisConnectionFactory.setHostName(String.join(",", hostNameList));
             redisConnectionFactory.setPort(port);
             if (StringUtils.isNotBlank(password)) {
                 redisConnectionFactory.setPassword(password);

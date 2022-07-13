@@ -33,10 +33,10 @@
             useGeneratedKeys="true">
         insert into "file_info" (id,file_name, file_type, file_size,
                                  file_path, create_time, update_time,
-                                 create_user, "delete")
+                                 create_user, "delete",business_path)
         values (#{id,jdbcType=VARCHAR},#{fileName,jdbcType=VARCHAR}, #{fileType,jdbcType=VARCHAR}, #{fileSize,jdbcType=BIGINT},
                 #{filePath,jdbcType=VARCHAR}, #{createTime,jdbcType=TIMESTAMP}, #{updateTime,jdbcType=TIMESTAMP},
-                #{createUser,jdbcType=VARCHAR}, #{delete,jdbcType=BOOLEAN})
+                #{createUser,jdbcType=VARCHAR}, #{delete,jdbcType=BOOLEAN},#{businessPath,jdbcType=VARCHAR})
     </insert>
 
     <select id="getFileInfoList" resultType="io.zeta.metaspace.model.fileinfo.FileInfoVO">

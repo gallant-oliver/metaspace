@@ -37,6 +37,10 @@ public class FileInfoVO {
      * 文件路径
      */
     private String filePath;
+    /**
+     * 业务路径
+     */
+    private String businessPath;
 
     /**
      * 创建时间

@@ -20,6 +20,7 @@ import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.datastandard.*;
+import io.zeta.metaspace.model.enums.FileInfoPath;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -31,10 +32,9 @@ import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataStandardService;
-import io.zeta.metaspace.web.util.ExportDataPathUtils;
-import io.zeta.metaspace.web.util.ObjectUtils;
-import io.zeta.metaspace.web.util.PoiExcelUtils;
-import io.zeta.metaspace.web.util.ReturnUtil;
+import io.zeta.metaspace.web.service.HdfsService;
+import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.*;
@@ -44,6 +44,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 import javax.inject.Singleton;
@@ -85,7 +86,10 @@ public class DataStandardREST {
     private DataStandardService dataStandardService;
     @Autowired
     private DataManageService dataManageService;
-    
+    @Autowired
+    private RedisUtil redisUtil;
+    @Autowired
+    private FileInfoService fileInfoService;
     /**
      * 新增数据标准
      */
@@ -492,7 +496,7 @@ public class DataStandardREST {
                     put("upload", upload);
                 }
             };
-            CommonConstant.FILE_CONCURRENT_HASH_MAP.put(upload,name);
+            redisUtil.set(upload, name, CommonConstant.FILE_REDIS_TIME);
             return ReturnUtil.success(map);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"导入失败");
@@ -515,6 +519,7 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
+    @Transactional(rollbackFor = Exception.class)
     public Result importCategory(@PathParam("upload")String upload, ImportCategory importCategory, @HeaderParam("tenantId")String tenantId) throws Exception {
         File file = null;
         try {
@@ -536,6 +541,7 @@ public class DataStandardREST {
             }else{
                 categoryPrivileges=dataManageService.importCategory(categoryId,importCategory.getDirection(), file,importCategory.isAuthorized(),CATEGORY_TYPE,tenantId);
             }
+            fileInfoService.createFileRecord(upload, FileInfoPath.STANDARD_CATEGORY,file);
             return ReturnUtil.success(categoryPrivileges);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"导入失败");

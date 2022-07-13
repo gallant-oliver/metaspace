@@ -20,6 +20,7 @@ import com.sun.jersey.core.header.FormDataContentDisposition;
 import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.enums.FileInfoPath;
 import io.zeta.metaspace.model.enums.SourceInfoOperation;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
@@ -43,6 +44,7 @@ import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoFileService;
 import io.zeta.metaspace.web.util.Base64Utils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
+import io.zeta.metaspace.web.util.RedisUtil;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import io.zeta.metaspace.web.util.office.excel.Excel2Pdf;
 import io.zeta.metaspace.web.util.office.excel.ExcelObject;
@@ -384,7 +386,7 @@ public class SourceInfoDatabaseREST {
             }
             // 跟source_info、db-info对比获取比对结果
             Result result = sourceInfoFileService.executeImportParsedResult(excelDataList,annexId, tenantId);
-            fileInfoService.createFileuploadRecord(annex);
+            fileInfoService.createFileuploadRecord(filePath, annex.getFileName(), FileInfoPath.DATABASE);
             HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"文件导入成功！");
             return result;
         }catch (Exception e){

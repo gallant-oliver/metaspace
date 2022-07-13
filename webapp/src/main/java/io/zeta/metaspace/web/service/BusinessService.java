@@ -1748,7 +1748,6 @@ public class BusinessService implements Approvable {
             map = new HashMap<String, Object>() {{
                 put("upload", upload);
             }};
-            CommonConstant.FILE_CONCURRENT_HASH_MAP.put(upload,fileInputStream.getName());
         } else {
             StringBuilder detail = new StringBuilder();
             for (String err : error) {
@@ -1872,7 +1871,6 @@ public class BusinessService implements Approvable {
             return;
         }
         insertBusinesses(business, categoryId, tenantId);
-        fileInfoService.uploadFile(fileInputStream,tenantId);
     }
 
     @Transactional(rollbackFor = Exception.class)

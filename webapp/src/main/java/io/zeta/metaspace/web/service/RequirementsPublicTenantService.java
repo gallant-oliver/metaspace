@@ -202,7 +202,6 @@ public class RequirementsPublicTenantService {
         // 存储过滤条件
         List<FilterConditionDTO> filterConditions = dto.getFilterConditions();
         columnService.batchInsert(po.getGuid(), po.getTableId(), filterConditions);
-        fileInfoService.createFileuploadRecord(dto.getFilePath(), dto.getFileName());
         return po.getGuid();
     }
 
@@ -236,7 +235,6 @@ public class RequirementsPublicTenantService {
         BeanUtils.copyProperties(dto, newPo, "guid", "resourceType");
 
         requirementsMapper.updateByPrimaryKey(newPo);
-        fileInfoService.createFileuploadRecord(dto.getFilePath(), dto.getFileName());
         //  修改需求的过滤条件字段
         columnService.batchUpdate(oldPo.getGuid(), oldPo.getTableId(), dto.getFilterConditions());
     }

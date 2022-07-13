@@ -124,10 +124,6 @@ public class CommonConstant {
     public static final String QUERY_PARAM = "QUERY";
     public static final String PATH_PARAM = "PATH";
     public static final String API_PATH = "metaspace";
-    /**
-     * 文件归档临时保存文件名
-     */
-    public static final ConcurrentHashMap<String, String> FILE_CONCURRENT_HASH_MAP = new ConcurrentHashMap<>();
 
     /**
      * 消息中心权限变更：新增，变更，移除
@@ -144,4 +140,9 @@ public class CommonConstant {
     public static final int IMPORT_TABLE = 3;
     public static final int PROJECT = 4;
     public static final int SECURITY_TABLE = 5;
+
+    /**
+     * 文件归档的redis过期时间
+     */
+    public static final long FILE_REDIS_TIME = 600;
 }

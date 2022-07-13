@@ -10,6 +10,7 @@ import io.zeta.metaspace.model.business.TechnicalStatus;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.dto.sourceinfo.DeriveFileDTO;
 import io.zeta.metaspace.model.dto.sourceinfo.SourceInfoDeriveTableColumnDTO;
+import io.zeta.metaspace.model.enums.FileInfoPath;
 import io.zeta.metaspace.model.enums.TableColumnContrast;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
@@ -1551,7 +1552,7 @@ public class SourceInfoDeriveTableInfoService {
         for (DeriveFileDTO deriveFileDTO : deriveFileDTOList) {
             try {
                 this.fileUploadSubmit(deriveFileDTO.getFileName(), deriveFileDTO.getPath(), tenantId);
-                fileInfoService.createFileuploadRecord(deriveFileDTO.getPath(),deriveFileDTO.getFileName());
+                fileInfoService.createFileuploadRecord(deriveFileDTO.getPath(),deriveFileDTO.getFileName(), FileInfoPath.DRIVE_TABLE);
             } catch (Exception e) {
                 error = e.getMessage();
             }
