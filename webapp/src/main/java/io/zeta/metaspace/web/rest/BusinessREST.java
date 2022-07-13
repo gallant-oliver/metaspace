@@ -935,7 +935,7 @@ public class BusinessREST {
             } else {
                 categoryPrivileges = businessCatalogueService.importCategory(categoryId, importCategory.getDirection(), file, importCategory.isAuthorized(), importCategory.getType(), tenantId);
             }
-            fileInfoService.createFileRecord(path, FileInfoPath.BUSINESS_CATEGORY,file);
+            fileInfoService.categoryCreateFileRecord(path, importCategory.getType(), file);
             return ReturnUtil.success(categoryPrivileges);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败:"+e.getMessage());

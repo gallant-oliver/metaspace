@@ -10,7 +10,7 @@ import lombok.Data;
 public enum FileInfoPath {
     TECHNICAL_CATEGORY("技术目录","数据资产/技术目录"),
     BUSINESS_CATEGORY("业务目录","数据资产/业务目录"),
-    INDICATORS_CATEGORY("指标目录","数据资产/指标目录"),
+    INDICATORS_CATEGORY("指标目录","指标设计/业务指标"),
     BUSINESS_OBJECT("业务对象","数据资产/业务目录/业务对象"),
     DATABASE("数据库登记","数据资产/源信息登记/数据库登记"),
     DRIVE_TABLE("衍生表登记","数据资产/源信息登记/衍生表登记"),
@@ -19,7 +19,7 @@ public enum FileInfoPath {
     API_CATEGORY("api目录","数据服务/API项目管理/API管理"),
     DEMAND_MANAGEMENT_EDIT("需求管理","需求管理"),
     DEMAND_MANAGEMENT("需求管理修改","租户资产/业务目录/业务对象详情/资源列表/创建需求"),
-    ATOM_TABLE("原子指标","指标设计/技术目录/原子指标");
+    ATOM_TABLE("原子指标","指标设计/技术指标/原子指标");
 
 
     public String getPath() {

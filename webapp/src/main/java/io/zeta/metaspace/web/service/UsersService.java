@@ -2,6 +2,7 @@ package io.zeta.metaspace.web.service;
 
 import com.google.common.collect.Lists;
 import io.zeta.metaspace.model.dataquality2.WarningGroup;
+import io.zeta.metaspace.model.enums.MessagePush;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.*;
@@ -12,9 +13,12 @@ import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserInfo;
 import io.zeta.metaspace.model.user.UserInfoGroup;
+import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
 import io.zeta.metaspace.web.dao.CategoryDAO;
 import io.zeta.metaspace.web.dao.UserDAO;
+import io.zeta.metaspace.web.dao.UserGroupDAO;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.service.dataquality.WarningGroupService;
 import io.zeta.metaspace.web.util.ParamUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -53,6 +57,10 @@ public class UsersService {
     private DataManageService dataManageService;
     @Autowired
     BusinessCatalogueService businessCatalogueService;
+    @Autowired
+    private UserGroupDAO userGroupDAO;
+    @Autowired
+    private MessageCenterService messageCenterService;
 
     @Bean(name = "getUserService")
     public UsersService getUserService() {
@@ -339,11 +347,26 @@ public class UsersService {
     }
 
     public void updateGroupByUser(String userId,List<String> userGroups,String tenantId) throws AtlasBaseException {
+        updateUserGroupMessage(userId, userGroups, tenantId);
         userDAO.deleteGroupByUser(userId,tenantId);
-        if (userGroups==null||userGroups.size()==0){
+        if (CollectionUtils.isEmpty(userGroups)) {
             return;
         }
         userDAO.addGroupByUser(userId,userGroups);
+    }
+
+    private void updateUserGroupMessage(String userId, List<String> newUserGroupId, String tenantId) {
+        List<String> oldUserGroupId = userGroupDAO.getUserGroupByUsrId(userId, tenantId);
+        for (String id : newUserGroupId) {
+            if (!oldUserGroupId.contains(id)) {
+                messageCenterService.userGroupMessage(CommonConstant.ADD, id, userId, tenantId);
+            }
+        }
+        for (String id : oldUserGroupId) {
+            if (!newUserGroupId.contains(id)) {
+                messageCenterService.userGroupMessage(CommonConstant.REMOVE, id, userId, tenantId);
+            }
+        }
     }
 
     public List<String> getMailsByGroups(String[] toList) {
