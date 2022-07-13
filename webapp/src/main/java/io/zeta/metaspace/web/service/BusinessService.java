@@ -23,7 +23,10 @@ import io.zeta.metaspace.model.approve.ApproveOperate;
 import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.business.*;
 import io.zeta.metaspace.model.dataquality2.HiveNumericType;
+import io.zeta.metaspace.model.entities.MessageEntity;
 import io.zeta.metaspace.model.enums.BusinessType;
+import io.zeta.metaspace.model.enums.MessagePush;
+import io.zeta.metaspace.model.enums.ProcessEnum;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.Table;
 import io.zeta.metaspace.model.metadata.*;
@@ -40,8 +43,10 @@ import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AbstractMetaspaceGremlinQueryProvider;
 import io.zeta.metaspace.utils.MetaspaceGremlin3QueryProvider;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.service.Approve.Approvable;
 import io.zeta.metaspace.web.service.Approve.ApproveService;
+import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -71,6 +76,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static io.zeta.metaspace.model.enums.MessagePush.*;
 import static io.zeta.metaspace.web.util.PoiExcelUtils.XLSX;
 
 /*
@@ -129,6 +135,17 @@ public class BusinessService implements Approvable {
 
     @Autowired
     private DataManageService dataManageService;
+    @Autowired
+    private FileInfoService fileInfoService;
+
+    @Autowired
+    ApproveGroupDAO approveGroupDAO;
+
+    @Autowired
+    MessageCenterService messageCenterService;
+
+    @Autowired
+    UserDAO userDAO;
 
     private AbstractMetaspaceGremlinQueryProvider gremlinQueryProvider = AbstractMetaspaceGremlinQueryProvider.INSTANCE;
 
@@ -2113,6 +2130,20 @@ public class BusinessService implements Approvable {
         ApproveItem approveItem = buildApproveItem(info, approveGroupId, approveType, tenantId);
         businessDao.updateApproveIdAndApproveGroupId(info.getBusinessId(), approveItem.getId());
         approveServiceImp.addApproveItem(approveItem);
+
+        // 审核消息推送审核人
+        List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroupId);
+        List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
+        MessageEntity message = null;
+        if ("1".equalsIgnoreCase(approveType)){
+            message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.name, info.getName(), RELEASE), RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
+        } else if ("2".equalsIgnoreCase(approveType)){
+            message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.name, info.getName(), OFFLINE), RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
+        }
+        for (String userEmail : userEmailList){
+            message.setCreateUser(userEmail);
+            messageCenterService.addMessage(message, tenantId);
+        }
     }
 
     /**

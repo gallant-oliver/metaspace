@@ -8,6 +8,7 @@ import io.zeta.metaspace.model.sourceinfo.derivetable.relation.CreateRequest;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
 import io.zeta.metaspace.web.dao.GroupDeriveTableRelationDAO;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.util.ParamUtil;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -28,6 +29,8 @@ public class DeriveTablePrivilegeService {
 
     @Autowired
     private GroupDeriveTableRelationDAO relationDAO;
+    @Autowired
+    private MessageCenterService messageCenterService;
 
     @Transactional
     public Result createRelation(String tenantId, CreateRequest request) {
@@ -35,7 +38,9 @@ public class DeriveTablePrivilegeService {
 
         if (PrivilegeType.IMPORTANCE.equals(request.getPrivilegeType())){
             relationDAO.updateDeriveTableImportancePrivilege(relationList);
+            messageCenterService.perAddMessage(CommonConstant.ADD,CommonConstant.IMPORT_TABLE,request.getUserGroupId(),request.getTableIdList(),tenantId);
         }else if(PrivilegeType.SECURITY.equals(request.getPrivilegeType())){
+            messageCenterService.perAddMessage(CommonConstant.ADD,CommonConstant.SECURITY_TABLE,request.getUserGroupId(),request.getTableIdList(),tenantId);
             relationDAO.updateDeriveTableSecurityPrivilege(relationList);
         }else{
             throw new AtlasBaseException("无法识别的权限的类型"+request.getPrivilegeType().name());
@@ -58,11 +63,14 @@ public class DeriveTablePrivilegeService {
         return relations;
     }
 
-    public Result deleteRelations(List<String> ids){
+    @Transactional(rollbackFor = Exception.class)
+    public Result deleteRelations(List<String> ids) {
+        messageCenterService.tableDelMessagePush(ids);
         relationDAO.deleteRelation(ids);
         return ReturnUtil.success();
     }
-    public Result   getDeriveTableRelations(String tenantId,PrivilegeType privilegeType,
+
+    public Result getDeriveTableRelations(String tenantId, PrivilegeType privilegeType,
                                           String userGroupId,Boolean registerType,
                                           String tableName,int limit,int offset){
         List<String> importanceTableId = relationDAO.selectTableIdByGroupId(userGroupId,PrivilegeType.IMPORTANCE.name());

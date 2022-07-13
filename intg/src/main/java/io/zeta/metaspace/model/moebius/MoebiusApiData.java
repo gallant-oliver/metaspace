@@ -27,29 +27,24 @@ public class MoebiusApiData {
     }
 
     public MoebiusApiData(ApiInfoV2 apiInfoV2){
-        this.name=apiInfoV2.getName();
-        this.desc=apiInfoV2.getDescription();
-        StringBuffer urlBuffer = new StringBuffer();
+        this.name = apiInfoV2.getName();
+        this.desc = apiInfoV2.getDescription();
+        StringBuilder urlBuffer = new StringBuilder();
         urlBuffer.append("/api/metaspace/dataservice/");
         urlBuffer.append(apiInfoV2.getGuid());
         urlBuffer.append("/");
         urlBuffer.append(apiInfoV2.getVersion());
-        this.path=urlBuffer.toString();
-        if (apiInfoV2!=null&&apiInfoV2.getPath()!=null&&!apiInfoV2.getPath().startsWith("/")){
+        if (apiInfoV2.getPath() != null && !apiInfoV2.getPath().startsWith("/")) {
             urlBuffer.append("/");
         }
-        if (apiInfoV2.getPath()!=null){
+        if (apiInfoV2.getPath() != null) {
             urlBuffer.append(apiInfoV2.getPath());
         }
+        this.path = "metaspace";
         this.url = urlBuffer.toString();
-        if (url.contains("{")){
-            path=url.substring(0,url.indexOf("{"));
-        }else{
-            path=url;
-        }
 
-        this.method=apiInfoV2.getRequestMode();
-        this.version=apiInfoV2.getVersion();
+        this.method = apiInfoV2.getRequestMode();
+        this.version = apiInfoV2.getVersion();
     }
     //名字
     private String name;

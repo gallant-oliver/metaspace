@@ -32,11 +32,14 @@ public enum TaskType {
     EMPTY_VALUE_NUM(25, "字段空值个数"),
     EMPTY_VALUE_NUM_RATIO(28, "字段空值个数/总行数"),
 
+    EMPTY_VALUE_NUM_TABLE_REMAKR(33, "表描述空值校验"),
+
     //唯一值校验
     UNIQUE_VALUE_NUM_CHANGE_RATIO(10, "字段唯一值个数变化率"),
     UNIQUE_VALUE_NUM_CHANGE(17, "字段唯一值个数变化"),
     UNIQUE_VALUE_NUM(24, "字段唯一值个数"),
     UNIQUE_VALUE_NUM_RATIO(27, "字段唯一值个数/总行数"),
+
 
     //重复值校验
     DUP_VALUE_NUM_CHANGE_RATIO(12, "字段重复值个数变化率"),

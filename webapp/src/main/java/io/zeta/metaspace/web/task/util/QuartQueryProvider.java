@@ -17,6 +17,7 @@
 package io.zeta.metaspace.web.task.util;
 
 import io.zeta.metaspace.model.dataquality.TaskType;
+import io.zeta.metaspace.model.dataquality.WrongSourceTypeSql;
 
 /*
  * @description
@@ -67,7 +68,7 @@ public class QuartQueryProvider {
         return null;
     }
 
-    public static String getErrData(final TaskType taskType){
+    public static String getErrData(final TaskType taskType, String sourceType){
         switch (taskType) {
             case UNIQUE_VALUE_NUM:
             case UNIQUE_VALUE_NUM_CHANGE:
@@ -79,6 +80,8 @@ public class QuartQueryProvider {
             case EMPTY_VALUE_NUM_CHANGE_RATIO:
             case EMPTY_VALUE_NUM_RATIO:
                 return "SELECT * from %s.%s WHERE %s is NULL or %s = ''";
+            case EMPTY_VALUE_NUM_TABLE_REMAKR:
+                return WrongSourceTypeSql.getWrongSqlBySourceType(sourceType.toUpperCase());
             case DUP_VALUE_NUM:
             case DUP_VALUE_NUM_CHANGE:
             case DUP_VALUE_NUM_CHANGE_RATIO:

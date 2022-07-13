@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.zeta.metaspace.web.dao.SourceInfoDeriveTableInfoDAO">
+
+    <select id="queryDeriveTableInfoByGuid" resultType="io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo">
+        SELECT
+            t1.ID AS ID,
+            t1.table_guid AS tableGuid,
+            t1.table_name_en AS tableNameEn,
+            t1.table_name_zh AS tableNameZh,
+            t1.PROCEDURE AS PROCEDURE,
+            t1.category_id AS categoryId,
+            t1.db_type AS dbType,
+            t1.business_id AS businessId,
+            t1.db_id AS dbId,
+            t1.source_id AS sourceId,
+            t1.update_frequency AS updateFrequency,
+            t1.etl_policy AS etlPolicy,
+            t1.incre_standard AS increStandard,
+            t1.clean_rule AS cleanRule,
+            t1.FILTER AS FILTER,
+            t1.tenant_id AS tenantId,
+            t1.remark AS remark,
+            t1.VERSION AS VERSION,
+            t1.source_table_guid AS sourceTableGuid,
+            t1.OPERATOR AS OPERATOR,
+            t1.file_name AS fileName,
+            t1.file_path AS filePath,
+            t1.incremental_field AS incrementalField,
+            t1.creator AS creator,
+            CAST ( t1.create_time AS VARCHAR ) AS createTimeStr,
+            t1.updater AS updater,
+            CAST ( t1.update_time AS VARCHAR ) AS updateTimeStr,
+            t1.ddl AS ddl,
+            t1.dml AS dml,
+            t1.STATE AS STATE
+        FROM
+            source_info_derive_table_info t1
+        WHERE
+            t1.tenant_id = #{tenantId}
+          AND t1.table_guid = #{tableGuid}
+          AND t1.STATE = '1'
+        ORDER BY
+            t1."version" ASC
+            limit 1
+    </select>
+
+</mapper>

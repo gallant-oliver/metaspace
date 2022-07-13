@@ -645,4 +645,6 @@ public interface CategoryDAO {
     CategoryEntityV2 queryCategoryInfo(@Param("guid") String guid);
 
     CategorycateQueryResult queryCategoryPrivilege(@Param("guid") String guid);
+
+    List<String> categoryName(@Param("ids") List<String> ids,@Param("tenantId") String tenantId);
 }

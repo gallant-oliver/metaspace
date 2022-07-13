@@ -61,6 +61,36 @@ public class MysqlAdapterExecutor extends AbstractAdapterExecutor {
     }
 
     /**
+     * 获取指定数据库表描述为空的表总个数
+     * @param db
+     * @param pool
+     * @return
+     */
+    public float getTblRemarkCountByDb(AdapterSource adapterSource, String user, String db,  String pool, Map<String, Object> map) {
+        String querySQL = "select count(*) as emptyCount from information_schema.tables where (table_comment is null or table_comment = '') and table_schema = '%s'";
+        querySQL=String.format(querySQL,db);
+        Connection connection = adapterSource.getConnection(user, db, pool);
+        return queryResult(connection, querySQL, resultSet -> {
+            try {
+                float emptyCount = 0;
+                while (resultSet.next()) {
+                    emptyCount = resultSet.getLong("emptyCount");
+                }
+                return emptyCount;
+            } catch (SQLException e) {
+                throw new AtlasBaseException("获取指定数据库表描述为空的表总个数失败", e);
+            } finally {
+                try {
+                    resultSet.close();
+                    connection.close();
+                } catch (Exception e) {
+                    throw new AtlasBaseException("关闭表连接失败", e);
+                }
+            }
+        });
+    }
+
+    /**
      * 表或者字段增加转义符号
      */
     @Override
