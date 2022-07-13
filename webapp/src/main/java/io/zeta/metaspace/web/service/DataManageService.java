@@ -2603,164 +2603,158 @@ public class DataManageService {
      */
     @Transactional(rollbackFor = Exception.class)
     public List<CategoryPrivilege> importCategory(String categoryId, String direction, File fileInputStream, boolean authorized, int type, String tenantId) throws Exception {
+        if (!fileInputStream.exists()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件丢失，请重新上传");
+        }
+        List<CategoryExport> categoryExports;
         try {
-            if (!fileInputStream.exists()) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件丢失，请重新上传");
-            }
-            List<CategoryExport> categoryExports;
             categoryExports = file2Data(fileInputStream);
-            checkSameName(categoryId, direction, categoryExports, type, tenantId);
-            if (categoryExports.isEmpty()) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "上传数据为空或全部重名");
-            }
-            Map<String, CategoryEntityV2> newCategorys = new HashMap<>();
-
-            //是否是导入一级目录
-            String upGuid;
-            String downGuid;
-            String parentQualifiedName = null;
-            String parentCategoryGuid = null;
-            int level;
-            String down = "down";
-            String up = "up";
-            if (categoryId != null && categoryId.length() != 0) {
-                if (up.equals(direction)) {
-                    CategoryEntityV2 currentEntity = categoryDao.queryByGuid(categoryId, tenantId);
-                    downGuid = categoryId;
-                    upGuid = currentEntity.getUpBrotherCategoryGuid();
-                    level = currentEntity.getLevel() - 1;
-                    if (currentEntity.getParentCategoryGuid() != null && currentEntity.getParentCategoryGuid().length() > 0) {
-                        CategoryEntityV2 categoryEntityV2 = categoryDao.queryByGuid(currentEntity.getParentCategoryGuid(), tenantId);
-                        parentQualifiedName = categoryEntityV2.getQualifiedName();
-                        parentCategoryGuid = currentEntity.getParentCategoryGuid();
-                    }
-                } else if (down.equals(direction)) {
-                    CategoryEntityV2 currentEntity = categoryDao.queryByGuid(categoryId, tenantId);
-                    upGuid = categoryId;
-                    downGuid = currentEntity.getDownBrotherCategoryGuid();
-                    level = currentEntity.getLevel() - 1;
-                    if (currentEntity.getParentCategoryGuid() != null && currentEntity.getParentCategoryGuid().length() > 0) {
-                        CategoryEntityV2 categoryEntityV2 = categoryDao.queryByGuid(currentEntity.getParentCategoryGuid(), tenantId);
-                        parentQualifiedName = categoryEntityV2.getQualifiedName();
-                        parentCategoryGuid = currentEntity.getParentCategoryGuid();
-                    }
-                } else {
-                    parentCategoryGuid = categoryId;
-                    upGuid = categoryDao.queryLastChildCategory(categoryId, tenantId);
-                    downGuid = null;
-                    CategoryEntityV2 currentEntity = categoryDao.queryByGuid(categoryId, tenantId);
-                    parentQualifiedName = currentEntity.getQualifiedName();
-                    level = currentEntity.getLevel();
-                }
-            } else {
-                upGuid = categoryDao.queryLastCategory(type, tenantId);
-                downGuid = null;
-                parentQualifiedName = null;
-                level = 0;
-            }
-
-            CategoryEntityV2 upChild = categoryDao.queryByGuid(upGuid, tenantId);
-            if (upChild == null) {
-                upChild = new CategoryEntityV2();
-            }
-            newCategorys.put(upGuid, upChild);
-            Timestamp timestamp = io.zeta.metaspace.utils.DateUtils.currentTimestamp();
-            User user = AdminUtils.getUserData();
-            String upId = upGuid;
-            for (CategoryExport categoryExport : categoryExports) {
-                StringBuffer qualifiedName = new StringBuffer();
-                String name = categoryExport.getName();
-                CategoryEntityV2 categoryEntityV2 = new CategoryEntityV2();
-                categoryEntityV2.setName(name);
-                categoryEntityV2.setSafe("1");
-                categoryEntityV2.setCategoryType(type);
-                categoryEntityV2.setDescription(categoryExport.getDescription());
-                categoryEntityV2.setGuid(categoryExport.getGuid());
-                categoryEntityV2.setParentCategoryGuid(parentCategoryGuid);
-                categoryEntityV2.setLevel(level + 1);
-                categoryEntityV2.setCreateTime(timestamp);
-                categoryEntityV2.setCreator(user.getUserId());
-
-                if (StringUtils.isNotEmpty(parentQualifiedName) && parentQualifiedName.length() > 0)
-                    qualifiedName.append(parentQualifiedName + ".");
-                qualifiedName.append(name);
-
-                categoryEntityV2.setUpBrotherCategoryGuid(upId);
-                newCategorys.get(upId).setDownBrotherCategoryGuid(categoryExport.getGuid());
-                upId = categoryEntityV2.getGuid();
-
-                newCategorys.put(categoryEntityV2.getGuid(), categoryEntityV2);
-            }
-            newCategorys.remove(upGuid);
-            if (newCategorys.get(upId) != null) {
-                newCategorys.get(upId).setDownBrotherCategoryGuid(downGuid);
-            }
-
-            if (upGuid != null) {
-                categoryDao.updateDownBrotherCategoryGuid(upGuid, upChild.getDownBrotherCategoryGuid(), tenantId);
-            }
-            if (downGuid != null) {
-                categoryDao.updateUpBrotherCategoryGuid(downGuid, upId, tenantId);
-            }
-
-            CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
-            ArrayList<CategoryEntityV2> categoryEntityV2s = new ArrayList<>(newCategorys.values());
-            List<GroupPrivilege> parentPrivilege = userGroupDAO.getCategoryGroupPrivileges(parentCategoryGuid, tenantId);
-            if (parentPrivilege.size() != 0 && categoryEntityV2s != null) {
-                userGroupDAO.addUserGroupCategoryPrivileges(parentPrivilege, categoryEntityV2s);
-            }
-            if (type == technicalType) {
-                AtomicInteger maxSort = new AtomicInteger(categoryDao.getMaxSortByParentGuid(parentCategoryGuid, tenantId));
-                categoryEntityV2s.forEach(c -> {
-                    c.setPrivateStatus(CategoryPrivateStatus.PRIVATE);
-                    c.setSort(maxSort.get());
-                    maxSort.getAndIncrement();
-                });
-            }
-            categoryDao.addAll(categoryEntityV2s, tenantId);
-            if (type == 3 || type == 4) {
-                privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
-            } else if (level != 0 || !authorized) {
-                fileInputStream.delete();
-                GroupPrivilege groupPrivilege = new GroupPrivilege();
-                groupPrivilege.setRead(true);
-                groupPrivilege.setEditCategory(true);
-                groupPrivilege.setEditItem(true);
-                parentPrivilege.forEach(category -> {
-                    groupPrivilege.setRead(category.getRead() || groupPrivilege.getRead());
-                    groupPrivilege.setEditCategory(category.getEditCategory() || groupPrivilege.getEditCategory());
-                    groupPrivilege.setEditItem(category.getEditItem() || groupPrivilege.getEditItem());
-                });
-                privilege = getCategoryPrivilege(groupPrivilege.getRead(), groupPrivilege.getEditItem(), groupPrivilege.getEditCategory());
-            } else {
-                privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
-            }
-            List<CategoryPrivilege> categoryPrivileges = new ArrayList<>();
-            for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2s) {
-                CategoryPrivilege categoryPrivilege = new CategoryPrivilege(categoryEntityV2);
-                categoryPrivilege.setPrivilege(privilege);
-                categoryPrivileges.add(categoryPrivilege);
-            }
-            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(AdminUtils.getUserData().getUserId(), tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
-            if (userGroupIds != null && !userGroupIds.isEmpty()) {
-                for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2s) {
-                    userGroupDAO.insertGroupRelations(userGroupIds, categoryEntityV2.getGuid(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
-                }
-            }
-            return categoryPrivileges;
         } catch (AtlasBaseException e) {
+            throw e;
+        } catch (Exception e) {
             LOG.error("数据转换失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件异常：" + e.getMessage());
-        } catch (SQLException e) {
-            LOG.error("导入失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件异常：" + e.getMessage());
-        } finally {
-            if (fileInputStream.exists()) {
-                fileInputStream.delete();
+        }
+        checkSameName(categoryId, direction, categoryExports, type, tenantId);
+        if (categoryExports.isEmpty()) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "上传数据为空或全部重名");
+        }
+        Map<String, CategoryEntityV2> newCategorys = new HashMap<>();
+
+        //是否是导入一级目录
+        String upGuid;
+        String downGuid;
+        String parentQualifiedName = null;
+        String parentCategoryGuid = null;
+        int level;
+        String down = "down";
+        String up = "up";
+        if (categoryId != null && categoryId.length() != 0) {
+            if (up.equals(direction)) {
+                CategoryEntityV2 currentEntity = categoryDao.queryByGuid(categoryId, tenantId);
+                downGuid = categoryId;
+                upGuid = currentEntity.getUpBrotherCategoryGuid();
+                level = currentEntity.getLevel() - 1;
+                if (currentEntity.getParentCategoryGuid() != null && currentEntity.getParentCategoryGuid().length() > 0) {
+                    CategoryEntityV2 categoryEntityV2 = categoryDao.queryByGuid(currentEntity.getParentCategoryGuid(), tenantId);
+                    parentQualifiedName = categoryEntityV2.getQualifiedName();
+                    parentCategoryGuid = currentEntity.getParentCategoryGuid();
+                }
+            } else if (down.equals(direction)) {
+                CategoryEntityV2 currentEntity = categoryDao.queryByGuid(categoryId, tenantId);
+                upGuid = categoryId;
+                downGuid = currentEntity.getDownBrotherCategoryGuid();
+                level = currentEntity.getLevel() - 1;
+                if (currentEntity.getParentCategoryGuid() != null && currentEntity.getParentCategoryGuid().length() > 0) {
+                    CategoryEntityV2 categoryEntityV2 = categoryDao.queryByGuid(currentEntity.getParentCategoryGuid(), tenantId);
+                    parentQualifiedName = categoryEntityV2.getQualifiedName();
+                    parentCategoryGuid = currentEntity.getParentCategoryGuid();
+                }
+            } else {
+                parentCategoryGuid = categoryId;
+                upGuid = categoryDao.queryLastChildCategory(categoryId, tenantId);
+                downGuid = null;
+                CategoryEntityV2 currentEntity = categoryDao.queryByGuid(categoryId, tenantId);
+                parentQualifiedName = currentEntity.getQualifiedName();
+                level = currentEntity.getLevel();
             }
+        } else {
+            upGuid = categoryDao.queryLastCategory(type, tenantId);
+            downGuid = null;
+            parentQualifiedName = null;
+            level = 0;
         }
 
+        CategoryEntityV2 upChild = categoryDao.queryByGuid(upGuid, tenantId);
+        if (upChild == null) {
+            upChild = new CategoryEntityV2();
+        }
+        newCategorys.put(upGuid, upChild);
+        Timestamp timestamp = io.zeta.metaspace.utils.DateUtils.currentTimestamp();
+        User user = AdminUtils.getUserData();
+        String upId = upGuid;
+        for (CategoryExport categoryExport : categoryExports) {
+            StringBuffer qualifiedName = new StringBuffer();
+            String name = categoryExport.getName();
+            CategoryEntityV2 categoryEntityV2 = new CategoryEntityV2();
+            categoryEntityV2.setName(name);
+            categoryEntityV2.setSafe("1");
+            categoryEntityV2.setCategoryType(type);
+            categoryEntityV2.setDescription(categoryExport.getDescription());
+            categoryEntityV2.setGuid(categoryExport.getGuid());
+            categoryEntityV2.setParentCategoryGuid(parentCategoryGuid);
+            categoryEntityV2.setLevel(level + 1);
+            categoryEntityV2.setCreateTime(timestamp);
+            categoryEntityV2.setCreator(user.getUserId());
 
+            if (StringUtils.isNotEmpty(parentQualifiedName) && parentQualifiedName.length() > 0)
+                qualifiedName.append(parentQualifiedName + ".");
+            qualifiedName.append(name);
+
+            categoryEntityV2.setUpBrotherCategoryGuid(upId);
+            newCategorys.get(upId).setDownBrotherCategoryGuid(categoryExport.getGuid());
+            upId = categoryEntityV2.getGuid();
+
+            newCategorys.put(categoryEntityV2.getGuid(), categoryEntityV2);
+        }
+        newCategorys.remove(upGuid);
+        if (newCategorys.get(upId) != null) {
+            newCategorys.get(upId).setDownBrotherCategoryGuid(downGuid);
+        }
+
+        if (upGuid != null) {
+            categoryDao.updateDownBrotherCategoryGuid(upGuid, upChild.getDownBrotherCategoryGuid(), tenantId);
+        }
+        if (downGuid != null) {
+            categoryDao.updateUpBrotherCategoryGuid(downGuid, upId, tenantId);
+        }
+
+        CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege();
+        ArrayList<CategoryEntityV2> categoryEntityV2s = new ArrayList<>(newCategorys.values());
+        List<GroupPrivilege> parentPrivilege = userGroupDAO.getCategoryGroupPrivileges(parentCategoryGuid, tenantId);
+        if (parentPrivilege.size() != 0 && categoryEntityV2s != null) {
+            userGroupDAO.addUserGroupCategoryPrivileges(parentPrivilege, categoryEntityV2s);
+        }
+        if (type == technicalType) {
+            AtomicInteger maxSort = new AtomicInteger(categoryDao.getMaxSortByParentGuid(parentCategoryGuid, tenantId));
+            categoryEntityV2s.forEach(c -> {
+                c.setPrivateStatus(CategoryPrivateStatus.PRIVATE);
+                c.setSort(maxSort.get());
+                maxSort.getAndIncrement();
+            });
+        }
+        categoryDao.addAll(categoryEntityV2s, tenantId);
+        if (type == 3 || type == 4) {
+            privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
+        } else if (level != 0 || !authorized) {
+            GroupPrivilege groupPrivilege = new GroupPrivilege();
+            groupPrivilege.setRead(true);
+            groupPrivilege.setEditCategory(true);
+            groupPrivilege.setEditItem(true);
+            parentPrivilege.forEach(category -> {
+                groupPrivilege.setRead(category.getRead() || groupPrivilege.getRead());
+                groupPrivilege.setEditCategory(category.getEditCategory() || groupPrivilege.getEditCategory());
+                groupPrivilege.setEditItem(category.getEditItem() || groupPrivilege.getEditItem());
+            });
+            privilege = getCategoryPrivilege(groupPrivilege.getRead(), groupPrivilege.getEditItem(), groupPrivilege.getEditCategory());
+        } else if (authorized) {
+            privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
+        } else {
+            privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
+        }
+        List<CategoryPrivilege> categoryPrivileges = new ArrayList<>();
+        for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2s) {
+            CategoryPrivilege categoryPrivilege = new CategoryPrivilege(categoryEntityV2);
+            categoryPrivilege.setPrivilege(privilege);
+            categoryPrivileges.add(categoryPrivilege);
+        }
+        List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(AdminUtils.getUserData().getUserId(), tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
+        if (userGroupIds!=null && !userGroupIds.isEmpty()) {
+            for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2s) {
+                userGroupDAO.insertGroupRelations(userGroupIds, categoryEntityV2.getGuid(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
+            }
+        }
+        return categoryPrivileges;
         //技术目录一级目录不允许删关联
 //        if (type == 0 && category.getLevel() == 1) {
 //            privilege.setDeleteRelation(false);
@@ -3430,8 +3424,6 @@ public class DataManageService {
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "禁止不同类型的目录互相导入，请选择正确的文件导入");
         }
-
-        fileInputStream.delete();
     }
 
     /**

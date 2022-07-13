@@ -8,6 +8,7 @@ import com.sun.jersey.multipart.FormDataParam;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.dto.requirements.*;
+import io.zeta.metaspace.model.enums.FileInfoPath;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -15,6 +16,7 @@ import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.service.HdfsService;
 import io.zeta.metaspace.web.service.RequirementsPublicTenantService;
+import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.AtlasErrorCode;
@@ -59,6 +61,8 @@ public class RequirementsPublicTenantREST {
     private RequirementsPublicTenantService publicTenantService;
     @Autowired
     private HdfsService hdfsService;
+    @Autowired
+    private FileInfoService fileInfoService;
 
     private static final Logger LOG = LoggerFactory.getLogger(RequirementsPublicTenantREST.class);
 
@@ -135,6 +139,7 @@ public class RequirementsPublicTenantREST {
         try {
             String resourceId = publicTenantService.createdRequirement(requirementDTO);
             HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), requirementDTO.getName());
+            fileInfoService.createFileuploadRecord(requirementDTO.getFilePath(),requirementDTO.getName(),FileInfoPath.DEMAND_MANAGEMENT);
             return ReturnUtil.success((Object) resourceId);
         } catch (IOException e) {
             LOG.error("添加需求失败",e);
@@ -150,6 +155,7 @@ public class RequirementsPublicTenantREST {
         try {
             HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), requirementDTO.getGuid());
             publicTenantService.editedRequirement(requirementDTO);
+            fileInfoService.createFileuploadRecord(requirementDTO.getFilePath(),requirementDTO.getName(), FileInfoPath.DEMAND_MANAGEMENT_EDIT);
         } catch (Exception e) {
             LOG.error("修改需求失败",e);
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "修改需求失败");

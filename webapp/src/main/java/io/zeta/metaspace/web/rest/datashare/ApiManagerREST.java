@@ -23,6 +23,7 @@ import io.zeta.metaspace.model.apigroup.ApiVersion;
 import io.zeta.metaspace.model.datasource.DataSourceTypeInfo;
 import io.zeta.metaspace.model.desensitization.DesensitizationRule;
 import io.zeta.metaspace.model.dto.api.ApiTestInfoVO;
+import io.zeta.metaspace.model.enums.FileInfoPath;
 import io.zeta.metaspace.model.ip.restriction.IpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
 import io.zeta.metaspace.model.metadata.Column;
@@ -41,12 +42,9 @@ import io.zeta.metaspace.model.share.*;
 import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.*;
-import io.zeta.metaspace.web.util.AdminUtils;
-import io.zeta.metaspace.web.util.ExportDataPathUtils;
-import io.zeta.metaspace.web.util.PoiExcelUtils;
-import io.zeta.metaspace.web.util.ReturnUtil;
+import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
+import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.AtlasErrorCode;
-import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
@@ -60,7 +58,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
@@ -70,7 +67,6 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.io.*;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -103,6 +99,11 @@ public class ApiManagerREST {
     private DesensitizationService desensitizationService;
     @Autowired
     private IpRestrictionService ipRestrictionService;
+
+    @Autowired
+    private FileInfoService fileInfoService;
+    @Autowired
+    private RedisUtil redisUtil;
 
     private static int CATEGORY_TYPE = 2;
 
@@ -972,7 +973,7 @@ public class ApiManagerREST {
             HashMap<String, String> map = new HashMap<String, String>() {{
                 put("upload", upload);
             }};
-            CommonConstant.FILE_CONCURRENT_HASH_MAP.put(upload,file.getName());
+            redisUtil.set(upload,name,CommonConstant.FILE_REDIS_TIME);
             return ReturnUtil.success(map);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导入失败:" + e.getMessage());
@@ -1000,6 +1001,7 @@ public class ApiManagerREST {
         try {
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
             shareService.importCategory(file, projectId, tenantId);
+            fileInfoService.createFileRecord(upload, FileInfoPath.API_CATEGORY,file);
             return ReturnUtil.success("success");
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败:" + e.getMessage());
