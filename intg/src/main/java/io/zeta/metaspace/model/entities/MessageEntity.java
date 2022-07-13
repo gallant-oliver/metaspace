@@ -120,4 +120,7 @@ public class MessageEntity {
         this.process = process;
     }
 
+    public MessageEntity(){
+    }
+
 }
