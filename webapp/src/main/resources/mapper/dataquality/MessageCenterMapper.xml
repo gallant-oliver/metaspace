@@ -5,7 +5,7 @@
     <!-- 新增消息列 -->
     <sql id="insert_message_column_List">
         id
-        , name, type, module, status, tenantid, create_user, operation_time, create_time, update_time
+        , name, type, module, status, tenantid, create_user, operation_time, create_time, update_time,delete,process
     </sql>
 
     <!--获取消息分页列表-->
@@ -187,7 +187,9 @@
         #{message.createUser},
         now(),
         now(),
-        now()
+        now(),
+        #{message.delete},
+        #{message.process}
         )
     </insert>
 
