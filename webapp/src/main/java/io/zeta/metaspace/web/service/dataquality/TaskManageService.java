@@ -524,14 +524,7 @@ public class TaskManageService {
                 int dataSourceType = rule.getScope();
                 for (EditionTaskInfo.ObjectInfo objectInfo : objectInfoList) {
                     String objectId = objectInfo.getObjectId().toString();
-                    if (0 == dataSourceType) {
-                        //添加数据源名字
-                        CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
-                        String dataSourceId = paramInfo.getDataSourceId();
-                        String dataSourceName = getDataSourceName(dataSourceId);
-                        paramInfo.setDataSourceName(dataSourceName);
-                        objectInfo.setObjectId(paramInfo);
-                    } else if (1 == dataSourceType) {
+                    if (0 == dataSourceType || 1 == dataSourceType || 3 == dataSourceType) {
                         //添加数据源名字
                         CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
                         String dataSourceId = paramInfo.getDataSourceId();

@@ -13,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 public class SqlServerAdapterExecutor extends AbstractAdapterExecutor {
     public SqlServerAdapterExecutor(AdapterSource adapterSource) {
@@ -58,6 +59,36 @@ public class SqlServerAdapterExecutor extends AbstractAdapterExecutor {
                 return totalSize;
             } catch (SQLException e) {
                 throw new AtlasBaseException("查询表大小失败", e);
+            }
+        });
+    }
+
+    /**
+     * 获取指定数据库表描述为空的表总个数
+     * @param db
+     * @param pool
+     * @return
+     */
+    public float getTblRemarkCountByDb(AdapterSource adapterSource, String user, String db,  String pool, Map<String, Object> map) {
+        String querySQL = "select count(*) as emptyCount from sys.objects obj left join [sys].[extended_properties] se on obj.object_id = se.major_id and se.minor_id = 0 join sys.schemas s on obj.schema_id=s.schema_id where obj.type = 'u' and (se.value is null or se.value = '') and s.name = '%s'";
+        querySQL=String.format(querySQL,db);
+        Connection connection = adapterSource.getConnection(user, db, pool);
+        return queryResult(connection, querySQL, resultSet -> {
+            try {
+                float emptyCount = 0;
+                while (resultSet.next()) {
+                    emptyCount = resultSet.getLong("emptyCount");
+                }
+                return emptyCount;
+            } catch (SQLException e) {
+                throw new AtlasBaseException("获取指定数据库表描述为空的表总个数失败", e);
+            } finally {
+                try {
+                    resultSet.close();
+                    connection.close();
+                } catch (Exception e) {
+                    throw new AtlasBaseException("关闭表连接失败", e);
+                }
             }
         });
     }

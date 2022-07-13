@@ -147,4 +147,6 @@ public interface DatabaseDAO {
                                      @Param("userId") String userId);
 
     TableDataSourceRelationPO selectByTableGuid(@Param("tableGuid") String tableGuid);
+
+    List<String> getDbName(List<String> ids);
 }

@@ -43,6 +43,10 @@ import io.zeta.metaspace.model.desensitization.ApiDesensitization;
 import io.zeta.metaspace.model.desensitization.DesensitizationRule;
 import io.zeta.metaspace.model.dto.api.ApiTestDTO;
 import io.zeta.metaspace.model.dto.api.ApiTestInfoVO;
+import io.zeta.metaspace.model.dto.api.ApiTestResult;
+import io.zeta.metaspace.model.entities.MessageEntity;
+import io.zeta.metaspace.model.enums.MessagePush;
+import io.zeta.metaspace.model.enums.ProcessEnum;
 import io.zeta.metaspace.model.ip.restriction.ApiIpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
@@ -62,12 +66,12 @@ import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.model.usergroup.DBInfo;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
-import io.zeta.metaspace.utils.AdapterUtils;
+import io.zeta.metaspace.utils.*;
 import io.zeta.metaspace.utils.DateUtils;
-import io.zeta.metaspace.utils.OKHttpClient;
-import io.zeta.metaspace.utils.SqlBuilderUtils;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
+import io.zeta.metaspace.web.model.CommonConstant;
+import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasConfiguration;
@@ -95,9 +99,8 @@ import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer;
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.lang.reflect.Type;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
+import java.sql.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -107,6 +110,8 @@ import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static io.zeta.metaspace.model.enums.MessagePush.DATA_SERVICE_AUDIT_START;
 
 /*
  * @description
@@ -157,6 +162,14 @@ public class DataShareService {
     private DesensitizationDAO desensitizationDAO;
     @Autowired
     private IpRestrictionDAO ipRestrictionDAO;
+    @Autowired
+    private FileInfoService fileInfoService;
+
+    @Autowired
+    ApproveGroupDAO approveGroupDAO;
+
+    @Autowired
+    MessageCenterService messageCenterService;
 
     Map<String, CompletableFuture> taskMap = new HashMap<>();
 
@@ -1422,37 +1435,37 @@ public class DataShareService {
     public List<String> getUserDataBases(String tenantId, String sourceId) throws AtlasBaseException {
 
         User user = AdminUtils.getUserData();
-        if("hive".equalsIgnoreCase(sourceId)){
+        if ("hive".equalsIgnoreCase(sourceId)) {
             List<String> databases = tenantService.getDatabase(tenantId);
             List<String> userHiveDatabases = shareDAO.getUserHiveDatabases(tenantId, user.getUserId());
-            if(null == databases){
+            if (null == databases) {
                 databases = new ArrayList<>();
             }
-            if(null == userHiveDatabases){
+            if (null == userHiveDatabases) {
                 userHiveDatabases = new ArrayList<>();
             }
             userHiveDatabases.retainAll(databases);
             return userHiveDatabases;
-        }else{
-            return shareDAO.getUserRelationDatabases(tenantId,sourceId,user.getUserId());
+        } else {
+            return shareDAO.getUserRelationDatabases(tenantId, sourceId, user.getUserId());
         }
     }
 
     public List<String> getUserTables(String tenantId, String sourceId, String dataBase) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         List<String> userDataBases = getUserDataBases(tenantId, sourceId);
-        if(!userDataBases.contains(dataBase)){
-            throw new AtlasBaseException("id为【"+sourceId+"】的数据源中没有找到数据库【" + dataBase + "." +dataBase + "】，请确认数据库存在并且确保用户" + user.getUsername() + "具有读取该数据库的权限",
+        if (!userDataBases.contains(dataBase)) {
+            throw new AtlasBaseException("id为【" + sourceId + "】的数据源中没有找到数据库【" + dataBase + "." + dataBase + "】，请确认数据库存在并且确保用户" + user.getUsername() + "具有读取该数据库的权限",
                     AtlasErrorCode.BAD_REQUEST, "数据库【" + dataBase + "】不存在");
         }
-        return shareDAO.getDatabaseTables(sourceId,dataBase);
+        return shareDAO.getDatabaseTables(sourceId, dataBase);
     }
 
     public List<String> getUserColumns(String tenantId, String sourceId, String dataBase, String tableName) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         List<String> userTables = getUserTables(tenantId, sourceId, dataBase);
-        if(!userTables.contains(tableName)){
-            throw new AtlasBaseException("id为【"+sourceId+"】的数据源中没有找到库表【" + dataBase + "." +tableName + "】，请确认库表存在并且确保用户" + user.getUsername() + "具有读取该库表的权限",
+        if (!userTables.contains(tableName)) {
+            throw new AtlasBaseException("id为【" + sourceId + "】的数据源中没有找到库表【" + dataBase + "." + tableName + "】，请确认库表存在并且确保用户" + user.getUsername() + "具有读取该库表的权限",
                     AtlasErrorCode.BAD_REQUEST, "表【" + tableName + "】不存在");
         }
         return shareDAO.getUserColumns(sourceId, dataBase, tableName);
@@ -1515,20 +1528,20 @@ public class DataShareService {
             schemaPage.setLists(lists);
             schemaPage.setCurrentSize(lists.size());
             return schemaPage;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据源元数据失败");
         }
     }
 
     /**
      * 根据配置的用户组权限获取数据库
+     *
      * @param parameters
      * @param tenantId
      * @param sourceId
      * @return
      */
-    public PageResult<Map<String, Object>> getDbDataList(ColumnParameters parameters, String tenantId, String sourceId){
+    public PageResult<Map<String, Object>> getDbDataList(ColumnParameters parameters, String tenantId, String sourceId) {
         List<DBInfo> dbInfoList = taskManageDAO.getUserGroupDatabase(tenantId, sourceId);
         PageResult<Map<String, Object>> schemaPage = new PageResult<>();
         List<Map<String, Object>> schemaNameList = dbInfoList.stream()
@@ -2201,7 +2214,7 @@ public class DataShareService {
                 String approveJson = apiGroupInfo.getApproveJson();
                 List list = gson.fromJson(approveJson, List.class);
                 List<String> userNames = new ArrayList<>();
-                if (list!=null&&list.size()!=0){
+                if (list != null && list.size() != 0) {
                     userNames = userDAO.getUserNameByIds(list);
                 }
                 apiGroupInfo.setApprove(userNames);
@@ -2518,6 +2531,21 @@ public class DataShareService {
         }
         shareDAO.updateApiVersionStatus(id, version, ApiStatusEnum.AUDIT.getName(), updateTime);
         auditService.insertApiAudit(tenantId, id, version, apiInfo.getVersionNum());
+
+        // api消息推送给管理员审批
+        String projectId = apiInfo.getProjectId();
+        String manage = shareDAO.getProjectManager(projectId);
+        if (StringUtils.isNotEmpty(manage)) {
+            List<String> userIdList = new ArrayList<>(Arrays.asList(manage));
+            List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
+            MessageEntity message = null;
+            message = new MessageEntity(DATA_SERVICE_AUDIT_START.type, MessagePush.getFormattedMessageName(DATA_SERVICE_AUDIT_START.name, apiInfo.getName()), DATA_SERVICE_AUDIT_START.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
+            for (String userEmail : userEmailList) {
+                message.setCreateUser(userEmail);
+                messageCenterService.addMessage(message, tenantId);
+            }
+        }
+
         addApiLog(ApiLogEnum.SUBMIT, id, AdminUtils.getUserData().getUserId());
     }
 
@@ -2707,7 +2735,7 @@ public class DataShareService {
         DataSourceType sourceType = DataSourceType.getType(apiInfo.getSourceType());
         if (!sourceType.isBuildIn()) {
             DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(apiInfo.getSourceId());
-            if(dataSourceInfo==null){
+            if (dataSourceInfo == null) {
                 LOG.error("数据源信息已失效");
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源信息已失效，测试失败！");
             }
@@ -3107,7 +3135,7 @@ public class DataShareService {
             handleParams(apiInfo);
             ApiInfoDetailDTO detailInfo = new ApiInfoDetailDTO();
             BeanUtils.copyProperties(apiInfo, detailInfo);
-            
+
             Timestamp createTime = apiInfo.getCreateTime();
             Timestamp updateTime = apiInfo.getUpdateTime();
             detailInfo.setCreateTime(createTime != null ? dateFormat.format(createTime) : "");
@@ -3118,8 +3146,7 @@ public class DataShareService {
             String sourceType = detailInfo.getSourceType();
             if ("HIVE".equals(sourceType)) {
                 detailInfo.setSourceName("资源池：" + detailInfo.getSourceName());
-            }
-            else {
+            } else {
                 detailInfo.setSourceName("数据源：" + detailInfo.getSourceName());
             }
 
@@ -3138,13 +3165,13 @@ public class DataShareService {
                     List<ApiInfoV2.FieldV2> params = apiInfo.getParam();
                     Map<String, ApiInfoV2.FieldV2> paramsMap = new HashMap<>();
                     if (CollectionUtils.isNotEmpty(params)) {
-                        paramsMap = params.stream().collect(Collectors.toMap(ApiInfoV2.FieldV2 :: getColumnName, Function.identity(), (key1, key2) -> key2));
+                        paramsMap = params.stream().collect(Collectors.toMap(ApiInfoV2.FieldV2::getColumnName, Function.identity(), (key1, key2) -> key2));
                     }
 
                     List<ApiInfoDetailDTO.ApiColumnInfoDetail> apiColumnInfoDetails = new ArrayList<>();
                     Map<String, String> ruleMap = new HashMap<>();
                     if (CollectionUtils.isNotEmpty(rules)) {
-                        ruleMap = rules.stream().collect(Collectors.toMap(ApiDesensitization :: getField, ApiDesensitization :: getRuleName, (key1, key2) -> key2));
+                        ruleMap = rules.stream().collect(Collectors.toMap(ApiDesensitization::getField, ApiDesensitization::getRuleName, (key1, key2) -> key2));
                     }
                     for (ApiInfoV2.FieldV2 returnParam : returnParams) {
                         ApiInfoDetailDTO.ApiColumnInfoDetail apiColumnInfoDetail = new ApiInfoDetailDTO.ApiColumnInfoDetail();
@@ -3166,7 +3193,7 @@ public class DataShareService {
             detailInfos.add(detailInfo);
         }
 
-       return fillHtmlTemplateData(detailInfos);
+        return fillHtmlTemplateData(detailInfos);
     }
 
     private ApiInfoV2 handleParams(ApiInfoV2 apiInfo) throws AtlasBaseException {
@@ -3177,12 +3204,14 @@ public class DataShareService {
             Object sortParam = apiInfo.getSortParams();
             Object apiPoly = apiInfo.getApiPoly();
 
-            Type typeParam = new TypeToken<List<ApiInfoV2.FieldV2>>(){}.getType();
+            Type typeParam = new TypeToken<List<ApiInfoV2.FieldV2>>() {
+            }.getType();
             List<ApiInfoV2.FieldV2> params = gson.fromJson(param == null ? null : param.toString(), typeParam);
             List<ApiInfoV2.FieldV2> returnParams = gson.fromJson(returnParam == null ? null : returnParam.toString(), typeParam);
             List<ApiInfoV2.FieldV2> sortParams = gson.fromJson(sortParam == null ? null : sortParam.toString(), typeParam);
 
-            Type apiPolyType = new TypeToken<ApiPolyEntity>(){}.getType();
+            Type apiPolyType = new TypeToken<ApiPolyEntity>() {
+            }.getType();
             ApiPolyEntity apiPolyEntity = gson.fromJson(apiPoly == null ? null : apiPoly.toString(), apiPolyType);
 
             apiInfo.setParam(params);
@@ -3241,7 +3270,7 @@ public class DataShareService {
     private List<CategoryExport> file2Data(File file) throws Exception {
         List<String> names = new ArrayList<>();
         List<CategoryExport> categoryExports = new ArrayList<>();
-        try(Workbook workbook = WorkbookFactory.create(file)) {
+        try (Workbook workbook = WorkbookFactory.create(file)) {
             Sheet sheet = workbook.getSheetAt(0);
 
             //文件格式校验
@@ -3290,8 +3319,7 @@ public class DataShareService {
                 categoryExports.add(category);
                 names.add(name);
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "转化失败");
         }
         return categoryExports;
@@ -3452,41 +3480,198 @@ public class DataShareService {
         getNextCateName(guid, cateMap, cateNameList);
     }
 
-    public Result testApi(ApiTestInfoVO apiTestInfoVO) {
+    public Result testApi(ApiTestInfoVO apiTestInfoVO) throws AtlasException {
         ApiInfoV2 apiInfo = getApiInfoByVersion(apiTestInfoVO.getApiId(), apiTestInfoVO.getVersion());
-        apiInfo.setParam(apiTestInfoVO.getParam());
-        testAPI(UUID.randomUUID().toString(), apiInfo, apiTestInfoVO.getPageSize(), apiTestInfoVO.getPageNum());
+        //默认参数
+        completeParam(apiInfo);
         List<ApiTestDTO> apiAndGroupInfoStatus = shareDAO.getApiAndGroupInfoStatus(apiTestInfoVO.getVersion(), apiTestInfoVO.getApiId());
         ApiTestDTO apiTestDTO = apiAndGroupInfoStatus.get(0);
         ApiStatusEnum anEnum = ApiStatusEnum.getEnum(apiTestDTO.getApiStatus());
-        String message = "测试通过！";
-        String success = message;
         switch (anEnum) {
             case DRAFT:
             case DOWN:
             case AUDIT:
-                message = "api处于" + anEnum.getStr() + "状态，api测试不通过！";
-                break;
+                return ReturnUtil.success("api处于" + anEnum.getStr() + "状态，api测试不通过！");
             case UP:
-                message = "该版本api未存在于已发布的分组中，api测试不通过！";
-                for (ApiTestDTO apiTestDTO1:apiAndGroupInfoStatus) {
-                    //存在组id，且组上线即可
-                    if (apiTestDTO1.getApiGroupId() != null && apiTestDTO1.isApiGroupPublish()) {
-                        //如果api和apigroup的mobiusId为空则数据有误
-                        if (StringUtils.isEmpty(apiTestDTO1.getApiMobiusId()) ||
-                                StringUtils.isEmpty(apiTestDTO1.getApiGroupIdMobiusId())) {
-                            throw new AtlasBaseException("API信息存在错误，请联系运维人员");
-                        }
-                        message = "测试通过！";
+                mobiusTestApi(apiInfo, apiTestInfoVO.getPageNum(), apiTestInfoVO.getPageSize());
+                break;
+        }
+        return ReturnUtil.success("api测试成功");
+    }
+
+    private void mobiusTestApi(ApiInfoV2 apiInfo, long pageNum, long pageSize) throws AtlasException {
+        String domainName = "";
+        //旧api访问直接ip为当前host，新api则是云平台域名
+        StringBuilder path = new StringBuilder();
+        if (StringUtils.isEmpty(apiInfo.getApiKey())) {
+            domainName = apiInfo.getProtocol().toLowerCase() + "://" + getMetaspaceHost();
+        } else {
+            path.append("http://");
+            Configuration configuration = ApplicationProperties.get();
+            domainName = configuration.getString("metaspace.mobius.domain.name") + "/";
+        }
+        path.append(domainName);
+        //新api地址多一个path
+        if (StringUtils.isNotEmpty(apiInfo.getApiKey())) {
+            path.append(CommonConstant.API_PATH);
+        }
+        path.append(ApiNewPathUtil.getNewPath(apiInfo));
+        String requestMode = apiInfo.getRequestMode();
+        String response = null;
+        if (requestMode.equals("POST")) {
+            response = postTest(path, apiInfo.getParam(), apiInfo.getApiKey(), pageNum, pageSize);
+        }
+        if (requestMode.equals("GET")) {
+            response = getTest(path, apiInfo.getParam(), apiInfo.getApiKey(), pageNum, pageSize);
+        }
+        if (response == null) {
+            throw new AtlasException("api测试失败");
+        }
+        //response类型：1.正常数据（datas,totalCount）;2.{errorCode,errorMessage};3:云平台返回字符串
+        ApiTestResult apiTestResult = JsonUtils.fromJson(response, ApiTestResult.class);
+        if (apiTestResult.getErrorCode() != null) {
+            throw new AtlasException(apiTestResult.getErrorMessage() != null ? apiTestResult.getErrorMessage() : "api测试失败");
+        }
+    }
+
+    private String postTest(StringBuilder path, List<ApiInfoV2.FieldV2> param, String apiKey, long pageNum, long pageSize) throws AtlasException {
+        try {
+            Map<String, Object> headerMap = new HashMap<>();
+            Map<String, Object> paramMap = new HashMap<>();
+            paramMap.put("page_num", pageNum);
+            paramMap.put("page_size", pageSize);
+            if (StringUtils.isNotEmpty(apiKey)) {
+                headerMap.put("apiKey", apiKey);
+            }
+            if (CollectionUtils.isNotEmpty(param)) {
+                for (ApiInfoV2.FieldV2 par : param) {
+                    if (CommonConstant.HEADER_PARAM.equals(par.getPlace())) {
+                        headerMap.put(par.getName(), par.getValue());
+                    }
+                    if (CommonConstant.PATH_PARAM.equals(par.getPlace())) {
+                        path.append("/").append("{").append(par.getValue()).append("}");
+                    }
+                    if (CommonConstant.QUERY_PARAM.equals(par.getPlace())) {
+                        paramMap.put(par.getName(), par.getValue());
                     }
                 }
+            }
+            return OKHttpClient.doPost(path.toString(), headerMap, paramMap, null);
+        } catch (AtlasBaseException e) {
+            throw new AtlasException("测试api失败", e);
+        }
+    }
+
+    private String getTest(StringBuilder path, List<ApiInfoV2.FieldV2> param, String apiKey, long pageNum, long pageSize) throws AtlasException {
+        try {
+            Map<String, String> headerMap = new HashMap<>();
+            Map<String, String> paramMap = new HashMap<>();
+            paramMap.put("page_num", pageNum + "");
+            paramMap.put("page_size", pageSize + "");
+            if (StringUtils.isNotEmpty(apiKey)) {
+                headerMap.put("apiKey", apiKey);
+            }
+            if (CollectionUtils.isNotEmpty(param)) {
+                for (ApiInfoV2.FieldV2 par : param) {
+                    if (CommonConstant.HEADER_PARAM.equals(par.getPlace())) {
+                        headerMap.put(par.getName(), par.getValue().toString());
+                    }
+                    if (CommonConstant.PATH_PARAM.equals(par.getPlace())) {
+                        path.append("/").append("{").append(par.getValue()).append("}");
+                    }
+                    if (CommonConstant.QUERY_PARAM.equals(par.getPlace())) {
+                        paramMap.put(par.getName(), par.getValue().toString());
+                    }
+                }
+            }
+            return OKHttpClient.doGet(path.toString(), paramMap, headerMap);
+        } catch (AtlasBaseException e) {
+            throw new AtlasException("测试api失败", e);
+        }
+    }
+
+    private void completeParam(ApiInfoV2 apiInfo) {
+        List<ApiInfoV2.FieldV2> param = apiInfo.getParam();
+        if (CollectionUtils.isEmpty(param)) {
+            return;
+        }
+        for (ApiInfoV2.FieldV2 par : param) {
+            DataType dataType = DataType.convertType(par.getColumnType().toUpperCase());
+            Object defaultValue = getDefaultValue(dataType, Integer.parseInt(par.getMinSize()), Integer.parseInt(par.getMaxSize()));
+            par.setValue(defaultValue);
+        }
+    }
+
+    private Object getDefaultValue(DataType dataType, int min, int max) {
+        StringBuilder str = new StringBuilder();
+        Object value = null;
+        switch (dataType) {
+            case DATE:
+                value = new Date(2021, 12, 12);
                 break;
+            case BOOLEAN:
+                value = true;
+                break;
+            case TIMESTAMP:
+                value = new Timestamp(2021, 12, 12, 12, 12, 12, 12);
+                break;
+            case TIME:
+                value = new Time(12, 12, 12);
+                break;
+            case STRING:
+                str.append("a");
+                if (min != 0) {
+                    while (str.length() <= min) {
+                        str.append("a");
+                    }
+                }
+                value = str.toString();
+                break;
+            case INT:
+            case BIGINT:
+                str.append("1");
+                if (min != 0) {
+                    while (str.length() <= min) {
+                        str.append("1");
+                    }
+                }
+                value = Long.valueOf(str.toString());
+                break;
+            case CLOB:
+                return new Clob[]{};
+            case DOUBLE:
+            case DECIMAL:
+                str.append(1.1);
+                if (min != 0) {
+                    while (str.length() <= min) {
+                        str.append("1");
+                    }
+                }
+                value = Double.valueOf(str.toString());
+                break;
+            case FLOAT:
+                str.append(1.1);
+                if (min != 0) {
+                    while (str.length() <= min) {
+                        str.append("1");
+                    }
+                }
+                value = Float.valueOf(str.toString());
+                break;
+            default:
+                value = "str1";
         }
-        if (message.equals(success)) {
-            return new Result("200",message,null,null);
-        } else {
-            return ReturnUtil.error("400", message);
+        //固定长度的参数类型，不该有不合理的长度限制
+        if (dataType.equals(DataType.TIME) || dataType.equals(DataType.DATE) || dataType.equals(DataType.TIMESTAMP) ||
+                dataType.equals(DataType.BOOLEAN)) {
+            if (min != 0 && value.toString().length() < min) {
+                throw new AtlasBaseException("参数最小长度不合理");
+            }
+            if (max != 0 && value.toString().length() > max) {
+                throw new AtlasBaseException("参数最大长度不合理");
+            }
         }
+        return value;
     }
 }
 

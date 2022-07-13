@@ -61,6 +61,8 @@ import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
+import io.zeta.metaspace.web.model.CommonConstant;
+import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
@@ -83,6 +85,7 @@ import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -172,6 +175,8 @@ public class DataManageService {
 
     @Autowired
     private ColumnTagDAO columnTagDAO;
+    @Autowired
+    private FileInfoService fileInfoService;
 
     int technicalType = 0;
     int dataStandType = 3;
@@ -2722,7 +2727,6 @@ public class DataManageService {
         if (type == 3 || type == 4) {
             privilege = new CategoryPrivilege.Privilege(false, false, true, true, true, true, true, true, true, false);
         } else if (level != 0 || !authorized) {
-            fileInputStream.delete();
             GroupPrivilege groupPrivilege = new GroupPrivilege();
             groupPrivilege.setRead(true);
             groupPrivilege.setEditCategory(true);
@@ -2744,15 +2748,13 @@ public class DataManageService {
             categoryPrivilege.setPrivilege(privilege);
             categoryPrivileges.add(categoryPrivilege);
         }
-            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(AdminUtils.getUserData().getUserId(), tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
-            if (userGroupIds!=null && !userGroupIds.isEmpty()) {
-                for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2s) {
-                    userGroupDAO.insertGroupRelations(userGroupIds, categoryEntityV2.getGuid(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
-                }
+        List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(AdminUtils.getUserData().getUserId(), tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
+        if (userGroupIds!=null && !userGroupIds.isEmpty()) {
+            for (CategoryEntityV2 categoryEntityV2 : categoryEntityV2s) {
+                userGroupDAO.insertGroupRelations(userGroupIds, categoryEntityV2.getGuid(), Boolean.TRUE, Boolean.FALSE, Boolean.FALSE);
             }
+        }
         return categoryPrivileges;
-
-
         //技术目录一级目录不允许删关联
 //        if (type == 0 && category.getLevel() == 1) {
 //            privilege.setDeleteRelation(false);
@@ -3422,8 +3424,6 @@ public class DataManageService {
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "禁止不同类型的目录互相导入，请选择正确的文件导入");
         }
-
-        fileInputStream.delete();
     }
 
     /**

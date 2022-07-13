@@ -1,5 +1,7 @@
 package io.zeta.metaspace.web.model;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * 业务操作公共属性值
  *
@@ -28,6 +30,9 @@ public class CommonConstant {
     public static final Integer BUSINESS_CATEGORY_TYPE = 1;
 
     public static final int TECHNICAL_CATEGORY_TYPE = 0;
+
+    public static final int INDICATORS_CATEGORY_TYPE = 5;
+
 
     /**
      * 需求状态-待下发
@@ -111,4 +116,33 @@ public class CommonConstant {
      * 字段长度
      */
     public static final int LENGTH_1000 = 1000;
+
+    /**
+     * 数据服务api参数类型
+     */
+    public static final String HEADER_PARAM="HEADER";
+    public static final String QUERY_PARAM = "QUERY";
+    public static final String PATH_PARAM = "PATH";
+    public static final String API_PATH = "metaspace";
+
+    /**
+     * 消息中心权限变更：新增，变更，移除
+     */
+    public static final int ADD = 1;
+    public static final int CHANGE = 2;
+    public static final int REMOVE = 3;
+
+    /**
+     * 消息中心变更类型：数据源，数据库，衍生表，
+     */
+    public static final int DATA_SOURCE = 1;
+    public static final int DATA_BASE = 2;
+    public static final int IMPORT_TABLE = 3;
+    public static final int PROJECT = 4;
+    public static final int SECURITY_TABLE = 5;
+
+    /**
+     * 文件归档的redis过期时间
+     */
+    public static final long FILE_REDIS_TIME = 600;
 }

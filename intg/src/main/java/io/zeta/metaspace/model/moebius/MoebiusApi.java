@@ -32,4 +32,5 @@ public class MoebiusApi {
     private String resBody;
     private String status;
     private String path;
+    private String token;
 }

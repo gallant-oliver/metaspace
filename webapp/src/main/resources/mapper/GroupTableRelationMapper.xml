@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.zeta.metaspace.web.dao.GroupDeriveTableRelationDAO">
+    <sql id="Base_Column_List">
+        derive_table_id,user_group_id,tenant_id,
+        id,importance_privilege,security_privilege
+    </sql>
+    <select id="getDeriveInfoByIds" resultType="io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelationDTO">
+        SELECT
+        ug.ID userGroupId,
+        ug.name userGroupIdName,
+        ti.tablename tableName,
+        gtr.importance_privilege,
+        gtr.security_privilege,
+        ug.tenant tenantId
+        FROM
+        group_table_relation gtr
+        INNER JOIN user_group ug ON gtr.user_group_id = ug."id"
+        INNER JOIN tableinfo ti ON ti.tableguid = gtr.derive_table_id
+        WHERE
+        gtr.id IN
+        <foreach collection="ids" item="id" open="(" close=")" separator="," index="index">
+            #{id}
+        </foreach>
+    </select>
+
+    <select id="getDeriveNameInfoByIds" resultType="java.lang.String">
+        SELECT tablename FROM tableinfo  WHERE tableinfo.tableguid in
+        <foreach collection="ids" item="id" open="(" close=")" separator="," index="index">
+            #{id}
+        </foreach>
+        and status='ACTIVE'
+    </select>
+
+</mapper>
