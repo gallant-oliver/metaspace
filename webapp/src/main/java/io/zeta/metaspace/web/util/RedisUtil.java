@@ -32,6 +32,9 @@ public class RedisUtil {
         return stringRedisTemplate.opsForValue().get(key);
     }
 
+    public void delKey(String key) {
+        stringRedisTemplate.delete(key);
+    }
     /**
      * hash获取数据
      *

@@ -273,6 +273,21 @@ public class MessageCenterService {
         }
     }
 
+    public void userGroupMessage(int operateType, String groupId, String userId, String tenantId) {
+        try {
+            String groupName = userGroupDAO.getUserGroupByID(groupId).getName();
+            User user = userDAO.getUser(userId);
+            if (groupName == null || user == null) {
+                return;
+            }
+            MessageEntity messageEntity = userGroupGetMessageEntity(operateType, groupName);
+            messageEntity.setCreateUser(user.getAccount());
+            addMessage(messageEntity, tenantId);
+        } catch (AtlasException e) {
+            throw new AtlasBaseException("消息推送失败",e);
+        }
+    }
+
     private MessageEntity getMessageEntityByType(int type,int operateType,String userGroupName, String category){
         MessageEntity messageEntity = null;
         if (type == CommonConstant.TECHNICAL_CATEGORY_TYPE && operateType == CommonConstant.CHANGE) {
