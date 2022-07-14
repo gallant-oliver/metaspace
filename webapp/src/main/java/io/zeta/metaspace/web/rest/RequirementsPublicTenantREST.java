@@ -139,10 +139,10 @@ public class RequirementsPublicTenantREST {
         try {
             String resourceId = publicTenantService.createdRequirement(requirementDTO);
             HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), requirementDTO.getName());
-            fileInfoService.createFileuploadRecord(requirementDTO.getFilePath(),requirementDTO.getName(),FileInfoPath.DEMAND_MANAGEMENT);
+            fileInfoService.createFileuploadRecord(requirementDTO.getFilePath(), requirementDTO.getFileName(), FileInfoPath.DEMAND_MANAGEMENT);
             return ReturnUtil.success((Object) resourceId);
         } catch (IOException e) {
-            LOG.error("添加需求失败",e);
+            LOG.error("添加需求失败", e);
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "添加需求失败");
         }
     }
