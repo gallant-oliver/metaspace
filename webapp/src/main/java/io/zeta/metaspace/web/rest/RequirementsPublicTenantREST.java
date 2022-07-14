@@ -184,7 +184,6 @@ public class RequirementsPublicTenantREST {
     @POST
     @Path("/upload/file")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @OperateType(OperateTypeEnum.INSERT)
     public FileDTO uploadFile(@HeaderParam(HEADER_TENANT_ID) String tenantId,
                               @FormDataParam("file") InputStream fileInputStream,
                               @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) {
@@ -206,7 +205,6 @@ public class RequirementsPublicTenantREST {
                     fileInputStream,
                     timestamp + "." + fileType,
                     tenantId + "/" + DateTimeUtils.formatTime(timestamp, DateTimeUtils.YYYYMMDD));
-            HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), "上传附件:".concat(fileName));
             return new FileDTO(fileName, uploadPath);
         } catch (Exception e) {
             throw new AtlasBaseException(
