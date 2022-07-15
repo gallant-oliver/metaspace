@@ -1001,7 +1001,7 @@ public class ApiManagerREST {
         try {
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
             shareService.importCategory(file, projectId, tenantId);
-            fileInfoService.createFileRecord(upload, FileInfoPath.API_CATEGORY,file);
+            fileInfoService.createFileRecord(upload, FileInfoPath.API_CATEGORY, file);
             return ReturnUtil.success("success");
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败:" + e.getMessage());

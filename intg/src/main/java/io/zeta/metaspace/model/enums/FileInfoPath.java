@@ -16,6 +16,7 @@ public enum FileInfoPath {
     DRIVE_TABLE("衍生表登记","数据资产/源信息登记/衍生表登记"),
     RULE_CATEGORY("规则目录","数据质量/规则管理"),
     STANDARD_CATEGORY("数据标准目录","数据质量/数据标准"),
+    STANDARD("数据标准目录","数据质量/数据标准/标准导入"),
     API_CATEGORY("api目录","数据服务/API项目管理/API管理"),
     DEMAND_MANAGEMENT_EDIT("需求管理","需求管理"),
     DEMAND_MANAGEMENT("需求管理修改","租户资产/业务目录/业务对象详情/资源列表/创建需求"),

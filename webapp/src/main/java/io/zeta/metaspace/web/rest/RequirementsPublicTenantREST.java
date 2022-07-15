@@ -155,7 +155,7 @@ public class RequirementsPublicTenantREST {
         try {
             HttpRequestContext.get().auditLog(ModuleEnum.REQUIREMENTMANAGEMENTPUBLIC.getAlias(), requirementDTO.getGuid());
             publicTenantService.editedRequirement(requirementDTO);
-            fileInfoService.createFileuploadRecord(requirementDTO.getFilePath(),requirementDTO.getName(), FileInfoPath.DEMAND_MANAGEMENT_EDIT);
+            fileInfoService.createFileuploadRecord(requirementDTO.getFilePath(), requirementDTO.getFileName(), FileInfoPath.DEMAND_MANAGEMENT_EDIT);
         } catch (Exception e) {
             LOG.error("修改需求失败",e);
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "修改需求失败");

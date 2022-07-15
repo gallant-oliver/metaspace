@@ -510,7 +510,7 @@ public class RuleREST {
             }else{
                 categoryPrivileges=dataManageService.importCategory(categoryId,importCategory.getDirection(), file,importCategory.isAuthorized(),CATEGORY_RULE,tenantId);
             }
-            fileInfoService.createFileRecord(upload, FileInfoPath.RULE_CATEGORY,file);
+            fileInfoService.createFileRecord(upload, FileInfoPath.RULE_CATEGORY, file);
             return ReturnUtil.success(categoryPrivileges);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
