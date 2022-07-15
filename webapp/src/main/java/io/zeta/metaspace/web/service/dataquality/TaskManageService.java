@@ -80,6 +80,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
 import org.apache.commons.lang.StringUtils;
 
 @Service
@@ -985,6 +986,19 @@ public class TaskManageService {
                     List<String> tblNamelist = errorDataCache.getIfPresent(hdfsOutPath);
                     if (tblNamelist == null) {
                         tblNamelist = hdfsUtil.exists(hdfsOutPath) ? hdfsUtil.catFile(hdfsOutPath, errorDataSize) : new ArrayList<>(); //无输出的规则或者执行异常的任务HDFS上是不会有输出结果的，返回空数据
+                    }
+                    List<Map<String, Object>> data = tblNamelist.stream().map(line -> {
+                        Map<String, Object> mapVal = GsonUtils.getInstance().fromJson(line, new TypeToken<Map<String, Object>>() {
+                        }.getType());
+                        return mapVal;
+                    }).collect(Collectors.toList());
+                    List<String> errorArray = new ArrayList<>();
+                    for (Map<String, Object> item : data) {
+                        if (item.get("TABLE_NAME") != null) {
+                            errorArray.add(item.get("TABLE_NAME").toString());
+                        } else if (item.get("table_name") != null) {
+                            errorArray.add(item.get("table_name").toString());
+                        }
                     }
                     // 异常表用分号区分返回给前端
                     String errorTblNameArray = StringUtils.join(tblNamelist, ";");
