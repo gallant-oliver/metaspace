@@ -1001,7 +1001,7 @@ public class TaskManageService {
                         }
                     }
                     // 异常表用分号区分返回给前端
-                    String errorTblNameArray = StringUtils.join(tblNamelist, ";");
+                    String errorTblNameArray = StringUtils.join(errorArray, ";");
                     Integer errorTblNameCount = (CollectionUtils.isEmpty(tblNamelist) ? 0 : tblNamelist.size());
                     record.setErrorTblNameArray(errorTblNameArray);
                     record.setErrorTblNameCount(errorTblNameCount);
