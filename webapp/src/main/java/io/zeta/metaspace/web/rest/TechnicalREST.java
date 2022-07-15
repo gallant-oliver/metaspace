@@ -574,7 +574,7 @@ public class TechnicalREST {
             } else {
                 categoryPrivileges = dataManageService.importCategory(categoryId, importCategory.getDirection(), file, importCategory.isAuthorized(), CATEGORY_TYPE, tenantId);
             }
-            fileInfoService.createFileRecord(upload, FileInfoPath.TECHNICAL_CATEGORY,file);
+            fileInfoService.createFileRecord(upload, FileInfoPath.TECHNICAL_CATEGORY, file);
             return ReturnUtil.success(categoryPrivileges);
         } catch (Exception e) {
             log.error(e.getMessage());

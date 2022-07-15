@@ -32,6 +32,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /*
  * @description
@@ -86,4 +87,6 @@ public interface MessageCenterDAO {
     int batchDelte(@Param("list") List<String> list, @Param("tenantId") String tenantId, @Param("userId") String userId, @Param("delAll") String delAll) throws SQLException;
 
     void addMessage(@Param("message") MessageEntity messageEntity) throws SQLException;
+
+    void addMessages(@Param("messages") Set<MessageEntity> list);
 }
