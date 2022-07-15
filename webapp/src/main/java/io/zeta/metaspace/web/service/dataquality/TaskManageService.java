@@ -862,6 +862,8 @@ public class TaskManageService {
                     } else if (3 == record.getScope() && record.getCheckStatus() == null) {
                         tableRuleSuggestion.add(record.getObjectName() + noEnd);
                     } else if (3 == record.getScope() && 1 == record.getCheckStatus()) {
+                        tableRuleSuggestion.add(record.getObjectName() + suffix);
+                    } else if (3 == record.getScope() && 0 == record.getCheckStatus()) {
                         String remarkEnd = "存在%s个表描述空值的情况，建议修复";
                         remarkEnd = String.format(remarkEnd, record.getErrorTblNameCount());
                         tableRuleSuggestion.add(record.getObjectName() + remarkEnd);
@@ -976,8 +978,10 @@ public class TaskManageService {
                     record.setObjectName(paramInfo.getSchema());
 
                     // 从hdfs拿到表空值描述的表集合
+                    String ruleExecutionId = record.getRuleExecutionId();
+                    TaskRuleExecutionRecord ruleRecord = taskManageDAO.getTaskRuleExecutionRecord(ruleExecutionId, tenantId);
                     String fileName = LivyTaskSubmitHelper.getOutName("data");
-                    String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(executionId, record.getCreateTime().getTime(), fileName);
+                    String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(executionId, ruleRecord.getCreateTime().getTime(), fileName);
                     List<String> tblNamelist = errorDataCache.getIfPresent(hdfsOutPath);
                     if (tblNamelist == null) {
                         tblNamelist = hdfsUtil.exists(hdfsOutPath) ? hdfsUtil.catFile(hdfsOutPath, errorDataSize) : new ArrayList<>(); //无输出的规则或者执行异常的任务HDFS上是不会有输出结果的，返回空数据
