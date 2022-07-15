@@ -982,7 +982,7 @@ public class TaskManageService {
                     String ruleExecutionId = record.getRuleExecutionId();
                     TaskRuleExecutionRecord ruleRecord = taskManageDAO.getTaskRuleExecutionRecord(ruleExecutionId, tenantId);
                     String fileName = LivyTaskSubmitHelper.getOutName("data");
-                    String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(executionId, ruleRecord.getCreateTime().getTime(), fileName);
+                    String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(ruleExecutionId, ruleRecord.getCreateTime().getTime(), fileName);
                     List<String> tblNamelist = errorDataCache.getIfPresent(hdfsOutPath);
                     if (tblNamelist == null) {
                         tblNamelist = hdfsUtil.exists(hdfsOutPath) ? hdfsUtil.catFile(hdfsOutPath, errorDataSize) : new ArrayList<>(); //无输出的规则或者执行异常的任务HDFS上是不会有输出结果的，返回空数据
