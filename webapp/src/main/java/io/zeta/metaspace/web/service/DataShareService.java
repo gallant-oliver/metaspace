@@ -81,7 +81,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.repository.Constants;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.poi.ss.usermodel.*;
@@ -1608,32 +1608,16 @@ public class DataShareService {
      */
     public PageResult<ProjectInfo> searchProject(Parameters parameters, String tenantId) throws AtlasBaseException {
         PageResult<ProjectInfo> commonResult = new PageResult<>();
-
         String query = parameters.getQuery();
         if (query != null) {
             parameters.setQuery(query.replaceAll("%", "/%").replaceAll("_", "/_"));
         }
-
-        //校验租户先是否有用户
-        SecuritySearch securitySearch = new SecuritySearch();
-        securitySearch.setTenantId(tenantId);
-        PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
-        List<String> userIds = userAndModules.getLists().stream().map(UserAndModule::getAccountGuid).collect(Collectors.toList());
-        List<ProjectInfo> lists;
-        try {
-            lists = shareDAO.searchProject(parameters, AdminUtils.getUserData().getUserId(), tenantId, userIds);
-        } catch (SQLException e) {
-            LOG.error("SQL执行异常", e);
-            lists = new ArrayList<>();
-        }
-        if (lists == null || lists.size() == 0) {
+        List<ProjectInfo> lists = shareDAO.searchProject(parameters, tenantId);
+        if (CollectionUtils.isEmpty(lists)) {
             return commonResult;
         }
         String userId = AdminUtils.getUserData().getUserId();
         for (ProjectInfo projectInfo : lists) {
-            if (userIds == null || userIds.size() == 0) {
-                projectInfo.setUserCount(0);
-            }
             projectInfo.setEditManager(false);
             if (projectInfo.getManagerId().equals(userId)) {
                 projectInfo.setEditManager(true);
@@ -1798,7 +1782,7 @@ public class DataShareService {
             }
             return users;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("getManager exception is {}", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败:" + e.getMessage());
         }
     }
