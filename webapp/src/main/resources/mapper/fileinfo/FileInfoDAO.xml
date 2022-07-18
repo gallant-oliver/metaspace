@@ -66,6 +66,7 @@
         fi.file_name ~ #{name}
     </if>
     </where>
+    order by fi.create_time desc
 	LIMIT #{limit} OFFSET #{offset}
     </select>
 

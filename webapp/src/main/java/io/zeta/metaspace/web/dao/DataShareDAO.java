@@ -340,47 +340,7 @@ public interface DataShareDAO {
             "</script>")
     public int addProjectToUserGroup(@Param("id")String id,@Param("userGroups") List<String> userGroups);
 
-    @Select("<script>" +
-            " select count(*)over() total,p.*,uc.usercount,ac.count apiCount from (" +
-            "select project.id,project.name,project.description,project.createtime,project.tenantid,project.valid,user1.username creator,user2.username manager,manager managerId,project.manager managerId from " +
-            "project join users user1 on project.creator=user1.userid join users user2 on project.manager=user2.userid  " +
-            ") p  join " +
-            " (select distinct project_group_relation.project_id from project_group_relation join " +
-            " (select user_group.id id from user_group_relation join user_group on user_group_relation.group_id=user_group.id " +
-            " where user_group_relation.user_id=#{userId} and user_group.tenant=#{tenantId}) ug " +
-            " on project_group_relation.group_id=ug.id " +
-            " union " +
-            " select id from project where manager=#{userId}) pi " +
-            " on p.id=pi.project_id  join " +
-            " (select count(distinct uc.user_id) usercount,project_id id from (" +
-            "  select g.user_id ,p.project_id from project_group_relation p join user_group_relation g on p.group_id=g.group_id\n" +
-            "  union " +
-            "  select manager user_id,id project_id from project " +
-            " ) uc where uc.user_id in " +
-            "<foreach collection='ids' item='id' index='index' separator=',' open='(' close=')'>" +
-            "#{id}" +
-            "</foreach>" +
-            "group by project_id ) uc on p.id=uc.id left join " +
-            "(select count(distinct guid) count,projectid from api where tenantid=#{tenantId} and valid=true group by projectid) ac on ac.projectid=p.id" +
-            " where p.tenantId=#{tenantId} and p.valid=true " +
-            "<if test=\"parameters.query!=null and parameters.query!=''\">" +
-            " and p.name like concat('%',#{parameters.query},'%') ESCAPE '/' " +
-            "</if>" +
-            "<if test='parameters.sortby!=null'>" +
-            " order by p.${parameters.sortby} " +
-            "</if>" +
-            "<if test='parameters.order!=null and parameters.sortby!=null'>" +
-            " ${parameters.order} " +
-            "</if>" +
-            "<if test='parameters.limit!=-1'>" +
-            " limit ${parameters.limit} " +
-            "</if>" +
-            "<if test='parameters.offset!=0'>" +
-            " offset ${parameters.offset} " +
-            "</if>" +
-            "</script>")
-    public List<ProjectInfo> searchProject(@Param("parameters")Parameters parameters,@Param("userId")String userId,
-                                           @Param("tenantId")String tenantId,@Param("ids")List<String> ids) throws SQLException;
+    List<ProjectInfo> searchProject(@Param("parameters") Parameters parameters, @Param("tenantId") String tenantId);
 
     @Update("update project set name=#{name},description=#{description},manager=#{manager} where id=#{id}")
     public int updateProject(ProjectInfo project);

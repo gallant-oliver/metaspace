@@ -115,7 +115,7 @@ public class CommonConstant {
     /**
      * 字段长度
      */
-    public static final int LENGTH_1000 = 1000;
+    public static final int LENGTH_3000 = 3000;
 
     /**
      * 数据服务api参数类型
@@ -140,6 +140,10 @@ public class CommonConstant {
     public static final int IMPORT_TABLE = 3;
     public static final int PROJECT = 4;
     public static final int SECURITY_TABLE = 5;
+    /**
+     * 衍生表导入锁
+     */
+    public static final String METASPACE_DERIVE_TABLE_IMPORT_LOCK = "metaspace_derive_table_import_lock";
 
     /**
      * 文件归档的redis过期时间

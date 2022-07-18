@@ -913,7 +913,6 @@ public class BusinessREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    @Transactional(rollbackFor = Exception.class)
     public Result importCategory(@PathParam("path") String path, ImportCategory importCategory, @HeaderParam("tenantId") String tenantId) throws Exception {
         File file = null;
         try {
@@ -1134,7 +1133,6 @@ public class BusinessREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    @Transactional(rollbackFor = Exception.class)
     public Result importBusiness(@PathParam("path") String path, ImportCategory importCategory, @HeaderParam("tenantId") String tenantId) throws Exception {
         File file = null;
         try {
@@ -1143,7 +1141,7 @@ public class BusinessREST {
             HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "批量导入业务对象：" + category.getName());
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + path);
             businessService.importBusiness(file, categoryId, tenantId);
-            fileInfoService.createFileRecord(path,FileInfoPath.BUSINESS_OBJECT,file);
+            fileInfoService.createFileRecord(path, FileInfoPath.BUSINESS_OBJECT, file);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");

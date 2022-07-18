@@ -65,6 +65,8 @@ public class TaskRuleExecutionRecord {
     @JsonIgnore
     private Timestamp createTime;
     private String tableId;
+    private String errorTblNameArray;
+    private Integer errorTblNameCount;
 
     public TaskRuleExecutionRecord(){
 
@@ -105,5 +107,7 @@ public class TaskRuleExecutionRecord {
         this.filing = taskRuleExecutionRecord.filing;
         this.createTime = taskRuleExecutionRecord.createTime;
         this.resultString = taskRuleExecutionRecord.resultString;
+        this.errorTblNameArray = taskRuleExecutionRecord.errorTblNameArray;
+        this.errorTblNameCount = taskRuleExecutionRecord.errorTblNameCount;
     }
 }

@@ -15,6 +15,7 @@ import io.zeta.metaspace.model.enums.TableColumnContrast;
 import io.zeta.metaspace.model.metadata.Column;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.metadata.TableEntity;
 import io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO;
 import io.zeta.metaspace.model.po.tableinfo.TableInfoDerivePO;
 import io.zeta.metaspace.model.pojo.TableInfo;
@@ -39,10 +40,12 @@ import io.zeta.metaspace.web.service.DataSourceService;
 import io.zeta.metaspace.web.service.HdfsService;
 import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.util.*;
+import org.apache.atlas.AtlasConfiguration;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
@@ -61,6 +64,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -77,6 +81,7 @@ import java.util.stream.Collectors;
 public class SourceInfoDeriveTableInfoService {
 
     private static final Logger LOG = LoggerFactory.getLogger(SourceInfoDeriveTableInfoService.class);
+    private static final int LOCK_TIME_OUT_TIME = AtlasConfiguration.LOCK_TIME_OUT_TIME.getInt();
 
     @Autowired
     private HdfsService hdfsService;
@@ -86,6 +91,9 @@ public class SourceInfoDeriveTableInfoService {
 
     @Autowired
     private SourceInfoDAO sourceInfoDAO;
+
+    @Autowired
+    private ZkLockUtils zkLockUtils;
 
     private SourceInfoDeriveTableInfoDAO sourceInfoDeriveTableInfoDao;
     private DbDAO dbDao;
@@ -192,6 +200,7 @@ public class SourceInfoDeriveTableInfoService {
             deriveColumnInfo.setColumnGuid(UUID.randomUUID().toString());
             deriveColumnInfo.setTableGuid(sourceInfoDeriveTableInfo.getTableGuid());
             deriveColumnInfo.setTenantId(tenantId);
+            deriveColumnInfo.setDataType(deriveColumnInfo.getDataType().toUpperCase());
         }
 
         // 表-字段关系
@@ -368,6 +377,7 @@ public class SourceInfoDeriveTableInfoService {
         // 设置字段顺序
         for (SourceInfoDeriveColumnInfo deriveColumnInfo : sourceInfoDeriveColumnInfos) {
             deriveColumnInfo.setSort(sourceInfoDeriveColumnInfos.indexOf(deriveColumnInfo));
+            deriveColumnInfo.setDataType(deriveColumnInfo.getDataType().toUpperCase());
         }
 
         TableInfo tableInfo = tableDAO.selectByDbGuidAndTableName(sourceInfoDeriveTableColumnDto.getDbId(), sourceInfoDeriveTableInfo.getTableNameEn());
@@ -455,12 +465,9 @@ public class SourceInfoDeriveTableInfoService {
             // 版本是1
             sourceInfoDeriveTableInfo.setVersion(-1);
             sourceInfoDeriveTableInfo.setState(DeriveTableStateEnum.COMMIT.getState());
-            if (StringUtils.isNotBlank(sourceInfoDeriveTableColumnDto.getSourceTableGuid())) {
-                String targetDbName = getDbNameByDbId(sourceInfoDeriveTableInfo.getDbId(), sourceInfoDeriveTableInfo.getSourceId());
-                String sourceDbName = tableDAO.getTableInfoByTableguidAndStatus(sourceInfoDeriveTableColumnDto.getSourceTableGuid()).getDbName();
-                sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto, targetDbName));
-                sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto, sourceDbName, targetDbName));
-            }
+            String targetDbName = getDbNameByDbId(sourceInfoDeriveTableInfo.getDbId(), sourceInfoDeriveTableInfo.getSourceId());
+            sourceInfoDeriveTableInfo.setDdl(createDDL(sourceInfoDeriveTableColumnDto, targetDbName));
+            sourceInfoDeriveTableInfo.setDml(createDML(sourceInfoDeriveTableColumnDto, null, targetDbName));
 
         }
         return false;
@@ -1121,6 +1128,7 @@ public class SourceInfoDeriveTableInfoService {
         sourceInfoDeriveTableColumnVO.setSourceInfoDeriveColumnVOS(deriveColumnInfoListByTableId.stream().map(e -> {
             SourceInfoDeriveColumnVO sourceInfoDeriveColumnVO = new SourceInfoDeriveColumnVO();
             BeanUtils.copyProperties(e, sourceInfoDeriveColumnVO);
+            sourceInfoDeriveColumnVO.setDataType(sourceInfoDeriveColumnVO.getDataType().toUpperCase());
             sourceInfoDeriveColumnVO.setTags(getTags(e.getTags(), byId.getTableGuid(), sourceInfoDeriveColumnVO.getColumnNameEn(), tenantId));
             if (StringUtils.isBlank(e.getSourceColumnGuid())) {
                 return sourceInfoDeriveColumnVO;
@@ -1282,37 +1290,37 @@ public class SourceInfoDeriveTableInfoService {
         StringBuilder strColumn = new StringBuilder();
         StringBuilder strSelect = new StringBuilder();
         strColumn.append("(");
-        String db = "";
-        String table = "";
+        List<String> tableSet = new ArrayList<>();
         List<SourceInfoDeriveColumnInfo> sourceInfoDeriveColumnInfos = sourceInfoDeriveTableColumnDto.getSourceInfoDeriveColumnInfos();
-        if (!CollectionUtils.isEmpty(sourceInfoDeriveColumnInfos) && sourceInfoDeriveColumnInfos.size() > 0) {
-            for (int i = 0; i < sourceInfoDeriveColumnInfos.size(); i++) {
-                SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo = sourceInfoDeriveColumnInfos.get(i);
-                if (i == 0) {
-                    db = sourceInfoDeriveColumnInfo.getSourceDbName();
-                    table = sourceInfoDeriveColumnInfo.getSourceTableNameEn();
-                }
-                if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceColumnNameEn())) {
-                    continue;
-                }
-                strColumn.append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(", ");
-                strSelect.append(sourceInfoDeriveColumnInfo.getSourceColumnNameEn()).append(" as ").append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(",");
+        for (SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo : sourceInfoDeriveColumnInfos) {
+            if (StringUtils.isBlank(sourceInfoDeriveColumnInfo.getSourceColumnNameEn())) {
+                continue;
             }
+            if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getSourceTableGuid())
+                    && !tableSet.contains(sourceInfoDeriveColumnInfo.getSourceTableGuid())) {
+                tableSet.add(sourceInfoDeriveColumnInfo.getSourceTableGuid());
+            }
+            strColumn.append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(", ");
+            strSelect.append(sourceInfoDeriveColumnInfo.getSourceColumnNameEn()).append(" as ").append(sourceInfoDeriveColumnInfo.getColumnNameEn()).append(",");
         }
 
         if ("(".equals(strColumn.toString())) {
             return "";
         }
-        String sourceTableNameEn = StringUtils.isEmpty(sourceInfoDeriveTableColumnDto.getSourceTableNameEn()) ? "" : sourceInfoDeriveTableColumnDto.getSourceTableNameEn();
         strColumn = new StringBuilder(strColumn.substring(0, strColumn.length() - 2));
         strColumn.append(")\r\n");
         str.append(strColumn).append("select \r\n");
         strSelect = new StringBuilder(strSelect.substring(0, strSelect.length() - 1));
-        // 导入衍生表需要从行内容读取源数据库和表
-        if (StringUtils.isBlank(dbName) && StringUtils.isBlank(sourceTableNameEn)){
-            str.append(strSelect).append("\r\n from ").append(db).append(".").append(table).append(";");
-        }else{
-            str.append(strSelect).append("\r\n from ").append(dbName).append(".").append(sourceTableNameEn).append(";");
+        // 导入衍生表需要从行内容读取源数据库和表(等于1表示只有一个源表)
+        if (tableSet.size() == 1) {
+            TableEntity sourceTable = tableDAO.selectById(tableSet.get(0));
+            if (sourceTable == null) {
+                str.append(strSelect).append("\r\n from ").append(";");
+            } else {
+                str.append(strSelect).append(" \r\n from ").append(sourceTable.getDbName()).append(".").append(sourceTable.getName()).append(";");
+            }
+        } else {
+            str.append(strSelect).append(" \r\n from ").append(";");
         }
 
         return str.toString();
@@ -1380,7 +1388,7 @@ public class SourceInfoDeriveTableInfoService {
         }
         // 根据数据源类型校验数据类型
         List<String> dataTypeList = Constant.DATA_TYPE_MAP.get(dbType);
-        List<String> errorDbTypes = sourceInfoDeriveColumnInfos.stream().filter(e -> !dataTypeList.contains(e.getDataType())).map(SourceInfoDeriveColumnInfo::getDataType).collect(Collectors.toList());
+        List<String> errorDbTypes = sourceInfoDeriveColumnInfos.stream().filter(e -> !dataTypeList.contains(e.getDataType().toLowerCase())).map(SourceInfoDeriveColumnInfo::getDataType).collect(Collectors.toList());
         if (!CollectionUtils.isEmpty(errorDbTypes)) {
             return ReturnUtil.error("400", "衍生表字段数据类型不符合规范:" + errorDbTypes.toString());
         }
@@ -1529,7 +1537,7 @@ public class SourceInfoDeriveTableInfoService {
         if (CollectionUtils.isEmpty(list)) {
             return ReturnUtil.error("400", CommonConstant.DATA_SOURCE_NOT_PROPERLY_DESCRIBED);
         }
-        return ReturnUtil.success(list);
+        return ReturnUtil.success(list.stream().map(String::toUpperCase).collect(Collectors.toList()));
     }
 
     public List<DeriveFileDTO> fileUploadDeriveBatch(List<DeriveFileDTO> deriveFileDTOList, String tenantId) {
@@ -1550,11 +1558,24 @@ public class SourceInfoDeriveTableInfoService {
     public Result fileUploadSubmitBatch(List<DeriveFileDTO> deriveFileDTOList, String tenantId) {
         String error = "";
         for (DeriveFileDTO deriveFileDTO : deriveFileDTOList) {
+            InterProcessMutex lock = zkLockUtils.getInterProcessMutex(CommonConstant.METASPACE_DERIVE_TABLE_IMPORT_LOCK);
             try {
-                this.fileUploadSubmit(deriveFileDTO.getFileName(), deriveFileDTO.getPath(), tenantId);
-                fileInfoService.createFileuploadRecord(deriveFileDTO.getPath(),deriveFileDTO.getFileName(), FileInfoPath.DRIVE_TABLE);
+                LOG.info("尝试拿锁 : {} {}", Thread.currentThread().getName(), CommonConstant.METASPACE_DERIVE_TABLE_IMPORT_LOCK);
+                if (lock.acquire(LOCK_TIME_OUT_TIME, TimeUnit.MINUTES)) {
+                    LOG.info("拿锁成功 : {} {}", Thread.currentThread().getName(), CommonConstant.METASPACE_DERIVE_TABLE_IMPORT_LOCK);
+                    this.fileUploadSubmit(deriveFileDTO.getFileName(), deriveFileDTO.getPath(), tenantId);
+                    fileInfoService.createFileuploadRecord(deriveFileDTO.getPath(), deriveFileDTO.getFileName(), FileInfoPath.DRIVE_TABLE);
+                }
+                LOG.info("导入衍生表文件[{}]结束", deriveFileDTO.getFileName());
             } catch (Exception e) {
                 error = e.getMessage();
+                LOG.error("导入衍生表失败", e);
+            } finally {
+                try {
+                    lock.release();
+                } catch (Exception e) {
+                    LOG.error("锁释放失败", e);
+                }
             }
         }
         if (StringUtils.isNotBlank(error)) {
@@ -1645,7 +1666,7 @@ public class SourceInfoDeriveTableInfoService {
         }
         // 根据数据源类型校验数据类型
         List<String> dataTypeList = Constant.DATA_TYPE_MAP.get(dbType);
-        List<String> errorDbTypes = sourceInfoDeriveColumnInfos.stream().filter(e -> !dataTypeList.contains(e.getDataType())).map(SourceInfoDeriveColumnInfo::getDataType).collect(Collectors.toList());
+        List<String> errorDbTypes = sourceInfoDeriveColumnInfos.stream().filter(e -> !dataTypeList.contains(e.getDataType().toLowerCase())).map(SourceInfoDeriveColumnInfo::getDataType).collect(Collectors.toList());
         if (!CollectionUtils.isEmpty(errorDbTypes)) {
             return ReturnUtil.error("400", "衍生表字段数据类型不符合规范:" + errorDbTypes.toString());
         }
@@ -1699,10 +1720,20 @@ public class SourceInfoDeriveTableInfoService {
      * @return
      */
     private Boolean checkDataType(List<String> dataTypeList, SourceInfoDeriveColumnInfo sourceInfoDeriveColumnInfo) {
-        if (dataTypeList.contains(sourceInfoDeriveColumnInfo.getDataType())) {
+        if (StringUtils.isEmpty(sourceInfoDeriveColumnInfo.getDataType())) {
+            return false;
+        }
+        String dataType = sourceInfoDeriveColumnInfo.getDataType();
+        int start = dataType.indexOf("(");
+        int end = dataType.indexOf(")");
+        if (start != -1 && end != -1) {
+            dataType = dataType.substring(0, start);
+        }
+        if (dataTypeList.contains(dataType.toUpperCase())) {
+            sourceInfoDeriveColumnInfo.setDataType(dataType);
             return true;
         }
-        if (sourceInfoDeriveColumnInfo.getDataType().contains("decimal") && dataTypeList.contains("decimal")) {
+        if (dataType.toLowerCase().contains("decimal") && dataTypeList.contains("DECIMAL")) {
             sourceInfoDeriveColumnInfo.setDataType("decimal");
             return true;
         }
@@ -1989,11 +2020,11 @@ public class SourceInfoDeriveTableInfoService {
             if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getSourceColumnNameEn()) && sourceInfoDeriveColumnInfo.getSourceColumnNameEn().length() > CommonConstant.LENGTH) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "源字段英文名不能超过128位");
             }
-            if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getMappingRule()) && sourceInfoDeriveColumnInfo.getMappingRule().length() > CommonConstant.LENGTH_1000) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "映射规则不能超过1000位");
+            if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getMappingRule()) && sourceInfoDeriveColumnInfo.getMappingRule().length() > CommonConstant.LENGTH_3000) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "映射规则不能超过3000位");
             }
-            if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getMappingDescribe()) && sourceInfoDeriveColumnInfo.getMappingDescribe().length() > CommonConstant.LENGTH) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "映射说明不能超过128位");
+            if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getMappingDescribe()) && sourceInfoDeriveColumnInfo.getMappingDescribe().length() > CommonConstant.LENGTH_3000) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "映射说明不能超过3000位");
             }
             if (StringUtils.isNotBlank(sourceInfoDeriveColumnInfo.getSecretPeriod()) && sourceInfoDeriveColumnInfo.getSecretPeriod().length() > CommonConstant.LENGTH) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "保密期限不能超过128位");

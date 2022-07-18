@@ -124,7 +124,7 @@ public class MessageCenterREST {
     }
 
     /**
-     * 新增消息接口——仅用于测试，后面删除
+     * 新增消息接口——供指标图书馆调用
      *
      * @param
      * @return

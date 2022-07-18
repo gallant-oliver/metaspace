@@ -57,6 +57,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.ResultSetMetaData;
@@ -939,6 +940,7 @@ public class QuartzJob implements Job {
                 sql = sql = String.format(errDataSql, sqlDbName, tableName, columnName, columnName);
                 break;
         }
+
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
         LOG.info("query sql = " + sql);
         adapterExecutor.queryResultByFetchSize(connection, sql, resultSet -> {
