@@ -1084,6 +1084,7 @@ public class UserGroupService {
         }
         List<String> updateCategory = new ArrayList<>();
         List<String> insertCategory = new ArrayList<>();
+        List<String> allCategory = new ArrayList<>();
         if (categorys.size() > 0) {
             for (CategoryPrivilegeV2 childCategory : childCategoriesPrivileges) {
                 // 若在“分配权限”弹窗中勾选多个目录，所勾选的目录含有手动创建和数据库登记的目录，目录的编辑权限针对数据登记生成的目录不生效。
@@ -1137,13 +1138,13 @@ public class UserGroupService {
             insertCategory.removeAll(DEFAULT_CATEGORY_GUID);
             categoryList.removeAll(DEFAULT_CATEGORY_GUID);
 
-            //目录权限变更消息通知
-            List<String> allCategory = new ArrayList<>();
+            //保留目录权限变更消息通知
             allCategory.addAll(updateCategory);
             allCategory.addAll(insertCategory);
             allCategory.addAll(categoryList);
-            List<String> list = categoryDAO.categoryName(allCategory, tenantId);
-            changeCategoryMessagePush(list,userGroupId,categoryType,tenantId);
+            allCategory.addAll(registeredCategorysAuthAdd);
+            allCategory.addAll(registeredCategorysAuthUpdate);
+
 
             if (updateCategory.size() != 0) {
                 if (isChild) {
@@ -1160,8 +1161,16 @@ public class UserGroupService {
                 userGroupDAO.updateCategoryPrivileges(categoryList, userGroupId, categorys.get(0));
             }
         }
+
+
         Timestamp currentTime = new Timestamp(System.currentTimeMillis());
         userGroupDAO.updateCategory(userGroupId, currentTime, AdminUtils.getUserData().getUserId());
+        //发送消息通知
+        if (!CollectionUtils.isEmpty(allCategory)) {
+            List<String> cateList = allCategory.stream().distinct().collect(Collectors.toList());
+            List<String> list = categoryDAO.categoryName(cateList, tenantId);
+            changeCategoryMessagePush(list, userGroupId, categoryType, tenantId);
+        }
         return childCategoriesPrivileges;
     }
 

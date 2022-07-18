@@ -36,14 +36,14 @@ public class DeriveTablePrivilegeService {
     public Result createRelation(String tenantId, CreateRequest request) {
         List<GroupDeriveTableRelation> relationList = this.buildGroupDeriveTableRelation(tenantId,request);
 
-        if (PrivilegeType.IMPORTANCE.equals(request.getPrivilegeType())){
+        if (PrivilegeType.IMPORTANCE.equals(request.getPrivilegeType())) {
             relationDAO.updateDeriveTableImportancePrivilege(relationList);
-            messageCenterService.perAddMessage(CommonConstant.ADD,CommonConstant.IMPORT_TABLE,request.getUserGroupId(),request.getTableIdList(),tenantId);
-        }else if(PrivilegeType.SECURITY.equals(request.getPrivilegeType())){
-            messageCenterService.perAddMessage(CommonConstant.ADD,CommonConstant.SECURITY_TABLE,request.getUserGroupId(),request.getTableIdList(),tenantId);
+            messageCenterService.perAddMessage(CommonConstant.ADD, CommonConstant.IMPORT_TABLE, request.getUserGroupId(), request.getTableIdList(), tenantId);
+        } else if (PrivilegeType.SECURITY.equals(request.getPrivilegeType())) {
+            messageCenterService.perAddMessage(CommonConstant.ADD, CommonConstant.SECURITY_TABLE, request.getUserGroupId(), request.getTableIdList(), tenantId);
             relationDAO.updateDeriveTableSecurityPrivilege(relationList);
-        }else{
-            throw new AtlasBaseException("无法识别的权限的类型"+request.getPrivilegeType().name());
+        } else {
+            throw new AtlasBaseException("无法识别的权限的类型" + request.getPrivilegeType().name());
         }
 
         return ReturnUtil.success();
