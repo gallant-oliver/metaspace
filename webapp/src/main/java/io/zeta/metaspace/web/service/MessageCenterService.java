@@ -200,18 +200,19 @@ public class MessageCenterService {
         }
     }
 
-    public Result addMessageList(List<MessageEntity> messageList, String tenantId) {
+    public void addMessageList(List<MessageEntity> messageList, String tenantId) {
+        if (CollectionUtils.isEmpty(messageList)) {
+            return;
+        }
         try {
-            Set<MessageEntity> messageEntitySet = messageList.stream().peek(e -> {
-                e.setId(UUID.randomUUID().toString());
-                e.setDelete(false);
-                e.setTenantid(tenantId);
-            }).collect(Collectors.toSet());
-            messageCenterDAO.addMessages(messageEntitySet);
-            return ReturnUtil.success();
+            for (MessageEntity messageEntity : messageList) {
+                String id = UUID.randomUUID().toString();
+                messageEntity.setTenantid(tenantId);
+                messageEntity.setId(id);
+            }
+            messageCenterDAO.addMessages(messageList);
         } catch (Exception e) {
             LOG.error("新增消息失败", e);
-            return ReturnUtil.error(AtlasErrorCode.MESSAGE_ADD_RESULT.getErrorCode(), AtlasErrorCode.MESSAGE_ADD_RESULT.getFormattedErrorMessage("新增消息失败"));
         }
     }
 
@@ -234,8 +235,7 @@ public class MessageCenterService {
                 MessageEntity messageEntity = new MessageEntity(messagePush, MessagePush.getFormattedMessageName(messagePush.name, groupName, n)
                         , processEnum.code);
                 for (String account : accounts) {
-                    MessageEntity message = new MessageEntity();
-                    BeanUtils.copyProperties(messageEntity, message);
+                    MessageEntity message = copyMessage(messageEntity);
                     message.setCreateUser(account);
                     list.add(message);
                 }
@@ -258,8 +258,7 @@ public class MessageCenterService {
             for (String cate : category) {
                 MessageEntity messageEntity = getMessageEntityByType(type, operateType, userGroupName, cate);
                 for (String account : userAccounts) {
-                    MessageEntity message = new MessageEntity();
-                    BeanUtils.copyProperties(messageEntity, message);
+                    MessageEntity message = copyMessage(messageEntity);
                     message.setCreateUser(account);
                     messageEntityList.add(message);
                 }
@@ -282,11 +281,12 @@ public class MessageCenterService {
             List<String> users = userGroupDAO.getAllUserByGroupId(deriveInfoByIds.get(0).getUserGroupId());
             List<MessageEntity> messageEntityList = new ArrayList<>();
             for (GroupDeriveTableRelationDTO dto : deriveInfoByIds) {
-                MessageEntity messageEntity = tableDelMessagePush(dto, users);
+                MessageEntity messageEntity = tableDelMessagePush(dto);
                 if (messageEntity != null) {
                     for (String account : users) {
-                        messageEntity.setCreateUser(account);
-                        messageEntityList.add(messageEntity);
+                        MessageEntity message = copyMessage(messageEntity);
+                        message.setCreateUser(account);
+                        messageEntityList.add(message);
                     }
                 }
             }
@@ -309,8 +309,7 @@ public class MessageCenterService {
             MessageEntity messageEntity = userGroupGetMessageEntity(operateType, groupName);
             List<User> usersByIds = userDAO.getUsersByIds(users);
             List<MessageEntity> messageEntityList = usersByIds.stream().map(e -> {
-                MessageEntity message = new MessageEntity();
-                BeanUtils.copyProperties(messageEntity, message);
+                MessageEntity message = copyMessage(messageEntity);
                 message.setCreateUser(e.getAccount());
                 return message;
             }).collect(Collectors.toList());
@@ -349,12 +348,12 @@ public class MessageCenterService {
         }
         if (type == CommonConstant.BUSINESS_CATEGORY_TYPE && operateType == CommonConstant.CHANGE) {
             messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_BUSINESS_CATEGORY_CHANGE, MessagePush.
-                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_CHANGE.name, userGroupName, category),
+                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_BUSINESS_CATEGORY_CHANGE.name, userGroupName, category),
                     ProcessEnum.PROCESS_APPROVED_AUTHORIZED.code);
         }
         if (type == CommonConstant.BUSINESS_CATEGORY_TYPE && operateType == CommonConstant.REMOVE) {
             messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_BUSINESS_CATEGORY_REMOVE, MessagePush.
-                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_REMOVE.name, userGroupName, category),
+                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_BUSINESS_CATEGORY_REMOVE.name, userGroupName, category),
                     ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
         }
         if (type == CommonConstant.INDICATORS_CATEGORY_TYPE && operateType == CommonConstant.CHANGE) {
@@ -370,26 +369,18 @@ public class MessageCenterService {
         return messageEntity;
     }
 
-    private MessageEntity tableDelMessagePush(GroupDeriveTableRelationDTO dto, List<String> users) {
+    private MessageEntity tableDelMessagePush(GroupDeriveTableRelationDTO dto) {
         //重要表推送
         if (dto.getImportancePrivilege() != null && dto.getImportancePrivilege()) {
-            MessageEntity messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_IMPORT_TABLE_REMOVE, MessagePush.
+            return new MessageEntity(MessagePush.USER_GROUP_PERMISSION_IMPORT_TABLE_REMOVE, MessagePush.
                     getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_IMPORT_TABLE_REMOVE.name, dto.getUserGroupName(),
                             dto.getTableName()), ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
-            for (String account : users) {
-                messageEntity.setCreateUser(account);
-                return messageEntity;
-            }
         }
         //私密表推送
         if (dto.getSecurityPrivilege() != null && dto.getSecurityPrivilege()) {
-            MessageEntity messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_SECURITY_TABLE_REMOVE, MessagePush.
+            return new MessageEntity(MessagePush.USER_GROUP_PERMISSION_SECURITY_TABLE_REMOVE, MessagePush.
                     getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_SECURITY_TABLE_REMOVE.name, dto.getUserGroupName(),
                             dto.getTableName()), ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
-            for (String account : users) {
-                messageEntity.setCreateUser(account);
-                return messageEntity;
-            }
         }
         return null;
     }
@@ -475,6 +466,16 @@ public class MessageCenterService {
                     USER_GROUP_USER_MEMBER_REMOVE.module, ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
         }
         throw new AtlasException("存在非法类型");
+    }
+
+    private MessageEntity copyMessage(MessageEntity sourceMessage) {
+        MessageEntity messageEntity = new MessageEntity();
+        messageEntity.setName(sourceMessage.getName());
+        messageEntity.setType(sourceMessage.getType());
+        messageEntity.setModule(sourceMessage.getModule());
+        messageEntity.setProcess(sourceMessage.getProcess());
+        messageEntity.setDelete(false);
+        return messageEntity;
     }
 
 }

@@ -88,5 +88,5 @@ public interface MessageCenterDAO {
 
     void addMessage(@Param("message") MessageEntity messageEntity) throws SQLException;
 
-    void addMessages(@Param("messages") Set<MessageEntity> list);
+    void addMessages(@Param("messages") List<MessageEntity> list);
 }
