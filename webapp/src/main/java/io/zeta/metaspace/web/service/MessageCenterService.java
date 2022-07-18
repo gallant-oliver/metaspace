@@ -205,12 +205,12 @@ public class MessageCenterService {
             return;
         }
         try {
-            for (MessageEntity messageEntity : messageList) {
-                String id = UUID.randomUUID().toString();
-                messageEntity.setTenantid(tenantId);
-                messageEntity.setId(id);
-            }
-            messageCenterDAO.addMessages(messageList);
+            Set<MessageEntity> messageEntitySet = messageList.stream().peek(e -> {
+                e.setId(UUID.randomUUID().toString());
+                e.setDelete(false);
+                e.setTenantid(tenantId);
+            }).collect(Collectors.toSet());
+            messageCenterDAO.addMessages(messageEntitySet);
         } catch (Exception e) {
             LOG.error("新增消息失败", e);
         }
@@ -235,7 +235,8 @@ public class MessageCenterService {
                 MessageEntity messageEntity = new MessageEntity(messagePush, MessagePush.getFormattedMessageName(messagePush.name, groupName, n)
                         , processEnum.code);
                 for (String account : accounts) {
-                    MessageEntity message = copyMessage(messageEntity);
+                    MessageEntity message = new MessageEntity();
+                    BeanUtils.copyProperties(messageEntity, message);
                     message.setCreateUser(account);
                     list.add(message);
                 }
@@ -258,7 +259,8 @@ public class MessageCenterService {
             for (String cate : category) {
                 MessageEntity messageEntity = getMessageEntityByType(type, operateType, userGroupName, cate);
                 for (String account : userAccounts) {
-                    MessageEntity message = copyMessage(messageEntity);
+                    MessageEntity message = new MessageEntity();
+                    BeanUtils.copyProperties(messageEntity, message);
                     message.setCreateUser(account);
                     messageEntityList.add(message);
                 }
@@ -284,7 +286,8 @@ public class MessageCenterService {
                 MessageEntity messageEntity = tableDelMessagePush(dto);
                 if (messageEntity != null) {
                     for (String account : users) {
-                        MessageEntity message = copyMessage(messageEntity);
+                        MessageEntity message = new MessageEntity();
+                        BeanUtils.copyProperties(messageEntity, message);
                         message.setCreateUser(account);
                         messageEntityList.add(message);
                     }
@@ -309,7 +312,8 @@ public class MessageCenterService {
             MessageEntity messageEntity = userGroupGetMessageEntity(operateType, groupName);
             List<User> usersByIds = userDAO.getUsersByIds(users);
             List<MessageEntity> messageEntityList = usersByIds.stream().map(e -> {
-                MessageEntity message = copyMessage(messageEntity);
+                MessageEntity message = new MessageEntity();
+                BeanUtils.copyProperties(messageEntity, message);
                 message.setCreateUser(e.getAccount());
                 return message;
             }).collect(Collectors.toList());
@@ -466,16 +470,6 @@ public class MessageCenterService {
                     USER_GROUP_USER_MEMBER_REMOVE.module, ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
         }
         throw new AtlasException("存在非法类型");
-    }
-
-    private MessageEntity copyMessage(MessageEntity sourceMessage) {
-        MessageEntity messageEntity = new MessageEntity();
-        messageEntity.setName(sourceMessage.getName());
-        messageEntity.setType(sourceMessage.getType());
-        messageEntity.setModule(sourceMessage.getModule());
-        messageEntity.setProcess(sourceMessage.getProcess());
-        messageEntity.setDelete(false);
-        return messageEntity;
     }
 
 }
