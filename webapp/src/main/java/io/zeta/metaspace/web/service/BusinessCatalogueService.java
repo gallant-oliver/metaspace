@@ -369,9 +369,10 @@ public class BusinessCatalogueService implements Approvable {
         approveItem.setTenantId(tenantId);
         approveServiceImp.addApproveItem(approveItem);
 
+
         // 审核消息推送审核人
         List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroupId);
-        List<String> userEmailList = (userIdList.size() > 0 ? userDAO.getUsersEmailByIds(userIdList) : null);
+        List<String> userEmailList = (CollectionUtils.isNotEmpty(userIdList) ? userDAO.getUsersEmailByIds(userIdList) : null);
         MessageEntity message = null;
         if ("1".equals(approveType)){
              message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_DIR.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_DIR.name, entity.getName(), RELEASE), RESOURCE_AUDIT_INFO_BUSINESS_DIR.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);

@@ -2540,7 +2540,7 @@ public class DataShareService {
         }
         if (StringUtils.isNotEmpty(manage)) {
             List<String> userIdList = new ArrayList<>(Arrays.asList(manage));
-            List<String> userEmailList = (userIdList.size() > 0 ? userDAO.getUsersEmailByIds(userIdList) : null);
+            List<String> userEmailList = (CollectionUtils.isNotEmpty(userIdList) ? userDAO.getUsersEmailByIds(userIdList) : null);
             MessageEntity message = null;
             message = new MessageEntity(DATA_SERVICE_AUDIT_START.type, MessagePush.getFormattedMessageName(DATA_SERVICE_AUDIT_START.name, apiInfo.getName()), DATA_SERVICE_AUDIT_START.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
 
