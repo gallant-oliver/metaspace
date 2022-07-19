@@ -134,7 +134,12 @@ public class ApproveServiceImp implements ApproveService {
                 addToMapByClass(moduleItemMap, item);
 
                 // 审核消息推送审核人
-                List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(item.getApproveGroup());
+                ApproveItem approveInfo = approveDao.getApproveItemById(item.getId(), tenant_id);
+                String approveGroup = "";
+                if (approveInfo != null) {
+                    approveGroup = approveInfo.getApproveGroup();
+                }
+                List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroup);
                 List<String> userEmailList = (CollectionUtils.isNotEmpty(userIdList) ? userDAO.getUsersEmailByIds(userIdList) : null);
                 MessageEntity message = null;
                 if ("1".equals(item.getApproveType())) {
@@ -143,7 +148,7 @@ public class ApproveServiceImp implements ApproveService {
                     message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.OFFLINE, MessagePush.PASS), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()), ProcessEnum.PROCESS_APPROVED.code);
                 }
 
-                if (CollectionUtils.isNotEmpty(userEmailList)){
+                if (CollectionUtils.isNotEmpty(userEmailList)) {
                     for (String userEmail : userEmailList) {
                         message.setCreateUser(userEmail);
                         messageCenterService.addMessage(message, tenant_id);
@@ -168,7 +173,12 @@ public class ApproveServiceImp implements ApproveService {
                 addToMapByClass(moduleItemMap, item);
 
                 // 审核消息推送审核人
-                List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(item.getApproveGroup());
+                ApproveItem approveInfo = approveDao.getApproveItemById(item.getId(), tenant_id);
+                String approveGroup = "";
+                if (approveInfo != null) {
+                    approveGroup = approveInfo.getApproveGroup();
+                }
+                List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroup);
                 List<String> userEmailList = (CollectionUtils.isNotEmpty(userIdList) ? userDAO.getUsersEmailByIds(userIdList) : null);
                 MessageEntity message = null;
                 if ("1".equals(item.getApproveType())) {
@@ -176,7 +186,7 @@ public class ApproveServiceImp implements ApproveService {
                 } else if ("2".equals(item.getApproveType())) {
                     message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.OFFLINE, MessagePush.REJECT), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()), ProcessEnum.PROCESS_APPROVED.code);
                 }
-                if (CollectionUtils.isNotEmpty(userEmailList)){
+                if (CollectionUtils.isNotEmpty(userEmailList)) {
                     for (String userEmail : userEmailList) {
                         message.setCreateUser(userEmail);
                         messageCenterService.addMessage(message, tenant_id);
