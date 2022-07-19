@@ -146,10 +146,13 @@ public class RequirementsService {
                     MessageEntity message = null;
                     for (String needName : needNameList) {
                         message = new MessageEntity(NEED_AUDIT_DEAL_PEOPLE.type, MessagePush.getFormattedMessageName(NEED_AUDIT_DEAL_PEOPLE.name, needName), NEED_AUDIT_DEAL_PEOPLE.module, ProcessEnum.PROCESS_APPROVED_NOT_DEAL.code);
-                        for (String userEmail : userEmailList) {
-                            message.setCreateUser(userEmail);
-                            messageCenterService.addMessage(message, tenantId);
+                        if (CollectionUtils.isNotEmpty(userEmailList)){
+                            for (String userEmail : userEmailList) {
+                                message.setCreateUser(userEmail);
+                                messageCenterService.addMessage(message, tenantId);
+                            }
                         }
+
                     }
 
                 }
@@ -403,9 +406,11 @@ public class RequirementsService {
         if (StringUtils.isNotEmpty(creator)){
             List<String> userEmailList = userDAO.getUsersEmailByIds(new ArrayList<>(Arrays.asList(creator)));
             MessageEntity message = new MessageEntity(NEED_AUDIT_FINISH.type, MessagePush.getFormattedMessageName(NEED_AUDIT_FINISH.name, requirementById.getName()), NEED_AUDIT_FINISH.module, ProcessEnum.PROCESS_APPROVED_FEEDBACK.code);
-            for (String userEmail : userEmailList){
-                message.setCreateUser(userEmail);
-                messageCenterService.addMessage(message, requirementById.getTenantId());
+            if (CollectionUtils.isNotEmpty(userEmailList)){
+                for (String userEmail : userEmailList){
+                    message.setCreateUser(userEmail);
+                    messageCenterService.addMessage(message, requirementById.getTenantId());
+                }
             }
         }
 

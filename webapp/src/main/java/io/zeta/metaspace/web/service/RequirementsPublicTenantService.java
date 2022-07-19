@@ -136,9 +136,11 @@ public class RequirementsPublicTenantService {
         if (po != null && StringUtils.isNotBlank(po.getUserId())){
             List<String> userEmailList = userDAO.getUsersEmailByIds(new ArrayList<>(Arrays.asList(po.getUserId())));
             MessageEntity message =  new MessageEntity(NEED_AUDIT_START_MANAGER.type, MessagePush.getFormattedMessageName(NEED_AUDIT_START_MANAGER.name, result.getName()), NEED_AUDIT_START_MANAGER.module, ProcessEnum.PROCESS_APPROVED_NOT_DEAL.code);
-            for (String userEmail : userEmailList) {
-                message.setCreateUser(userEmail);
-                messageCenterService.addMessage(message, tenantId);
+            if (CollectionUtils.isNotEmpty(userEmailList)){
+                for (String userEmail : userEmailList) {
+                    message.setCreateUser(userEmail);
+                    messageCenterService.addMessage(message, tenantId);
+                }
             }
         }
 
