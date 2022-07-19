@@ -1026,7 +1026,7 @@ public class UserGroupService {
         // 若在“分配权限”弹窗中勾选多个目录，所勾选的目录含有手动创建和数据库登记的目录，目录的编辑权限针对数据登记生成的目录不生效。
         CategoryPrivilegeV2 c = new CategoryPrivilegeV2();
         c.setRead(categorys.get(0).getRead());
-        c.setEditCategory(false);
+        c.setEditCategory(categorys.get(0).getEditCategory());
         c.setEditItem(categorys.get(0).getEditItem());
 
         List<String> categoryList = new ArrayList<>();
@@ -1051,7 +1051,7 @@ public class UserGroupService {
             childCategoriesPrivileges = userGroupDAO.getCurrentCategoriesPrivileges(guids.get(0), userGroupId);
         }
 
-        List<String> childIds = childCategoriesPrivileges.stream().map(categoryPrivilegeV2 -> categoryPrivilegeV2.getGuid()).collect(Collectors.toList());
+        List<String> childIds = childCategoriesPrivileges.stream().map(CategoryPrivilegeV2::getGuid).collect(Collectors.toList());
         for (String updateId : updateIds) {
             if (childIds.contains(updateId)) {
                 // 若在“分配权限”弹窗中勾选多个目录，所勾选的目录含有手动创建和数据库登记的目录，目录的编辑权限针对数据登记生成的目录不生效。
@@ -1170,6 +1170,13 @@ public class UserGroupService {
             List<String> cateList = allCategory.stream().distinct().collect(Collectors.toList());
             List<String> list = categoryDAO.categoryName(cateList, tenantId);
             changeCategoryMessagePush(list, userGroupId, categoryType, tenantId);
+        }
+        if (categoryType == 0) {
+            if (isChild) {
+                childCategoriesPrivileges = userGroupDAO.getChildCategoriesPrivilegesInSameGroup(guids, userGroupId, categoryType, tenantId);
+            } else {
+                childCategoriesPrivileges = userGroupDAO.getCurrentCategoriesPrivileges(guids.get(0), userGroupId);
+            }
         }
         return childCategoriesPrivileges;
     }
