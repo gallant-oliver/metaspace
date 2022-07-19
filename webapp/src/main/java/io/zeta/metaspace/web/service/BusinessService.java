@@ -2133,16 +2133,18 @@ public class BusinessService implements Approvable {
 
         // 审核消息推送审核人
         List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroupId);
-        List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
+        List<String> userEmailList = (CollectionUtils.isNotEmpty(userIdList) ? userDAO.getUsersEmailByIds(userIdList) : null);
         MessageEntity message = null;
         if ("1".equalsIgnoreCase(approveType)){
             message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.name, info.getName(), RELEASE), RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
         } else if ("2".equalsIgnoreCase(approveType)){
             message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.name, info.getName(), OFFLINE), RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
         }
-        for (String userEmail : userEmailList){
-            message.setCreateUser(userEmail);
-            messageCenterService.addMessage(message, tenantId);
+        if (CollectionUtils.isNotEmpty(userEmailList)){
+            for (String userEmail : userEmailList){
+                message.setCreateUser(userEmail);
+                messageCenterService.addMessage(message, tenantId);
+            }
         }
     }
 

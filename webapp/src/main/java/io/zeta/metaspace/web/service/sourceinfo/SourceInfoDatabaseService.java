@@ -38,7 +38,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -383,11 +383,13 @@ public class SourceInfoDatabaseService implements Approvable {
 
             // 审核消息推送审核人
             List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroupId);
-            List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
+            List<String> userEmailList = (CollectionUtils.isNotEmpty(userIdList) ? userDAO.getUsersEmailByIds(userIdList) : null);
             MessageEntity message = new MessageEntity(RESOURCE_AUDIT_INFO_DATABASE.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_DATABASE.name, databaseInfo.getDatabaseAlias()), RESOURCE_AUDIT_INFO_DATABASE.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
-            for (String userEmail : userEmailList){
-                message.setCreateUser(userEmail);
-                messageCenterService.addMessage(message, tenantId);
+            if (CollectionUtils.isNotEmpty(userEmailList)){
+                for (String userEmail : userEmailList){
+                    message.setCreateUser(userEmail);
+                    messageCenterService.addMessage(message, tenantId);
+                }
             }
         }
         HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),this.convertStringFromList(databaseInfos.stream().map(DatabaseInfo::getDatabaseAlias).collect(Collectors.toList())));

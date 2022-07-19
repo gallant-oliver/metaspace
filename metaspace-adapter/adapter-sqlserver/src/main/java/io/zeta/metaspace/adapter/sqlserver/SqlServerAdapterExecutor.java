@@ -70,6 +70,9 @@ public class SqlServerAdapterExecutor extends AbstractAdapterExecutor {
      * @return
      */
     public float getTblRemarkCountByDb(AdapterSource adapterSource, String user, String db,  String pool, Map<String, Object> map) {
+        if (db.contains(".")){
+            db = db.substring(db.indexOf(".")+1,db.length());
+        }
         String querySQL = "select count(*) as emptyCount from sys.objects obj left join [sys].[extended_properties] se on obj.object_id = se.major_id and se.minor_id = 0 join sys.schemas s on obj.schema_id=s.schema_id where obj.type = 'u' and (se.value is null or se.value = '') and s.name = '%s'";
         querySQL=String.format(querySQL,db);
         Connection connection = adapterSource.getConnection(user, db, pool);
