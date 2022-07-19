@@ -134,8 +134,8 @@ public class ApproveServiceImp implements ApproveService {
                 addToMapByClass(moduleItemMap, item);
 
                 // 审核消息推送审核人
-                List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(item.getId());
-                List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
+                List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(item.getApproveGroup());
+                List<String> userEmailList = (userIdList.size() > 0 ? userDAO.getUsersEmailByIds(userIdList) : null);
                 MessageEntity message = null;
                 if ("1".equals(item.getApproveType())) {
                     message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.RELEASE, MessagePush.PASS), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()), ProcessEnum.PROCESS_APPROVED.code);
@@ -143,9 +143,11 @@ public class ApproveServiceImp implements ApproveService {
                     message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.OFFLINE, MessagePush.PASS), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()), ProcessEnum.PROCESS_APPROVED.code);
                 }
 
-                for (String userEmail : userEmailList) {
-                    message.setCreateUser(userEmail);
-                    messageCenterService.addMessage(message, tenant_id);
+                if (CollectionUtils.isNotEmpty(userEmailList)){
+                    for (String userEmail : userEmailList) {
+                        message.setCreateUser(userEmail);
+                        messageCenterService.addMessage(message, tenant_id);
+                    }
                 }
             }
         } else if (ApproveOperate.REJECTED.equals(ApproveOperate.getOprateByCode(paras.getResult())) || ApproveOperate.CANCEL.equals(ApproveOperate.getOprateByCode(paras.getResult()))) { //驳回或者取回
@@ -166,18 +168,19 @@ public class ApproveServiceImp implements ApproveService {
                 addToMapByClass(moduleItemMap, item);
 
                 // 审核消息推送审核人
-                List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(item.getId());
-                List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
+                List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(item.getApproveGroup());
+                List<String> userEmailList = (userIdList.size() > 0 ? userDAO.getUsersEmailByIds(userIdList) : null);
                 MessageEntity message = null;
                 if ("1".equals(item.getApproveType())) {
                     message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.RELEASE, MessagePush.REJECT), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()), ProcessEnum.PROCESS_APPROVED.code);
                 } else if ("2".equals(item.getApproveType())) {
                     message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.OFFLINE, MessagePush.REJECT), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()), ProcessEnum.PROCESS_APPROVED.code);
                 }
-
-                for (String userEmail : userEmailList) {
-                    message.setCreateUser(userEmail);
-                    messageCenterService.addMessage(message, tenant_id);
+                if (CollectionUtils.isNotEmpty(userEmailList)){
+                    for (String userEmail : userEmailList) {
+                        message.setCreateUser(userEmail);
+                        messageCenterService.addMessage(message, tenant_id);
+                    }
                 }
             }
         }

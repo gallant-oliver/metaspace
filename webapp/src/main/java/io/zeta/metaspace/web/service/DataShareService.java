@@ -2534,15 +2534,21 @@ public class DataShareService {
 
         // api消息推送给管理员审批
         String projectId = apiInfo.getProjectId();
-        String manage = shareDAO.getProjectManager(projectId);
+        String manage = null;
+        if (StringUtils.isNotEmpty(projectId)){
+            manage = shareDAO.getProjectManager(projectId);
+        }
         if (StringUtils.isNotEmpty(manage)) {
             List<String> userIdList = new ArrayList<>(Arrays.asList(manage));
-            List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
+            List<String> userEmailList = (userIdList.size() > 0 ? userDAO.getUsersEmailByIds(userIdList) : null);
             MessageEntity message = null;
             message = new MessageEntity(DATA_SERVICE_AUDIT_START.type, MessagePush.getFormattedMessageName(DATA_SERVICE_AUDIT_START.name, apiInfo.getName()), DATA_SERVICE_AUDIT_START.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
-            for (String userEmail : userEmailList) {
-                message.setCreateUser(userEmail);
-                messageCenterService.addMessage(message, tenantId);
+
+            if (CollectionUtils.isNotEmpty(userEmailList)){
+                for (String userEmail : userEmailList) {
+                    message.setCreateUser(userEmail);
+                    messageCenterService.addMessage(message, tenantId);
+                }
             }
         }
 

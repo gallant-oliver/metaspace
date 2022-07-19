@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -371,16 +371,18 @@ public class BusinessCatalogueService implements Approvable {
 
         // 审核消息推送审核人
         List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroupId);
-        List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
+        List<String> userEmailList = (userIdList.size() > 0 ? userDAO.getUsersEmailByIds(userIdList) : null);
         MessageEntity message = null;
         if ("1".equals(approveType)){
              message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_DIR.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_DIR.name, entity.getName(), RELEASE), RESOURCE_AUDIT_INFO_BUSINESS_DIR.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
         } else if ("2".equals(approveType)){
              message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_DIR.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_DIR.name, entity.getName(), OFFLINE), RESOURCE_AUDIT_INFO_BUSINESS_DIR.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
         }
-        for (String userEmail : userEmailList){
-            message.setCreateUser(userEmail);
-            messageCenterService.addMessage(message, tenantId);
+        if (CollectionUtils.isNotEmpty(userEmailList)){
+            for (String userEmail : userEmailList){
+                message.setCreateUser(userEmail);
+                messageCenterService.addMessage(message, tenantId);
+            }
         }
     }
 

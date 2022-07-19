@@ -990,8 +990,13 @@ public class QuartzJob implements Job {
 
     private String getSql(String errDataSql, String sqlDbName, String sourceType) {
         if (!sourceType.equalsIgnoreCase("POSTGRESQL")) {
-            if (sourceType.equalsIgnoreCase("OSCAR")){
+            if (sourceType.equalsIgnoreCase("OSCAR")) {
                 errDataSql = String.format(errDataSql, sqlDbName, sqlDbName);
+            } else if (sourceType.equalsIgnoreCase("SQLSERVER")) {
+                if (sqlDbName.contains(".")) {
+                    sqlDbName = sqlDbName.substring(sqlDbName.indexOf(".") + 1, sqlDbName.length());
+                    errDataSql = String.format(errDataSql, sqlDbName);
+                }
             } else {
                 errDataSql = String.format(errDataSql, sqlDbName);
             }
