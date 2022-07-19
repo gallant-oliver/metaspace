@@ -12,6 +12,7 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.service.fileinfo.FileCommentService;
 import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.util.ReturnUtil;
@@ -66,15 +67,19 @@ public class FileInfoController {
 
     /**
      * 指标图书馆文件归档入口
-     *
      */
     @POST
     @Path("indicators/upload")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result createFileInfo(@QueryParam("fileName") String fileName, @QueryParam("path") String path) {
+    public Result createFileInfo(@QueryParam("fileName") String fileName, @QueryParam("path") String path, @QueryParam("type") int type) {
         try {
-            fileInfoService.createFileuploadRecord(path, fileName, FileInfoPath.ATOM_TABLE);
+            if (type == CommonConstant.ATOM_INDICATOR) {
+                fileInfoService.createFileuploadRecord(path, fileName, FileInfoPath.ATOM_INDICATOR);
+            }
+            if (type == CommonConstant.BUSINESS_INDICATOR) {
+                fileInfoService.createFileuploadRecord(path, fileName, FileInfoPath.BUSINESS_INDICATORS);
+            }
             return ReturnUtil.success();
         } catch (Exception e) {
             LOG.error("文件归档添加失败", e);

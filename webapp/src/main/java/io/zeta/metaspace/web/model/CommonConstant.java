@@ -120,7 +120,7 @@ public class CommonConstant {
     /**
      * 数据服务api参数类型
      */
-    public static final String HEADER_PARAM="HEADER";
+    public static final String HEADER_PARAM = "HEADER";
     public static final String QUERY_PARAM = "QUERY";
     public static final String PATH_PARAM = "PATH";
     public static final String API_PATH = "metaspace";
@@ -149,4 +149,7 @@ public class CommonConstant {
      * 文件归档的redis过期时间
      */
     public static final long FILE_REDIS_TIME = 600;
+
+    public static final int BUSINESS_INDICATOR = 1;
+    public static final int ATOM_INDICATOR = 2;
 }
