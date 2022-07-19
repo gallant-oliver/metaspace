@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 import io.zeta.metaspace.model.fileinfo.FileInfo;
 import io.zeta.metaspace.web.service.HdfsService;
 import io.zeta.metaspace.web.util.AdminUtils;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
 import java.sql.Timestamp;
