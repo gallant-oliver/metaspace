@@ -24,7 +24,6 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.*;
-import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -485,6 +484,9 @@ public class HomePageService {
         HomeTaskInfo taskInfo = null;
         try {
             taskInfo = homePageDAO.getTaskInfo(tenantId);
+            if (taskInfo == null) {
+                taskInfo = new HomeTaskInfo();
+            }
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务详情查询异常");
         }
