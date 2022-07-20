@@ -80,7 +80,12 @@ public class SqlServerAdapterSource extends AbstractAdapterSource {
         }
 
         if (StringUtils.isNotEmpty(getDataSourceInfo().getDatabase())) {
-            jdbcUrlBuilder.append(";").append("databaseName=").append(getDataSourceInfo().getDatabase());
+            if (StringUtils.isNotEmpty(schema) && schema.contains(".")){
+                schema = schema.substring(0, schema.indexOf("."));
+                jdbcUrlBuilder.append(";").append("databaseName=").append(schema);
+            } else {
+                jdbcUrlBuilder.append(";").append("databaseName=").append(getDataSourceInfo().getDatabase());
+            }
         }
 
         String jdbcParameter = getDataSourceInfo().getJdbcParameter();
@@ -127,6 +132,15 @@ public class SqlServerAdapterSource extends AbstractAdapterSource {
     public Connection getConnectionForDriver() {
         try {
             return DriverManager.getConnection(getJdbcUrl(), getDataSourceInfo().getUserName(), getDataSourceInfo().getPassword());
+        } catch (SQLException e) {
+            throw new AtlasBaseException(e);
+        }
+    }
+
+    @Override
+    public Connection getConnectionForDriver(String proxyUser, String schema) {
+        try {
+            return DriverManager.getConnection(getJdbcUrl(proxyUser, schema), getDataSourceInfo().getUserName(), getDataSourceInfo().getPassword());
         } catch (SQLException e) {
             throw new AtlasBaseException(e);
         }
