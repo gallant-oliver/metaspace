@@ -445,7 +445,7 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
      * @return
      */
     public float getTblRemarkCountByDb(AdapterSource adapterSource, String user, String db, String pool, Map<String, Object> map) {
-        String querySQL = "select count(*) as emptyCount from all_tab_comments where (comments is null or comments = '') and owner = '%s'";
+        String querySQL = "select count(*) as emptyCount from all_tab_comments where (comments is null or comments = '') and owner = '%s' and table_type = 'TABLE'";
         querySQL = String.format(querySQL, db);
         Connection connection = adapterSource.getConnection(user, db, pool);
         return queryResult(connection, querySQL, resultSet -> {
