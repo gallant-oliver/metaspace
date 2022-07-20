@@ -998,8 +998,11 @@ public class UserGroupService {
      */
     @Transactional(rollbackFor = Exception.class)
     public List<CategoryPrivilegeV2> updatePrivileges(List<CategoryPrivilegeV2> categorys, String userGroupId, int categoryType, String tenantId, boolean isChild, List<String> updateIds) throws SQLException, AtlasBaseException {
+        if(CollectionUtils.isEmpty(categorys)){
+            return categorys;
+        }
         //获取所有的guids
-        List<String> guids = categorys.stream().map(category -> category.getGuid()).collect(Collectors.toList());
+        List<String> guids = categorys.stream().map(CategoryPrivilegeV2::getGuid).collect(Collectors.toList());
         //根据guids获取所有的目录实体
         List<CategoryEntityV2> categoryEntitysByGuids = categoryDAO.queryCategoryEntitysByGuids(guids, tenantId);
         for (CategoryPrivilegeV2 category : categorys) {
