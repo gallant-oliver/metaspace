@@ -47,7 +47,7 @@ public interface HomePageDAO {
             " select tableInfo.tableGuid,tableInfo.tableName,tableInfo.display_name as displayName, count(*) as times from business2Table",
             " join tableInfo on business2table.tableGuid=tableInfo.tableGuid join businessinfo on businessinfo.businessid=business2Table.businessid " +
             " where businessinfo.tenantid=#{tenantId}" +
-            " group by tableInfo.tableGuid,tableInfo.tableName",
+            " group by tableInfo.tableGuid,tableInfo.tableName,tableInfo.display_name",
             " order by times desc",
             " <if test='limit!= -1'>",
             " limit #{limit}",

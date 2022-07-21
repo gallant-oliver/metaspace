@@ -1084,6 +1084,7 @@ public class UserGroupService {
         }
         List<String> updateCategory = new ArrayList<>();
         List<String> insertCategory = new ArrayList<>();
+        List<String> allCategory = new ArrayList<>();
         if (categorys.size() > 0) {
             for (CategoryPrivilegeV2 childCategory : childCategoriesPrivileges) {
                 // 若在“分配权限”弹窗中勾选多个目录，所勾选的目录含有手动创建和数据库登记的目录，目录的编辑权限针对数据登记生成的目录不生效。
@@ -1137,13 +1138,13 @@ public class UserGroupService {
             insertCategory.removeAll(DEFAULT_CATEGORY_GUID);
             categoryList.removeAll(DEFAULT_CATEGORY_GUID);
 
-            //目录权限变更消息通知
-            List<String> allCategory = new ArrayList<>();
+            //保留目录权限变更消息通知
             allCategory.addAll(updateCategory);
             allCategory.addAll(insertCategory);
             allCategory.addAll(categoryList);
-            List<String> list = categoryDAO.categoryName(allCategory, tenantId);
-            changeCategoryMessagePush(list,userGroupId,categoryType,tenantId);
+            allCategory.addAll(registeredCategorysAuthAdd);
+            allCategory.addAll(registeredCategorysAuthUpdate);
+
 
             if (updateCategory.size() != 0) {
                 if (isChild) {
@@ -1160,8 +1161,16 @@ public class UserGroupService {
                 userGroupDAO.updateCategoryPrivileges(categoryList, userGroupId, categorys.get(0));
             }
         }
+
+
         Timestamp currentTime = new Timestamp(System.currentTimeMillis());
         userGroupDAO.updateCategory(userGroupId, currentTime, AdminUtils.getUserData().getUserId());
+        //发送消息通知
+        if (!CollectionUtils.isEmpty(allCategory)) {
+            List<String> cateList = allCategory.stream().distinct().collect(Collectors.toList());
+            List<String> list = categoryDAO.categoryName(cateList, tenantId);
+            changeCategoryMessagePush(list, userGroupId, categoryType, tenantId);
+        }
         return childCategoriesPrivileges;
     }
 
@@ -1171,9 +1180,7 @@ public class UserGroupService {
         }
         UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
         List<String> userAccount = userGroupDAO.getAllUserByGroupId(userGroupId);
-        for (String cate : category) {
-            messageCenterService.directoryMessagePush(type, CommonConstant.REMOVE, userGroupByID.getName(), userAccount, cate, tenantId);
-        }
+        messageCenterService.directoryMessagePush(type, CommonConstant.REMOVE, userGroupByID.getName(), userAccount, category, tenantId);
     }
 
     private void changeCategoryMessagePush(List<String> category, String userGroupId, int type, String tenantId) {
@@ -1182,9 +1189,7 @@ public class UserGroupService {
         }
         UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
         List<String> collect = userGroupDAO.getAllUserByGroupId(userGroupId);
-        for (String cate : category) {
-            messageCenterService.directoryMessagePush(type, CommonConstant.CHANGE, userGroupByID.getName(), collect, cate, tenantId);
-        }
+        messageCenterService.directoryMessagePush(type, CommonConstant.CHANGE, userGroupByID.getName(), collect, category, tenantId);
     }
 
     /**
@@ -1219,19 +1224,22 @@ public class UserGroupService {
             List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getParentCategoriesPrivileges(categorIdList, userGroupId, category.getType(), tenantId);
             List<String> updateCategory = new ArrayList<>();
             List<String> insertCategory = new ArrayList<>();
+            List<String> messages = new ArrayList<>();
             for (CategoryPrivilegeV2 childCategory : childCategoriesPrivileges) {
                 if (childCategory.getRead() == null) {
                     insertCategory.add(childCategory.getGuid());
                 } else {
                     updateCategory.add(childCategory.getGuid());
                 }
+                //消息通知代码
                 if (!DEFAULT_CATEGORY_GUID.contains(childCategory.getGuid())) {
-                    messageCenterService.directoryMessagePush(category.getType(), CommonConstant.CHANGE, userGroupByID.getName(), collect, childCategory.getName(), tenantId);
+                    messages.add(childCategory.getName());
                 }
             }
             // 1-贴源层、2-基础层、4-通用层、5-应用层不需要分配权限
             updateCategory.removeAll(DEFAULT_CATEGORY_GUID);
             insertCategory.removeAll(DEFAULT_CATEGORY_GUID);
+            messageCenterService.directoryMessagePush(category.getType(), CommonConstant.CHANGE, userGroupByID.getName(), collect, messages, tenantId);
             if (updateCategory.size() != 0) {
                 userGroupDAO.updateChildCategoryPrivileges(updateCategory, userGroupId, categoryPrivilege);
             }
@@ -1660,9 +1668,7 @@ public class UserGroupService {
         List<String> user = userGroupDAO.getAllUserByGroupId(userGroupId);
         UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
         Integer categoryType = categoryDAO.queryByGuid(ids.get(0), tenantId).getCategoryType();
-        for (String cate : list) {
-            messageCenterService.directoryMessagePush(categoryType, CommonConstant.REMOVE, userGroupByID.getName(), user, cate, tenantId);
-        }
+        messageCenterService.directoryMessagePush(categoryType, CommonConstant.REMOVE, userGroupByID.getName(), user, list, tenantId);
     }
 
     /**

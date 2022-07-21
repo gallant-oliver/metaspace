@@ -44,6 +44,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -199,7 +200,25 @@ public class MessageCenterService {
         }
     }
 
-    //数据源，数据库，项目，保密表，重要表消息推送
+    public void addMessageList(List<MessageEntity> messageList, String tenantId) {
+        if (CollectionUtils.isEmpty(messageList)) {
+            return;
+        }
+        try {
+            Set<MessageEntity> messageEntitySet = messageList.stream().peek(e -> {
+                e.setId(UUID.randomUUID().toString());
+                e.setDelete(false);
+                e.setTenantid(tenantId);
+            }).collect(Collectors.toSet());
+            messageCenterDAO.addMessages(messageEntitySet);
+        } catch (Exception e) {
+            LOG.error("新增消息失败", e);
+        }
+    }
+
+    /**
+     * 数据源，数据库，项目，保密表，重要表消息推送
+     */
     public void perAddMessage(int operateType, int type, String groupId, List<String> ids, String tenantId) {
         try {
             List<String> user = userGroupDAO.getAllUserByGroupId(groupId);
@@ -211,47 +230,75 @@ public class MessageCenterService {
             MessagePush messagePush = perGetMessagePush(type, operateType);
             ProcessEnum processEnum = getProcess(operateType);
             List<String> name = getMessageName(type, operateType, ids, tenantId);
+            List<MessageEntity> list = new ArrayList<>();
             for (String n : name) {
+                MessageEntity messageEntity = new MessageEntity(messagePush, MessagePush.getFormattedMessageName(messagePush.name, groupName, n)
+                        , processEnum.code);
                 for (String account : accounts) {
-                    MessageEntity messageEntity = new MessageEntity(messagePush, MessagePush.getFormattedMessageName(messagePush.name, groupName, n)
-                            , processEnum.code);
-                    messageEntity.setCreateUser(account);
-                    addMessage(messageEntity, tenantId);
+                    MessageEntity message = new MessageEntity();
+                    BeanUtils.copyProperties(messageEntity, message);
+                    message.setCreateUser(account);
+                    list.add(message);
                 }
             }
+            addMessageList(list, tenantId);
         } catch (AtlasBaseException e) {
-            throw new AtlasBaseException("消息推送失败",e);
+            throw new AtlasBaseException("消息推送失败", e);
         }
     }
 
-    //业务目录，技术目录，指标目录权限分配消息推送
-    public void directoryMessagePush(int type, int operateType, String userGroupName, List<String> userAccounts, String category, String tenantId) {
+    /**
+     * 业务目录，技术目录，指标目录权限分配消息推送
+     */
+    public void directoryMessagePush(int type, int operateType, String userGroupName, List<String> userAccounts, List<String> category, String tenantId) {
         try {
             if (CollectionUtils.isEmpty(userAccounts)) {
                 return;
             }
-            MessageEntity messageEntity = getMessageEntityByType(type, operateType, userGroupName, category);
-            for (String account : userAccounts) {
-                messageEntity.setCreateUser(account);
-                addMessage(messageEntity, tenantId);
+            List<MessageEntity> messageEntityList = new ArrayList<>();
+            for (String cate : category) {
+                MessageEntity messageEntity = getMessageEntityByType(type, operateType, userGroupName, cate);
+                for (String account : userAccounts) {
+                    MessageEntity message = new MessageEntity();
+                    BeanUtils.copyProperties(messageEntity, message);
+                    message.setCreateUser(account);
+                    messageEntityList.add(message);
+                }
             }
+            addMessageList(messageEntityList, tenantId);
         } catch (Exception e) {
             throw new AtlasBaseException("消息推送失败", e);
         }
     }
 
-    //重要表和保密表的移除权限，一个衍生表可能同是保密和重要
+    /**
+     * 重要表和保密表的移除权限，一个衍生表可能同是保密和重要
+     */
     public void tableDelMessagePush(List<String> ids) {
         try {
             List<GroupDeriveTableRelationDTO> deriveInfoByIds = groupDeriveTableRelationDAO.getDeriveInfoByIds(ids);
-            List<String> users = userGroupDAO.getAllUserByGroupId(deriveInfoByIds.get(0).getUserGroupId());
-            for (GroupDeriveTableRelationDTO dto : deriveInfoByIds) {
-                tableDelMessagePush(dto,users);
+            if (CollectionUtils.isEmpty(deriveInfoByIds)) {
+                return;
             }
+            List<String> users = userGroupDAO.getAllUserByGroupId(deriveInfoByIds.get(0).getUserGroupId());
+            List<MessageEntity> messageEntityList = new ArrayList<>();
+            for (GroupDeriveTableRelationDTO dto : deriveInfoByIds) {
+                MessageEntity messageEntity = tableDelMessagePush(dto);
+                if (messageEntity != null) {
+                    for (String account : users) {
+                        MessageEntity message = new MessageEntity();
+                        BeanUtils.copyProperties(messageEntity, message);
+                        message.setCreateUser(account);
+                        messageEntityList.add(message);
+                    }
+                }
+            }
+            addMessageList(messageEntityList, deriveInfoByIds.get(0).getTenantId());
         } catch (Exception e) {
             throw new AtlasBaseException("消息推送失败", e);
         }
     }
+
 
     public void userGroupMessage(int operateType, String groupId, List<String> users, String tenantId) {
         try {
@@ -264,12 +311,15 @@ public class MessageCenterService {
             }
             MessageEntity messageEntity = userGroupGetMessageEntity(operateType, groupName);
             List<User> usersByIds = userDAO.getUsersByIds(users);
-            for (User user : usersByIds) {
-                messageEntity.setCreateUser(user.getAccount());
-                addMessage(messageEntity, tenantId);
-            }
+            List<MessageEntity> messageEntityList = usersByIds.stream().map(e -> {
+                MessageEntity message = new MessageEntity();
+                BeanUtils.copyProperties(messageEntity, message);
+                message.setCreateUser(e.getAccount());
+                return message;
+            }).collect(Collectors.toList());
+            addMessageList(messageEntityList, tenantId);
         } catch (AtlasException e) {
-            throw new AtlasBaseException("消息推送失败",e);
+            throw new AtlasBaseException("消息推送失败", e);
         }
     }
 
@@ -284,11 +334,11 @@ public class MessageCenterService {
             messageEntity.setCreateUser(user.getAccount());
             addMessage(messageEntity, tenantId);
         } catch (AtlasException e) {
-            throw new AtlasBaseException("消息推送失败",e);
+            throw new AtlasBaseException("消息推送失败", e);
         }
     }
 
-    private MessageEntity getMessageEntityByType(int type,int operateType,String userGroupName, String category){
+    private MessageEntity getMessageEntityByType(int type, int operateType, String userGroupName, String category) {
         MessageEntity messageEntity = null;
         if (type == CommonConstant.TECHNICAL_CATEGORY_TYPE && operateType == CommonConstant.CHANGE) {
             messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_CHANGE, MessagePush.
@@ -302,12 +352,12 @@ public class MessageCenterService {
         }
         if (type == CommonConstant.BUSINESS_CATEGORY_TYPE && operateType == CommonConstant.CHANGE) {
             messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_BUSINESS_CATEGORY_CHANGE, MessagePush.
-                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_CHANGE.name, userGroupName, category),
+                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_BUSINESS_CATEGORY_CHANGE.name, userGroupName, category),
                     ProcessEnum.PROCESS_APPROVED_AUTHORIZED.code);
         }
         if (type == CommonConstant.BUSINESS_CATEGORY_TYPE && operateType == CommonConstant.REMOVE) {
             messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_BUSINESS_CATEGORY_REMOVE, MessagePush.
-                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_TECHNICAL_CATEGORY_REMOVE.name, userGroupName, category),
+                    getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_BUSINESS_CATEGORY_REMOVE.name, userGroupName, category),
                     ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
         }
         if (type == CommonConstant.INDICATORS_CATEGORY_TYPE && operateType == CommonConstant.CHANGE) {
@@ -323,30 +373,23 @@ public class MessageCenterService {
         return messageEntity;
     }
 
-    private void tableDelMessagePush(GroupDeriveTableRelationDTO dto,List<String> users){
+    private MessageEntity tableDelMessagePush(GroupDeriveTableRelationDTO dto) {
         //重要表推送
         if (dto.getImportancePrivilege() != null && dto.getImportancePrivilege()) {
-            MessageEntity messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_IMPORT_TABLE_REMOVE, MessagePush.
+            return new MessageEntity(MessagePush.USER_GROUP_PERMISSION_IMPORT_TABLE_REMOVE, MessagePush.
                     getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_IMPORT_TABLE_REMOVE.name, dto.getUserGroupName(),
                             dto.getTableName()), ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
-            for (String account : users) {
-                messageEntity.setCreateUser(account);
-                addMessage(messageEntity, dto.getTenantId());
-            }
         }
         //私密表推送
         if (dto.getSecurityPrivilege() != null && dto.getSecurityPrivilege()) {
-            MessageEntity messageEntity = new MessageEntity(MessagePush.USER_GROUP_PERMISSION_SECURITY_TABLE_REMOVE, MessagePush.
+            return new MessageEntity(MessagePush.USER_GROUP_PERMISSION_SECURITY_TABLE_REMOVE, MessagePush.
                     getFormattedMessageName(MessagePush.USER_GROUP_PERMISSION_SECURITY_TABLE_REMOVE.name, dto.getUserGroupName(),
                             dto.getTableName()), ProcessEnum.PROCESS_APPROVED_NOT_AUTHORIZED.code);
-            for (String account : users) {
-                messageEntity.setCreateUser(account);
-                addMessage(messageEntity, dto.getTenantId());
-            }
         }
+        return null;
     }
 
-    private ProcessEnum getProcess(int operateType) throws AtlasBaseException{
+    private ProcessEnum getProcess(int operateType) throws AtlasBaseException {
         if (operateType == CommonConstant.ADD || operateType == CommonConstant.CHANGE) {
             return ProcessEnum.PROCESS_APPROVED_AUTHORIZED;
         }
@@ -356,7 +399,7 @@ public class MessageCenterService {
         throw new AtlasBaseException("非法操作类型");
     }
 
-    private MessagePush perGetMessagePush(int type,int operateType){
+    private MessagePush perGetMessagePush(int type, int operateType) {
         if (type == CommonConstant.DATA_SOURCE) {
             if (operateType == CommonConstant.ADD) {
                 return MessagePush.USER_GROUP_PERMISSION_DATA_SOURCE_ADD;
@@ -394,7 +437,7 @@ public class MessageCenterService {
         throw new AtlasBaseException("存在非法类型");
     }
 
-    private List<String> getMessageName(int type,int operateType,List<String> ids,String tenantId){
+    private List<String> getMessageName(int type, int operateType, List<String> ids, String tenantId) {
         List<String> name = new ArrayList<>();
         if (type == CommonConstant.DATA_SOURCE) {
             name = dataSourceDAO.getSourceNameForSourceIds(ids);
@@ -415,7 +458,7 @@ public class MessageCenterService {
         return name;
     }
 
-    private MessageEntity userGroupGetMessageEntity(int operateType,String groupName) throws AtlasException {
+    private MessageEntity userGroupGetMessageEntity(int operateType, String groupName) throws AtlasException {
         if (operateType == CommonConstant.ADD) {
             return new MessageEntity(MessagePush.USER_GROUP_USER_MEMBER_ADD.type, MessagePush.
                     getFormattedMessageName(MessagePush.USER_GROUP_USER_MEMBER_ADD.name, groupName), MessagePush.

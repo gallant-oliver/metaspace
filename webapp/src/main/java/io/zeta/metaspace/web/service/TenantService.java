@@ -34,12 +34,13 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -79,17 +80,17 @@ public class TenantService {
     private static Cache<String, Pool> poolCache;
     private static Cache<String, List<String>> databaseCache;
     private final String successStatusCode = "200";
-    
-    
+
+
     @Autowired
     private UserDAO userDAO;
     @Autowired
     private TenantDAO tenantDAO;
     @Autowired
     private DatabaseDAO databaseDAO;
-    
+
     private static Logger LOG = Logger.getLogger(TenantService.class);
-    
+
     static {
         try {
             conf = ApplicationProperties.get();
@@ -117,81 +118,76 @@ public class TenantService {
      * @return
      */
     public PageResult<UserAndModule> getUserAndModule(int offset, int limit, SecuritySearch securitySearch) throws AtlasBaseException {
-        Object status=null;
-        Object msgDesc=null;
+        String status = null;
+        Object msgDesc = null;
         try {
             SECURITY_HOST = conf.getString(SECURITY_CENTER_HOST);
-            String cacheKey = getCacheKey(securitySearch.getTenantId())+limit+offset+securitySearch.toString();
+            String cacheKey = getCacheKey(securitySearch.getTenantId()) + limit + offset + securitySearch.toString();
             PageResult<UserAndModule> pageResult = userModulesCache.getIfPresent(cacheKey);
-            if (pageResult!=null) {
+            if (pageResult != null) {
                 return pageResult;
             }
             pageResult = new PageResult<>();
-            if (securitySearch.getToolName()==null){
+            if (securitySearch.getToolName() == null) {
                 securitySearch.setToolName(toolName);
             }
-            HashMap<String,Object> hashMap = new HashMap<>();
+            HashMap<String, Object> hashMap = new HashMap<>();
             hashMap.put(TICKET_KEY, AdminUtils.getSSOTicket());
-            hashMap.put("User-Agent","Chrome");
-            hashMap.put("X-XSRF-HEADER","valid");
-            HashMap<String,Object> queryParamMap = new HashMap<>();
-            if (limit!=-1&&limit!=0){
-                queryParamMap.put("pageSize",limit);
+            hashMap.put("User-Agent", "Chrome");
+            hashMap.put("X-XSRF-HEADER", "valid");
+            HashMap<String, Object> queryParamMap = new HashMap<>();
+            if (limit != -1 && limit != 0) {
+                queryParamMap.put("pageSize", limit);
             }
-            queryParamMap.put("startIndex",offset);
+            queryParamMap.put("startIndex", offset);
             Gson gson = new Gson();
             String json = gson.toJson(securitySearch);
             int retryCount = 0;
             int retries = 3;
-            while(retryCount < retries) {
+            while (retryCount < retries) {
                 String string = OKHttpClient.doPost(SECURITY_HOST + TENANT_USER_MODULE, hashMap, queryParamMap, json);
-                if (string == null||string.length()==0) {
+                if (StringUtils.isBlank(string)) {
                     retryCount++;
                     continue;
                 }
                 Map map = gson.fromJson(string, HashMap.class);
-                status = map.get("statusCode");
-                if (status==null||!status.toString().startsWith(successStatusCode)){
-                    msgDesc=map.get("msgDesc");
+                status = String.valueOf(map.get("statusCode"));
+                if (status == null || !status.startsWith(successStatusCode)) {
+                    msgDesc = map.get("msgDesc");
                     retryCount++;
                     continue;
                 }
                 Object data = map.get("data");
-                List<UserAndModule> userAndModules = new ArrayList<>();
                 if (data instanceof Map) {
                     Object userVoList = ((Map) data).getOrDefault("userVoList", new ArrayList<>());
                     Object totalCount = ((Map) data).getOrDefault("totalCount", 0);
-                    pageResult.setTotalSize(((Double)totalCount).intValue());
-                    userAndModules = gson.fromJson(gson.toJson(userVoList), new TypeToken<List<UserAndModule>>() {
+                    pageResult.setTotalSize(Double.valueOf(String.valueOf(totalCount)).longValue());
+                    List<UserAndModule> userAndModules = gson.fromJson(gson.toJson(userVoList), new TypeToken<List<UserAndModule>>() {
                     }.getType());
-                    for (UserAndModule userAndModule:userAndModules){
-                        if (userAndModule.getAccountGuid()==null){
+                    List<User> users = userDAO.getAllUser();
+                    for (UserAndModule userAndModule : userAndModules) {
+                        if (StringUtils.isBlank(userAndModule.getEmail())) {
                             continue;
                         }
-                        List<User> users = userDAO.getAllUser();
-                        Optional<User> first = users.stream().filter(user -> user.getUserId().equals(userAndModule.getAccountGuid())).findFirst();
-                        if (first.isPresent()){
-                            boolean isUserName = first.get().getUsername().equals(userAndModule.getUserName());
-                            boolean isEmail = first.get().getAccount().equals(userAndModule.getEmail());
-                            if ((isUserName || isEmail)){
-                                userDAO.updateUser(userAndModule,new Timestamp(System.currentTimeMillis()));
-                            }
-                        }else{
-                            userDAO.insertUser(userAndModule,new Timestamp(System.currentTimeMillis()));
+                        Optional<User> first = users.stream().filter(user -> user.getAccount().equals(userAndModule.getEmail())).findFirst();
+                        if (first.isPresent()) {
+                            userDAO.updateUser(userAndModule, new Timestamp(System.currentTimeMillis()));
+                        } else {
+                            userDAO.insertUser(userAndModule, new Timestamp(System.currentTimeMillis()));
                         }
                     }
                     pageResult.setLists(userAndModules);
                     pageResult.setCurrentSize(userAndModules.size());
                 }
-                userModulesCache.put(cacheKey,pageResult);
+                userModulesCache.put(cacheKey, pageResult);
                 return pageResult;
             }
-        }catch (AtlasBaseException e){
-            throw new AtlasBaseException(e.getAtlasErrorCode(),e,"从安全中心获取用户和用户权限失败:"+e.getMessage());
-        }catch (Exception e){
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,e,"从安全中心获取用户和用户权限失败:"+e.getMessage());
+        } catch (AtlasBaseException e) {
+            throw new AtlasBaseException(e.getAtlasErrorCode(), e, "从安全中心获取用户和用户权限失败:" + e.getMessage());
+        } catch (Exception e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "从安全中心获取用户和用户权限失败:" + e.getMessage());
         }
-        throw getAtlasBaseException(status,msgDesc,"从安全中心获取用户和用户权限失败");
+        throw getAtlasBaseException(status, msgDesc, "从安全中心获取用户和用户权限失败");
     }
 
 
@@ -577,7 +573,7 @@ public class TenantService {
         }
         return null;
     }
-    
+
     /**
      * 获取住户下有权限的HIVE数据库
      * fix: HIVE 元数据权限管理优化：不再根据安全中心的权限过滤，改为查询当前用户有权限访问的HIVE库（用户组权限）

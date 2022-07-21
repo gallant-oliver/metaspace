@@ -171,7 +171,31 @@
     </update>
 
     <!--新增消息-->
-    <insert id="addMessage" parameterType="io.zeta.metaspace.model.entities.MessageEntity">
+    <insert id="addMessages" parameterType="io.zeta.metaspace.model.entities.MessageEntity">
+        insert into message_center
+        (
+        <include refid="insert_message_column_List"/>
+        )
+        values
+        <foreach collection="messages" index="index"  item="message" separator=",">
+            (
+            #{message.id},
+            #{message.name},
+            #{message.type},
+            #{message.module},
+            0,
+            #{message.tenantid},
+            #{message.createUser},
+            now(),
+            now(),
+            now(),
+            #{message.delete},
+            #{message.process}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="addMessage">
         insert into message_center
         (
         <include refid="insert_message_column_List"/>
