@@ -22,7 +22,7 @@ package io.zeta.metaspace.model.dataquality;
 public enum WrongSourceTypeSql {
 
     // ORACLE类型获取异常数据sql
-    ORACEL_WRONG_SQL("ORACLE", "select table_name from all_tab_comments where (comments is null or comments = '') and owner = '%s'"),
+    ORACEL_WRONG_SQL("ORACLE", "select table_name from all_tab_comments c right join all_tables t on c.table_name = t.table_name and c.owner = t.owner and c.table_type = 'TABLE' where (c.comments is null or c.comments = '') and t.owner = '%s'"),
 
     // MYSQL类型获取异常数据sql
     MYSQL_WRONG_SQL("MYSQL", "select table_name from information_schema.tables where (table_comment is null or table_comment = '') and table_schema = '%s'"),

@@ -836,7 +836,7 @@ public class QuartzJob implements Job {
                     case EMPTY_VALUE_NUM_TABLE_REMAKR:
                         HashMap<String, Object> map = new HashMap<>();
                         resultValue = adapterExecutor.getTblRemarkCountByDb(adapterSource, user, dbName, pool, map);
-                        writeErrorData(jobType, tableName, columnName, dbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath, sourceType, map);
+                        writeErrorData(jobType, tableName, columnName, dbName, adapterSource, adapterSource.getConnectionForDriver(user, dbName), hdfsOutPath, sourceType, map);
                         return resultValue;
                     default:
                         sql = String.format(query, sqlDbName, tableName);
