@@ -58,10 +58,7 @@ import org.springframework.util.CollectionUtils;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.ResultSetMetaData;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -800,7 +797,7 @@ public class QuartzJob implements Job {
             String sql = null;
             String superType = String.valueOf(jobType.code);
             String fileName = LivyTaskSubmitHelper.getOutName("data");
-            String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(task.getId(), task.getTimeStamp(), fileName);
+             String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(task.getId(), task.getTimeStamp(), fileName);
             if (columnRule) {
                 columnName = adapterExecutor.addEscapeChar(task.getObjectName());
                 switch (jobType) {
@@ -836,7 +833,8 @@ public class QuartzJob implements Job {
                     case EMPTY_VALUE_NUM_TABLE_REMAKR:
                         HashMap<String, Object> map = new HashMap<>();
                         resultValue = adapterExecutor.getTblRemarkCountByDb(adapterSource, user, dbName, pool, map);
-                        writeErrorData(jobType, tableName, columnName, dbName, adapterSource, adapterSource.getConnectionForDriver(user, dbName), hdfsOutPath, sourceType, map);
+                        Connection connection = ("SQLSERVER".equals(sourceType) ? adapterSource.getConnectionForDriver(user, dbName) : adapterSource.getConnection(user, dbName, pool));
+                        writeErrorData(jobType, tableName, columnName, dbName, adapterSource, connection, hdfsOutPath, sourceType, map);
                         return resultValue;
                     default:
                         sql = String.format(query, sqlDbName, tableName);
@@ -982,6 +980,13 @@ public class QuartzJob implements Job {
                 return null;
             } catch (Exception e) {
                 throw new AdapterBaseException("解析查询结果失败", e);
+            } finally {
+                try {
+                    resultSet.close();
+                    connection.close();
+                } catch (SQLException e) {
+                    throw new AdapterBaseException("数据库连接关闭异常", e);
+                }
             }
 
         });
