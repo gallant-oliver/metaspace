@@ -1137,6 +1137,8 @@ public class UserGroupService {
         }
         Timestamp currentTime = new Timestamp(System.currentTimeMillis());
         userGroupDAO.updateCategory(userGroupId, currentTime, AdminUtils.getUserData().getUserId());
+
+        //技术目录的规则返回
         if (categoryType == 0) {
             if (isChild) {
                 childCategoriesPrivileges = userGroupDAO.getChildCategoriesPrivilegesInSameGroup(guids, userGroupId, categoryType, tenantId);
