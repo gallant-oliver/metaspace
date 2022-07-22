@@ -189,8 +189,7 @@ public class BusinessService implements Approvable {
             // 如果发布开关打开，则更新状态为待审核；否则更新为待发布
             if (info.getPublish()) {
                 info.setStatus(Status.AUDITING.getIntValue() + "");
-            }
-            else {
+            } else {
                 info.setStatus(Status.FOUNDED.getIntValue() + "");
             }
 
@@ -322,7 +321,7 @@ public class BusinessService implements Approvable {
 //                boolean editTechnical = modules.stream().anyMatch(module-> ModuleEnum.TECHNICALEDIT.getId()==module.getModuleId());
             info.setEditTechnical(true);
             //tables
-            List<TechnologyInfo.Table> tables = buildTablesByBusinessId(businessId, tenantId,null,null);
+            List<TechnologyInfo.Table> tables = buildTablesByBusinessId(businessId, tenantId, null, null);
 
             // 查询表是否可跳转‘元数据管理’
             if (CollectionUtils.isNotEmpty(tables)) {
@@ -330,10 +329,9 @@ public class BusinessService implements Approvable {
                 // 当前用户是否同时有表所在数据库和数据源的查看权限
                 List<String> jumpTableGuids = businessDao.getTableJump(tableGuids, userId, tenantId);
                 for (TechnologyInfo.Table table : tables) {
-                    if (jumpTableGuids.contains(table.getTableGuid())){
+                    if (jumpTableGuids.contains(table.getTableGuid())) {
                         table.setJump(true);
-                    }
-                    else {
+                    } else {
                         table.setJump(false);
                     }
                 }
@@ -354,6 +352,7 @@ public class BusinessService implements Approvable {
 
     /**
      * 公共租户
+     *
      * @param businessId
      * @param tenantId
      * @return
@@ -377,7 +376,7 @@ public class BusinessService implements Approvable {
 //                boolean editTechnical = modules.stream().anyMatch(module-> ModuleEnum.TECHNICALEDIT.getId()==module.getModuleId());
             info.setEditTechnical(true);
             //tables
-            List<TechnologyInfo.Table> tables = buildTablesByBusinessIdGlobal(businessId, tenantId,null,null);
+            List<TechnologyInfo.Table> tables = buildTablesByBusinessIdGlobal(businessId, tenantId, null, null);
             if (publicService.isGlobal()) {
                 for (TechnologyInfo.Table table : tables) {
                     table.setJump(true);
@@ -412,6 +411,7 @@ public class BusinessService implements Approvable {
 
     /**
      * 获取挂载信息-全局用户
+     *
      * @param businessId
      * @return
      * @throws AtlasBaseException
@@ -443,11 +443,11 @@ public class BusinessService implements Approvable {
     }
 
     private List<TechnologyInfo.Table> buildTablesByBusinessId(String businessId, String tenantId, String trustTableGuid, List<TechnologyInfo.Table> tables) {
-        if(tables == null ){
+        if (tables == null) {
             tables = businessDao.queryAllTablesByBusinessId(businessId, tenantId);
         }
         User user = AdminUtils.getUserData();
-        List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
+        List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
 
         tables.forEach(table -> {
             if (Objects.nonNull(table.getDisplayName())) {
@@ -456,19 +456,19 @@ public class BusinessService implements Approvable {
                 table.setDisplayName(table.getTableName());
             }
             //table
-            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableGuid(),tenantId);
-            if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))){
+            SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableGuid(), tenantId);
+            if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))) {
                 if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
                     Boolean importancePrivilege = Boolean.TRUE;
                     Boolean securityPrivilege = Boolean.TRUE;
                     List<GroupDeriveTableRelation> relations = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableGuid(), userGroupIds, tenantId);
                     GroupDeriveTableRelation relation = new GroupDeriveTableRelation();
-                    boolean ifSecurityNull=relations.stream().allMatch(r-> r.getSecurityPrivilege()==null);
-                    boolean ifImportanceNull=relations.stream().allMatch(r-> r.getImportancePrivilege()==null);
-                    relation.setSecurityPrivilege(ifSecurityNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getSecurityPrivilege));
-                    relation.setImportancePrivilege(ifImportanceNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getImportancePrivilege));
+                    boolean ifSecurityNull = (CollectionUtils.isEmpty(relations) ? true : relations.stream().anyMatch(r -> r.getSecurityPrivilege() == null));
+                    boolean ifImportanceNull = (CollectionUtils.isEmpty(relations) ? true : relations.stream().anyMatch(r -> r.getImportancePrivilege() == null));
+                    relation.setSecurityPrivilege(ifSecurityNull ? null : relations.stream().anyMatch(GroupDeriveTableRelation::getSecurityPrivilege));
+                    relation.setImportancePrivilege(ifImportanceNull ? null : relations.stream().anyMatch(GroupDeriveTableRelation::getImportancePrivilege));
                     if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
-                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getImportancePrivilege() == null || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
+                            (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || relation.getImportancePrivilege() == null || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
                         importancePrivilege = Boolean.FALSE;
 
                     }
@@ -476,24 +476,26 @@ public class BusinessService implements Approvable {
                             (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || relation.getSecurityPrivilege() == null || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
                         securityPrivilege = Boolean.FALSE;
                     }
-                    if (sourceInfoDeriveTableInfo.getImportance()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getImportance())){
-                        importancePrivilege = null;                    }
-                    if (sourceInfoDeriveTableInfo.getSecurity()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getSecurity())){
-                        securityPrivilege = null;                    }
+                    if (sourceInfoDeriveTableInfo.getImportance() == null || Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getImportance())) {
+                        importancePrivilege = null;
+                    }
+                    if (sourceInfoDeriveTableInfo.getSecurity() == null || Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getSecurity())) {
+                        securityPrivilege = null;
+                    }
                     table.setImportancePrivilege(importancePrivilege);
                     table.setSecurityPrivilege(securityPrivilege);
-                }else{
+                } else {
                     table.setImportancePrivilege(!sourceInfoDeriveTableInfo.getImportance());
                     table.setSecurityPrivilege(!sourceInfoDeriveTableInfo.getSecurity());
                 }
             }
         });
-        if(trustTableGuid ==null || trustTableGuid.isEmpty()){
+        if (trustTableGuid == null || trustTableGuid.isEmpty()) {
             trustTableGuid = businessDao.getTrustTableGuid(businessId);
         }
         if (Objects.nonNull(trustTableGuid)) {
             String finalTrustTableGuid = trustTableGuid;
-            tables.stream().filter(t->finalTrustTableGuid.equals(t.getTableGuid())).forEach(table -> table.setTrust(Boolean.TRUE));
+            tables.stream().filter(t -> finalTrustTableGuid.equals(t.getTableGuid())).forEach(table -> table.setTrust(Boolean.TRUE));
         }
         tables.sort(Comparator.comparing(TechnologyInfo.Table::isTrust).reversed());
         return tables;
@@ -501,11 +503,11 @@ public class BusinessService implements Approvable {
 
 
     private List<TechnologyInfo.Table> buildTablesByBusinessIdGlobal(String businessId, String tenantId, String trustTableGuid, List<TechnologyInfo.Table> tables) {
-        if(tables == null ){
+        if (tables == null) {
             tables = businessDao.queryAllTablesByBusinessId(businessId, tenantId);
         }
         User user = AdminUtils.getUserData();
-        List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(),tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
+        List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
 
         tables.forEach(table -> {
             if (Objects.nonNull(table.getDisplayName())) {
@@ -513,24 +515,24 @@ public class BusinessService implements Approvable {
             } else {
                 table.setDisplayName(table.getTableName());
             }
-            if(publicService.isGlobal()){
+            if (publicService.isGlobal()) {
                 table.setImportancePrivilege(true);
                 table.setSecurityPrivilege(true);
-            }else {
+            } else {
                 //table
-                SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableGuid(),tenantId);
-                if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))){
+                SourceInfoDeriveTableInfo sourceInfoDeriveTableInfo = sourceInfoDeriveTableInfoDAO.getByNameAndDbGuid(table.getTableGuid(), tenantId);
+                if (Boolean.FALSE.equals(ParamUtil.isNull(sourceInfoDeriveTableInfo))) {
                     if (Boolean.FALSE.equals(ParamUtil.isNull(userGroupIds))) {
                         Boolean importancePrivilege = Boolean.TRUE;
                         Boolean securityPrivilege = Boolean.TRUE;
                         List<GroupDeriveTableRelation> relations = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableGuid(), userGroupIds, tenantId);
                         GroupDeriveTableRelation relation = new GroupDeriveTableRelation();
-                        boolean ifSecurityNull=relations.stream().allMatch(r-> r.getSecurityPrivilege()==null);
-                        boolean ifImportanceNull=relations.stream().allMatch(r-> r.getImportancePrivilege()==null);
-                        relation.setSecurityPrivilege(ifSecurityNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getSecurityPrivilege));
-                        relation.setImportancePrivilege(ifImportanceNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getImportancePrivilege));
+                        boolean ifSecurityNull = relations.stream().allMatch(r -> r.getSecurityPrivilege() == null);
+                        boolean ifImportanceNull = relations.stream().allMatch(r -> r.getImportancePrivilege() == null);
+                        relation.setSecurityPrivilege(ifSecurityNull ? null : relations.stream().anyMatch(GroupDeriveTableRelation::getSecurityPrivilege));
+                        relation.setImportancePrivilege(ifImportanceNull ? null : relations.stream().anyMatch(GroupDeriveTableRelation::getImportancePrivilege));
                         if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
-                                (Boolean.TRUE.equals(ParamUtil.isNull(relation)) ||relation.getImportancePrivilege() == null || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
+                                (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || relation.getImportancePrivilege() == null || Boolean.FALSE.equals(relation.getImportancePrivilege()))) {
                             importancePrivilege = Boolean.FALSE;
 
                         }
@@ -538,33 +540,35 @@ public class BusinessService implements Approvable {
                                 (Boolean.TRUE.equals(ParamUtil.isNull(relation)) || relation.getSecurityPrivilege() == null || Boolean.FALSE.equals(relation.getSecurityPrivilege()))) {
                             securityPrivilege = Boolean.FALSE;
                         }
-                        if (sourceInfoDeriveTableInfo.getImportance()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getImportance())){
-                            importancePrivilege = null;                    }
-                        if (sourceInfoDeriveTableInfo.getSecurity()==null ||Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getSecurity())){
-                            securityPrivilege = null;                    }
+                        if (sourceInfoDeriveTableInfo.getImportance() == null || Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getImportance())) {
+                            importancePrivilege = null;
+                        }
+                        if (sourceInfoDeriveTableInfo.getSecurity() == null || Boolean.FALSE.equals(sourceInfoDeriveTableInfo.getSecurity())) {
+                            securityPrivilege = null;
+                        }
                         table.setImportancePrivilege(importancePrivilege);
                         table.setSecurityPrivilege(securityPrivilege);
-                    }else{
+                    } else {
                         table.setImportancePrivilege(!sourceInfoDeriveTableInfo.getImportance());
                         table.setSecurityPrivilege(!sourceInfoDeriveTableInfo.getSecurity());
                     }
                 }
             }
         });
-        if(trustTableGuid ==null || trustTableGuid.isEmpty()){
+        if (trustTableGuid == null || trustTableGuid.isEmpty()) {
             trustTableGuid = businessDao.getTrustTableGuid(businessId);
         }
         if (Objects.nonNull(trustTableGuid)) {
             String finalTrustTableGuid = trustTableGuid;
-            tables.stream().filter(t->finalTrustTableGuid.equals(t.getTableGuid())).forEach(table -> table.setTrust(Boolean.TRUE));
+            tables.stream().filter(t -> finalTrustTableGuid.equals(t.getTableGuid())).forEach(table -> table.setTrust(Boolean.TRUE));
         }
         tables.sort(Comparator.comparing(TechnologyInfo.Table::isTrust).reversed());
         return tables;
     }
 
     private List<TechnologyInfo.Table> buildTablesByBusinessIdGlobal(String businessId, String trustTableGuid) {
-        List<TechnologyInfo.Table> tables =  businessDao.queryTablesByBusinessIdAndTenantId(businessId);
-        if(CollectionUtils.isEmpty(tables)){
+        List<TechnologyInfo.Table> tables = businessDao.queryTablesByBusinessIdAndTenantId(businessId);
+        if (CollectionUtils.isEmpty(tables)) {
             return new ArrayList<>();
         }
         tables.forEach(table -> {
@@ -575,7 +579,7 @@ public class BusinessService implements Approvable {
             }
         });
         if (Objects.nonNull(trustTableGuid)) {
-            tables.stream().filter(t->trustTableGuid.equals(t.getTableGuid())).forEach(table -> table.setTrust(Boolean.TRUE));
+            tables.stream().filter(t -> trustTableGuid.equals(t.getTableGuid())).forEach(table -> table.setTrust(Boolean.TRUE));
         }
         tables.sort(Comparator.comparing(TechnologyInfo.Table::isTrust).reversed());
         return tables;
@@ -603,7 +607,7 @@ public class BusinessService implements Approvable {
                 infoHeader.setPath(joiner.toString());
                 //level2Category
                 infoHeader.setLevel2Category(level2Category);
-                buildTablesByBusinessId(infoHeader.getBusinessId(), tenantId,infoHeader.getTrustTable(),infoHeader.getTables()==null?new ArrayList<>():infoHeader.getTables());
+                buildTablesByBusinessId(infoHeader.getBusinessId(), tenantId, infoHeader.getTrustTable(), infoHeader.getTables() == null ? new ArrayList<>() : infoHeader.getTables());
                 if (CollectionUtils.isEmpty(infoHeader.getTables())) {
                     infoHeader.setTechnicalStatus("0");
                 } else {
@@ -688,7 +692,7 @@ public class BusinessService implements Approvable {
                     categoryIds = categoryBusiness.stream().map(c -> c.getGuid()).collect(Collectors.toList());
                 }
             } else {
-                List<CategorycateQueryResult> allCategories = businessCatalogueService.getAllCategories(BUSINESS_TYPE, tenantId,null);
+                List<CategorycateQueryResult> allCategories = businessCatalogueService.getAllCategories(BUSINESS_TYPE, tenantId, null);
                 if (CollectionUtils.isNotEmpty(allCategories)) {
                     categoryIds = allCategories.stream().map(c -> c.getGuid()).collect(Collectors.toList());
                 }
@@ -706,7 +710,7 @@ public class BusinessService implements Approvable {
             }
 
             for (BusinessInfoHeader infoHeader : businessInfoList) {
-                if(StringUtils.isEmpty(tenantId)){
+                if (StringUtils.isEmpty(tenantId)) {
                     tenantId = infoHeader.getTenantId();
                 }
                 String path = CategoryRelationUtils.getPath(infoHeader.getCategoryGuid(), tenantId);
@@ -738,6 +742,7 @@ public class BusinessService implements Approvable {
 
     /**
      * 获取业务对象-全局查询
+     *
      * @param parameters
      * @return
      * @throws AtlasBaseException
@@ -802,7 +807,7 @@ public class BusinessService implements Approvable {
                 categoryIds = categoryBusiness.stream().map(c -> c.getGuid()).collect(Collectors.toList());
             }
         } else {
-            List<CategorycateQueryResult> allCategories = businessCatalogueService.getAllCategories(BUSINESS_TYPE, tenantId,null);
+            List<CategorycateQueryResult> allCategories = businessCatalogueService.getAllCategories(BUSINESS_TYPE, tenantId, null);
             if (CollectionUtils.isNotEmpty(allCategories)) {
                 categoryIds = allCategories.stream().map(c -> c.getGuid()).collect(Collectors.toList());
             }
@@ -822,7 +827,7 @@ public class BusinessService implements Approvable {
                 int length = 2;
                 if (pathArr.length >= length)
                     infoHeader.setLevel2Category(pathArr[1]);
-                buildTablesByBusinessId(infoHeader.getBusinessId(), tenantId,infoHeader.getTrustTable(),infoHeader.getTables()==null?new ArrayList<>():infoHeader.getTables());
+                buildTablesByBusinessId(infoHeader.getBusinessId(), tenantId, infoHeader.getTrustTable(), infoHeader.getTables() == null ? new ArrayList<>() : infoHeader.getTables());
             }
             pageResult.setLists(businessInfoList);
             long totalsize = 0;
@@ -1038,7 +1043,7 @@ public class BusinessService implements Approvable {
             Map<String, List<DataOwnerHeader>> dataOwnerMap = dataOwnerByGuids.stream().collect(Collectors.groupingBy(DataOwnerHeader::getTableGuid));
             for (TechnologyInfo.Table table : tableHeaderList) {
                 List<ApiHead> apiHeads = apiHeadMap.get(table.getTableGuid());
-                if (CollectionUtils.isEmpty(apiHeads)){
+                if (CollectionUtils.isEmpty(apiHeads)) {
                     continue;
                 }
                 for (ApiHead apiHead : apiHeads) {
@@ -1463,7 +1468,7 @@ public class BusinessService implements Approvable {
 
 
     public List<Column> convertExceltoMap(File file) throws AtlasBaseException {
-        try(Workbook workbook = new WorkbookFactory().create(file)){
+        try (Workbook workbook = new WorkbookFactory().create(file)) {
             Sheet sheet = workbook.getSheetAt(0);
             int rowNum = sheet.getLastRowNum() + 1;
             Row row = null;
@@ -1592,14 +1597,12 @@ public class BusinessService implements Approvable {
 
             FileOutputStream output = null;
             File file = new File(joiner.toString() + ".xlsx");
-            try(Workbook workbook = PoiExcelUtils.createExcelFile(attributes, datas, XLSX)) {
+            try (Workbook workbook = PoiExcelUtils.createExcelFile(attributes, datas, XLSX)) {
                 output = new FileOutputStream(file);
                 workbook.write(output);
-            }
-            catch (Exception e){
+            } catch (Exception e) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导出失败");
-            }
-            finally {
+            } finally {
                 if (output != null) {
                     output.flush();
                     output.close();
@@ -1632,7 +1635,7 @@ public class BusinessService implements Approvable {
                 });
                 return table;
             } else {
-                RDBMSTable table = metaDataService.getRDBMSTableInfoById(guid, tenantId,null);
+                RDBMSTable table = metaDataService.getRDBMSTableInfoById(guid, tenantId, null);
                 String tableName = table.getTableName();
                 String tableDisplayName = table.getDisplayName();
                 if (Objects.isNull(tableDisplayName) || "".equals(tableDisplayName.trim())) {
@@ -2118,11 +2121,12 @@ public class BusinessService implements Approvable {
 
     /**
      * 将审批对象送审
-     * @param tenantId 租户id
-     * @param info 要被送审的信息对象
+     *
+     * @param tenantId    租户id
+     * @param info        要被送审的信息对象
      * @param approveType 审批类型（发布或下线）
      */
-    private void approveItems(String tenantId, BusinessInfo info, String approveType){
+    private void approveItems(String tenantId, BusinessInfo info, String approveType) {
         String approveGroupId = info.getApproveGroupId();
         if (StringUtils.isEmpty(approveGroupId)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审批组不能为空");
@@ -2135,13 +2139,13 @@ public class BusinessService implements Approvable {
         List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroupId);
         List<String> userEmailList = (CollectionUtils.isNotEmpty(userIdList) ? userDAO.getUsersEmailByIds(userIdList) : null);
         MessageEntity message = null;
-        if ("1".equalsIgnoreCase(approveType)){
+        if ("1".equalsIgnoreCase(approveType)) {
             message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.name, info.getName(), RELEASE), RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
-        } else if ("2".equalsIgnoreCase(approveType)){
+        } else if ("2".equalsIgnoreCase(approveType)) {
             message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.name, info.getName(), OFFLINE), RESOURCE_AUDIT_INFO_BUSINESS_OBJECT.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
         }
-        if (CollectionUtils.isNotEmpty(userEmailList)){
-            for (String userEmail : userEmailList){
+        if (CollectionUtils.isNotEmpty(userEmailList)) {
+            for (String userEmail : userEmailList) {
                 message.setCreateUser(userEmail);
                 messageCenterService.addMessage(message, tenantId);
             }
@@ -2150,13 +2154,14 @@ public class BusinessService implements Approvable {
 
     /**
      * 构建审批对象
-     * @param info 信息对象
+     *
+     * @param info           信息对象
      * @param approveGroupId 审核组id
-     * @param approveType 审批类型（发布或下线）
-     * @param tenantId 租户id
+     * @param approveType    审批类型（发布或下线）
+     * @param tenantId       租户id
      * @return 审批对象
      */
-    private ApproveItem buildApproveItem(Object info, String approveGroupId, String approveType, String tenantId){
+    private ApproveItem buildApproveItem(Object info, String approveGroupId, String approveType, String tenantId) {
 
         ApproveItem approveItem = new ApproveItem();
 
@@ -2165,7 +2170,7 @@ public class BusinessService implements Approvable {
 
         String id = "";
         String name = "";
-        if (info instanceof BusinessInfo){
+        if (info instanceof BusinessInfo) {
             id = ((BusinessInfo) info).getBusinessId();
             name = ((BusinessInfo) info).getName();
 
@@ -2192,9 +2197,10 @@ public class BusinessService implements Approvable {
 
     /**
      * 获取被审批的对象详情接口实现
-     * @param objectId  对象ID
-     * @param type 业务对象类型
-     * @param version 查看版本
+     *
+     * @param objectId 对象ID
+     * @param type     业务对象类型
+     * @param version  查看版本
      * @param tenantId 租户id
      * @return 被审批对象
      */
@@ -2206,10 +2212,11 @@ public class BusinessService implements Approvable {
     }
 
     /**
-     *  修改被审批对象的审批状态的接口实现
+     * 修改被审批对象的审批状态的接口实现
+     *
      * @param approveResult 审核结果
-     * @param tenantId 租户id
-     * @param items 被审核对象
+     * @param tenantId      租户id
+     * @param items         被审核对象
      * @throws Exception
      */
     @Override
@@ -2228,12 +2235,10 @@ public class BusinessService implements Approvable {
                 // 修改私密状态
                 if (businessInfo.getPublish()) {
                     businessInfo.setPrivateStatus("PUBLIC");
-                }
-                else {
+                } else {
                     businessInfo.setPrivateStatus("PRIVATE");
                 }
-            }
-            else {
+            } else {
                 // 审批不通过
                 // 更新审批状态
                 businessInfo.setStatus(Status.REJECT.getIntValue() + "");
@@ -2241,8 +2246,7 @@ public class BusinessService implements Approvable {
                 // 还原开关状态：开关为开，还原为关；开关为关，还原为开
                 if (businessInfo.getPublish()) {
                     businessInfo.setPublish(false);
-                }
-                else {
+                } else {
                     businessInfo.setPublish(true);
                 }
             }
@@ -2311,7 +2315,7 @@ public class BusinessService implements Approvable {
 
     public List<CategorycateQueryResult> getBusinessPlaceCategories(Integer type, String tenantId) {
         List<CategorycateQueryResult> result = new ArrayList<>();
-        List<CategorycateQueryResult> allCategories = businessCatalogueService.getAllCategories(1, tenantId,null);
+        List<CategorycateQueryResult> allCategories = businessCatalogueService.getAllCategories(1, tenantId, null);
         if (CollectionUtils.isNotEmpty(allCategories)) {
             // 取出有编辑权限的目录
             result = allCategories.stream().filter(c -> c.getEditItem() != null && c.getEditItem()).collect(Collectors.toList());
