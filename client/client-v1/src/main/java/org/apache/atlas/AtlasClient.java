@@ -194,54 +194,54 @@ public class AtlasClient extends AbstractAtlasBaseClient {
         return service;
     }
 
-    public static class API_V1 extends API {
+    public static class APIV1 extends API {
         //Admin operations
-        public static final API_V1 VERSION = new API_V1(BASE_URI + ADMIN_VERSION, HttpMethod.GET, Response.Status.OK);
-        public static final API_V1 STATUS  = new API_V1(BASE_URI + ADMIN_STATUS, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 VERSION = new APIV1(BASE_URI + ADMIN_VERSION, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 STATUS  = new APIV1(BASE_URI + ADMIN_STATUS, HttpMethod.GET, Response.Status.OK);
 
         //Type operations
-        public static final API_V1 CREATE_TYPE      = new API_V1(BASE_URI + TYPES, HttpMethod.POST, Response.Status.CREATED);
-        public static final API_V1 UPDATE_TYPE      = new API_V1(BASE_URI + TYPES, HttpMethod.PUT, Response.Status.OK);
-        public static final API_V1 GET_TYPE         = new API_V1(BASE_URI + TYPES, HttpMethod.GET, Response.Status.OK);
-        public static final API_V1 LIST_TYPES       = new API_V1(BASE_URI + TYPES, HttpMethod.GET, Response.Status.OK);
-        public static final API_V1 LIST_TRAIT_TYPES = new API_V1(BASE_URI + TYPES + "?type=trait", HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 CREATE_TYPE      = new APIV1(BASE_URI + TYPES, HttpMethod.POST, Response.Status.CREATED);
+        public static final APIV1 UPDATE_TYPE      = new APIV1(BASE_URI + TYPES, HttpMethod.PUT, Response.Status.OK);
+        public static final APIV1 GET_TYPE         = new APIV1(BASE_URI + TYPES, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 LIST_TYPES       = new APIV1(BASE_URI + TYPES, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 LIST_TRAIT_TYPES = new APIV1(BASE_URI + TYPES + "?type=trait", HttpMethod.GET, Response.Status.OK);
 
         //Entity operations
-        public static final API_V1 CREATE_ENTITY         = new API_V1(BASE_URI + URI_ENTITY, HttpMethod.POST, Response.Status.CREATED);
-        public static final API_V1 GET_ENTITY            = new API_V1(BASE_URI + URI_ENTITY, HttpMethod.GET, Response.Status.OK);
-        public static final API_V1 UPDATE_ENTITY         = new API_V1(BASE_URI + URI_ENTITY, HttpMethod.PUT, Response.Status.OK);
-        public static final API_V1 UPDATE_ENTITY_PARTIAL = new API_V1(BASE_URI + URI_ENTITY, HttpMethod.POST, Response.Status.OK);
-        public static final API_V1 LIST_ENTITIES         = new API_V1(BASE_URI + URI_ENTITY, HttpMethod.GET, Response.Status.OK);
-        public static final API_V1 DELETE_ENTITIES       = new API_V1(BASE_URI + URI_ENTITY, HttpMethod.DELETE, Response.Status.OK);
-        public static final API_V1 DELETE_ENTITY         = new API_V1(BASE_URI + URI_ENTITY, HttpMethod.DELETE, Response.Status.OK);
+        public static final APIV1 CREATE_ENTITY         = new APIV1(BASE_URI + URI_ENTITY, HttpMethod.POST, Response.Status.CREATED);
+        public static final APIV1 GET_ENTITY            = new APIV1(BASE_URI + URI_ENTITY, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 UPDATE_ENTITY         = new APIV1(BASE_URI + URI_ENTITY, HttpMethod.PUT, Response.Status.OK);
+        public static final APIV1 UPDATE_ENTITY_PARTIAL = new APIV1(BASE_URI + URI_ENTITY, HttpMethod.POST, Response.Status.OK);
+        public static final APIV1 LIST_ENTITIES         = new APIV1(BASE_URI + URI_ENTITY, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 DELETE_ENTITIES       = new APIV1(BASE_URI + URI_ENTITY, HttpMethod.DELETE, Response.Status.OK);
+        public static final APIV1 DELETE_ENTITY         = new APIV1(BASE_URI + URI_ENTITY, HttpMethod.DELETE, Response.Status.OK);
 
         //audit operation
-        public static final API_V1 LIST_ENTITY_AUDIT = new API_V1(BASE_URI + URI_ENTITY, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 LIST_ENTITY_AUDIT = new APIV1(BASE_URI + URI_ENTITY, HttpMethod.GET, Response.Status.OK);
 
         //Trait operations
-        public static final API_V1 ADD_TRAITS                = new API_V1(BASE_URI + URI_ENTITY, HttpMethod.POST, Response.Status.CREATED);
-        public static final API_V1 DELETE_TRAITS             = new API_V1(BASE_URI + URI_ENTITY, HttpMethod.DELETE, Response.Status.OK);
-        public static final API_V1 LIST_TRAITS               = new API_V1(BASE_URI + URI_ENTITY, HttpMethod.GET, Response.Status.OK);
-        public static final API_V1 GET_ALL_TRAIT_DEFINITIONS = new API_V1(BASE_URI + URI_ENTITY, HttpMethod.GET, Response.Status.OK);
-        public static final API_V1 GET_TRAIT_DEFINITION      = new API_V1(BASE_URI + URI_ENTITY, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 ADD_TRAITS                = new APIV1(BASE_URI + URI_ENTITY, HttpMethod.POST, Response.Status.CREATED);
+        public static final APIV1 DELETE_TRAITS             = new APIV1(BASE_URI + URI_ENTITY, HttpMethod.DELETE, Response.Status.OK);
+        public static final APIV1 LIST_TRAITS               = new APIV1(BASE_URI + URI_ENTITY, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 GET_ALL_TRAIT_DEFINITIONS = new APIV1(BASE_URI + URI_ENTITY, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 GET_TRAIT_DEFINITION      = new APIV1(BASE_URI + URI_ENTITY, HttpMethod.GET, Response.Status.OK);
 
         //Search operations
-        public static final API_V1 SEARCH           = new API_V1(BASE_URI + URI_SEARCH, HttpMethod.GET, Response.Status.OK);
-        public static final API_V1 SEARCH_DSL       = new API_V1(BASE_URI + URI_SEARCH + "/dsl", HttpMethod.GET, Response.Status.OK);
-        public static final API_V1 SEARCH_FULL_TEXT = new API_V1(BASE_URI + URI_SEARCH + "/fulltext", HttpMethod.GET, Response.Status.OK);
-        public static final API_V1 GREMLIN_SEARCH   = new API_V1(BASE_URI + URI_SEARCH + "/gremlin", HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 SEARCH           = new APIV1(BASE_URI + URI_SEARCH, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 SEARCH_DSL       = new APIV1(BASE_URI + URI_SEARCH + "/dsl", HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 SEARCH_FULL_TEXT = new APIV1(BASE_URI + URI_SEARCH + "/fulltext", HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 GREMLIN_SEARCH   = new APIV1(BASE_URI + URI_SEARCH + "/gremlin", HttpMethod.GET, Response.Status.OK);
 
         //Lineage operations based on dataset name
-        public static final API_V1 NAME_LINEAGE_INPUTS_GRAPH  = new API_V1(BASE_URI + URI_NAME_LINEAGE, HttpMethod.GET, Response.Status.OK);
-        public static final API_V1 NAME_LINEAGE_OUTPUTS_GRAPH = new API_V1(BASE_URI + URI_NAME_LINEAGE, HttpMethod.GET, Response.Status.OK);
-        public static final API_V1 NAME_LINEAGE_SCHEMA        = new API_V1(BASE_URI + URI_NAME_LINEAGE, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 NAME_LINEAGE_INPUTS_GRAPH  = new APIV1(BASE_URI + URI_NAME_LINEAGE, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 NAME_LINEAGE_OUTPUTS_GRAPH = new APIV1(BASE_URI + URI_NAME_LINEAGE, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 NAME_LINEAGE_SCHEMA        = new APIV1(BASE_URI + URI_NAME_LINEAGE, HttpMethod.GET, Response.Status.OK);
 
         //Lineage operations based on entity id of the dataset
-        public static final API_V1 LINEAGE_INPUTS_GRAPH  = new API_V1(BASE_URI + URI_LINEAGE, HttpMethod.GET, Response.Status.OK);
-        public static final API_V1 LINEAGE_OUTPUTS_GRAPH = new API_V1(BASE_URI + URI_LINEAGE, HttpMethod.GET, Response.Status.OK);
-        public static final API_V1 LINEAGE_SCHEMA        = new API_V1(BASE_URI + URI_LINEAGE, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 LINEAGE_INPUTS_GRAPH  = new APIV1(BASE_URI + URI_LINEAGE, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 LINEAGE_OUTPUTS_GRAPH = new APIV1(BASE_URI + URI_LINEAGE, HttpMethod.GET, Response.Status.OK);
+        public static final APIV1 LINEAGE_SCHEMA        = new APIV1(BASE_URI + URI_LINEAGE, HttpMethod.GET, Response.Status.OK);
 
-        private API_V1(String path, String method, Response.Status status) {
+        private APIV1(String path, String method, Response.Status status) {
             super(path, method, status);
         }
     }
@@ -254,8 +254,8 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      */
     public List<String> createType(String typeAsJson) throws AtlasServiceException {
         LOG.debug("Creating type definition: {}", typeAsJson);
-        ObjectNode response = callAPIWithBody(API_V1.CREATE_TYPE, typeAsJson);
-        List<String> results = extractResults(response, AtlasClient.TYPES, new ExtractOperation<String, ObjectNode>() {
+        ObjectNode response = callAPIWithBody(APIV1.CREATE_TYPE, typeAsJson);
+        List<String> results = extractResults(response, AbstractAtlasBaseClient.TYPES, new ExtractOperation<String, ObjectNode>() {
             @Override
             String extractElement(ObjectNode element) {
                 return element.get(AtlasClient.NAME).asText();
@@ -288,7 +288,9 @@ public class AtlasClient extends AbstractAtlasBaseClient {
         TypesDef typesDef = new TypesDef(Collections.emptyList(), Collections.emptyList(), Collections.singletonList(piiTrait),
                 Collections.emptyList());
 
-        LOG.debug("Creating trait type {} {}", traitName, BaseAtlasType.toV1Json(piiTrait));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Creating trait type {} {}", traitName, BaseAtlasType.toV1Json(piiTrait));
+        }
 
         return createType(BaseAtlasType.toV1Json(typesDef));
     }
@@ -311,8 +313,8 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      */
     public List<String> updateType(String typeAsJson) throws AtlasServiceException {
         LOG.debug("Updating type definition: {}", typeAsJson);
-        ObjectNode response = callAPIWithBody(API_V1.UPDATE_TYPE, typeAsJson);
-        List<String> results = extractResults(response, AtlasClient.TYPES, new ExtractOperation<String, ObjectNode>() {
+        ObjectNode response = callAPIWithBody(APIV1.UPDATE_TYPE, typeAsJson);
+        List<String> results = extractResults(response, AbstractAtlasBaseClient.TYPES, new ExtractOperation<String, ObjectNode>() {
             @Override
             String extractElement(ObjectNode element) {
                 return element.get(AtlasClient.NAME).asText();
@@ -338,7 +340,7 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      * @throws AtlasServiceException
      */
     public List<String> listTypes() throws AtlasServiceException {
-        final ObjectNode jsonResponse = callAPIWithQueryParams(API_V1.LIST_TYPES, null);
+        final ObjectNode jsonResponse = callAPIWithQueryParams(APIV1.LIST_TYPES, null);
         return extractStringList(jsonResponse);
     }
 
@@ -349,14 +351,11 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      * @throws AtlasServiceException
      */
     public List<String> listTypes(final DataTypes.TypeCategory category) throws AtlasServiceException {
-        final API api = API_V1.LIST_TYPES;
-        ObjectNode response = callAPIWithRetries(api, null, new ResourceCreator() {
-            @Override
-            public WebResource createResource() {
-                WebResource resource = getResource(api.getNormalizedPath());
-                resource = resource.queryParam(TYPE, category.name());
-                return resource;
-            }
+        final API api = APIV1.LIST_TYPES;
+        ObjectNode response = callAPIWithRetries(api, null, () -> {
+            WebResource resource = getResource(api.getNormalizedPath());
+            resource = resource.queryParam(TYPE, category.name());
+            return resource;
         });
         return extractResults(response, AtlasClient.RESULTS, new ExtractOperation<String, String>());
     }
@@ -375,22 +374,19 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      */
     public List<String> listTypes(final DataTypes.TypeCategory category, final String superType,
                                   final String notSupertype) throws AtlasServiceException {
-        final API api = API_V1.LIST_TYPES;
-        ObjectNode response = callAPIWithRetries(api, null, new ResourceCreator() {
-            @Override
-            public WebResource createResource() {
-                WebResource resource = getResource(api);
-                resource = resource.queryParam(TYPE, category.name());
-                resource = resource.queryParam(SUPERTYPE, superType);
-                resource = resource.queryParam(NOT_SUPERTYPE, notSupertype);
-                return resource;
-            }
+        final API api = APIV1.LIST_TYPES;
+        ObjectNode response = callAPIWithRetries(api, null, () -> {
+            WebResource resource = getResource(api);
+            resource = resource.queryParam(TYPE, category.name());
+            resource = resource.queryParam(SUPERTYPE, superType);
+            resource = resource.queryParam(NOT_SUPERTYPE, notSupertype);
+            return resource;
         });
         return extractStringList(response);
     }
 
     public TypesDef getType(String typeName) throws AtlasServiceException {
-        ObjectNode response = callAPIWithBodyAndParams(API_V1.GET_TYPE, null, typeName);
+        ObjectNode response = callAPIWithBodyAndParams(APIV1.GET_TYPE, null, typeName);
         String     typeJson = BaseAtlasType.toJson(response.get(DEFINITION));
         return BaseAtlasType.fromV1Json(typeJson, TypesDef.class);
     }
@@ -403,13 +399,13 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      */
     protected List<String> createEntity(ArrayNode entities) throws AtlasServiceException {
         LOG.debug("Creating entities: {}", entities);
-        ObjectNode   response = callAPIWithBody(API_V1.CREATE_ENTITY, entities.toString());
+        ObjectNode   response = callAPIWithBody(APIV1.CREATE_ENTITY, entities.toString());
         List<String> results  = extractEntityResult(response).getCreatedEntities();
         LOG.debug("Create entities returned results: {}", results);
         return results;
     }
 
-    protected EntityResult extractEntityResult(ObjectNode response) throws AtlasServiceException {
+    protected EntityResult extractEntityResult(ObjectNode response) {
         return EntityResult.fromString(response.toString());
     }
 
@@ -457,7 +453,7 @@ public class AtlasClient extends AbstractAtlasBaseClient {
 
     protected EntityResult updateEntities(ArrayNode entities) throws AtlasServiceException {
         LOG.debug("Updating entities: {}", entities);
-        ObjectNode   response = callAPIWithBody(API_V1.UPDATE_ENTITY, entities.toString());
+        ObjectNode   response = callAPIWithBody(APIV1.UPDATE_ENTITY, entities.toString());
         EntityResult results  = extractEntityResult(response);
         LOG.debug("Update entities returned results: {}", results);
         return results;
@@ -478,14 +474,11 @@ public class AtlasClient extends AbstractAtlasBaseClient {
     public EntityResult updateEntityAttribute(final String guid, final String attribute, String value)
             throws AtlasServiceException {
         LOG.debug("Updating entity id: {}, attribute name: {}, attribute value: {}", guid, attribute, value);
-        final API api = API_V1.UPDATE_ENTITY_PARTIAL;
-        ObjectNode response = callAPIWithRetries(api, value, new ResourceCreator() {
-            @Override
-            public WebResource createResource() {
-                WebResource resource = getResource(api, guid);
-                resource = resource.queryParam(ATTRIBUTE_NAME, attribute);
-                return resource;
-            }
+        final API api = APIV1.UPDATE_ENTITY_PARTIAL;
+        ObjectNode response = callAPIWithRetries(api, value, () -> {
+            WebResource resource = getResource(api, guid);
+            resource = resource.queryParam(ATTRIBUTE_NAME, attribute);
+            return resource;
         });
         return extractEntityResult(response);
     }
@@ -499,7 +492,7 @@ public class AtlasClient extends AbstractAtlasBaseClient {
     public EntityResult updateEntity(String guid, Referenceable entity) throws AtlasServiceException {
         String entityJson = BaseAtlasType.toV1Json(entity);
         LOG.debug("Updating entity id {} with {}", guid, entityJson);
-        ObjectNode response = callAPIWithBodyAndParams(API_V1.UPDATE_ENTITY_PARTIAL, entityJson, guid);
+        ObjectNode response = callAPIWithBodyAndParams(APIV1.UPDATE_ENTITY_PARTIAL, entityJson, guid);
         return extractEntityResult(response);
     }
 
@@ -512,7 +505,7 @@ public class AtlasClient extends AbstractAtlasBaseClient {
     public void addTrait(String guid, Struct traitDefinition) throws AtlasServiceException {
         String traitJson = BaseAtlasType.toV1Json(traitDefinition);
         LOG.debug("Adding trait to entity with id {} {}", guid, traitJson);
-        callAPIWithBodyAndParams(API_V1.ADD_TRAITS, traitJson, guid, URI_TRAITS);
+        callAPIWithBodyAndParams(APIV1.ADD_TRAITS, traitJson, guid, URI_TRAITS);
     }
 
     /**
@@ -522,7 +515,7 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      * @throws AtlasServiceException
      */
     public void deleteTrait(String guid, String traitName) throws AtlasServiceException {
-        callAPIWithBodyAndParams(API_V1.DELETE_TRAITS, null, guid, TRAITS, traitName);
+        callAPIWithBodyAndParams(APIV1.DELETE_TRAITS, null, guid, TRAITS, traitName);
     }
 
     /**
@@ -536,26 +529,23 @@ public class AtlasClient extends AbstractAtlasBaseClient {
     public EntityResult updateEntity(final String entityType, final String uniqueAttributeName,
                                      final String uniqueAttributeValue,
                                      Referenceable entity) throws AtlasServiceException {
-        final API api        = API_V1.UPDATE_ENTITY_PARTIAL;
+        final API api        = APIV1.UPDATE_ENTITY_PARTIAL;
         String    entityJson = BaseAtlasType.toV1Json(entity);
         LOG.debug("Updating entity type: {}, attributeName: {}, attributeValue: {}, entity: {}", entityType,
                   uniqueAttributeName, uniqueAttributeValue, entityJson);
-        ObjectNode response = callAPIWithRetries(api, entityJson, new ResourceCreator() {
-            @Override
-            public WebResource createResource() {
-                WebResource resource = getResource(api, QUALIFIED_NAME);
-                resource = resource.queryParam(TYPE, entityType);
-                resource = resource.queryParam(ATTRIBUTE_NAME, uniqueAttributeName);
-                resource = resource.queryParam(ATTRIBUTE_VALUE, uniqueAttributeValue);
-                return resource;
-            }
+        ObjectNode response = callAPIWithRetries(api, entityJson, () -> {
+            WebResource resource = getResource(api, QUALIFIED_NAME);
+            resource = resource.queryParam(TYPE, entityType);
+            resource = resource.queryParam(ATTRIBUTE_NAME, uniqueAttributeName);
+            resource = resource.queryParam(ATTRIBUTE_VALUE, uniqueAttributeValue);
+            return resource;
         });
         EntityResult result = extractEntityResult(response);
         LOG.debug("Update entity returned result: {}", result);
         return result;
     }
 
-    protected String getString(ObjectNode jsonObject, String parameter) throws AtlasServiceException {
+    protected String getString(ObjectNode jsonObject, String parameter) {
         return jsonObject.get(parameter).asText();
     }
 
@@ -568,16 +558,13 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      */
     public EntityResult deleteEntities(final String... guids) throws AtlasServiceException {
         LOG.debug("Deleting entities: {}", guids);
-        final API api = API_V1.DELETE_ENTITIES;
-        ObjectNode jsonResponse = callAPIWithRetries(api, null, new ResourceCreator() {
-            @Override
-            public WebResource createResource() {
-                WebResource resource = getResource(api);
-                for (String guid : guids) {
-                    resource = resource.queryParam(GUID.toLowerCase(), guid);
-                }
-                return resource;
+        final API api = APIV1.DELETE_ENTITIES;
+        ObjectNode jsonResponse = callAPIWithRetries(api, null, () -> {
+            WebResource resource = getResource(api);
+            for (String guid : guids) {
+                resource = resource.queryParam(GUID.toLowerCase(), guid);
             }
+            return resource;
         });
         EntityResult results = extractEntityResult(jsonResponse);
         LOG.debug("Delete entities returned results: {}", results);
@@ -595,7 +582,7 @@ public class AtlasClient extends AbstractAtlasBaseClient {
             throws AtlasServiceException {
         LOG.debug("Deleting entity type: {}, attributeName: {}, attributeValue: {}", entityType, uniqueAttributeName,
                   uniqueAttributeValue);
-        API         api      = API_V1.DELETE_ENTITIES;
+        API         api      = APIV1.DELETE_ENTITIES;
         WebResource resource = getResource(api);
         resource = resource.queryParam(TYPE, entityType);
         resource = resource.queryParam(ATTRIBUTE_NAME, uniqueAttributeName);
@@ -613,7 +600,7 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      * @throws AtlasServiceException
      */
     public Referenceable getEntity(String guid) throws AtlasServiceException {
-        ObjectNode jsonResponse = callAPIWithBodyAndParams(API_V1.GET_ENTITY, null, guid);
+        ObjectNode jsonResponse = callAPIWithBodyAndParams(APIV1.GET_ENTITY, null, guid);
         String entityInstanceDefinition = BaseAtlasType.toJson(jsonResponse.get(AtlasClient.DEFINITION));
         return BaseAtlasType.fromV1Json(entityInstanceDefinition, Referenceable.class);
     }
@@ -636,16 +623,13 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      */
     public Referenceable getEntity(final String entityType, final String attribute, final String value)
             throws AtlasServiceException {
-        final API api = API_V1.GET_ENTITY;
-        ObjectNode jsonResponse = callAPIWithRetries(api, null, new ResourceCreator() {
-            @Override
-            public WebResource createResource() {
-                WebResource resource = getResource(api);
-                resource = resource.queryParam(TYPE, entityType);
-                resource = resource.queryParam(ATTRIBUTE_NAME, attribute);
-                resource = resource.queryParam(ATTRIBUTE_VALUE, value);
-                return resource;
-            }
+        final API api = APIV1.GET_ENTITY;
+        ObjectNode jsonResponse = callAPIWithRetries(api, null, () -> {
+            WebResource resource = getResource(api);
+            resource = resource.queryParam(TYPE, entityType);
+            resource = resource.queryParam(ATTRIBUTE_NAME, attribute);
+            resource = resource.queryParam(ATTRIBUTE_VALUE, value);
+            return resource;
         });
         String entityInstanceDefinition =  BaseAtlasType.toJson(jsonResponse.get(AtlasClient.DEFINITION));
         return BaseAtlasType.fromV1Json(entityInstanceDefinition, Referenceable.class);
@@ -658,13 +642,10 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      * @throws AtlasServiceException
      */
     public List<String> listEntities(final String entityType) throws AtlasServiceException {
-        ObjectNode jsonResponse = callAPIWithRetries(API_V1.LIST_ENTITIES, null, new ResourceCreator() {
-            @Override
-            public WebResource createResource() {
-                WebResource resource = getResource(API_V1.LIST_ENTITIES);
-                resource = resource.queryParam(TYPE, entityType);
-                return resource;
-            }
+        ObjectNode jsonResponse = callAPIWithRetries(APIV1.LIST_ENTITIES, null, () -> {
+            WebResource resource = getResource(APIV1.LIST_ENTITIES);
+            resource = resource.queryParam(TYPE, entityType);
+            return resource;
         });
         return extractStringList(jsonResponse);
     }
@@ -676,7 +657,7 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      * @throws AtlasServiceException
      */
     public List<String> listTraits(final String guid) throws AtlasServiceException {
-        ObjectNode jsonResponse = callAPIWithBodyAndParams(API_V1.LIST_TRAITS, null, guid, URI_TRAITS);
+        ObjectNode jsonResponse = callAPIWithBodyAndParams(APIV1.LIST_TRAITS, null, guid, URI_TRAITS);
         return extractStringList(jsonResponse);
     }
 
@@ -687,7 +668,7 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      * @throws AtlasServiceException
      */
     public List<Struct> listTraitDefinitions(final String guid) throws AtlasServiceException {
-        ObjectNode        jsonResponse    = callAPIWithBodyAndParams(API_V1.GET_ALL_TRAIT_DEFINITIONS, null, guid, TRAIT_DEFINITIONS);
+        ObjectNode        jsonResponse    = callAPIWithBodyAndParams(APIV1.GET_ALL_TRAIT_DEFINITIONS, null, guid, TRAIT_DEFINITIONS);
         List<ObjectNode>  traitDefList    = extractResults(jsonResponse, AtlasClient.RESULTS, new ExtractOperation<ObjectNode, ObjectNode>());
         ArrayList<Struct> traitStructList = new ArrayList<>();
         for (ObjectNode traitDef : traitDefList) {
@@ -705,7 +686,7 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      * @throws AtlasServiceException
      */
     public Struct getTraitDefinition(final String guid, final String traitName) throws AtlasServiceException {
-        ObjectNode jsonResponse = callAPIWithBodyAndParams(API_V1.GET_TRAIT_DEFINITION, null, guid, TRAIT_DEFINITIONS, traitName);
+        ObjectNode jsonResponse = callAPIWithBodyAndParams(APIV1.GET_TRAIT_DEFINITION, null, guid, TRAIT_DEFINITIONS, traitName);
 
         return BaseAtlasType.fromV1Json(BaseAtlasType.toJson(jsonResponse.get(AtlasClient.RESULTS)), Struct.class);
     }
@@ -716,8 +697,7 @@ public class AtlasClient extends AbstractAtlasBaseClient {
         }
     }
 
-    protected <T, U> List<T> extractResults(ObjectNode jsonResponse, String key, ExtractOperation<T, U> extractInterafce)
-            throws AtlasServiceException {
+    protected <T, U> List<T> extractResults(ObjectNode jsonResponse, String key, ExtractOperation<T, U> extractInterafce) {
         ArrayNode    results     = (ArrayNode)jsonResponse.get(key);
         ArrayList<T> resultsList = new ArrayList<>();
         for (int index = 0; index < results.size(); index++) {
@@ -749,13 +729,13 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      */
     public List<EntityAuditEvent> getEntityAuditEvents(String entityId, String startKey, short numResults)
             throws AtlasServiceException {
-        WebResource resource = getResource(API_V1.LIST_ENTITY_AUDIT, entityId, URI_ENTITY_AUDIT);
+        WebResource resource = getResource(APIV1.LIST_ENTITY_AUDIT, entityId, URI_ENTITY_AUDIT);
         if (StringUtils.isNotEmpty(startKey)) {
             resource = resource.queryParam(START_KEY, startKey);
         }
         resource = resource.queryParam(NUM_RESULTS, String.valueOf(numResults));
 
-        ObjectNode jsonResponse = callAPIWithResource(API_V1.LIST_ENTITY_AUDIT, resource);
+        ObjectNode jsonResponse = callAPIWithResource(APIV1.LIST_ENTITY_AUDIT, resource);
         return extractResults(jsonResponse, AtlasClient.EVENTS, new ExtractOperation<EntityAuditEvent, ObjectNode>() {
             @Override
             EntityAuditEvent extractElement(ObjectNode element) {
@@ -774,16 +754,13 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      * @throws AtlasServiceException
      */
     public JsonNode search(final String searchQuery, final int limit, final int offset) throws AtlasServiceException {
-        final API api = API_V1.SEARCH;
-        ObjectNode result = callAPIWithRetries(api, null, new ResourceCreator() {
-            @Override
-            public WebResource createResource() {
-                WebResource resource = getResource(api);
-                resource = resource.queryParam(QUERY, searchQuery);
-                resource = resource.queryParam(LIMIT, String.valueOf(limit));
-                resource = resource.queryParam(OFFSET, String.valueOf(offset));
-                return resource;
-            }
+        final API api = APIV1.SEARCH;
+        ObjectNode result = callAPIWithRetries(api, null, () -> {
+            WebResource resource = getResource(api);
+            resource = resource.queryParam(QUERY, searchQuery);
+            resource = resource.queryParam(LIMIT, String.valueOf(limit));
+            resource = resource.queryParam(OFFSET, String.valueOf(offset));
+            return resource;
         });
         return result.get(RESULTS);
     }
@@ -798,16 +775,13 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      */
     public ArrayNode searchByDSL(final String query, final int limit, final int offset) throws AtlasServiceException {
         LOG.debug("DSL query: {}", query);
-        final API api = API_V1.SEARCH_DSL;
-        ObjectNode response = callAPIWithRetries(api, null, new ResourceCreator() {
-            @Override
-            public WebResource createResource() {
-                WebResource resource = getResource(api);
-                resource = resource.queryParam(QUERY, query);
-                resource = resource.queryParam(LIMIT, String.valueOf(limit));
-                resource = resource.queryParam(OFFSET, String.valueOf(offset));
-                return resource;
-            }
+        final API api = APIV1.SEARCH_DSL;
+        ObjectNode response = callAPIWithRetries(api, null, () -> {
+            WebResource resource = getResource(api);
+            resource = resource.queryParam(QUERY, query);
+            resource = resource.queryParam(LIMIT, String.valueOf(limit));
+            resource = resource.queryParam(OFFSET, String.valueOf(offset));
+            return resource;
         });
 
         JsonNode results = response.get(RESULTS);
@@ -824,41 +798,38 @@ public class AtlasClient extends AbstractAtlasBaseClient {
      * @throws AtlasServiceException
      */
     public ObjectNode searchByFullText(final String query, final int limit, final int offset) throws AtlasServiceException {
-        final API api = API_V1.SEARCH_FULL_TEXT;
-        return callAPIWithRetries(api, null, new ResourceCreator() {
-            @Override
-            public WebResource createResource() {
-                WebResource resource = getResource(api);
-                resource = resource.queryParam(QUERY, query);
-                resource = resource.queryParam(LIMIT, String.valueOf(limit));
-                resource = resource.queryParam(OFFSET, String.valueOf(offset));
-                return resource;
-            }
+        final API api = APIV1.SEARCH_FULL_TEXT;
+        return callAPIWithRetries(api, null, () -> {
+            WebResource resource = getResource(api);
+            resource = resource.queryParam(QUERY, query);
+            resource = resource.queryParam(LIMIT, String.valueOf(limit));
+            resource = resource.queryParam(OFFSET, String.valueOf(offset));
+            return resource;
         });
     }
 
     public ObjectNode getInputGraph(String datasetName) throws AtlasServiceException {
-        ObjectNode response = callAPIWithBodyAndParams(API_V1.NAME_LINEAGE_INPUTS_GRAPH, null, datasetName, "/inputs/graph");
+        ObjectNode response = callAPIWithBodyAndParams(APIV1.NAME_LINEAGE_INPUTS_GRAPH, null, datasetName, "/inputs/graph");
         return (ObjectNode)response.get(AtlasClient.RESULTS);
     }
 
     public ObjectNode getOutputGraph(String datasetName) throws AtlasServiceException {
-        ObjectNode response = callAPIWithBodyAndParams(API_V1.NAME_LINEAGE_OUTPUTS_GRAPH, null, datasetName, "/outputs/graph");
+        ObjectNode response = callAPIWithBodyAndParams(APIV1.NAME_LINEAGE_OUTPUTS_GRAPH, null, datasetName, "/outputs/graph");
         return (ObjectNode)response.get(AtlasClient.RESULTS);
     }
 
     public ObjectNode getInputGraphForEntity(String entityId) throws AtlasServiceException {
-        ObjectNode response = callAPIWithBodyAndParams(API_V1.LINEAGE_INPUTS_GRAPH, null, entityId, "/inputs/graph");
+        ObjectNode response = callAPIWithBodyAndParams(APIV1.LINEAGE_INPUTS_GRAPH, null, entityId, "/inputs/graph");
         return (ObjectNode)response.get(AtlasClient.RESULTS);
     }
 
     public ObjectNode getOutputGraphForEntity(String datasetId) throws AtlasServiceException {
-        ObjectNode response = callAPIWithBodyAndParams(API_V1.LINEAGE_OUTPUTS_GRAPH, null, datasetId, "/outputs/graph");
+        ObjectNode response = callAPIWithBodyAndParams(APIV1.LINEAGE_OUTPUTS_GRAPH, null, datasetId, "/outputs/graph");
         return (ObjectNode) response.get(AtlasClient.RESULTS);
     }
 
     public ObjectNode getSchemaForEntity(String datasetId) throws AtlasServiceException {
-        ObjectNode response = callAPIWithBodyAndParams(API_V1.LINEAGE_OUTPUTS_GRAPH, null, datasetId, "/schema");
+        ObjectNode response = callAPIWithBodyAndParams(APIV1.LINEAGE_OUTPUTS_GRAPH, null, datasetId, "/schema");
         return (ObjectNode) response.get(AtlasClient.RESULTS);
     }
 
@@ -866,7 +837,7 @@ public class AtlasClient extends AbstractAtlasBaseClient {
         List<String> ret     = new ArrayList<>();
         JsonNode     results = (response != null) ? response.get(AtlasClient.RESULTS) : null;
 
-        if (results != null && results instanceof ArrayNode) {
+        if (results instanceof ArrayNode) {
             for (JsonNode node : results) {
                 ret.add(node.asText());
             }
@@ -882,17 +853,18 @@ public class AtlasClient extends AbstractAtlasBaseClient {
     }
 
     @VisibleForTesting
-    public ObjectNode callAPIWithResource(API_V1 apiV1, WebResource resource) throws AtlasServiceException {
+    public ObjectNode callAPIWithResource(APIV1 apiV1, WebResource resource) throws AtlasServiceException {
         return callAPIWithResource(apiV1, resource, null, ObjectNode.class);
     }
 
     @VisibleForTesting
+    @Override
     public WebResource getResource(API api, String... params) {
         return getResource(api.getNormalizedPath(), params);
     }
 
     @VisibleForTesting
-    public WebResource getResource(API_V1 apiV1, String... params) {
+    public WebResource getResource(APIV1 apiV1, String... params) {
         return getResource(apiV1.getNormalizedPath(), params);
     }
 
@@ -902,7 +874,7 @@ public class AtlasClient extends AbstractAtlasBaseClient {
     }
 
     @VisibleForTesting
-    public ObjectNode callAPIWithBody(API_V1 apiV1, Object requestObject) throws AtlasServiceException {
+    public ObjectNode callAPIWithBody(APIV1 apiV1, Object requestObject) throws AtlasServiceException {
         return callAPI(apiV1, ObjectNode.class, requestObject, (String[]) null);
     }
 
@@ -912,7 +884,7 @@ public class AtlasClient extends AbstractAtlasBaseClient {
     }
 
     @VisibleForTesting
-    public ObjectNode callAPIWithBodyAndParams(API_V1 apiV1, Object requestObject, String... params) throws AtlasServiceException {
+    public ObjectNode callAPIWithBodyAndParams(APIV1 apiV1, Object requestObject, String... params) throws AtlasServiceException {
         return callAPI(apiV1, ObjectNode.class, requestObject, params);
     }
 
@@ -922,17 +894,18 @@ public class AtlasClient extends AbstractAtlasBaseClient {
     }
 
     @VisibleForTesting
-    public ObjectNode callAPIWithQueryParams(API_V1 apiV1, MultivaluedMap<String, String> queryParams) throws AtlasServiceException {
+    public ObjectNode callAPIWithQueryParams(APIV1 apiV1, MultivaluedMap<String, String> queryParams) throws AtlasServiceException {
         return callAPI(apiV1, ObjectNode.class, queryParams);
     }
 
     @VisibleForTesting
+    @Override
     ObjectNode callAPIWithRetries(API api, Object requestObject, ResourceCreator resourceCreator) throws AtlasServiceException {
         return super.callAPIWithRetries(api, requestObject, resourceCreator);
     }
 
     @VisibleForTesting
-    ObjectNode callAPIWithRetries(API_V1 apiV1, Object requestObject, ResourceCreator resourceCreator) throws AtlasServiceException {
+    ObjectNode callAPIWithRetries(APIV1 apiV1, Object requestObject, ResourceCreator resourceCreator) throws AtlasServiceException {
         return super.callAPIWithRetries(apiV1, requestObject, resourceCreator);
     }
 }
