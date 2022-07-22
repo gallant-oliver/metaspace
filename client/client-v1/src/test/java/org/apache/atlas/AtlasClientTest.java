@@ -76,12 +76,12 @@ public class AtlasClientTest {
 
         AtlasClient atlasClient = new AtlasClient(service, configuration);
 
-        WebResource.Builder builder = setupBuilder(AtlasClient.API_V1.VERSION, service);
+        WebResource.Builder builder = setupBuilder(AtlasClient.APIV1.VERSION, service);
         ClientResponse response = mock(ClientResponse.class);
         when(response.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
         when(response.getEntity(String.class)).thenReturn("{\"Version\":\"version-rrelease\",\"Name\":\"apache-atlas\"," +
                 "\"Description\":\"Metadata Management and Data Governance Platform over Hadoop\"}");
-        when(builder.method(AtlasClient.API_V1.VERSION.getMethod(), ClientResponse.class, null)).thenReturn(response);
+        when(builder.method(AtlasClient.APIV1.VERSION.getMethod(), ClientResponse.class, null)).thenReturn(response);
 
         assertTrue(atlasClient.isServerReady());
     }
@@ -91,7 +91,7 @@ public class AtlasClientTest {
         setupRetryParams();
         AtlasClient atlasClient = new AtlasClient(service, configuration);
 
-        WebResource.Builder builder = setupBuilder(AtlasClient.API_V1.CREATE_ENTITY, service);
+        WebResource.Builder builder = setupBuilder(AtlasClient.APIV1.CREATE_ENTITY, service);
         ClientResponse response = mock(ClientResponse.class);
         when(response.getStatus()).thenReturn(Response.Status.CREATED.getStatusCode());
 
@@ -107,7 +107,7 @@ public class AtlasClientTest {
         assertEquals(ids.get(0), "id");
     }
 
-    private WebResource.Builder setupBuilder(AtlasClient.API_V1 api, WebResource webResource) {
+    private WebResource.Builder setupBuilder(AtlasClient.APIV1 api, WebResource webResource) {
         when(webResource.path(api.getPath())).thenReturn(service);
         when(webResource.path(api.getNormalizedPath())).thenReturn(service);
         return getBuilder(service);
@@ -117,8 +117,8 @@ public class AtlasClientTest {
     public void shouldReturnFalseIfServerIsNotReady() throws AtlasServiceException {
         setupRetryParams();
         AtlasClient atlasClient = new AtlasClient(service, configuration);
-        WebResource.Builder builder = setupBuilder(AtlasClient.API_V1.VERSION, service);
-        when(builder.method(AtlasClient.API_V1.VERSION.getMethod(), ClientResponse.class, null)).thenThrow(
+        WebResource.Builder builder = setupBuilder(AtlasClient.APIV1.VERSION, service);
+        when(builder.method(AtlasClient.APIV1.VERSION.getMethod(), ClientResponse.class, null)).thenThrow(
                 new ClientHandlerException());
         assertFalse(atlasClient.isServerReady());
     }
@@ -127,12 +127,12 @@ public class AtlasClientTest {
     public void shouldReturnFalseIfServiceIsUnavailable() throws AtlasServiceException {
         setupRetryParams();
         AtlasClient atlasClient = new AtlasClient(service, configuration);
-        WebResource.Builder builder = setupBuilder(AtlasClient.API_V1.VERSION, service);
+        WebResource.Builder builder = setupBuilder(AtlasClient.APIV1.VERSION, service);
         ClientResponse response = mock(ClientResponse.class);
         when(response.getStatus()).thenReturn(Response.Status.SERVICE_UNAVAILABLE.getStatusCode());
         when(response.getClientResponseStatus()).thenReturn(ClientResponse.Status.SERVICE_UNAVAILABLE);
 
-        when(builder.method(AtlasClient.API_V1.VERSION.getMethod(), ClientResponse.class, null)).thenReturn(response);
+        when(builder.method(AtlasClient.APIV1.VERSION.getMethod(), ClientResponse.class, null)).thenReturn(response);
 
         assertFalse(atlasClient.isServerReady());
     }
@@ -142,12 +142,12 @@ public class AtlasClientTest {
         setupRetryParams();
 
         AtlasClient atlasClient = new AtlasClient(service, configuration);
-        WebResource.Builder builder = setupBuilder(AtlasClient.API_V1.VERSION, service);
+        WebResource.Builder builder = setupBuilder(AtlasClient.APIV1.VERSION, service);
         ClientResponse response = mock(ClientResponse.class);
         when(response.getStatus()).thenReturn(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
         when(response.getClientResponseStatus()).thenReturn(ClientResponse.Status.INTERNAL_SERVER_ERROR);
 
-        when(builder.method(AtlasClient.API_V1.VERSION.getMethod(), ClientResponse.class, null)).thenReturn(response);
+        when(builder.method(AtlasClient.APIV1.VERSION.getMethod(), ClientResponse.class, null)).thenReturn(response);
 
         atlasClient.isServerReady();
         fail("Should throw exception");
@@ -159,13 +159,13 @@ public class AtlasClientTest {
 
         AtlasClient atlasClient = new AtlasClient(service, configuration);
 
-        WebResource.Builder builder = setupBuilder(AtlasClient.API_V1.STATUS, service);
+        WebResource.Builder builder = setupBuilder(AtlasClient.APIV1.STATUS, service);
         ClientResponse response = mock(ClientResponse.class);
         when(response.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
         String activeStatus = "{\"Status\":\"Active\"}";
         when(response.getEntity(String.class)).thenReturn(activeStatus);
         when(response.getLength()).thenReturn(activeStatus.length());
-        when(builder.method(AtlasClient.API_V1.STATUS.getMethod(), ClientResponse.class, null)).thenReturn(response);
+        when(builder.method(AtlasClient.APIV1.STATUS.getMethod(), ClientResponse.class, null)).thenReturn(response);
 
 //         Fix after AtlasBaseClient
 //        atlasClient.setService();
@@ -181,11 +181,11 @@ public class AtlasClientTest {
 
         AtlasClient atlasClient = new AtlasClient(service, configuration);
 
-        WebResource.Builder builder = setupBuilder(AtlasClient.API_V1.STATUS, service);
+        WebResource.Builder builder = setupBuilder(AtlasClient.APIV1.STATUS, service);
         ClientResponse response = mock(ClientResponse.class);
         when(response.getStatus()).thenReturn(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
         when(response.getClientResponseStatus()).thenReturn(ClientResponse.Status.INTERNAL_SERVER_ERROR);
-        when(builder.method(AtlasClient.API_V1.STATUS.getMethod(), ClientResponse.class, null)).thenReturn(response);
+        when(builder.method(AtlasClient.APIV1.STATUS.getMethod(), ClientResponse.class, null)).thenReturn(response);
 
         String status = atlasClient.getAdminStatus();
         fail("Should fail with AtlasServiceException");
@@ -196,11 +196,11 @@ public class AtlasClientTest {
         setupRetryParams();
         AtlasClient atlasClient = new AtlasClient(service, configuration);
 
-        WebResource.Builder builder = setupBuilder(AtlasClient.API_V1.STATUS, service);
+        WebResource.Builder builder = setupBuilder(AtlasClient.APIV1.STATUS, service);
         ClientResponse response = mock(ClientResponse.class);
         when(response.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
         when(response.getEntity(String.class)).thenReturn("{\"status\":\"Active\"}");
-        when(builder.method(AtlasClient.API_V1.STATUS.getMethod(), ClientResponse.class, null)).thenReturn(response);
+        when(builder.method(AtlasClient.APIV1.STATUS.getMethod(), ClientResponse.class, null)).thenReturn(response);
 
         String status = atlasClient.getAdminStatus();
         assertEquals(status, AtlasClient.UNKNOWN_STATUS);
@@ -220,7 +220,7 @@ public class AtlasClientTest {
 
         when(client.resource(UriBuilder.fromUri("http://localhost:31000").build())).thenReturn(service);
         when(client.resource(UriBuilder.fromUri("http://localhost:41000").build())).thenReturn(service);
-        WebResource.Builder builder = setupBuilder(AtlasClient.API_V1.STATUS, service);
+        WebResource.Builder builder = setupBuilder(AtlasClient.APIV1.STATUS, service);
         ClientResponse firstResponse = mock(ClientResponse.class);
         when(firstResponse.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
         String passiveStatus = "{\"Status\":\"PASSIVE\"}";
@@ -231,7 +231,7 @@ public class AtlasClientTest {
         String activeStatus = "{\"Status\":\"ACTIVE\"}";
         when(secondResponse.getEntity(String.class)).thenReturn(activeStatus);
         when(secondResponse.getLength()).thenReturn(activeStatus.length());
-        when(builder.method(AtlasClient.API_V1.STATUS.getMethod(), ClientResponse.class, null)).
+        when(builder.method(AtlasClient.APIV1.STATUS.getMethod(), ClientResponse.class, null)).
                 thenReturn(firstResponse).thenReturn(firstResponse).thenReturn(firstResponse).
                 thenReturn(secondResponse);
 
@@ -248,7 +248,7 @@ public class AtlasClientTest {
         setupRetryParams();
 
         when(client.resource(UriBuilder.fromUri("http://localhost:31000").build())).thenReturn(service);
-        WebResource.Builder builder = setupBuilder(AtlasClient.API_V1.STATUS, service);
+        WebResource.Builder builder = setupBuilder(AtlasClient.APIV1.STATUS, service);
         ClientResponse response = mock(ClientResponse.class);
         when(response.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
         when(response.getEntity(String.class)).thenReturn("{\"Status\":\"BECOMING_ACTIVE\"}");
@@ -257,7 +257,7 @@ public class AtlasClientTest {
         String activeStatus = "{\"Status\":\"ACTIVE\"}";
         when(response.getEntity(String.class)).thenReturn(activeStatus);
         when(response.getLength()).thenReturn(activeStatus.length());
-        when(builder.method(AtlasClient.API_V1.STATUS.getMethod(), ClientResponse.class, null)).
+        when(builder.method(AtlasClient.APIV1.STATUS.getMethod(), ClientResponse.class, null)).
                 thenReturn(response).thenReturn(response).thenReturn(nextResponse);
 
         AtlasClient atlasClient = new AtlasClient(service, configuration);
@@ -273,7 +273,7 @@ public class AtlasClientTest {
         setupRetryParams();
 
         when(client.resource(UriBuilder.fromUri("http://localhost:31000").build())).thenReturn(service);
-        WebResource.Builder builder = setupBuilder(AtlasClient.API_V1.STATUS, service);
+        WebResource.Builder builder = setupBuilder(AtlasClient.APIV1.STATUS, service);
         ClientResponse response = mock(ClientResponse.class);
         when(response.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
         when(response.getEntity(String.class)).thenReturn("{\"Status\":\"BECOMING_ACTIVE\"}");
@@ -282,7 +282,7 @@ public class AtlasClientTest {
         String activeStatus = "{\"Status\":\"ACTIVE\"}";
         when(response.getEntity(String.class)).thenReturn(activeStatus);
         when(response.getLength()).thenReturn(activeStatus.length());
-        when(builder.method(AtlasClient.API_V1.STATUS.getMethod(), ClientResponse.class, null)).
+        when(builder.method(AtlasClient.APIV1.STATUS.getMethod(), ClientResponse.class, null)).
                 thenThrow(new ClientHandlerException("Simulating connection exception")).
                 thenReturn(response).
                 thenReturn(nextResponse);
@@ -302,11 +302,11 @@ public class AtlasClientTest {
         setupRetryParams();
 
         when(client.resource(UriBuilder.fromUri("http://localhost:31000").build())).thenReturn(service);
-        WebResource.Builder builder = setupBuilder(AtlasClient.API_V1.STATUS, service);
+        WebResource.Builder builder = setupBuilder(AtlasClient.APIV1.STATUS, service);
         ClientResponse response = mock(ClientResponse.class);
         when(response.getStatus()).thenReturn(Response.Status.OK.getStatusCode());
         when(response.getEntity(String.class)).thenReturn("{\"Status\":\"BECOMING_ACTIVE\"}");
-        when(builder.method(AtlasClient.API_V1.STATUS.getMethod(), ClientResponse.class, null)).
+        when(builder.method(AtlasClient.APIV1.STATUS.getMethod(), ClientResponse.class, null)).
                 thenThrow(new ClientHandlerException("Simulating connection exception")).
                 thenReturn(response).
                 thenReturn(response);
@@ -338,7 +338,7 @@ public class AtlasClientTest {
         when(response.getEntity(String.class)).thenReturn(activeStatus);
         when(response.getLength()).thenReturn(activeStatus.length());
 
-        when(builder.method(AtlasClient.API_V1.LIST_TYPES.getMethod(), ClientResponse.class, null)).
+        when(builder.method(AtlasClient.APIV1.LIST_TYPES.getMethod(), ClientResponse.class, null)).
                 thenThrow(new ClientHandlerException("simulating exception in calling API", new ConnectException())).
                 thenReturn(response);
 
@@ -349,7 +349,7 @@ public class AtlasClientTest {
         atlasClient.setService(service);
         atlasClient.setConfiguration(configuration);
 
-        atlasClient.callAPIWithRetries(AtlasClient.API_V1.LIST_TYPES, null, resourceCreator);
+        atlasClient.callAPIWithRetries(AtlasClient.APIV1.LIST_TYPES, null, resourceCreator);
 
         verify(client).destroy();
         verify(client).resource(UriBuilder.fromUri("http://localhost:31000").build());
@@ -373,7 +373,7 @@ public class AtlasClientTest {
         when(response.getEntity(String.class)).thenReturn(activeStatus);
         when(response.getLength()).thenReturn(activeStatus.length());
 
-        when(builder.method(AtlasClient.API_V1.LIST_TYPES.getMethod(), ClientResponse.class, null)).
+        when(builder.method(AtlasClient.APIV1.LIST_TYPES.getMethod(), ClientResponse.class, null)).
                 thenThrow(new ClientHandlerException("simulating exception in calling API", new ConnectException())).
                 thenReturn(response);
 
@@ -385,7 +385,7 @@ public class AtlasClientTest {
         atlasClient.setService(resourceObject);
         atlasClient.setConfiguration(configuration);
 
-        atlasClient.callAPIWithRetries(AtlasClient.API_V1.LIST_TYPES, null, resourceCreator);
+        atlasClient.callAPIWithRetries(AtlasClient.APIV1.LIST_TYPES, null, resourceCreator);
 
         verify(client).destroy();
         verify(client, times(2)).resource(UriBuilder.fromUri("http://localhost:31000").build());
@@ -414,7 +414,7 @@ public class AtlasClientTest {
         when(response.getEntity(String.class)).thenReturn(activeStatus);
         when(response.getLength()).thenReturn(activeStatus.length());
 
-        when(builder.method(AtlasClient.API_V1.LIST_TYPES.getMethod(), ClientResponse.class, null)).
+        when(builder.method(AtlasClient.APIV1.LIST_TYPES.getMethod(), ClientResponse.class, null)).
                 thenThrow(new ClientHandlerException("simulating exception in calling API", new ConnectException())).
                 thenReturn(firstResponse).
                 thenReturn(response);
@@ -425,7 +425,7 @@ public class AtlasClientTest {
         atlasClient.setService(resourceObject);
         atlasClient.setConfiguration(configuration);
 
-        atlasClient.callAPIWithRetries(AtlasClient.API_V1.LIST_TYPES, null, resourceCreator);
+        atlasClient.callAPIWithRetries(AtlasClient.APIV1.LIST_TYPES, null, resourceCreator);
 
 
         verify(client).destroy();

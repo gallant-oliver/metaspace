@@ -99,8 +99,8 @@ public class NotificationHookConsumer extends AbstractKafkaNotificationConsumer 
 
                     if (auditLog == null) {
                         auditLog = new AuditLog(messageUser, THREAD_NAME_PREFIX,
-                                AtlasClient.API_V1.CREATE_ENTITY.getMethod(),
-                                AtlasClient.API_V1.CREATE_ENTITY.getNormalizedPath());
+                                AtlasClient.APIV1.CREATE_ENTITY.getMethod(),
+                                AtlasClient.APIV1.CREATE_ENTITY.getNormalizedPath());
                     }
 
                     atlasEntityStore.createOrUpdate(new AtlasEntityStream(entities), false);
@@ -114,8 +114,8 @@ public class NotificationHookConsumer extends AbstractKafkaNotificationConsumer 
 
                     if (auditLog == null) {
                         auditLog = new AuditLog(messageUser, THREAD_NAME_PREFIX,
-                                AtlasClientV2.API_V2.UPDATE_ENTITY_BY_ATTRIBUTE.getMethod(),
-                                String.format(AtlasClientV2.API_V2.UPDATE_ENTITY_BY_ATTRIBUTE.getNormalizedPath(), partialUpdateRequest.getTypeName()));
+                                AtlasClientV2.APIV2.UPDATE_ENTITY_BY_ATTRIBUTE.getMethod(),
+                                String.format(AtlasClientV2.APIV2.UPDATE_ENTITY_BY_ATTRIBUTE.getNormalizedPath(), partialUpdateRequest.getTypeName()));
                     }
 
                     AtlasEntityType entityType = typeRegistry.getEntityTypeByName(partialUpdateRequest.getTypeName());
@@ -133,8 +133,8 @@ public class NotificationHookConsumer extends AbstractKafkaNotificationConsumer 
 
                     if (auditLog == null) {
                         auditLog = new AuditLog(messageUser, THREAD_NAME_PREFIX,
-                                AtlasClientV2.API_V2.DELETE_ENTITY_BY_ATTRIBUTE.getMethod(),
-                                String.format(AtlasClientV2.API_V2.DELETE_ENTITY_BY_ATTRIBUTE.getNormalizedPath(), deleteRequest.getTypeName()));
+                                AtlasClientV2.APIV2.DELETE_ENTITY_BY_ATTRIBUTE.getMethod(),
+                                String.format(AtlasClientV2.APIV2.DELETE_ENTITY_BY_ATTRIBUTE.getNormalizedPath(), deleteRequest.getTypeName()));
                     }
 
                     try {
@@ -153,8 +153,8 @@ public class NotificationHookConsumer extends AbstractKafkaNotificationConsumer 
 
                     if (auditLog == null) {
                         auditLog = new AuditLog(messageUser, THREAD_NAME_PREFIX,
-                                AtlasClientV2.API_V2.UPDATE_ENTITY.getMethod(),
-                                AtlasClientV2.API_V2.UPDATE_ENTITY.getNormalizedPath());
+                                AtlasClientV2.APIV2.UPDATE_ENTITY.getMethod(),
+                                AtlasClientV2.APIV2.UPDATE_ENTITY.getNormalizedPath());
                     }
 
                     atlasEntityStore.createOrUpdate(new AtlasEntityStream(entities), false);
@@ -167,8 +167,8 @@ public class NotificationHookConsumer extends AbstractKafkaNotificationConsumer 
 
                     if (auditLog == null) {
                         auditLog = new AuditLog(messageUser, THREAD_NAME_PREFIX,
-                                AtlasClientV2.API_V2.CREATE_ENTITY.getMethod(),
-                                AtlasClientV2.API_V2.CREATE_ENTITY.getNormalizedPath());
+                                AtlasClientV2.APIV2.CREATE_ENTITY.getMethod(),
+                                AtlasClientV2.APIV2.CREATE_ENTITY.getNormalizedPath());
                     }
 
                     atlasEntityStore.createOrUpdate(new AtlasEntityStream(entities), false);
@@ -182,8 +182,8 @@ public class NotificationHookConsumer extends AbstractKafkaNotificationConsumer 
 
                     if (auditLog == null) {
                         auditLog = new AuditLog(messageUser, THREAD_NAME_PREFIX,
-                                AtlasClientV2.API_V2.UPDATE_ENTITY.getMethod(),
-                                AtlasClientV2.API_V2.UPDATE_ENTITY.getNormalizedPath());
+                                AtlasClientV2.APIV2.UPDATE_ENTITY.getMethod(),
+                                AtlasClientV2.APIV2.UPDATE_ENTITY.getNormalizedPath());
                     }
                     atlasEntityStore.updateEntity(entityId, entity, true);
                 }
@@ -195,8 +195,8 @@ public class NotificationHookConsumer extends AbstractKafkaNotificationConsumer 
 
                     if (auditLog == null) {
                         auditLog = new AuditLog(messageUser, THREAD_NAME_PREFIX,
-                                AtlasClientV2.API_V2.UPDATE_ENTITY.getMethod(),
-                                AtlasClientV2.API_V2.UPDATE_ENTITY.getNormalizedPath());
+                                AtlasClientV2.APIV2.UPDATE_ENTITY.getMethod(),
+                                AtlasClientV2.APIV2.UPDATE_ENTITY.getNormalizedPath());
                     }
 
                     atlasEntityStore.createOrUpdate(new AtlasEntityStream(entities), false);
@@ -211,8 +211,8 @@ public class NotificationHookConsumer extends AbstractKafkaNotificationConsumer 
                         for (AtlasObjectId entity : entities) {
                             if (auditLog == null) {
                                 auditLog = new AuditLog(messageUser, THREAD_NAME_PREFIX,
-                                        AtlasClientV2.API_V2.DELETE_ENTITY_BY_ATTRIBUTE.getMethod(),
-                                        String.format(AtlasClientV2.API_V2.DELETE_ENTITY_BY_ATTRIBUTE.getNormalizedPath(), entity.getTypeName()));
+                                        AtlasClientV2.APIV2.DELETE_ENTITY_BY_ATTRIBUTE.getMethod(),
+                                        String.format(AtlasClientV2.APIV2.DELETE_ENTITY_BY_ATTRIBUTE.getNormalizedPath(), entity.getTypeName()));
                             }
 
                             AtlasEntityType type = (AtlasEntityType) typeRegistry.getType(entity.getTypeName());
