@@ -446,8 +446,8 @@ public class BusinessService implements Approvable {
                     Boolean securityPrivilege = Boolean.TRUE;
                     List<GroupDeriveTableRelation> relations = groupDeriveTableRelationDAO.getByTableIdAndGroups(table.getTableGuid(), userGroupIds, tenantId);
                     GroupDeriveTableRelation relation = new GroupDeriveTableRelation();
-                    boolean ifSecurityNull=relations.stream().allMatch(r-> r.getSecurityPrivilege()==null);
-                    boolean ifImportanceNull=relations.stream().allMatch(r-> r.getImportancePrivilege()==null);
+                    boolean ifSecurityNull=(CollectionUtils.isEmpty(relations) ? true : relations.stream().anyMatch(r-> r.getSecurityPrivilege()==null));
+                    boolean ifImportanceNull=(CollectionUtils.isEmpty(relations) ? true : relations.stream().anyMatch(r-> r.getImportancePrivilege()==null));
                     relation.setSecurityPrivilege(ifSecurityNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getSecurityPrivilege));
                     relation.setImportancePrivilege(ifImportanceNull?null:relations.stream().anyMatch(GroupDeriveTableRelation::getImportancePrivilege));
                     if (Boolean.TRUE.equals(sourceInfoDeriveTableInfo.getImportance()) &&
