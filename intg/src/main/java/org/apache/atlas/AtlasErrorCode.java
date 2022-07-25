@@ -186,7 +186,7 @@ public enum AtlasErrorCode {
     INSTANCE_GUID_NOT_DATASET(404, "METASPACE-404-00-011", " 给定实例ID{0}不是数据集"),
     INSTANCE_GUID_DELETED(404, "METASPACE-404-00-012", " 给定实例ID{0}已被删除"),
     NO_PROPAGATED_CLASSIFICATIONS_FOUND_FOR_ENTITY(404, "METASPACE-404-00-013", " 没有与实体关联的传播分类:{0}"),
-    
+
     // All data conflict errors go here
     TYPE_ALREADY_EXISTS(409, "METASPACE-409-00-001", " 给定类型{0}已存在"),
     TYPE_HAS_REFERENCES(409, "METASPACE-409-00-002", " 给定类型{0}有引用"),
@@ -199,7 +199,7 @@ public enum AtlasErrorCode {
     GLOSSARY_CATEGORY_ALREADY_EXISTS(409, "METASPACE-409-00-00A", " 目录已经存在"),
     STANDARD_NUMBER_ALREADY_EXISTS(409, "METASPACE-409-00-00B", " 标准编码已存在"),
     STANDARD_NAME_ALREADY_EXISTS(409, "METASPACE-409-00-00C", " 标准名称已存在"),
-    
+
     // All internal errors go here
     INTERNAL_UNKNOWN_ERROR(500, "METASPACE-500-00-000", " 服务器内部错误"),
     INTERNAL_ERROR(500, "METASPACE-500-00-001", " 内部服务器错误{0}"),
@@ -231,8 +231,8 @@ public enum AtlasErrorCode {
     MESSAGE_UPDATE_COUNT_RESULT(500, "METASPACE-401-00-005", "消息更新数量为0"),
     MESSAGE_BATCH_READ_RESULT(500, "METASPACE-401-00-006", "批量已读失败"),
     MESSAGE_BATCH_DELETE_RESULT(500, "METASPACE-401-00-007", "批量删除失败"),
-    MESSAGE_ADD_RESULT(500, "METASPACE-401-00-008", "新增消息失败");
-
+    MESSAGE_ADD_RESULT(500, "METASPACE-401-00-008", "新增消息失败"),
+    CATEGORY_NAME_SAME_ERROR(500, "METASPACE-500-00-008", "存在相同的目录名");
 
 
     private String errorCode;
