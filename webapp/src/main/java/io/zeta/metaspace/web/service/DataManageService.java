@@ -1261,10 +1261,10 @@ public class DataManageService {
             List<RelationEntityV2> list = new ArrayList<>();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
             if (StringUtils.isNotEmpty(tableName)) {
-                tableName = tableName.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
+                tableName = tableName.replace("%", "/%").replace("_", "/_");
             }
             if (StringUtils.isNotEmpty(tag)) {
-                tag = tag.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
+                tag = tag.replace("%", "/%").replace("_", "/_");
             }
             User user = AdminUtils.getUserData();
             //获取用户组
@@ -1324,10 +1324,10 @@ public class DataManageService {
             int offset = query.getOffset();
             PageResult<RelationEntityV2> pageResult = new PageResult<>();
             if (StringUtils.isNotEmpty(tableName)) {
-                tableName = tableName.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
+                tableName = tableName.replace("%", "/%").replace("_", "/_");
             }
             if (StringUtils.isNotEmpty(tag)) {
-                tag = tag.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
+                tag = tag.replace("%", "/%").replace("_", "/_");
             }
 
             List<RelationEntityV2> list = relationDao.queryByTableNameV2Global(tableName, tag, limit, offset);

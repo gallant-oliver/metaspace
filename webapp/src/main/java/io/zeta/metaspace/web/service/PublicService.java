@@ -171,7 +171,7 @@ public class PublicService {
 
     public PageResult<RelationEntityV2> getQueryTables(RelationQuery relationQuery) throws AtlasBaseException {
         PageResult<RelationEntityV2> pageResult;
-        if (isGlobal()) {
+        if (Boolean.TRUE.equals(isGlobal())) {
             pageResult = dataManageService.getRelationsByTableNameGlobal(relationQuery);
         } else {
             pageResult = dataManageService.getRelationsByTableNameGeneral(relationQuery);
