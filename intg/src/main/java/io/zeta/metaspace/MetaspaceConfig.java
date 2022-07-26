@@ -7,11 +7,7 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class MetaspaceConfig {
@@ -62,7 +58,7 @@ public class MetaspaceConfig {
         return dataSourceType;
     }
 
-    public static String[] getDataSourceTypeBuiltIn(){
+    public static String[] getDataSourceTypeBuiltIn() {
         if (ArrayUtils.isEmpty(dataSourceTypeBuiltIn)) {
             throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.datasource.type.builtIn未正确配置");
         }
@@ -75,6 +71,7 @@ public class MetaspaceConfig {
         }
         return Arrays.stream(userGroupAuthMenus).map(Integer::parseInt).collect(Collectors.toList()).toArray(new Integer[]{});
     }
+
     public static String[] getDataSourceApiType() {
         if (ArrayUtils.isEmpty(dataSourceApiType)) {
             throw new AtlasBaseException(AtlasErrorCode.CONF_LOAD_ERROE, "metaspace.datasource.api.type未正确配置");

@@ -155,7 +155,7 @@ public class EditionTaskInfo {
         private String sequence;
         private List<ObjectInfo> objectIdList;
         private List<EditionTaskInfo.SubTaskRule> subTaskRuleList;
-        private Map<String,Integer> config;
+        private Map<String,Object> config;
         private String pool;
         private int scope;
         private int type;
