@@ -200,7 +200,7 @@ public class PublicService {
         if (isGlobal()) {
             return businessService.getBusinessListByNameGlobal(parameters);
         } else {
-            return businessService.getBusinessListByName(parameters, null);
+            return businessService.getBusinessListByNamePublic(parameters);
         }
     }
 }
