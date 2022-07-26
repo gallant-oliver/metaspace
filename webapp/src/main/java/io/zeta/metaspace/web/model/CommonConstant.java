@@ -1,7 +1,5 @@
 package io.zeta.metaspace.web.model;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
  * 业务操作公共属性值
  *
@@ -152,4 +150,10 @@ public class CommonConstant {
 
     public static final int BUSINESS_INDICATOR = 1;
     public static final int ATOM_INDICATOR = 2;
+
+    public static final String PRIVATE = "PRIVATE";
+
+    public static final String PUBLIC = "PUBLIC";
+
+    public static final String ASSET_NAME = "Asset.name";
 }
