@@ -142,10 +142,11 @@ public class ApproveServiceImp implements ApproveService {
                 List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroup);
                 List<String> userEmailList = (CollectionUtils.isNotEmpty(userIdList) ? userDAO.getUsersEmailByIds(userIdList) : null);
                 MessageEntity message = null;
+                String businessTypeText = (approveInfo != null ? BusinessType.getTextByCode(approveInfo.getBusinessType()) : null);
                 if ("1".equals(item.getApproveType())) {
-                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.RELEASE, MessagePush.PASS), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()), ProcessEnum.PROCESS_APPROVED.code);
+                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, approveInfo.getObjectName(), businessTypeText, MessagePush.RELEASE, MessagePush.PASS), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, businessTypeText), ProcessEnum.PROCESS_APPROVED.code);
                 } else if ("2".equals(item.getApproveType())) {
-                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.OFFLINE, MessagePush.PASS), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()), ProcessEnum.PROCESS_APPROVED.code);
+                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, approveInfo.getObjectName(), businessTypeText, MessagePush.OFFLINE, MessagePush.PASS), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, businessTypeText), ProcessEnum.PROCESS_APPROVED.code);
                 }
 
                 if (CollectionUtils.isNotEmpty(userEmailList)) {
@@ -181,10 +182,11 @@ public class ApproveServiceImp implements ApproveService {
                 List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroup);
                 List<String> userEmailList = (CollectionUtils.isNotEmpty(userIdList) ? userDAO.getUsersEmailByIds(userIdList) : null);
                 MessageEntity message = null;
+                String businessTypeText = (approveInfo != null ? BusinessType.getTextByCode(approveInfo.getBusinessType()) : null);
                 if ("1".equals(item.getApproveType())) {
-                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.RELEASE, MessagePush.REJECT), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()), ProcessEnum.PROCESS_APPROVED.code);
+                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, approveInfo.getObjectName(), businessTypeText, MessagePush.RELEASE, MessagePush.REJECT), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, businessTypeText), ProcessEnum.PROCESS_APPROVED.code);
                 } else if ("2".equals(item.getApproveType())) {
-                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.OFFLINE, MessagePush.REJECT), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()), ProcessEnum.PROCESS_APPROVED.code);
+                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, approveInfo.getObjectName(), businessTypeText, MessagePush.OFFLINE, MessagePush.REJECT), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, businessTypeText), ProcessEnum.PROCESS_APPROVED.code);
                 }
                 if (CollectionUtils.isNotEmpty(userEmailList)) {
                     for (String userEmail : userEmailList) {
