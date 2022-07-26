@@ -81,6 +81,8 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.lang.StringUtils;
+
 @Service
 public class TaskManageService {
 
@@ -534,14 +536,7 @@ public class TaskManageService {
                 int dataSourceType = rule.getScope();
                 for (EditionTaskInfo.ObjectInfo objectInfo : objectInfoList) {
                     String objectId = objectInfo.getObjectId().toString();
-                    if (0 == dataSourceType) {
-                        //添加数据源名字
-                        CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
-                        String dataSourceId = paramInfo.getDataSourceId();
-                        String dataSourceName = getDataSourceName(dataSourceId);
-                        paramInfo.setDataSourceName(dataSourceName);
-                        objectInfo.setObjectId(paramInfo);
-                    } else if (1 == dataSourceType) {
+                    if (0 == dataSourceType || 1 == dataSourceType || 3 == dataSourceType) {
                         //添加数据源名字
                         CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
                         String dataSourceId = paramInfo.getDataSourceId();
@@ -875,6 +870,14 @@ public class TaskManageService {
                         tableRuleSuggestion.add(record.getObjectName() + suffix);
                     } else if (1 == record.getScope() && 1 == record.getCheckStatus()) {
                         columnRuleSuggestion.add(record.getObjectName() + suffix);
+                    } else if (3 == record.getScope() && record.getCheckStatus() == null) {
+                        tableRuleSuggestion.add(record.getObjectName() + noEnd);
+                    } else if (3 == record.getScope() && 1 == record.getCheckStatus()) {
+                        tableRuleSuggestion.add(record.getObjectName() + suffix);
+                    } else if (3 == record.getScope() && 0 == record.getCheckStatus()) {
+                        String remarkEnd = "存在%s个表描述空值的情况，建议修复";
+                        remarkEnd = String.format(remarkEnd, record.getErrorTblNameCount());
+                        tableRuleSuggestion.add(record.getObjectName() + remarkEnd);
                     }
                     Integer sequence = taskManageDAO.getSubTaskSequence(record.getSubtaskId());
                     record.setSubTaskSequence(sequence);
@@ -897,6 +900,7 @@ public class TaskManageService {
             Map<String, SubTaskRecord> map = new LinkedHashMap<>(); //配置的子任务要满足顺序一致，使用LinkedHashMap保证，且查询sql要保证有序性
             List<TaskRuleExecutionRecord> list = taskManageDAO.getTaskRuleExecutionRecordList(executionId, subtaskId, tenantId);
             Boolean filing = taskManageDAO.getFilingStatus(executionId) == 0 ? false : true;
+            HdfsUtils hdfsUtil = new HdfsUtils();
             for (TaskRuleExecutionRecord record : list) {
                 record.setFiling(filing);
 
@@ -977,6 +981,40 @@ public class TaskManageService {
                         }
                         map.get(record.getSubtaskId()).setTaskRuleExecutionRecords(resultList);
                     }
+                } else if (3 == record.getScope()) {
+                    CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
+                    String dataSourceName = getDataSourceName(paramInfo.getDataSourceId());
+                    record.setDataSourceName(dataSourceName);
+                    record.setDbName(paramInfo.getSchema());
+                    record.setObjectName(paramInfo.getSchema());
+
+                    // 从hdfs拿到表空值描述的表集合
+                    String ruleExecutionId = record.getRuleExecutionId();
+                    TaskRuleExecutionRecord ruleRecord = taskManageDAO.getTaskRuleExecutionRecord(ruleExecutionId, tenantId);
+                    String fileName = LivyTaskSubmitHelper.getOutName("data");
+                    String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(ruleExecutionId, ruleRecord.getCreateTime().getTime(), fileName);
+                    List<String> tblNamelist = errorDataCache.getIfPresent(hdfsOutPath);
+                    if (tblNamelist == null) {
+                        tblNamelist = hdfsUtil.exists(hdfsOutPath) ? hdfsUtil.catFile(hdfsOutPath, errorDataSize) : new ArrayList<>(); //无输出的规则或者执行异常的任务HDFS上是不会有输出结果的，返回空数据
+                    }
+                    List<Map<String, Object>> data = tblNamelist.stream().map(line -> {
+                        Map<String, Object> mapVal = GsonUtils.getInstance().fromJson(line, new TypeToken<Map<String, Object>>() {
+                        }.getType());
+                        return mapVal;
+                    }).collect(Collectors.toList());
+                    List<String> errorArray = new ArrayList<>();
+                    for (Map<String, Object> item : data) {
+                        if (item.get("TABLE_NAME") != null) {
+                            errorArray.add(item.get("TABLE_NAME").toString());
+                        } else if (item.get("table_name") != null) {
+                            errorArray.add(item.get("table_name").toString());
+                        }
+                    }
+                    // 异常表用分号区分返回给前端
+                    String errorTblNameArray = StringUtils.join(errorArray, ";");
+                    Integer errorTblNameCount = (CollectionUtils.isEmpty(errorArray) ? 0 : errorArray.size());
+                    record.setErrorTblNameArray(errorTblNameArray);
+                    record.setErrorTblNameCount(errorTblNameCount);
                 }
             }
             return new ArrayList<>(map.values());
@@ -1122,6 +1160,12 @@ public class TaskManageService {
                 getDataByList(list, parameters, errorData);
                 return errorData;
             }
+        } else if (3 == record.getScope()) {
+            CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
+            String dataSourceName = getDataSourceName(paramInfo.getDataSourceId());
+            errorData.setDataSourceName(dataSourceName);
+            errorData.setDbName(paramInfo.getSchema());
+            errorData.setDataSourceId(paramInfo.getDataSourceId());
         }
         String fileName = LivyTaskSubmitHelper.getOutName("data");
         String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(ruleExecutionId, record.getCreateTime().getTime(), fileName);
@@ -1365,14 +1409,15 @@ public class TaskManageService {
 
     /**
      * 数据库更新告警信息
+     *
      * @param task
      * @param checkStatus
      * @param orangeWarningcheckStatus
      * @param redWarningcheckStatus
      * @param taskRuleExecute
      */
-    @Transactional(rollbackFor=Exception.class)
-    public void updateWarningInfo(AtomicTaskExecution task, RuleExecuteStatus checkStatus, RuleExecuteStatus orangeWarningcheckStatus, RuleExecuteStatus redWarningcheckStatus, DataQualityTaskRuleExecute taskRuleExecute) throws Exception{
+    @Transactional(rollbackFor = Exception.class)
+    public void updateWarningInfo(AtomicTaskExecution task, RuleExecuteStatus checkStatus, RuleExecuteStatus orangeWarningcheckStatus, RuleExecuteStatus redWarningcheckStatus, DataQualityTaskRuleExecute taskRuleExecute) throws Exception {
         taskManageDAO.updateRuleExecutionWarningInfo(taskRuleExecute);
 
         //普通告警数量
@@ -1394,6 +1439,6 @@ public class TaskManageService {
             taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
         }
     }
-    
-    
+
+
 }

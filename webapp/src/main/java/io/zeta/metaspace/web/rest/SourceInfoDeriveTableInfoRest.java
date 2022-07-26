@@ -9,6 +9,7 @@ import io.zeta.metaspace.model.dto.sourceinfo.DeriveFileDTO;
 import io.zeta.metaspace.model.dto.sourceinfo.SourceInfoDeriveTableColumnDTO;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
+import io.zeta.metaspace.model.operatelog.OperateTypeEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.sourceinfo.derivetable.constant.DeriveTableStateEnum;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
@@ -403,6 +404,7 @@ public class SourceInfoDeriveTableInfoRest {
     @POST
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
+    @OperateType(OperateTypeEnum.INSERT)
     public Result fileUploadSubmitBatch(List<DeriveFileDTO> deriveFileDTOList, @HeaderParam(value = "tenantId") String tenantId) {
         HttpRequestContext.get().auditLog(ModuleEnum.DERIVEDTABLESREGISTER.getAlias(), "新增衍生表登记记录：文件导入");
         return sourceInfoDeriveTableInfoService.fileUploadSubmitBatch(deriveFileDTOList, tenantId);

@@ -7,6 +7,7 @@ import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.MetaspaceConfig;
 import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
+import io.zeta.metaspace.model.enums.FileInfoPath;
 import io.zeta.metaspace.model.metadata.CategoryItem;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.metadata.RelationQuery;
@@ -17,13 +18,13 @@ import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.share.Organization;
 import io.zeta.metaspace.model.table.DataSourceHeader;
 import io.zeta.metaspace.model.table.DatabaseHeader;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.model.TemplateEnum;
-import io.zeta.metaspace.web.service.CategoryRelationUtils;
-import io.zeta.metaspace.web.service.DataManageService;
-import io.zeta.metaspace.web.service.MetaDataService;
-import io.zeta.metaspace.web.service.SearchService;
+import io.zeta.metaspace.web.service.*;
+import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
+import io.zeta.metaspace.web.util.RedisUtil;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.atlas.AtlasErrorCode;
@@ -52,12 +53,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.zeta.metaspace.model.operatelog.OperateTypeEnum.*;
@@ -85,7 +82,10 @@ public class TechnicalREST {
     private static final int MAX_EXCEL_FILE_SIZE = 10 * 1024 * 1024;
     @Context
     private HttpServletRequest request;
-
+    @Autowired
+    private RedisUtil redisUtil;
+    @Autowired
+    private FileInfoService fileInfoService;
     /**
      * 添加关联表时搜数据源
      *
@@ -516,7 +516,7 @@ public class TechnicalREST {
                                  @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
         File file = null;
         try {
-            String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            String name = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
             HttpRequestContext.get().auditLog(ModuleEnum.TECHNICAL.getAlias(), name);
             file = ExportDataPathUtils.fileCheck(name, fileInputStream);
             String upload;
@@ -528,6 +528,7 @@ public class TechnicalREST {
             HashMap<String, String> map = new HashMap<String, String>() {{
                 put("upload", upload);
             }};
+            redisUtil.set(upload,name,CommonConstant.FILE_REDIS_TIME);
             return ReturnUtil.success(map);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
@@ -573,6 +574,7 @@ public class TechnicalREST {
             } else {
                 categoryPrivileges = dataManageService.importCategory(categoryId, importCategory.getDirection(), file, importCategory.isAuthorized(), CATEGORY_TYPE, tenantId);
             }
+            fileInfoService.createFileRecord(upload, FileInfoPath.TECHNICAL_CATEGORY, file);
             return ReturnUtil.success(categoryPrivileges);
         } catch (Exception e) {
             log.error(e.getMessage());

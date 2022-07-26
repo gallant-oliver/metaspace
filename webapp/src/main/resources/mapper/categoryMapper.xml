@@ -106,4 +106,12 @@
              WHERE c.guid = #{guid}
     </select>
 
+    <select id="categoryName" resultType="java.lang.String">
+        SELECT category.name from category where category.guid in
+        <foreach collection="ids" item="id" open="(" close=")" separator="," index="index">
+            #{id}
+        </foreach>
+        and category.tenantid=#{tenantId}
+    </select>
+
 </mapper>

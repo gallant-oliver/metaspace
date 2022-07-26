@@ -44,6 +44,9 @@ import io.zeta.metaspace.model.desensitization.DesensitizationRule;
 import io.zeta.metaspace.model.dto.api.ApiTestDTO;
 import io.zeta.metaspace.model.dto.api.ApiTestInfoVO;
 import io.zeta.metaspace.model.dto.api.ApiTestResult;
+import io.zeta.metaspace.model.entities.MessageEntity;
+import io.zeta.metaspace.model.enums.MessagePush;
+import io.zeta.metaspace.model.enums.ProcessEnum;
 import io.zeta.metaspace.model.ip.restriction.ApiIpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestriction;
 import io.zeta.metaspace.model.ip.restriction.IpRestrictionType;
@@ -68,6 +71,7 @@ import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.model.CommonConstant;
+import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasConfiguration;
@@ -77,7 +81,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.repository.Constants;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.poi.ss.usermodel.*;
@@ -106,6 +110,8 @@ import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static io.zeta.metaspace.model.enums.MessagePush.DATA_SERVICE_AUDIT_START;
 
 /*
  * @description
@@ -156,6 +162,14 @@ public class DataShareService {
     private DesensitizationDAO desensitizationDAO;
     @Autowired
     private IpRestrictionDAO ipRestrictionDAO;
+    @Autowired
+    private FileInfoService fileInfoService;
+
+    @Autowired
+    ApproveGroupDAO approveGroupDAO;
+
+    @Autowired
+    MessageCenterService messageCenterService;
 
     Map<String, CompletableFuture> taskMap = new HashMap<>();
 
@@ -1421,37 +1435,37 @@ public class DataShareService {
     public List<String> getUserDataBases(String tenantId, String sourceId) throws AtlasBaseException {
 
         User user = AdminUtils.getUserData();
-        if("hive".equalsIgnoreCase(sourceId)){
+        if ("hive".equalsIgnoreCase(sourceId)) {
             List<String> databases = tenantService.getDatabase(tenantId);
             List<String> userHiveDatabases = shareDAO.getUserHiveDatabases(tenantId, user.getUserId());
-            if(null == databases){
+            if (null == databases) {
                 databases = new ArrayList<>();
             }
-            if(null == userHiveDatabases){
+            if (null == userHiveDatabases) {
                 userHiveDatabases = new ArrayList<>();
             }
             userHiveDatabases.retainAll(databases);
             return userHiveDatabases;
-        }else{
-            return shareDAO.getUserRelationDatabases(tenantId,sourceId,user.getUserId());
+        } else {
+            return shareDAO.getUserRelationDatabases(tenantId, sourceId, user.getUserId());
         }
     }
 
     public List<String> getUserTables(String tenantId, String sourceId, String dataBase) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         List<String> userDataBases = getUserDataBases(tenantId, sourceId);
-        if(!userDataBases.contains(dataBase)){
-            throw new AtlasBaseException("id为【"+sourceId+"】的数据源中没有找到数据库【" + dataBase + "." +dataBase + "】，请确认数据库存在并且确保用户" + user.getUsername() + "具有读取该数据库的权限",
+        if (!userDataBases.contains(dataBase)) {
+            throw new AtlasBaseException("id为【" + sourceId + "】的数据源中没有找到数据库【" + dataBase + "." + dataBase + "】，请确认数据库存在并且确保用户" + user.getUsername() + "具有读取该数据库的权限",
                     AtlasErrorCode.BAD_REQUEST, "数据库【" + dataBase + "】不存在");
         }
-        return shareDAO.getDatabaseTables(sourceId,dataBase);
+        return shareDAO.getDatabaseTables(sourceId, dataBase);
     }
 
     public List<String> getUserColumns(String tenantId, String sourceId, String dataBase, String tableName) throws AtlasBaseException {
         User user = AdminUtils.getUserData();
         List<String> userTables = getUserTables(tenantId, sourceId, dataBase);
-        if(!userTables.contains(tableName)){
-            throw new AtlasBaseException("id为【"+sourceId+"】的数据源中没有找到库表【" + dataBase + "." +tableName + "】，请确认库表存在并且确保用户" + user.getUsername() + "具有读取该库表的权限",
+        if (!userTables.contains(tableName)) {
+            throw new AtlasBaseException("id为【" + sourceId + "】的数据源中没有找到库表【" + dataBase + "." + tableName + "】，请确认库表存在并且确保用户" + user.getUsername() + "具有读取该库表的权限",
                     AtlasErrorCode.BAD_REQUEST, "表【" + tableName + "】不存在");
         }
         return shareDAO.getUserColumns(sourceId, dataBase, tableName);
@@ -1514,20 +1528,20 @@ public class DataShareService {
             schemaPage.setLists(lists);
             schemaPage.setCurrentSize(lists.size());
             return schemaPage;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取数据源元数据失败");
         }
     }
 
     /**
      * 根据配置的用户组权限获取数据库
+     *
      * @param parameters
      * @param tenantId
      * @param sourceId
      * @return
      */
-    public PageResult<Map<String, Object>> getDbDataList(ColumnParameters parameters, String tenantId, String sourceId){
+    public PageResult<Map<String, Object>> getDbDataList(ColumnParameters parameters, String tenantId, String sourceId) {
         List<DBInfo> dbInfoList = taskManageDAO.getUserGroupDatabase(tenantId, sourceId);
         PageResult<Map<String, Object>> schemaPage = new PageResult<>();
         List<Map<String, Object>> schemaNameList = dbInfoList.stream()
@@ -1594,32 +1608,16 @@ public class DataShareService {
      */
     public PageResult<ProjectInfo> searchProject(Parameters parameters, String tenantId) throws AtlasBaseException {
         PageResult<ProjectInfo> commonResult = new PageResult<>();
-
         String query = parameters.getQuery();
         if (query != null) {
             parameters.setQuery(query.replaceAll("%", "/%").replaceAll("_", "/_"));
         }
-
-        //校验租户先是否有用户
-        SecuritySearch securitySearch = new SecuritySearch();
-        securitySearch.setTenantId(tenantId);
-        PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
-        List<String> userIds = userAndModules.getLists().stream().map(UserAndModule::getAccountGuid).collect(Collectors.toList());
-        List<ProjectInfo> lists;
-        try {
-            lists = shareDAO.searchProject(parameters, AdminUtils.getUserData().getUserId(), tenantId, userIds);
-        } catch (SQLException e) {
-            LOG.error("SQL执行异常", e);
-            lists = new ArrayList<>();
-        }
-        if (lists == null || lists.size() == 0) {
+        List<ProjectInfo> lists = shareDAO.searchProject(parameters, tenantId);
+        if (CollectionUtils.isEmpty(lists)) {
             return commonResult;
         }
         String userId = AdminUtils.getUserData().getUserId();
         for (ProjectInfo projectInfo : lists) {
-            if (userIds == null || userIds.size() == 0) {
-                projectInfo.setUserCount(0);
-            }
             projectInfo.setEditManager(false);
             if (projectInfo.getManagerId().equals(userId)) {
                 projectInfo.setEditManager(true);
@@ -1784,7 +1782,7 @@ public class DataShareService {
             }
             return users;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("getManager exception is {}", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败:" + e.getMessage());
         }
     }
@@ -2200,7 +2198,7 @@ public class DataShareService {
                 String approveJson = apiGroupInfo.getApproveJson();
                 List list = gson.fromJson(approveJson, List.class);
                 List<String> userNames = new ArrayList<>();
-                if (list!=null&&list.size()!=0){
+                if (list != null && list.size() != 0) {
                     userNames = userDAO.getUserNameByIds(list);
                 }
                 apiGroupInfo.setApprove(userNames);
@@ -2517,6 +2515,27 @@ public class DataShareService {
         }
         shareDAO.updateApiVersionStatus(id, version, ApiStatusEnum.AUDIT.getName(), updateTime);
         auditService.insertApiAudit(tenantId, id, version, apiInfo.getVersionNum());
+
+        // api消息推送给管理员审批
+        String projectId = apiInfo.getProjectId();
+        String manage = null;
+        if (StringUtils.isNotEmpty(projectId)){
+            manage = shareDAO.getProjectManager(projectId);
+        }
+        if (StringUtils.isNotEmpty(manage)) {
+            List<String> userIdList = new ArrayList<>(Arrays.asList(manage));
+            List<String> userEmailList = (CollectionUtils.isNotEmpty(userIdList) ? userDAO.getUsersEmailByIds(userIdList) : null);
+            MessageEntity message = null;
+            message = new MessageEntity(DATA_SERVICE_AUDIT_START.type, MessagePush.getFormattedMessageName(DATA_SERVICE_AUDIT_START.name, apiInfo.getName()), DATA_SERVICE_AUDIT_START.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
+
+            if (CollectionUtils.isNotEmpty(userEmailList)){
+                for (String userEmail : userEmailList) {
+                    message.setCreateUser(userEmail);
+                    messageCenterService.addMessage(message, tenantId);
+                }
+            }
+        }
+
         addApiLog(ApiLogEnum.SUBMIT, id, AdminUtils.getUserData().getUserId());
     }
 
@@ -2706,7 +2725,7 @@ public class DataShareService {
         DataSourceType sourceType = DataSourceType.getType(apiInfo.getSourceType());
         if (!sourceType.isBuildIn()) {
             DataSourceInfo dataSourceInfo = dataSourceDAO.getDataSourceInfo(apiInfo.getSourceId());
-            if(dataSourceInfo==null){
+            if (dataSourceInfo == null) {
                 LOG.error("数据源信息已失效");
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据源信息已失效，测试失败！");
             }
@@ -3106,7 +3125,7 @@ public class DataShareService {
             handleParams(apiInfo);
             ApiInfoDetailDTO detailInfo = new ApiInfoDetailDTO();
             BeanUtils.copyProperties(apiInfo, detailInfo);
-            
+
             Timestamp createTime = apiInfo.getCreateTime();
             Timestamp updateTime = apiInfo.getUpdateTime();
             detailInfo.setCreateTime(createTime != null ? dateFormat.format(createTime) : "");
@@ -3117,8 +3136,7 @@ public class DataShareService {
             String sourceType = detailInfo.getSourceType();
             if ("HIVE".equals(sourceType)) {
                 detailInfo.setSourceName("资源池：" + detailInfo.getSourceName());
-            }
-            else {
+            } else {
                 detailInfo.setSourceName("数据源：" + detailInfo.getSourceName());
             }
 
@@ -3137,13 +3155,13 @@ public class DataShareService {
                     List<ApiInfoV2.FieldV2> params = apiInfo.getParam();
                     Map<String, ApiInfoV2.FieldV2> paramsMap = new HashMap<>();
                     if (CollectionUtils.isNotEmpty(params)) {
-                        paramsMap = params.stream().collect(Collectors.toMap(ApiInfoV2.FieldV2 :: getColumnName, Function.identity(), (key1, key2) -> key2));
+                        paramsMap = params.stream().collect(Collectors.toMap(ApiInfoV2.FieldV2::getColumnName, Function.identity(), (key1, key2) -> key2));
                     }
 
                     List<ApiInfoDetailDTO.ApiColumnInfoDetail> apiColumnInfoDetails = new ArrayList<>();
                     Map<String, String> ruleMap = new HashMap<>();
                     if (CollectionUtils.isNotEmpty(rules)) {
-                        ruleMap = rules.stream().collect(Collectors.toMap(ApiDesensitization :: getField, ApiDesensitization :: getRuleName, (key1, key2) -> key2));
+                        ruleMap = rules.stream().collect(Collectors.toMap(ApiDesensitization::getField, ApiDesensitization::getRuleName, (key1, key2) -> key2));
                     }
                     for (ApiInfoV2.FieldV2 returnParam : returnParams) {
                         ApiInfoDetailDTO.ApiColumnInfoDetail apiColumnInfoDetail = new ApiInfoDetailDTO.ApiColumnInfoDetail();
@@ -3165,7 +3183,7 @@ public class DataShareService {
             detailInfos.add(detailInfo);
         }
 
-       return fillHtmlTemplateData(detailInfos);
+        return fillHtmlTemplateData(detailInfos);
     }
 
     private ApiInfoV2 handleParams(ApiInfoV2 apiInfo) throws AtlasBaseException {
@@ -3176,12 +3194,14 @@ public class DataShareService {
             Object sortParam = apiInfo.getSortParams();
             Object apiPoly = apiInfo.getApiPoly();
 
-            Type typeParam = new TypeToken<List<ApiInfoV2.FieldV2>>(){}.getType();
+            Type typeParam = new TypeToken<List<ApiInfoV2.FieldV2>>() {
+            }.getType();
             List<ApiInfoV2.FieldV2> params = gson.fromJson(param == null ? null : param.toString(), typeParam);
             List<ApiInfoV2.FieldV2> returnParams = gson.fromJson(returnParam == null ? null : returnParam.toString(), typeParam);
             List<ApiInfoV2.FieldV2> sortParams = gson.fromJson(sortParam == null ? null : sortParam.toString(), typeParam);
 
-            Type apiPolyType = new TypeToken<ApiPolyEntity>(){}.getType();
+            Type apiPolyType = new TypeToken<ApiPolyEntity>() {
+            }.getType();
             ApiPolyEntity apiPolyEntity = gson.fromJson(apiPoly == null ? null : apiPoly.toString(), apiPolyType);
 
             apiInfo.setParam(params);
@@ -3240,7 +3260,7 @@ public class DataShareService {
     private List<CategoryExport> file2Data(File file) throws Exception {
         List<String> names = new ArrayList<>();
         List<CategoryExport> categoryExports = new ArrayList<>();
-        try(Workbook workbook = WorkbookFactory.create(file)) {
+        try (Workbook workbook = WorkbookFactory.create(file)) {
             Sheet sheet = workbook.getSheetAt(0);
 
             //文件格式校验
@@ -3289,8 +3309,7 @@ public class DataShareService {
                 categoryExports.add(category);
                 names.add(name);
             }
-        }
-        catch (Exception e){
+        } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "转化失败");
         }
         return categoryExports;
@@ -3479,7 +3498,7 @@ public class DataShareService {
         } else {
             path.append("http://");
             Configuration configuration = ApplicationProperties.get();
-            domainName = configuration.getString("metaspace.mobius.domain.name")+"/";
+            domainName = configuration.getString("metaspace.mobius.domain.name") + "/";
         }
         path.append(domainName);
         //新api地址多一个path
@@ -3561,24 +3580,24 @@ public class DataShareService {
         }
     }
 
-    private void completeParam(ApiInfoV2 apiInfo){
+    private void completeParam(ApiInfoV2 apiInfo) {
         List<ApiInfoV2.FieldV2> param = apiInfo.getParam();
-        if(CollectionUtils.isEmpty(param)){
+        if (CollectionUtils.isEmpty(param)) {
             return;
         }
-        for (ApiInfoV2.FieldV2 par:param) {
+        for (ApiInfoV2.FieldV2 par : param) {
             DataType dataType = DataType.convertType(par.getColumnType().toUpperCase());
-            Object defaultValue = getDefaultValue(dataType,Integer.parseInt(par.getMinSize()),Integer.parseInt(par.getMaxSize()));
+            Object defaultValue = getDefaultValue(dataType, Integer.parseInt(par.getMinSize()), Integer.parseInt(par.getMaxSize()));
             par.setValue(defaultValue);
         }
     }
 
-    private Object getDefaultValue(DataType dataType,int min,int max){
+    private Object getDefaultValue(DataType dataType, int min, int max) {
         StringBuilder str = new StringBuilder();
         Object value = null;
-        switch (dataType){
+        switch (dataType) {
             case DATE:
-                value = new Date(2021,12,12);
+                value = new Date(2021, 12, 12);
                 break;
             case BOOLEAN:
                 value = true;

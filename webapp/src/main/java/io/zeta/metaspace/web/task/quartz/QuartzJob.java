@@ -53,19 +53,19 @@ import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.ResultSetMetaData;
-import java.sql.Timestamp;
+import java.io.File;
+import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.zeta.metaspace.model.dataquality.RuleCheckType.FIX;
 import static io.zeta.metaspace.model.dataquality.RuleCheckType.FLU;
+import static io.zeta.metaspace.model.dataquality.TaskType.EMPTY_VALUE_NUM_TABLE_REMAKR;
 
 /*
  * @description
@@ -240,6 +240,11 @@ public class QuartzJob implements Job {
                     } else {
                         throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的任务类型");
                     }
+                } else if (3 == taskExecution.getScope()) {
+                    CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
+                    taskExecution.setDataSourceId(paramInfo.getDataSourceId());
+                    taskExecution.setDbName(paramInfo.getSchema());
+                    taskExecution.setObjectName(paramInfo.getSchema());
                 } else {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "错误的任务类型");
                 }
@@ -251,7 +256,8 @@ public class QuartzJob implements Job {
     }
 
 
-    private void executeAtomicTaskList(String taskId, String taskExecuteId, List<AtomicTaskExecution> taskList, String tenantId) throws Exception {
+    private void executeAtomicTaskList(String taskId, String
+            taskExecuteId, List<AtomicTaskExecution> taskList, String tenantId) throws Exception {
         engine = AtlasConfiguration.METASPACE_QUALITY_ENGINE.get(conf, String::valueOf);
         LOG.info("query engine:" + engine);
         int totalStep = taskList.size();
@@ -368,6 +374,7 @@ public class QuartzJob implements Job {
             Measure measure = null;
             switch (jobType) {
                 case TABLE_ROW_NUM:
+                case EMPTY_VALUE_NUM_TABLE_REMAKR:
                     ruleResultValue(task, true, false);
                     break;
                 case TABLE_ROW_NUM_CHANGE:
@@ -764,27 +771,33 @@ public class QuartzJob implements Job {
             String columnName = null;
             String user = MetaspaceConfig.getHiveAdmin();
             AdapterSource adapterSource;
+            String sourceType;
             if (task.getDataSourceId() == null || hiveId.equals(task.getDataSourceId())) {
                 if (Objects.nonNull(engine) && QualityEngine.IMPALA.getEngine().equals(engine)) {
                     adapterSource = AdapterUtils.getImpalaAdapterSource();
+                    sourceType = "IMPALA";
                 } else {
                     adapterSource = AdapterUtils.getHiveAdapterSource();
+                    sourceType = "HIVE";
                 }
             } else {
                 DataSourceInfo dataSourceInfo = dataSourceService.getUnencryptedDataSourceInfo(task.getDataSourceId());
                 adapterSource = AdapterUtils.getAdapterSource(dataSourceInfo);
+                sourceType = dataSourceInfo.getSourceType();
             }
 
             //表名列名转义
             AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
-            tableName = adapterExecutor.addEscapeChar(tableName);
+            if (StringUtils.isNotBlank(tableName)) {
+                tableName = adapterExecutor.addEscapeChar(tableName);
+            }
             String sqlDbName = adapterExecutor.addSchemaEscapeChar(dbName);
             TaskType jobType = TaskType.getTaskByCode(task.getTaskType());
             String query = QuartQueryProvider.getQuery(jobType);
             String sql = null;
             String superType = String.valueOf(jobType.code);
             String fileName = LivyTaskSubmitHelper.getOutName("data");
-            String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(task.getId(), task.getTimeStamp(), fileName);
+             String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(task.getId(), task.getTimeStamp(), fileName);
             if (columnRule) {
                 columnName = adapterExecutor.addEscapeChar(task.getObjectName());
                 switch (jobType) {
@@ -792,14 +805,14 @@ public class QuartzJob implements Job {
                     case UNIQUE_VALUE_NUM_CHANGE:
                     case UNIQUE_VALUE_NUM_CHANGE_RATIO:
                     case UNIQUE_VALUE_NUM_RATIO:
-                        writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath);
+                        writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath, sourceType, null);
                         sql = String.format(query, sqlDbName, tableName, columnName, columnName, sqlDbName, tableName, columnName);
                         break;
                     case DUP_VALUE_NUM:
                     case DUP_VALUE_NUM_CHANGE:
                     case DUP_VALUE_NUM_CHANGE_RATIO:
                     case DUP_VALUE_NUM_RATIO:
-                        writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath);
+                        writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath, sourceType, null);
 
                         sql = String.format(query, columnName, sqlDbName, tableName, columnName, columnName, sqlDbName, tableName, columnName);
                         break;
@@ -807,15 +820,26 @@ public class QuartzJob implements Job {
                     case EMPTY_VALUE_NUM_CHANGE:
                     case EMPTY_VALUE_NUM_CHANGE_RATIO:
                     case EMPTY_VALUE_NUM_RATIO:
-                        writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath);
+                        writeErrorData(jobType, tableName, columnName, sqlDbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath, sourceType, null);
                         sql = String.format(query, sqlDbName, tableName, columnName, columnName);
                         break;
+
                     default:
                         sql = String.format(query, columnName, sqlDbName, tableName);
                         break;
                 }
             } else {
-                sql = String.format(query, sqlDbName, tableName);
+                switch (jobType) {
+                    case EMPTY_VALUE_NUM_TABLE_REMAKR:
+                        HashMap<String, Object> map = new HashMap<>();
+                        resultValue = adapterExecutor.getTblRemarkCountByDb(adapterSource, user, dbName, pool, map);
+                        Connection connection = ("SQLSERVER".equals(sourceType) ? adapterSource.getConnectionForDriver(user, dbName) : adapterSource.getConnection(user, dbName, pool));
+                        writeErrorData(jobType, tableName, columnName, dbName, adapterSource, connection, hdfsOutPath, sourceType, map);
+                        return resultValue;
+                    default:
+                        sql = String.format(query, sqlDbName, tableName);
+                        break;
+                }
             }
 
             String columnTypeKey = null;
@@ -863,9 +887,32 @@ public class QuartzJob implements Job {
         }
     }
 
-    public void writeErrorData(TaskType jobType, String tableName, String columnName, String sqlDbName, AdapterSource adapterSource, Connection connection, String hdfsOutPath) {
-        String errDataSql = QuartQueryProvider.getErrData(jobType);
+    public void writeErrorData(TaskType jobType, String tableName, String columnName, String
+            sqlDbName, AdapterSource adapterSource, Connection connection, String hdfsOutPath, String
+                                       sourceType, Map<String, Object> mapVal) {
+        String errDataSql = QuartQueryProvider.getErrData(jobType, sourceType);
         String sql;
+        HdfsUtils hdfsUtils = new HdfsUtils();
+        try (BufferedWriter fileBufferWriter = hdfsUtils.getFileBufferWriter(hdfsOutPath);) {
+            if (jobType == EMPTY_VALUE_NUM_TABLE_REMAKR) {
+                if (sourceType.equalsIgnoreCase("IMPALA") || sourceType.equalsIgnoreCase("HIVE")) {
+                    List<String> emptyTblNameList = (List<String>) mapVal.get("emptyTblNameList");
+                    if (!CollectionUtils.isEmpty(emptyTblNameList)) {
+                        for (String item : emptyTblNameList) {
+                            LinkedHashMap<String, Object> map = new LinkedHashMap<>();
+                            map.put("TABLE_NAME", item);
+                            fileBufferWriter.write(GsonUtils.getInstance().toJson(map) + "\n");
+                        }
+                        fileBufferWriter.flush();
+                    }
+                    return;
+                }
+            }
+        } catch (Exception e) {
+            throw new AdapterBaseException("解析查询结果失败", e);
+        }
+
+
         switch (jobType) {
             case UNIQUE_VALUE_NUM:
             case UNIQUE_VALUE_NUM_CHANGE:
@@ -884,14 +931,17 @@ public class QuartzJob implements Job {
             case EMPTY_VALUE_NUM_RATIO:
                 sql = String.format(errDataSql, sqlDbName, tableName, columnName, columnName);
                 break;
+            case EMPTY_VALUE_NUM_TABLE_REMAKR:
+                sql = getSql(errDataSql, sqlDbName, sourceType);
+                break;
             default:
-                sql = String.format(errDataSql, columnName, sqlDbName, tableName);
+                sql = sql = String.format(errDataSql, sqlDbName, tableName, columnName, columnName);
                 break;
         }
+
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
         LOG.info("query sql = " + sql);
         adapterExecutor.queryResultByFetchSize(connection, sql, resultSet -> {
-            HdfsUtils hdfsUtils = new HdfsUtils();
             try (BufferedWriter fileBufferWriter = hdfsUtils.getFileBufferWriter(hdfsOutPath);) {
                 ResultSetMetaData metaData = resultSet.getMetaData();
                 int columnCount = metaData.getColumnCount();
@@ -930,14 +980,38 @@ public class QuartzJob implements Job {
                 return null;
             } catch (Exception e) {
                 throw new AdapterBaseException("解析查询结果失败", e);
+            } finally {
+                try {
+                    resultSet.close();
+                    connection.close();
+                } catch (SQLException e) {
+                    throw new AdapterBaseException("数据库连接关闭异常", e);
+                }
             }
 
         });
 
     }
 
+    private String getSql(String errDataSql, String sqlDbName, String sourceType) {
+        if (!sourceType.equalsIgnoreCase("POSTGRESQL")) {
+            if (sourceType.equalsIgnoreCase("OSCAR")) {
+                errDataSql = String.format(errDataSql, sqlDbName, sqlDbName);
+            } else if (sourceType.equalsIgnoreCase("SQLSERVER")) {
+                if (sqlDbName.contains(".")) {
+                    sqlDbName = sqlDbName.substring(sqlDbName.indexOf(".") + 1, sqlDbName.length());
+                    errDataSql = String.format(errDataSql, sqlDbName);
+                }
+            } else {
+                errDataSql = String.format(errDataSql, sqlDbName);
+            }
+        }
+        return errDataSql;
+    }
+
     //规则值变化
-    public Float ruleResultValueChange(AtomicTaskExecution task, boolean record, boolean columnRule) throws Exception {
+    public Float ruleResultValueChange(AtomicTaskExecution task, boolean record, boolean columnRule) throws
+            Exception {
         Float nowValue = null;
         Float valueChange = null;
         try {
@@ -957,7 +1031,8 @@ public class QuartzJob implements Job {
     }
 
     //规则值变化率
-    public Float ruleResultChangeRatio(AtomicTaskExecution task, boolean record, boolean columnRule) throws Exception {
+    public Float ruleResultChangeRatio(AtomicTaskExecution task, boolean record, boolean columnRule) throws
+            Exception {
         Float ratio = null;
         Float ruleValueChange = 0F;
         Float lastValue = 0F;
@@ -1119,7 +1194,8 @@ public class QuartzJob implements Job {
      * @param resultValue
      * @return
      */
-    public RuleExecuteStatus checkResult(AtomicTaskExecution task, Float resultValue, Float referenceValue) throws Exception {
+    public RuleExecuteStatus checkResult(AtomicTaskExecution task, Float resultValue, Float referenceValue) throws
+            Exception {
         RuleExecuteStatus checkStatus = null;
         try {
             DataQualitySubTaskRule subTaskRule = taskManageDAO.getSubTaskRuleInfo(task.getSubTaskRuleId());
@@ -1191,7 +1267,8 @@ public class QuartzJob implements Job {
         return checkStatus;
     }
 
-    public RuleExecuteStatus checkResultStatus(RuleCheckType ruleCheckType, CheckExpression checkExpression, Float resultValue, Float checkThresholdMinValue, Float checkThresholdMaxValue) {
+    public RuleExecuteStatus checkResultStatus(RuleCheckType ruleCheckType, CheckExpression checkExpression, Float
+            resultValue, Float checkThresholdMinValue, Float checkThresholdMaxValue) {
         RuleExecuteStatus ruleStatus = null;
         try {
             if (FIX == ruleCheckType) {
@@ -1260,7 +1337,8 @@ public class QuartzJob implements Job {
         return ruleStatus;
     }
 
-    public float oscarCustomHandle(AtomicTaskExecution task, List<CustomizeParam> tables, List<CustomizeParam> columns) throws Exception {
+    public float oscarCustomHandle(AtomicTaskExecution
+                                           task, List<CustomizeParam> tables, List<CustomizeParam> columns) throws Exception {
         Float resultValue = 0.0f;
         try {
             AdapterSource adapterSource = getOscarAdapterSource(task);
@@ -1309,7 +1387,8 @@ public class QuartzJob implements Job {
         return adapterSource;
     }
 
-    private String buildExecuteSql(AtomicTaskExecution task, List<CustomizeParam> tables, List<CustomizeParam> columns) throws Exception {
+    private String buildExecuteSql(AtomicTaskExecution
+                                           task, List<CustomizeParam> tables, List<CustomizeParam> columns) throws Exception {
         String sql = task.getSql();
         if (tables != null) {
             for (CustomizeParam table : tables) {

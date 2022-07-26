@@ -4,6 +4,7 @@ import io.zeta.metaspace.model.enums.PrivilegeType;
 import io.zeta.metaspace.model.sourceinfo.derivetable.pojo.SourceInfoDeriveTableInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableInfo;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelation;
+import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelationDTO;
 import io.zeta.metaspace.model.sourceinfo.derivetable.vo.DeriveTableVersion;
 import org.apache.ibatis.annotations.*;
 
@@ -198,4 +199,7 @@ public interface GroupDeriveTableRelationDAO {
             " derive_table_id = #{tableId} AND tenant_id=#{tenantId}" +
             "</script>")
     void deleteRelationSecurityPrivilegeByTableId(@Param("tenantId") String tenantId,@Param("tableId") String tableGuid);
+
+    List<GroupDeriveTableRelationDTO> getDeriveInfoByIds(@Param("ids") List<String> ids);
+    List<String> getDeriveNameInfoByIds(@Param("ids") List<String> ids);
 }

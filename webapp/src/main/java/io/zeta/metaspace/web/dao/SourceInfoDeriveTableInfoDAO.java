@@ -40,7 +40,7 @@ public interface SourceInfoDeriveTableInfoDAO {
             " left join users t4 on t1.operator = t4.userid",
             " where t1.version = -1 and t1.tenant_id = #{tenantId} ",
             " <if test='tableName != null '>",
-            " and ( t1.table_name_en like #{tableName} or t1.table_name_zh like #{tableName})",
+            " and ( lower(t1.table_name_en) like lower(#{tableName}) or lower(t1.table_name_zh) like lower(#{tableName}) ) ",
             " </if>",
             " <if test='state != null '>",
             " and t1.state = #{state}",
@@ -307,4 +307,13 @@ public interface SourceInfoDeriveTableInfoDAO {
             "</foreach> " +
             "</script>" )
     List<ColumnTag> getTagListById(@Param("tagIds") List<String> tagIds);
+
+    /**
+     * 查询最新一条已发布的衍生表信息
+     *
+     * @param tableGuid 衍生表Guid
+     * @param tenantId  租户ID
+     * @return 返回最新发布的衍生表登记
+     */
+    SourceInfoDeriveTableInfo queryDeriveTableInfoByGuid(@Param("tenantId") String tenantId, @Param("tableGuid") String tableGuid);
 }

@@ -1,26 +1,41 @@
 package io.zeta.metaspace.utils;
 
 
+import org.apache.atlas.exception.AtlasBaseException;
+
 import javax.net.ssl.*;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 
+/**
+ * @author Gridsum
+ */
 public class SSLSocketClient {
 
-    //获取这个SSLSocketFactory
+    private SSLSocketClient() {}
+
+    /**
+     * 获取这个SSLSocketFactory
+     *
+     * @return SSLSocketFactory
+     */
     public static SSLSocketFactory getSSLSocketFactory() {
         try {
-            SSLContext sslContext = SSLContext.getInstance("SSL");
+            SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
             sslContext.init(null, getTrustManager(), new SecureRandom());
             return sslContext.getSocketFactory();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new AtlasBaseException(e);
         }
     }
 
-    //获取TrustManager
+    /**
+     * 获取TrustManager
+     *
+     * @return TrustManager
+     */
     private static TrustManager[] getTrustManager() {
-        TrustManager[] trustAllCerts = new TrustManager[]{
+        return new TrustManager[]{
                 new X509TrustManager() {
                     @Override
                     public void checkClientTrusted(X509Certificate[] chain, String authType) {
@@ -36,18 +51,15 @@ public class SSLSocketClient {
                     }
                 }
         };
-        return trustAllCerts;
     }
 
-    //获取HostnameVerifier
+    /**
+     * 获取HostnameVerifier
+     *
+     * @return HostnameVerifier
+     */
     public static HostnameVerifier getHostnameVerifier() {
-        HostnameVerifier hostnameVerifier = new HostnameVerifier() {
-            @Override
-            public boolean verify(String s, SSLSession sslSession) {
-                return true;
-            }
-        };
-        return hostnameVerifier;
+        return (s, sslSession) -> true;
     }
 
 }

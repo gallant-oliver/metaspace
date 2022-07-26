@@ -24,6 +24,7 @@ import io.zeta.metaspace.model.dataquality2.Rule;
 import io.zeta.metaspace.model.dataquality2.RuleTemplate;
 import io.zeta.metaspace.model.datastandard.DataStandAndRule;
 import io.zeta.metaspace.model.datastandard.DataStandardHead;
+import io.zeta.metaspace.model.enums.FileInfoPath;
 import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
@@ -31,12 +32,16 @@ import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.result.RoleModulesCategories;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.DataStandardService;
+import io.zeta.metaspace.web.service.HdfsService;
 import io.zeta.metaspace.web.service.dataquality.RuleService;
+import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
+import io.zeta.metaspace.web.util.RedisUtil;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -60,7 +65,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -94,7 +98,10 @@ public class RuleREST {
     private DataStandardService dataStandardService;
     @Autowired
     private DataManageService dataManageService;
-    
+    @Autowired
+    private FileInfoService fileInfoService;
+    @Autowired
+    private RedisUtil redisUtil;
     /**
      * 添加规则
      */
@@ -443,7 +450,7 @@ public class RuleREST {
                                  @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
         File file = null;
         try {
-            String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            String name = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
             HttpRequestContext.get().auditLog(ModuleEnum.RULEMANAGE.getAlias(), name);
             file = ExportDataPathUtils.fileCheck(name, fileInputStream);
             String upload;
@@ -452,6 +459,7 @@ public class RuleREST {
             } else {
                 upload = dataManageService.uploadCategory(categoryId, direction, file, CATEGORY_RULE, tenantId);
             }
+            redisUtil.set(upload,name,CommonConstant.FILE_REDIS_TIME);
             HashMap<String, String> map = new HashMap<String, String>() {
                 private static final long serialVersionUID = 2618267072797185578L;
         
@@ -502,6 +510,7 @@ public class RuleREST {
             }else{
                 categoryPrivileges=dataManageService.importCategory(categoryId,importCategory.getDirection(), file,importCategory.isAuthorized(),CATEGORY_RULE,tenantId);
             }
+            fileInfoService.createFileRecord(upload, FileInfoPath.RULE_CATEGORY, file);
             return ReturnUtil.success(categoryPrivileges);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");

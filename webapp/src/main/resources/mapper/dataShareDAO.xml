@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="io.zeta.metaspace.web.dao.DataShareDAO">
+    <select id="searchProject" resultType="io.zeta.metaspace.model.share.ProjectInfo">
+        SELECT count(*)over() total,
+	project.ID,
+	project.NAME,
+	project.description,
+	project.createtime,
+	project.tenantid,
+	project.VALID,
+	user1.username creator,
+	user2.username manager,
+	manager managerId,
+	(SELECT count(DISTINCT guid) FROM api WHERE VALID = TRUE AND api.projectid = project.ID) as apiCount,
+	(SELECT count(DISTINCT user_temp.user_id) from (
+	SELECT DISTINCT user_id from project_group_relation as pgr INNER JOIN user_group_relation as ugr on pgr.group_id = ugr.group_id WHERE pgr.project_id = project.ID
+		UNION
+	SELECT DISTINCT manager as user_id FROM project as pr WHERE pr.id = project.id
+	) as user_temp ) as usercount
+FROM
+	project
+	JOIN users user1 ON project.creator = user1.userid
+	JOIN users user2 ON project.manager = user2.userid
+WHERE
+	project.tenantid = #{tenantId}
+	AND project.VALID = TRUE
+        <if test="parameters.query != null and parameters.query != '' ">
+            and project.name like concat('%',#{parameters.query},'%')
+        </if>
+	    <if test = "parameters.order==null or parameters.order== 'asc' ">
+            ORDER BY project.createtime
+        </if>
+        <if test = "parameters.order== 'desc' ">
+            ORDER BY project.createtime desc
+        </if>
+        <if test="parameters.limit != null and parameters.limit != -1 ">
+            limit #{parameters.limit} offset #{parameters.offset}
+        </if>
+    </select>
+</mapper>

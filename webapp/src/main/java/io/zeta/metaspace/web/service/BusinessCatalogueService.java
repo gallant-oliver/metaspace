@@ -1,15 +1,3 @@
-// ======================================================================
-//
-//      Copyright (C) 北京国双科技有限公司
-//                    http://www.gridsum.com
-//
-//      保密性声明：此文件属北京国双科技有限公司所有，仅限拥有由国双科技
-//      授予了相应权限的人所查看和所修改。如果你没有被国双科技授予相应的
-//      权限而得到此文件，请删除此文件。未得国双科技同意，不得查看、修改、
-//      散播此文件。
-//
-//
-// ======================================================================
 /**
  * @author sunhaoning@gridsum.com
  * @date 2018/11/19 20:10
@@ -28,9 +16,8 @@ import io.zeta.metaspace.model.approve.ApproveOperate;
 import io.zeta.metaspace.model.approve.ApproveType;
 import io.zeta.metaspace.model.business.BussinessCatalogueInput;
 import io.zeta.metaspace.model.dto.CategoryPrivilegeDTO;
-import io.zeta.metaspace.model.enums.BusinessType;
-import io.zeta.metaspace.model.enums.CategoryPrivateStatus;
-import io.zeta.metaspace.model.enums.Status;
+import io.zeta.metaspace.model.entities.MessageEntity;
+import io.zeta.metaspace.model.enums.*;
 import io.zeta.metaspace.model.metadata.CategoryExport;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
@@ -48,6 +35,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryDeleteReturn;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -57,7 +45,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -68,6 +55,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static io.zeta.metaspace.model.enums.MessagePush.*;
 
 
 @Service
@@ -80,16 +69,13 @@ public class BusinessCatalogueService implements Approvable {
     @Autowired
     RoleDAO roleDao;
     @Autowired
-    CategoryDAO categoryDao;
+    private CategoryDAO categoryDao;
     @Autowired
     UserGroupDAO userGroupDAO;
     @Autowired
     UserGroupService userGroupService;
     @Autowired
     ApproveService approveServiceImp;
-
-    @Autowired
-    private CategoryDAO categoryDAO;
 
     @Autowired
     RelationDAO relationDao;
@@ -100,6 +86,12 @@ public class BusinessCatalogueService implements Approvable {
 
     int dataStandType = 3;
 
+    @Autowired
+    ApproveGroupDAO approveGroupDAO;
+
+    @Autowired
+    MessageCenterService messageCenterService;
+
     /**
      * 创建业务目录
      *
@@ -109,13 +101,13 @@ public class BusinessCatalogueService implements Approvable {
      * @throws Exception
      */
     @Transactional(rollbackFor = Exception.class)
-    public CategoryPrivilege createCategory(BussinessCatalogueInput input, String tenantId) throws Exception {
+    public CategoryPrivilege createCategory(BussinessCatalogueInput input, String tenantId) {
         try {
             String currentCategoryGuid = input.getGuid();
             boolean publish = input.getPublish();
-            Integer type=input.getCategoryType();
-            LOG.info("publish="+publish);
-            String approveGroupId=input.getApproveGroupId();
+            Integer type = input.getCategoryType();
+            LOG.info("publish=" + publish);
+            String approveGroupId = input.getApproveGroupId();
             CategoryEntityV2 entity = new CategoryEntityV2();
             String newCategoryGuid = UUID.randomUUID().toString();
             String name = input.getName();
@@ -141,99 +133,121 @@ public class BusinessCatalogueService implements Approvable {
 
             String approveId = UUID.randomUUID().toString();
             if (publish) {
-                if(StringUtils.isBlank(approveGroupId)){
+                if (StringUtils.isBlank(approveGroupId)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审批组不能为空");
                 }
                 entity.setPublish(true);
                 entity.setApprovalId(approveId);
-            }else{
+            } else {
                 entity.setApprovalId(null);
             }
 
-            String parentCategoryGuid = categoryDAO.getParentIdByGuid(currentCategoryGuid,tenantId);
-            int currentCategorySort = 0;
-            if (currentCategoryGuid != null) {
-                currentCategorySort = categoryDAO.getCategorySortById(currentCategoryGuid, tenantId);
-            }
-            if ("up".equals(input.getDirection())) {
-                categoryDao.updateSort(currentCategorySort, parentCategoryGuid, tenantId);
-                entity.setSort(currentCategorySort);
-            } else if ("down".equals(input.getDirection())) {
-                categoryDao.updateSort(currentCategorySort + 1, parentCategoryGuid, tenantId);
-                entity.setSort(currentCategorySort + 1);
-            } else {
-                int maxSort = categoryDao.getMaxSortByParentGuid(input.getParentCategoryGuid(), tenantId);
-                entity.setSort(maxSort);
-            }
-
-            //创建一级目录
-            if (StringUtils.isEmpty(currentCategoryGuid)) {
-                CategoryPrivilege oneLevelCategory = null;
-                if (categoryDao.ifExistCategory(type, tenantId) > 0) {
-                    oneLevelCategory = createOneLevelCategory(entity, type, tenantId,publish);
-                } else {
-                    oneLevelCategory = createFirstCategory(entity, type, tenantId,publish);
-                }
-                if (!Objects.isNull(oneLevelCategory)) {
-                    oneLevelCategory.setCode(entity.getCode());
-                }
-                oneLevelCategory.setSort(entity.getSort());
-                //目录是否需要发布，如果需要发布，则需要选择审批组,记录审批信息
-                if (publish) {
-                    LOG.info("发起审批:" + approveGroupId);
-                    BusinessType businessType=BusinessType.BUSINESSCATALOGUE;
-                    if(type==5){//指标目录
-                        businessType=BusinessType.INDEXCATALOGUE;
-                    }
-                    this.approveItems(approveId,tenantId, entity, ApproveType.PUBLISH.getCode(), businessType, approveGroupId);
-                }
-                return oneLevelCategory;
-            }else {
-                if (Objects.isNull(categoryDao.queryByGuidV2(currentCategoryGuid, tenantId))) {
-                    throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录已被删除，请刷新后重新操作");
-                }
-                CategoryPrivilege.Privilege privilege = createOtherCategory(entity, type, input, tenantId,publish);
-
-                categoryDao.add(entity, tenantId);
-                CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(newCategoryGuid, tenantId);
-
-                returnEntity.setPrivateStatus(CategoryPrivateStatus.PRIVATE.name());
-                if(publish){
-                    returnEntity.setPublish(true);
-                    returnEntity.setStatus("1");//待审批
-                }else {
-                    returnEntity.setPublish(false);
-                    returnEntity.setStatus("0");//待发布
-                }
-                returnEntity.setSort(entity.getSort());
-                returnEntity.setPrivilege(privilege);
-
-                //目录是否需要发布，如果需要发布，则需要选择审批组,记录审批信息
-                if (publish) {
-                    LOG.info("发起审批:" + approveGroupId);
-                    BusinessType businessType=BusinessType.BUSINESSCATALOGUE;
-                    if(type==5){//指标目录
-                        businessType=BusinessType.INDEXCATALOGUE;
-                    }
-                    this.approveItems(approveId,tenantId, entity, ApproveType.PUBLISH.getCode(), businessType, approveGroupId);
-                }
-
-                return returnEntity;
-            }
+            String parentCategoryGuid = categoryDao.getParentIdByGuid(currentCategoryGuid, tenantId);
+            updateSort(currentCategoryGuid, tenantId, input, parentCategoryGuid, entity);
+            return createFirstCategoryAll(currentCategoryGuid, input, tenantId, entity, approveId);
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
             LOG.error("创建业务目录失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建业务目录失败："+e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "创建业务目录失败：" + e.getMessage());
         }
     }
 
+    /**
+     * 更新sort
+     * @param currentCategoryGuid
+     * @param tenantId
+     * @param input
+     * @param parentCategoryGuid
+     * @param entity
+     */
+    private void updateSort(String currentCategoryGuid, String tenantId, BussinessCatalogueInput input, String parentCategoryGuid, CategoryEntityV2 entity) {
+        int currentCategorySort = 0;
+        if (currentCategoryGuid != null) {
+            currentCategorySort = categoryDao.getCategorySortById(currentCategoryGuid, tenantId);
+        }
+        if ("up".equals(input.getDirection())) {
+            categoryDao.updateSort(currentCategorySort, parentCategoryGuid, tenantId);
+            entity.setSort(currentCategorySort);
+        } else if ("down".equals(input.getDirection())) {
+            categoryDao.updateSort(currentCategorySort + 1, parentCategoryGuid, tenantId);
+            entity.setSort(currentCategorySort + 1);
+        } else {
+            int maxSort = categoryDao.getMaxSortByParentGuid(input.getParentCategoryGuid(), tenantId);
+            entity.setSort(maxSort);
+        }
+    }
 
-    private CategoryPrivilege createOneLevelCategory(CategoryEntityV2 entity, int type, String tenantId,Boolean publish) throws AtlasBaseException {
+    /**
+     * 创建一级目录
+     * @param currentCategoryGuid
+     * @param input
+     * @param tenantId
+     * @param entity
+     * @param approveId
+     * @return
+     * @throws Exception
+     */
+    private CategoryPrivilege createFirstCategoryAll(String currentCategoryGuid, BussinessCatalogueInput input, String tenantId, CategoryEntityV2 entity, String approveId) throws Exception {
+        if (StringUtils.isEmpty(currentCategoryGuid)) {
+            CategoryPrivilege oneLevelCategory = null;
+            if (categoryDao.ifExistCategory(input.getCategoryType(), tenantId) > 0) {
+                oneLevelCategory = createOneLevelCategory(entity, input.getCategoryType(), tenantId, input.getPublish());
+            } else {
+                oneLevelCategory = createFirstCategory(entity, tenantId, input.getPublish());
+            }
+            if (!Objects.isNull(oneLevelCategory)) {
+                oneLevelCategory.setCode(entity.getCode());
+            }
+            oneLevelCategory.setSort(entity.getSort());
+            //目录是否需要发布，如果需要发布，则需要选择审批组,记录审批信息
+            if (input.getPublish()) {
+                LOG.info("发起审批:" + input.getApproveGroupId());
+                BusinessType businessType = BusinessType.BUSINESSCATALOGUE;
+                if (input.getCategoryType() == 5) {//指标目录
+                    businessType = BusinessType.INDEXCATALOGUE;
+                }
+                this.approveItems(approveId, tenantId, entity, ApproveType.PUBLISH.getCode(), businessType, input.getApproveGroupId());
+            }
+            return oneLevelCategory;
+        } else {
+            if (Objects.isNull(categoryDao.queryByGuidV2(currentCategoryGuid, tenantId))) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前目录已被删除，请刷新后重新操作");
+            }
+            CategoryPrivilege.Privilege privilege = createOtherCategory(entity, input.getCategoryType(), input, tenantId, input.getPublish());
+
+            categoryDao.add(entity, tenantId);
+            CategoryPrivilege returnEntity = categoryDao.queryByGuidV2(entity.getGuid(), tenantId);
+
+            returnEntity.setPrivateStatus(CategoryPrivateStatus.PRIVATE.name());
+            if (input.getPublish()) {
+                returnEntity.setPublish(true);
+                returnEntity.setStatus("1");//待审批
+            } else {
+                returnEntity.setPublish(false);
+                returnEntity.setStatus("0");//待发布
+            }
+            returnEntity.setSort(entity.getSort());
+            returnEntity.setPrivilege(privilege);
+
+            //目录是否需要发布，如果需要发布，则需要选择审批组,记录审批信息
+            if (input.getPublish()) {
+                LOG.info("发起审批:" + input.getApproveGroupId());
+                BusinessType businessType = BusinessType.BUSINESSCATALOGUE;
+                if (input.getCategoryType() == 5) {//指标目录
+                    businessType = BusinessType.INDEXCATALOGUE;
+                }
+                this.approveItems(approveId, tenantId, entity, ApproveType.PUBLISH.getCode(), businessType, input.getApproveGroupId());
+            }
+            return returnEntity;
+        }
+    }
+
+    private CategoryPrivilege createOneLevelCategory(CategoryEntityV2 entity, int type, String tenantId, boolean publish) throws AtlasBaseException {
         int count = categoryDao.querySameNameOne(entity.getName(), type, tenantId);
         if (count > 0)
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
-        StringBuffer qualifiedName = new StringBuffer();
+            throw new AtlasBaseException(AtlasErrorCode.CATEGORY_NAME_SAME_ERROR, AtlasErrorCode.CATEGORY_NAME_SAME_ERROR.getFormattedErrorMessage());
+        StringBuilder qualifiedName = new StringBuilder();
         qualifiedName.append(entity.getName());
         entity.setQualifiedName(qualifiedName.toString());
         entity.setLevel(1);
@@ -245,14 +259,14 @@ public class BusinessCatalogueService implements Approvable {
         returnEntity.setLevel(1);
         returnEntity.setParentCategoryGuid(null);
         returnEntity.setPrivateStatus(CategoryPrivateStatus.PRIVATE.name());
-        Boolean delete=true;
-        Boolean edit=true;
-        if(publish){
+        Boolean delete = true;
+        Boolean edit = true;
+        if (publish) {
             returnEntity.setPublish(true);
             returnEntity.setStatus("1");//待审批
-            delete=false;
-            edit=false;
-        }else {
+            delete = false;
+            edit = false;
+        } else {
             returnEntity.setPublish(false);
             returnEntity.setStatus("0");//待发布
         }
@@ -261,8 +275,8 @@ public class BusinessCatalogueService implements Approvable {
         return returnEntity;
     }
 
-    private CategoryPrivilege createFirstCategory(CategoryEntityV2 entity, int type, String tenantId,Boolean publish) throws AtlasBaseException {
-        StringBuffer qualifiedName = new StringBuffer();
+    private CategoryPrivilege createFirstCategory(CategoryEntityV2 entity, String tenantId, boolean publish) throws AtlasBaseException {
+        StringBuilder qualifiedName = new StringBuilder();
         //qualifiedName
         qualifiedName.append(entity.getName());
         entity.setQualifiedName(qualifiedName.toString());
@@ -277,14 +291,14 @@ public class BusinessCatalogueService implements Approvable {
         returnEntity.setUpBrotherCategoryGuid(null);
         returnEntity.setDownBrotherCategoryGuid(null);
         returnEntity.setPrivateStatus(CategoryPrivateStatus.PRIVATE.name());
-        Boolean delete=true;
-        Boolean edit=true;
-        if(publish){
+        Boolean delete = true;
+        Boolean edit = true;
+        if (publish) {
             returnEntity.setPublish(true);
             returnEntity.setStatus("1");//待审批
-            delete=false;
-            edit=false;
-        }else {
+            delete = false;
+            edit = false;
+        } else {
             returnEntity.setPublish(false);
             returnEntity.setStatus("0");//待发布
         }
@@ -294,8 +308,8 @@ public class BusinessCatalogueService implements Approvable {
         return returnEntity;
     }
 
-    private CategoryPrivilege.Privilege createOtherCategory(CategoryEntityV2 entity, int type, BussinessCatalogueInput info, String tenantId,Boolean publish) throws SQLException, AtlasBaseException {
-        StringBuffer qualifiedName = new StringBuffer();
+    private CategoryPrivilege.Privilege createOtherCategory(CategoryEntityV2 entity, int type, BussinessCatalogueInput info, String tenantId, boolean publish) throws SQLException, AtlasBaseException {
+        StringBuilder qualifiedName = new StringBuilder();
         String newCategoryParentGuid = info.getParentCategoryGuid();
         //获取当前catalogue
         CategoryEntityV2 currentEntity = categoryDao.queryByGuid(info.getGuid(), tenantId);
@@ -318,35 +332,36 @@ public class BusinessCatalogueService implements Approvable {
                 parentQualifiedName = currentCatalogParentEntity.getQualifiedName();
             }
         }
-        if (StringUtils.isNotEmpty(parentQualifiedName) && parentQualifiedName.length() > 0)
+        if (StringUtils.isNotEmpty(parentQualifiedName)) {
             qualifiedName.append(parentQualifiedName + ".");
+        }
         qualifiedName.append(entity.getName());
         int count = categoryDao.querySameNameNum(entity.getName(), parentGuid, type, tenantId);
         if (count > 0)
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
+            throw new AtlasBaseException(AtlasErrorCode.CATEGORY_NAME_SAME_ERROR, AtlasErrorCode.CATEGORY_NAME_SAME_ERROR.getFormattedErrorMessage());
         //qualifiedName
         entity.setQualifiedName(qualifiedName.toString());
 
-        Boolean delete=true;
-        Boolean edit=true;
-        if(publish){
-            delete=false;
-            edit=false;
+        Boolean delete = true;
+        Boolean edit = true;
+        if (publish) {
+            delete = false;
+            edit = false;
         }
-        CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
-       return privilege;
+        return new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
     }
 
     /**
      * 将审批对象送审
-     * @param approveId 审批记录id
-     * @param tenantId 租户id
-     * @param entity 业务目录对象
-     * @param approveType 审批类型
+     *
+     * @param approveId      审批记录id
+     * @param tenantId       租户id
+     * @param entity         业务目录对象
+     * @param approveType    审批类型
      * @param approveGroupId 审核组id
-     * @param businessType 业务类型
+     * @param businessType   业务类型
      */
-    private void approveItems(String approveId,String tenantId, CategoryEntityV2 entity,String approveType,BusinessType businessType,String approveGroupId){
+    private void approveItems(String approveId, String tenantId, CategoryEntityV2 entity, String approveType, BusinessType businessType, String approveGroupId) {
         ApproveItem approveItem = new ApproveItem();
         approveItem.setId(approveId);
         approveItem.setObjectId(entity.getGuid());
@@ -362,63 +377,78 @@ public class BusinessCatalogueService implements Approvable {
         approveItem.setTenantId(tenantId);
         approveServiceImp.addApproveItem(approveItem);
 
+        // 审核消息推送审核人
+        List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroupId);
+        List<String> userEmailList = (CollectionUtils.isNotEmpty(userIdList) ? userDAO.getUsersEmailByIds(userIdList) : null);
+        MessageEntity message = new MessageEntity();
+        if ("1".equals(approveType)) {
+            message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_DIR.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_DIR.name, entity.getName(), RELEASE), RESOURCE_AUDIT_INFO_BUSINESS_DIR.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
+        } else if ("2".equals(approveType)) {
+            message = new MessageEntity(RESOURCE_AUDIT_INFO_BUSINESS_DIR.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_BUSINESS_DIR.name, entity.getName(), OFFLINE), RESOURCE_AUDIT_INFO_BUSINESS_DIR.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
+        }
+        if (CollectionUtils.isNotEmpty(userEmailList)) {
+            for (String userEmail : userEmailList) {
+                message.setCreateUser(userEmail);
+                messageCenterService.addMessage(message, tenantId);
+            }
+        }
     }
 
     /**
      * 获取被审批的对象详情接口实现
-     * @param objectId  对象ID
-     * @param type 业务对象类型
-     * @param version 查看版本
+     *
+     * @param objectId 对象ID
+     * @param type     业务对象类型
+     * @param version  查看版本
      * @param tenantId 租户id
      * @return 被审批对象
      */
     @Override
     public Object getObjectDetail(String objectId, String type, int version, String tenantId) {
         try {
-            CategoryEntityV2 currentCatalog = categoryDao.queryByGuid(objectId, tenantId);
-            return currentCatalog;
-        }catch (Exception e){
+            return categoryDao.queryByGuid(objectId, tenantId);
+        } catch (Exception e) {
             LOG.error("查询目录信息异常", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询目录信息异常："+e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询目录信息异常：" + e.getMessage());
         }
     }
 
     @Override
     public void changeObjectStatus(String approveResult, String tenantId, List<ApproveItem> items) throws Exception {
         String updater = AdminUtils.getUserData().getUserId();
-        if (!CollectionUtils.isEmpty(items)) {
-            for (ApproveItem item : items) {
-                String objectId = item.getObjectId();
-                String approveType = item.getApproveType();
-
-                if (approveType.equals(ApproveType.PUBLISH.getCode())) {
-                    //发布
-                    if (approveResult.equals(ApproveOperate.APPROVE.getCode())) {
-                        //通过
-                        categoryDao.updateCataloguePrivateStatus(objectId,CategoryPrivateStatus.PUBLIC.name(),true,tenantId,updater);
-                    } else if (approveResult.equals(ApproveOperate.REJECTED.getCode())) {
-                        //驳回
-                        categoryDao.updateCataloguePrivateStatus(objectId,CategoryPrivateStatus.PRIVATE.name(),false,tenantId,updater);
-                        LOG.info("目录审批被驳回");
-                    }else if(ApproveOperate.CANCEL.getCode().equals(approveResult)){
-                        //撤回
-                        categoryDao.updateCataloguePrivateStatus(objectId,CategoryPrivateStatus.PRIVATE.name(),false,tenantId,updater);
-                        LOG.info("目录审批被撤回");
-                    }
-                } else if (approveType.equals(ApproveType.OFFLINE.getCode())) {
-                    //发布
-                    if (approveResult.equals(ApproveOperate.APPROVE.getCode())) {
-                        //通过
-                        categoryDao.updateCataloguePrivateStatus(objectId,CategoryPrivateStatus.PRIVATE.name(),false,tenantId,updater);
-                    } else if (approveResult.equals(ApproveOperate.REJECTED.getCode())) {
-                        //驳回
-                        categoryDao.updateCataloguePrivateStatus(objectId,CategoryPrivateStatus.PUBLIC.name(),true,tenantId,updater);
-                        LOG.info("目录审批被驳回");
-                    }else if(ApproveOperate.CANCEL.getCode().equals(approveResult)){
-                        //撤回
-                        categoryDao.updateCataloguePrivateStatus(objectId,CategoryPrivateStatus.PUBLIC.name(),true,tenantId,updater);
-                        LOG.info("目录审批被撤回");
-                    }
+        if (CollectionUtils.isEmpty(items)) {
+            return;
+        }
+        for (ApproveItem item : items) {
+            String objectId = item.getObjectId();
+            String approveType = item.getApproveType();
+            if (approveType.equals(ApproveType.PUBLISH.getCode())) {
+                //发布
+                if (approveResult.equals(ApproveOperate.APPROVE.getCode())) {
+                    //通过
+                    categoryDao.updateCataloguePrivateStatus(objectId, CategoryPrivateStatus.PUBLIC.name(), true, tenantId, updater);
+                } else if (approveResult.equals(ApproveOperate.REJECTED.getCode())) {
+                    //驳回
+                    categoryDao.updateCataloguePrivateStatus(objectId, CategoryPrivateStatus.PRIVATE.name(), false, tenantId, updater);
+                    LOG.info("目录审批被驳回");
+                } else if (ApproveOperate.CANCEL.getCode().equals(approveResult)) {
+                    //撤回
+                    categoryDao.updateCataloguePrivateStatus(objectId, CategoryPrivateStatus.PRIVATE.name(), false, tenantId, updater);
+                    LOG.info("目录审批被撤回");
+                }
+            } else if (approveType.equals(ApproveType.OFFLINE.getCode())) {
+                //发布
+                if (approveResult.equals(ApproveOperate.APPROVE.getCode())) {
+                    //通过
+                    categoryDao.updateCataloguePrivateStatus(objectId, CategoryPrivateStatus.PRIVATE.name(), false, tenantId, updater);
+                } else if (approveResult.equals(ApproveOperate.REJECTED.getCode())) {
+                    //驳回
+                    categoryDao.updateCataloguePrivateStatus(objectId, CategoryPrivateStatus.PUBLIC.name(), true, tenantId, updater);
+                    LOG.info("目录审批被驳回");
+                } else if (ApproveOperate.CANCEL.getCode().equals(approveResult)) {
+                    //撤回
+                    categoryDao.updateCataloguePrivateStatus(objectId, CategoryPrivateStatus.PUBLIC.name(), true, tenantId, updater);
+                    LOG.info("目录审批被撤回");
                 }
             }
         }
@@ -441,33 +471,33 @@ public class BusinessCatalogueService implements Approvable {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录名不能为空");
             }
             CategoryEntityV2 currentEntity = categoryDao.queryByGuid(guid, tenantId);
-            Boolean oldisPublish=currentEntity.getPublish();
-            Boolean newisPublish=info.getPublish();
+            Boolean oldisPublish = currentEntity.getPublish();
+            Boolean newisPublish = info.getPublish();
             String approveId = UUID.randomUUID().toString();
             CategoryEntityV2 entity = new CategoryEntityV2();
-            if(!oldisPublish.equals(newisPublish)){
+            if (!oldisPublish.equals(newisPublish)) {
                 if (StringUtils.isBlank(approveGroupId)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "审批组不能为空");
                 }
-                String approveType="";
-                BusinessType businessType=BusinessType.BUSINESSCATALOGUE;
-                if(type==5){//指标目录
-                    businessType=BusinessType.INDEXCATALOGUE;
+                String approveType = "";
+                BusinessType businessType = BusinessType.BUSINESSCATALOGUE;
+                if (type == 5) {//指标目录
+                    businessType = BusinessType.INDEXCATALOGUE;
                 }
 
-                if(oldisPublish && !newisPublish){
-                    approveType=ApproveType.OFFLINE.getCode();
+                if (oldisPublish && !newisPublish) {
+                    approveType = ApproveType.OFFLINE.getCode();
                     entity.setPublish(false);
                 }
-                if(!oldisPublish && newisPublish){
-                    approveType=ApproveType.PUBLISH.getCode();
+                if (!oldisPublish && newisPublish) {
+                    approveType = ApproveType.PUBLISH.getCode();
                     entity.setPublish(true);
                 }
                 currentEntity.setName(name);
                 //如果目录隐私状态如果申请改变，则需要发审批请求
-                this.approveItems(approveId,tenantId, currentEntity, approveType,businessType,approveGroupId);
-            }else {
-                approveId=null;
+                this.approveItems(approveId, tenantId, currentEntity, approveType, businessType, approveGroupId);
+            } else {
+                approveId = null;
             }
 
             String parentQualifiedName = null;
@@ -479,7 +509,7 @@ public class BusinessCatalogueService implements Approvable {
             qualifiedName.append(name);
             int count = categoryDao.querySameNameNum(name, currentEntity.getParentCategoryGuid(), type, tenantId);
             if (count > 0 && !currentEntity.getName().equals(info.getName())) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在相同的目录名");
+                throw new AtlasBaseException(AtlasErrorCode.CATEGORY_NAME_SAME_ERROR, AtlasErrorCode.CATEGORY_NAME_SAME_ERROR.getFormattedErrorMessage());
             }
             entity.setGuid(info.getGuid());
             entity.setName(info.getName());
@@ -527,7 +557,7 @@ public class BusinessCatalogueService implements Approvable {
      */
     private List<CategoryEntityV2> file2AllData(File file, int type, List<CategoryEntityV2> systemCategory) throws Exception {
         List<CategoryEntityV2> categories = new ArrayList<>();
-        try(Workbook workbook = WorkbookFactory.create(file)) {
+        try (Workbook workbook = WorkbookFactory.create(file)) {
             Sheet sheet = workbook.getSheetAt(0);
             int rowNum = sheet.getLastRowNum() + 1;
 
@@ -634,19 +664,18 @@ public class BusinessCatalogueService implements Approvable {
             if (systemCategoryGuids.size() != 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件内容不合规范，不包含初始目录，请使用全局导出的文件");
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件解析失败");
         }
         //全局导入时，目录id新赋值
-        for(CategoryEntityV2 cate: categories){
-            String guid=cate.getGuid();
-            String newGuid= UUID.randomUUID().toString();
-            for(CategoryEntityV2 cate2: categories){
-                if(guid.equals(cate2.getGuid())){
+        for (CategoryEntityV2 cate : categories) {
+            String guid = cate.getGuid();
+            String newGuid = UUID.randomUUID().toString();
+            for (CategoryEntityV2 cate2 : categories) {
+                if (guid.equals(cate2.getGuid())) {
                     cate2.setGuid(newGuid);
                 }
-                if(guid.equals(cate2.getParentCategoryGuid())){
+                if (guid.equals(cate2.getParentCategoryGuid())) {
                     cate2.setParentCategoryGuid(newGuid);
                 }
             }
@@ -753,7 +782,7 @@ public class BusinessCatalogueService implements Approvable {
     private List<CategoryExport> file2Data(File file) throws Exception {
         List<String> names = new ArrayList<>();
         List<CategoryExport> categoryExports = new ArrayList<>();
-        try(Workbook workbook = WorkbookFactory.create(file)) {
+        try (Workbook workbook = WorkbookFactory.create(file)) {
             Sheet sheet = workbook.getSheetAt(0);
 
             //文件格式校验
@@ -800,8 +829,7 @@ public class BusinessCatalogueService implements Approvable {
                 categoryExports.add(category);
                 names.add(nameCell.getStringCellValue());
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件解析失败");
         }
         return categoryExports;
@@ -852,7 +880,7 @@ public class BusinessCatalogueService implements Approvable {
      */
     @Transactional(rollbackFor = Exception.class)
     public void importAllCategory(File fileInputStream, Integer type, String tenantId) throws Exception {
-        if (null==type) {
+        if (null == type) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "目录类型不能为空");
         }
         if (!fileInputStream.exists()) {
@@ -889,8 +917,6 @@ public class BusinessCatalogueService implements Approvable {
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e, "禁止不同类型的目录互相导入，请选择正确的文件导入");
         }
-
-        fileInputStream.delete();
     }
 
 
@@ -927,12 +953,12 @@ public class BusinessCatalogueService implements Approvable {
         int level;
         String down = "down";
         String up = "up";
-        int currentCategorySort=0;
+        int currentCategorySort = 0;
         if (categoryId != null && categoryId.length() != 0) {
             if (up.equals(direction)) {
                 Collections.reverse(categoryExports);//倒序排序
                 CategoryEntityV2 currentEntity = categoryDao.queryByGuid(categoryId, tenantId);
-                currentCategorySort=currentEntity.getSort();
+                currentCategorySort = currentEntity.getSort();
                 level = currentEntity.getLevel() - 1;
                 if (currentEntity.getParentCategoryGuid() != null && currentEntity.getParentCategoryGuid().length() > 0) {
                     CategoryEntityV2 categoryEntityV2 = categoryDao.queryByGuid(currentEntity.getParentCategoryGuid(), tenantId);
@@ -941,7 +967,7 @@ public class BusinessCatalogueService implements Approvable {
                 }
             } else if (down.equals(direction)) {
                 CategoryEntityV2 currentEntity = categoryDao.queryByGuid(categoryId, tenantId);
-                currentCategorySort=currentEntity.getSort();
+                currentCategorySort = currentEntity.getSort();
                 level = currentEntity.getLevel() - 1;
                 if (currentEntity.getParentCategoryGuid() != null && currentEntity.getParentCategoryGuid().length() > 0) {
                     CategoryEntityV2 categoryEntityV2 = categoryDao.queryByGuid(currentEntity.getParentCategoryGuid(), tenantId);
@@ -960,18 +986,18 @@ public class BusinessCatalogueService implements Approvable {
 
         Timestamp timestamp = io.zeta.metaspace.utils.DateUtils.currentTimestamp();
         User user = AdminUtils.getUserData();
-        int sort=0;
-        List<CategoryEntityV2> categories=new ArrayList<>();
+        int sort = 0;
+        List<CategoryEntityV2> categories = new ArrayList<>();
 
         for (CategoryExport categoryExport : categoryExports) {
-            String guid=categoryExport.getGuid();
-            String name=categoryExport.getName();
+            String guid = categoryExport.getGuid();
+            String name = categoryExport.getName();
             if ("up".equals(direction)) {
                 categoryDao.updateSort(currentCategorySort, parentCategoryGuid, tenantId);
-                sort=currentCategorySort;
+                sort = currentCategorySort;
             } else if ("down".equals(direction)) {
                 categoryDao.updateSort(currentCategorySort + 1, parentCategoryGuid, tenantId);
-                sort=currentCategorySort + 1;
+                sort = currentCategorySort + 1;
             } else {
                 sort = categoryDao.getMaxSortByParentGuid(parentCategoryGuid, tenantId);
             }
@@ -989,20 +1015,20 @@ public class BusinessCatalogueService implements Approvable {
             categoryEntityV2.setSort(sort);
             categoryEntityV2.setPrivateStatus(CategoryPrivateStatus.PRIVATE);
             categoryEntityV2.setPublish(false);
-            StringBuffer qualifiedName=new StringBuffer();
+            StringBuffer qualifiedName = new StringBuffer();
             if (StringUtils.isNotEmpty(parentQualifiedName) && parentQualifiedName.length() > 0) {
                 qualifiedName.append(parentQualifiedName + ".");
                 qualifiedName.append(name);
-            }else {
+            } else {
                 qualifiedName.append(name);
             }
             categoryEntityV2.setQualifiedName(qualifiedName.toString());
-            List<CategoryEntityV2> category=new ArrayList<>();
+            List<CategoryEntityV2> category = new ArrayList<>();
             category.add(categoryEntityV2);
             categories.add(categoryEntityV2);
             categoryDao.addAll(category, tenantId);
 
-            currentCategorySort=sort;
+            currentCategorySort = sort;
 
         }
 
@@ -1067,22 +1093,22 @@ public class BusinessCatalogueService implements Approvable {
         String userId = AdminUtils.getUserData().getUserId();
         List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(userId, tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
         List<CategorycateQueryResult> data;
-        List<CategorycateQueryResult> valuesList=new ArrayList<>();
-        List<CategorycateQueryResult> cateList=new ArrayList<>();
-        data = userGroupDAO.getAllCategory(userGroupIds,categoryType,tenantId,userId);
+        List<CategorycateQueryResult> valuesList = new ArrayList<>();
+        List<CategorycateQueryResult> cateList = new ArrayList<>();
+        data = userGroupDAO.getAllCategory(userGroupIds, categoryType, tenantId, userId);
         //目录权限校验
         //目录状态公开的租户下所以用户可见，私有目录是否加入用户组判断，加入用户组后，目录创建者无法查看
-        for(CategorycateQueryResult result:data){
-            String guid=result.getGuid();
-            String privateStatus=result.getPrivateStatus();
-            if(CategoryPrivateStatus.PUBLIC.name().equals(privateStatus)){
+        for (CategorycateQueryResult result : data) {
+            String guid = result.getGuid();
+            String privateStatus = result.getPrivateStatus();
+            if (CategoryPrivateStatus.PUBLIC.name().equals(privateStatus)) {
                 valuesList.add(result);
-            }else {
-                UserGroupPrivilege userGroupPrivilege=getCataPrivilege(userGroupIds,guid);
-                if(null ==userGroupPrivilege){
+            } else {
+                UserGroupPrivilege userGroupPrivilege = getCataPrivilege(userGroupIds, guid);
+                if (null == userGroupPrivilege) {
                     //如果当前用户创建的目录已加入其他用户组（其中无当前用户），则该用户不可见
-                    int cnt=userGroupDAO.getCateUserGroupRelationNum(guid);
-                    if(cnt>0){
+                    int cnt = userGroupDAO.getCateUserGroupRelationNum(guid);
+                    if (cnt > 0) {
                         continue;
                     }
                 }
@@ -1091,17 +1117,17 @@ public class BusinessCatalogueService implements Approvable {
         }
         //剔除查看权限不足的目录：如果子目录有权限可查出，但其父目录无权限，未查出，此时，需要剔除子目录
         removeNoParentCategory(valuesList);
-        Map<String,List<CategorycateQueryResult>> parent;
-        parent=valuesList.stream().collect(Collectors.groupingBy(c -> c.getParentCategoryGuid()+"str"));//用父目录id分组
+        Map<String, List<CategorycateQueryResult>> parent;
+        parent = valuesList.stream().collect(Collectors.groupingBy(c -> c.getParentCategoryGuid() + "str"));//用父目录id分组
         //目录根据sort升级排序
-        parent.forEach((k,v) -> {
-            List<CategorycateQueryResult> list=v.stream().sorted(Comparator.comparing( s -> s.getSort())).collect(Collectors.toList());
-            parent.put(k,list);
+        parent.forEach((k, v) -> {
+            List<CategorycateQueryResult> list = v.stream().sorted(Comparator.comparing(s -> s.getSort())).collect(Collectors.toList());
+            parent.put(k, list);
         });
-        List<CategorycateQueryResult> parentCateList=parent.get("nullstr");
-        for(CategorycateQueryResult result:parentCateList){
+        List<CategorycateQueryResult> parentCateList = parent.get("nullstr");
+        for (CategorycateQueryResult result : parentCateList) {
             //将目录按照目录-子目录-目录-子目录顺序拼装到新的list中，按此顺序生成文件
-            getSonCate(result,parent,cateList);
+            getSonCate(result, parent, cateList);
         }
         Workbook workbook = allData2workbook(userDAO, categoryType, cateList);
         return workbook2file(workbook);
@@ -1111,11 +1137,11 @@ public class BusinessCatalogueService implements Approvable {
      * @Author fanjiajia
      * @Description 递归获取子目录
      **/
-    private List<CategorycateQueryResult> getSonCate(CategorycateQueryResult result,Map<String,List<CategorycateQueryResult>> parent,List<CategorycateQueryResult> cateList){
+    private List<CategorycateQueryResult> getSonCate(CategorycateQueryResult result, Map<String, List<CategorycateQueryResult>> parent, List<CategorycateQueryResult> cateList) {
         cateList.add(result);
-        String guid=result.getGuid();
-        List<CategorycateQueryResult> sonCateList=parent.get(guid+"str");
-        if(!CollectionUtils.isEmpty(sonCateList)) {
+        String guid = result.getGuid();
+        List<CategorycateQueryResult> sonCateList = parent.get(guid + "str");
+        if (!CollectionUtils.isEmpty(sonCateList)) {
             for (CategorycateQueryResult son : sonCateList) {
                 getSonCate(son, parent, cateList);
             }
@@ -1127,7 +1153,7 @@ public class BusinessCatalogueService implements Approvable {
     private Workbook allData2workbook(UserDAO userDAO, int categoryType, List<CategorycateQueryResult> list) {
         Workbook workbook = new XSSFWorkbook();
         List<List<String>> dataList = list.stream().map(categoryEntityV2 -> {
-        List<String> data = Lists.newArrayList(categoryEntityV2.getGuid(), categoryEntityV2.getName(), categoryEntityV2.getDescription(), categoryEntityV2.getUpBrotherCategoryGuid(), categoryEntityV2.getDownBrotherCategoryGuid(), categoryEntityV2.getParentCategoryGuid(), categoryEntityV2.getQualifiedName(), new Integer(categoryEntityV2.getLevel()).toString(),categoryEntityV2.getSort().toString());
+            List<String> data = Lists.newArrayList(categoryEntityV2.getGuid(), categoryEntityV2.getName(), categoryEntityV2.getDescription(), categoryEntityV2.getUpBrotherCategoryGuid(), categoryEntityV2.getDownBrotherCategoryGuid(), categoryEntityV2.getParentCategoryGuid(), categoryEntityV2.getQualifiedName(), new Integer(categoryEntityV2.getLevel()).toString(), categoryEntityV2.getSort().toString());
             return data;
         }).collect(Collectors.toList());
         PoiExcelUtils.createSheet(workbook, "目录", Lists.newArrayList("目录id", "目录名字", "目录描述", "同级的上方目录id", "同级的下方目录id", "父目录id", "全名称", "级别", "排序"), dataList);
@@ -1190,32 +1216,32 @@ public class BusinessCatalogueService implements Approvable {
         return workbook;
     }
 
-    public List<CategorycateQueryResult> getAllCategories(int type, String tenantId,String userId) throws AtlasBaseException {
+    public List<CategorycateQueryResult> getAllCategories(int type, String tenantId, String userId) throws AtlasBaseException {
         try {
             if (StringUtils.isEmpty(userId)) {
                 userId = AdminUtils.getUserData().getUserId();
             }
             List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(userId, tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
-            List<CategorycateQueryResult> valuesList=new ArrayList<>();
-            List<CategorycateQueryResult> categories=userGroupDAO.getAllCategory(userGroupIds,type,tenantId,userId);
+            List<CategorycateQueryResult> valuesList = new ArrayList<>();
+            List<CategorycateQueryResult> categories = userGroupDAO.getAllCategory(userGroupIds, type, tenantId, userId);
 
-            String status1=String.valueOf(Status.AUDITING.getIntValue());
-            for(CategorycateQueryResult result:categories){
-                boolean delete=false;
-                boolean edit=false;
-                String guid=result.getGuid();
-                String privateStatus=result.getPrivateStatus();
-                String status=result.getStatus();
-                int  count=0;
-                if(type==1){//业务目录
-                    count=businessDAO.getBusinessCountByCategoryId(guid,tenantId,userId);
-                }else if(type==5){//指标目录
-                    count=businessDAO.getIndicatorCountByCategoryId(guid);
+            String status1 = String.valueOf(Status.AUDITING.getIntValue());
+            for (CategorycateQueryResult result : categories) {
+                boolean delete = false;
+                boolean edit = false;
+                String guid = result.getGuid();
+                String privateStatus = result.getPrivateStatus();
+                String status = result.getStatus();
+                int count = 0;
+                if (type == 1) {//业务目录
+                    count = businessDAO.getBusinessCountByCategoryId(guid, tenantId, userId);
+                } else if (type == 5) {//指标目录
+                    count = businessDAO.getIndicatorCountByCategoryId(guid);
                 }
                 result.setCount(count);
-                if(CategoryPrivateStatus.PUBLIC.name().equals(privateStatus)){
-                    if(String.valueOf(Status.REJECT.getIntValue()).equals(status) ||String.valueOf(Status.ACTIVE.getIntValue()).equals(status) ){
-                        edit=true;
+                if (CategoryPrivateStatus.PUBLIC.name().equals(privateStatus)) {
+                    if (String.valueOf(Status.REJECT.getIntValue()).equals(status) || String.valueOf(Status.ACTIVE.getIntValue()).equals(status)) {
+                        edit = true;
                     }
                     UserGroupPrivilege userGroupPrivilege = getCataPrivilege(userGroupIds, guid);
                     if (null != userGroupPrivilege) {
@@ -1232,25 +1258,25 @@ public class BusinessCatalogueService implements Approvable {
                         result.setRead(true);
                         edit = false;
                     }
-                    CategoryPrivilege.Privilege privilege=new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
+                    CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
                     result.setPrivilege(privilege);
                     valuesList.add(result);
-                }else {
-                    UserGroupPrivilege userGroupPrivilege=getCataPrivilege(userGroupIds,guid);
-                    if(null !=userGroupPrivilege){
+                } else {
+                    UserGroupPrivilege userGroupPrivilege = getCataPrivilege(userGroupIds, guid);
+                    if (null != userGroupPrivilege) {
                         result.setEditCategory(userGroupPrivilege.getEditCategory());
                         result.setEditItem(userGroupPrivilege.getEditItem());
                         result.setRead(userGroupPrivilege.getRead());
-                        if(userGroupPrivilege.getEditCategory()){
-                            delete=true;
-                            edit=true;
+                        if (userGroupPrivilege.getEditCategory()) {
+                            delete = true;
+                            edit = true;
                         }
-                    }else {
-                        delete=true;
-                        edit=true;
+                    } else {
+                        delete = true;
+                        edit = true;
                         //如果当前用户创建的目录已加入其他用户组（其中无当前用户），则该用户不可见
-                        int cnt=userGroupDAO.getCateUserGroupRelationNum(guid);
-                        if(cnt>0){
+                        int cnt = userGroupDAO.getCateUserGroupRelationNum(guid);
+                        if (cnt > 0) {
                             continue;
                         }
                         //私密，但是是它的创建者，拥有读，编写目录权限
@@ -1258,11 +1284,11 @@ public class BusinessCatalogueService implements Approvable {
                         result.setEditItem(false);
                         result.setRead(true);
                     }
-                    if(status1.equals(status)){
-                        delete=false;
-                        edit=false;
+                    if (status1.equals(status)) {
+                        delete = false;
+                        edit = false;
                     }
-                    CategoryPrivilege.Privilege privilege=new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
+                    CategoryPrivilege.Privilege privilege = new CategoryPrivilege.Privilege(false, false, true, true, false, delete, false, false, edit, false);
                     result.setPrivilege(privilege);
                     valuesList.add(result);
                 }
@@ -1272,7 +1298,7 @@ public class BusinessCatalogueService implements Approvable {
             return valuesList;
         } catch (MyBatisSystemException e) {
             LOG.error("数据库服务异常", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常:"+e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常:" + e.getMessage());
         } catch (AtlasBaseException e) {
             throw e;
         }
@@ -1286,19 +1312,19 @@ public class BusinessCatalogueService implements Approvable {
         try {
             String userId = AdminUtils.getUserData().getUserId();
             List<String> userGroupIds = userGroupDAO.getAlluserGroupByUsersId(userId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
-            List<CategoryEntityV2> valuesList=new ArrayList<>();
-            List<CategoryEntityV2> categories=userGroupDAO.getAllCategoryByCommonTenant(userGroupIds,type,userId);
-            for(CategoryEntityV2 result:categories){
-                String guid=result.getGuid();
-                String privateStatus=result.getPrivateStatus().name();
-                if(CategoryPrivateStatus.PUBLIC.name().equals(privateStatus)){
+            List<CategoryEntityV2> valuesList = new ArrayList<>();
+            List<CategoryEntityV2> categories = userGroupDAO.getAllCategoryByCommonTenant(userGroupIds, type, userId);
+            for (CategoryEntityV2 result : categories) {
+                String guid = result.getGuid();
+                String privateStatus = result.getPrivateStatus().name();
+                if (CategoryPrivateStatus.PUBLIC.name().equals(privateStatus)) {
                     valuesList.add(result);
-                }else {
-                    UserGroupPrivilege userGroupPrivilege=getCataPrivilege(userGroupIds,guid);
-                    if(null ==userGroupPrivilege){
+                } else {
+                    UserGroupPrivilege userGroupPrivilege = getCataPrivilege(userGroupIds, guid);
+                    if (null == userGroupPrivilege) {
                         //如果当前用户创建的目录已加入其他用户组（其中无当前用户），则该用户不可见
-                        int cnt=userGroupDAO.getCateUserGroupRelationNum(guid);
-                        if(cnt>0){
+                        int cnt = userGroupDAO.getCateUserGroupRelationNum(guid);
+                        if (cnt > 0) {
                             continue;
                         }
                     }
@@ -1311,29 +1337,29 @@ public class BusinessCatalogueService implements Approvable {
             return valuesList;
         } catch (MyBatisSystemException e) {
             LOG.error("数据库服务异常", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常:"+e.getMessage());
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常:" + e.getMessage());
         } catch (AtlasBaseException e) {
             throw e;
         }
     }
 
-    public UserGroupPrivilege getCataPrivilege(List<String> userGroupIds, String guid){
-        UserGroupPrivilege  privilege=new UserGroupPrivilege();
-        List<UserGroupPrivilege>  list=userGroupDAO.getCataUserGroupPrivilege(guid,userGroupIds);
-        if(list==null || list.size()==0 ){
-            return  null;
+    public UserGroupPrivilege getCataPrivilege(List<String> userGroupIds, String guid) {
+        UserGroupPrivilege privilege = new UserGroupPrivilege();
+        List<UserGroupPrivilege> list = userGroupDAO.getCataUserGroupPrivilege(guid, userGroupIds);
+        if (list == null || list.size() == 0) {
+            return null;
         }
         privilege.setRead(false);
         privilege.setEditCategory(false);
         privilege.setEditItem(false);
-        for(UserGroupPrivilege cp:list){
-            if(cp.getEditCategory()){
+        for (UserGroupPrivilege cp : list) {
+            if (cp.getEditCategory()) {
                 privilege.setEditCategory(true);
             }
-            if(cp.getEditItem()){
+            if (cp.getEditItem()) {
                 privilege.setEditItem(true);
             }
-            if(cp.getRead()){
+            if (cp.getRead()) {
                 privilege.setRead(true);
             }
         }
@@ -1343,41 +1369,42 @@ public class BusinessCatalogueService implements Approvable {
 
     /**
      * 删除有父目录，但是父目录不存在的目录
+     *
      * @param categoryList
      */
-    private void removeNoParentCategory(List<CategorycateQueryResult> categoryList){
-        Map<String,String> map = categoryList.stream().collect(HashMap::new,(m,v)->m.put(v.getGuid(),v.getParentCategoryGuid()),HashMap::putAll);
+    private void removeNoParentCategory(List<CategorycateQueryResult> categoryList) {
+        Map<String, String> map = categoryList.stream().collect(HashMap::new, (m, v) -> m.put(v.getGuid(), v.getParentCategoryGuid()), HashMap::putAll);
         categoryList.removeIf(categoryPrivilege ->
                 this.checkParentIfExist(map, categoryPrivilege.getParentCategoryGuid(), categoryList));
     }
 
-    private boolean checkParentIfExist(Map<String,String> map,String parentId,List<CategorycateQueryResult> categoryPrivilegeList){
-        if (StringUtils.isEmpty(parentId)){
+    private boolean checkParentIfExist(Map<String, String> map, String parentId, List<CategorycateQueryResult> categoryPrivilegeList) {
+        if (StringUtils.isEmpty(parentId)) {
             return false;
         }
-        if (map.containsKey(parentId)){
-            Optional<CategorycateQueryResult> result=categoryPrivilegeList.stream().filter(c->parentId.equals(c.getGuid())).findFirst();
-            if (result.isPresent()){
-                return checkParentIfExist(map,result.get().getParentCategoryGuid(),categoryPrivilegeList);
+        if (map.containsKey(parentId)) {
+            Optional<CategorycateQueryResult> result = categoryPrivilegeList.stream().filter(c -> parentId.equals(c.getGuid())).findFirst();
+            if (result.isPresent()) {
+                return checkParentIfExist(map, result.get().getParentCategoryGuid(), categoryPrivilegeList);
             }
         }
         return true;
     }
 
-    private void removeNoParentCategory2(List<CategoryEntityV2> categoryList){
-        Map<String,String> map = categoryList.stream().collect(HashMap::new,(m,v)->m.put(v.getGuid(),v.getParentCategoryGuid()),HashMap::putAll);
+    private void removeNoParentCategory2(List<CategoryEntityV2> categoryList) {
+        Map<String, String> map = categoryList.stream().collect(HashMap::new, (m, v) -> m.put(v.getGuid(), v.getParentCategoryGuid()), HashMap::putAll);
         categoryList.removeIf(categoryPrivilege ->
                 this.checkParentIfExist2(map, categoryPrivilege.getParentCategoryGuid(), categoryList));
     }
 
-    private boolean checkParentIfExist2(Map<String,String> map,String parentId,List<CategoryEntityV2> categoryPrivilegeList){
-        if (StringUtils.isEmpty(parentId)){
+    private boolean checkParentIfExist2(Map<String, String> map, String parentId, List<CategoryEntityV2> categoryPrivilegeList) {
+        if (StringUtils.isEmpty(parentId)) {
             return false;
         }
-        if (map.containsKey(parentId)){
-            Optional<CategoryEntityV2> result=categoryPrivilegeList.stream().filter(c->parentId.equals(c.getGuid())).findFirst();
-            if (result.isPresent()){
-                return checkParentIfExist2(map,result.get().getParentCategoryGuid(),categoryPrivilegeList);
+        if (map.containsKey(parentId)) {
+            Optional<CategoryEntityV2> result = categoryPrivilegeList.stream().filter(c -> parentId.equals(c.getGuid())).findFirst();
+            if (result.isPresent()) {
+                return checkParentIfExist2(map, result.get().getParentCategoryGuid(), categoryPrivilegeList);
             }
         }
         return true;
@@ -1443,7 +1470,7 @@ public class BusinessCatalogueService implements Approvable {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "存在同名目录，请迁移到其他目录或修改目录名字");
         }
         int lastSort = categoryDao.getMaxSortByParentGuid(parentId, tenantId);
-        categoryDao.updateCategoryGuid(categoryId, parentId, null, null, tenantId,lastSort);
+        categoryDao.updateCategoryGuid(categoryId, parentId, null, null, tenantId, lastSort);
     }
 
     public CategoryPrivilegeDTO getCategoriesPrivilege(String guid, String tenantId) throws AtlasBaseException {

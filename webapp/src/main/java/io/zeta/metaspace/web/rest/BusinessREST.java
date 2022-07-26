@@ -32,15 +32,19 @@ import io.zeta.metaspace.model.Permission;
 import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.business.*;
 import io.zeta.metaspace.model.dto.CategoryPrivilegeDTO;
+import io.zeta.metaspace.model.enums.FileInfoPath;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.operatelog.OperateType;
 import io.zeta.metaspace.model.result.*;
 import io.zeta.metaspace.model.share.*;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.*;
+import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.util.ExportDataPathUtils;
 import io.zeta.metaspace.web.util.PoiExcelUtils;
+import io.zeta.metaspace.web.util.RedisUtil;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
@@ -108,6 +112,11 @@ public class BusinessREST {
 
     @Autowired
     private SearchService searchService;
+
+    @Autowired
+    private FileInfoService fileInfoService;
+    @Autowired
+    private RedisUtil redisUtil;
 
     /**
      * 添加业务对象
@@ -867,7 +876,7 @@ public class BusinessREST {
         }
         File file = null;
         try {
-            String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            String name = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
             HttpRequestContext.get().auditLog(ModuleEnum.BUSINESSCATALOGUE.getAlias(), name);
             file = ExportDataPathUtils.fileCheck(name, fileInputStream);
             String upload;
@@ -879,6 +888,7 @@ public class BusinessREST {
             HashMap<String, String> map = new HashMap<String, String>() {{
                 put("upload", upload);
             }};
+            redisUtil.set(upload,name,CommonConstant.FILE_REDIS_TIME);
             return ReturnUtil.success(map);
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "导入失败:"+e.getMessage());
@@ -924,6 +934,7 @@ public class BusinessREST {
             } else {
                 categoryPrivileges = businessCatalogueService.importCategory(categoryId, importCategory.getDirection(), file, importCategory.isAuthorized(), importCategory.getType(), tenantId);
             }
+            fileInfoService.categoryCreateFileRecord(path, importCategory.getType(), file);
             return ReturnUtil.success(categoryPrivileges);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败:"+e.getMessage());
@@ -1094,9 +1105,10 @@ public class BusinessREST {
                                  @FormDataParam("file") FormDataContentDisposition contentDispositionHeader) throws Exception {
         File file = null;
         try {
-            String name = URLDecoder.decode(contentDispositionHeader.getFileName(), "GB18030");
+            String name = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
             file = ExportDataPathUtils.fileCheck(name, fileInputStream);
-            Map<String, Object> map = businessService.uploadBusiness(file, tenantId);
+            Map<String, Object> map = businessService.uploadBusiness(file);
+            redisUtil.set(map.get("upload").toString(),name,CommonConstant.FILE_REDIS_TIME);
             return ReturnUtil.success(map);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "文件异常");
@@ -1129,6 +1141,7 @@ public class BusinessREST {
             HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "批量导入业务对象：" + category.getName());
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + path);
             businessService.importBusiness(file, categoryId, tenantId);
+            fileInfoService.createFileRecord(path, FileInfoPath.BUSINESS_OBJECT, file);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
@@ -1386,7 +1399,7 @@ public class BusinessREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getBusinessPlaceCategories()");
             }
 
-            return businessService.getBusinessPlaceCategories(type, tenantId);
+            return businessService.getBusinessPlaceCategories(tenantId);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {

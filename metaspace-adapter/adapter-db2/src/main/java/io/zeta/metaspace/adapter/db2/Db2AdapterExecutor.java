@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
 public class Db2AdapterExecutor extends AbstractAdapterExecutor {
     public Db2AdapterExecutor(AdapterSource adapterSource) {
@@ -53,6 +54,36 @@ public class Db2AdapterExecutor extends AbstractAdapterExecutor {
                 return totalSize;
             } catch (SQLException e) {
                 throw new AtlasBaseException("查询表大小失败", e);
+            }
+        });
+    }
+
+    /**
+     * 获取指定数据库表描述为空的表总个数
+     * @param db
+     * @param pool
+     * @return
+     */
+    public float getTblRemarkCountByDb(AdapterSource adapterSource, String user, String db,  String pool, Map<String, Object> map) {
+        String querySQL = "select count(*) as emptyCount from syscat.tables where (remarks is null or remarks = '') and tabschema = '%s' and type = 'T'";
+        querySQL=String.format(querySQL,db);
+        Connection connection = adapterSource.getConnection(user, db, pool);
+        return queryResult(connection, querySQL, resultSet -> {
+            try {
+                float emptyCount = 0;
+                while (resultSet.next()) {
+                    emptyCount = resultSet.getLong("emptyCount");
+                }
+                return emptyCount;
+            } catch (SQLException e) {
+                throw new AtlasBaseException("获取指定数据库表描述为空的表总个数失败", e);
+            } finally {
+                try {
+                    resultSet.close();
+                    connection.close();
+                } catch (Exception e) {
+                    throw new AtlasBaseException("关闭表连接失败", e);
+                }
             }
         });
     }

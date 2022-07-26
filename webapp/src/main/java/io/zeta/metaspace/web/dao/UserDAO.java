@@ -101,10 +101,9 @@ public interface UserDAO {
 
     @Update("update users set " +
             " username=#{userAndModule.userName}," +
-            " account=#{userAndModule.email}, " +
             " update_time=#{updateTime}," +
             " valid=true " +
-            " where userid=#{userAndModule.accountGuid}")
+            " where account=#{userAndModule.email}")
     public Integer updateUser(@Param("userAndModule") UserAndModule userAndModule, @Param("updateTime") Timestamp updateTime);
 
     @Insert("insert into users(userid,username,account,create_time,update_time,valid) values(#{userAndModule.accountGuid},#{userAndModule.userName},#{userAndModule.email},#{updateTime},#{updateTime},true)")

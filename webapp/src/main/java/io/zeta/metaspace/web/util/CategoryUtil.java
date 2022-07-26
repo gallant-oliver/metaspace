@@ -123,6 +123,7 @@ public class CategoryUtil {
             add(new Rule("字段最小值变化率", 1, "%", "相比上一周期，字段最小值变化率", createTime, createTime, "29", "rule_5", 8));
             add(new Rule("字段最大值变化率", 1, "%", "相比上一周期，字段最大值变化率", createTime, createTime, "30", "rule_5", 9));
             add(new Rule("一致性校验",2,null,"一致性",createTime,createTime,"31","rule_6",31));
+            add(new Rule("表描述空值校验", 3, "个", "数据表的描述信息完整性", createTime, createTime, "32", "rule_2", 33));
         }
     };
 

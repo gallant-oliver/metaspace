@@ -340,7 +340,7 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
 
     @Override
     public PageResult<LinkedHashMap<String, Object>> getSchemaPage(Parameters parameters) {
-        if (parameters.getQuery()==null){
+        if (parameters.getQuery() == null) {
             parameters.setQuery("");
         }
         SelectQuery query = new SelectQuery()
@@ -361,7 +361,7 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
     @Override
     public PageResult<LinkedHashMap<String, Object>> getTablePage(String schemaName, Parameters parameters) {
         schemaName = addAlternativeQuoting(schemaName);
-        if (parameters.getQuery()==null){
+        if (parameters.getQuery() == null) {
             parameters.setQuery("");
         }
         SelectQuery query = new SelectQuery()
@@ -376,10 +376,10 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
     }
 
     @Override
-    public PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, Parameters parameters,boolean isNum) {
+    public PageResult<LinkedHashMap<String, Object>> getColumnPage(String schemaName, String tableName, Parameters parameters, boolean isNum) {
         schemaName = addAlternativeQuoting(schemaName);
         tableName = addAlternativeQuoting(tableName);
-        if (parameters.getQuery()==null){
+        if (parameters.getQuery() == null) {
             parameters.setQuery("");
         }
         SelectQuery query = new SelectQuery()
@@ -392,9 +392,9 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
         query = getAdapter().getAdapterTransformer().addLimit(query, parameters.getLimit(), parameters.getOffset());
 
         // 过滤数值型字段
-        if (isNum){
-            List<String> columnType = Arrays.stream(HiveNumericType.values()).filter(type-> type.getCode() != 7).map(HiveNumericType::getName).collect(Collectors.toList());
-            query.addCondition(new InCondition(new FunctionCall("lower").addCustomParams(new CustomSql("DATA_TYPE")),columnType));
+        if (isNum) {
+            List<String> columnType = Arrays.stream(HiveNumericType.values()).filter(type -> type.getCode() != 7).map(HiveNumericType::getName).collect(Collectors.toList());
+            query.addCondition(new InCondition(new FunctionCall("lower").addCustomParams(new CustomSql("DATA_TYPE")), columnType));
         }
         log.info("column sql:" + query.toString());
         return queryResult(query.toString(), this::extractResultSetToPageResult);
@@ -420,9 +420,9 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
     @Override
     public float getTableSize(String db, String tableName, String pool) {
         String querySQL = "select sum(num_rows * avg_row_len) data_length from ALL_TABLES where table_name = '%s' and owner='%s'";
-        db=db.replaceAll("'","''");
-        tableName=tableName.replaceAll("'","''");
-        querySQL=String.format(querySQL,tableName,db);
+        db = db.replaceAll("'", "''");
+        tableName = tableName.replaceAll("'", "''");
+        querySQL = String.format(querySQL, tableName, db);
         Connection connection = getAdapterSource().getConnection();
         return queryResult(connection, querySQL, resultSet -> {
             try {
@@ -437,6 +437,37 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
         });
     }
 
+    /**
+     * 获取指定数据库表描述为空的表总个数
+     *
+     * @param db
+     * @param pool
+     * @return
+     */
+    public float getTblRemarkCountByDb(AdapterSource adapterSource, String user, String db, String pool, Map<String, Object> map) {
+        String querySQL = "select count(*) as emptyCount from all_tab_comments c right join all_tables t on c.table_name = t.table_name and c.owner = t.owner and c.table_type = 'TABLE' where (c.comments is null or c.comments = '') and t.owner = '%s'";
+        querySQL = String.format(querySQL, db);
+        Connection connection = adapterSource.getConnection(user, db, pool);
+        return queryResult(connection, querySQL, resultSet -> {
+            try {
+                float emptyCount = 0;
+                while (resultSet.next()) {
+                    emptyCount = resultSet.getLong("emptyCount");
+                }
+                return emptyCount;
+            } catch (SQLException e) {
+                throw new AtlasBaseException("获取指定数据库表描述为空的表总个数失败", e);
+            } finally {
+                try {
+                    resultSet.close();
+                    connection.close();
+                } catch (Exception e) {
+                    throw new AtlasBaseException("关闭表连接失败", e);
+                }
+            }
+        });
+    }
+
 
     @Override
     public String getCreateTableSql(String schema, String table) {
@@ -445,10 +476,10 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
 
     @Override
     public String getCreateTableOrViewSql(String schema, String table, String type) {
-        String schemaName=schema.replaceAll("\"","");
-        String tableName=table.replaceAll("\"","");
-        String typeName=type.replaceAll("\"","");
-        String querySql = "select dbms_metadata.get_ddl('" + typeName +"','" + tableName + "','" + schemaName + "') from dual";
+        String schemaName = schema.replaceAll("\"", "");
+        String tableName = table.replaceAll("\"", "");
+        String typeName = type.replaceAll("\"", "");
+        String querySql = "select dbms_metadata.get_ddl('" + typeName + "','" + tableName + "','" + schemaName + "') from dual";
         return queryResult(querySql, resultSet -> {
             try {
                 String sql = null;
@@ -465,17 +496,17 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
     @Override
     public Map<String, String> getUserObject(String schemaName, List<String> tableNameList) {
         Map<String, String> result = new HashMap<>();
-        if(CollectionUtils.isEmpty(tableNameList)){
+        if (CollectionUtils.isEmpty(tableNameList)) {
             return result;
         }
         List<String> tableList = tableNameList.stream()
-                .map(v->v.contains(".") ? v.substring(v.lastIndexOf(".")+1) : v).collect(Collectors.toList());
+                .map(v -> v.contains(".") ? v.substring(v.lastIndexOf(".") + 1) : v).collect(Collectors.toList());
         StringBuilder sql = new StringBuilder(" Select owner,object_name,object_type From all_objects Where object_name in ( ");
         int length = tableNameList.size();
-        for(int i = 0;i < length;i++){
-            if(i == length-1){
+        for (int i = 0; i < length; i++) {
+            if (i == length - 1) {
                 sql.append("?");
-            }else{
+            } else {
                 sql.append("?,");
             }
         }
@@ -484,7 +515,7 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
         try (Connection connection = getAdapterSource().getConnection()) {
             PreparedStatement statement = connection.prepareStatement(sql.toString());
             int index = 1;
-            for (String tableName : tableList){
+            for (String tableName : tableList) {
                 statement.setString(index++, tableName.toUpperCase());
             }
             ResultSet resultSet = statement.executeQuery();
@@ -493,7 +524,7 @@ public class OracleAdapterExecutor extends AbstractAdapterExecutor {
                 String objectName = resultSet.getString("object_name");
                 String objectType = resultSet.getString("object_type"); //TABLE VIEW
 
-                result.put(objectName,objectType);
+                result.put(objectName, objectType);
             }
         } catch (SQLException e) {
             throw new AtlasBaseException(e);

@@ -8,10 +8,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.*;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.security.AccessControlException;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -184,8 +181,8 @@ public class HdfsService {
         if (!fileSystem.exists(path)) {
             throw new RuntimeException("文件" + filePath + "不存在");
         }
-        //FileStatus fileStatus = fileSystem.getFileStatus(path);
-        //long len = fileStatus.getLen();
+//        FileStatus fileStatus = fileSystem.getFileStatus(path);
+//        long len = fileStatus.getLen();
         try{
             return fileSystem.open(path);
         }catch (IOException e){
@@ -222,4 +219,20 @@ public class HdfsService {
         log.info("读取excel数据文件成功。");
         return excelList;
     }
+
+    public Long getFileSize(String filePath) throws IOException {
+        FileSystem fileSystem = initProxyFs();
+        if(fileSystem == null){
+            log.error("hdfs 初始化为空");
+            throw new RuntimeException("hdfs 初始化失败.");
+        }
+        filePath = getHdfsAbsoluteFilePath(filePath,false);
+        Path path = new Path(filePath);
+        if (!fileSystem.exists(path)) {
+            throw new RuntimeException("文件" + filePath + "不存在");
+        }
+        FileStatus fileStatus = fileSystem.getFileStatus(path);
+        return fileStatus.getLen();
+    }
+
 }
