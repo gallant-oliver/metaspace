@@ -10,10 +10,6 @@
 //
 //
 // ======================================================================
-/**
- * @author liwenfeng@gridsum.com
- * @date 2022/7/5 10:29
- */
 package io.zeta.metaspace.web.service;
 
 /*
@@ -30,29 +26,25 @@ import io.zeta.metaspace.model.enums.ProcessEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelationDTO;
 import io.zeta.metaspace.model.user.User;
-import io.zeta.metaspace.model.usergroup.UserGroup;
+import io.zeta.metaspace.model.usergroup.result.GroupAccountDTO;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
-import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
-import org.apache.commons.configuration.Configuration;
+import org.apache.atlas.model.metadata.CategoryEntityV2;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
-import java.sql.SQLException;
-import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -74,6 +66,8 @@ public class MessageCenterService {
     private GroupDeriveTableRelationDAO groupDeriveTableRelationDAO;
     @Autowired
     private UserDAO userDAO;
+    @Autowired
+    private CategoryDAO categoryDAO;
 
     public PageResult<Map<String, Object>> getMyMessageList(Integer type, String tenantId, Integer status, String search, long offset, long limit) throws AtlasBaseException {
         try {
@@ -200,7 +194,7 @@ public class MessageCenterService {
         }
     }
 
-    public void addMessageList(List<MessageEntity> messageList, String tenantId) {
+    private void addMessageList(List<MessageEntity> messageList, String tenantId) {
         if (CollectionUtils.isEmpty(messageList)) {
             return;
         }
@@ -219,7 +213,7 @@ public class MessageCenterService {
     /**
      * 数据源，数据库，项目，保密表，重要表消息推送
      */
-    public void perAddMessage(int operateType, int type, String groupId, List<String> ids, String tenantId) {
+    void perAddMessage(int operateType, int type, String groupId, List<String> ids, String tenantId) {
         try {
             List<String> user = userGroupDAO.getAllUserByGroupId(groupId);
             List<String> accounts = user.stream().distinct().collect(Collectors.toList());
@@ -243,14 +237,14 @@ public class MessageCenterService {
             }
             addMessageList(list, tenantId);
         } catch (AtlasBaseException e) {
-            throw new AtlasBaseException("消息推送失败", e);
+            LOG.error("消息推送失败", e);
         }
     }
 
     /**
      * 业务目录，技术目录，指标目录权限分配消息推送
      */
-    public void directoryMessagePush(int type, int operateType, String userGroupName, List<String> userAccounts, List<String> category, String tenantId) {
+    void directoryMessagePush(int type, int operateType, String userGroupName, List<String> userAccounts, List<String> category, String tenantId) {
         try {
             if (CollectionUtils.isEmpty(userAccounts)) {
                 return;
@@ -267,14 +261,43 @@ public class MessageCenterService {
             }
             addMessageList(messageEntityList, tenantId);
         } catch (Exception e) {
-            throw new AtlasBaseException("消息推送失败", e);
+            LOG.error("消息推送失败", e);
+        }
+    }
+
+    /**
+     * 业务目录，技术目录，指标目录权限分配消息推送
+     */
+    void directoryMessagePush(List<String> groupIds, String cateId, String tenantId) {
+        try {
+            CategoryEntityV2 category = categoryDAO.queryByGuid(cateId, tenantId);
+            if (category == null) {
+                return;
+            }
+            List<GroupAccountDTO> accountByUser = userGroupDAO.getAccountByUserGroupIds(groupIds);
+            if (CollectionUtils.isEmpty(accountByUser)) {
+                return;
+            }
+            List<MessageEntity> messageEntities = new ArrayList<>();
+            for (GroupAccountDTO ro : accountByUser) {
+                MessageEntity messageEntity = getMessageEntityByType(category.getCategoryType(), CommonConstant.REMOVE, ro.getGroupName(), category.getName());
+                for (User user : ro.getUserList()) {
+                    MessageEntity message = new MessageEntity();
+                    BeanUtils.copyProperties(messageEntity, message);
+                    message.setCreateUser(user.getAccount());
+                    messageEntities.add(message);
+                }
+            }
+            addMessageList(messageEntities, tenantId);
+        } catch (Exception e) {
+            LOG.error("消息推送失败", e);
         }
     }
 
     /**
      * 重要表和保密表的移除权限，一个衍生表可能同是保密和重要
      */
-    public void tableDelMessagePush(List<String> ids) {
+    void tableDelMessagePush(List<String> ids) {
         try {
             List<GroupDeriveTableRelationDTO> deriveInfoByIds = groupDeriveTableRelationDAO.getDeriveInfoByIds(ids);
             if (CollectionUtils.isEmpty(deriveInfoByIds)) {
@@ -295,12 +318,12 @@ public class MessageCenterService {
             }
             addMessageList(messageEntityList, deriveInfoByIds.get(0).getTenantId());
         } catch (Exception e) {
-            throw new AtlasBaseException("消息推送失败", e);
+            LOG.error("消息推送失败", e);
         }
     }
 
 
-    public void userGroupMessage(int operateType, String groupId, List<String> users, String tenantId) {
+    void userGroupMessage(int operateType, String groupId, List<String> users, String tenantId) {
         try {
             if (CollectionUtils.isEmpty(users)) {
                 return;
@@ -319,11 +342,11 @@ public class MessageCenterService {
             }).collect(Collectors.toList());
             addMessageList(messageEntityList, tenantId);
         } catch (AtlasException e) {
-            throw new AtlasBaseException("消息推送失败", e);
+            LOG.error("消息推送失败", e);
         }
     }
 
-    public void userGroupMessage(int operateType, String groupId, String userId, String tenantId) {
+    void userGroupMessage(int operateType, String groupId, String userId, String tenantId) {
         try {
             String groupName = userGroupDAO.getUserGroupByID(groupId).getName();
             User user = userDAO.getUser(userId);
@@ -334,7 +357,7 @@ public class MessageCenterService {
             messageEntity.setCreateUser(user.getAccount());
             addMessage(messageEntity, tenantId);
         } catch (AtlasException e) {
-            throw new AtlasBaseException("消息推送失败", e);
+            LOG.error("消息推送失败", e);
         }
     }
 
