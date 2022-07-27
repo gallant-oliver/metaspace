@@ -35,6 +35,7 @@ class Base64Format{
         put("gif","data:image/gif;base64,");
         put("svg","data:image/svg+xml;base64,");
         put("ico","data:image/x-icon;base64,");
+        put("jpeg","data:image/jpeg;base64,");
     }};
 
     public static  String getBase64StringByPrefix(String prefix){
