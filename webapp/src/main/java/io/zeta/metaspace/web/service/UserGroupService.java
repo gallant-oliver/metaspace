@@ -42,6 +42,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1180,7 +1181,7 @@ public class UserGroupService {
         }
         UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
         List<String> userAccount = userGroupDAO.getAllUserByGroupId(userGroupId);
-        messageCenterService.directoryMessagePush(type, CommonConstant.REMOVE, userGroupByID.getName(), userAccount, category, tenantId);
+        messageCenterService.deleteDirectoryMessagePush(type, CommonConstant.REMOVE, userGroupByID.getName(), userAccount, category, tenantId);
     }
 
     private void changeCategoryMessagePush(List<String> category, String userGroupId, int type, String tenantId) {
@@ -1189,7 +1190,7 @@ public class UserGroupService {
         }
         UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
         List<String> collect = userGroupDAO.getAllUserByGroupId(userGroupId);
-        messageCenterService.directoryMessagePush(type, CommonConstant.CHANGE, userGroupByID.getName(), collect, category, tenantId);
+        messageCenterService.deleteDirectoryMessagePush(type, CommonConstant.CHANGE, userGroupByID.getName(), collect, category, tenantId);
     }
 
     /**
@@ -1239,7 +1240,7 @@ public class UserGroupService {
             // 1-贴源层、2-基础层、4-通用层、5-应用层不需要分配权限
             updateCategory.removeAll(DEFAULT_CATEGORY_GUID);
             insertCategory.removeAll(DEFAULT_CATEGORY_GUID);
-            messageCenterService.directoryMessagePush(category.getType(), CommonConstant.CHANGE, userGroupByID.getName(), collect, messages, tenantId);
+            messageCenterService.deleteDirectoryMessagePush(category.getType(), CommonConstant.CHANGE, userGroupByID.getName(), collect, messages, tenantId);
             if (updateCategory.size() != 0) {
                 userGroupDAO.updateChildCategoryPrivileges(updateCategory, userGroupId, categoryPrivilege);
             }
@@ -1668,7 +1669,7 @@ public class UserGroupService {
         List<String> user = userGroupDAO.getAllUserByGroupId(userGroupId);
         UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
         Integer categoryType = categoryDAO.queryByGuid(ids.get(0), tenantId).getCategoryType();
-        messageCenterService.directoryMessagePush(categoryType, CommonConstant.REMOVE, userGroupByID.getName(), user, list, tenantId);
+        messageCenterService.deleteDirectoryMessagePush(categoryType, CommonConstant.REMOVE, userGroupByID.getName(), user, list, tenantId);
     }
 
     /**
@@ -1793,7 +1794,7 @@ public class UserGroupService {
      * @throws AtlasBaseException
      */
     public void deleteGroupPrivilege(List<String> groupIds,String categoryId,String tenantId) throws SQLException, AtlasBaseException {
-        if (groupIds==null){
+        if (CollectionUtils.isEmpty(groupIds)){
             return;
         }
 
@@ -1801,17 +1802,16 @@ public class UserGroupService {
         CategoryEntityV2 categoryByGuid = categoryDAO.queryByGuid(categoryId, tenantId);
         String parentCategoryGuid = categoryByGuid.getParentCategoryGuid();
         List<RoleModulesCategories.Category> childCategoriesPrivileges = userGroupDAO.getChildCategorys(categoryList, categoryByGuid.getCategoryType(), tenantId);
-        List<String> ids = childCategoriesPrivileges.stream().map(categoryPrivilegeV2 -> categoryPrivilegeV2.getGuid()).collect(Collectors.toList());
+        List<String> ids = childCategoriesPrivileges.stream().map(RoleModulesCategories.Category::getGuid).collect(Collectors.toList());
         ids.addAll(categoryList);
 
-        if (parentCategoryGuid!=null&&parentCategoryGuid.length()!=0){
-            for (String userGroupId:groupIds){
-
-                if (parentCategoryGuid!=null&&parentCategoryGuid.length()!=0){
+        if (!StringUtils.isEmpty(parentCategoryGuid)) {
+            for (String userGroupId : groupIds) {
+                if (parentCategoryGuid.length() != 0) {
                     CategoryPrivilegeV2 parentCategory = userGroupDAO.getCategoriesPrivileges(parentCategoryGuid, userGroupId);
-                    if (parentCategory!=null&&parentCategory.getRead()!=null&&parentCategory.getRead()){
+                    if (parentCategory != null && parentCategory.getRead() != null && parentCategory.getRead()) {
                         UserGroup userGroup = userGroupDAO.getUserGroupByID(userGroupId);
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "父目录对用户组："+userGroup.getName()+"有权限，无法移除");
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "父目录对用户组：" + userGroup.getName() + "有权限，无法移除");
                     }
                 }
             }
@@ -1819,6 +1819,7 @@ public class UserGroupService {
         Timestamp currentTime = new Timestamp(System.currentTimeMillis());
         userGroupDAO.updateUserGroups(groupIds, currentTime,AdminUtils.getUserData().getUserId());
         userGroupDAO.deleteGroupPrivilege(ids,groupIds);
+        messageCenterService.deleteDirectoryMessagePush(groupIds, categoryId, tenantId);
     }
 
     /**

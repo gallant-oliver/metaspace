@@ -1,10 +1,15 @@
 package io.zeta.metaspace.web.service.fileinfo;
 
 import io.zeta.metaspace.model.enums.FileInfoPath;
+import io.zeta.metaspace.model.fileinfo.FileInfo;
 import io.zeta.metaspace.model.fileinfo.FileInfoVO;
 import io.zeta.metaspace.model.result.PageResult;
+import io.zeta.metaspace.model.sourceinfo.Annex;
 import io.zeta.metaspace.web.dao.fileinfo.FileInfoDAO;
 import io.zeta.metaspace.web.model.CommonConstant;
+import io.zeta.metaspace.web.service.HdfsService;
+import io.zeta.metaspace.web.service.sourceinfo.AnnexService;
+import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.RedisUtil;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.collections.CollectionUtils;
@@ -14,11 +19,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import io.zeta.metaspace.model.fileinfo.FileInfo;
-import io.zeta.metaspace.web.service.HdfsService;
-import io.zeta.metaspace.web.util.AdminUtils;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
@@ -37,11 +41,16 @@ public class FileInfoService {
     private HdfsService hdfsService;
     @Autowired
     private RedisUtil redisUtil;
+    @Autowired
+    private AnnexService annexService;
 
     private static final Logger LOG = LoggerFactory.getLogger(FileInfoService.class);
 
     public void createFileuploadRecord(String path, String fileName, FileInfoPath fileInfoPath) {
         try {
+            if (StringUtils.isEmpty(path) || StringUtils.isEmpty(fileName)) {
+                return;
+            }
             Long fileSize = hdfsService.getFileSize(path);
             FileInfo fileInfo = createPojo(fileName, path, fileInfoPath);
             fileInfo.setFileSize(fileSize);
@@ -51,10 +60,20 @@ public class FileInfoService {
         }
     }
 
-    public PageResult getList(String name, int limit, int offset) {
+    public void createFileuploadRecord(String uploadId, FileInfoPath fileInfoPath) {
+        try {
+            Annex annex = annexService.findByAnnexId(uploadId);
+            String fileName = redisUtil.get(uploadId);
+            createFileuploadRecord(annex.getPath(), fileName, fileInfoPath);
+        } catch (Exception e) {
+            LOG.error("归档失败", e);
+        }
+    }
+
+    public PageResult<FileInfoVO> getList(String name, int limit, int offset) {
         String query = queryEscape(name);
         List<FileInfoVO> fileInfoList = fileInfoDAO.getFileInfoList(query, limit, offset);
-        PageResult pageResult = new PageResult();
+        PageResult<FileInfoVO> pageResult = new PageResult<>();
         pageResult.setLists(fileInfoList);
         pageResult.setTotalSize(CollectionUtils.isEmpty(fileInfoList) ? 0 : fileInfoList.get(0).getTotal());
         pageResult.setCurrentSize(fileInfoList.size());
