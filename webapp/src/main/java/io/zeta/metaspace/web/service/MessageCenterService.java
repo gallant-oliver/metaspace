@@ -244,7 +244,7 @@ public class MessageCenterService {
     /**
      * 业务目录，技术目录，指标目录权限分配消息推送
      */
-    void deleteDirectoryMessagePush(int type, int operateType, String userGroupName, List<String> userAccounts, List<String> category, String tenantId) {
+    void directoryMessagePush(int type, int operateType, String userGroupName, List<String> userAccounts, List<String> category, String tenantId) {
         try {
             if (CollectionUtils.isEmpty(userAccounts)) {
                 return;
@@ -268,7 +268,7 @@ public class MessageCenterService {
     /**
      * 业务目录，技术目录，指标目录权限分配消息推送
      */
-    void deleteDirectoryMessagePush(List<String> groupIds, String cateId, String tenantId) {
+    void directoryMessagePush(List<String> groupIds, String cateId, String tenantId) {
         try {
             CategoryEntityV2 category = categoryDAO.queryByGuid(cateId, tenantId);
             if (category == null) {

@@ -1181,7 +1181,7 @@ public class UserGroupService {
         }
         UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
         List<String> userAccount = userGroupDAO.getAllUserByGroupId(userGroupId);
-        messageCenterService.deleteDirectoryMessagePush(type, CommonConstant.REMOVE, userGroupByID.getName(), userAccount, category, tenantId);
+        messageCenterService.directoryMessagePush(type, CommonConstant.REMOVE, userGroupByID.getName(), userAccount, category, tenantId);
     }
 
     private void changeCategoryMessagePush(List<String> category, String userGroupId, int type, String tenantId) {
@@ -1190,7 +1190,7 @@ public class UserGroupService {
         }
         UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
         List<String> collect = userGroupDAO.getAllUserByGroupId(userGroupId);
-        messageCenterService.deleteDirectoryMessagePush(type, CommonConstant.CHANGE, userGroupByID.getName(), collect, category, tenantId);
+        messageCenterService.directoryMessagePush(type, CommonConstant.CHANGE, userGroupByID.getName(), collect, category, tenantId);
     }
 
     /**
@@ -1240,7 +1240,7 @@ public class UserGroupService {
             // 1-贴源层、2-基础层、4-通用层、5-应用层不需要分配权限
             updateCategory.removeAll(DEFAULT_CATEGORY_GUID);
             insertCategory.removeAll(DEFAULT_CATEGORY_GUID);
-            messageCenterService.deleteDirectoryMessagePush(category.getType(), CommonConstant.CHANGE, userGroupByID.getName(), collect, messages, tenantId);
+            messageCenterService.directoryMessagePush(category.getType(), CommonConstant.CHANGE, userGroupByID.getName(), collect, messages, tenantId);
             if (updateCategory.size() != 0) {
                 userGroupDAO.updateChildCategoryPrivileges(updateCategory, userGroupId, categoryPrivilege);
             }
@@ -1669,7 +1669,7 @@ public class UserGroupService {
         List<String> user = userGroupDAO.getAllUserByGroupId(userGroupId);
         UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
         Integer categoryType = categoryDAO.queryByGuid(ids.get(0), tenantId).getCategoryType();
-        messageCenterService.deleteDirectoryMessagePush(categoryType, CommonConstant.REMOVE, userGroupByID.getName(), user, list, tenantId);
+        messageCenterService.directoryMessagePush(categoryType, CommonConstant.REMOVE, userGroupByID.getName(), user, list, tenantId);
     }
 
     /**
@@ -1819,7 +1819,7 @@ public class UserGroupService {
         Timestamp currentTime = new Timestamp(System.currentTimeMillis());
         userGroupDAO.updateUserGroups(groupIds, currentTime,AdminUtils.getUserData().getUserId());
         userGroupDAO.deleteGroupPrivilege(ids,groupIds);
-        messageCenterService.deleteDirectoryMessagePush(groupIds, categoryId, tenantId);
+        messageCenterService.directoryMessagePush(groupIds, categoryId, tenantId);
     }
 
     /**
