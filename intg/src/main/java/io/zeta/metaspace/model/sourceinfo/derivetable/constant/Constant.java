@@ -18,6 +18,9 @@ public class Constant {
     public static final String ORACLE = "ORACLE";
     public static final String MYSQL = "MYSQL";
     public static final String OSCAR = "OSCAR";
+    public static final String DB2 = "DB2";
+    public static final String SQLSERVER = "SQLSERVER";
+    public static final String POSTGRESQL = "POSTGRESQL";
 
 
     // 表英文名和字段英文名校验规则：包含英文字母、下划线和数字，不能以下划线开头
@@ -42,9 +45,23 @@ public class Constant {
     private static final List<String> OSCAR_DATA_TYPE = Arrays.asList("_aclitem", "_bool", "_bpchar", "_bytea", "_char", "_date", "_float4", "_float8", "_int2",
             "_int2vector", "_int4", "_int8", "_name", "_oid", "_oidvector", "_regproc", "_text", "_time", "_timestamp", "_varchar",
             "abstime", "aclitem", "bool", "bpchar", "bytea", "char", "date", "float4", "float8", "int1", "int2", "int2vector",
-            "int4", "int8", "name", "oid", "oidvector", "regproc","set", "sys_attribute", "sys_class", "sys_proc", "sys_segment", "sys_type", "text", "time", "timestamp",
+            "int4", "int8", "name", "oid", "oidvector", "regproc", "set", "sys_attribute", "sys_class", "sys_proc", "sys_segment", "sys_type", "text", "time", "timestamp",
             "timestamptz", "unknown", "varchar");
 
+    // DB2数据类型
+    private static final List<String> DB2_DATA_TYPE = Arrays.asList("bigint", "blob", "char", "char for bit data", "clob", "datalink", "date", "db2securitylabel", "db2sqlstate",
+            "dbclob", "decfloat", "decimal", "double", "float", "graphic", "integer", "long varchar", "long varchar for bit data", "long vargraphic", "number",
+            "numeric", "real", "smallint", "time", "timestamp", "varchar", "varchar for bit data", "varchar2", "vargraphic", "xml");
+
+    // SQLSERVER数据类型
+    private static final List<String> SQLSERVER_DATA_TYPE = Arrays.asList("char", "varchar", "text", "nchar", "nvarchar", "ntext", "bit", "binary", "varbinary",
+            "image", "tinyint", "int", "smallint", "bigint", "decimal", "numeric", "money", "smallmoney", "float", "real",
+            "datetime", "datetime2", "smalldatetime", "date", "time", "datetimeoffset", "timestamp", "sql_variant", "uniqueidentifier", "xml", "cursor", "table");
+
+    // POSTGRESQL数据类型
+    private static final List<String> POSTGRESQL_DATA_TYPE = Arrays.asList("char", "varchar", "text", "timestamp", "timestamptz", "int", "int2", "int4", "int8", "bool", "json", "jsonb",
+            "float8", "smallint", "integer", "bigint", "decimal", "numeric", "money", "double precision", "smallserial", "real",
+            "serial", "bigserial", "date");
 
     public static final Map<String, List<String>> DATA_TYPE_MAP = new HashMap<String, List<String>>() {
         {
@@ -52,6 +69,9 @@ public class Constant {
             put(ORACLE, ORACLE_DATA_TYPE);
             put(MYSQL, MYSQL_DATA_TYPE);
             put(OSCAR, OSCAR_DATA_TYPE);
+            put(DB2, DB2_DATA_TYPE);
+            put(SQLSERVER, SQLSERVER_DATA_TYPE);
+            put(POSTGRESQL, POSTGRESQL_DATA_TYPE);
         }
     };
 
@@ -67,12 +87,24 @@ public class Constant {
     // OSCAR必须要加长度的数据类型
     private static final List<String> OSCAR_DATA_LENGTH_TYPE = Arrays.asList("varchar2", "varchar", "char");
 
+    // DB2必须要加长度的数据类型
+    private static final List<String> DB2_DATA_LENGTH_TYPE = Arrays.asList("varchar2", "varchar", "char");
+
+    // SQLSERVER必须要加长度的数据类型
+    private static final List<String> SQLSERVER_DATA_LENGTH_TYPE = Arrays.asList("varchar", "nvarchar", "char", "binary", "varbinary", "float");
+
+    // POSTGRESQL必须要加长度的数据类型
+    private static final List<String> POSTGRESQL_DATA_LENGTH_TYPE = Arrays.asList("varchar", "char");
+
     public static final Map<String, List<String>> DATA_LENGTH_TYPE_MAP = new HashMap<String, List<String>>() {
         {
             put(HIVE, HIVE_DATA_LENGTH_TYPE);
             put(ORACLE, ORACLE_DATA_LENGTH_TYPE);
             put(MYSQL, MYSQL_DATA_LENGTH_TYPE);
             put(OSCAR, OSCAR_DATA_LENGTH_TYPE);
+            put(DB2, DB2_DATA_LENGTH_TYPE);
+            put(SQLSERVER, SQLSERVER_DATA_LENGTH_TYPE);
+            put(POSTGRESQL, POSTGRESQL_DATA_LENGTH_TYPE);
         }
     };
 
