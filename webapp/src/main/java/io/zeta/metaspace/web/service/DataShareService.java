@@ -99,6 +99,7 @@ import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer;
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.lang.reflect.Type;
+import java.net.URLDecoder;
 import java.sql.*;
 import java.sql.Date;
 import java.text.DateFormat;
@@ -2953,42 +2954,43 @@ public class DataShareService {
 
     @HystrixCommand()
     public QueryResult queryApiDataV2(HttpServletRequest request) throws AtlasBaseException {
-        String requestURL = request.getRequestURL().toString();
-        String path = requestURL.replaceFirst(".*/api/metaspace/dataservice/", "");
-        String[] split = path.split("/");
-        String id = split[0];
-        String version = split[1];
-        ApiInfoV2 apiInfoByVersion = getApiInfoByVersion(id, version);
+        try {
+            String requestURL = request.getRequestURL().toString();
+            String path = requestURL.replaceFirst(".*/api/metaspace/dataservice/", "");
+            String[] split = path.split("/");
+            String id = split[0];
+            String version = split[1];
+            ApiInfoV2 apiInfoByVersion = getApiInfoByVersion(id, version);
 
-        ApiPolyEntity apiPolyEntity = apiInfoByVersion.getApiPolyEntity();
+            ApiPolyEntity apiPolyEntity = apiInfoByVersion.getApiPolyEntity();
 
-        if (apiPolyEntity != null && apiPolyEntity.getIpRestriction() != null) {
-            handleIpRestriction(RequestIpUtils.getRealRequestIpAddress(request), apiPolyEntity.getIpRestriction());
-        }
+            if (apiPolyEntity != null && apiPolyEntity.getIpRestriction() != null) {
+                handleIpRestriction(RequestIpUtils.getRealRequestIpAddress(request), apiPolyEntity.getIpRestriction());
+            }
 
-        if (!apiInfoByVersion.getRequestMode().equals(request.getMethod())) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求方式错误");
-        }
-        Map<String, String> queryMap = new HashMap<>();
+            if (!apiInfoByVersion.getRequestMode().equals(request.getMethod())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求方式错误");
+            }
+            Map<String, String> queryMap = new HashMap<>();
 
-        if (!ApiStatusEnum.UP.getName().equals(apiInfoByVersion.getStatus())) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API未上架");
-        }
-        getFieldsValue(request, apiInfoByVersion, split, queryMap);
-        String page_num = queryMap.get("page_num");
-        String page_size = queryMap.get("page_size");
-        long limit = 10;
-        long offset = 0;
-        if (page_size != null) {
-            limit = Long.valueOf(page_size);
-        }
-        if (page_num != null && Long.valueOf(page_num) > 0) {
-            offset = (Long.valueOf(page_num) - 1) * limit;
-        }
-        Map resultMap = testAPIV2(id, apiInfoByVersion, limit, offset);
-        List<LinkedHashMap<String, Object>> result = (List<LinkedHashMap<String, Object>>) resultMap.get("queryResult");
+            if (!ApiStatusEnum.UP.getName().equals(apiInfoByVersion.getStatus())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API未上架");
+            }
+            getFieldsValue(request, apiInfoByVersion, split, queryMap);
+            String page_num = queryMap.get("page_num");
+            String page_size = queryMap.get("page_size");
+            long limit = 10;
+            long offset = 0;
+            if (page_size != null) {
+                limit = Long.parseLong(page_size);
+            }
+            if (page_num != null && Long.parseLong(page_num) > 0) {
+                offset = (Long.parseLong(page_num) - 1) * limit;
+            }
+            Map resultMap = testAPIV2(id, apiInfoByVersion, limit, offset);
+            List<LinkedHashMap<String, Object>> result = (List<LinkedHashMap<String, Object>>) resultMap.get("queryResult");
 
-        Long count = Long.parseLong(resultMap.get("queryCount").toString());
+            long count = Long.parseLong(resultMap.get("queryCount").toString());
 
 //        String xml = "xml";
 //        String acceptHeader = request.getHeader("Accept");
@@ -3003,11 +3005,14 @@ public class DataShareService {
 //        } else {
 //
 //        }
-        JsonQueryResult queryResult = new JsonQueryResult();
-        queryResult.setDatas(result);
-        queryResult.setTotalCount(count);
-        shareDAO.updateUsedCount(path);
-        return queryResult;
+            JsonQueryResult queryResult = new JsonQueryResult();
+            queryResult.setDatas(result);
+            queryResult.setTotalCount(count);
+            shareDAO.updateUsedCount(path);
+            return queryResult;
+        } catch (UnsupportedEncodingException e) {
+            throw new AtlasBaseException(e);
+        }
     }
 
     public List<LinkedHashMap<String, Object>> processSensitiveDataV2(ApiInfoV2 apiInfo, List<ApiDesensitization> desensitization, List<LinkedHashMap<String, Object>> result) {
@@ -3042,7 +3047,7 @@ public class DataShareService {
         }
     }
 
-    public void getFieldsValue(HttpServletRequest request, ApiInfoV2 apiInfo, String[] paths, Map<String, String> queryMap) throws AtlasBaseException {
+    public void getFieldsValue(HttpServletRequest request, ApiInfoV2 apiInfo, String[] paths, Map<String, String> queryMap) throws AtlasBaseException, UnsupportedEncodingException {
 
         String apiPath = apiInfo.getPath();
         List<ApiInfoV2.FieldV2> param = apiInfo.getParam();
@@ -3050,7 +3055,8 @@ public class DataShareService {
         if (queryString != null && queryString.length() != 0) {
             String[] querys = queryString.split("&");
             for (String query : querys) {
-                String[] entity = query.split("=");
+                String decode = URLDecoder.decode(query, "utf-8");
+                String[] entity = decode.split("=");
                 queryMap.put(entity[0], entity[1]);
             }
         }

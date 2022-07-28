@@ -35,6 +35,7 @@ import io.zeta.metaspace.model.sourceinfo.Annex;
 import io.zeta.metaspace.model.sourceinfo.CreateRequest;
 import io.zeta.metaspace.model.sourceinfo.PublishRequest;
 import io.zeta.metaspace.model.user.User;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.service.DataManageService;
 import io.zeta.metaspace.web.service.HdfsService;
 import io.zeta.metaspace.web.service.SourceService;
@@ -74,6 +75,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import java.io.*;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -103,10 +105,12 @@ public class SourceInfoDatabaseREST {
     private AnnexService annexService;
     @Autowired
     private SourceInfoFileService sourceInfoFileService;
-    private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.SourceInfoDatabaseREST");
-
     @Autowired
     private FileInfoService fileInfoService;
+    @Autowired
+    private RedisUtil redisUtil;
+
+    private static final Logger PERF_LOG = AtlasPerfTracer.getPerfLogger("rest.SourceInfoDatabaseREST");
 
     @POST
     @Path("database")
@@ -263,7 +267,7 @@ public class SourceInfoDatabaseREST {
     public Result uploadFile(@FormDataParam("file") InputStream fileInputStream,
                              @FormDataParam("file") FormDataContentDisposition contentDispositionHeader,
                              @HeaderParam("tenantId")String tenantId) throws UnsupportedEncodingException {
-        String fileName = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
+        String fileName = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), StandardCharsets.UTF_8);
         String fileType = FilenameUtils.getExtension(fileName);
         log.info("上传文件的格式是:{}",fileType);
         //判断文件格式是否支持
@@ -293,6 +297,7 @@ public class SourceInfoDatabaseREST {
             Annex annex = new Annex(annexId,fileName,fileType,uploadPath,fileSize);
             annexService.saveRecord(annex);
             HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"上传附件成功！");
+            redisUtil.set(annexId, fileName, CommonConstant.FILE_REDIS_TIME);
             return ReturnUtil.success("success",annexId);
         }catch (Exception e){
             HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"上传附件失败！");
