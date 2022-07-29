@@ -1,3 +1,4 @@
+FROM docker.gridsumdissector.com/zeta/base/zeta-backend-base:latest
 FROM docker.gridsumdissector.com/zeta/backend:1.0
 
 LABEL describe="数据管理后端基础镜像"
@@ -11,4 +12,4 @@ RUN set -x;git clone https://${name}:${token}@gitlab.gridsum.com/zeta/dev/${prod
     mvn -B clean package -Pdist -DskipTests &&\
     mvn clean
 
-FROM docker.gridsumdissector.com/zeta/base/zeta-backend-base:latest
+
