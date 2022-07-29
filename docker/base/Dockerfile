@@ -1,5 +1,4 @@
 FROM docker.gridsumdissector.com/zeta/backend:1.0
-FROM  docker.gridsumdissector.com/zeta/base/zeta-backend-base:latest
 
 LABEL describe="数据管理后端基础镜像"
 ARG product=metaspace
@@ -11,3 +10,5 @@ RUN set -x;git clone https://${name}:${token}@gitlab.gridsum.com/zeta/dev/${prod
     cd ${project} && \
     mvn -B clean package -Pdist -DskipTests &&\
     mvn clean
+
+FROM docker.gridsumdissector.com/zeta/base/zeta-backend-base:latest
