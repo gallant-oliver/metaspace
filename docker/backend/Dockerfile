@@ -1,4 +1,4 @@
-from docker.gridsumdissector.com/library/metaspace-backend-base-hadoop3:latest-7-sc516684
+FROM docker.gridsumdissector.com/library/metaspace-backend-base-hadoop3:latest-8-sc516684
 LABEL describe="数据管理后端镜像"
 #代码仓库项目名称
 ARG project=metaspace
