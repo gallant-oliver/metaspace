@@ -14,7 +14,7 @@ RUN git fetch && git checkout ${branch} && git pull && \
   jar xf ../metaspace.war && \
   rm -rf ../metaspace.war
 
-FROM openjdk:8u302-jre-slim-buster
+FROM docker.gridsumdissector.com/zeta/base/zeta-backend-base:latest
 WORKDIR /apps/metaspace
 #拷贝部署所需文件
 COPY --from=0 /usr/local/metaspace/distro/metaspace-*/conf ./conf

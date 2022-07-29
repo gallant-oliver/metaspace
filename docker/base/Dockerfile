@@ -1,4 +1,3 @@
-FROM docker.gridsumdissector.com/zeta/base/zeta-backend-base:latest
 FROM docker.gridsumdissector.com/zeta/backend:1.0
 
 LABEL describe="数据管理后端基础镜像"
