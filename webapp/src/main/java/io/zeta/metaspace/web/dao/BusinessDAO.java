@@ -338,13 +338,13 @@ public interface BusinessDAO {
 
     //批量添加业务信息
     @Insert("<script>" +
-            "insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets,submitter,submissionTime,businessOperator,businessLastUpdate,ticketNumber,level2CategoryId,tenantid,businessstatus,technicalstatus,publish,status,private_status,create_mode,submitter_read) " +
+            "insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets,submitter,submissionTime,businessOperator,businessLastUpdate,ticketNumber,level2CategoryId,tenantid,businessstatus,technicalstatus,publish,status,private_status,create_mode,submitter_read,system_file_name,process_name) " +
             " values " +
             " <foreach item='info' index='index' collection='infos' separator='),(' open='(' close=')'>" +
             "#{info.departmentId},#{info.businessId},#{info.name},#{info.module},#{info.description},#{info.owner},#{info.manager}," +
             "#{info.maintainer},#{info.dataAssets},#{info.submitter},#{info.submissionTime},#{info.businessOperator}," +
             "#{info.businessLastUpdate},#{info.ticketNumber},#{info.level2CategoryId},#{tenantId},1,0,#{info.publish}," +
-            "#{info.status},#{info.privateStatus},#{info.createMode},#{info.submitterRead}" +
+            "#{info.status},#{info.privateStatus},#{info.createMode},#{info.submitterRead},#{info.systemFileName},#{info.processName}" +
             " </foreach>" +
             " </script>")
     public int insertBusinessInfos(@Param("infos") List<BusinessInfo> infos,@Param("tenantId")String tenantId);
