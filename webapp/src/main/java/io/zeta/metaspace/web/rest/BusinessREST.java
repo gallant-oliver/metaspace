@@ -1107,7 +1107,7 @@ public class BusinessREST {
         try {
             String name = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
             file = ExportDataPathUtils.fileCheck(name, fileInputStream);
-            Map<String, Object> map = businessService.uploadBusiness(file, tenantId);
+            Map<String, Object> map = businessService.uploadBusiness(file);
             redisUtil.set(map.get("upload").toString(),name,CommonConstant.FILE_REDIS_TIME);
             return ReturnUtil.success(map);
         } catch (Exception e) {
@@ -1399,7 +1399,7 @@ public class BusinessREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getBusinessPlaceCategories()");
             }
 
-            return businessService.getBusinessPlaceCategories(type, tenantId);
+            return businessService.getBusinessPlaceCategories(tenantId);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {

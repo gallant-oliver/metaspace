@@ -2,14 +2,18 @@ package io.zeta.metaspace.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class Result {
-    String code;
-    String message;
-    String detail;
-    Object data;
+import java.io.Serializable;
 
-    public Result() {}
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class Result implements Serializable {
+    private static final long serialVersionUID = -8279811011652999663L;
+    private String code;
+    private String message;
+    private String detail;
+    private Object data;
+
+    public Result() {
+    }
 
     public Result(String code, String message, String detail, Object data) {
         this.code = code;

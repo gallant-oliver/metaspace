@@ -1208,11 +1208,11 @@ public class SourceInfoDeriveTableInfoService {
             String dataType = sourceInfoDeriveColumnInfo.getDataType();
             // 对特殊的dbType进行拼接长度
             if (Constant.DATA_LENGTH_TYPE_MAP.get(dbType) != null) {
-                dataType = Constant.DATA_LENGTH_TYPE_MAP.get(dbType).contains(dataType) ? dataType.concat(lengthStr) : dataType;
+                dataType = Constant.DATA_LENGTH_TYPE_MAP.get(dbType).contains(dataType.toLowerCase()) ? dataType.concat(lengthStr) : dataType;
             }
             Map<String, String> stringStringMap = Constant.REPLACE_TYPE_MAP.get(dbType);
             if (!CollectionUtils.isEmpty(stringStringMap)) {
-                dataType = stringStringMap.getOrDefault(dataType, dataType);
+                dataType = stringStringMap.getOrDefault(dataType.toLowerCase(), dataType);
             }
             // 最后一个字段不用拼接逗号
             columnDDL.append(tableFiled).append(columnNameEn).append(tableFiled).append(" ").append(dataType);
