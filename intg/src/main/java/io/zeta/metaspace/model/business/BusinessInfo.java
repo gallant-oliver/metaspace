@@ -89,6 +89,16 @@ public class BusinessInfo {
      */
     private Boolean submitterRead;
 
+    /**
+     * 流程名称
+     */
+    private String processName;
+
+    /**
+     * 相关制度文件名称
+     */
+    private String systemFileName;
+
     public Boolean getSubmitterRead() {
         return submitterRead;
     }
@@ -311,5 +321,21 @@ public class BusinessInfo {
 
     public void setTrustTable(String trustTable) {
         this.trustTable = trustTable;
+    }
+
+    public String getProcessName() {
+        return processName;
+    }
+
+    public void setProcessName(String processName) {
+        this.processName = processName;
+    }
+
+    public String getSystemFileName() {
+        return systemFileName;
+    }
+
+    public void setSystemFileName(String systemFileName) {
+        this.systemFileName = systemFileName;
     }
 }
