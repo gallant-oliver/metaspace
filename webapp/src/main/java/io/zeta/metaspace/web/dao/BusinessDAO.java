@@ -594,7 +594,7 @@ public interface BusinessDAO {
             "bi.manager manager, bi.maintainer maintainer, bi.dataassets dataAssets, " +
             "bi.businesslastupdate businessLastUpdate, bi.businessoperator businessOperator, " +
             "bi.private_status privateStatus, " +
-            "(select name from approval_group where id=bi.approve_group_id) as approveGroupId, bi.publish_desc publishDesc " +
+            "(select name from approval_group where id=bi.approve_group_id) as approveGroupId, bi.publish_desc publishDesc, bi.process_name processName, bi.system_file_name systemFileName " +
             "from businessinfo bi " +
             "join business_relation br on bi.businessid = br.businessid " +
             "where bi.tenantid=#{tenantId} and br.categoryguid=#{categoryGuid} " +
@@ -635,7 +635,7 @@ public interface BusinessDAO {
             "bi.manager manager, bi.maintainer maintainer, bi.dataassets dataAssets, " +
             "bi.businesslastupdate businessLastUpdate, bi.businessoperator businessOperator, " +
             "bi.private_status privateStatus, " +
-            "(select name from approval_group where id=bi.approve_group_id) as approveGroupId, bi.publish_desc publishDesc " +
+            "(select name from approval_group where id=bi.approve_group_id) as approveGroupId, bi.publish_desc publishDesc, bi.process_name processName, bi.system_file_name systemFileName " +
             "from businessinfo bi " +
             "join business_relation br on bi.businessid = br.businessid " +
             "where bi.tenantid=#{tenantId} and br.categoryguid=#{categoryGuid} " +
