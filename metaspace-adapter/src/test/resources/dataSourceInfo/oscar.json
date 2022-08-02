@@ -6,5 +6,6 @@
   "userName": "SYSDBA",
   "password": "szoscar55",
   "database": "OSRDB",
-  "jdbcParameter": ""
+  "jdbcParameter": "",
+  "db": "TEST"
 }
