@@ -1783,7 +1783,7 @@ public class BusinessService implements Approvable {
                 int rowNum = sheet.getLastRowNum() + 1;
                 //文件格式校验
                 Row first = sheet.getRow(0);
-                ArrayList<String> strings = Lists.newArrayList("业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产");
+                ArrayList<String> strings = Lists.newArrayList("业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产", "相关制度文件名称", "流程名称");
                 for (int j = 0; j < strings.size(); j++) {
                     Cell cell = first.getCell(j);
                     if (!strings.get(j).equals(cell.getStringCellValue())) {
@@ -1836,6 +1836,12 @@ public class BusinessService implements Approvable {
 
                     Cell dataAssetsCell = row.getCell(6);
                     businessInfo.setDataAssets(PoiExcelUtils.getCellValue(dataAssetsCell));
+
+                    Cell systemFileName = row.getCell(7);
+                    businessInfo.setSystemFileName(PoiExcelUtils.getCellValue(systemFileName));
+
+                    Cell processName = row.getCell(8);
+                    businessInfo.setProcessName(PoiExcelUtils.getCellValue(processName));
                     business.add(businessInfo);
                     fileNames.add(name);
                 }
