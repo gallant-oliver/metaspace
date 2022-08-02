@@ -1641,23 +1641,21 @@ public class BusinessService implements Approvable {
         String cellFormat = "第%d页，第%d个业务对象错误，原因：%s";
         String sheetFormat = "第%d页错误，原因：%s";
         List<BusinessInfo> business = new ArrayList<>();
-        try {
-            try (Workbook workbook = WorkbookFactory.create(file)) {
-                int numberOfSheets = workbook.getNumberOfSheets();
-                List<String> fileNames = new ArrayList<>();
-                List<String> businessNames = businessDao.getBusinessNames(tenantId);
-                for (int i = 0; i < numberOfSheets; i++) {
-                    Sheet sheet = workbook.getSheetAt(0);
-                    int rowNum = sheet.getLastRowNum() + 1;
-                    //文件格式校验
-                    Row first = sheet.getRow(0);
-                    ArrayList<String> strings = Lists.newArrayList("业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产");
-                    for (int j = 0; j < strings.size(); j++) {
-                        Cell cell = first.getCell(j);
-                        if (!strings.get(j).equals(cell.getStringCellValue())) {
-                            error.add(String.format(sheetFormat, i, "文件内容不正确"));
-                            break;
-                        }
+        try (Workbook workbook = WorkbookFactory.create(file)) {
+            int numberOfSheets = workbook.getNumberOfSheets();
+            List<String> fileNames = new ArrayList<>();
+            List<String> businessNames = businessDao.getBusinessNames(tenantId);
+            for (int i = 0; i < numberOfSheets; i++) {
+                Sheet sheet = workbook.getSheetAt(0);
+                int rowNum = sheet.getLastRowNum() + 1;
+                //文件格式校验
+                Row first = sheet.getRow(0);
+                ArrayList<String> strings = Lists.newArrayList("业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产", "相关制度文件名称", "流程名称");
+                for (int j = 0; j < strings.size(); j++) {
+                    Cell cell = first.getCell(j);
+                    if (!strings.get(j).equals(cell.getStringCellValue())) {
+                        error.add(String.format(sheetFormat, i, "文件内容不正确"));
+                        break;
                     }
 
                     for (int j = 1; j < rowNum; j++) {
@@ -1702,11 +1700,16 @@ public class BusinessService implements Approvable {
                         Cell maintainerCell = row.getCell(5);
                         businessInfo.setMaintainer(PoiExcelUtils.getCellValue(maintainerCell));
 
-                        Cell dataAssetsCell = row.getCell(6);
-                        businessInfo.setDataAssets(PoiExcelUtils.getCellValue(dataAssetsCell));
-                        business.add(businessInfo);
-                        fileNames.add(name);
-                    }
+                    Cell dataAssetsCell = row.getCell(6);
+                    businessInfo.setDataAssets(PoiExcelUtils.getCellValue(dataAssetsCell));
+
+                    Cell systemFileName = row.getCell(7);
+                    businessInfo.setSystemFileName(PoiExcelUtils.getCellValue(systemFileName));
+
+                    Cell processName = row.getCell(8);
+                    businessInfo.setProcessName(PoiExcelUtils.getCellValue(processName));
+                    business.add(businessInfo);
+                    fileNames.add(name);
                 }
                 return business;
             }

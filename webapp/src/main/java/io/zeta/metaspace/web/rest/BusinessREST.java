@@ -1045,7 +1045,7 @@ public class BusinessREST {
                 uri.setDownloadUri(downURL);
                 return ReturnUtil.success(uri);
             }
-            DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
+                DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
             return ReturnUtil.success(downloadUri);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导出业务对象失败");
