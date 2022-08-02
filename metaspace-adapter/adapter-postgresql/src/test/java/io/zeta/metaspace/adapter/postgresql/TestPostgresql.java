@@ -18,7 +18,7 @@ import java.util.Collection;
 import java.util.HashMap;
 
 @Slf4j
-public class TestOscar {
+public class TestPostgresql {
     @BeforeClass
     public void init() {
         System.setProperty("javax.security.auth.useSubjectCredsOnly", "false");
