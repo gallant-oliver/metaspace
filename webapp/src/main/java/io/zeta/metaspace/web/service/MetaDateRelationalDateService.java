@@ -1,5 +1,6 @@
 package io.zeta.metaspace.web.service;
 
+import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.metadata.LineageTrace;
 import io.zeta.metaspace.model.metadata.SimpleTaskNode;
 import io.zeta.metaspace.model.metadata.TableInfoVo;
@@ -18,6 +19,24 @@ import java.util.stream.Collectors;
  * @author w
  */
 public class MetaDateRelationalDateService {
+
+    /**
+     * 将任务调度获取的数据库名数据处理为元数据采集的数据库名
+     *
+     * @param tableInfoVo 请求任务调度的数据格式
+     */
+    public static void unifyTableInfo(TableInfoVo tableInfoVo) {
+        if (tableInfoVo == null) {
+            return;
+        }
+        if (DataSourceType.POSTGRESQL.getName().equals(tableInfoVo.getType())
+                && !StringUtils.isEmpty(tableInfoVo.getDatabase())) {
+            String database = tableInfoVo.getDatabase();
+            tableInfoVo.setDatabase(
+                    database.substring(database.lastIndexOf('.') + 1)
+            );
+        }
+    }
 
     /**
      * 将任务调度获取的数据库名数据处理为元数据采集的数据库名

@@ -514,6 +514,27 @@ public interface TableDAO {
      */
     TableSourceDataBasePO selectSourceDbByGuid(@Param("guid") String guid);
 
+    /**
+     * 根据表guid获取对应的数据库名称与类型
+     * @param guid 表id
+     * @return 源数据库配置信息
+     */
+    TableSourceDataBasePO selectDataTypeByGuid(@Param("guid") String guid);
+
+    /**
+     * 根据数据库guid获取对应的数据源IP与端口
+     * @param databaseGuid 数据库id
+     * @return 数据源IP与端口
+     */
+    TableSourceDataBasePO selectSourceInfoByDatabaseGuid(@Param("databaseGuid") String databaseGuid);
+
+    /**
+     * 根据数据库guid获取（POSTGRESQL）对应的数据库名称、数据源IP与端口
+     * @param databaseGuid 数据库id
+     * @return 数据源IP与端口
+     */
+    TableSourceDataBasePO selectSourceDatabaseByDatabaseGuid(@Param("databaseGuid") String databaseGuid);
+
     List<TableMetadataPO> selectMetadataListByTableGuid(@Param("tableGuid") String tableGuid);
 
     /**
