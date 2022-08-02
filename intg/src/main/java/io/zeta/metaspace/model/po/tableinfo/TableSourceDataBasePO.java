@@ -32,4 +32,12 @@ public class TableSourceDataBasePO {
      * 查询的数据库类型（Mysql、Oracle）
      */
     private String type;
+    /**
+     * 数据表对应的数据库的ID
+     */
+    private String databaseGuid;
+    /**
+     * 数据源（data_source）中注册的数据名称
+     */
+    private String sourceDatabase;
 }

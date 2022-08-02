@@ -66,8 +66,8 @@ import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.model.usergroup.DBInfo;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
-import io.zeta.metaspace.utils.*;
 import io.zeta.metaspace.utils.DateUtils;
+import io.zeta.metaspace.utils.*;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.model.CommonConstant;
@@ -100,8 +100,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.net.URLDecoder;
-import java.sql.*;
 import java.sql.Date;
+import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -2520,7 +2520,7 @@ public class DataShareService {
         // api消息推送给管理员审批
         String projectId = apiInfo.getProjectId();
         String manage = null;
-        if (StringUtils.isNotEmpty(projectId)){
+        if (StringUtils.isNotEmpty(projectId)) {
             manage = shareDAO.getProjectManager(projectId);
         }
         if (StringUtils.isNotEmpty(manage)) {
@@ -2529,7 +2529,7 @@ public class DataShareService {
             MessageEntity message = null;
             message = new MessageEntity(DATA_SERVICE_AUDIT_START.type, MessagePush.getFormattedMessageName(DATA_SERVICE_AUDIT_START.name, apiInfo.getName()), DATA_SERVICE_AUDIT_START.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
 
-            if (CollectionUtils.isNotEmpty(userEmailList)){
+            if (CollectionUtils.isNotEmpty(userEmailList)) {
                 for (String userEmail : userEmailList) {
                     message.setCreateUser(userEmail);
                     messageCenterService.addMessage(message, tenantId);
@@ -2967,7 +2967,6 @@ public class DataShareService {
             if (apiPolyEntity != null && apiPolyEntity.getIpRestriction() != null) {
                 handleIpRestriction(RequestIpUtils.getRealRequestIpAddress(request), apiPolyEntity.getIpRestriction());
             }
-
             if (!apiInfoByVersion.getRequestMode().equals(request.getMethod())) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求方式错误");
             }
@@ -2991,20 +2990,6 @@ public class DataShareService {
             List<LinkedHashMap<String, Object>> result = (List<LinkedHashMap<String, Object>>) resultMap.get("queryResult");
 
             long count = Long.parseLong(resultMap.get("queryCount").toString());
-
-//        String xml = "xml";
-//        String acceptHeader = request.getHeader("Accept");
-//        if(acceptHeader.contains(xml)) {
-//            XmlQueryResult queryResult = new XmlQueryResult();
-//            XmlQueryResult.QueryData queryData = new XmlQueryResult.QueryData();
-//            queryData.setData(result);
-//            queryResult.setTotalCount(count);
-//            queryResult.setDatas(queryData);
-//            shareDAO.updateUsedCount(path);
-//            return queryResult;
-//        } else {
-//
-//        }
             JsonQueryResult queryResult = new JsonQueryResult();
             queryResult.setDatas(result);
             queryResult.setTotalCount(count);
@@ -3055,7 +3040,7 @@ public class DataShareService {
         if (queryString != null && queryString.length() != 0) {
             String[] querys = queryString.split("&");
             for (String query : querys) {
-                String decode = URLDecoder.decode(query, "utf-8");
+                String decode = URLDecoder.decode(ConvertPercent.convertPercent(query), "utf-8");
                 String[] entity = decode.split("=");
                 queryMap.put(entity[0], entity[1]);
             }

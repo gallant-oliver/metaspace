@@ -38,9 +38,9 @@ public interface BusinessDAO {
 
     //添加业务信息
     @Insert("insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets,submitter,submissionTime,businessOperator,businessLastUpdate,ticketNumber,level2CategoryId,tenantid," +
-            "private_status,status,publish,publish_desc,approve_group_id,submitter_read,create_mode) " +
+            "private_status,status,publish,publish_desc,approve_group_id,submitter_read,create_mode,process_name,system_file_name) " +
             "values(#{info.departmentId},#{info.businessId},#{info.name},#{info.module},#{info.description},#{info.owner},#{info.manager},#{info.maintainer},#{info.dataAssets},#{info.submitter},#{info.submissionTime},#{info.businessOperator},#{info.businessLastUpdate},#{info.ticketNumber},#{info.level2CategoryId},#{tenantId}," +
-            "#{info.privateStatus},#{info.status},#{info.publish},#{info.publishDesc},#{info.approveGroupId},#{info.submitterRead},#{info.createMode})")
+            "#{info.privateStatus},#{info.status},#{info.publish},#{info.publishDesc},#{info.approveGroupId},#{info.submitterRead},#{info.createMode},#{info.processName},#{info.systemFileName})")
     public int insertBusinessInfo(@Param("info") BusinessInfo info,@Param("tenantId")String tenantId);
 
     @Select("select count(1) from businessInfo where name=#{name} and tenantid=#{tenantId}")
@@ -49,7 +49,7 @@ public interface BusinessDAO {
     //更新业务信息
     @Update("update businessinfo set name=#{name},module=#{module},description=#{description},owner=#{owner},manager=#{manager}," +
             "maintainer=#{maintainer},dataAssets=#{dataAssets},businessOperator=#{businessOperator},businessLastUpdate=#{businessLastUpdate}," +
-            "publish=#{publish},publish_desc=#{publishDesc},approve_group_id=#{approveGroupId},status=#{status} " +
+            "publish=#{publish},publish_desc=#{publishDesc},approve_group_id=#{approveGroupId},status=#{status},process_name=#{processName},system_file_name=#{systemFileName} " +
             "where businessId=#{businessId}")
     public int updateBusinessInfo(BusinessInfo info);
 
@@ -449,7 +449,7 @@ public interface BusinessDAO {
 
     @Select("SELECT bi.businessid businessId, bi.name businessName, bi.departmentid departmentId, c.name departmentName, " +
             "bi.create_mode createMode, bi.module module, bi.description description, bi.owner, bi.manager manager, " +
-            "bi.maintainer maintainer, bi.dataassets dataAssets, bi.publish publish, bi.publish_desc publishDesc " +
+            "bi.maintainer maintainer, bi.dataassets dataAssets, bi.publish publish, bi.publish_desc publishDesc, bi.process_name processName, bi.system_file_name systemFileName " +
             "FROM businessinfo bi " +
             "INNER JOIN category c ON c.guid = bi.departmentId " +
             "WHERE bi.businessid = #{objectId} AND bi.tenantid=#{tenantId}")
