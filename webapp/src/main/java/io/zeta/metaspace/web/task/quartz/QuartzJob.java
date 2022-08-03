@@ -842,17 +842,6 @@ public class QuartzJob implements Job {
                 }
             }
 
-            String columnTypeKey = null;
-            StringJoiner joiner = new StringJoiner(".");
-            if (Objects.nonNull(columnName)) {
-                columnTypeKey = joiner.add(sqlDbName).add(tableName).add(columnName).add(superType).toString();
-            } else {
-                columnTypeKey = joiner.add(sqlDbName).add(tableName).add(superType).toString();
-            }
-            if (columnType2Result.containsKey(columnTypeKey)) {
-                return columnType2Result.get(columnTypeKey);
-            }
-
             LOG.info("query Sql: " + sql);
 
             Connection connection = adapterSource.getConnection(user, dbName, pool);
@@ -873,9 +862,6 @@ public class QuartzJob implements Job {
                 }
             });
 
-            if (Objects.nonNull(resultValue)) {
-                columnType2Result.put(columnTypeKey, resultValue);
-            }
             return resultValue;
         } catch (Exception e) {
             LOG.info(e.toString());

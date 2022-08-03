@@ -26,7 +26,8 @@ public enum ProcessEnum {
     PROCESS_APPROVED_NOT_AUTHORIZED(3, "已移除"),
     PROCESS_APPROVED_DEAL(4, "已处理"),
     PROCESS_APPROVED_FEEDBACK(5, "已反馈"),
-    PROCESS_APPROVED_NOT_DEAL(6, "待处理");
+    PROCESS_APPROVED_NOT_DEAL(6, "待处理"),
+    PROCESS_CANCEL(7, "已撤回");
     /**
      * 流程状态编号
      */

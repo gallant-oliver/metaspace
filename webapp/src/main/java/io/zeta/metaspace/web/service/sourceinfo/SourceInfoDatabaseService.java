@@ -15,10 +15,7 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.po.sourceinfo.DatabaseInfoPO;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.sourceinfo.ApproveItemForReset;
-import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
-import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForCategory;
-import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForList;
+import io.zeta.metaspace.model.sourceinfo.*;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.*;
@@ -89,6 +86,8 @@ public class SourceInfoDatabaseService implements Approvable {
     @Autowired
     UserDAO userDAO;
 
+    @Autowired
+    private FileInfoService fileInfoService;
 
     /**
      * 新增源信息数据库登记
@@ -124,6 +123,7 @@ public class SourceInfoDatabaseService implements Approvable {
             databaseInfoDAO.updateStatusByIds(ids,Status.AUDITING.getIntValue()+"");
             this.approveItems(tenantId,databaseInfoList,approveGroupId);
         }
+        fileInfoService.createFileuploadRecord(databaseInfo.getAnnexId(),FileInfoPath.DATABASE_REGISTRATION_FILE);
         return checkResult;
     }
 

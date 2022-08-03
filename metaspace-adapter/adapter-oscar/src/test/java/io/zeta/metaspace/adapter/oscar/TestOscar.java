@@ -4,15 +4,18 @@ import io.zeta.metaspace.adapter.Adapter;
 import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.model.TableSchema;
+import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import io.zeta.metaspace.model.metadata.MetaDataInfo;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.UnitTestUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.HashMap;
 
 @Slf4j
 public class TestOscar {
@@ -79,7 +82,7 @@ public class TestOscar {
         MetaDataInfo metaDataInfo = adapterExecutor.getMeteDataInfo(tableSchema);
         metaDataInfo.getTables().stream().findAny().ifPresent(table -> {
             float tableSize = adapterExecutor.getTableSize(table.getSchema().getName(), table.getName(), "root.default");
-            log.info("tableSieze is ：{}",tableSize);
+            log.info("tableSieze is ：{}", tableSize);
         });
     }
 
@@ -95,7 +98,22 @@ public class TestOscar {
         MetaDataInfo metaDataInfo = adapterExecutor.getMeteDataInfo(tableSchema);
         metaDataInfo.getTables().stream().findAny().ifPresent(table -> {
             float tableSize = adapterExecutor.getTableSize(table.getSchema().getName(), table.getName(), "root.default");
-            log.info("tableSieze is ：{}",tableSize);
+            log.info("tableSieze is ：{}", tableSize);
         });
+    }
+
+    @Test
+    public void testGetTblRemarkCountByDb() {
+        DataSourceInfo dataSourceInfo = UnitTestUtils.readDataSourceInfoJson("../src/test/resources/dataSourceInfo/oscar.json");
+        AdapterSource adapterSource = AdapterUtils.getAdapterSource(dataSourceInfo);
+        AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
+        String db = dataSourceInfo.getUserName();
+        String user = dataSourceInfo.getUserName();
+        String pool = "root.default";
+        float result = adapterExecutor.getTblRemarkCountByDb(adapterSource, user, db, pool, new HashMap<>());
+        Assert.assertTrue(result > 0);
+
+        float resultNull = adapterExecutor.getTblRemarkCountByDb(adapterSource, null, null, pool, new HashMap<>());
+        Assert.assertTrue(0.0 == resultNull);
     }
 }
