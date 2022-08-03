@@ -1604,7 +1604,7 @@ public class BusinessService implements Approvable {
         font.setBold(true);
         cellStyle.setFont(font);
         List<List<String>> dataList = list.stream().map(businessInfo -> Lists.newArrayList(businessInfo.getName(), businessInfo.getModule(), businessInfo.getDescription(),
-                businessInfo.getOwner(), businessInfo.getManager(), businessInfo.getMaintainer(), businessInfo.getDataAssets())).collect(Collectors.toList());
+                businessInfo.getOwner(), businessInfo.getManager(), businessInfo.getMaintainer(), businessInfo.getDataAssets(), businessInfo.getSystemFileName(), businessInfo.getProcessName())).collect(Collectors.toList());
         ArrayList<String> attributes = Lists.newArrayList("业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产", "相关制度文件名称", "流程名称");
         PoiExcelUtils.createSheet(workbook, "业务对象", attributes, dataList, cellStyle, 12);
         return workbook;
