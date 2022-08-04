@@ -19,6 +19,8 @@ import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -31,6 +33,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 @Component
 public class DataServiceUtil {
+    private static final Logger LOG = LoggerFactory.getLogger(DataServiceUtil.class);
     @Autowired
     public DataShareService dataShareService;
     private static DataServiceUtil utils;
@@ -40,7 +43,7 @@ public class DataServiceUtil {
             Configuration configuration = ApplicationProperties.get();
             mobiusUrl=configuration.getString("metaspace.mobius.url");
         } catch (AtlasException e) {
-            e.printStackTrace();
+            LOG.error("初始化配置失败", e);
         }
     }
 

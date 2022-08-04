@@ -141,11 +141,9 @@ public class KafkaBridge {
                 exitCode = EXIT_CODE_SUCCESS;
             }
         } catch(ParseException e) {
-            LOG.error("Failed to parse arguments. Error: ", e.getMessage());
+            LOG.error("Failed to parse arguments. Error: ", e);
             printUsage();
         } catch(Exception e) {
-            System.out.println("ImportKafkaEntities failed. Please check the log file for the detailed error message");
-            e.printStackTrace();
             LOG.error("ImportKafkaEntities failed", e);
         }
 

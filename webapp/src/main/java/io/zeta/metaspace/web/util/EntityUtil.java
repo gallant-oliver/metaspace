@@ -5,6 +5,8 @@ import io.zeta.metaspace.utils.GsonUtils;
 import org.apache.atlas.model.instance.AtlasEntity;
 import org.apache.atlas.model.instance.AtlasObjectId;
 import org.apache.commons.codec.binary.Base64;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -13,7 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 
 public class EntityUtil {
-
+    private static final Logger LOG = LoggerFactory.getLogger(EntityUtil.class);
     public static final String PARTITION_ATTRIBUTE = "partitionKeys";
 
     public static List<String> extractPartitionKeyInfo(AtlasEntity entity) {
@@ -42,7 +44,7 @@ public class EntityUtil {
             String jsonStr = new String(Base64.encodeBase64(bytes),"UTF-8");
             return jsonStr;
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            LOG.error("generateBusinessId失败", e);
         }
         return "";
     }
@@ -53,7 +55,7 @@ public class EntityUtil {
             Map<String,String> map = GsonUtils.getInstance().fromJson(result, Map.class);
             return map;
         } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+            LOG.error("decodeBusinessId失败", e);
         }
         return null;
     }

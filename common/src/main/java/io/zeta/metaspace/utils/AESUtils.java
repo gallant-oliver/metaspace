@@ -1,5 +1,8 @@
 package io.zeta.metaspace.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
@@ -13,6 +16,8 @@ import java.util.Base64;
  * @Data 2019/9/10 14:29
  */
 public class AESUtils {
+
+    private static final Logger LOG = LoggerFactory.getLogger(AESUtils.class);
 
     private AESUtils() {
     }
@@ -38,7 +43,7 @@ public class AESUtils {
             byte[] byteAES = cipher.doFinal(byteEncode);
             return Base64.getEncoder().encodeToString(byteAES);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("加密aesEncode失败", e);
             return null;
         }
     }
@@ -61,7 +66,7 @@ public class AESUtils {
             byte[] byteDecode = cipher.doFinal(byteContent);
             return new String(byteDecode, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("解密aesDecode失败", e);
             return null;
         }
     }

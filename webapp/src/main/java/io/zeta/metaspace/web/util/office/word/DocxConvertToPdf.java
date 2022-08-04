@@ -67,7 +67,7 @@ public class DocxConvertToPdf {
                 in.close();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("doc转pdf失败", e);
         } finally {
             if(tmpHtml != null && tmpHtml.exists()){
                 tmpHtml.delete();
@@ -208,7 +208,7 @@ public class DocxConvertToPdf {
             try {
                 is.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("关闭输出流失败", e);
             }
         }
     }
@@ -222,7 +222,7 @@ public class DocxConvertToPdf {
             try {
                 os.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("关闭输出流失败", e);
             }
         }
     }
