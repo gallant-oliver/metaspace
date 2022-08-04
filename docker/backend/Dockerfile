@@ -14,8 +14,8 @@ RUN git fetch && git checkout ${branch} && git pull && \
   jar xf ../metaspace.war && \
   rm -rf ../metaspace.war
 
-ARG base_tag=2.0
-FROM docker.gridsumdissector.com/zeta/base/zeta-backend-base:${base_tag}
+
+FROM docker.gridsumdissector.com/zeta/base/zeta-backend-base:4.0
 WORKDIR /apps/metaspace
 #拷贝部署所需文件
 COPY --from=0 /usr/local/metaspace/distro/metaspace-*/conf ./conf
