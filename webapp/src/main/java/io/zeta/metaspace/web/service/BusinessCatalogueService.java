@@ -829,6 +829,8 @@ public class BusinessCatalogueService implements Approvable {
                 categoryExports.add(category);
                 names.add(nameCell.getStringCellValue());
             }
+        } catch (AtlasBaseException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "文件解析失败");
         }
