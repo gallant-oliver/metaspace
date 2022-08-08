@@ -114,7 +114,7 @@ public interface RuleTemplateDAO {
             "                       AND d.version = 0",
             " where r.tenantid=#{tenantId} and r.delete=false ",
             "<if test=\"params.query != null and params.query!=''\">",
-            " and (r.name like concat('%',#{params.query},'%')  ESCAPE '/' or r.description like concat('%',#{params.query},'%')  ESCAPE '/' ) ",
+            " and (r.name like concat('%',#{params.query},'%')  ESCAPE '/' or r.description like concat('%',#{params.query},'%')  ESCAPE '/'  or r.id like concat('%',#{params.query},'%')  ESCAPE '/' ) ",
             "<if test='params.enable != null'>",
             " and r.enable=#{params.enable} ",
             "</if>",
