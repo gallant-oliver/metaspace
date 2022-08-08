@@ -3038,8 +3038,8 @@ public class DataShareService {
         List<ApiInfoV2.FieldV2> param = apiInfo.getParam();
         String queryString = request.getQueryString();
         if (queryString != null && queryString.length() != 0) {
-            String[] querys = queryString.split("&");
-            for (String query : querys) {
+            String[] querySubStr = queryString.split("&");
+            for (String query : querySubStr) {
                 String decode = URLDecoder.decode(ConvertPercent.convertPercent(query), "utf-8");
                 String[] entity = decode.split("=");
                 queryMap.put(entity[0], entity[1]);
@@ -3050,11 +3050,13 @@ public class DataShareService {
             String value = null;
             String name = field.getName();
             String place = field.getPlace();
-            if ("PATH".equals(place)) {
+            if (apiPath.contains("{") && apiPath.contains("}") && "PATH".equals(place)) {
                 String[] apiPaths = apiPath.split("/");
                 for (int i = 0; i < apiPaths.length; i++) {
-                    if (apiPaths[i].equals("{" + name + "}")) {
-                        value = paths[i + 1];
+                    if (apiPaths[i].contains("{") && apiPaths[i].contains("}") && apiPaths[i].equals("{" + name + "}")) {
+                        //真实path = randomId/版本/定义的path
+                        value = paths[i + 2];
+                        break;
                     }
                 }
             }
@@ -3530,7 +3532,9 @@ public class DataShareService {
                         headerMap.put(par.getName(), par.getValue());
                     }
                     if (CommonConstant.PATH_PARAM.equals(par.getPlace())) {
-                        path.append("/").append("{").append(par.getValue()).append("}");
+                        String s = path.toString();
+                        String replace = s.replace("{" + par.getName() + "}", par.getValue().toString());
+                        path = new StringBuilder(replace);
                     }
                     if (CommonConstant.QUERY_PARAM.equals(par.getPlace())) {
                         paramMap.put(par.getName(), par.getValue());
@@ -3558,7 +3562,9 @@ public class DataShareService {
                         headerMap.put(par.getName(), par.getValue().toString());
                     }
                     if (CommonConstant.PATH_PARAM.equals(par.getPlace())) {
-                        path.append("/").append("{").append(par.getValue()).append("}");
+                        String s = path.toString();
+                        String replace = s.replace("{" + par.getName() + "}", par.getValue().toString());
+                        path = new StringBuilder(replace);
                     }
                     if (CommonConstant.QUERY_PARAM.equals(par.getPlace())) {
                         paramMap.put(par.getName(), par.getValue().toString());
