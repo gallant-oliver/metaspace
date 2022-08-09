@@ -1964,8 +1964,8 @@ public class SourceInfoDeriveTableInfoService {
         if (sourceInfoDeriveTableColumnDTO.getBusinessCategoryName().length() > CommonConstant.LENGTH) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "业务目录不能超过128位");
         }
-        if (sourceInfoDeriveTableColumnDTO.getBusinessName().length() > CommonConstant.LENGTH) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "业务对象不能超过128位");
+        if (sourceInfoDeriveTableColumnDTO.getBusinessName().length() > CommonConstant.BUSINESS_LENGTH) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "业务对象不能超过200位");
         }
         if (StringUtils.isNotBlank(sourceInfoDeriveTableColumnDTO.getUpdateFrequency()) && sourceInfoDeriveTableColumnDTO.getUpdateFrequency().length() > CommonConstant.LENGTH) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "更新频率不能超过128位");

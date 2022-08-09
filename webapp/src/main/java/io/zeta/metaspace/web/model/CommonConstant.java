@@ -57,6 +57,11 @@ public class CommonConstant {
     public static final int LENGTH = 128;
 
     /**
+     * 业务对象字段长度
+     */
+    public static final int BUSINESS_LENGTH = 200;
+
+    /**
      * 座机号正则表达式
      */
     public static final String REGEX_MOBILE = "^[0][0-9]{2,3}-[0-9]{5,10}$";
