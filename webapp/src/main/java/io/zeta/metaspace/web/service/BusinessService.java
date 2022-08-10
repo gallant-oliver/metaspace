@@ -2149,7 +2149,8 @@ public class BusinessService implements Approvable {
                 List<String> userGroupIds = userGroups.stream().map(UserGroup::getId).collect(Collectors.toList());
 
                 relations = businessDao.queryRelationByCategoryGuidAndBusinessIdFilterV2(categoryGuids, businessId, tenantId, limit, offset, tableName, userGroupIds);
-                if (!org.springframework.util.CollectionUtils.isEmpty(relations)) {
+                if (CollectionUtils.isNotEmpty(relations)) {
+                    getSourceName(relations, tenantId);
                     totalNum = relations.get(0).getTotal();
                 }
                 getPath(relations, tenantId);
@@ -2163,6 +2164,28 @@ public class BusinessService implements Approvable {
         } catch (Exception e) {
             LOG.error("获取关联失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联失败");
+        }
+    }
+
+    public void getSourceName(List<RelationEntityV2> list, String tenantId) {
+        if (CollectionUtils.isEmpty(list)) {
+            return;
+        }
+        Map<String, String> sourceNameMap = new HashMap<>();
+        Set<String> sourceIdList = list.stream().filter(f -> StringUtils.isNotBlank(f.getSourceId()) && !"hive".equalsIgnoreCase(f.getSourceId()))
+                .map(RelationEntityV2::getSourceId).collect(Collectors.toSet());
+        if (CollectionUtils.isNotEmpty(sourceIdList)){
+            List<RelationEntityV2> sourceNameList = businessDao.getSourceNameBySourceId(sourceIdList, tenantId);
+            if (CollectionUtils.isNotEmpty(sourceNameList)) {
+                sourceNameMap = sourceNameList.stream().collect(Collectors.toMap(RelationEntityV2::getSourceId, RelationEntityV2::getSourceName));
+            }
+        }
+        for (RelationEntityV2 relationEntityV2 : list) {
+            if (sourceNameMap.containsKey(relationEntityV2.getSourceId())) {
+                relationEntityV2.setSourceName(sourceNameMap.get(relationEntityV2.getSourceId()));
+            } else if ("hive".equalsIgnoreCase(relationEntityV2.getSourceId())) {
+                relationEntityV2.setSourceName("hive");
+            }
         }
     }
 
