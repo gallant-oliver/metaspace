@@ -1841,7 +1841,7 @@ public class BusinessService implements Approvable {
             pageResult.setLists(new ArrayList<>());
             return pageResult;
         }
-        List<String> businessIds = businessListByCondition.getLists().stream().map(businessInfoHeader -> businessInfoHeader.getBusinessId()).collect(Collectors.toList());
+        List<String> businessIds = businessListByCondition.getLists().stream().map(BusinessInfoHeader::getBusinessId).collect(Collectors.toList());
         List<Table> tables = businessDao.getTablesByBusiness(businessIds, limit, offset);
         if (CollectionUtils.isEmpty(tables)) {
             pageResult.setLists(new ArrayList<>());
@@ -1864,15 +1864,15 @@ public class BusinessService implements Approvable {
             pageResult.setLists(new ArrayList<>());
             return pageResult;
         }
-        List<String> businessIds = businessListByCondition.getLists().stream().map(businessInfoHeader -> businessInfoHeader.getBusinessId()).collect(Collectors.toList());
+        List<String> businessIds = businessListByCondition.getLists().stream().map(BusinessInfoHeader::getBusinessId).collect(Collectors.toList());
         List<Table> tables = businessDao.getTablesByBusinessAndColumn(businessIds, limit, offset);
         if (CollectionUtils.isEmpty(tables)) {
             pageResult.setLists(new ArrayList<>());
             return pageResult;
         }
         List<Column> columns = columnDAO.checkDescriptionColumnByTableIds(tables);
-        Map<String, List<Column>> map = columns.stream().collect(Collectors.groupingBy(column -> column.getTableId()));
-        tables.stream().forEach(table -> table.setColumns(map.get(table.getTableId())));
+        Map<String, List<Column>> map = columns.stream().collect(Collectors.groupingBy(Column::getTableId));
+        tables.forEach(table -> table.setColumns(map.get(table.getTableId())));
         pageResult.setLists(tables);
         pageResult.setTotalSize(tables.get(0).getTotal());
         pageResult.setCurrentSize(tables.size());

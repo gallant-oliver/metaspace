@@ -413,7 +413,7 @@ public interface BusinessDAO {
     @Select("<script>" +
             " select count(*)over() total,* from (" +
             "select distinct t.tableguid tableId,t.tablename,t.status,t.databaseguid databaseId,t.dbname databaseName,t.databasestatus from business2table b " +
-            " join tableinfo t on b.tableGuid=t.tableguid where " +
+            " join tableinfo t on b.tableGuid=t.tableguid where t.status = 'ACTIVE'  AND" +
             " (t.description is null or t.description='') and " +
             " b.businessid in " +
             " <foreach item='id' index='index' collection='businessIds' separator=',' open='(' close=')'>" +

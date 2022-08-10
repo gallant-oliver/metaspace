@@ -595,7 +595,7 @@ public class DataStandardREST {
             sortCategory.setSort(sort);
             sortCategory.setOrder(order);
             sortCategory.setGuid(guid);
-            List<RoleModulesCategories.Category> categories = dataManageService.sortCategory(sortCategory, CATEGORY_TYPE, tenantId);
+            List<CategoryPrivilege> categories = dataManageService.sortCategory(sortCategory, CATEGORY_TYPE, tenantId);
             return ReturnUtil.success(categories);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"目录排序并变更结构失败");

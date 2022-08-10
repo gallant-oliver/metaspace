@@ -849,7 +849,7 @@ public class SearchService {
     @Transactional(rollbackFor = Exception.class)
     public PageResult<DataSourceHeader> getTechnicalDataSourcePageResultV2(Parameters parameters, String categoryId, String tenantId) throws AtlasBaseException {
         List<String> strings = new ArrayList<>();
-        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false);
+        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false,null);
         for (CategoryPrivilegeV2 categoryPrivilegeV2 : userPrivilegeCategory.values()) {
             if (categoryPrivilegeV2.getEditItem()) {
                 strings.add(categoryPrivilegeV2.getGuid());
@@ -913,7 +913,7 @@ public class SearchService {
     @Transactional(rollbackFor = Exception.class)
     public PageResult<DatabaseHeader> getTechnicalDatabasePageResultV2(Parameters parameters, String sourceId, String categoryId, String tenantId) throws AtlasBaseException {
         List<String> strings = new ArrayList<>();
-        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false);
+        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false,null);
         for (CategoryPrivilegeV2 categoryPrivilegeV2 : userPrivilegeCategory.values()) {
             if (categoryPrivilegeV2.getEditItem()) {
                 strings.add(categoryPrivilegeV2.getGuid());
@@ -938,7 +938,7 @@ public class SearchService {
         User user = AdminUtils.getUserData();
         List<String> strings = new ArrayList<>();
         //判断多租户和独立部署
-        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false);
+        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false,null);
         for (CategoryPrivilegeV2 categoryPrivilegeV2 : userPrivilegeCategory.values()) {
             if (categoryPrivilegeV2.getEditItem()) {
                 strings.add(categoryPrivilegeV2.getGuid());
@@ -1086,7 +1086,7 @@ public class SearchService {
     @Transactional(rollbackFor = Exception.class)
     public PageResult<AddRelationTable> getTechnicalTablePageResultV2(Parameters parameters, String categoryId, String tenantId) throws AtlasBaseException {
         List<String> strings = new ArrayList<>();
-        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false);
+        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false, null);
         for (CategoryPrivilegeV2 categoryPrivilegeV2 : userPrivilegeCategory.values()) {
             if (categoryPrivilegeV2.getEditItem()) {
                 strings.add(categoryPrivilegeV2.getGuid());
