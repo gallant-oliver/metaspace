@@ -28,6 +28,7 @@ import org.apache.ibatis.annotations.*;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Set;
 
 /*
  * @description
@@ -674,7 +675,8 @@ public interface BusinessDAO {
     List<TechnologyInfo.Table> queryAllTablesByBusinessId(@Param("businessId") String businessId, @Param("tenantId") String tenantId);
 
     @Select("<script>" +
-            "select distinct COUNT ( * ) OVER () total, ti.tableguid tableGuid, ti.tablename tableName, " +
+            " select COUNT ( * ) OVER () total, a.* from ( " +
+            "select distinct ti.tableguid tableGuid, ti.tablename tableName, " +
             "si.data_source_id sourceId, " +
             "si.category_id categoryGuid, " +
             "ti.dbname dbName, ti.databaseguid dbId, ti.status, ti.description " +
@@ -695,12 +697,15 @@ public interface BusinessDAO {
             "#{userGroupId} " +
             "</foreach>" +
             " order by ti.status, ti.tablename" +
+            " ) as a " +
             "<if test='limit!= -1'>" +
             " limit #{limit}" +
             "</if>" +
             " offset #{offset}" +
             "</script>")
     List<RelationEntityV2> queryRelationByCategoryGuidAndBusinessIdFilterV2(@Param("categoryGuids")List<String> categoryGuids, @Param("businessId")String businessId, @Param("tenantId") String tenantId, @Param("limit") int limit, @Param("offset") int offset, @Param("tableName") String tableName, @Param("userGroupIds") List<String> userGroupIds);
+
+    List<RelationEntityV2> getSourceNameBySourceId(@Param("sourceIds")Set<String> sourceIds, @Param("tenantId") String tenantId);
 
     //删除业务信息与用户组的关联
     @Delete("<script>" +
