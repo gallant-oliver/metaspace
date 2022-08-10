@@ -151,7 +151,7 @@ public class SearchService {
                     return databasePageResult;
                 }
                 if(StringUtils.isNotBlank(query)){
-                    query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
+                    query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
                 }
                 databaseList = databaseInfoDAO.selectByDbNameAndTenantId(tenantId, groupIds,query, dbList, limit, offset);
             } else if (HiveConstant.SOURCE_ID.equalsIgnoreCase(sourceId)) {
@@ -216,7 +216,7 @@ public class SearchService {
             if (StringUtils.isEmpty(sourceId)) {
                 dbList = tenantService.getDatabase(tenantId);
                 if(StringUtils.isNotBlank(query)){
-                    query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
+                    query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
                 }
                 databaseList = databaseInfoDAO.selectByDbNameAndTenantId(tenantId, groupIds,query, dbList, limit, offset);
             } else if (HiveConstant.SOURCE_ID.equalsIgnoreCase(sourceId)) {
@@ -291,7 +291,7 @@ public class SearchService {
             }*/
 
             if(StringUtils.isNotBlank(query)){
-                query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
+                query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
             }
 
             List<String> databaseNames = dbDAO.getHiveDatabasesByQuery(query);
@@ -866,7 +866,7 @@ public class SearchService {
     public PageResult<DataSourceHeader> getDataSourceResultV2(Parameters parameters, List<String> strings, String categoryGuid, String tenantId) throws AtlasBaseException {
         String query = parameters.getQuery();
         if (Objects.nonNull(query))
-            query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
+            query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
         PageResult<DataSourceHeader> databasePageResult = new PageResult<>();
         //如果没目录
         if (strings.size() == 0) {
@@ -959,7 +959,7 @@ public class SearchService {
     public PageResult<DatabaseHeader> getDatabaseResultV2(Parameters parameters, List<String> strings, String sourceId, String categoryGuid, String tenantId) throws AtlasBaseException {
         String query = parameters.getQuery();
         if (Objects.nonNull(query))
-            query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
+            query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
         PageResult<DatabaseHeader> databasePageResult = new PageResult<>();
         //如果没目录
         if (strings.size() == 0) {
@@ -1126,7 +1126,7 @@ public class SearchService {
             return tablePageResult;
         }
         if (Objects.nonNull(query)) {
-            query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
+            query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
         }
         List<String> databases = tenantService.getDatabase(tenantId);
         //获取匹配到的所有表
@@ -1214,7 +1214,7 @@ public class SearchService {
             }
             List<String> databases = tenantService.getDatabase(tenantId);
             if (Objects.nonNull(query))
-                query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
+                query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
             if (databases != null && databases.size() != 0)
                 tableInfo = userGroupDAO.getTableInfosV2(strings, query, offset, limit, databases, tenantId);
             List<AddRelationTable> tables = getTables(tableInfo);
