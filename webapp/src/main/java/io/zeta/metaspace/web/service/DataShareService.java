@@ -1937,7 +1937,7 @@ public class DataShareService {
             HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "更新api策略:" + apiInfo.getName() + " " + apiInfo.getVersion());
 
             if (Stream.of(ApiStatusEnum.UP, ApiStatusEnum.DOWN).map(ApiStatusEnum::getName).noneMatch(s -> s.equals(apiInfo.getStatus()))) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未审核的api无法只编辑策略");
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未审核的api无法编辑策略");
             }
 
             long count = apiPolyDao.countApiPolyByStatus(apiId, version, AuditStatusEnum.NEW);
@@ -1953,7 +1953,10 @@ public class DataShareService {
 
             //添加审核记录
             auditService.insertApiAudit(tenantId, apiId, version, apiInfo.getVersionNum(), apiPoly.getId());
+        } catch (AtlasBaseException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
+            LOG.error("updateAPIInfoV2ApiPolyEntity exception is {}", e);
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新 API 策略失败");
         }
     }
