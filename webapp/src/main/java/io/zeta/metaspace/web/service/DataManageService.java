@@ -61,7 +61,6 @@ import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
-import io.zeta.metaspace.web.service.fileinfo.FileInfoService;
 import io.zeta.metaspace.web.service.sourceinfo.SourceInfoDatabaseService;
 import io.zeta.metaspace.web.util.*;
 import org.apache.atlas.ApplicationProperties;
@@ -84,6 +83,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.mybatis.spring.MyBatisSystemException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -173,8 +173,6 @@ public class DataManageService {
 
     @Autowired
     private ColumnTagDAO columnTagDAO;
-    @Autowired
-    private FileInfoService fileInfoService;
 
     int technicalType = 0;
     int dataStandType = 3;
@@ -281,7 +279,7 @@ public class DataManageService {
             //获取用户组
             List<UserGroup> userGroups = userGroupDAO.getuserGroupByUsersId(userId, tenantId);
             if (!CollectionUtils.isEmpty(userGroups)) {
-                userGroupIds = userGroups.stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
+                userGroupIds = userGroups.stream().map(UserGroup::getId).collect(Collectors.toList());
             }
             categoryPrivilegeList = categoryDAO.selectListByTenantIdAndGroupId(tenantId, userGroupIds);
             removeNoParentCategory(categoryPrivilegeList);
@@ -3382,22 +3380,31 @@ public class DataManageService {
      * @param type
      * @return
      */
-    public List<RoleModulesCategories.Category> sortCategory(SortCategory sortCategory, int type, String tenantId) throws AtlasBaseException {
+    public List<CategoryPrivilege> sortCategory(SortCategory sortCategory, int type, String tenantId) throws AtlasBaseException {
         List<RoleModulesCategories.Category> childCategorys;
         if (sortCategory.getGuid() == null || sortCategory.getGuid().length() == 0) {
             List<Module> modules = tenantService.getModule(tenantId);
-            if (!modules.stream().anyMatch(module -> ModuleEnum.AUTHORIZATION.getId() == module.getModuleId()) && type == 1) {
+            if (modules.stream().noneMatch(module -> ModuleEnum.AUTHORIZATION.getId() == module.getModuleId()) && type == 1) {
                 throw new AtlasBaseException(AtlasErrorCode.PERMISSION_DENIED, "当前用户没有变更所有目录的权限");
             }
             childCategorys = userGroupDAO.getAllCategorysAndSort(type, sortCategory.getSort(), sortCategory.getOrder(), tenantId);
         } else {
-            childCategorys = userGroupDAO.getChildCategorysAndSort(Arrays.asList(sortCategory.getGuid()), type, sortCategory.getSort(), sortCategory.getOrder(), tenantId);
+            childCategorys = userGroupDAO.getChildCategorysAndSort(Collections.singletonList(sortCategory.getGuid()), type, sortCategory.getSort(), sortCategory.getOrder(), tenantId);
         }
         if (sortCategory.getGuid() != null && sortCategory.getGuid().length() != 0) {
             RoleModulesCategories.Category category = categoryDao.getCategoryByGuid(sortCategory.getGuid(), tenantId);
             childCategorys.add(category);
         }
-        return childCategorys;
+        List<CategoryPrivilege> list = new ArrayList<>();
+        //返回前端顺序，sort字段
+        for (int i = 0; i < childCategorys.size(); i++) {
+            CategoryPrivilege categoryPrivilege = new CategoryPrivilege();
+            BeanUtils.copyProperties(childCategorys.get(i), categoryPrivilege);
+            categoryPrivilege.setPrivilege(new CategoryPrivilege.Privilege());
+            categoryPrivilege.setSort(i);
+            list.add(categoryPrivilege);
+        }
+        return list;
     }
 
     /**
