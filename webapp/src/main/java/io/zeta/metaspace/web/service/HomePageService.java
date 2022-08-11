@@ -197,12 +197,12 @@ public class HomePageService {
     }
 
     private int getSingleDayDBTotal(String tenantId) {
-        List<String> dbs = tenantService.getDatabase(tenantId);
+        List<String> dbs = tenantService.getDatabaseByTenantId(tenantId);
         return relationDAO.selectByTenantIdAndDatabaseName(tenantId, dbs);
     }
 
     private int getSingleDayTBTotal(String tenantId) {
-        List<String> dbs = tenantService.getDatabase(tenantId);
+        List<String> dbs = tenantService.getDatabaseByTenantId(tenantId);
         return tableDAO.selectCountByTenantIdAndDbName(tenantId, dbs);
     }
 
