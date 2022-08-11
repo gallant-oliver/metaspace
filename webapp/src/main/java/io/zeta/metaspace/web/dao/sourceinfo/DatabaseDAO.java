@@ -146,6 +146,11 @@ public interface DatabaseDAO {
     List<String> getHiveDataBaseName(@Param("tenantId") String tenantId,
                                      @Param("userId") String userId);
 
+    /**
+     * 查询当前用户在当前租户下有权限访问的HIVE数据库ID
+     */
+    List<String> getHiveDataBaseNameByTenantId(@Param("tenantId") String tenantId);
+
     TableDataSourceRelationPO selectByTableGuid(@Param("tableGuid") String tableGuid);
 
     List<String> getDbName(List<String> ids);
