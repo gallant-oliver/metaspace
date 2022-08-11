@@ -202,7 +202,7 @@ public class UsersService {
             info.setUser(user);
             //userGroups
             List<CategoryPrivilege> technicalCategoryList = dataManageService.getTechnicalCategoryByUserId(tenantId, userId);
-            List<String> guidList = technicalCategoryList.stream().map(item -> item.getGuid()).collect(Collectors.toList());
+            List<String> guidList = technicalCategoryList.stream().map(CategoryPrivilege::getGuid).collect(Collectors.toList());
             List<CategoryPath> technicalPaths = categoryDAO.getPathByIds(guidList, 0, tenantId);
             Map<String,String> technicalPathMap = new HashMap<>();
             technicalPaths.forEach(path->{
@@ -218,7 +218,7 @@ public class UsersService {
             }
             info.setTechnicalCategory(technicals);
 
-            Map<String, CategoryPrivilegeV2> businessCategories = userGroupService.getUserPrivilegeCategory(tenantId, 1, false);
+            Map<String, CategoryPrivilegeV2> businessCategories = userGroupService.getUserPrivilegeCategory(tenantId, 1, false, userId);
             List<UserInfo.Category> business = new ArrayList<>();
             if (businessCategories.size()!=0){
                 List<CategoryPath> businessPaths = categoryDAO.getPathByIds(Lists.newArrayList(businessCategories.keySet()), 1, tenantId);
