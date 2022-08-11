@@ -6881,3 +6881,12 @@ ALTER TABLE approval_group_relation DROP CONSTRAINT fk1;
 ALTER TABLE approval_group_relation DROP CONSTRAINT fk2;
 ALTER TABLE users DROP CONSTRAINT user_pkey;
 ALTER TABLE users ADD CONSTRAINT user_pkey PRIMARY KEY ("account");
+
+-- 1.15.0-1.16.0-指标图书馆
+-- 分布式锁表shedlock
+CREATE TABLE "public"."shedlock"(
+    name VARCHAR(64) NOT NULL,
+    lock_until TIMESTAMP NOT NULL,
+    locked_at TIMESTAMP NOT NULL,
+    locked_by VARCHAR(255) NOT NULL,
+    PRIMARY KEY (name));
