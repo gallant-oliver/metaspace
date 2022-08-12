@@ -189,7 +189,7 @@ public class HomePageService {
         }
     }
 
-    // @Cacheable(value = "DbTotalCache", key = "'DbTotalCache'+#tenantId")
+    @Cacheable(value = "DbTotalCache", key = "'DbTotalCache'+#tenantId")
     public BrokenLine getDBTotals(String tenantId) throws AtlasBaseException {
         BrokenLine brokenLine = new BrokenLine();
         addBrokenLine(brokenLine, SystemStatistical.DB_TOTAL, tenantId);
@@ -294,7 +294,7 @@ public class HomePageService {
         return statistical;
     }
 
-    // @Cacheable(value = "TbTotalCache", key = "'TbTotalCache'+#tenantId")
+    @Cacheable(value = "TbTotalCache", key = "'TbTotalCache'+#tenantId")
     public BrokenLine getTBTotals(String tenantId) throws AtlasBaseException {
         BrokenLine brokenLine = new BrokenLine();
         addBrokenLine(brokenLine, SystemStatistical.TB_TOTAL, tenantId);
