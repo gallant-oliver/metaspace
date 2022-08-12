@@ -99,7 +99,7 @@ public class HomePageService {
             for (String tenantId : tenants) {
                 homePageDAO.deleteStatistical(date, tenantId);
                 int dbTotal = this.getSingleDayDBTotal(tenantId);
-                int tbTotal = this.getSingleDayDBTotal(tenantId);
+                int tbTotal = this.getSingleDayTBTotal(tenantId);
                 long businessCount = homePageDAO.getBusinessCount(tenantId);
                 long addedBusinessCount = homePageDAO.getAddedBusinessCount(tenantId);
                 long noAddedBusinessCount = homePageDAO.getNoAddedBusinessCount(tenantId);
@@ -189,7 +189,7 @@ public class HomePageService {
         }
     }
 
-    @Cacheable(value = "DbTotalCache", key = "'DbTotalCache'+#tenantId")
+    // @Cacheable(value = "DbTotalCache", key = "'DbTotalCache'+#tenantId")
     public BrokenLine getDBTotals(String tenantId) throws AtlasBaseException {
         BrokenLine brokenLine = new BrokenLine();
         addBrokenLine(brokenLine, SystemStatistical.DB_TOTAL, tenantId);
@@ -294,7 +294,7 @@ public class HomePageService {
         return statistical;
     }
 
-    @Cacheable(value = "TbTotalCache", key = "'TbTotalCache'+#tenantId")
+    // @Cacheable(value = "TbTotalCache", key = "'TbTotalCache'+#tenantId")
     public BrokenLine getTBTotals(String tenantId) throws AtlasBaseException {
         BrokenLine brokenLine = new BrokenLine();
         addBrokenLine(brokenLine, SystemStatistical.TB_TOTAL, tenantId);
