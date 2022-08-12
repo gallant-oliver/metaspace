@@ -99,7 +99,7 @@ public class HomePageService {
             for (String tenantId : tenants) {
                 homePageDAO.deleteStatistical(date, tenantId);
                 int dbTotal = this.getSingleDayDBTotal(tenantId);
-                int tbTotal = this.getSingleDayDBTotal(tenantId);
+                int tbTotal = this.getSingleDayTBTotal(tenantId);
                 long businessCount = homePageDAO.getBusinessCount(tenantId);
                 long addedBusinessCount = homePageDAO.getAddedBusinessCount(tenantId);
                 long noAddedBusinessCount = homePageDAO.getNoAddedBusinessCount(tenantId);
