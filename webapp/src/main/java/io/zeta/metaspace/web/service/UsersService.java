@@ -223,10 +223,10 @@ public class UsersService {
             if (businessCategories != null && !businessCategories.isEmpty()) {
                 List<String> categoryGuids = businessCategories.stream().map(CategorycateQueryResult::getGuid).collect(Collectors.toList());
                 List<CategoryPath> indicatorPaths = categoryDAO.getPathByIds(categoryGuids, 1, tenantId);
-                Map<String, String> indicatorPathMap = new HashMap<>();
+                Map<String, String> businessPathMap = new HashMap<>();
                 indicatorPaths.forEach(path -> {
                     String categoryPath = path.getPath().replace("\"", "").replace("{", "").replace("}", "").replace(",", "/");
-                    indicatorPathMap.put(path.getGuid(), categoryPath);
+                    businessPathMap.put(path.getGuid(), categoryPath);
                 });
                 business = businessCategories.stream().map(item -> {
                     UserInfo.Category category = new UserInfo.Category();
@@ -235,7 +235,7 @@ public class UsersService {
                     category.setRead(item.getRead());
                     category.setEditItem(item.getEditItem());
                     category.setEditCategory(item.getEditCategory());
-                    category.setPath(indicatorPathMap.get(category.getGuid()));
+                    category.setPath(businessPathMap.get(category.getGuid()));
                     return category;
                 }).collect(Collectors.toList());
             }
