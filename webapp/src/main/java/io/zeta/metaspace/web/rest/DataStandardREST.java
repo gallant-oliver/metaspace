@@ -285,6 +285,7 @@ public class DataStandardREST {
         try {
             file = ExportDataPathUtils.fileCheck(fileName, fileInputStream);
             dataStandardService.importDataStandard(categoryId, file, tenantId);
+            fileInfoService.createFileRecordByFile(file, fileName, FileInfoPath.STANDARD);
             return Response.ok().build();
         } catch (AtlasBaseException | IllegalArgumentException e) {
             throw e;
@@ -519,7 +520,6 @@ public class DataStandardREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    @Transactional(rollbackFor = Exception.class)
     public Result importCategory(@PathParam("upload")String upload, ImportCategory importCategory, @HeaderParam("tenantId")String tenantId) throws Exception {
         File file = null;
         try {
@@ -541,7 +541,7 @@ public class DataStandardREST {
             }else{
                 categoryPrivileges=dataManageService.importCategory(categoryId,importCategory.getDirection(), file,importCategory.isAuthorized(),CATEGORY_TYPE,tenantId);
             }
-            fileInfoService.createFileRecord(upload, FileInfoPath.STANDARD_CATEGORY,file);
+            fileInfoService.createFileRecord(upload, FileInfoPath.STANDARD_CATEGORY, file);
             return ReturnUtil.success(categoryPrivileges);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"导入失败");
@@ -595,7 +595,7 @@ public class DataStandardREST {
             sortCategory.setSort(sort);
             sortCategory.setOrder(order);
             sortCategory.setGuid(guid);
-            List<RoleModulesCategories.Category> categories = dataManageService.sortCategory(sortCategory, CATEGORY_TYPE, tenantId);
+            List<CategoryPrivilege> categories = dataManageService.sortCategory(sortCategory, CATEGORY_TYPE, tenantId);
             return ReturnUtil.success(categories);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(),AtlasErrorCode.BAD_REQUEST,e,"目录排序并变更结构失败");

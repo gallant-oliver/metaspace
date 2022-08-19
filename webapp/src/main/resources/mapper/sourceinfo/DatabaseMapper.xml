@@ -14,6 +14,17 @@
           AND dgr.source_id = 'hive'
     </select>
 
+    <select id="getHiveDataBaseNameByTenantId" resultType="java.lang.String">
+        SELECT d.database_name
+        FROM db_info d
+                 INNER JOIN database_group_relation dgr ON d.database_guid = dgr.database_guid
+                 INNER JOIN user_group_relation ugr ON dgr.group_id = ugr.group_id
+                 INNER JOIN user_group ug ON ugr.group_id = ug.id
+        WHERE ug.valid = TRUE
+          AND ug.tenant = #{tenantId}
+          AND dgr.source_id = 'hive'
+    </select>
+
     <select id="selectByTableGuid" resultType="io.zeta.metaspace.model.po.sourceinfo.TableDataSourceRelationPO">
         SELECT
 	si.data_source_id,

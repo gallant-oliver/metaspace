@@ -510,7 +510,7 @@ public class RuleREST {
             }else{
                 categoryPrivileges=dataManageService.importCategory(categoryId,importCategory.getDirection(), file,importCategory.isAuthorized(),CATEGORY_RULE,tenantId);
             }
-            fileInfoService.createFileRecord(upload, FileInfoPath.RULE_CATEGORY,file);
+            fileInfoService.createFileRecord(upload, FileInfoPath.RULE_CATEGORY, file);
             return ReturnUtil.success(categoryPrivileges);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
@@ -564,7 +564,7 @@ public class RuleREST {
             sortCategory.setSort(sort);
             sortCategory.setOrder(order);
             sortCategory.setGuid(guid);
-            List<RoleModulesCategories.Category> categories = dataManageService.sortCategory(sortCategory, CATEGORY_RULE, tenantId);
+            List<CategoryPrivilege> categories = dataManageService.sortCategory(sortCategory, CATEGORY_RULE, tenantId);
             return ReturnUtil.success(categories);
         }catch (Exception e){
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "目录排序并变更结构失败");

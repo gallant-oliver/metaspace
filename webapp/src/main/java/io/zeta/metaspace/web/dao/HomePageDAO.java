@@ -45,9 +45,9 @@ public interface HomePageDAO {
 
     @Select({" <script>",
             " select tableInfo.tableGuid,tableInfo.tableName,tableInfo.display_name as displayName, count(*) as times from business2Table",
-            " join tableInfo on business2table.tableGuid=tableInfo.tableGuid join businessinfo on businessinfo.businessid=business2Table.businessid " +
-            " where businessinfo.tenantid=#{tenantId}" +
-            " group by tableInfo.tableGuid,tableInfo.tableName",
+            " join tableInfo on business2table.tableGuid=tableInfo.tableGuid join businessinfo on businessinfo.businessid=business2Table.businessid ",
+            " where businessinfo.tenantid=#{tenantId} AND tableInfo.status='ACTIVE' ",
+            " group by tableInfo.tableGuid,tableInfo.tableName,tableInfo.display_name",
             " order by times desc",
             " <if test='limit!= -1'>",
             " limit #{limit}",
@@ -56,8 +56,10 @@ public interface HomePageDAO {
             " </script>"})
     public List<TableUseInfo> getTableRelatedInfo(@Param("limit") int limit, @Param("offset") int offset,@Param("tenantId")String tenantId);
 
-    @Select("select count(DISTINCT businessinfo.businessId) as totalBusiness,count(distinct tableGuid) as totalTable from business2table join businessinfo on businessinfo.businessid=business2Table.businessid " +
-            "where businessinfo.tenantid=#{tenantId}")
+    @Select("select count(DISTINCT businessinfo.businessId) as totalBusiness,count(distinct tableInfo.tableGuid) as totalTable from business2table " +
+            " join businessinfo on businessinfo.businessid=business2Table.businessid " +
+            " join tableInfo on business2table.tableGuid=tableInfo.tableGuid " +
+            " where businessinfo.tenantid=#{tenantId} AND tableInfo.status='ACTIVE' ")
     public Map<String, Long> getTotalInfo(@Param("tenantId")String tenantId);
 
     @Select("select count(*) from businessInfo where technicalStatus=#{technicalStatus} and tenantid=#{tenantId}")

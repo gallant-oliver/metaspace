@@ -211,11 +211,11 @@ public class AtlasHiveHookContext {
     }
 
     public boolean isKnownDatabase(String dbQualifiedName) {
-        return knownObjects != null && dbQualifiedName != null ? knownObjects.isKnownDatabase(dbQualifiedName) : false;
+        return (knownObjects != null && dbQualifiedName != null) && knownObjects.isKnownDatabase(dbQualifiedName);
     }
 
     public boolean isKnownTable(String tblQualifiedName) {
-        return knownObjects != null && tblQualifiedName != null ? knownObjects.isKnownTable(tblQualifiedName) : false;
+        return (knownObjects != null && tblQualifiedName != null) && knownObjects.isKnownTable(tblQualifiedName);
     }
 
     public void addToKnownEntities(Collection<AtlasEntity> entities) {
@@ -246,6 +246,18 @@ public class AtlasHiveHookContext {
         List<Database> databases = new ArrayList<>();
         List<Table>    tables    = new ArrayList<>();
 
+        initList(databases,tables);
+
+        for (Database database : databases) {
+            knownObjects.removeFromKnownDatabase(getQualifiedName(database));
+        }
+
+        for (Table table : tables) {
+            knownObjects.removeFromKnownTable(getQualifiedName(table));
+        }
+    }
+
+    private void initList(List<Database> databases, List<Table> tables) {
         if (isMetastoreHook()) {
             switch (hiveOperation) {
                 case CREATEDATABASE:
@@ -260,7 +272,8 @@ public class AtlasHiveHookContext {
                     tables.add(toTable(((AlterTableEvent) metastoreEvent).getOldTable()));
                     tables.add(toTable(((AlterTableEvent) metastoreEvent).getNewTable()));
                     break;
-                default:break;
+                default:
+                    break;
             }
         } else {
             if (getOutputs() != null) {
@@ -272,18 +285,11 @@ public class AtlasHiveHookContext {
                         case TABLE:
                             tables.add(output.getTable());
                             break;
-                        default:break;
+                        default:
+                            break;
                     }
                 }
             }
-        }
-
-        for (Database database : databases) {
-            knownObjects.removeFromKnownDatabase(getQualifiedName(database));
-        }
-
-        for (Table table : tables) {
-            knownObjects.removeFromKnownTable(getQualifiedName(table));
         }
     }
 

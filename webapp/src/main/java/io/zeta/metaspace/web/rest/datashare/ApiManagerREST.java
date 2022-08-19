@@ -66,7 +66,10 @@ import javax.validation.Valid;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -170,13 +173,8 @@ public class ApiManagerREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
     public Result updateAPIPloy(@PathParam("apiId") String apiId, @PathParam("version") String version, ApiPolyEntity apiPolyEntity, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "更新api策略:" + apiId + " " + version);
-        try {
-            shareService.updateAPIInfoV2ApiPolyEntity(apiId, version, apiPolyEntity, tenantId);
-            return ReturnUtil.success();
-        } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新api策略");
-        }
+        shareService.updateAPIInfoV2ApiPolyEntity(apiId, version, apiPolyEntity, tenantId);
+        return ReturnUtil.success();
     }
 
 
@@ -1001,7 +999,7 @@ public class ApiManagerREST {
         try {
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + upload);
             shareService.importCategory(file, projectId, tenantId);
-            fileInfoService.createFileRecord(upload, FileInfoPath.API_CATEGORY,file);
+            fileInfoService.createFileRecord(upload, FileInfoPath.API_CATEGORY, file);
             return ReturnUtil.success("success");
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败:" + e.getMessage());

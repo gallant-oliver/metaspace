@@ -45,7 +45,7 @@ public interface ApproveDAO {
             "</if>" +
             "<if test='paras.approveStatus!=null and paras.approveStatus.size()!=0'>" +
             " and a.status in " +
-            " <foreach collection='paras.status' item='stat' index='index' separator=',' open='(' close=')'>" +
+            " <foreach collection='paras.approveStatus' item='stat' index='index' separator=',' open='(' close=')'>" +
             " #{stat}" +
             " </foreach>" +
             "</if>" +

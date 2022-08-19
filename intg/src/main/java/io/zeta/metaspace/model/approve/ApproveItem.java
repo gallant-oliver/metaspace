@@ -41,7 +41,7 @@ public class ApproveItem {
      /**
       * 审批组
       */
-     private String ApproveGroup;
+     private String approveGroup;
      /**
       * 提交人
       */

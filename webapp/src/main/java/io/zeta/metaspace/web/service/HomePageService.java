@@ -24,7 +24,6 @@ import io.zeta.metaspace.model.metadata.Parameters;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.web.dao.*;
-import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DateUtils;
 import io.zeta.metaspace.web.util.ReturnUtil;
 import org.apache.atlas.AtlasErrorCode;
@@ -100,7 +99,7 @@ public class HomePageService {
             for (String tenantId : tenants) {
                 homePageDAO.deleteStatistical(date, tenantId);
                 int dbTotal = this.getSingleDayDBTotal(tenantId);
-                int tbTotal = this.getSingleDayDBTotal(tenantId);
+                int tbTotal = this.getSingleDayTBTotal(tenantId);
                 long businessCount = homePageDAO.getBusinessCount(tenantId);
                 long addedBusinessCount = homePageDAO.getAddedBusinessCount(tenantId);
                 long noAddedBusinessCount = homePageDAO.getNoAddedBusinessCount(tenantId);
@@ -198,12 +197,12 @@ public class HomePageService {
     }
 
     private int getSingleDayDBTotal(String tenantId) {
-        List<String> dbs = tenantService.getDatabase(tenantId);
+        List<String> dbs = tenantService.getDatabaseByTenantId(tenantId);
         return relationDAO.selectByTenantIdAndDatabaseName(tenantId, dbs);
     }
 
     private int getSingleDayTBTotal(String tenantId) {
-        List<String> dbs = tenantService.getDatabase(tenantId);
+        List<String> dbs = tenantService.getDatabaseByTenantId(tenantId);
         return tableDAO.selectCountByTenantIdAndDbName(tenantId, dbs);
     }
 
@@ -485,6 +484,9 @@ public class HomePageService {
         HomeTaskInfo taskInfo = null;
         try {
             taskInfo = homePageDAO.getTaskInfo(tenantId);
+            if (taskInfo == null) {
+                taskInfo = new HomeTaskInfo();
+            }
         } catch (Exception e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务详情查询异常");
         }

@@ -1574,4 +1574,6 @@ public interface UserGroupDAO {
     List<String> getDbIds(List<String> ids);
 
     List<String> getUserGroupByUsrId(@Param("userId") String userId,@Param("tenantId") String tenantId);
+
+    List<GroupAccountDTO> getAccountByUserGroupIds(@Param("ids") List<String> groupIds);
 }

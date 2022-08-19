@@ -64,7 +64,7 @@ public class DataSetLineageJerseyResourceIT extends BaseResourceIT {
     @Test
     public void testInputsGraph() throws Exception {
         String     tableId  = atlasClientV1.getEntity(HIVE_TABLE_TYPE, AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, salesMonthlyTable).getId()._getId();
-        ObjectNode response = atlasClientV1.callAPIWithBodyAndParams(AtlasClient.API_V1.LINEAGE_INPUTS_GRAPH, null, tableId, "/inputs/graph");
+        ObjectNode response = atlasClientV1.callAPIWithBodyAndParams(AtlasClient.APIV1.LINEAGE_INPUTS_GRAPH, null, tableId, "/inputs/graph");
 
         Assert.assertNotNull(response);
         System.out.println("inputs graph = " + response);
@@ -113,7 +113,7 @@ public class DataSetLineageJerseyResourceIT extends BaseResourceIT {
     @Test
     public void testOutputsGraph() throws Exception {
         String     tableId  = atlasClientV1.getEntity(HIVE_TABLE_TYPE, AtlasClient.REFERENCEABLE_ATTRIBUTE_NAME, salesFactTable).getId()._getId();
-        ObjectNode response = atlasClientV1.callAPIWithBodyAndParams(AtlasClient.API_V1.LINEAGE_INPUTS_GRAPH, null, tableId, "/outputs/graph");
+        ObjectNode response = atlasClientV1.callAPIWithBodyAndParams(AtlasClient.APIV1.LINEAGE_INPUTS_GRAPH, null, tableId, "/outputs/graph");
 
         Assert.assertNotNull(response);
         System.out.println("outputs graph= " + response);
@@ -170,12 +170,12 @@ public class DataSetLineageJerseyResourceIT extends BaseResourceIT {
 
     @Test(expectedExceptions = AtlasServiceException.class)
     public void testSchemaForInvalidTable() throws Exception {
-        ObjectNode response = atlasClientV1.callAPIWithBodyAndParams(AtlasClient.API_V1.NAME_LINEAGE_SCHEMA, null, "blah", "schema");
+        ObjectNode response = atlasClientV1.callAPIWithBodyAndParams(AtlasClient.APIV1.NAME_LINEAGE_SCHEMA, null, "blah", "schema");
     }
 
     @Test(expectedExceptions = AtlasServiceException.class)
     public void testSchemaForDB() throws Exception {
-        ObjectNode response = atlasClientV1.callAPIWithBodyAndParams(AtlasClient.API_V1.NAME_LINEAGE_SCHEMA, null, salesDBName, "schema");
+        ObjectNode response = atlasClientV1.callAPIWithBodyAndParams(AtlasClient.APIV1.NAME_LINEAGE_SCHEMA, null, salesDBName, "schema");
     }
 
     private void setupInstances() throws Exception {

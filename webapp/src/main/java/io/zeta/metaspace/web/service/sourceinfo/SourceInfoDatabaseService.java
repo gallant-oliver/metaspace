@@ -15,10 +15,7 @@ import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.po.sourceinfo.DatabaseInfoPO;
 import io.zeta.metaspace.model.result.CategoryPrivilege;
 import io.zeta.metaspace.model.result.PageResult;
-import io.zeta.metaspace.model.sourceinfo.ApproveItemForReset;
-import io.zeta.metaspace.model.sourceinfo.DatabaseInfo;
-import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForCategory;
-import io.zeta.metaspace.model.sourceinfo.DatabaseInfoForList;
+import io.zeta.metaspace.model.sourceinfo.*;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.web.dao.*;
@@ -38,7 +35,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.CannotCreateTransactionException;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -89,6 +86,8 @@ public class SourceInfoDatabaseService implements Approvable {
     @Autowired
     UserDAO userDAO;
 
+    @Autowired
+    private FileInfoService fileInfoService;
 
     /**
      * 新增源信息数据库登记
@@ -124,6 +123,7 @@ public class SourceInfoDatabaseService implements Approvable {
             databaseInfoDAO.updateStatusByIds(ids,Status.AUDITING.getIntValue()+"");
             this.approveItems(tenantId,databaseInfoList,approveGroupId);
         }
+        fileInfoService.createFileuploadRecord(databaseInfo.getAnnexId(),FileInfoPath.DATABASE_REGISTRATION_FILE);
         return checkResult;
     }
 
@@ -330,6 +330,7 @@ public class SourceInfoDatabaseService implements Approvable {
         }else{
             databaseInfoDAO.updateStatusByIds(ids,Status.FOUNDED.getIntValue()+"");
         }
+        fileInfoService.createFileuploadRecord(databaseInfo.getAnnexId(),FileInfoPath.DATABASE_REGISTRATION_FILE);
         return checkResult;
     }
 
@@ -383,11 +384,13 @@ public class SourceInfoDatabaseService implements Approvable {
 
             // 审核消息推送审核人
             List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroupId);
-            List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
+            List<String> userEmailList = (CollectionUtils.isNotEmpty(userIdList) ? userDAO.getUsersEmailByIds(userIdList) : null);
             MessageEntity message = new MessageEntity(RESOURCE_AUDIT_INFO_DATABASE.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_DATABASE.name, databaseInfo.getDatabaseAlias()), RESOURCE_AUDIT_INFO_DATABASE.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
-            for (String userEmail : userEmailList){
-                message.setCreateUser(userEmail);
-                messageCenterService.addMessage(message, tenantId);
+            if (CollectionUtils.isNotEmpty(userEmailList)){
+                for (String userEmail : userEmailList){
+                    message.setCreateUser(userEmail);
+                    messageCenterService.addMessage(message, tenantId);
+                }
             }
         }
         HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),this.convertStringFromList(databaseInfos.stream().map(DatabaseInfo::getDatabaseAlias).collect(Collectors.toList())));

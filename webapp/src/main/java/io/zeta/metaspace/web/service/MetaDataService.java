@@ -24,6 +24,7 @@ import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.bo.DatabaseInfoBO;
 import io.zeta.metaspace.discovery.MetaspaceGremlinService;
 import io.zeta.metaspace.model.datasource.DataSourceInfo;
+import io.zeta.metaspace.model.datasource.DataSourceType;
 import io.zeta.metaspace.model.enums.Status;
 import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.po.tableinfo.TableSourceDataBasePO;
@@ -1549,9 +1550,12 @@ public class MetaDataService {
         if (StringUtils.isEmpty(guid)) {
             throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取表血缘关系失败");
         }
-        TableSourceDataBasePO dataBasePO = tableDAO.selectSourceDbByGuid(guid);
+        TableSourceDataBasePO tableInfoData = tableDAO.selectDataTypeByGuid(guid);
+        if (tableInfoData == null) {
+            throw new AtlasBaseException(AtlasErrorCode.INVALID_PARAMETERS, "请求参数异常，获取表血缘关系失败");
+        }
         TableLineageInfo info = new TableLineageInfo();
-        if (dataBasePO == null || dataBasePO.getTable().equalsIgnoreCase("hive")) {
+        if (tableInfoData.getType().equalsIgnoreCase("hive")) {
             try {
                 AtlasLineageInfo lineageInfo = atlasLineageService.getAtlasLineageInfo(guid, direction, depth);
                 if (Objects.isNull(lineageInfo)) {
@@ -1584,11 +1588,16 @@ public class MetaDataService {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取表血缘关系失败");
             }
         } else {
+            TableSourceDataBasePO dataBasePO = DataSourceType.POSTGRESQL.getName().equalsIgnoreCase(tableInfoData.getType()) ?
+                    tableDAO.selectSourceDatabaseByDatabaseGuid(tableInfoData.getDatabaseGuid())
+                    : tableDAO.selectSourceInfoByDatabaseGuid(tableInfoData.getDatabaseGuid());
             TableInfoVo tableInfo = new TableInfoVo();
-            org.springframework.beans.BeanUtils.copyProperties(dataBasePO, tableInfo);
+            org.springframework.beans.BeanUtils.copyProperties(tableInfoData, tableInfo);
+            tableInfo.setPort(dataBasePO.getPort());
+            tableInfo.setHost(dataBasePO.getHost());
             tableInfo.setDepth(depth);
             tableInfo.setDirection(direction.toString());
-            TableInfoVo tableInfoVo = judgeSourceDB(tableInfo);
+            TableInfoVo tableInfoVo = judgeSourceDB(tableInfo, dataBasePO);
             info = getRelationTableLineage(token, tableInfoVo);
         }
         return info;
@@ -1600,12 +1609,12 @@ public class MetaDataService {
      * @param tableInfoVo 元数据采集的配置信息
      * @return 任务调度的配置信息
      */
-    public TableInfoVo judgeSourceDB(TableInfoVo tableInfoVo) {
+    public TableInfoVo judgeSourceDB(TableInfoVo tableInfoVo, TableSourceDataBasePO dataBasePO) {
         if (StringUtils.isNotBlank(tableInfoVo.getType())) {
             String database;
             switch (tableInfoVo.getType()) {
                 case "POSTGRESQL":
-                    database = "postgres." + tableInfoVo.getDatabase();
+                    database = dataBasePO.getSourceDatabase() + "." + tableInfoVo.getDatabase();
                     tableInfoVo.setDatabase(database);
                     break;
                 case "SQLSERVER":
@@ -1655,6 +1664,8 @@ public class MetaDataService {
             if (tableInfoVo.getDepth() > 6) {
                 tableInfoVo.setDepth(3);
             }
+            // 将请求任务调度数据库名转义为对应数据管理中的数据库名
+            MetaDateRelationalDateService.unifyTableInfo(tableInfoVo);
             List<TableInfoVo> tableInfoVos = new ArrayList<>();
             tableInfoVos.add(tableInfoVo);
             Set<LineageTrace> lineageTraceSet = new HashSet<>();

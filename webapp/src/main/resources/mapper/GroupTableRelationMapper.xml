@@ -10,7 +10,7 @@
     <select id="getDeriveInfoByIds" resultType="io.zeta.metaspace.model.sourceinfo.derivetable.relation.GroupDeriveTableRelationDTO">
         SELECT
         ug.ID userGroupId,
-        ug.name userGroupIdName,
+        ug.name userGroupName,
         ti.tablename tableName,
         gtr.importance_privilege,
         gtr.security_privilege,

@@ -29,7 +29,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.atlas</groupId>
     <artifactId>apache-atlas</artifactId>
-    <version>1.15.0</version>
+    <version>1.16.0</version>
     <description>Metadata Management and Data Governance Platform over Hadoop</description>
     <name>metaspace</name>
     <packaging>pom</packaging>
@@ -182,7 +182,7 @@
 
         <!-- Needed for hooks -->
         <aopalliance.version>1.0</aopalliance.version>
-        <jackson.version>2.9.6</jackson.version>
+        <jackson.version>2.10.1</jackson.version>
 
         <!-- Apache commons -->
         <commons-conf.version>1.10</commons-conf.version>
@@ -209,10 +209,10 @@
 
         <!-- Storm dependencies -->
         <codehaus.woodstox.stax2-api.version>3.1.4</codehaus.woodstox.stax2-api.version>
-        <woodstox-core.version>5.0.3</woodstox-core.version>
+        <woodstox-core.version>6.2.8</woodstox-core.version>
         <!-- Storm dependencies -->
 
-        <quartz.version>2.3.0</quartz.version>
+        <quartz.version>2.3.2</quartz.version>
 
         <PermGen>64m</PermGen>
         <MaxPermGen>512m</MaxPermGen>
@@ -1060,7 +1060,7 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-all</artifactId>
-                <version>1.8.5</version>
+                <version>1.10.19</version>
                 <scope>test</scope>
             </dependency>
 

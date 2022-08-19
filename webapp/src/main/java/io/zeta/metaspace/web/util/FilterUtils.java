@@ -102,7 +102,7 @@ public class FilterUtils {
         source = replaceWithCase(source, "xp_cmdshell", "");
         source = replaceWithCase(source, "/add", "");
         source = replaceWithCase(source, "net user", "");
-        //去除执行存储过程的命令关键字 
+        //去除执行存储过程的命令关键字
         source = replaceWithCase(source, "exec", "");
         source = replaceWithCase(source, "execute", "");
         //去除系统存储过程或扩展存储过程关键字

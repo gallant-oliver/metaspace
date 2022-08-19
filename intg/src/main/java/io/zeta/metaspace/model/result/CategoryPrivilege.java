@@ -3,28 +3,10 @@ package io.zeta.metaspace.model.result;
 import io.zeta.metaspace.MetaspaceConfig;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 
-/*
-{
-    "guid": "sit consequat ullamco deserunt",
-    "name": "laboris aliquip mollit laborum nostrud",
-    "description": "enim quis",
-    "upBrotherCategoryGuid": null,
-    "downBrotherCategoryGuid": null,
-    "parentCategoryGuid": "Excepteur exercitation",
-	"privilege":{
-	"hide": false,
-	"show": true,
-	"addSibling":true,
-	"addChildren":true,
-	"createRelation":true,
-	"delete":true,
-	"deleteRelation":true,
-	"addOwner":""
-	}
-  }
-]
- */
-public class CategoryPrivilege {
+import java.io.Serializable;
+
+public class CategoryPrivilege implements Serializable {
+    private static final long serialVersionUID = -7323844569496221180L;
     private String guid;
     private String name;
     private String parentCategoryGuid;
@@ -56,6 +38,7 @@ public class CategoryPrivilege {
     public void setEdit(boolean edit) {
         this.edit = edit;
     }
+
     private Boolean read;
     private Boolean editCategory;
     private Boolean editItem;
@@ -79,29 +62,30 @@ public class CategoryPrivilege {
     }
 
 
+    public CategoryPrivilege(CategoryPrivilegeV2 category) {
+        this.guid = category.getGuid();
+        this.name = category.getName();
+        this.parentCategoryGuid = category.getParentCategoryGuid();
+        this.upBrotherCategoryGuid = category.getUpBrotherCategoryGuid();
+        this.downBrotherCategoryGuid = category.getDownBrotherCategoryGuid();
+        this.description = category.getDescription();
+        this.level = category.getLevel();
+        this.count = category.getCount();
+        this.code = category.getCode();
+        this.sort = category.getSort();
+    }
 
+    ;
 
-    public CategoryPrivilege(CategoryPrivilegeV2 category){
-        this.guid=category.getGuid();
-        this.name=category.getName();
-        this.parentCategoryGuid=category.getParentCategoryGuid();
-        this.upBrotherCategoryGuid=category.getUpBrotherCategoryGuid();
-        this.downBrotherCategoryGuid=category.getDownBrotherCategoryGuid();
-        this.description=category.getDescription();
-        this.level=category.getLevel();
-        this.count=category.getCount();
-        this.code=category.getCode();
-        this.sort=category.getSort();
-    };
-    public CategoryPrivilege(CategoryEntityV2 categoryEntityV2){
+    public CategoryPrivilege(CategoryEntityV2 categoryEntityV2) {
         this.guid = categoryEntityV2.getGuid();
-        this.name=categoryEntityV2.getName();
+        this.name = categoryEntityV2.getName();
         this.parentCategoryGuid = categoryEntityV2.getParentCategoryGuid();
-        this.upBrotherCategoryGuid=categoryEntityV2.getUpBrotherCategoryGuid();
-        this.downBrotherCategoryGuid=categoryEntityV2.getDownBrotherCategoryGuid();
-        this.description=categoryEntityV2.getDescription();
-        this.level=categoryEntityV2.getLevel();
-        this.objectCount=0;
+        this.upBrotherCategoryGuid = categoryEntityV2.getUpBrotherCategoryGuid();
+        this.downBrotherCategoryGuid = categoryEntityV2.getDownBrotherCategoryGuid();
+        this.description = categoryEntityV2.getDescription();
+        this.level = categoryEntityV2.getLevel();
+        this.objectCount = 0;
     }
 
 
@@ -127,9 +111,9 @@ public class CategoryPrivilege {
         return level;
     }
 
-    public void mergeCount(int count){
-        if (count>this.count){
-            this.count=count;
+    public void mergeCount(int count) {
+        if (count > this.count) {
+            this.count = count;
         }
     }
 
@@ -177,10 +161,10 @@ public class CategoryPrivilege {
         this.downBrotherCategoryGuid = category.getDownBrotherCategoryGuid();
         this.description = category.getDescription();
         this.level = category.getLevel();
-        this.safe=category.getSafe();
-        this.count=category.getCount();
-        this.code=category.getCode();
-        this.sort=category.getSort();
+        this.safe = category.getSafe();
+        this.count = category.getCount();
+        this.code = category.getCode();
+        this.sort = category.getSort();
     }
 
     public CategoryPrivilege() {
@@ -259,7 +243,8 @@ public class CategoryPrivilege {
         this.code = code;
     }
 
-    public static class Privilege{
+    public static class Privilege implements Serializable {
+        private static final long serialVersionUID = 4692229403224018669L;
         //目录是否隐藏
         private boolean hide;
         //目录是否置灰
@@ -384,47 +369,49 @@ public class CategoryPrivilege {
             this.delete = privilege.isDelete();
             this.deleteRelation = privilege.isDeleteRelation();
             this.addOwner = privilege.isAddOwner();
-            this.edit=privilege.isEdit();
-            this.editSafe=privilege.isEditSafe();
-            this.move=privilege.move;
+            this.edit = privilege.isEdit();
+            this.editSafe = privilege.isEditSafe();
+            this.move = privilege.move;
         }
 
-        public Privilege(boolean hide, boolean ash, boolean addSibling, boolean addChildren, boolean createRelation, boolean delete, boolean deleteRelation, boolean addOwner,boolean edit,boolean editSafe) {
+        public Privilege(boolean hide, boolean ash, boolean addSibling, boolean addChildren, boolean createRelation, boolean delete, boolean deleteRelation, boolean addOwner, boolean edit, boolean editSafe) {
             this.hide = hide;
             this.ash = ash;
             this.addSibling = addSibling;
             this.addChildren = addChildren;
             this.delete = delete;
             this.edit = edit;
-            this.editSafe=editSafe;
+            this.editSafe = editSafe;
             this.createRelation = createRelation;
             this.deleteRelation = deleteRelation;
             this.addOwner = addOwner;
-            this.move=addSibling;
+            this.move = addSibling;
         }
-        public void mergePrivilege(Privilege  privilege){
-            this.ash=this.ash&&privilege.ash;
-            this.hide = this.hide&&privilege.hide;
-            this.addSibling=this.addSibling||privilege.addSibling;
-            this.addChildren=this.addChildren||privilege.addChildren;
-            this.delete=this.delete||privilege.delete;
-            this.edit=this.edit||privilege.edit;
-            this.editSafe=this.editSafe||privilege.editSafe;
-            this.createRelation=this.createRelation||privilege.createRelation;
-            this.deleteRelation=this.deleteRelation||privilege.deleteRelation;
-            this.addOwner=this.addOwner||privilege.addOwner;
-            this.move=this.move||privilege.move;
+
+        public void mergePrivilege(Privilege privilege) {
+            this.ash = this.ash && privilege.ash;
+            this.hide = this.hide && privilege.hide;
+            this.addSibling = this.addSibling || privilege.addSibling;
+            this.addChildren = this.addChildren || privilege.addChildren;
+            this.delete = this.delete || privilege.delete;
+            this.edit = this.edit || privilege.edit;
+            this.editSafe = this.editSafe || privilege.editSafe;
+            this.createRelation = this.createRelation || privilege.createRelation;
+            this.deleteRelation = this.deleteRelation || privilege.deleteRelation;
+            this.addOwner = this.addOwner || privilege.addOwner;
+            this.move = this.move || privilege.move;
 
         }
-        public void adminPrivilege(String guid){
-            this.hide=false;
-            this.addSibling=true;
-            this.addChildren=true;
-            this.delete=true;
-            this.edit=true;
+
+        public void adminPrivilege(String guid) {
+            this.hide = false;
+            this.addSibling = true;
+            this.addChildren = true;
+            this.delete = true;
+            this.edit = true;
             if (MetaspaceConfig.systemCategory.contains(guid)) {
-                this.delete=false;
-                this.edit=false;
+                this.delete = false;
+                this.edit = false;
             }
         }
     }
