@@ -42,6 +42,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryPath;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -1084,6 +1085,7 @@ public class UserGroupService {
         }
         List<String> updateCategory = new ArrayList<>();
         List<String> insertCategory = new ArrayList<>();
+        List<String> allCategory = new ArrayList<>();
         if (categorys.size() > 0) {
             for (CategoryPrivilegeV2 childCategory : childCategoriesPrivileges) {
                 // 若在“分配权限”弹窗中勾选多个目录，所勾选的目录含有手动创建和数据库登记的目录，目录的编辑权限针对数据登记生成的目录不生效。
@@ -1137,13 +1139,13 @@ public class UserGroupService {
             insertCategory.removeAll(DEFAULT_CATEGORY_GUID);
             categoryList.removeAll(DEFAULT_CATEGORY_GUID);
 
-            //目录权限变更消息通知
-            List<String> allCategory = new ArrayList<>();
+            //保留目录权限变更消息通知
             allCategory.addAll(updateCategory);
             allCategory.addAll(insertCategory);
             allCategory.addAll(categoryList);
-            List<String> list = categoryDAO.categoryName(allCategory, tenantId);
-            changeCategoryMessagePush(list,userGroupId,categoryType,tenantId);
+            allCategory.addAll(registeredCategorysAuthAdd);
+            allCategory.addAll(registeredCategorysAuthUpdate);
+
 
             if (updateCategory.size() != 0) {
                 if (isChild) {
@@ -1160,8 +1162,16 @@ public class UserGroupService {
                 userGroupDAO.updateCategoryPrivileges(categoryList, userGroupId, categorys.get(0));
             }
         }
+
+
         Timestamp currentTime = new Timestamp(System.currentTimeMillis());
         userGroupDAO.updateCategory(userGroupId, currentTime, AdminUtils.getUserData().getUserId());
+        //发送消息通知
+        if (!CollectionUtils.isEmpty(allCategory)) {
+            List<String> cateList = allCategory.stream().distinct().collect(Collectors.toList());
+            List<String> list = categoryDAO.categoryName(cateList, tenantId);
+            changeCategoryMessagePush(list, userGroupId, categoryType, tenantId);
+        }
         return childCategoriesPrivileges;
     }
 
@@ -1171,9 +1181,7 @@ public class UserGroupService {
         }
         UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
         List<String> userAccount = userGroupDAO.getAllUserByGroupId(userGroupId);
-        for (String cate : category) {
-            messageCenterService.directoryMessagePush(type, CommonConstant.REMOVE, userGroupByID.getName(), userAccount, cate, tenantId);
-        }
+        messageCenterService.directoryMessagePush(type, CommonConstant.REMOVE, userGroupByID.getName(), userAccount, category, tenantId);
     }
 
     private void changeCategoryMessagePush(List<String> category, String userGroupId, int type, String tenantId) {
@@ -1182,9 +1190,7 @@ public class UserGroupService {
         }
         UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
         List<String> collect = userGroupDAO.getAllUserByGroupId(userGroupId);
-        for (String cate : category) {
-            messageCenterService.directoryMessagePush(type, CommonConstant.CHANGE, userGroupByID.getName(), collect, cate, tenantId);
-        }
+        messageCenterService.directoryMessagePush(type, CommonConstant.CHANGE, userGroupByID.getName(), collect, category, tenantId);
     }
 
     /**
@@ -1219,19 +1225,22 @@ public class UserGroupService {
             List<CategoryPrivilegeV2> childCategoriesPrivileges = userGroupDAO.getParentCategoriesPrivileges(categorIdList, userGroupId, category.getType(), tenantId);
             List<String> updateCategory = new ArrayList<>();
             List<String> insertCategory = new ArrayList<>();
+            List<String> messages = new ArrayList<>();
             for (CategoryPrivilegeV2 childCategory : childCategoriesPrivileges) {
                 if (childCategory.getRead() == null) {
                     insertCategory.add(childCategory.getGuid());
                 } else {
                     updateCategory.add(childCategory.getGuid());
                 }
+                //消息通知代码
                 if (!DEFAULT_CATEGORY_GUID.contains(childCategory.getGuid())) {
-                    messageCenterService.directoryMessagePush(category.getType(), CommonConstant.CHANGE, userGroupByID.getName(), collect, childCategory.getName(), tenantId);
+                    messages.add(childCategory.getName());
                 }
             }
             // 1-贴源层、2-基础层、4-通用层、5-应用层不需要分配权限
             updateCategory.removeAll(DEFAULT_CATEGORY_GUID);
             insertCategory.removeAll(DEFAULT_CATEGORY_GUID);
+            messageCenterService.directoryMessagePush(category.getType(), CommonConstant.CHANGE, userGroupByID.getName(), collect, messages, tenantId);
             if (updateCategory.size() != 0) {
                 userGroupDAO.updateChildCategoryPrivileges(updateCategory, userGroupId, categoryPrivilege);
             }
@@ -1364,7 +1373,7 @@ public class UserGroupService {
         List<CategoryPrivilegeV2> userGroupCategory = Lists.newArrayList(getUserGroupPrivilegeCategory(groupId,tenantId,type).values());
 
 
-        Map<String,CategoryPrivilegeV2> userMap = getUserPrivilegeCategory(tenantId,type,isAll);
+        Map<String, CategoryPrivilegeV2> userMap = getUserPrivilegeCategory(tenantId, type, isAll, null);
 
         //合并用户组和用户目录权限
         for (CategoryPrivilegeV2 category:userGroupCategory){
@@ -1442,7 +1451,7 @@ public class UserGroupService {
     public List<CategoryGroupAndUser> getNoPrivilegeCategory(String groupId,int type,String tenantId,boolean isAll) throws AtlasBaseException {
         List<CategoryGroupAndUser> categories = new ArrayList<>();
         //获取用户权限目录
-        List<CategoryPrivilegeV2> userCategory = Lists.newArrayList(getUserPrivilegeCategory(tenantId,type,isAll).values());
+        List<CategoryPrivilegeV2> userCategory = Lists.newArrayList(getUserPrivilegeCategory(tenantId, type, isAll, null).values());
 
         //获取用户组权限目录
         Map<String,CategoryPrivilegeV2> userGroupMap = getUserGroupPrivilegeCategory(groupId,tenantId,type);
@@ -1541,16 +1550,18 @@ public class UserGroupService {
      * @return
      * @throws AtlasBaseException
      */
-    public Map<String,CategoryPrivilegeV2> getUserPrivilegeCategory(String tenantId,int type,boolean isAll) throws AtlasBaseException {
-        List<CategoryPrivilegeV2> userCategories=null;
-        Map<String,CategoryPrivilegeV2> userMap = new HashMap<>();
-        if (isAll){
-            userCategories=userGroupDAO.getAllCategoryPrivilege(type,tenantId);
-        }else{
-            User user = AdminUtils.getUserData();
+    public Map<String, CategoryPrivilegeV2> getUserPrivilegeCategory(String tenantId, int type, boolean isAll, String userId) throws AtlasBaseException {
+        List<CategoryPrivilegeV2> userCategories = null;
+        Map<String, CategoryPrivilegeV2> userMap = new HashMap<>();
+        if (isAll) {
+            userCategories = userGroupDAO.getAllCategoryPrivilege(type, tenantId);
+        } else {
+            if (userId == null) {
+                userId = AdminUtils.getUserData().getUserId();
+            }
             //获取用户组
-            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
-            if (userGroupIds==null||userGroupIds.size()==0){
+            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(userId, tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(userGroupIds)) {
                 return userMap;
             }
             //获取用户组对应的权限目录
@@ -1580,7 +1591,7 @@ public class UserGroupService {
             } else {
                 userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type, allDBNames);
             }
-            List<String> categoryIds = userCategories.stream().map(category -> category.getGuid()).collect(Collectors.toList());
+            List<String> categoryIds = userCategories.stream().map(CategoryPrivilegeV2::getGuid).collect(Collectors.toList());
             if (CollectionUtils.isEmpty(categoryIds)) {
                 return userMap;
             }
@@ -1629,7 +1640,7 @@ public class UserGroupService {
             return;
         }
         CategoryEntityV2 firstCategory = categoryDAO.queryByGuid(categoryIds.get(0), tenantId);
-        Map<String, CategoryPrivilegeV2> userMap = getUserPrivilegeCategory(tenantId, firstCategory.getCategoryType(), false);
+        Map<String, CategoryPrivilegeV2> userMap = getUserPrivilegeCategory(tenantId, firstCategory.getCategoryType(), false, null);
         if (!isDeleteCategory(categoryIds,userMap,userGroupId,firstCategory.getCategoryType(),tenantId)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "权限不足，无法移除，请检查对用户对当前目录或子目录的权限");
         }
@@ -1660,9 +1671,7 @@ public class UserGroupService {
         List<String> user = userGroupDAO.getAllUserByGroupId(userGroupId);
         UserGroup userGroupByID = userGroupDAO.getUserGroupByID(userGroupId);
         Integer categoryType = categoryDAO.queryByGuid(ids.get(0), tenantId).getCategoryType();
-        for (String cate : list) {
-            messageCenterService.directoryMessagePush(categoryType, CommonConstant.REMOVE, userGroupByID.getName(), user, cate, tenantId);
-        }
+        messageCenterService.directoryMessagePush(categoryType, CommonConstant.REMOVE, userGroupByID.getName(), user, list, tenantId);
     }
 
     /**
@@ -1676,9 +1685,9 @@ public class UserGroupService {
         Map<String, CategoryPrivilegeV2> userCategoryMap;
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
         if (categoryType==3||categoryType==4){
-            userCategoryMap = getUserPrivilegeCategory(tenantId, categoryType, true);
+            userCategoryMap = getUserPrivilegeCategory(tenantId, categoryType, true, null);
         }else{
-            userCategoryMap = getUserPrivilegeCategory(tenantId, categoryType, false);
+            userCategoryMap = getUserPrivilegeCategory(tenantId, categoryType, false, null);
         }
         for (CategoryPrivilegeV2 category : userCategoryMap.values()) {
             CategoryPrivilege categoryPrivilege = new CategoryPrivilege(category);
@@ -1787,7 +1796,7 @@ public class UserGroupService {
      * @throws AtlasBaseException
      */
     public void deleteGroupPrivilege(List<String> groupIds,String categoryId,String tenantId) throws SQLException, AtlasBaseException {
-        if (groupIds==null){
+        if (CollectionUtils.isEmpty(groupIds)){
             return;
         }
 
@@ -1795,17 +1804,16 @@ public class UserGroupService {
         CategoryEntityV2 categoryByGuid = categoryDAO.queryByGuid(categoryId, tenantId);
         String parentCategoryGuid = categoryByGuid.getParentCategoryGuid();
         List<RoleModulesCategories.Category> childCategoriesPrivileges = userGroupDAO.getChildCategorys(categoryList, categoryByGuid.getCategoryType(), tenantId);
-        List<String> ids = childCategoriesPrivileges.stream().map(categoryPrivilegeV2 -> categoryPrivilegeV2.getGuid()).collect(Collectors.toList());
+        List<String> ids = childCategoriesPrivileges.stream().map(RoleModulesCategories.Category::getGuid).collect(Collectors.toList());
         ids.addAll(categoryList);
 
-        if (parentCategoryGuid!=null&&parentCategoryGuid.length()!=0){
-            for (String userGroupId:groupIds){
-
-                if (parentCategoryGuid!=null&&parentCategoryGuid.length()!=0){
+        if (!StringUtils.isEmpty(parentCategoryGuid)) {
+            for (String userGroupId : groupIds) {
+                if (parentCategoryGuid.length() != 0) {
                     CategoryPrivilegeV2 parentCategory = userGroupDAO.getCategoriesPrivileges(parentCategoryGuid, userGroupId);
-                    if (parentCategory!=null&&parentCategory.getRead()!=null&&parentCategory.getRead()){
+                    if (parentCategory != null && parentCategory.getRead() != null && parentCategory.getRead()) {
                         UserGroup userGroup = userGroupDAO.getUserGroupByID(userGroupId);
-                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "父目录对用户组："+userGroup.getName()+"有权限，无法移除");
+                        throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "父目录对用户组：" + userGroup.getName() + "有权限，无法移除");
                     }
                 }
             }
@@ -1813,6 +1821,7 @@ public class UserGroupService {
         Timestamp currentTime = new Timestamp(System.currentTimeMillis());
         userGroupDAO.updateUserGroups(groupIds, currentTime,AdminUtils.getUserData().getUserId());
         userGroupDAO.deleteGroupPrivilege(ids,groupIds);
+        messageCenterService.directoryMessagePush(groupIds, categoryId, tenantId);
     }
 
     /**

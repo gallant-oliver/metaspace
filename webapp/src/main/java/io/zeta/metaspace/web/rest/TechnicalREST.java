@@ -574,7 +574,7 @@ public class TechnicalREST {
             } else {
                 categoryPrivileges = dataManageService.importCategory(categoryId, importCategory.getDirection(), file, importCategory.isAuthorized(), CATEGORY_TYPE, tenantId);
             }
-            fileInfoService.createFileRecord(upload, FileInfoPath.TECHNICAL_CATEGORY,file);
+            fileInfoService.createFileRecord(upload, FileInfoPath.TECHNICAL_CATEGORY, file);
             return ReturnUtil.success(categoryPrivileges);
         } catch (Exception e) {
             log.error(e.getMessage());
@@ -635,7 +635,7 @@ public class TechnicalREST {
             sortCategory.setSort(sort);
             sortCategory.setOrder(order);
             sortCategory.setGuid(guid);
-            List<RoleModulesCategories.Category> categories = dataManageService.sortCategory(sortCategory, CATEGORY_TYPE, tenantId);
+            List<CategoryPrivilege> categories = dataManageService.sortCategory(sortCategory, CATEGORY_TYPE, tenantId);
             return ReturnUtil.success(categories);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "目录排序并变更结构失败");

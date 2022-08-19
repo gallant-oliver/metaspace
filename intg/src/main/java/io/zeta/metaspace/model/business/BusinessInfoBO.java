@@ -73,4 +73,14 @@ public class BusinessInfoBO {
      * 是否发布
      */
     private Boolean publish;
+
+    /**
+     * 流程名称
+     */
+    private String processName;
+
+    /**
+     * 相关制度文件名称
+     */
+    private String systemFileName;
 }

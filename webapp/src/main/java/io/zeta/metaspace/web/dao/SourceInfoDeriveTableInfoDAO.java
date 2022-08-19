@@ -40,7 +40,7 @@ public interface SourceInfoDeriveTableInfoDAO {
             " left join users t4 on t1.operator = t4.userid",
             " where t1.version = -1 and t1.tenant_id = #{tenantId} ",
             " <if test='tableName != null '>",
-            " and ( t1.table_name_en like #{tableName} or t1.table_name_zh like #{tableName})",
+            " and ( lower(t1.table_name_en) like lower(#{tableName}) or lower(t1.table_name_zh) like lower(#{tableName}) ) ",
             " </if>",
             " <if test='state != null '>",
             " and t1.state = #{state}",

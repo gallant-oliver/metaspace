@@ -81,9 +81,11 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.lang.StringUtils;
+
 @Service
 public class TaskManageService {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(TaskManageService.class);
     private static final String JOB_GROUP_NAME = "METASPACE_JOBGROUP";
     private static final String TRIGGER_NAME = "METASPACE_TRIGGER";
@@ -92,7 +94,7 @@ public class TaskManageService {
     private static String engine;
     private static Configuration conf;
     private static Cache<String, List<String>> errorDataCache = CacheBuilder.newBuilder().maximumSize(10000).expireAfterWrite(30, TimeUnit.MINUTES).build();
-    
+
     static {
         try {
             conf = ApplicationProperties.get();
@@ -100,10 +102,10 @@ public class TaskManageService {
             LOG.error(e.toString());
         }
     }
-    
+
     @Autowired
     private TaskManageDAO taskManageDAO;
-    
+
     @Autowired
     private RuleService ruleService;
     @Autowired
@@ -149,8 +151,8 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取任务列表失败");
         }
     }
-    
-    
+
+
     public List<TaskDTO> listEnableTasks(String tenantId) {
         return taskManageDAO.queryEnableTasks(tenantId)
                 .stream()
@@ -161,12 +163,12 @@ public class TaskManageService {
                         .build())
                 .collect(Collectors.toList());
     }
-    
+
     public PageResult getTableList(String dbName, Parameters parameters) throws AtlasBaseException {
         try {
             String databaseId = taskManageDAO.getDbIdByDbName(dbName);
             PageResult<Table> pageResult = metaspaceEntityService.getTableByDB(databaseId, true, parameters.getOffset(), parameters.getLimit());
-            
+
             List<Table> tableList = pageResult.getLists();
             if (Objects.nonNull(tableList) && tableList.size() > 0) {
                 Table tmpTable = taskManageDAO.getDbAndTableName(tableList.get(0).getTableId());
@@ -257,7 +259,7 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组列表失败");
         }
     }
-    
+
     public List<TaskWarningHeader.WarningGroupHeader> getAllWarningGroup(String tenantId) throws AtlasBaseException {
         try {
             return taskManageDAO.getAllWarningGroup(tenantId);
@@ -266,18 +268,18 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取告警组列表失败");
         }
     }
-    
+
     @Transactional(rollbackFor = Exception.class)
     public void addDataQualityTask(TaskInfo taskInfo, String tenantId) throws AtlasBaseException {
         try {
             Timestamp currentTime = DateUtils.currentTimestamp();
             DataQualityTask dataQualityTask = new DataQualityTask();
-            
+
             List<String> dataQualityTaskByName = taskManageDAO.getDataQualityTaskByName(taskInfo.getTaskName(), tenantId);
             if (dataQualityTaskByName != null && dataQualityTaskByName.size() > 0) {
                 throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务名称已经存在");
             }
-            
+
             //id
             String guid = UUID.randomUUID().toString();
             dataQualityTask.setId(guid);
@@ -601,9 +603,9 @@ public class TaskManageService {
             LOG.error("获取任务信息失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取任务信息失败");
         }
-    
+
     }
-    
+
     public void enableTask(String taskId) throws AtlasBaseException {
         try {
             String qrtzName = taskManageDAO.getQrtzJobByTaskId(taskId);
@@ -621,7 +623,7 @@ public class TaskManageService {
                 } else {
                     addQuartzJob(taskId, qrtzName);
                 }
-                
+
             }
             //设置任务状态为【启用】
             taskManageDAO.updateTaskEnableStatus(taskId, true);
@@ -630,7 +632,7 @@ public class TaskManageService {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "开启任务失败");
         }
     }
-    
+
     public void disableTask(String taskId) throws AtlasBaseException {
         try {
             String jobName = taskManageDAO.getQrtzJobByTaskId(taskId);
@@ -643,7 +645,7 @@ public class TaskManageService {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭模板失败");
         }
     }
-    
+
     public String startTaskNow(String taskId) throws AtlasBaseException {
         if (QuartzJob.STATE_MAP.containsKey(taskId)) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "任务正在执行中");
@@ -858,6 +860,14 @@ public class TaskManageService {
                         tableRuleSuggestion.add(record.getObjectName() + suffix);
                     } else if (1 == record.getScope() && 1 == record.getCheckStatus()) {
                         columnRuleSuggestion.add(record.getObjectName() + suffix);
+                    } else if (3 == record.getScope() && record.getCheckStatus() == null) {
+                        tableRuleSuggestion.add(record.getObjectName() + noEnd);
+                    } else if (3 == record.getScope() && 1 == record.getCheckStatus()) {
+                        tableRuleSuggestion.add(record.getObjectName() + suffix);
+                    } else if (3 == record.getScope() && 0 == record.getCheckStatus()) {
+                        String remarkEnd = "存在%s个表描述空值的情况，建议修复";
+                        remarkEnd = String.format(remarkEnd, record.getErrorTblNameCount());
+                        tableRuleSuggestion.add(record.getObjectName() + remarkEnd);
                     }
                     Integer sequence = taskManageDAO.getSubTaskSequence(record.getSubtaskId());
                     record.setSubTaskSequence(sequence);
@@ -880,6 +890,7 @@ public class TaskManageService {
             Map<String, SubTaskRecord> map = new LinkedHashMap<>(); //配置的子任务要满足顺序一致，使用LinkedHashMap保证，且查询sql要保证有序性
             List<TaskRuleExecutionRecord> list = taskManageDAO.getTaskRuleExecutionRecordList(executionId, subtaskId, tenantId);
             Boolean filing = taskManageDAO.getFilingStatus(executionId) == 0 ? false : true;
+            HdfsUtils hdfsUtil = new HdfsUtils();
             for (TaskRuleExecutionRecord record : list) {
                 record.setFiling(filing);
 
@@ -960,6 +971,40 @@ public class TaskManageService {
                         }
                         map.get(record.getSubtaskId()).setTaskRuleExecutionRecords(resultList);
                     }
+                } else if (3 == record.getScope()) {
+                    CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
+                    String dataSourceName = getDataSourceName(paramInfo.getDataSourceId());
+                    record.setDataSourceName(dataSourceName);
+                    record.setDbName(paramInfo.getSchema());
+                    record.setObjectName(paramInfo.getSchema());
+
+                    // 从hdfs拿到表空值描述的表集合
+                    String ruleExecutionId = record.getRuleExecutionId();
+                    TaskRuleExecutionRecord ruleRecord = taskManageDAO.getTaskRuleExecutionRecord(ruleExecutionId, tenantId);
+                    String fileName = LivyTaskSubmitHelper.getOutName("data");
+                    String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(ruleExecutionId, ruleRecord.getCreateTime().getTime(), fileName);
+                    List<String> tblNamelist = errorDataCache.getIfPresent(hdfsOutPath);
+                    if (tblNamelist == null) {
+                        tblNamelist = hdfsUtil.exists(hdfsOutPath) ? hdfsUtil.catFile(hdfsOutPath, errorDataSize) : new ArrayList<>(); //无输出的规则或者执行异常的任务HDFS上是不会有输出结果的，返回空数据
+                    }
+                    List<Map<String, Object>> data = tblNamelist.stream().map(line -> {
+                        Map<String, Object> mapVal = GsonUtils.getInstance().fromJson(line, new TypeToken<Map<String, Object>>() {
+                        }.getType());
+                        return mapVal;
+                    }).collect(Collectors.toList());
+                    List<String> errorArray = new ArrayList<>();
+                    for (Map<String, Object> item : data) {
+                        if (item.get("TABLE_NAME") != null) {
+                            errorArray.add(item.get("TABLE_NAME").toString());
+                        } else if (item.get("table_name") != null) {
+                            errorArray.add(item.get("table_name").toString());
+                        }
+                    }
+                    // 异常表用分号区分返回给前端
+                    String errorTblNameArray = StringUtils.join(errorArray, ";");
+                    Integer errorTblNameCount = (CollectionUtils.isEmpty(errorArray) ? 0 : errorArray.size());
+                    record.setErrorTblNameArray(errorTblNameArray);
+                    record.setErrorTblNameCount(errorTblNameCount);
                 }
             }
             return new ArrayList<>(map.values());
@@ -1105,6 +1150,12 @@ public class TaskManageService {
                 getDataByList(list, parameters, errorData);
                 return errorData;
             }
+        } else if (3 == record.getScope()) {
+            CustomizeParam paramInfo = GsonUtils.getInstance().fromJson(objectId, CustomizeParam.class);
+            String dataSourceName = getDataSourceName(paramInfo.getDataSourceId());
+            errorData.setDataSourceName(dataSourceName);
+            errorData.setDbName(paramInfo.getSchema());
+            errorData.setDataSourceId(paramInfo.getDataSourceId());
         }
         String fileName = LivyTaskSubmitHelper.getOutName("data");
         String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(ruleExecutionId, record.getCreateTime().getTime(), fileName);
@@ -1348,14 +1399,15 @@ public class TaskManageService {
 
     /**
      * 数据库更新告警信息
+     *
      * @param task
      * @param checkStatus
      * @param orangeWarningcheckStatus
      * @param redWarningcheckStatus
      * @param taskRuleExecute
      */
-    @Transactional(rollbackFor=Exception.class)
-    public void updateWarningInfo(AtomicTaskExecution task, RuleExecuteStatus checkStatus, RuleExecuteStatus orangeWarningcheckStatus, RuleExecuteStatus redWarningcheckStatus, DataQualityTaskRuleExecute taskRuleExecute) throws Exception{
+    @Transactional(rollbackFor = Exception.class)
+    public void updateWarningInfo(AtomicTaskExecution task, RuleExecuteStatus checkStatus, RuleExecuteStatus orangeWarningcheckStatus, RuleExecuteStatus redWarningcheckStatus, DataQualityTaskRuleExecute taskRuleExecute) throws Exception {
         taskManageDAO.updateRuleExecutionWarningInfo(taskRuleExecute);
 
         //普通告警数量
@@ -1377,6 +1429,6 @@ public class TaskManageService {
             taskManageDAO.updateTaskExecuteWarningStatus(task.getId(), WarningStatus.WARNING.code);
         }
     }
-    
-    
+
+
 }

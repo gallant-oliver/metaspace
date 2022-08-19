@@ -66,8 +66,8 @@ import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserIdAndName;
 import io.zeta.metaspace.model.usergroup.DBInfo;
 import io.zeta.metaspace.model.usergroup.UserGroupIdAndName;
-import io.zeta.metaspace.utils.*;
 import io.zeta.metaspace.utils.DateUtils;
+import io.zeta.metaspace.utils.*;
 import io.zeta.metaspace.web.dao.*;
 import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.model.CommonConstant;
@@ -81,7 +81,7 @@ import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
 import org.apache.atlas.repository.Constants;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.poi.ss.usermodel.*;
@@ -99,8 +99,9 @@ import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer;
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.lang.reflect.Type;
-import java.sql.*;
+import java.net.URLDecoder;
 import java.sql.Date;
+import java.sql.*;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -1608,32 +1609,16 @@ public class DataShareService {
      */
     public PageResult<ProjectInfo> searchProject(Parameters parameters, String tenantId) throws AtlasBaseException {
         PageResult<ProjectInfo> commonResult = new PageResult<>();
-
         String query = parameters.getQuery();
         if (query != null) {
             parameters.setQuery(query.replaceAll("%", "/%").replaceAll("_", "/_"));
         }
-
-        //校验租户先是否有用户
-        SecuritySearch securitySearch = new SecuritySearch();
-        securitySearch.setTenantId(tenantId);
-        PageResult<UserAndModule> userAndModules = tenantService.getUserAndModule(0, -1, securitySearch);
-        List<String> userIds = userAndModules.getLists().stream().map(UserAndModule::getAccountGuid).collect(Collectors.toList());
-        List<ProjectInfo> lists;
-        try {
-            lists = shareDAO.searchProject(parameters, AdminUtils.getUserData().getUserId(), tenantId, userIds);
-        } catch (SQLException e) {
-            LOG.error("SQL执行异常", e);
-            lists = new ArrayList<>();
-        }
-        if (lists == null || lists.size() == 0) {
+        List<ProjectInfo> lists = shareDAO.searchProject(parameters, tenantId);
+        if (CollectionUtils.isEmpty(lists)) {
             return commonResult;
         }
         String userId = AdminUtils.getUserData().getUserId();
         for (ProjectInfo projectInfo : lists) {
-            if (userIds == null || userIds.size() == 0) {
-                projectInfo.setUserCount(0);
-            }
             projectInfo.setEditManager(false);
             if (projectInfo.getManagerId().equals(userId)) {
                 projectInfo.setEditManager(true);
@@ -1798,7 +1783,7 @@ public class DataShareService {
             }
             return users;
         } catch (Exception e) {
-            LOG.error(e.getMessage());
+            LOG.error("getManager exception is {}", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "查询失败:" + e.getMessage());
         }
     }
@@ -1952,7 +1937,7 @@ public class DataShareService {
             HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "更新api策略:" + apiInfo.getName() + " " + apiInfo.getVersion());
 
             if (Stream.of(ApiStatusEnum.UP, ApiStatusEnum.DOWN).map(ApiStatusEnum::getName).noneMatch(s -> s.equals(apiInfo.getStatus()))) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未审核的api无法只编辑策略");
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未审核的api无法编辑策略");
             }
 
             long count = apiPolyDao.countApiPolyByStatus(apiId, version, AuditStatusEnum.NEW);
@@ -1968,7 +1953,10 @@ public class DataShareService {
 
             //添加审核记录
             auditService.insertApiAudit(tenantId, apiId, version, apiInfo.getVersionNum(), apiPoly.getId());
+        } catch (AtlasBaseException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
+            LOG.error("updateAPIInfoV2ApiPolyEntity exception is {}", e);
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新 API 策略失败");
         }
     }
@@ -2534,15 +2522,21 @@ public class DataShareService {
 
         // api消息推送给管理员审批
         String projectId = apiInfo.getProjectId();
-        String manage = shareDAO.getProjectManager(projectId);
+        String manage = null;
+        if (StringUtils.isNotEmpty(projectId)) {
+            manage = shareDAO.getProjectManager(projectId);
+        }
         if (StringUtils.isNotEmpty(manage)) {
             List<String> userIdList = new ArrayList<>(Arrays.asList(manage));
-            List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
+            List<String> userEmailList = (CollectionUtils.isNotEmpty(userIdList) ? userDAO.getUsersEmailByIds(userIdList) : null);
             MessageEntity message = null;
             message = new MessageEntity(DATA_SERVICE_AUDIT_START.type, MessagePush.getFormattedMessageName(DATA_SERVICE_AUDIT_START.name, apiInfo.getName()), DATA_SERVICE_AUDIT_START.module, ProcessEnum.PROCESS_APPROVED_NOT_APPROVED.code);
-            for (String userEmail : userEmailList) {
-                message.setCreateUser(userEmail);
-                messageCenterService.addMessage(message, tenantId);
+
+            if (CollectionUtils.isNotEmpty(userEmailList)) {
+                for (String userEmail : userEmailList) {
+                    message.setCreateUser(userEmail);
+                    messageCenterService.addMessage(message, tenantId);
+                }
             }
         }
 
@@ -2963,61 +2957,50 @@ public class DataShareService {
 
     @HystrixCommand()
     public QueryResult queryApiDataV2(HttpServletRequest request) throws AtlasBaseException {
-        String requestURL = request.getRequestURL().toString();
-        String path = requestURL.replaceFirst(".*/api/metaspace/dataservice/", "");
-        String[] split = path.split("/");
-        String id = split[0];
-        String version = split[1];
-        ApiInfoV2 apiInfoByVersion = getApiInfoByVersion(id, version);
+        try {
+            String requestURL = request.getRequestURL().toString();
+            String path = requestURL.replaceFirst(".*/api/metaspace/dataservice/", "");
+            String[] split = path.split("/");
+            String id = split[0];
+            String version = split[1];
+            ApiInfoV2 apiInfoByVersion = getApiInfoByVersion(id, version);
 
-        ApiPolyEntity apiPolyEntity = apiInfoByVersion.getApiPolyEntity();
+            ApiPolyEntity apiPolyEntity = apiInfoByVersion.getApiPolyEntity();
 
-        if (apiPolyEntity != null && apiPolyEntity.getIpRestriction() != null) {
-            handleIpRestriction(RequestIpUtils.getRealRequestIpAddress(request), apiPolyEntity.getIpRestriction());
+            if (apiPolyEntity != null && apiPolyEntity.getIpRestriction() != null) {
+                handleIpRestriction(RequestIpUtils.getRealRequestIpAddress(request), apiPolyEntity.getIpRestriction());
+            }
+            if (!apiInfoByVersion.getRequestMode().equals(request.getMethod())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求方式错误");
+            }
+            Map<String, String> queryMap = new HashMap<>();
+
+            if (!ApiStatusEnum.UP.getName().equals(apiInfoByVersion.getStatus())) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API未上架");
+            }
+            getFieldsValue(request, apiInfoByVersion, split, queryMap);
+            String page_num = queryMap.get("page_num");
+            String page_size = queryMap.get("page_size");
+            long limit = 10;
+            long offset = 0;
+            if (page_size != null) {
+                limit = Long.parseLong(page_size);
+            }
+            if (page_num != null && Long.parseLong(page_num) > 0) {
+                offset = (Long.parseLong(page_num) - 1) * limit;
+            }
+            Map resultMap = testAPIV2(id, apiInfoByVersion, limit, offset);
+            List<LinkedHashMap<String, Object>> result = (List<LinkedHashMap<String, Object>>) resultMap.get("queryResult");
+
+            long count = Long.parseLong(resultMap.get("queryCount").toString());
+            JsonQueryResult queryResult = new JsonQueryResult();
+            queryResult.setDatas(result);
+            queryResult.setTotalCount(count);
+            shareDAO.updateUsedCount(path);
+            return queryResult;
+        } catch (UnsupportedEncodingException e) {
+            throw new AtlasBaseException(e);
         }
-
-        if (!apiInfoByVersion.getRequestMode().equals(request.getMethod())) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "请求方式错误");
-        }
-        Map<String, String> queryMap = new HashMap<>();
-
-        if (!ApiStatusEnum.UP.getName().equals(apiInfoByVersion.getStatus())) {
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "当前API未上架");
-        }
-        getFieldsValue(request, apiInfoByVersion, split, queryMap);
-        String page_num = queryMap.get("page_num");
-        String page_size = queryMap.get("page_size");
-        long limit = 10;
-        long offset = 0;
-        if (page_size != null) {
-            limit = Long.valueOf(page_size);
-        }
-        if (page_num != null && Long.valueOf(page_num) > 0) {
-            offset = (Long.valueOf(page_num) - 1) * limit;
-        }
-        Map resultMap = testAPIV2(id, apiInfoByVersion, limit, offset);
-        List<LinkedHashMap<String, Object>> result = (List<LinkedHashMap<String, Object>>) resultMap.get("queryResult");
-
-        Long count = Long.parseLong(resultMap.get("queryCount").toString());
-
-//        String xml = "xml";
-//        String acceptHeader = request.getHeader("Accept");
-//        if(acceptHeader.contains(xml)) {
-//            XmlQueryResult queryResult = new XmlQueryResult();
-//            XmlQueryResult.QueryData queryData = new XmlQueryResult.QueryData();
-//            queryData.setData(result);
-//            queryResult.setTotalCount(count);
-//            queryResult.setDatas(queryData);
-//            shareDAO.updateUsedCount(path);
-//            return queryResult;
-//        } else {
-//
-//        }
-        JsonQueryResult queryResult = new JsonQueryResult();
-        queryResult.setDatas(result);
-        queryResult.setTotalCount(count);
-        shareDAO.updateUsedCount(path);
-        return queryResult;
     }
 
     public List<LinkedHashMap<String, Object>> processSensitiveDataV2(ApiInfoV2 apiInfo, List<ApiDesensitization> desensitization, List<LinkedHashMap<String, Object>> result) {
@@ -3052,15 +3035,16 @@ public class DataShareService {
         }
     }
 
-    public void getFieldsValue(HttpServletRequest request, ApiInfoV2 apiInfo, String[] paths, Map<String, String> queryMap) throws AtlasBaseException {
+    public void getFieldsValue(HttpServletRequest request, ApiInfoV2 apiInfo, String[] paths, Map<String, String> queryMap) throws AtlasBaseException, UnsupportedEncodingException {
 
         String apiPath = apiInfo.getPath();
         List<ApiInfoV2.FieldV2> param = apiInfo.getParam();
         String queryString = request.getQueryString();
         if (queryString != null && queryString.length() != 0) {
-            String[] querys = queryString.split("&");
-            for (String query : querys) {
-                String[] entity = query.split("=");
+            String[] querySubStr = queryString.split("&");
+            for (String query : querySubStr) {
+                String decode = URLDecoder.decode(ConvertPercent.convertPercent(query), "utf-8");
+                String[] entity = decode.split("=");
                 queryMap.put(entity[0], entity[1]);
             }
         }
@@ -3069,11 +3053,13 @@ public class DataShareService {
             String value = null;
             String name = field.getName();
             String place = field.getPlace();
-            if ("PATH".equals(place)) {
+            if (apiPath.contains("{") && apiPath.contains("}") && "PATH".equals(place)) {
                 String[] apiPaths = apiPath.split("/");
                 for (int i = 0; i < apiPaths.length; i++) {
-                    if (apiPaths[i].equals("{" + name + "}")) {
-                        value = paths[i + 1];
+                    if (apiPaths[i].contains("{") && apiPaths[i].contains("}") && apiPaths[i].equals("{" + name + "}")) {
+                        //真实path = randomId/版本/定义的path
+                        value = paths[i + 2];
+                        break;
                     }
                 }
             }
@@ -3549,7 +3535,9 @@ public class DataShareService {
                         headerMap.put(par.getName(), par.getValue());
                     }
                     if (CommonConstant.PATH_PARAM.equals(par.getPlace())) {
-                        path.append("/").append("{").append(par.getValue()).append("}");
+                        String s = path.toString();
+                        String replace = s.replace("{" + par.getName() + "}", par.getValue().toString());
+                        path = new StringBuilder(replace);
                     }
                     if (CommonConstant.QUERY_PARAM.equals(par.getPlace())) {
                         paramMap.put(par.getName(), par.getValue());
@@ -3577,7 +3565,9 @@ public class DataShareService {
                         headerMap.put(par.getName(), par.getValue().toString());
                     }
                     if (CommonConstant.PATH_PARAM.equals(par.getPlace())) {
-                        path.append("/").append("{").append(par.getValue()).append("}");
+                        String s = path.toString();
+                        String replace = s.replace("{" + par.getName() + "}", par.getValue().toString());
+                        path = new StringBuilder(replace);
                     }
                     if (CommonConstant.QUERY_PARAM.equals(par.getPlace())) {
                         paramMap.put(par.getName(), par.getValue().toString());

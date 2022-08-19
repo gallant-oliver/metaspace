@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 
 import static io.zeta.metaspace.model.enums.MessagePush.RESOURCE_AUDIT_INFO_INDEX_DESIGN;
+import static io.zeta.metaspace.model.enums.MessagePush.RESOURCE_AUDIT_INFO_INDEX_DESIGN_CANCEL;
 
 @Service
 public class ApproveServiceImp implements ApproveService {
@@ -134,18 +135,27 @@ public class ApproveServiceImp implements ApproveService {
                 addToMapByClass(moduleItemMap, item);
 
                 // 审核消息推送审核人
-                List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(item.getId());
-                List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
+                ApproveItem approveInfo = approveDao.getApproveItemById(item.getId(), tenant_id);
+                String approveGroup = "";
+                if (approveInfo != null) {
+                    approveGroup = approveInfo.getApproveGroup();
+                }
+                List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroup);
+                List<String> userEmailList = (CollectionUtils.isNotEmpty(userIdList) ? userDAO.getUsersEmailByIds(userIdList) : null);
                 MessageEntity message = null;
+                String businessTypeText = (approveInfo != null ? BusinessType.getTextByCode(approveInfo.getBusinessType()) : null);
+                String objectName = (approveInfo != null ? approveInfo.getObjectName() : null);
                 if ("1".equals(item.getApproveType())) {
-                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.RELEASE, MessagePush.PASS), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()), ProcessEnum.PROCESS_APPROVED.code);
+                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, objectName, businessTypeText, MessagePush.RELEASE, MessagePush.PASS), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, businessTypeText), ProcessEnum.PROCESS_APPROVED.code);
                 } else if ("2".equals(item.getApproveType())) {
-                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.OFFLINE, MessagePush.PASS), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()), ProcessEnum.PROCESS_APPROVED.code);
+                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, objectName, businessTypeText, MessagePush.OFFLINE, MessagePush.PASS), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, businessTypeText), ProcessEnum.PROCESS_APPROVED.code);
                 }
 
-                for (String userEmail : userEmailList) {
-                    message.setCreateUser(userEmail);
-                    messageCenterService.addMessage(message, tenant_id);
+                if (CollectionUtils.isNotEmpty(userEmailList) && message != null) {
+                    for (String userEmail : userEmailList) {
+                        message.setCreateUser(userEmail);
+                        messageCenterService.addMessage(message, tenant_id);
+                    }
                 }
             }
         } else if (ApproveOperate.REJECTED.equals(ApproveOperate.getOprateByCode(paras.getResult())) || ApproveOperate.CANCEL.equals(ApproveOperate.getOprateByCode(paras.getResult()))) { //驳回或者取回
@@ -158,26 +168,48 @@ public class ApproveServiceImp implements ApproveService {
                 item.setApprover(AdminUtils.getUserData().getUserId()); //写入审批人
                 if (ApproveOperate.REJECTED.equals(ApproveOperate.getOprateByCode(paras.getResult()))) {
                     result = ApproveOperate.REJECTED;
-                    approveDao.updateStatus(item);  //todo 批量优化
+
                 } else {
                     result = ApproveOperate.CANCEL;
-                    approveDao.deleteItemById(item); //取回与驳回对业务模块操作一致
+
                 }
                 addToMapByClass(moduleItemMap, item);
 
                 // 审核消息推送审核人
-                List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(item.getId());
-                List<String> userEmailList = userDAO.getUsersEmailByIds(userIdList);
+                ApproveItem approveInfo = approveDao.getApproveItemById(item.getId(), tenant_id);
+                String approveGroup = "";
+                if (approveInfo != null) {
+                    approveGroup = approveInfo.getApproveGroup();
+                }
+                List<String> userIdList = approveGroupDAO.getUserIdByApproveGroup(approveGroup);
+                List<String> userEmailList = (CollectionUtils.isNotEmpty(userIdList) ? userDAO.getUsersEmailByIds(userIdList) : null);
                 MessageEntity message = null;
-                if ("1".equals(item.getApproveType())) {
-                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.RELEASE, MessagePush.REJECT), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()), ProcessEnum.PROCESS_APPROVED.code);
-                } else if ("2".equals(item.getApproveType())) {
-                    message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, item.getObjectName(), item.getBusinessTypeText(), MessagePush.OFFLINE, MessagePush.REJECT), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, item.getBusinessTypeText()), ProcessEnum.PROCESS_APPROVED.code);
+                String businessTypeText = (approveInfo != null ? BusinessType.getTextByCode(approveInfo.getBusinessType()) : null);
+                String objectName = (approveInfo != null ? approveInfo.getObjectName() : null);
+                if (ApproveOperate.REJECTED.equals(result)){
+                    if ("1".equals(item.getApproveType())) {
+                        message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, objectName, businessTypeText, MessagePush.RELEASE, MessagePush.REJECT), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, businessTypeText), ProcessEnum.PROCESS_APPROVED.code);
+                    } else if ("2".equals(item.getApproveType())) {
+                        message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.name, objectName, businessTypeText, MessagePush.OFFLINE, MessagePush.REJECT), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN.module, businessTypeText), ProcessEnum.PROCESS_APPROVED.code);
+                    }
+
+                    approveDao.updateStatus(item);  //todo 批量优化
+                }
+                if (ApproveOperate.CANCEL.equals(result)){
+                    if ("1".equals(item.getApproveType())) {
+                        message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN_CANCEL.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN_CANCEL.name, objectName, businessTypeText, MessagePush.RELEASE), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN_CANCEL.module, businessTypeText), ProcessEnum.PROCESS_CANCEL.code);
+                    } else if ("2".equals(item.getApproveType())) {
+                        message = new MessageEntity(RESOURCE_AUDIT_INFO_INDEX_DESIGN_CANCEL.type, MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN_CANCEL.name, objectName, businessTypeText, MessagePush.OFFLINE), MessagePush.getFormattedMessageName(RESOURCE_AUDIT_INFO_INDEX_DESIGN_CANCEL.module, businessTypeText), ProcessEnum.PROCESS_CANCEL.code);
+                    }
+
+                    approveDao.deleteItemById(item); //取回与驳回对业务模块操作一致
                 }
 
-                for (String userEmail : userEmailList) {
-                    message.setCreateUser(userEmail);
-                    messageCenterService.addMessage(message, tenant_id);
+                if (CollectionUtils.isNotEmpty(userEmailList) && message != null) {
+                    for (String userEmail : userEmailList) {
+                        message.setCreateUser(userEmail);
+                        messageCenterService.addMessage(message, tenant_id);
+                    }
                 }
             }
         }
@@ -185,10 +217,12 @@ public class ApproveServiceImp implements ApproveService {
         for (Map.Entry<String, List<ApproveItem>> en : moduleItemMap.entrySet()) {  //对不同模块审批的回调
             String serviceName = moduleServiceClass.get(ModuleEnum.getModuleById(Integer.parseInt(en.getKey())));
             try {
-                //从容器中获取实现审批业务接口的服务对象
-                Approvable obj = (Approvable) applicationContext.getBean(serviceName);
-                //调用接口方法，继续状态变更业务
-                obj.changeObjectStatus(result.code, tenant_id, en.getValue());
+                if (StringUtils.isNotBlank(serviceName)) {
+                    //从容器中获取实现审批业务接口的服务对象
+                    Approvable obj = (Approvable) applicationContext.getBean(serviceName);
+                    //调用接口方法，继续状态变更业务
+                    obj.changeObjectStatus(result.code, tenant_id, en.getValue());
+                }
             } catch (Exception e) {
                 LOG.error("审批失败", e);
                 throw e;

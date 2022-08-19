@@ -1,6 +1,7 @@
 package io.zeta.metaspace.adapter.sqlserver;
 
 import io.zeta.metaspace.adapter.AbstractAdapterExecutor;
+import io.zeta.metaspace.adapter.AdapterExecutor;
 import io.zeta.metaspace.adapter.AdapterSource;
 import io.zeta.metaspace.utils.ByteFormat;
 import io.zeta.metaspace.utils.DateUtils;
@@ -42,9 +43,9 @@ public class SqlServerAdapterExecutor extends AbstractAdapterExecutor {
     @Override
     public float getTableSize(String db, String tableName, String pool) {
         String querySQL = "SET NOCOUNT ON;exec sp_spaceused '%s.[%s]', true; ";
-        db=db.replaceAll("'","''");
-        tableName=tableName.replaceAll("'","''");
-        querySQL=String.format(querySQL,db,tableName);
+        db = db.replaceAll("'", "''");
+        tableName = tableName.replaceAll("'", "''");
+        querySQL = String.format(querySQL, db, tableName);
         Connection connection = getAdapterSource().getConnection();
         return queryResult(connection, querySQL, resultSet -> {
             try {
@@ -65,14 +66,18 @@ public class SqlServerAdapterExecutor extends AbstractAdapterExecutor {
 
     /**
      * 获取指定数据库表描述为空的表总个数
+     *
      * @param db
      * @param pool
      * @return
      */
-    public float getTblRemarkCountByDb(AdapterSource adapterSource, String user, String db,  String pool, Map<String, Object> map) {
+    public float getTblRemarkCountByDb(AdapterSource adapterSource, String user, String db, String pool, Map<String, Object> map) {
+        Connection connection = adapterSource.getConnectionForDriver(user, db);
+        if (db.contains(".")) {
+            db = db.substring(db.indexOf(".") + 1, db.length());
+        }
         String querySQL = "select count(*) as emptyCount from sys.objects obj left join [sys].[extended_properties] se on obj.object_id = se.major_id and se.minor_id = 0 join sys.schemas s on obj.schema_id=s.schema_id where obj.type = 'u' and (se.value is null or se.value = '') and s.name = '%s'";
-        querySQL=String.format(querySQL,db);
-        Connection connection = adapterSource.getConnection(user, db, pool);
+        querySQL = String.format(querySQL, db);
         return queryResult(connection, querySQL, resultSet -> {
             try {
                 float emptyCount = 0;
@@ -103,62 +108,62 @@ public class SqlServerAdapterExecutor extends AbstractAdapterExecutor {
 
     @Override
     public String getCreateTableSql(String schema, String table) {
-        if(StringUtils.isEmpty(schema) || StringUtils.isEmpty(table)){
+        if (StringUtils.isEmpty(schema) || StringUtils.isEmpty(table)) {
             throw new AtlasBaseException("schema or table is null !");
         }
-        String schemaName=schema.replaceAll("\"","");
-        String[] strs=schemaName.split("\\.");
-        String tableName=table.replaceAll("\"","");
-        String querySql="SELECT TABLE_CATALOG ,TABLE_SCHEMA , TABLE_NAME ,COLUMN_NAME ,IS_NULLABLE,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH ,NUMERIC_PRECISION ,NUMERIC_SCALE,COLUMN_DEFAULT " +
+        String schemaName = schema.replaceAll("\"", "");
+        String[] strs = schemaName.split("\\.");
+        String tableName = table.replaceAll("\"", "");
+        String querySql = "SELECT TABLE_CATALOG ,TABLE_SCHEMA , TABLE_NAME ,COLUMN_NAME ,IS_NULLABLE,DATA_TYPE,CHARACTER_MAXIMUM_LENGTH ,NUMERIC_PRECISION ,NUMERIC_SCALE,COLUMN_DEFAULT " +
                 " FROM INFORMATION_SCHEMA.COLUMNS    " +
-                " WHERE TABLE_CATALOG = '" +strs[0]+"'"+
-                " and TABLE_SCHEMA = '" +strs[1]+"'"+
-                " and TABLE_NAME ='" +tableName+"';";
+                " WHERE TABLE_CATALOG = '" + strs[0] + "'" +
+                " and TABLE_SCHEMA = '" + strs[1] + "'" +
+                " and TABLE_NAME ='" + tableName + "';";
 
-        String createSql=queryResult(querySql, resultSet -> {
+        String createSql = queryResult(querySql, resultSet -> {
             try {
-                StringBuffer sql =new StringBuffer();
+                StringBuffer sql = new StringBuffer();
                 sql.append("CREATE TABLE ");
                 sql.append(schemaName).append(".").append(tableName).append(" ( \n");
 
                 while (resultSet.next()) {
-                    StringBuilder sb=new StringBuilder();
-                    String column_name=resultSet.getString("COLUMN_NAME");
-                    if(Character.isUpperCase(column_name.charAt(0))){
+                    StringBuilder sb = new StringBuilder();
+                    String column_name = resultSet.getString("COLUMN_NAME");
+                    if (Character.isUpperCase(column_name.charAt(0))) {
                         sb.append("\"").append(column_name).append("\" ");
-                    }else{
+                    } else {
                         sb.append(column_name).append(" ");
                     }
-                    String data_type=resultSet.getString("DATA_TYPE");
+                    String data_type = resultSet.getString("DATA_TYPE");
                     sb.append(data_type);
                     int character_maximum_length = resultSet.getInt("CHARACTER_MAXIMUM_LENGTH");
                     int numeric_precision = resultSet.getInt("NUMERIC_PRECISION");
                     int numeric_scale = resultSet.getInt("NUMERIC_SCALE");
-                    if(character_maximum_length>0){
+                    if (character_maximum_length > 0) {
                         sb.append("(").append(character_maximum_length).append(") ");
-                    }else{
-                        if(numeric_precision>0){
+                    } else {
+                        if (numeric_precision > 0) {
                             sb.append("(").append(numeric_precision);
-                            if(numeric_scale>0){
+                            if (numeric_scale > 0) {
                                 sb.append(",").append(numeric_scale).append(")");
-                            }else {
+                            } else {
                                 sb.append(")");
                             }
                         }
                     }
                     boolean is_nullable = resultSet.getBoolean("IS_NULLABLE");
-                    String nullStr= is_nullable ? " NULL " : " NOT NULL ";
+                    String nullStr = is_nullable ? " NULL " : " NOT NULL ";
                     sb.append(nullStr);
                     String column_default = resultSet.getString("COLUMN_DEFAULT");
-                    if(column_default==null||"null".equalsIgnoreCase(column_default.trim())){
+                    if (column_default == null || "null".equalsIgnoreCase(column_default.trim())) {
                         sb.append("#");
-                    }else{
+                    } else {
                         sb.append("DEFAULT ").append(column_default).append("#");
                     }
                     sql.append(sb.toString());
                 }
                 sql.deleteCharAt(sql.lastIndexOf("#")).append("\n);");
-                return sql.toString().replaceAll("#",",\n");
+                return sql.toString().replaceAll("#", ",\n");
             } catch (SQLException e) {
                 throw new AtlasBaseException("查询建表语句失败", e);
             }

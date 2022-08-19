@@ -57,10 +57,8 @@ import org.springframework.util.CollectionUtils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.ResultSetMetaData;
-import java.sql.Timestamp;
+import java.io.File;
+import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -799,7 +797,7 @@ public class QuartzJob implements Job {
             String sql = null;
             String superType = String.valueOf(jobType.code);
             String fileName = LivyTaskSubmitHelper.getOutName("data");
-            String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(task.getId(), task.getTimeStamp(), fileName);
+             String hdfsOutPath = LivyTaskSubmitHelper.getHdfsOutPath(task.getId(), task.getTimeStamp(), fileName);
             if (columnRule) {
                 columnName = adapterExecutor.addEscapeChar(task.getObjectName());
                 switch (jobType) {
@@ -835,23 +833,13 @@ public class QuartzJob implements Job {
                     case EMPTY_VALUE_NUM_TABLE_REMAKR:
                         HashMap<String, Object> map = new HashMap<>();
                         resultValue = adapterExecutor.getTblRemarkCountByDb(adapterSource, user, dbName, pool, map);
-                        writeErrorData(jobType, tableName, columnName, dbName, adapterSource, adapterSource.getConnection(user, dbName, pool), hdfsOutPath, sourceType, map);
+                        Connection connection = ("SQLSERVER".equals(sourceType) ? adapterSource.getConnectionForDriver(user, dbName) : adapterSource.getConnection(user, dbName, pool));
+                        writeErrorData(jobType, tableName, columnName, dbName, adapterSource, connection, hdfsOutPath, sourceType, map);
                         return resultValue;
                     default:
                         sql = String.format(query, sqlDbName, tableName);
                         break;
                 }
-            }
-
-            String columnTypeKey = null;
-            StringJoiner joiner = new StringJoiner(".");
-            if (Objects.nonNull(columnName)) {
-                columnTypeKey = joiner.add(sqlDbName).add(tableName).add(columnName).add(superType).toString();
-            } else {
-                columnTypeKey = joiner.add(sqlDbName).add(tableName).add(superType).toString();
-            }
-            if (columnType2Result.containsKey(columnTypeKey)) {
-                return columnType2Result.get(columnTypeKey);
             }
 
             LOG.info("query Sql: " + sql);
@@ -874,9 +862,6 @@ public class QuartzJob implements Job {
                 }
             });
 
-            if (Objects.nonNull(resultValue)) {
-                columnType2Result.put(columnTypeKey, resultValue);
-            }
             return resultValue;
         } catch (Exception e) {
             LOG.info(e.toString());
@@ -939,6 +924,7 @@ public class QuartzJob implements Job {
                 sql = sql = String.format(errDataSql, sqlDbName, tableName, columnName, columnName);
                 break;
         }
+
         AdapterExecutor adapterExecutor = adapterSource.getNewAdapterExecutor();
         LOG.info("query sql = " + sql);
         adapterExecutor.queryResultByFetchSize(connection, sql, resultSet -> {
@@ -980,6 +966,13 @@ public class QuartzJob implements Job {
                 return null;
             } catch (Exception e) {
                 throw new AdapterBaseException("解析查询结果失败", e);
+            } finally {
+                try {
+                    resultSet.close();
+                    connection.close();
+                } catch (SQLException e) {
+                    throw new AdapterBaseException("数据库连接关闭异常", e);
+                }
             }
 
         });
@@ -988,8 +981,13 @@ public class QuartzJob implements Job {
 
     private String getSql(String errDataSql, String sqlDbName, String sourceType) {
         if (!sourceType.equalsIgnoreCase("POSTGRESQL")) {
-            if (sourceType.equalsIgnoreCase("OSCAR")){
+            if (sourceType.equalsIgnoreCase("OSCAR")) {
                 errDataSql = String.format(errDataSql, sqlDbName, sqlDbName);
+            } else if (sourceType.equalsIgnoreCase("SQLSERVER")) {
+                if (sqlDbName.contains(".")) {
+                    sqlDbName = sqlDbName.substring(sqlDbName.indexOf(".") + 1, sqlDbName.length());
+                    errDataSql = String.format(errDataSql, sqlDbName);
+                }
             } else {
                 errDataSql = String.format(errDataSql, sqlDbName);
             }

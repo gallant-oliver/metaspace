@@ -1,7 +1,5 @@
 package io.zeta.metaspace.web.model;
 
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
  * 业务操作公共属性值
  *
@@ -57,6 +55,11 @@ public class CommonConstant {
      * 字段长度
      */
     public static final int LENGTH = 128;
+
+    /**
+     * 业务对象字段长度
+     */
+    public static final int BUSINESS_LENGTH = 200;
 
     /**
      * 座机号正则表达式
@@ -115,12 +118,12 @@ public class CommonConstant {
     /**
      * 字段长度
      */
-    public static final int LENGTH_1000 = 1000;
+    public static final int LENGTH_3000 = 3000;
 
     /**
      * 数据服务api参数类型
      */
-    public static final String HEADER_PARAM="HEADER";
+    public static final String HEADER_PARAM = "HEADER";
     public static final String QUERY_PARAM = "QUERY";
     public static final String PATH_PARAM = "PATH";
     public static final String API_PATH = "metaspace";
@@ -140,9 +143,22 @@ public class CommonConstant {
     public static final int IMPORT_TABLE = 3;
     public static final int PROJECT = 4;
     public static final int SECURITY_TABLE = 5;
+    /**
+     * 衍生表导入锁
+     */
+    public static final String METASPACE_DERIVE_TABLE_IMPORT_LOCK = "metaspace_derive_table_import_lock";
 
     /**
      * 文件归档的redis过期时间
      */
     public static final long FILE_REDIS_TIME = 600;
+
+    public static final int BUSINESS_INDICATOR = 1;
+    public static final int ATOM_INDICATOR = 2;
+
+    public static final String PRIVATE = "PRIVATE";
+
+    public static final String PUBLIC = "PUBLIC";
+
+    public static final String ASSET_NAME = "Asset.name";
 }

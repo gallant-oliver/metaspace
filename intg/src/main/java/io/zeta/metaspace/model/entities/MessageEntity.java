@@ -67,7 +67,7 @@ public class MessageEntity {
     private String createUser;
 
     /**
-     * 流程进度(0-已审批、1-未审批、2-已授权、3-已移除、4-已处理、5-已反馈、6-待处理
+     * 流程进度(0-已审批、1-未审批、2-已授权、3-已移除、4-已处理、5-已反馈、6-待处理、7-已撤回
      */
     private Integer process;
 

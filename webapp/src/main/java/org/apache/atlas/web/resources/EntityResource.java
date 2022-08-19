@@ -205,7 +205,7 @@ public class EntityResource {
             UriBuilder ub = uriInfo.getAbsolutePathBuilder();
             locationURI = CollectionUtils.isEmpty(guids) ? null : ub.path(guids.get(0)).build();
         } else {
-            String uriPath = AtlasClient.API_V1.GET_ENTITY.getNormalizedPath();
+            String uriPath = AtlasClient.APIV1.GET_ENTITY.getNormalizedPath();
             locationURI = guids.isEmpty() ? null : UriBuilder
                 .fromPath(AtlasConstants.DEFAULT_ATLAS_REST_ADDRESS)
                 .path(uriPath).path(guids.get(0)).build();

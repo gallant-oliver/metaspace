@@ -913,7 +913,6 @@ public class BusinessREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(INSERT)
-    @Transactional(rollbackFor = Exception.class)
     public Result importCategory(@PathParam("path") String path, ImportCategory importCategory, @HeaderParam("tenantId") String tenantId) throws Exception {
         File file = null;
         try {
@@ -994,7 +993,7 @@ public class BusinessREST {
             sortCategory.setSort(sort);
             sortCategory.setOrder(order);
             sortCategory.setGuid(guid);
-            List<RoleModulesCategories.Category> categories = dataManageService.sortCategory(sortCategory, CATEGORY_TYPE, tenantId);
+            List<CategoryPrivilege> categories = dataManageService.sortCategory(sortCategory, CATEGORY_TYPE, tenantId);
             return ReturnUtil.success(categories);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "目录排序并变更结构失败");
@@ -1046,7 +1045,7 @@ public class BusinessREST {
                 uri.setDownloadUri(downURL);
                 return ReturnUtil.success(uri);
             }
-            DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
+                DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
             return ReturnUtil.success(downloadUri);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导出业务对象失败");
@@ -1108,7 +1107,7 @@ public class BusinessREST {
         try {
             String name = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), "UTF-8");
             file = ExportDataPathUtils.fileCheck(name, fileInputStream);
-            Map<String, Object> map = businessService.uploadBusiness(file, tenantId);
+            Map<String, Object> map = businessService.uploadBusiness(file);
             redisUtil.set(map.get("upload").toString(),name,CommonConstant.FILE_REDIS_TIME);
             return ReturnUtil.success(map);
         } catch (Exception e) {
@@ -1134,7 +1133,6 @@ public class BusinessREST {
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(UPDATE)
-    @Transactional(rollbackFor = Exception.class)
     public Result importBusiness(@PathParam("path") String path, ImportCategory importCategory, @HeaderParam("tenantId") String tenantId) throws Exception {
         File file = null;
         try {
@@ -1143,7 +1141,7 @@ public class BusinessREST {
             HttpRequestContext.get().auditLog(ModuleEnum.BUSINESS.getAlias(), "批量导入业务对象：" + category.getName());
             file = new File(ExportDataPathUtils.tmpFilePath + File.separatorChar + path);
             businessService.importBusiness(file, categoryId, tenantId);
-            fileInfoService.createFileRecord(path,FileInfoPath.BUSINESS_OBJECT,file);
+            fileInfoService.createFileRecord(path, FileInfoPath.BUSINESS_OBJECT, file);
             return ReturnUtil.success();
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导入失败");
@@ -1401,7 +1399,7 @@ public class BusinessREST {
                 perf = AtlasPerfTracer.getPerfTracer(PERF_LOG, "BusinessREST.getBusinessPlaceCategories()");
             }
 
-            return businessService.getBusinessPlaceCategories(type, tenantId);
+            return businessService.getBusinessPlaceCategories(tenantId);
         } catch (MyBatisSystemException e) {
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "数据库服务异常");
         } finally {

@@ -1,7 +1,7 @@
 package io.zeta.metaspace.web.model;
 
 public enum TemplateEnum {
-    
+
     ALL_CATEGORY_TEMPLATE("all_category_template.xlsx",
             new String[][]{{"目录id", "目录名字", "目录描述", "同级的上方目录id", "同级的下方目录id", "父目录id", "全名称", "级别", "排序"}}),
     CATEGORY_TEMPLATE("category_template.xlsx", new String[][]{{"目录名字", "目录描述"}}),
@@ -13,22 +13,22 @@ public enum TemplateEnum {
                             "只允许正整数", "布尔型: true 或 false", "多个值以;分割", "枚举值:\n贴源层\n基础层\n通用层\n应用层", ""}
             }),
     BUSINESS_TEMPLATE("business_template.xlsx",
-            new String[][]{{"业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产"}}),
+            new String[][]{{"业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产", "相关制度文件名称", "流程名称"}}),
     INDEX_FIELD_TEMPLATE("index_field_template.xlsx",
             new String[][]{{"注释", "编码", "名称", "父指标域编码", "描述"},
                     {"填写规则（不要删除）", "请输入英文和数字，不区分大小写", "请输入中文、英文或数字", "二级指标域请输入其父指标域的编码；一级指标域不用填写", "请输入描述，不超过200个字符"},
                     {"范例（不要删除）", "XS001", "销售域", "父指标域编码", "描述"}}),
 
     API_CATEGORY_TEMPLATE("api_category_template.xlsx", new String[][]{{"目录名字"}});
-    
+
     private String fileName;
     private String[][] content;
-    
+
     TemplateEnum(String fileName, String[][] content) {
         this.fileName = fileName;
         this.content = content;
     }
-    
+
     public String getFileName() {
         return fileName;
     }
