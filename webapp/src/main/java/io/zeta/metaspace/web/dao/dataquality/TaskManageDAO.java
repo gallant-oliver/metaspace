@@ -18,10 +18,7 @@ package io.zeta.metaspace.web.dao.dataquality;
 
 import io.zeta.metaspace.model.dataassets.DataAssets;
 import io.zeta.metaspace.model.dataquality2.*;
-import io.zeta.metaspace.model.metadata.Column;
-import io.zeta.metaspace.model.metadata.Parameters;
-import io.zeta.metaspace.model.metadata.RuleParameters;
-import io.zeta.metaspace.model.metadata.Table;
+import io.zeta.metaspace.model.metadata.*;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.usergroup.DBInfo;
 import io.zeta.metaspace.web.typeHandler.ListStringTypeHandler;
@@ -974,11 +971,12 @@ public interface TaskManageDAO {
     List<SyncTaskDefinition> getTaskSchemas(@Param("tenantId") String tenantId, @Param("sourceId") String sourceId);
 
 
-    @Select("SELECT DISTINCT db.database_guid,db.database_name FROM database_group_relation dgr " +
-            "INNER JOIN user_group ug ON dgr.group_id = ug.id " +
-            "INNER JOIN db_info db ON dgr.database_guid = db.database_guid AND db.status = 'ACTIVE'" +
-            "WHERE ug.tenant = #{tenantId} AND dgr.source_id =  #{sourceId}")
-    List<DBInfo> getUserGroupDatabase(@Param("tenantId") String tenantId, @Param("sourceId") String sourceId);
+    List<DBInfo> getUserGroupDatabase(@Param("tenantId") String tenantId, @Param("sourceId") String sourceId,@Param("userId")String userId);
+
+    List<Database> getUserGroupHiveDatabase(@Param("tenantId") String tenantId, @Param("userId")String userId,
+                                            @Param("limit") int limit,@Param("offset") int offset);
+
+    Long getUserGroupHiveDatabaseSize(@Param("tenantId") String tenantId, @Param("userId")String userId);
 
 
     @Select("<script>"+

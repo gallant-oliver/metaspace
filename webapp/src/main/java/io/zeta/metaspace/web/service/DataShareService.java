@@ -1543,7 +1543,7 @@ public class DataShareService {
      * @return
      */
     public PageResult<Map<String, Object>> getDbDataList(ColumnParameters parameters, String tenantId, String sourceId) {
-        List<DBInfo> dbInfoList = taskManageDAO.getUserGroupDatabase(tenantId, sourceId);
+        List<DBInfo> dbInfoList = taskManageDAO.getUserGroupDatabase(tenantId, sourceId, AdminUtils.getUserData().getUserId());
         PageResult<Map<String, Object>> schemaPage = new PageResult<>();
         List<Map<String, Object>> schemaNameList = dbInfoList.stream()
                 .skip(parameters.getOffset())
