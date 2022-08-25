@@ -3,8 +3,8 @@
   "className": "org.apache.griffin.measure.Application",
   "proxyUser":"metaspace",
   "queue": "root.default",
-  "numExecutors": "4",
-  "executorCores": "2",
+  "numExecutors": 4,
+  "executorCores": 2,
   "driverMemory": "3g",
   "executorMemory": "5g",
   "conf": {
