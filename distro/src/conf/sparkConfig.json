@@ -1,7 +1,7 @@
 {
   "file": "hdfs:///apps/metaspace/jars/griffin-measure-6.jar",
   "className": "org.apache.griffin.measure.Application",
-  "proxyUser":"user",
+  "proxyUser":"metaspace",
   "queue": "root.default",
   "driverMemory": "3g",
   "executorMemory": "5g",
