@@ -1,16 +1,15 @@
 {
-  "file": "hdfs:///apps/metaspace/jars/griffin-measure-6.jar",
+  "file": "hdfs:///apps/metaspace/jars/measure-0.6.0.jar",
   "className": "org.apache.griffin.measure.Application",
-  "proxyUser":"metaspace",
+  "proxyUser":"user",
   "queue": "root.default",
-  "numExecutors": "4",
-  "executorCores": "2",
   "driverMemory": "3g",
   "executorMemory": "5g",
   "conf": {
-    "spark.sql.hive.real.user":"metaspace"
+    "spark.sql.hive.real.user": "user",
+    "spark.driver.extraJavaOptions":"-verbose:class",
+    "spark.executor.extraJavaOptions":"-verbose:class"
   },
   "files": [
   ]
-
 }
