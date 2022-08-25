@@ -1,5 +1,5 @@
 {
-  "file": "hdfs:///apps/metaspace/jars/measure-0.6.0.jar",
+  "file": "hdfs:///apps/metaspace/jars/griffin-measure-6.jar",
   "className": "org.apache.griffin.measure.Application",
   "proxyUser":"user",
   "queue": "root.default",
