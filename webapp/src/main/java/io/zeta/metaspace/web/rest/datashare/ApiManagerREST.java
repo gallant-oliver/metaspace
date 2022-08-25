@@ -39,6 +39,7 @@ import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.share.*;
+import io.zeta.metaspace.model.sourceinfo.derivetable.constant.Constant;
 import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.*;
@@ -48,6 +49,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
+import org.apache.atlas.repository.Constants;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.collections.CollectionUtils;
@@ -1071,6 +1073,15 @@ public class ApiManagerREST {
                 inputStream.close();
             }
         }
+    }
+
+    @GET
+    @Path("/dock/type")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result dockType(){
+        DockTypeVO dockTypeVO = new DockTypeVO(Constants.DATA_SHARE_DOCKING_TYPE);
+        return  ReturnUtil.success(dockTypeVO);
     }
 
     public static String filename(String filePath) throws UnsupportedEncodingException {
