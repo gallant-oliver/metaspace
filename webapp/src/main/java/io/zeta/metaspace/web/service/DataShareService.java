@@ -1559,6 +1559,24 @@ public class DataShareService {
         return schemaPage;
     }
 
+    /**
+     * 根据配置的用户组权限获取hive数据库
+     *
+     * @param parameters
+     * @param tenantId
+     * @return
+     */
+    public PageResult<Database> getHiveDbDataList(Parameters parameters, String tenantId) {
+        PageResult<Database> schemaPage = new PageResult<>();
+        List<Database> dbInfoList = taskManageDAO.getHiveUserGroupDatabase(parameters, tenantId);
+        if (CollectionUtils.isEmpty(dbInfoList)) {
+            return schemaPage;
+        }
+        schemaPage.setLists(dbInfoList);
+        schemaPage.setCurrentSize(dbInfoList.size());
+        schemaPage.setTotalSize(dbInfoList.get(0).getTotal());
+        return schemaPage;
+    }
 
     public enum SEARCH_TYPE {
         SCHEMA, TABLE, COLUMN

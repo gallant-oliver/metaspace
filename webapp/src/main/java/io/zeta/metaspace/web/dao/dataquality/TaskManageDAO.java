@@ -200,7 +200,7 @@ public interface TaskManageDAO {
      * @param
      * @return
      */
-    @Select({" select id from data_quality_task where tenantid=#{tenantId} and name=#{taskName}"})
+    @Select({" select id from data_quality_task where tenantid=#{tenantId} and name=#{taskName} and delete = false "})
     public List<String> getDataQualityTaskByName(@Param("taskName")String taskName,@Param("tenantId")String tenantId);
 
     /**
@@ -908,6 +908,22 @@ public interface TaskManageDAO {
              " </script>"})
     public List<RuleHeader> searchRuleList(@Param("params") Parameters params,@Param("scope")Integer scope,@Param("tenantId") String tenantId);
 
+    /**
+     * 根据库ID获取表
+     * @param dataBaseGuid
+     * @return
+     */
+    @Select("<script>" +
+            "select tableguid as tableId,tablename as tableName,status from tableinfo " +
+            " where status='ACTIVE' and databaseguid=#{dataBaseGuid} " +
+            " <if test=\"params.query != null and params.query !='' \">" +
+            " and tablename like concat('%',#{params.query},'%') ESCAPE '/' " +
+            " </if>" +
+            " <if test='params.limit != -1 and params.offset!= 0 '>" +
+            " limit #{params.limit} offset #{params.offset} " +
+            " </if>" +
+            "</script>")
+    List<Table> getHiveTableByDbName(@Param("dataBaseGuid") String dataBaseGuid, @Param("params") Parameters params);
 
     /**
      * 根据库名字获取库id
@@ -978,6 +994,20 @@ public interface TaskManageDAO {
 
     Long getUserGroupHiveDatabaseSize(@Param("tenantId") String tenantId, @Param("userId")String userId);
 
+    @Select("<script>" +
+            "SELECT COUNT ( * ) OVER () total, a.* from ( " +
+            "SELECT DISTINCT db.database_guid as databaseId,db.database_name as databaseName,db.status as status FROM database_group_relation dgr " +
+            "INNER JOIN user_group ug ON dgr.group_id = ug.id " +
+            "INNER JOIN db_info db ON dgr.database_guid = db.database_guid AND db.status = 'ACTIVE' " +
+            "WHERE ug.tenant = #{tenantId} AND dgr.source_id = 'hive' ) as a " +
+            " <if test=\"params.query != null and params.query !='' \">" +
+            " WHERE a.databaseName like concat('%',#{params.query},'%') ESCAPE '/' " +
+            " </if>" +
+            " <if test='params.limit != -1 and params.offset!= 0 '>" +
+            " limit #{params.limit} offset #{params.offset} " +
+            " </if>" +
+            "</script>")
+    List<Database> getHiveUserGroupDatabase(@Param("params") Parameters params, @Param("tenantId") String tenantId);
 
     @Select("<script>"+
             "SELECT da.name,description,da.id,tenantid tenantId,count(*)over() total,4 as type,te.name tenantName," +
@@ -994,4 +1024,28 @@ public interface TaskManageDAO {
             "</script>")
     List<DataAssets> tasksSearch(@Param("tenantId") String tenantId, @Param("userId") String userId,
                                  @Param("isGlobal") boolean isGlobal, @Param("offset") int offset, @Param("limit") int limit, @Param("query") String query);
+
+    /**
+     * 根据任务id查询最新10条执行的规则详情
+     * @param taskId 任务ID
+     * @return 返回
+     */
+    @Select("<script>" +
+            " SELECT " +
+            "  r.id AS id, " +
+            "  r.task_execute_id AS taskExecuteId, " +
+            "  r.task_id AS taskId, " +
+            "  r.subtask_id AS subtaskId, " +
+            "  r.subtask_rule_id AS subtaskRuleId, " +
+            "  r.RESULT, " +
+            "  T.executeTime AS executeTime  " +
+            " FROM " +
+            "  data_quality_task_rule_execute AS r " +
+            "  INNER JOIN ( " +
+            "         SELECT ID AS executionId, execute_time AS executeTime FROM data_quality_task_execute " +
+            "         WHERE task_id = #{taskId} ORDER BY executeTime DESC LIMIT 10 " +
+            "  ) AS T ON T.executionId = r.task_execute_id " +
+            "</script>")
+    List<SubTaskExecuteRule> getSubTaskExecuteRule(@Param("taskId") String taskId);
+
 }
