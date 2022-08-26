@@ -20,6 +20,7 @@ package org.apache.atlas.repository;
 
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
+import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 
 import static org.apache.atlas.type.AtlasStructType.AtlasAttribute.encodePropertyKey;
@@ -160,6 +161,28 @@ public final class Constants {
     public static final String EDGE_ID_IN_IMPORT_KEY   = "__eIdInImport";
 
     public static final String TICKET_KEY = "X-SSO-FullticketId";
+
+    public static final String X_API_KEY = getToken();
+
+    public static final int DATA_SHARE_DOCKING_TYPE = dockType();
+
+    private static String getToken(){
+        try {
+            Configuration configuration = ApplicationProperties.get();
+            return configuration.getString("apisix_create_key");
+        } catch (AtlasException e) {
+            throw new AtlasBaseException("获取apiSix头token失败");
+        }
+    }
+
+    private static int dockType(){
+        try {
+            Configuration configuration = ApplicationProperties.get();
+            return configuration.getInt("datashare.docking.type");
+        } catch (AtlasException e) {
+            throw new AtlasBaseException("获取数据服务对接平台类型失败");
+        }
+    }
 
     private Constants() {
     }
