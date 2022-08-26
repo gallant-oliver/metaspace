@@ -626,7 +626,7 @@ public class ApiManagerREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getDatabaseByQuery(Parameters parameters, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters, tenantId);
+            PageResult<Database> pageResult = searchService.getHiveDatabase(parameters, tenantId);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取库列表失败");

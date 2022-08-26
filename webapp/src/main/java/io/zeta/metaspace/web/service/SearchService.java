@@ -24,6 +24,7 @@ import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.model.HiveConstant;
@@ -103,6 +104,8 @@ public class SearchService {
     private PublicService publicService;
     @Autowired
     private DbDAO dbDAO;
+    @Autowired
+    private TaskManageDAO taskManageDAO;
     // 神通数据库分页字段
     private static final String OSCAR_PAGE_COLUMN = "TEMP_COLUMN_RNUM";
 
@@ -573,12 +576,8 @@ public class SearchService {
 
     public PageResult<TableInfo> getTableByDBWithQueryWithoutTmp(String databaseId, Parameters parameters, String tenantId) throws AtlasBaseException {
         try {
-            List<String> categoryIds = getPermissionCategoryIds(tenantId);
             PageResult<TableInfo> pageResult = new PageResult<>();
-            if (Objects.isNull(categoryIds) || categoryIds.size() == 0) {
-                return pageResult;
-            }
-            List<TableInfo> tableList = roleDAO.getTableInfosByDBId(categoryIds, databaseId);
+            List<TableInfo> tableList = roleDAO.getTableInfosByDBId(databaseId);
 
             tableList.forEach(table -> {
                 String displayName = table.getDisplayName();
@@ -1277,6 +1276,21 @@ public class SearchService {
         //strings = getChildAndOwnerCategorysByRoles(userGroups, tenantId);*/
 
         return getDatabaseV2(parameters, tenantId);
+    }
+
+    /**
+     * 数据服务获取hive的数据源下的库
+     * 1.当前用户所在用户组拥有的库
+     * 2.该数据库进行过登记，且当前用户具有登记所在的技术目录权限
+     */
+    public PageResult<Database> getHiveDatabase(Parameters parameters, String tenantId) throws AtlasBaseException {
+        PageResult<Database> pageResult = new PageResult<>();
+        String userId = AdminUtils.getUserData().getUserId();
+        List<Database> databases = taskManageDAO.getUserGroupHiveDatabase(tenantId, userId, parameters.getLimit(), parameters.getOffset());
+        pageResult.setTotalSize(taskManageDAO.getUserGroupHiveDatabaseSize(tenantId, userId));
+        pageResult.setLists(databases);
+        pageResult.setCurrentSize(databases.size());
+        return pageResult;
     }
 
     //多租户
