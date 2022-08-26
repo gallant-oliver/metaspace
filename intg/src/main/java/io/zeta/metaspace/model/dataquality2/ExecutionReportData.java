@@ -33,6 +33,10 @@ public class ExecutionReportData {
     private TaskCheckResultCount checkResultCount;
     private ImprovingSuggestion suggestion;
     private List<SubTaskRecord> ruleCheckResult;
+    /**
+     * 所有子任务对应最后10条趋势结果
+     */
+    private List<SubTaskContrastRecord> subTaskContrastRecordList;
 
     @Data
     public static class TaskBasicInfo {
