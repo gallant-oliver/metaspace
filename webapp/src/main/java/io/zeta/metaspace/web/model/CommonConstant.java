@@ -161,4 +161,11 @@ public class CommonConstant {
     public static final String PUBLIC = "PUBLIC";
 
     public static final String ASSET_NAME = "Asset.name";
+
+    private static final String API_SIX_CREATE_PATH = "/apisix/admin/routes";
+
+    public static final int MOBIUS_TYPE = 1;
+    public static final int API_SIX_TYPE = 2;
+
+    public static final String API_ACCESS_PREFIX = "/api/metaspace/dataservice/";
 }
