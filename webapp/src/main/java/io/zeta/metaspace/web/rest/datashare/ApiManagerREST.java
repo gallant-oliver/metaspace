@@ -244,8 +244,8 @@ public class ApiManagerREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(OperateTypeEnum.DELETE)
     public Result deleteApi(List<String> ids, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        List<String> projectNames = shareService.getApiInfoByIds(ids).stream().map(apiInfoV2 -> apiInfoV2.getName()).collect(Collectors.toList());
-        if (projectNames == null || projectNames.size() == 0) {
+        List<String> projectNames = shareService.getApiInfoByIds(ids).stream().map(ApiInfoV2::getName).collect(Collectors.toList());
+        if (projectNames.size() == 0) {
             return ReturnUtil.success();
         }
         HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "批量删除api:[" + Joiner.on("、").join(projectNames) + "]");
@@ -294,6 +294,26 @@ public class ApiManagerREST {
     public Result getApiInfo(@PathParam("apiId") String apiId) throws AtlasBaseException {
         try {
             ApiInfoV2 apiInfoMaxVersion = shareService.getApiInfoMaxVersion(apiId);
+            return ReturnUtil.success(apiInfoMaxVersion);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取详情失败");
+        }
+    }
+
+    /**
+     * 获取api详情(创建新版本时调用)
+     *
+     * @param apiId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{apiId}/template/info")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getApiNeWInfo(@PathParam("apiId") String apiId) throws AtlasBaseException {
+        try {
+            ApiInfoV2 apiInfoMaxVersion = shareService.getApiInfoTemplateVersion(apiId);
             return ReturnUtil.success(apiInfoMaxVersion);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取详情失败");

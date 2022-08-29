@@ -14,6 +14,7 @@
 package io.zeta.metaspace.model.moebius;
 
 import io.zeta.metaspace.model.share.ApiInfoV2;
+import io.zeta.metaspace.model.share.apisix.ApiSixCreateInfo;
 import lombok.Data;
 
 /**
@@ -29,20 +30,8 @@ public class MoebiusApiData {
     public MoebiusApiData(ApiInfoV2 apiInfoV2){
         this.name = apiInfoV2.getName();
         this.desc = apiInfoV2.getDescription();
-        StringBuilder urlBuffer = new StringBuilder();
-        urlBuffer.append("/api/metaspace/dataservice/");
-        urlBuffer.append(apiInfoV2.getGuid());
-        urlBuffer.append("/");
-        urlBuffer.append(apiInfoV2.getVersion());
-        if (apiInfoV2.getPath() != null && !apiInfoV2.getPath().startsWith("/")) {
-            urlBuffer.append("/");
-        }
-        if (apiInfoV2.getPath() != null) {
-            urlBuffer.append(apiInfoV2.getPath());
-        }
         this.path = "metaspace";
-        this.url = urlBuffer.toString();
-
+        this.url = ApiSixCreateInfo.newPath(apiInfoV2);
         this.method = apiInfoV2.getRequestMode();
         this.version = apiInfoV2.getVersion();
     }

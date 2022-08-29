@@ -834,4 +834,7 @@ public interface DataShareDAO {
     List<ApiTestDTO> getApiAndGroupInfoStatus(@Param("version")String version,@Param("guid")String guid);
 
     List<String> getProjectName(@Param("ids") List<String> ids,@Param("tenantId") String tenantId);
+
+    void apiNewPath(@Param("guid") String guid,@Param("version") String version,@Param("newPath") String newPath,
+                    @Param("apiSixId") String apiSixId);
 }
