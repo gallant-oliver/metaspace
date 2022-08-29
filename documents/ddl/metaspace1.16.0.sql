@@ -6877,6 +6877,12 @@ ALTER TABLE businessinfo ADD COLUMN system_file_name VARCHAR(255) COLLATE "pg_ca
 
 COMMENT ON COLUMN "public"."businessinfo"."system_file_name" IS '相关制度文件名称';
 
+-- 将字段时间类型由timestamptz改为timestamp，否则映射实体类型LocalDateTime会报转换错误
+
+ALTER TABLE "public"."api_poly" ALTER COLUMN create_time type timestamp(6);
+
+ALTER TABLE "public"."api_poly" ALTER COLUMN update_time type timestamp(6);
+
 ALTER TABLE approval_group_relation DROP CONSTRAINT fk1;
 ALTER TABLE approval_group_relation DROP CONSTRAINT fk2;
 ALTER TABLE users DROP CONSTRAINT user_pkey;
