@@ -34,8 +34,8 @@
          Some dependencies, like slf4j are excluded from the jar because they are included in Atlas -->
 
     <properties>
-        <tinkerpop.version>3.3.3</tinkerpop.version>
-        <janus.version>0.3.1</janus.version>
+        <tinkerpop.version>3.5.1</tinkerpop.version>
+        <janus.version>0.6.1</janus.version>
         <checkstyle.failOnViolation>false</checkstyle.failOnViolation>
         <lucene-solr.version>7.3.0</lucene-solr.version>
     </properties>
@@ -75,6 +75,10 @@
                     <groupId>com.codahale.metrics</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.noggit</groupId>
+                    <artifactId>noggit</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -93,7 +97,7 @@
         <dependency>
             <groupId>org.janusgraph</groupId>
             <artifactId>janusgraph-cassandra</artifactId>
-            <version>${janus.version}</version>
+            <version>0.5.3</version>
             <exclusions>
                   <exclusion>
                       <groupId>ch.qos.logback</groupId>
@@ -179,7 +183,17 @@
         <dependency>
             <groupId>org.apache.solr</groupId>
             <artifactId>solr-solrj</artifactId>
-            <version>7.0.0</version>
+            <version>8.9.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.eclipse.jetty</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.eclipse.jetty.http2</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- CVE Overrides for Lucene -->
         <dependency>

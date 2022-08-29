@@ -3,14 +3,13 @@
   "className": "org.apache.griffin.measure.Application",
   "proxyUser":"metaspace",
   "queue": "root.default",
-  "numExecutors": 4,
-  "executorCores": 2,
   "driverMemory": "3g",
   "executorMemory": "5g",
   "conf": {
-    "spark.sql.hive.real.user":"metaspace"
+    "spark.sql.hive.real.user": "user",
+    "spark.driver.extraJavaOptions":"-verbose:class",
+    "spark.executor.extraJavaOptions":"-verbose:class"
   },
   "files": [
   ]
-
 }

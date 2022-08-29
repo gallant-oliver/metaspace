@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -43,12 +44,11 @@ public class EmbeddedServer {
     protected final Server server;
 
     public EmbeddedServer(String host, int port, String path) throws IOException {
-        int queueSize = AtlasConfiguration.WEBSERVER_QUEUE_SIZE.getInt();
-        LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>(queueSize);
-
-        int minThreads = AtlasConfiguration.WEBSERVER_MIN_THREADS.getInt();
-        int maxThreads = AtlasConfiguration.WEBSERVER_MAX_THREADS.getInt();
-        long keepAliveTime = AtlasConfiguration.WEBSERVER_KEEPALIVE_SECONDS.getLong();
+        int                           queueSize     = AtlasConfiguration.WEBSERVER_QUEUE_SIZE.getInt();
+        LinkedBlockingQueue<Runnable> queue         = new LinkedBlockingQueue<>(queueSize);
+        int                           minThreads    = AtlasConfiguration.WEBSERVER_MIN_THREADS.getInt();
+        int                           maxThreads    = AtlasConfiguration.WEBSERVER_MAX_THREADS.getInt();
+        long                          keepAliveTime = AtlasConfiguration.WEBSERVER_KEEPALIVE_SECONDS.getLong();
         StringBuilder buffer = new StringBuilder();
         buffer.append("\n############################################");
         buffer.append("############################################");
