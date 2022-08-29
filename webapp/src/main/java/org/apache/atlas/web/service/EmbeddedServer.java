@@ -61,7 +61,7 @@ public class EmbeddedServer {
         buffer.append("############################################");
         LOG.info(buffer.toString());
         ExecutorThreadPool pool =
-                new ExecutorThreadPool(minThreads, maxThreads, keepAliveTime, TimeUnit.SECONDS, queue);
+                new ExecutorThreadPool(maxThreads, minThreads, queue);
         server = new Server(pool);
 
         Connector connector = getConnector(host, port);
