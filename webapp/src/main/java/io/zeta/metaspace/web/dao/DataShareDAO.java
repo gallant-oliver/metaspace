@@ -835,6 +835,5 @@ public interface DataShareDAO {
 
     List<String> getProjectName(@Param("ids") List<String> ids,@Param("tenantId") String tenantId);
 
-    void apiNewPath(@Param("guid") String guid,@Param("version") String version,@Param("newPath") String newPath,
-                    @Param("apiSixId") String apiSixId);
+    void apiNewPath(@Param("guid") String guid,@Param("version") String version,@Param("apiSixId") String apiSixId);
 }

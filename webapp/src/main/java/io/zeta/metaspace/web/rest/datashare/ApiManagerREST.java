@@ -301,26 +301,6 @@ public class ApiManagerREST {
     }
 
     /**
-     * 获取api详情(创建新版本时调用)
-     *
-     * @param apiId
-     * @return
-     * @throws AtlasBaseException
-     */
-    @GET
-    @Path("/{apiId}/template/info")
-    @Consumes(Servlets.JSON_MEDIA_TYPE)
-    @Produces(Servlets.JSON_MEDIA_TYPE)
-    public Result getApiNeWInfo(@PathParam("apiId") String apiId) throws AtlasBaseException {
-        try {
-            ApiInfoV2 apiInfoMaxVersion = shareService.getApiInfoTemplateVersion(apiId);
-            return ReturnUtil.success(apiInfoMaxVersion);
-        } catch (Exception e) {
-            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取详情失败");
-        }
-    }
-
-    /**
      * 根据版本获取api详情
      *
      * @param apiId
@@ -334,6 +314,26 @@ public class ApiManagerREST {
     public Result getApiInfoByVersion(@PathParam("apiId") String apiId, @PathParam("version") String version) throws AtlasBaseException {
         try {
             ApiInfoV2 apiInfo = shareService.getApiInfoByVersion(apiId, version);
+            return ReturnUtil.success(apiInfo);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取详情失败");
+        }
+    }
+
+    /**
+     * 根据版本获取api详情
+     *
+     * @param apiId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/apiinfo/path/{apiId}/{version}")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getApiInfoByVersionPath(@PathParam("apiId") String apiId, @PathParam("version") String version) throws AtlasBaseException {
+        try {
+            ApiInfoV2 apiInfo = shareService.getApiInfoPath(apiId, version);
             return ReturnUtil.success(apiInfo);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取详情失败");
@@ -827,6 +827,7 @@ public class ApiManagerREST {
     public Result testApi(@HeaderParam("tenantId") String tenantId, ApiInfoV2 apiInfoV2,
                           @DefaultValue("1") @QueryParam("page_num") Long pageNum,
                           @DefaultValue("10") @QueryParam("page_size") Long pageSize,
+                          @DefaultValue("json") @QueryParam(CommonConstant.API_RESULT_FORMAT_PARAM) String format,
                           @PathParam("randomName") String randomName) throws Exception {
         try {
             long limit = 10;
@@ -837,9 +838,12 @@ public class ApiManagerREST {
             if (pageNum != null && pageNum > 0) {
                 offset = (pageNum - 1) * limit;
             }
-            Map resultMap = shareService.testAPI(randomName, apiInfoV2, limit, offset);
-            List<LinkedHashMap<String, Object>> result = (List<LinkedHashMap<String, Object>>) resultMap.get("queryResult");
-            return ReturnUtil.success(result);
+            ApiTestResultVO apiTestResultVO = shareService.testAPI(randomName, apiInfoV2, limit, offset, format);
+            if (CommonConstant.XML_FORMAT.equals(format)) {
+                String resultStr = XmlUtil.toFormatXml(apiTestResultVO.getQueryResult());
+                return ReturnUtil.success("success",resultStr);
+            }
+            return ReturnUtil.success(apiTestResultVO.getQueryResult());
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "测试api失败");
         }

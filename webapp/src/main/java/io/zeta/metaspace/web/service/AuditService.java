@@ -319,7 +319,7 @@ public class AuditService {
 
     private void apiSixCreate(ApiInfoV2 apiInfoV2) {
         ApiSixCreateInfo apiSixCreateInfo = new ApiSixCreateInfo(apiInfoV2);
-        String apiSixUrl = DataServiceUtil.apiSixUrl + "/apisix/admin/routes";
+        String apiSixUrl = DataServiceUtil.apiSixUrl + CommonConstant.API_SIX_CREATE_PATH;
         String requestBody = JsonUtils.toJson(apiSixCreateInfo);
         Map<String, Object> headerMap = Maps.newHashMap();
         headerMap.put("X-API-KEY", Constants.X_API_KEY);
@@ -340,12 +340,11 @@ public class AuditService {
         if (createResult) {
             throw new AtlasBaseException(apiSixCreateVO.getMessage(), AtlasErrorCode.BAD_REQUEST, "审核api失败，apiSix创建api失败");
         }
-        String newPath = apiSixCreateInfo.getUris()[0];
         String apiSixKey = getApiSixKey(apiSixCreateVO.getNode().getKey());
-        dataShareDAO.apiNewPath(apiInfoV2.getGuid(), apiInfoV2.getVersion(), newPath, apiSixKey);
+        dataShareDAO.apiNewPath(apiInfoV2.getGuid(), apiInfoV2.getVersion(), apiSixKey);
     }
 
-    public ApiSixResultVO analResult(String res) {
+    ApiSixResultVO analResult(String res) {
         if (StringUtils.isEmpty(res)) {
             return null;
         }

@@ -15,8 +15,10 @@ package io.zeta.metaspace.web.filter;
 
 import com.google.gson.Gson;
 import io.zeta.metaspace.model.share.QueryResult;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.util.DataServiceUtil;
 import io.zeta.metaspace.web.util.FilterUtils;
+import io.zeta.metaspace.web.util.XmlUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.type.BaseAtlasType;
@@ -59,10 +61,10 @@ public class DataServiceFilter implements Filter {
         HttpServletResponse httpServletResponse = (HttpServletResponse) response;
         Gson gson = new Gson();
         QueryResult queryResult= null;
-        if (FilterUtils.isDataService(requestURL)){
-            response.setContentType("application/json;charset=utf-8");
+        if (FilterUtils.isDataService(requestURL)) {
+            String format = request.getParameter(CommonConstant.API_RESULT_FORMAT_PARAM);
             request.setCharacterEncoding("utf-8");
-            try(PrintWriter printWriter = response.getWriter()){
+            try (PrintWriter printWriter = response.getWriter()) {
                 try {
                     queryResult = DataServiceUtil.queryApiData(httpServletRequest);
                 } catch (AtlasBaseException e) {
@@ -71,7 +73,7 @@ public class DataServiceFilter implements Filter {
                     errorJsonMap.put("errorCode", errorCode.getErrorCode());
                     errorJsonMap.put("errorMessage", e.getMessage());
 
-                    if (e.getDetail() != null){
+                    if (e.getDetail() != null) {
                         errorJsonMap.put("detail", e.getDetail());
                     }
                     if (e.getCause() != null) {
@@ -82,11 +84,18 @@ public class DataServiceFilter implements Filter {
                     printWriter.print(errorJson);
                     return;
                 }
-                String jsonStr = gson.toJson(queryResult);
-
-                printWriter.print(jsonStr);
+                String resultStr = null;
+                //返回格式，默认json
+                if (CommonConstant.XML_FORMAT.equals(format)) {
+                    response.setContentType("application/xml;charset=utf-8");
+                    resultStr = XmlUtil.toXml(queryResult);
+                } else {
+                    response.setContentType("application/json;charset=utf-8");
+                    resultStr = gson.toJson(queryResult);
+                }
+                printWriter.print(resultStr);
             }
-        }else{
+        } else {
             chain.doFilter(request, response);
         }
     }

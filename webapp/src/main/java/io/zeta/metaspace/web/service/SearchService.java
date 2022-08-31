@@ -1281,7 +1281,6 @@ public class SearchService {
     /**
      * 数据服务获取hive的数据源下的库
      * 1.当前用户所在用户组拥有的库
-     * 2.该数据库进行过登记，且当前用户具有登记所在的技术目录权限
      */
     public PageResult<Database> getHiveDatabase(Parameters parameters, String tenantId) throws AtlasBaseException {
         PageResult<Database> pageResult = new PageResult<>();
