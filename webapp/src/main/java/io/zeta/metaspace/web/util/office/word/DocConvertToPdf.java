@@ -23,6 +23,8 @@ import org.apache.poi.hwpf.converter.WordToHtmlConverter;
 import org.apache.poi.hwpf.usermodel.Picture;
 import org.apache.poi.hwpf.usermodel.PictureType;
 import org.jsoup.Jsoup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -44,6 +46,7 @@ import java.util.regex.Pattern;
  * doc->pdf 逻辑：doc->html->pdf
  */
 public class DocConvertToPdf {
+    private static final Logger LOG = LoggerFactory.getLogger(DocConvertToPdf.class);
     /**
      * doc转pdf （合并了doc转html，html转pdf的操作）
      * @param in
@@ -59,7 +62,7 @@ public class DocConvertToPdf {
 
             htmlTopdf(new String(FileUtils.readFileToByteArray(tmpHtml)),dest);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("doc转pdf失败", e);
         } finally {
             if(tmpHtml != null && tmpHtml.exists()){
                 tmpHtml.delete();
@@ -180,13 +183,13 @@ public class DocConvertToPdf {
             // 输出转换完成的html内容
             writeFile(new String(out.toByteArray()), htmlFilePath);
         } catch (TransformerException e) {
-            e.printStackTrace();
+            LOG.error("转换过程中发生异常", e);
         } catch (IOException e1) {
-            e1.printStackTrace();
+            LOG.error("转换过程中发生IO异常", e1);
         } catch (ParserConfigurationException e2) {
-            e2.printStackTrace();
+            LOG.error("配置错误", e2);
         } catch (Exception e3) {
-            e3.printStackTrace();
+            LOG.error("convertToHtml失败", e3);
         } finally {
             if (in != null) {
                 try {
@@ -219,9 +222,9 @@ public class DocConvertToPdf {
                     String picturePath = catalogue + File.separator + pic.suggestFullFileName();
                     pic.writeImageContent(new FileOutputStream(picturePath));
                 } catch (FileNotFoundException e) {
-                    e.printStackTrace();
+                    LOG.error("文件没有发现异常", e);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    LOG.error("文件IO异常", e);
                 }
             }
         }
@@ -248,9 +251,9 @@ public class DocConvertToPdf {
             bw = new BufferedWriter(new OutputStreamWriter(fos,"UTF-8"));
             bw.write(utf8Content);
         } catch (FileNotFoundException fnfe) {
-            fnfe.printStackTrace();
+            LOG.error("文件没有发现异常", fnfe);
         } catch (IOException ioe) {
-            ioe.printStackTrace();
+            LOG.error("文件IO异常", ioe);
         } finally {
             try {
                 if (bw != null)

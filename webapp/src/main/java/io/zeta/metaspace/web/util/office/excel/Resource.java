@@ -4,11 +4,14 @@ import org.apache.poi.hssf.usermodel.*;
 
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.BaseFont;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by cary on 6/15/17.
  */
 public class Resource {
+    private static final Logger LOG = LoggerFactory.getLogger(Resource.class);
     /**
      * 中文字体支持
      */
@@ -19,7 +22,7 @@ public class Resource {
             // 搜尋系統,載入系統內的字型(慢)
             FontFactory.registerDirectories();
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("中文字体支持注册字体失败", e);
         }
     }
 
@@ -35,7 +38,7 @@ public class Resource {
                     font.getFontHeightInPoints());
             return iTextFont;
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("将 POI Font 转换到 iText Font失败", e);
         }
         return null;
     }

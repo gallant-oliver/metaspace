@@ -1505,7 +1505,7 @@ public class TaskManageService {
                 try {
                     zos.close();
                 } catch (IOException e) {
-                    e.printStackTrace();
+                   LOG.error("关闭ZipOutputStream失败", e);
                 }
             }
         }
