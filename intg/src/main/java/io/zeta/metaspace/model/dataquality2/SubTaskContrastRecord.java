@@ -18,6 +18,10 @@ public class SubTaskContrastRecord {
      */
     private String subtaskRuleId;
     /**
+     * 子任务规则名称（子任务+规则名称）
+     */
+    private String subTaskRuleName;
+    /**
      * 任务对应子任务最后10条趋势
      */
     private List<SubTaskContrast> subTaskContrastList;

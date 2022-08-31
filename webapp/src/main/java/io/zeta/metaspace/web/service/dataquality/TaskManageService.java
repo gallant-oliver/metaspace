@@ -939,19 +939,34 @@ public class TaskManageService {
         Map<String, List<SubTaskExecuteRule>> subTaskRuleListMap = ruleList.stream().collect(Collectors.groupingBy(SubTaskExecuteRule::getSubtaskRuleId));
         // 子任务序号
         int num = 1;
+        // 子任务规则名称
+        Map<String, Integer> ruleNameMap = new HashMap<>();
         // 遍历所有子任务
         for (SubTaskRecord subTaskRecord : executeResult) {
             // 获取当前子任务
             String subTaskId = subTaskRecord.getSubTaskId();
+            // 子任务名称规则重复个数
+            int total = 1;
             // 遍历所有子任务对应规则
             for (TaskRuleExecutionRecord taskRuleExecutionRecord : subTaskRecord.getTaskRuleExecutionRecords()) {
                 String subTaskRuleId = taskRuleExecutionRecord.getSubTaskRuleId();
                 SubTaskContrastRecord subTaskContrastRecord = new SubTaskContrastRecord();
                 subTaskContrastRecord.setSubTaskId(subTaskId);
                 subTaskContrastRecord.setSubtaskRuleId(subTaskRuleId);
+                // 子任务对应规则名称
+                String subTaskRuleName;
+                String ruleName = getSubTaskRuleName(num, taskRuleExecutionRecord.getRuleName());
+                if (ruleNameMap.containsKey(ruleName)) {
+                    subTaskRuleName = ruleName + "-" + ruleNameMap.get(ruleName);
+                    ruleNameMap.put(ruleName, total++);
+                } else {
+                    subTaskRuleName = ruleName;
+                    ruleNameMap.put(ruleName, total);
+                }
+                subTaskContrastRecord.setSubTaskRuleName(subTaskRuleName);
                 // 子任务规则ID历史列表
                 List<SubTaskExecuteRule> subRuleList = subTaskRuleListMap.get(subTaskRuleId);
-                List<SubTaskContrast> subTaskContrast = getSubTaskRuleList(subRuleList, num, taskRuleExecutionRecord.getRuleName());
+                List<SubTaskContrast> subTaskContrast = getSubTaskRuleList(subRuleList);
                 subTaskContrastRecord.setSubTaskContrastList(subTaskContrast);
                 list.add(subTaskContrastRecord);
             }
@@ -970,33 +985,29 @@ public class TaskManageService {
     /**
      * 获取当前任务规则ID执行历史列表
      * @param subRuleList 前任务规则ID列表
-     * @param i 子任务序号
-     * @param ruleName 规则名称
      * @return 返回历史列表
      */
-    public List<SubTaskContrast> getSubTaskRuleList(List<SubTaskExecuteRule> subRuleList, int i, String ruleName) {
+    public List<SubTaskContrast> getSubTaskRuleList(List<SubTaskExecuteRule> subRuleList) {
         List<SubTaskContrast> list = new ArrayList<>();
         List<SubTaskExecuteRule> rules = subRuleList.stream()
                 .sorted(Comparator.comparing(SubTaskExecuteRule::getExecuteTime)).collect(Collectors.toList());
-        // 子任务规则名称
-        Map<String, Integer> ruleNameMap = new HashMap<>();
-        // 子任务名称规则重复个数
-        int total = 1;
         for (SubTaskExecuteRule subTaskExecuteRule : rules) {
             SubTaskContrast subTaskContrast = new SubTaskContrast();
             subTaskContrast.setExecuteTime(subTaskExecuteRule.getExecuteTime());
             subTaskContrast.setResult(subTaskExecuteRule.getResult());
-            String subRuleName = "子任务" + i + "-" + ruleName;
-            if (ruleNameMap.containsKey(subRuleName)) {
-                subRuleName = subRuleName + "-" + ruleNameMap.get(subRuleName);
-                ruleNameMap.put(subRuleName, total++);
-            } else {
-                ruleNameMap.put(subRuleName, total);
-            }
-            subTaskContrast.setSubTaskRuleName(subRuleName);
             list.add(subTaskContrast);
         }
         return list;
+    }
+
+    /**
+     * 子任务规则名称
+     * @param num 子任务序号
+     * @param ruleName 规则名称
+     * @return 返回子任务规则名称
+     */
+    public String getSubTaskRuleName(int num, String ruleName) {
+        return "子任务" + num + "-" + ruleName;
     }
 
     public List<SubTaskRecord> getTaskRuleExecutionRecordList(String executionId, String subtaskId, String tenantId) throws AtlasBaseException {
