@@ -2286,6 +2286,17 @@ public class DataShareService {
         }
     }
 
+    //api详情，审核通过的话，路径是完整的
+    public ApiInfoV2 getApiInfoPath(String id, String version) {
+        ApiInfoV2 apiInfoByVersion = getApiInfoByVersion(id, version);
+        String status = apiInfoByVersion.getStatus();
+        if (ApiStatusEnum.UP.getName().equals(status) || ApiStatusEnum.DOWN.getName().equals(status)) {
+            String newPath = DataServiceUtil.apiSixUrl + ApiSixCreateInfo.newPath(apiInfoByVersion);
+            apiInfoByVersion.setPath(newPath);
+        }
+        return apiInfoByVersion;
+    }
+
 
     public ApiPoly getApiPoly(String id, String version) {
         return apiPolyDao.getEffectiveApiPoly(id, version, AtlasConfiguration.METASPACE_API_POLY_EFFECTIVE_TIME.getLong());
@@ -2716,7 +2727,7 @@ public class DataShareService {
     }
 
 
-    public Map testAPIV2(String randomName, ApiInfoV2 apiInfo, long limit, long offset) throws AtlasBaseException {
+    public ApiTestResultVO testAPIV2(String randomName, ApiInfoV2 apiInfo, long limit, long offset) throws AtlasBaseException {
         String tableName = null;
         String dbName = null;
 
@@ -2773,15 +2784,18 @@ public class DataShareService {
 
             ApiPolyEntity apiPolyEntity = apiInfo.getApiPolyEntity();
 
-            List<LinkedHashMap<String, Object>> result = pageResult.getLists();
+            ApiTestResultVO apiTestResult = new ApiTestResultVO();
+            List<LinkedHashMap<String, Object>> result;
+            if (pageResult == null) {
+                return apiTestResult;
+            }
+            result = pageResult.getLists();
             if (apiPolyEntity != null && CollectionUtils.isNotEmpty(apiPolyEntity.getDesensitization())) {
                 result = processSensitiveDataV2(apiInfo, apiPolyEntity.getDesensitization(), result);
             }
-
-            Map resultMap = new HashMap();
-            resultMap.put("queryResult", result);
-            resultMap.put("queryCount", pageResult.getTotalSize());
-            return resultMap;
+            apiTestResult.setQueryResult(result);
+            apiTestResult.setQueryCount(pageResult.getTotalSize());
+            return apiTestResult;
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -2790,7 +2804,7 @@ public class DataShareService {
         }
     }
 
-    public Map testAPI(String randomName, ApiInfoV2 apiInfo, long limit, long offset) throws AtlasBaseException {
+    public ApiTestResultVO testAPI(String randomName, ApiInfoV2 apiInfo, long limit, long offset, String format) throws AtlasBaseException {
         String tableName = null;
         String dbName = null;
         DataSourceType sourceType = DataSourceType.getType(apiInfo.getSourceType());
@@ -2844,20 +2858,20 @@ public class DataShareService {
                 return null;
             });
             taskMap.put(randomName, future);
+            ApiTestResultVO apiTestResult = new ApiTestResultVO();
             PageResult<LinkedHashMap<String, Object>> pageResult = future.get();
+            if (pageResult == null) {
+                return apiTestResult;
+            }
             taskMap.remove(randomName);
-
             ApiPolyEntity apiPolyEntity = apiInfo.getApiPolyEntity();
-
             List<LinkedHashMap<String, Object>> result = pageResult.getLists();
             if (apiPolyEntity != null && CollectionUtils.isNotEmpty(apiPolyEntity.getDesensitization())) {
                 result = processSensitiveDataV2(apiInfo, apiPolyEntity.getDesensitization(), result);
             }
-
-            Map resultMap = new HashMap();
-            resultMap.put("queryResult", result);
-            resultMap.put("queryCount", pageResult.getTotalSize());
-            return resultMap;
+            apiTestResult.setQueryResult(result);
+            apiTestResult.setQueryCount(pageResult.getTotalSize());
+            return apiTestResult;
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
@@ -3056,10 +3070,10 @@ public class DataShareService {
             if (page_num != null && Long.parseLong(page_num) > 0) {
                 offset = (Long.parseLong(page_num) - 1) * limit;
             }
-            Map resultMap = testAPIV2(id, apiInfoByVersion, limit, offset);
-            List<LinkedHashMap<String, Object>> result = (List<LinkedHashMap<String, Object>>) resultMap.get("queryResult");
+            ApiTestResultVO apiTestResultVO = testAPIV2(id, apiInfoByVersion, limit, offset);
+            List<LinkedHashMap<String, Object>> result = apiTestResultVO.getQueryResult();
 
-            long count = Long.parseLong(resultMap.get("queryCount").toString());
+            long count = apiTestResultVO.getQueryCount();
             JsonQueryResult queryResult = new JsonQueryResult();
             queryResult.setDatas(result);
             queryResult.setTotalCount(count);

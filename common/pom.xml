@@ -154,6 +154,12 @@
             <artifactId>maven-model</artifactId>
             <version>3.6.3</version>
         </dependency>
+        <dependency>
+            <groupId>us.fatehi</groupId>
+            <artifactId>schemacrawler</artifactId>
+            <version>16.2.4</version>
+            <scope>compile</scope>
+        </dependency>
 
 
     </dependencies>

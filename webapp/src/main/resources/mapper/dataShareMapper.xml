@@ -14,7 +14,7 @@
                 typeHandler="io.zeta.metaspace.web.util.JSONTypeHandlerPg"/>
     </resultMap>
     <update id="apiNewPath">
-        update api set path = #{newPath},mobius_id=#{apiSixId} where api.guid = #{guid} and api.version = #{version}
+        update api set mobius_id=#{apiSixId} where api.guid = #{guid} and api.version = #{version}
     </update>
 
     <select id="getApiDisplayInfos" resultMap="apiInfos">
