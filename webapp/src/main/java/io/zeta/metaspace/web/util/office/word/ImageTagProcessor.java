@@ -13,9 +13,11 @@ import com.itextpdf.tool.xml.WorkerContext;
 import com.itextpdf.tool.xml.exceptions.RuntimeWorkerException;
 import com.itextpdf.tool.xml.html.HTML;
 import com.itextpdf.tool.xml.pipeline.html.HtmlPipelineContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ImageTagProcessor extends com.itextpdf.tool.xml.html.Image {
-
+    private static final Logger LOG = LoggerFactory.getLogger(ImageTagProcessor.class);
     /*
      * (non-Javadoc)
      *
@@ -39,7 +41,7 @@ public class ImageTagProcessor extends com.itextpdf.tool.xml.html.Image {
                         throw new Exception(e);
                     } catch (Exception e1) {
                         // TODO Auto-generated catch block
-                        e1.printStackTrace();
+                        LOG.error("end失败", e);
                     }
                 }
                 if (img != null) {

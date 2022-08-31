@@ -9,6 +9,8 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.ss.usermodel.Color;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -24,6 +26,7 @@ import java.io.IOException;
  * 工具类
  */
 public class POIUtil {
+    private static final Logger LOG = LoggerFactory.getLogger(POIUtil.class);
     /**
      * 获取单元格颜色
      *
@@ -127,7 +130,7 @@ public class POIUtil {
                 return result;
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("scale失败", e);
         }
         return null;
     }

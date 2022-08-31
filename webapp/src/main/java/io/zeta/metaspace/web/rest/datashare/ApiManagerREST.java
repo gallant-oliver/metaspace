@@ -39,6 +39,7 @@ import io.zeta.metaspace.model.result.DownloadUri;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.share.*;
+import io.zeta.metaspace.model.sourceinfo.derivetable.constant.Constant;
 import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.model.TemplateEnum;
 import io.zeta.metaspace.web.service.*;
@@ -48,6 +49,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.metadata.CategoryEntityV2;
 import org.apache.atlas.model.metadata.CategoryInfoV2;
+import org.apache.atlas.repository.Constants;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.atlas.web.util.Servlets;
 import org.apache.commons.collections.CollectionUtils;
@@ -242,8 +244,8 @@ public class ApiManagerREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     @OperateType(OperateTypeEnum.DELETE)
     public Result deleteApi(List<String> ids, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        List<String> projectNames = shareService.getApiInfoByIds(ids).stream().map(apiInfoV2 -> apiInfoV2.getName()).collect(Collectors.toList());
-        if (projectNames == null || projectNames.size() == 0) {
+        List<String> projectNames = shareService.getApiInfoByIds(ids).stream().map(ApiInfoV2::getName).collect(Collectors.toList());
+        if (projectNames.size() == 0) {
             return ReturnUtil.success();
         }
         HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "批量删除api:[" + Joiner.on("、").join(projectNames) + "]");
@@ -292,6 +294,26 @@ public class ApiManagerREST {
     public Result getApiInfo(@PathParam("apiId") String apiId) throws AtlasBaseException {
         try {
             ApiInfoV2 apiInfoMaxVersion = shareService.getApiInfoMaxVersion(apiId);
+            return ReturnUtil.success(apiInfoMaxVersion);
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取详情失败");
+        }
+    }
+
+    /**
+     * 获取api详情(创建新版本时调用)
+     *
+     * @param apiId
+     * @return
+     * @throws AtlasBaseException
+     */
+    @GET
+    @Path("/{apiId}/template/info")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result getApiNeWInfo(@PathParam("apiId") String apiId) throws AtlasBaseException {
+        try {
+            ApiInfoV2 apiInfoMaxVersion = shareService.getApiInfoTemplateVersion(apiId);
             return ReturnUtil.success(apiInfoMaxVersion);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取详情失败");
@@ -626,7 +648,7 @@ public class ApiManagerREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getDatabaseByQuery(Parameters parameters, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
         try {
-            PageResult<Database> pageResult = searchService.getDatabasePageResultV2(parameters, tenantId);
+            PageResult<Database> pageResult = searchService.getHiveDatabase(parameters, tenantId);
             return ReturnUtil.success(pageResult);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取库列表失败");
@@ -1071,6 +1093,15 @@ public class ApiManagerREST {
                 inputStream.close();
             }
         }
+    }
+
+    @GET
+    @Path("/dock/type")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result dockType(){
+        DockTypeVO dockTypeVO = new DockTypeVO(Constants.DATA_SHARE_DOCKING_TYPE);
+        return  ReturnUtil.success(dockTypeVO);
     }
 
     public static String filename(String filePath) throws UnsupportedEncodingException {

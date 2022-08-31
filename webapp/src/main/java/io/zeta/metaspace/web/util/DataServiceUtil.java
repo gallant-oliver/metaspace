@@ -13,12 +13,15 @@
 
 package io.zeta.metaspace.web.util;
 
+import io.zeta.metaspace.model.share.ApiInfoV2;
 import io.zeta.metaspace.model.share.QueryResult;
 import io.zeta.metaspace.web.service.DataShareService;
 import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -31,16 +34,19 @@ import javax.servlet.http.HttpServletRequest;
  */
 @Component
 public class DataServiceUtil {
+    private static final Logger LOG = LoggerFactory.getLogger(DataServiceUtil.class);
     @Autowired
     public DataShareService dataShareService;
     private static DataServiceUtil utils;
     public static String mobiusUrl;
+    public static String apiSixUrl;
     static{
         try {
             Configuration configuration = ApplicationProperties.get();
             mobiusUrl=configuration.getString("metaspace.mobius.url");
+            apiSixUrl=configuration.getString("apisix_address");
         } catch (AtlasException e) {
-            e.printStackTrace();
+            LOG.error("初始化配置失败", e);
         }
     }
 

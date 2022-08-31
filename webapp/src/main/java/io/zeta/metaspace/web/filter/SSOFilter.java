@@ -65,10 +65,6 @@ public class SSOFilter implements Filter {
         httpRequestContext.setRequest(httpServletRequest);
         httpRequestContext.setIp(getIpAdress(httpServletRequest));
         try {
-            if (FilterUtils.isSkipUrl(requestURL)) {
-                filterChain.doFilter(request, response);
-                return;
-            }
             if (FilterUtils.isDataService(requestURL)){
                 filterChain.doFilter(request, response);
                 return;
