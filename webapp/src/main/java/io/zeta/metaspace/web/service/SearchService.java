@@ -24,6 +24,7 @@ import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.model.HiveConstant;
@@ -103,6 +104,8 @@ public class SearchService {
     private PublicService publicService;
     @Autowired
     private DbDAO dbDAO;
+    @Autowired
+    private TaskManageDAO taskManageDAO;
     // 神通数据库分页字段
     private static final String OSCAR_PAGE_COLUMN = "TEMP_COLUMN_RNUM";
 
@@ -151,7 +154,7 @@ public class SearchService {
                     return databasePageResult;
                 }
                 if(StringUtils.isNotBlank(query)){
-                    query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
+                    query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
                 }
                 databaseList = databaseInfoDAO.selectByDbNameAndTenantId(tenantId, groupIds,query, dbList, limit, offset);
             } else if (HiveConstant.SOURCE_ID.equalsIgnoreCase(sourceId)) {
@@ -216,7 +219,7 @@ public class SearchService {
             if (StringUtils.isEmpty(sourceId)) {
                 dbList = tenantService.getDatabase(tenantId);
                 if(StringUtils.isNotBlank(query)){
-                    query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
+                    query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
                 }
                 databaseList = databaseInfoDAO.selectByDbNameAndTenantId(tenantId, groupIds,query, dbList, limit, offset);
             } else if (HiveConstant.SOURCE_ID.equalsIgnoreCase(sourceId)) {
@@ -291,7 +294,7 @@ public class SearchService {
             }*/
 
             if(StringUtils.isNotBlank(query)){
-                query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
+                query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
             }
 
             List<String> databaseNames = dbDAO.getHiveDatabasesByQuery(query);
@@ -573,12 +576,8 @@ public class SearchService {
 
     public PageResult<TableInfo> getTableByDBWithQueryWithoutTmp(String databaseId, Parameters parameters, String tenantId) throws AtlasBaseException {
         try {
-            List<String> categoryIds = getPermissionCategoryIds(tenantId);
             PageResult<TableInfo> pageResult = new PageResult<>();
-            if (Objects.isNull(categoryIds) || categoryIds.size() == 0) {
-                return pageResult;
-            }
-            List<TableInfo> tableList = roleDAO.getTableInfosByDBId(categoryIds, databaseId);
+            List<TableInfo> tableList = roleDAO.getTableInfosByDBId(databaseId);
 
             tableList.forEach(table -> {
                 String displayName = table.getDisplayName();
@@ -849,7 +848,7 @@ public class SearchService {
     @Transactional(rollbackFor = Exception.class)
     public PageResult<DataSourceHeader> getTechnicalDataSourcePageResultV2(Parameters parameters, String categoryId, String tenantId) throws AtlasBaseException {
         List<String> strings = new ArrayList<>();
-        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false);
+        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false,null);
         for (CategoryPrivilegeV2 categoryPrivilegeV2 : userPrivilegeCategory.values()) {
             if (categoryPrivilegeV2.getEditItem()) {
                 strings.add(categoryPrivilegeV2.getGuid());
@@ -866,7 +865,7 @@ public class SearchService {
     public PageResult<DataSourceHeader> getDataSourceResultV2(Parameters parameters, List<String> strings, String categoryGuid, String tenantId) throws AtlasBaseException {
         String query = parameters.getQuery();
         if (Objects.nonNull(query))
-            query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
+            query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
         PageResult<DataSourceHeader> databasePageResult = new PageResult<>();
         //如果没目录
         if (strings.size() == 0) {
@@ -913,7 +912,7 @@ public class SearchService {
     @Transactional(rollbackFor = Exception.class)
     public PageResult<DatabaseHeader> getTechnicalDatabasePageResultV2(Parameters parameters, String sourceId, String categoryId, String tenantId) throws AtlasBaseException {
         List<String> strings = new ArrayList<>();
-        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false);
+        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false,null);
         for (CategoryPrivilegeV2 categoryPrivilegeV2 : userPrivilegeCategory.values()) {
             if (categoryPrivilegeV2.getEditItem()) {
                 strings.add(categoryPrivilegeV2.getGuid());
@@ -938,7 +937,7 @@ public class SearchService {
         User user = AdminUtils.getUserData();
         List<String> strings = new ArrayList<>();
         //判断多租户和独立部署
-        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false);
+        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false,null);
         for (CategoryPrivilegeV2 categoryPrivilegeV2 : userPrivilegeCategory.values()) {
             if (categoryPrivilegeV2.getEditItem()) {
                 strings.add(categoryPrivilegeV2.getGuid());
@@ -959,7 +958,7 @@ public class SearchService {
     public PageResult<DatabaseHeader> getDatabaseResultV2(Parameters parameters, List<String> strings, String sourceId, String categoryGuid, String tenantId) throws AtlasBaseException {
         String query = parameters.getQuery();
         if (Objects.nonNull(query))
-            query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
+            query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
         PageResult<DatabaseHeader> databasePageResult = new PageResult<>();
         //如果没目录
         if (strings.size() == 0) {
@@ -1086,7 +1085,7 @@ public class SearchService {
     @Transactional(rollbackFor = Exception.class)
     public PageResult<AddRelationTable> getTechnicalTablePageResultV2(Parameters parameters, String categoryId, String tenantId) throws AtlasBaseException {
         List<String> strings = new ArrayList<>();
-        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false);
+        Map<String, CategoryPrivilegeV2> userPrivilegeCategory = userGroupService.getUserPrivilegeCategory(tenantId, 0, false, null);
         for (CategoryPrivilegeV2 categoryPrivilegeV2 : userPrivilegeCategory.values()) {
             if (categoryPrivilegeV2.getEditItem()) {
                 strings.add(categoryPrivilegeV2.getGuid());
@@ -1126,7 +1125,7 @@ public class SearchService {
             return tablePageResult;
         }
         if (Objects.nonNull(query)) {
-            query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
+            query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
         }
         List<String> databases = tenantService.getDatabase(tenantId);
         //获取匹配到的所有表
@@ -1214,7 +1213,7 @@ public class SearchService {
             }
             List<String> databases = tenantService.getDatabase(tenantId);
             if (Objects.nonNull(query))
-                query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");;
+                query = query.replaceAll("%", "\\\\%").replaceAll("_", "\\\\_");
             if (databases != null && databases.size() != 0)
                 tableInfo = userGroupDAO.getTableInfosV2(strings, query, offset, limit, databases, tenantId);
             List<AddRelationTable> tables = getTables(tableInfo);
@@ -1277,6 +1276,21 @@ public class SearchService {
         //strings = getChildAndOwnerCategorysByRoles(userGroups, tenantId);*/
 
         return getDatabaseV2(parameters, tenantId);
+    }
+
+    /**
+     * 数据服务获取hive的数据源下的库
+     * 1.当前用户所在用户组拥有的库
+     * 2.该数据库进行过登记，且当前用户具有登记所在的技术目录权限
+     */
+    public PageResult<Database> getHiveDatabase(Parameters parameters, String tenantId) throws AtlasBaseException {
+        PageResult<Database> pageResult = new PageResult<>();
+        String userId = AdminUtils.getUserData().getUserId();
+        List<Database> databases = taskManageDAO.getUserGroupHiveDatabase(tenantId, userId, parameters.getLimit(), parameters.getOffset());
+        pageResult.setTotalSize(taskManageDAO.getUserGroupHiveDatabaseSize(tenantId, userId));
+        pageResult.setLists(databases);
+        pageResult.setCurrentSize(databases.size());
+        return pageResult;
     }
 
     //多租户

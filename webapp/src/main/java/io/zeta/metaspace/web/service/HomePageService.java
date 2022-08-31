@@ -99,7 +99,7 @@ public class HomePageService {
             for (String tenantId : tenants) {
                 homePageDAO.deleteStatistical(date, tenantId);
                 int dbTotal = this.getSingleDayDBTotal(tenantId);
-                int tbTotal = this.getSingleDayDBTotal(tenantId);
+                int tbTotal = this.getSingleDayTBTotal(tenantId);
                 long businessCount = homePageDAO.getBusinessCount(tenantId);
                 long addedBusinessCount = homePageDAO.getAddedBusinessCount(tenantId);
                 long noAddedBusinessCount = homePageDAO.getNoAddedBusinessCount(tenantId);
@@ -197,12 +197,12 @@ public class HomePageService {
     }
 
     private int getSingleDayDBTotal(String tenantId) {
-        List<String> dbs = tenantService.getDatabase(tenantId);
+        List<String> dbs = tenantService.getDatabaseByTenantId(tenantId);
         return relationDAO.selectByTenantIdAndDatabaseName(tenantId, dbs);
     }
 
     private int getSingleDayTBTotal(String tenantId) {
-        List<String> dbs = tenantService.getDatabase(tenantId);
+        List<String> dbs = tenantService.getDatabaseByTenantId(tenantId);
         return tableDAO.selectCountByTenantIdAndDbName(tenantId, dbs);
     }
 

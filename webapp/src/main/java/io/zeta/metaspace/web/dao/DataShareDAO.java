@@ -761,7 +761,7 @@ public interface DataShareDAO {
     @Select("select mobius_id from api where guid=#{id} and valid=true")
     public List<String> getApiMobiusIds(@Param("id")String id);
 
-    @Select("select mobius_id from api where guid=#{id} and version={version}}")
+    @Select("select mobius_id from api where guid=#{id} and version=#{version} ")
     public String getApiMobiusIdByVersion(@Param("id")String id,@Param("version")String version);
 
     @Select("<script>" +
@@ -834,4 +834,7 @@ public interface DataShareDAO {
     List<ApiTestDTO> getApiAndGroupInfoStatus(@Param("version")String version,@Param("guid")String guid);
 
     List<String> getProjectName(@Param("ids") List<String> ids,@Param("tenantId") String tenantId);
+
+    void apiNewPath(@Param("guid") String guid,@Param("version") String version,@Param("newPath") String newPath,
+                    @Param("apiSixId") String apiSixId);
 }

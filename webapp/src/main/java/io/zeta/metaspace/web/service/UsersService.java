@@ -202,7 +202,7 @@ public class UsersService {
             info.setUser(user);
             //userGroups
             List<CategoryPrivilege> technicalCategoryList = dataManageService.getTechnicalCategoryByUserId(tenantId, userId);
-            List<String> guidList = technicalCategoryList.stream().map(item -> item.getGuid()).collect(Collectors.toList());
+            List<String> guidList = technicalCategoryList.stream().map(CategoryPrivilege::getGuid).collect(Collectors.toList());
             List<CategoryPath> technicalPaths = categoryDAO.getPathByIds(guidList, 0, tenantId);
             Map<String,String> technicalPathMap = new HashMap<>();
             technicalPaths.forEach(path->{
@@ -218,21 +218,26 @@ public class UsersService {
             }
             info.setTechnicalCategory(technicals);
 
-            Map<String, CategoryPrivilegeV2> businessCategories = userGroupService.getUserPrivilegeCategory(tenantId, 1, false);
+            List<CategorycateQueryResult> businessCategories = businessCatalogueService.getAllCategories(1, tenantId, userId);
             List<UserInfo.Category> business = new ArrayList<>();
-            if (businessCategories.size()!=0){
-                List<CategoryPath> businessPaths = categoryDAO.getPathByIds(Lists.newArrayList(businessCategories.keySet()), 1, tenantId);
-                Map<String,String> businessPathMap = new HashMap<>();
-                businessPaths.forEach(path->{
+            if (businessCategories != null && !businessCategories.isEmpty()) {
+                List<String> categoryGuids = businessCategories.stream().map(CategorycateQueryResult::getGuid).collect(Collectors.toList());
+                List<CategoryPath> indicatorPaths = categoryDAO.getPathByIds(categoryGuids, 1, tenantId);
+                Map<String, String> businessPathMap = new HashMap<>();
+                indicatorPaths.forEach(path -> {
                     String categoryPath = path.getPath().replace("\"", "").replace("{", "").replace("}", "").replace(",", "/");
-                    businessPathMap.put(path.getGuid(),categoryPath);
+                    businessPathMap.put(path.getGuid(), categoryPath);
                 });
-                for (CategoryPrivilegeV2 category:businessCategories.values()){
-                    UserInfo.Category technicalCategory = new UserInfo.Category(category);
-                    String path=businessPathMap.get(category.getGuid());
-                    technicalCategory.setPath(path);
-                    business.add(technicalCategory);
-                }
+                business = businessCategories.stream().map(item -> {
+                    UserInfo.Category category = new UserInfo.Category();
+                    category.setGuid(item.getGuid());
+                    category.setCategoryName(item.getName());
+                    category.setRead(item.getRead());
+                    category.setEditItem(item.getEditItem());
+                    category.setEditCategory(item.getEditCategory());
+                    category.setPath(businessPathMap.get(category.getGuid()));
+                    return category;
+                }).collect(Collectors.toList());
             }
             info.setBusinessCategory(business);
 

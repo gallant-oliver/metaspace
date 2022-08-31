@@ -993,7 +993,7 @@ public class BusinessREST {
             sortCategory.setSort(sort);
             sortCategory.setOrder(order);
             sortCategory.setGuid(guid);
-            List<RoleModulesCategories.Category> categories = dataManageService.sortCategory(sortCategory, CATEGORY_TYPE, tenantId);
+            List<CategoryPrivilege> categories = dataManageService.sortCategory(sortCategory, CATEGORY_TYPE, tenantId);
             return ReturnUtil.success(categories);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "目录排序并变更结构失败");
@@ -1045,7 +1045,7 @@ public class BusinessREST {
                 uri.setDownloadUri(downURL);
                 return ReturnUtil.success(uri);
             }
-            DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
+                DownloadUri downloadUri = ExportDataPathUtils.generateURL(url, ids);
             return ReturnUtil.success(downloadUri);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "导出业务对象失败");

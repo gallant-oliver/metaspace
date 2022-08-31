@@ -1373,7 +1373,7 @@ public class UserGroupService {
         List<CategoryPrivilegeV2> userGroupCategory = Lists.newArrayList(getUserGroupPrivilegeCategory(groupId,tenantId,type).values());
 
 
-        Map<String,CategoryPrivilegeV2> userMap = getUserPrivilegeCategory(tenantId,type,isAll);
+        Map<String, CategoryPrivilegeV2> userMap = getUserPrivilegeCategory(tenantId, type, isAll, null);
 
         //合并用户组和用户目录权限
         for (CategoryPrivilegeV2 category:userGroupCategory){
@@ -1451,7 +1451,7 @@ public class UserGroupService {
     public List<CategoryGroupAndUser> getNoPrivilegeCategory(String groupId,int type,String tenantId,boolean isAll) throws AtlasBaseException {
         List<CategoryGroupAndUser> categories = new ArrayList<>();
         //获取用户权限目录
-        List<CategoryPrivilegeV2> userCategory = Lists.newArrayList(getUserPrivilegeCategory(tenantId,type,isAll).values());
+        List<CategoryPrivilegeV2> userCategory = Lists.newArrayList(getUserPrivilegeCategory(tenantId, type, isAll, null).values());
 
         //获取用户组权限目录
         Map<String,CategoryPrivilegeV2> userGroupMap = getUserGroupPrivilegeCategory(groupId,tenantId,type);
@@ -1550,16 +1550,18 @@ public class UserGroupService {
      * @return
      * @throws AtlasBaseException
      */
-    public Map<String,CategoryPrivilegeV2> getUserPrivilegeCategory(String tenantId,int type,boolean isAll) throws AtlasBaseException {
-        List<CategoryPrivilegeV2> userCategories=null;
-        Map<String,CategoryPrivilegeV2> userMap = new HashMap<>();
-        if (isAll){
-            userCategories=userGroupDAO.getAllCategoryPrivilege(type,tenantId);
-        }else{
-            User user = AdminUtils.getUserData();
+    public Map<String, CategoryPrivilegeV2> getUserPrivilegeCategory(String tenantId, int type, boolean isAll, String userId) throws AtlasBaseException {
+        List<CategoryPrivilegeV2> userCategories = null;
+        Map<String, CategoryPrivilegeV2> userMap = new HashMap<>();
+        if (isAll) {
+            userCategories = userGroupDAO.getAllCategoryPrivilege(type, tenantId);
+        } else {
+            if (userId == null) {
+                userId = AdminUtils.getUserData().getUserId();
+            }
             //获取用户组
-            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(user.getUserId(), tenantId).stream().map(userGroup -> userGroup.getId()).collect(Collectors.toList());
-            if (userGroupIds==null||userGroupIds.size()==0){
+            List<String> userGroupIds = userGroupDAO.getuserGroupByUsersId(userId, tenantId).stream().map(UserGroup::getId).collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(userGroupIds)) {
                 return userMap;
             }
             //获取用户组对应的权限目录
@@ -1589,7 +1591,7 @@ public class UserGroupService {
             } else {
                 userCategories = userGroupDAO.getUserGroupsCategory(userGroupIds, tenantId, type, allDBNames);
             }
-            List<String> categoryIds = userCategories.stream().map(category -> category.getGuid()).collect(Collectors.toList());
+            List<String> categoryIds = userCategories.stream().map(CategoryPrivilegeV2::getGuid).collect(Collectors.toList());
             if (CollectionUtils.isEmpty(categoryIds)) {
                 return userMap;
             }
@@ -1638,7 +1640,7 @@ public class UserGroupService {
             return;
         }
         CategoryEntityV2 firstCategory = categoryDAO.queryByGuid(categoryIds.get(0), tenantId);
-        Map<String, CategoryPrivilegeV2> userMap = getUserPrivilegeCategory(tenantId, firstCategory.getCategoryType(), false);
+        Map<String, CategoryPrivilegeV2> userMap = getUserPrivilegeCategory(tenantId, firstCategory.getCategoryType(), false, null);
         if (!isDeleteCategory(categoryIds,userMap,userGroupId,firstCategory.getCategoryType(),tenantId)){
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "权限不足，无法移除，请检查对用户对当前目录或子目录的权限");
         }
@@ -1683,9 +1685,9 @@ public class UserGroupService {
         Map<String, CategoryPrivilegeV2> userCategoryMap;
         List<CategoryPrivilege> userCategorys = new ArrayList<>();
         if (categoryType==3||categoryType==4){
-            userCategoryMap = getUserPrivilegeCategory(tenantId, categoryType, true);
+            userCategoryMap = getUserPrivilegeCategory(tenantId, categoryType, true, null);
         }else{
-            userCategoryMap = getUserPrivilegeCategory(tenantId, categoryType, false);
+            userCategoryMap = getUserPrivilegeCategory(tenantId, categoryType, false, null);
         }
         for (CategoryPrivilegeV2 category : userCategoryMap.values()) {
             CategoryPrivilege categoryPrivilege = new CategoryPrivilege(category);

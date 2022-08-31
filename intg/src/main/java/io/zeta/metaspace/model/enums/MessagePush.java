@@ -25,7 +25,8 @@ public enum MessagePush {
     RESOURCE_AUDIT_INFO_DATABASE(0, "资源审核信息", "您有名称为【%s】的数据库登记发布待审批", "数据资产/数据库登记"),
     RESOURCE_AUDIT_INFO_BUSINESS_DIR(0, "资源审核信息", "您有名称为【%s】的业务目录【%s】待审批", "数据资产/业务目录"),
     RESOURCE_AUDIT_INFO_BUSINESS_OBJECT(0, "资源审核信息", "您有名称为【%s】的业务对象【%s】待审批", "数据资产/业务目录/业务对象"),
-    RESOURCE_AUDIT_INFO_INDEX_DESIGN(0, "资源审核信息", "您有名称为【%s】的【%s】-【%s】审批【%s】", "指标设计/%s"),
+    RESOURCE_AUDIT_INFO_INDEX_DESIGN(0, "资源审核信息", "您有名称为【%s】的【%s】-【%s】审批【%s】", "数据资产/%s"),
+    RESOURCE_AUDIT_INFO_INDEX_DESIGN_CANCEL(0, "资源审核信息", "您有名称为【%s】的【%s】-【%s】已撤回申请", "数据资产/%s"),
 
     //用户组管理
     USER_GROUP_USER_MEMBER_ADD(1,"用户组信息","您已经被添加到【%s】用户组中","系统管理/用户组管理"),

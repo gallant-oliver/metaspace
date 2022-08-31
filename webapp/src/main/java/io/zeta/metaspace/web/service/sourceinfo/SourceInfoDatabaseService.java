@@ -330,6 +330,7 @@ public class SourceInfoDatabaseService implements Approvable {
         }else{
             databaseInfoDAO.updateStatusByIds(ids,Status.FOUNDED.getIntValue()+"");
         }
+        fileInfoService.createFileuploadRecord(databaseInfo.getAnnexId(),FileInfoPath.DATABASE_REGISTRATION_FILE);
         return checkResult;
     }
 

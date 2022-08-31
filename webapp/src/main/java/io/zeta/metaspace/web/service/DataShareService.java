@@ -61,6 +61,8 @@ import io.zeta.metaspace.model.security.Queue;
 import io.zeta.metaspace.model.security.SecuritySearch;
 import io.zeta.metaspace.model.security.UserAndModule;
 import io.zeta.metaspace.model.share.*;
+import io.zeta.metaspace.model.share.apisix.ApiSixCreateInfo;
+import io.zeta.metaspace.model.share.apisix.ApiSixResultVO;
 import io.zeta.metaspace.model.sync.SyncTaskDefinition;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.model.user.UserIdAndName;
@@ -1543,7 +1545,7 @@ public class DataShareService {
      * @return
      */
     public PageResult<Map<String, Object>> getDbDataList(ColumnParameters parameters, String tenantId, String sourceId) {
-        List<DBInfo> dbInfoList = taskManageDAO.getUserGroupDatabase(tenantId, sourceId);
+        List<DBInfo> dbInfoList = taskManageDAO.getUserGroupDatabase(tenantId, sourceId, AdminUtils.getUserData().getUserId());
         PageResult<Map<String, Object>> schemaPage = new PageResult<>();
         List<Map<String, Object>> schemaNameList = dbInfoList.stream()
                 .skip(parameters.getOffset())
@@ -1559,6 +1561,24 @@ public class DataShareService {
         return schemaPage;
     }
 
+    /**
+     * 根据配置的用户组权限获取hive数据库
+     *
+     * @param parameters
+     * @param tenantId
+     * @return
+     */
+    public PageResult<Database> getHiveDbDataList(Parameters parameters, String tenantId) {
+        PageResult<Database> schemaPage = new PageResult<>();
+        List<Database> dbInfoList = taskManageDAO.getHiveUserGroupDatabase(parameters, tenantId);
+        if (CollectionUtils.isEmpty(dbInfoList)) {
+            return schemaPage;
+        }
+        schemaPage.setLists(dbInfoList);
+        schemaPage.setCurrentSize(dbInfoList.size());
+        schemaPage.setTotalSize(dbInfoList.get(0).getTotal());
+        return schemaPage;
+    }
 
     public enum SEARCH_TYPE {
         SCHEMA, TABLE, COLUMN
@@ -1937,7 +1957,7 @@ public class DataShareService {
             HttpRequestContext.get().auditLog(ModuleEnum.APIMANAGE.getAlias(), "更新api策略:" + apiInfo.getName() + " " + apiInfo.getVersion());
 
             if (Stream.of(ApiStatusEnum.UP, ApiStatusEnum.DOWN).map(ApiStatusEnum::getName).noneMatch(s -> s.equals(apiInfo.getStatus()))) {
-                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未审核的api无法只编辑策略");
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "未审核的api无法编辑策略");
             }
 
             long count = apiPolyDao.countApiPolyByStatus(apiId, version, AuditStatusEnum.NEW);
@@ -1953,7 +1973,10 @@ public class DataShareService {
 
             //添加审核记录
             auditService.insertApiAudit(tenantId, apiId, version, apiInfo.getVersionNum(), apiPoly.getId());
+        } catch (AtlasBaseException e) {
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         } catch (Exception e) {
+            LOG.error("updateAPIInfoV2ApiPolyEntity exception is {}", e);
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新 API 策略失败");
         }
     }
@@ -2014,11 +2037,8 @@ public class DataShareService {
         addApiLogs(ApiLogEnum.DELETE, ids, AdminUtils.getUserData().getUserId());
         for (String apiMobiuId : apiMobiusIds) {
             if (StringUtils.isNotEmpty(apiMobiuId)) {
-                if (apiMobiuId != null && apiMobiuId.length() != 0) {
-                    List<String> groupIds = shareDAO.getMobiusApiGroupIds(apiMobiuId);
-                    deleteApiMobius(apiMobiuId, groupIds);
-                }
-
+                List<String> groupIds = shareDAO.getMobiusApiGroupIds(apiMobiuId);
+                deleteDockApi(apiMobiuId, groupIds);
             }
         }
         apiGroupDAO.deleteRelationByApi(ids);
@@ -2050,8 +2070,45 @@ public class DataShareService {
         String apiMobiusId = shareDAO.getApiMobiusIdByVersion(api.getApiId(), api.getVersion());
         List<String> groupIds = shareDAO.getMobiusApiGroupIds(apiMobiusId);
         apiGroupDAO.deleteRelationByApiVersion(api);
-        if (StringUtils.isNotEmpty(apiMobiusId)) {
-            deleteApiMobius(apiMobiusId, groupIds);
+        deleteDockApi(apiMobiusId,groupIds);
+    }
+
+    /**
+     * 删除外部api，云平台、apiSix
+     * @param dockId
+     */
+    private void deleteDockApi(String dockId, List<String> groupIds) {
+        if (StringUtils.isEmpty(dockId)) {
+            return;
+        }
+        if (Constants.DATA_SHARE_DOCKING_TYPE == CommonConstant.MOBIUS_TYPE) {
+            deleteApiMobius(dockId, groupIds);
+        }
+        if (Constants.DATA_SHARE_DOCKING_TYPE == CommonConstant.API_SIX_TYPE) {
+            deleteApiSix(dockId);
+        }
+    }
+
+    private void deleteApiSix(String dockId){
+        String apiSixUrl = DataServiceUtil.apiSixUrl + "/apisix/admin/routes/"+ dockId;
+        Map<String, String> headerMap = Maps.newHashMap();
+        headerMap.put("X-API-KEY", Constants.X_API_KEY);
+        int retryCount = 0;
+        int retries = 3;
+        ApiSixResultVO apiSixDeleteVO = null;
+        boolean createResult = true;
+        while (retryCount < retries) {
+            String res = OKHttpClient.doDelete(apiSixUrl,headerMap);
+            LOG.info(res);
+            apiSixDeleteVO = auditService.analResult(res);
+            if (StringUtils.isEmpty(apiSixDeleteVO.getMessage())) {
+                createResult = false;
+                break;
+            }
+            retryCount++;
+        }
+        if (createResult) {
+            throw new AtlasBaseException(apiSixDeleteVO.getMessage(),AtlasErrorCode.BAD_REQUEST, "删除api失败，apiSix删除api失败");
         }
     }
 
@@ -2129,6 +2186,17 @@ public class DataShareService {
             LOG.error("获取api信息", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取api信息");
         }
+    }
+
+    public ApiInfoV2 getApiInfoTemplateVersion(String id) throws AtlasBaseException {
+        ApiInfoV2 apiInfoMaxVersion = getApiInfoMaxVersion(id);
+        String path = apiInfoMaxVersion.getPath();
+        String truePathPrefix = CommonConstant.API_ACCESS_PREFIX + id + "/" + apiInfoMaxVersion.getVersion();
+        if (path.startsWith(truePathPrefix)) {
+            String s = path.replaceFirst(truePathPrefix, "");
+            apiInfoMaxVersion.setPath(s);
+        }
+        return apiInfoMaxVersion;
     }
 
     public ApiInfoV2 getApiInfoByVersion(String id, String version, String apiPolyId) throws AtlasBaseException {
@@ -2491,7 +2559,9 @@ public class DataShareService {
         } else {
             downStatus(guid);
         }
-        updateMobiusApiStatus(guid, status);
+        if(Constants.DATA_SHARE_DOCKING_TYPE == CommonConstant.MOBIUS_TYPE) {
+            updateMobiusApiStatus(guid, status);
+        }
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -3038,8 +3108,8 @@ public class DataShareService {
         List<ApiInfoV2.FieldV2> param = apiInfo.getParam();
         String queryString = request.getQueryString();
         if (queryString != null && queryString.length() != 0) {
-            String[] querys = queryString.split("&");
-            for (String query : querys) {
+            String[] querySubStr = queryString.split("&");
+            for (String query : querySubStr) {
                 String decode = URLDecoder.decode(ConvertPercent.convertPercent(query), "utf-8");
                 String[] entity = decode.split("=");
                 queryMap.put(entity[0], entity[1]);
@@ -3050,11 +3120,13 @@ public class DataShareService {
             String value = null;
             String name = field.getName();
             String place = field.getPlace();
-            if ("PATH".equals(place)) {
+            if (apiPath.contains("{") && apiPath.contains("}") && "PATH".equals(place)) {
                 String[] apiPaths = apiPath.split("/");
                 for (int i = 0; i < apiPaths.length; i++) {
-                    if (apiPaths[i].equals("{" + name + "}")) {
-                        value = paths[i + 1];
+                    if (apiPaths[i].contains("{") && apiPaths[i].contains("}") && apiPaths[i].equals("{" + name + "}")) {
+                        //真实path = randomId/版本/定义的path
+                        value = paths[i + 2];
+                        break;
                     }
                 }
             }
@@ -3530,7 +3602,9 @@ public class DataShareService {
                         headerMap.put(par.getName(), par.getValue());
                     }
                     if (CommonConstant.PATH_PARAM.equals(par.getPlace())) {
-                        path.append("/").append("{").append(par.getValue()).append("}");
+                        String s = path.toString();
+                        String replace = s.replace("{" + par.getName() + "}", par.getValue().toString());
+                        path = new StringBuilder(replace);
                     }
                     if (CommonConstant.QUERY_PARAM.equals(par.getPlace())) {
                         paramMap.put(par.getName(), par.getValue());
@@ -3558,7 +3632,9 @@ public class DataShareService {
                         headerMap.put(par.getName(), par.getValue().toString());
                     }
                     if (CommonConstant.PATH_PARAM.equals(par.getPlace())) {
-                        path.append("/").append("{").append(par.getValue()).append("}");
+                        String s = path.toString();
+                        String replace = s.replace("{" + par.getName() + "}", par.getValue().toString());
+                        path = new StringBuilder(replace);
                     }
                     if (CommonConstant.QUERY_PARAM.equals(par.getPlace())) {
                         paramMap.put(par.getName(), par.getValue().toString());

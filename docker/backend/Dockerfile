@@ -1,3 +1,4 @@
+ARG base_tag=4.0
 FROM docker.gridsumdissector.com/library/metaspace-backend-base-hadoop3:latest-8-sc516684
 LABEL describe="数据管理后端镜像"
 #代码仓库项目名称
@@ -14,7 +15,7 @@ RUN git fetch && git checkout ${branch} && git pull && \
   jar xf ../metaspace.war && \
   rm -rf ../metaspace.war
 
-FROM docker.gridsumdissector.com/zeta/base/zeta-backend-base:latest
+FROM docker.gridsumdissector.com/zeta/base/zeta-backend-base:${base_tag}
 WORKDIR /apps/metaspace
 #拷贝部署所需文件
 COPY --from=0 /usr/local/metaspace/distro/metaspace-*/conf ./conf
@@ -28,12 +29,6 @@ RUN  mkdir /apps/metaspace/logs
 #时区
 ENV TZ=Asia/Shanghai
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
-
-# 添加execl导出需要用到的lib
-RUN sed -i s/deb.debian.org/mirrors.aliyun.com/g /etc/apt/sources.list \
-&& apt-get clean \
-&& apt-get update \
-&& apt-get install -y fontconfig libfreetype6
 
 EXPOSE 21001
 #堆内存

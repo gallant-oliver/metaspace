@@ -28,6 +28,7 @@ import org.apache.ibatis.annotations.*;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Set;
 
 /*
  * @description
@@ -338,13 +339,13 @@ public interface BusinessDAO {
 
     //批量添加业务信息
     @Insert("<script>" +
-            "insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets,submitter,submissionTime,businessOperator,businessLastUpdate,ticketNumber,level2CategoryId,tenantid,businessstatus,technicalstatus,publish,status,private_status,create_mode,submitter_read) " +
+            "insert into businessinfo(departmentid,businessid,name,module,description,owner,manager,maintainer,dataassets,submitter,submissionTime,businessOperator,businessLastUpdate,ticketNumber,level2CategoryId,tenantid,businessstatus,technicalstatus,publish,status,private_status,create_mode,submitter_read,system_file_name,process_name) " +
             " values " +
             " <foreach item='info' index='index' collection='infos' separator='),(' open='(' close=')'>" +
             "#{info.departmentId},#{info.businessId},#{info.name},#{info.module},#{info.description},#{info.owner},#{info.manager}," +
             "#{info.maintainer},#{info.dataAssets},#{info.submitter},#{info.submissionTime},#{info.businessOperator}," +
             "#{info.businessLastUpdate},#{info.ticketNumber},#{info.level2CategoryId},#{tenantId},1,0,#{info.publish}," +
-            "#{info.status},#{info.privateStatus},#{info.createMode},#{info.submitterRead}" +
+            "#{info.status},#{info.privateStatus},#{info.createMode},#{info.submitterRead},#{info.systemFileName},#{info.processName}" +
             " </foreach>" +
             " </script>")
     public int insertBusinessInfos(@Param("infos") List<BusinessInfo> infos,@Param("tenantId")String tenantId);
@@ -412,7 +413,7 @@ public interface BusinessDAO {
     @Select("<script>" +
             " select count(*)over() total,* from (" +
             "select distinct t.tableguid tableId,t.tablename,t.status,t.databaseguid databaseId,t.dbname databaseName,t.databasestatus from business2table b " +
-            " join tableinfo t on b.tableGuid=t.tableguid where " +
+            " join tableinfo t on b.tableGuid=t.tableguid where t.status = 'ACTIVE'  AND" +
             " (t.description is null or t.description='') and " +
             " b.businessid in " +
             " <foreach item='id' index='index' collection='businessIds' separator=',' open='(' close=')'>" +
@@ -594,7 +595,7 @@ public interface BusinessDAO {
             "bi.manager manager, bi.maintainer maintainer, bi.dataassets dataAssets, " +
             "bi.businesslastupdate businessLastUpdate, bi.businessoperator businessOperator, " +
             "bi.private_status privateStatus, " +
-            "(select name from approval_group where id=bi.approve_group_id) as approveGroupId, bi.publish_desc publishDesc " +
+            "(select name from approval_group where id=bi.approve_group_id) as approveGroupId, bi.publish_desc publishDesc, bi.process_name processName, bi.system_file_name systemFileName " +
             "from businessinfo bi " +
             "join business_relation br on bi.businessid = br.businessid " +
             "where bi.tenantid=#{tenantId} and br.categoryguid=#{categoryGuid} " +
@@ -635,7 +636,7 @@ public interface BusinessDAO {
             "bi.manager manager, bi.maintainer maintainer, bi.dataassets dataAssets, " +
             "bi.businesslastupdate businessLastUpdate, bi.businessoperator businessOperator, " +
             "bi.private_status privateStatus, " +
-            "(select name from approval_group where id=bi.approve_group_id) as approveGroupId, bi.publish_desc publishDesc " +
+            "(select name from approval_group where id=bi.approve_group_id) as approveGroupId, bi.publish_desc publishDesc, bi.process_name processName, bi.system_file_name systemFileName " +
             "from businessinfo bi " +
             "join business_relation br on bi.businessid = br.businessid " +
             "where bi.tenantid=#{tenantId} and br.categoryguid=#{categoryGuid} " +
@@ -674,7 +675,8 @@ public interface BusinessDAO {
     List<TechnologyInfo.Table> queryAllTablesByBusinessId(@Param("businessId") String businessId, @Param("tenantId") String tenantId);
 
     @Select("<script>" +
-            "select distinct COUNT ( * ) OVER () total, ti.tableguid tableGuid, ti.tablename tableName, " +
+            " select COUNT ( * ) OVER () total, a.* from ( " +
+            "select distinct ti.tableguid tableGuid, ti.tablename tableName, " +
             "si.data_source_id sourceId, " +
             "si.category_id categoryGuid, " +
             "ti.dbname dbName, ti.databaseguid dbId, ti.status, ti.description " +
@@ -695,12 +697,15 @@ public interface BusinessDAO {
             "#{userGroupId} " +
             "</foreach>" +
             " order by ti.status, ti.tablename" +
+            " ) as a " +
             "<if test='limit!= -1'>" +
             " limit #{limit}" +
             "</if>" +
             " offset #{offset}" +
             "</script>")
     List<RelationEntityV2> queryRelationByCategoryGuidAndBusinessIdFilterV2(@Param("categoryGuids")List<String> categoryGuids, @Param("businessId")String businessId, @Param("tenantId") String tenantId, @Param("limit") int limit, @Param("offset") int offset, @Param("tableName") String tableName, @Param("userGroupIds") List<String> userGroupIds);
+
+    List<RelationEntityV2> getSourceNameBySourceId(@Param("sourceIds")Set<String> sourceIds, @Param("tenantId") String tenantId);
 
     //删除业务信息与用户组的关联
     @Delete("<script>" +

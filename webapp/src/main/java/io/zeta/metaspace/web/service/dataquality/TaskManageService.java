@@ -75,6 +75,8 @@ import org.springframework.util.CollectionUtils;
 import java.io.*;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -162,6 +164,31 @@ public class TaskManageService {
                         .taskName(task.getName())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    public PageResult<Table> getHiveTableList(String dbName, Parameters parameters) throws AtlasBaseException {
+        try {
+            PageResult<Table> pageResult = new PageResult<>();
+            String databaseId = taskManageDAO.getDbIdByDbName(dbName);
+            List<Table> tableList = taskManageDAO.getHiveTableByDbName(databaseId, parameters);
+            if (org.apache.commons.collections4.CollectionUtils.isEmpty(tableList)) {
+                return pageResult;
+            }
+            Table tmpTable = taskManageDAO.getDbAndTableName(tableList.get(0).getTableId());
+            if (tmpTable != null) {
+                dbName = tmpTable.getDatabaseName();
+            }
+            for (Table table : tableList) {
+                table.setDatabaseName(dbName);
+            }
+            pageResult.setLists(tableList);
+            pageResult.setCurrentSize(tableList.size());
+            pageResult.setTotalSize(tableList.get(0).getTotal());
+            return pageResult;
+        } catch (Exception e) {
+            LOG.error("getHiveTableList获取表失败", e);
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取hive表失败");
+        }
     }
 
     public PageResult getTableList(String dbName, Parameters parameters) throws AtlasBaseException {
@@ -873,6 +900,7 @@ public class TaskManageService {
                     record.setSubTaskSequence(sequence);
                 }
             }
+            resultData.setQualityTrendChart(getSubTaskContrastList(executeResult,basicInfo.getTaskId()));
             resultData.setRuleCheckResult(executeResult);
             //suggestion
             suggestion.setTableQuestion(tableRuleSuggestion);
@@ -883,6 +911,92 @@ public class TaskManageService {
             LOG.error("获取报告详情失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取报告详情失败");
         }
+    }
+
+    /**
+     * 获取任务对应的前十条趋势图
+     * @param executeResult 当前任务对应的子任务列表
+     * @param taskId 任务ID
+     * @return 返回前10条趋势图
+     */
+    public QualityTrendChart getSubTaskContrastList(List<SubTaskRecord> executeResult, String taskId) {
+        QualityTrendChart qualityTrendChart = new QualityTrendChart();
+        List<SubTaskContrastRecord> list = new ArrayList<>();
+        if (org.apache.commons.collections4.CollectionUtils.isEmpty(executeResult)) {
+            return qualityTrendChart;
+        }
+        List<SubTaskExecuteRule> executeRules = taskManageDAO.getSubTaskExecuteRule(taskId);
+        if (org.apache.commons.collections4.CollectionUtils.isEmpty(executeRules)) {
+            return qualityTrendChart;
+        }
+        List<SubTaskExecuteRule> ruleList = executeRules.stream().peek(r -> {
+            if (r.getResult() == null) {
+                r.setResult(0f);
+            }
+        }).collect(Collectors.toList());
+
+        // 根据当前子任务规则ID分组
+        Map<String, List<SubTaskExecuteRule>> subTaskRuleListMap = ruleList.stream().collect(Collectors.groupingBy(SubTaskExecuteRule::getSubtaskRuleId));
+        // 子任务序号
+        int num = 1;
+        // 遍历所有子任务
+        for (SubTaskRecord subTaskRecord : executeResult) {
+            // 获取当前子任务
+            String subTaskId = subTaskRecord.getSubTaskId();
+            // 遍历所有子任务对应规则
+            for (TaskRuleExecutionRecord taskRuleExecutionRecord : subTaskRecord.getTaskRuleExecutionRecords()) {
+                String subTaskRuleId = taskRuleExecutionRecord.getSubTaskRuleId();
+                SubTaskContrastRecord subTaskContrastRecord = new SubTaskContrastRecord();
+                subTaskContrastRecord.setSubTaskId(subTaskId);
+                subTaskContrastRecord.setSubtaskRuleId(subTaskRuleId);
+                // 子任务规则ID历史列表
+                List<SubTaskExecuteRule> subRuleList = subTaskRuleListMap.get(subTaskRuleId);
+                List<SubTaskContrast> subTaskContrast = getSubTaskRuleList(subRuleList, num, taskRuleExecutionRecord.getRuleName());
+                subTaskContrastRecord.setSubTaskContrastList(subTaskContrast);
+                list.add(subTaskContrastRecord);
+            }
+            num++;
+        }
+        qualityTrendChart.setExecuteTimeList(
+                list.get(0).getSubTaskContrastList().stream().map(r -> {
+                    DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    return format.format(r.getExecuteTime());
+                }).collect(Collectors.toList())
+        );
+        qualityTrendChart.setSubTaskContrastRecordList(list);
+        return qualityTrendChart;
+    }
+
+    /**
+     * 获取当前任务规则ID执行历史列表
+     * @param subRuleList 前任务规则ID列表
+     * @param i 子任务序号
+     * @param ruleName 规则名称
+     * @return 返回历史列表
+     */
+    public List<SubTaskContrast> getSubTaskRuleList(List<SubTaskExecuteRule> subRuleList, int i, String ruleName) {
+        List<SubTaskContrast> list = new ArrayList<>();
+        List<SubTaskExecuteRule> rules = subRuleList.stream()
+                .sorted(Comparator.comparing(SubTaskExecuteRule::getExecuteTime)).collect(Collectors.toList());
+        // 子任务规则名称
+        Map<String, Integer> ruleNameMap = new HashMap<>();
+        // 子任务名称规则重复个数
+        int total = 1;
+        for (SubTaskExecuteRule subTaskExecuteRule : rules) {
+            SubTaskContrast subTaskContrast = new SubTaskContrast();
+            subTaskContrast.setExecuteTime(subTaskExecuteRule.getExecuteTime());
+            subTaskContrast.setResult(subTaskExecuteRule.getResult());
+            String subRuleName = "子任务" + i + "-" + ruleName;
+            if (ruleNameMap.containsKey(subRuleName)) {
+                subRuleName = subRuleName + "-" + ruleNameMap.get(subRuleName);
+                ruleNameMap.put(subRuleName, total++);
+            } else {
+                ruleNameMap.put(subRuleName, total);
+            }
+            subTaskContrast.setSubTaskRuleName(subRuleName);
+            list.add(subTaskContrast);
+        }
+        return list;
     }
 
     public List<SubTaskRecord> getTaskRuleExecutionRecordList(String executionId, String subtaskId, String tenantId) throws AtlasBaseException {

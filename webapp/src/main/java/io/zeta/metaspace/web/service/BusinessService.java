@@ -1604,8 +1604,8 @@ public class BusinessService implements Approvable {
         font.setBold(true);
         cellStyle.setFont(font);
         List<List<String>> dataList = list.stream().map(businessInfo -> Lists.newArrayList(businessInfo.getName(), businessInfo.getModule(), businessInfo.getDescription(),
-                businessInfo.getOwner(), businessInfo.getManager(), businessInfo.getMaintainer(), businessInfo.getDataAssets())).collect(Collectors.toList());
-        ArrayList<String> attributes = Lists.newArrayList("业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产");
+                businessInfo.getOwner(), businessInfo.getManager(), businessInfo.getMaintainer(), businessInfo.getDataAssets(), businessInfo.getSystemFileName(), businessInfo.getProcessName())).collect(Collectors.toList());
+        ArrayList<String> attributes = Lists.newArrayList("业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产", "相关制度文件名称", "流程名称");
         PoiExcelUtils.createSheet(workbook, "业务对象", attributes, dataList, cellStyle, 12);
         return workbook;
     }
@@ -1651,7 +1651,7 @@ public class BusinessService implements Approvable {
                     int rowNum = sheet.getLastRowNum() + 1;
                     //文件格式校验
                     Row first = sheet.getRow(0);
-                    ArrayList<String> strings = Lists.newArrayList("业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产");
+                    ArrayList<String> strings = Lists.newArrayList("业务对象名称", "业务模块", "业务描述", "所有者", "管理者", "维护者", "相关数据资产", "相关制度文件名称", "流程名称");
                     for (int j = 0; j < strings.size(); j++) {
                         Cell cell = first.getCell(j);
                         if (!strings.get(j).equals(cell.getStringCellValue())) {
@@ -1704,6 +1704,12 @@ public class BusinessService implements Approvable {
 
                         Cell dataAssetsCell = row.getCell(6);
                         businessInfo.setDataAssets(PoiExcelUtils.getCellValue(dataAssetsCell));
+
+                        Cell systemFileName = row.getCell(7);
+                        businessInfo.setSystemFileName(PoiExcelUtils.getCellValue(systemFileName));
+
+                        Cell processName = row.getCell(8);
+                        businessInfo.setProcessName(PoiExcelUtils.getCellValue(processName));
                         business.add(businessInfo);
                         fileNames.add(name);
                     }
@@ -1835,7 +1841,7 @@ public class BusinessService implements Approvable {
             pageResult.setLists(new ArrayList<>());
             return pageResult;
         }
-        List<String> businessIds = businessListByCondition.getLists().stream().map(businessInfoHeader -> businessInfoHeader.getBusinessId()).collect(Collectors.toList());
+        List<String> businessIds = businessListByCondition.getLists().stream().map(BusinessInfoHeader::getBusinessId).collect(Collectors.toList());
         List<Table> tables = businessDao.getTablesByBusiness(businessIds, limit, offset);
         if (CollectionUtils.isEmpty(tables)) {
             pageResult.setLists(new ArrayList<>());
@@ -1858,15 +1864,15 @@ public class BusinessService implements Approvable {
             pageResult.setLists(new ArrayList<>());
             return pageResult;
         }
-        List<String> businessIds = businessListByCondition.getLists().stream().map(businessInfoHeader -> businessInfoHeader.getBusinessId()).collect(Collectors.toList());
+        List<String> businessIds = businessListByCondition.getLists().stream().map(BusinessInfoHeader::getBusinessId).collect(Collectors.toList());
         List<Table> tables = businessDao.getTablesByBusinessAndColumn(businessIds, limit, offset);
         if (CollectionUtils.isEmpty(tables)) {
             pageResult.setLists(new ArrayList<>());
             return pageResult;
         }
         List<Column> columns = columnDAO.checkDescriptionColumnByTableIds(tables);
-        Map<String, List<Column>> map = columns.stream().collect(Collectors.groupingBy(column -> column.getTableId()));
-        tables.stream().forEach(table -> table.setColumns(map.get(table.getTableId())));
+        Map<String, List<Column>> map = columns.stream().collect(Collectors.groupingBy(Column::getTableId));
+        tables.forEach(table -> table.setColumns(map.get(table.getTableId())));
         pageResult.setLists(tables);
         pageResult.setTotalSize(tables.get(0).getTotal());
         pageResult.setCurrentSize(tables.size());
@@ -2143,7 +2149,8 @@ public class BusinessService implements Approvable {
                 List<String> userGroupIds = userGroups.stream().map(UserGroup::getId).collect(Collectors.toList());
 
                 relations = businessDao.queryRelationByCategoryGuidAndBusinessIdFilterV2(categoryGuids, businessId, tenantId, limit, offset, tableName, userGroupIds);
-                if (!org.springframework.util.CollectionUtils.isEmpty(relations)) {
+                if (CollectionUtils.isNotEmpty(relations)) {
+                    getSourceName(relations, tenantId);
                     totalNum = relations.get(0).getTotal();
                 }
                 getPath(relations, tenantId);
@@ -2157,6 +2164,28 @@ public class BusinessService implements Approvable {
         } catch (Exception e) {
             LOG.error("获取关联失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "获取关联失败");
+        }
+    }
+
+    public void getSourceName(List<RelationEntityV2> list, String tenantId) {
+        if (CollectionUtils.isEmpty(list)) {
+            return;
+        }
+        Map<String, String> sourceNameMap = new HashMap<>();
+        Set<String> sourceIdList = list.stream().filter(f -> StringUtils.isNotBlank(f.getSourceId()) && !"hive".equalsIgnoreCase(f.getSourceId()))
+                .map(RelationEntityV2::getSourceId).collect(Collectors.toSet());
+        if (CollectionUtils.isNotEmpty(sourceIdList)){
+            List<RelationEntityV2> sourceNameList = businessDao.getSourceNameBySourceId(sourceIdList, tenantId);
+            if (CollectionUtils.isNotEmpty(sourceNameList)) {
+                sourceNameMap = sourceNameList.stream().collect(Collectors.toMap(RelationEntityV2::getSourceId, RelationEntityV2::getSourceName));
+            }
+        }
+        for (RelationEntityV2 relationEntityV2 : list) {
+            if (sourceNameMap.containsKey(relationEntityV2.getSourceId())) {
+                relationEntityV2.setSourceName(sourceNameMap.get(relationEntityV2.getSourceId()));
+            } else if ("hive".equalsIgnoreCase(relationEntityV2.getSourceId())) {
+                relationEntityV2.setSourceName("hive");
+            }
         }
     }
 
