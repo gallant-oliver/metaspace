@@ -12,7 +12,7 @@
     <artifactId>adapter-mysql</artifactId>
 
     <properties>
-        <jdbc.mysql.version>5.1.48</jdbc.mysql.version>
+        <jdbc.mysql.version>8.0.28</jdbc.mysql.version>
 
         <plugin.id>MYSQL</plugin.id>
         <plugin.class>io.zeta.metaspace.adapter.mysql.MysqlComponent</plugin.class>
