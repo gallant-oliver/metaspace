@@ -677,10 +677,13 @@ public class SearchService {
         String dbDisplayText = db.getDisplayText();
         String user = admin ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
         Connection conn = AdapterUtils.getHiveAdapterSource().getConnection(user, dbDisplayText, MetaspaceConfig.getHiveJobQueueName());
-        String sql = "select * from " + splits[0] + ".`" + tableName + "` limit " + guidCount.getCount();
-
+        //String sql = "select * from " + splits[0] + ".`" + tableName + "` limit " + guidCount.getCount();
+        String sql = "select * from ?" + ".`" + tableName + "` limit ?";
+        PreparedStatement preparedStatement = conn.prepareStatement(sql);
+        preparedStatement.setString(1, splits[0]);
+        preparedStatement.setInt(2, guidCount.getCount());
         if (conn != null) {
-            try (ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 List<String> columns = new ArrayList<>();
                 ResultSetMetaData metaData = resultSet.getMetaData();
                 List<Map<String, String>> resultList = new ArrayList<>();
@@ -726,9 +729,16 @@ public class SearchService {
         Map<String, Object> dbRelationshipAttributes = tableEntity.getRelationshipAttributes();
         AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
         String dbDisplayText = db.getDisplayText();
-        String sql = "show create table " + name;
-        try (Connection conn = AdapterUtils.getHiveAdapterSource().getConnection(user, dbDisplayText, MetaspaceConfig.getHiveJobQueueName());
-             ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
+        // String sql = "show create table " + name;
+        String sql = "show create table ?";
+        Connection conn = null;
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+        try {
+            conn = AdapterUtils.getHiveAdapterSource().getConnection(user, dbDisplayText, MetaspaceConfig.getHiveJobQueueName());
+            preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, name);
+            resultSet = preparedStatement.executeQuery();
             StringBuffer stringBuffer = new StringBuffer();
             while (resultSet.next()) {
                 Object object = resultSet.getObject(1);
@@ -740,6 +750,14 @@ public class SearchService {
         } catch (Exception e) {
             LOG.error("获取hive连接失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
+        } finally {
+            try {
+                resultSet.close();
+                preparedStatement.close();
+                conn.close();
+            } catch (SQLException e) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭sql连接异常");
+            }
         }
     }
 

@@ -23,6 +23,7 @@ import org.springframework.stereotype.Component;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
+import java.security.SecureRandom;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Provider
@@ -30,7 +31,11 @@ import java.util.concurrent.ThreadLocalRandom;
 public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundException> {
     @Override
     public Response toResponse(NotFoundException e) {
-        final long id = ThreadLocalRandom.current().nextLong();
+        //final long id = ThreadLocalRandom.current().nextLong();
+        SecureRandom random = new SecureRandom();
+        byte bytes[] = new byte[19];
+        random.nextBytes(bytes);
+        final long id = random.nextLong();
         ExceptionMapperUtil.logException(id, e);
         return Response
                 .status(Response.Status.NOT_FOUND)
