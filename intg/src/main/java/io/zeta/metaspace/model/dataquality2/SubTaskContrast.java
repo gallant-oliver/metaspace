@@ -16,10 +16,6 @@ public class SubTaskContrast {
      */
     private Float result;
     /**
-     * 子任务规则名称（子任务+规则名称）
-     */
-    private String subTaskRuleName;
-    /**
      * 执行时间
      */
     @JsonFormat(timezone = "Asia/Shanghai", pattern = "yyyy-MM-dd HH:mm:ss")
