@@ -75,6 +75,8 @@ import org.springframework.util.CollectionUtils;
 import java.io.*;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -898,7 +900,7 @@ public class TaskManageService {
                     record.setSubTaskSequence(sequence);
                 }
             }
-            resultData.setSubTaskContrastRecordList(getSubTaskContrastList(executeResult,basicInfo.getTaskId()));
+            resultData.setQualityTrendChart(getSubTaskContrastList(executeResult,basicInfo.getTaskId()));
             resultData.setRuleCheckResult(executeResult);
             //suggestion
             suggestion.setTableQuestion(tableRuleSuggestion);
@@ -917,14 +919,15 @@ public class TaskManageService {
      * @param taskId 任务ID
      * @return 返回前10条趋势图
      */
-    public List<SubTaskContrastRecord> getSubTaskContrastList(List<SubTaskRecord> executeResult, String taskId) {
+    public QualityTrendChart getSubTaskContrastList(List<SubTaskRecord> executeResult, String taskId) {
+        QualityTrendChart qualityTrendChart = new QualityTrendChart();
         List<SubTaskContrastRecord> list = new ArrayList<>();
         if (org.apache.commons.collections4.CollectionUtils.isEmpty(executeResult)) {
-            return list;
+            return qualityTrendChart;
         }
         List<SubTaskExecuteRule> executeRules = taskManageDAO.getSubTaskExecuteRule(taskId);
         if (org.apache.commons.collections4.CollectionUtils.isEmpty(executeRules)) {
-            return list;
+            return qualityTrendChart;
         }
         List<SubTaskExecuteRule> ruleList = executeRules.stream().peek(r -> {
             if (r.getResult() == null) {
@@ -932,58 +935,68 @@ public class TaskManageService {
             }
         }).collect(Collectors.toList());
 
-        // 根据任务实例ID分组对应的规则执行列表（包含子任务1、子任务2...结果）
-        Map<String, List<SubTaskExecuteRule>> ruleListMap = ruleList.stream().collect(Collectors.groupingBy(SubTaskExecuteRule::getTaskExecuteId, Collectors.toList()));
-        // 根据子任务分组(包含历史子任务)
-        Map<String, List<SubTaskExecuteRule>> subTaskHistoryMap = ruleList.stream().collect(Collectors.groupingBy(SubTaskExecuteRule::getSubtaskId));
-
+        // 根据当前子任务规则ID分组
+        Map<String, List<SubTaskExecuteRule>> subTaskRuleListMap = ruleList.stream().collect(Collectors.groupingBy(SubTaskExecuteRule::getSubtaskRuleId));
+        // 子任务序号
+        int num = 1;
         // 遍历所有子任务
         for (SubTaskRecord subTaskRecord : executeResult) {
             // 获取当前子任务
             String subTaskId = subTaskRecord.getSubTaskId();
-            List<SubTaskContrast> subTaskContrastList = new ArrayList<>();
-            SubTaskContrastRecord subTaskContrastRecord = new SubTaskContrastRecord();
-            subTaskContrastRecord.setSubTaskId(subTaskId);
-            // 获取当前子任务对应的执行实例ID
-            String executionId = subTaskRecord.getTaskRuleExecutionRecords().get(0).getExecutionId();
-            SubTaskContrast subTaskContrast = new SubTaskContrast();
-            // 当前执行实例对应的规则结果列表（包含子任务1、子任务2...结果）
-            List<SubTaskExecuteRule> subTaskExecuteRules = ruleListMap.get(executionId);
-            // 获取当前子任务对应的所有规则执行结果列表
-            List<SubTaskExecuteRule> subTaskExecuteRuleList = subTaskExecuteRules.stream().filter(f -> subTaskId.equals(f.getSubtaskId())).collect(Collectors.toList());
-            subTaskContrast.setResult(subTaskExecuteRuleList.stream().mapToDouble(SubTaskExecuteRule::getResult).sum());
-            subTaskContrast.setExecuteTime(subTaskExecuteRuleList.get(0).getExecuteTime());
-            subTaskContrastList.add(subTaskContrast);
-            // 获取历史前9条执行记录
-            List<SubTaskExecuteRule> subTaskHistoryList = subTaskHistoryMap.get(subTaskId);
-            Map<String, List<SubTaskExecuteRule>> currentSubTaskHistoryMap = subTaskHistoryList.stream()
-                    .filter(f -> !executionId.equals(f.getTaskExecuteId()))
-                    .collect(Collectors.groupingBy(SubTaskExecuteRule::getTaskExecuteId));
-            getSubTaskRuleHistory(currentSubTaskHistoryMap, subTaskContrastList);
-
-            subTaskContrastRecord.setSubTaskContrastList(subTaskContrastList);
-            list.add(subTaskContrastRecord);
+            // 遍历所有子任务对应规则
+            for (TaskRuleExecutionRecord taskRuleExecutionRecord : subTaskRecord.getTaskRuleExecutionRecords()) {
+                String subTaskRuleId = taskRuleExecutionRecord.getSubTaskRuleId();
+                SubTaskContrastRecord subTaskContrastRecord = new SubTaskContrastRecord();
+                subTaskContrastRecord.setSubTaskId(subTaskId);
+                subTaskContrastRecord.setSubtaskRuleId(subTaskRuleId);
+                // 子任务规则ID历史列表
+                List<SubTaskExecuteRule> subRuleList = subTaskRuleListMap.get(subTaskRuleId);
+                List<SubTaskContrast> subTaskContrast = getSubTaskRuleList(subRuleList, num, taskRuleExecutionRecord.getRuleName());
+                subTaskContrastRecord.setSubTaskContrastList(subTaskContrast);
+                list.add(subTaskContrastRecord);
+            }
+            num++;
         }
-        return list;
+        qualityTrendChart.setExecuteTimeList(
+                list.get(0).getSubTaskContrastList().stream().map(r -> {
+                    DateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    return format.format(r.getExecuteTime());
+                }).collect(Collectors.toList())
+        );
+        qualityTrendChart.setSubTaskContrastRecordList(list);
+        return qualityTrendChart;
     }
 
     /**
-     * 获取当前子任务的历史记录趋势
-     * @param map 子任务对应规则结果map（key为执行任务实例ID）
-     * @param subTaskContrastList 子任务存储
+     * 获取当前任务规则ID执行历史列表
+     * @param subRuleList 前任务规则ID列表
+     * @param i 子任务序号
+     * @param ruleName 规则名称
+     * @return 返回历史列表
      */
-    public void getSubTaskRuleHistory(Map<String, List<SubTaskExecuteRule>> map, List<SubTaskContrast> subTaskContrastList) {
-        for (Map.Entry<String, List<SubTaskExecuteRule>> stringListEntry : map.entrySet()) {
+    public List<SubTaskContrast> getSubTaskRuleList(List<SubTaskExecuteRule> subRuleList, int i, String ruleName) {
+        List<SubTaskContrast> list = new ArrayList<>();
+        List<SubTaskExecuteRule> rules = subRuleList.stream()
+                .sorted(Comparator.comparing(SubTaskExecuteRule::getExecuteTime)).collect(Collectors.toList());
+        // 子任务规则名称
+        Map<String, Integer> ruleNameMap = new HashMap<>();
+        // 子任务名称规则重复个数
+        int total = 1;
+        for (SubTaskExecuteRule subTaskExecuteRule : rules) {
             SubTaskContrast subTaskContrast = new SubTaskContrast();
-            // 对应的执行规则列表（已过滤其它子任务）
-            List<SubTaskExecuteRule> value = stringListEntry.getValue();
-            if (org.apache.commons.collections4.CollectionUtils.isEmpty(value)) {
-                break;
+            subTaskContrast.setExecuteTime(subTaskExecuteRule.getExecuteTime());
+            subTaskContrast.setResult(subTaskExecuteRule.getResult());
+            String subRuleName = "子任务" + i + "-" + ruleName;
+            if (ruleNameMap.containsKey(subRuleName)) {
+                subRuleName = subRuleName + "-" + ruleNameMap.get(subRuleName);
+                ruleNameMap.put(subRuleName, total++);
+            } else {
+                ruleNameMap.put(subRuleName, total);
             }
-            subTaskContrast.setResult(value.stream().mapToDouble(SubTaskExecuteRule::getResult).sum());
-            subTaskContrast.setExecuteTime(value.get(0).getExecuteTime());
-            subTaskContrastList.add(subTaskContrast);
+            subTaskContrast.setSubTaskRuleName(subRuleName);
+            list.add(subTaskContrast);
         }
+        return list;
     }
 
     public List<SubTaskRecord> getTaskRuleExecutionRecordList(String executionId, String subtaskId, String tenantId) throws AtlasBaseException {
