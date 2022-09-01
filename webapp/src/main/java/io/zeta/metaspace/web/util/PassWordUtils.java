@@ -13,6 +13,8 @@
 
 package io.zeta.metaspace.web.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
@@ -24,7 +26,7 @@ import java.security.SecureRandom;
 
 
 public class PassWordUtils {
-
+    private static final Logger LOG = LoggerFactory.getLogger(PassWordUtils.class);
     private PassWordUtils() {
     }
 
@@ -50,7 +52,7 @@ public class PassWordUtils {
             byte[] byteAES = cipher.doFinal(byteEncode);
             return new String(new BASE64Encoder().encode(byteAES));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("加密aesEncode失败", e);
             return null;
         }
     }
@@ -73,7 +75,7 @@ public class PassWordUtils {
             byte[] byteDecode = cipher.doFinal(byteContent);
             return new String(byteDecode, CHARACTER);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("解密aesDecode失败", e);
             return null;
         }
     }

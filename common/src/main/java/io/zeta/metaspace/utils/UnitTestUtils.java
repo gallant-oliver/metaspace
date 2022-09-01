@@ -7,6 +7,8 @@ import io.zeta.metaspace.model.datasource.DataSourceInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.SkipException;
 
 import java.io.IOException;
@@ -20,6 +22,7 @@ import java.util.stream.Stream;
 
 @Slf4j
 public class UnitTestUtils {
+    private static final Logger LOG = LoggerFactory.getLogger(UnitTestUtils.class);
     private final static Gson gson = new Gson();
 
     /**
@@ -45,7 +48,7 @@ public class UnitTestUtils {
         try (Stream<String> stream = Files.lines(Paths.get(path), StandardCharsets.UTF_8)) {
             json = stream.collect(Collectors.joining("\n"));
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("读取数据配置信息失败", e);
         }
         return gson.fromJson(json, DataSourceInfo.class);
     }

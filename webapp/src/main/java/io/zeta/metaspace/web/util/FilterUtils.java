@@ -22,22 +22,7 @@ public class FilterUtils {
     private static List<String> permissionUrl = new ArrayList<>();
 
     static {
-        skipUrl.add("v2/entity/uniqueAttribute/type/");
-        skipUrl.add("api/metaspace/v2/entity/");
-        skipUrl.add("/api/metaspace/admin/status");
-        skipUrl.add("api/metaspace/v2/entity");
-        skipUrl.add("api/metaspace/metadata/supplementTable");
-        skipUrl.add("api/metaspace/metadata/business/trust");
-        skipUrl.add("api/metaspace/market/business");
-        skipUrl.add("api/metaspace/metadata/refreshcache");
-        skipUrl.add("api/metaspace/api");
-        skipUrl.add("/api/metaspace/tenant");
-        skipUrl.add("/api/metaspace/admin/version");
-        skipUrl.add("/api/metaspace/cache");
-        skipUrl.add("api/metaspace/metadata/update/supplementTable");
-
         permissionUrl.add("api/metaspace/health/check");
-        permissionUrl.add("api/metaspace/health/check/password");
         permissionUrl.add("api/metaspace/businesses/excel/file/template");
         permissionUrl.add("api/metaspace/businesses/excel/category/template");
         permissionUrl.add("api/metaspace/businesses/excel/allcategory/template");

@@ -112,7 +112,7 @@
                   <artifactId>guava</artifactId>
                 </exclusion>
             </exclusions>
-            <version>2.1.8</version>
+            <version>3.5</version>
         </dependency>
 
 

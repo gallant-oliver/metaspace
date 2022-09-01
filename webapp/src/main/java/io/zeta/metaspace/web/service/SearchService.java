@@ -24,6 +24,7 @@ import io.zeta.metaspace.model.usergroup.UserGroup;
 import io.zeta.metaspace.utils.AdapterUtils;
 import io.zeta.metaspace.utils.ThreadPoolUtil;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.dao.dataquality.TaskManageDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.DatabaseInfoDAO;
 import io.zeta.metaspace.web.dao.sourceinfo.SourceInfoDAO;
 import io.zeta.metaspace.web.model.HiveConstant;
@@ -103,6 +104,8 @@ public class SearchService {
     private PublicService publicService;
     @Autowired
     private DbDAO dbDAO;
+    @Autowired
+    private TaskManageDAO taskManageDAO;
     // 神通数据库分页字段
     private static final String OSCAR_PAGE_COLUMN = "TEMP_COLUMN_RNUM";
 
@@ -573,12 +576,8 @@ public class SearchService {
 
     public PageResult<TableInfo> getTableByDBWithQueryWithoutTmp(String databaseId, Parameters parameters, String tenantId) throws AtlasBaseException {
         try {
-            List<String> categoryIds = getPermissionCategoryIds(tenantId);
             PageResult<TableInfo> pageResult = new PageResult<>();
-            if (Objects.isNull(categoryIds) || categoryIds.size() == 0) {
-                return pageResult;
-            }
-            List<TableInfo> tableList = roleDAO.getTableInfosByDBId(categoryIds, databaseId);
+            List<TableInfo> tableList = roleDAO.getTableInfosByDBId(databaseId);
 
             tableList.forEach(table -> {
                 String displayName = table.getDisplayName();
@@ -678,10 +677,13 @@ public class SearchService {
         String dbDisplayText = db.getDisplayText();
         String user = admin ? MetaspaceConfig.getHiveAdmin() : AdminUtils.getUserName();
         Connection conn = AdapterUtils.getHiveAdapterSource().getConnection(user, dbDisplayText, MetaspaceConfig.getHiveJobQueueName());
-        String sql = "select * from " + splits[0] + ".`" + tableName + "` limit " + guidCount.getCount();
-
+        //String sql = "select * from " + splits[0] + ".`" + tableName + "` limit " + guidCount.getCount();
+        String sql = "select * from ?" + ".`" + tableName + "` limit ?";
+        PreparedStatement preparedStatement = conn.prepareStatement(sql);
+        preparedStatement.setString(1, splits[0]);
+        preparedStatement.setInt(2, guidCount.getCount());
         if (conn != null) {
-            try (ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 List<String> columns = new ArrayList<>();
                 ResultSetMetaData metaData = resultSet.getMetaData();
                 List<Map<String, String>> resultList = new ArrayList<>();
@@ -727,9 +729,16 @@ public class SearchService {
         Map<String, Object> dbRelationshipAttributes = tableEntity.getRelationshipAttributes();
         AtlasRelatedObjectId db = (AtlasRelatedObjectId) dbRelationshipAttributes.get("db");
         String dbDisplayText = db.getDisplayText();
-        String sql = "show create table " + name;
-        try (Connection conn = AdapterUtils.getHiveAdapterSource().getConnection(user, dbDisplayText, MetaspaceConfig.getHiveJobQueueName());
-             ResultSet resultSet = conn.createStatement().executeQuery(sql)) {
+        // String sql = "show create table " + name;
+        String sql = "show create table ?";
+        Connection conn = null;
+        PreparedStatement preparedStatement = null;
+        ResultSet resultSet = null;
+        try {
+            conn = AdapterUtils.getHiveAdapterSource().getConnection(user, dbDisplayText, MetaspaceConfig.getHiveJobQueueName());
+            preparedStatement = conn.prepareStatement(sql);
+            preparedStatement.setString(1, name);
+            resultSet = preparedStatement.executeQuery();
             StringBuffer stringBuffer = new StringBuffer();
             while (resultSet.next()) {
                 Object object = resultSet.getObject(1);
@@ -741,6 +750,14 @@ public class SearchService {
         } catch (Exception e) {
             LOG.error("获取hive连接失败", e);
             throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "Hive服务异常");
+        } finally {
+            try {
+                resultSet.close();
+                preparedStatement.close();
+                conn.close();
+            } catch (SQLException e) {
+                throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "关闭sql连接异常");
+            }
         }
     }
 
@@ -1277,6 +1294,20 @@ public class SearchService {
         //strings = getChildAndOwnerCategorysByRoles(userGroups, tenantId);*/
 
         return getDatabaseV2(parameters, tenantId);
+    }
+
+    /**
+     * 数据服务获取hive的数据源下的库
+     * 1.当前用户所在用户组拥有的库
+     */
+    public PageResult<Database> getHiveDatabase(Parameters parameters, String tenantId) throws AtlasBaseException {
+        PageResult<Database> pageResult = new PageResult<>();
+        String userId = AdminUtils.getUserData().getUserId();
+        List<Database> databases = taskManageDAO.getUserGroupHiveDatabase(tenantId, userId, parameters.getLimit(), parameters.getOffset());
+        pageResult.setTotalSize(taskManageDAO.getUserGroupHiveDatabaseSize(tenantId, userId));
+        pageResult.setLists(databases);
+        pageResult.setCurrentSize(databases.size());
+        return pageResult;
     }
 
     //多租户

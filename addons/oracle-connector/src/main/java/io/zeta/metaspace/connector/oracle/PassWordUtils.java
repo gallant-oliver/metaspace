@@ -13,6 +13,8 @@
 
 package io.zeta.metaspace.connector.oracle;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
@@ -24,6 +26,9 @@ import java.security.SecureRandom;
 
 
 public class PassWordUtils {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PassWordUtils.class);
+
     private static final String AES = "AES";
     private static final String CHARACTER = "utf-8";
     private static final String AESKey = "metaspace";
@@ -46,7 +51,7 @@ public class PassWordUtils {
             byte[] byteAES = cipher.doFinal(byteEncode);
             return new String(new BASE64Encoder().encode(byteAES));
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("加密aesEncode失败", e);
             return null;
         }
     }
@@ -69,7 +74,7 @@ public class PassWordUtils {
             byte[] byteDecode = cipher.doFinal(byteContent);
             return new String(byteDecode, CHARACTER);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("解密aesDecode失败", e);
             return null;
         }
     }

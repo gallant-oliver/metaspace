@@ -25,6 +25,8 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.quartz.*;
 import org.quartz.spi.MutableTrigger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -37,6 +39,7 @@ import java.util.*;
  * @date 2019/1/17 10:22
  */
 public class QuartzManager {
+    private static final Logger LOG = LoggerFactory.getLogger(QuartzManager.class);
 
     @Autowired
     @Qualifier("Scheduler")
@@ -153,7 +156,7 @@ public class QuartzManager {
             TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
             exist = scheduler.checkExists(triggerKey);
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("判断任务是否存在失败", e);
         }
         return exist;
     }
@@ -189,7 +192,7 @@ public class QuartzManager {
                 scheduler.rescheduleJob(triggerKey, trigger);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("修改一个任务的触发时间失败", e);
         }
     }
 
@@ -201,7 +204,7 @@ public class QuartzManager {
                 return trigger.getEndTime();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("getJobEndTime失败", e);
         }
         return null;
     }
@@ -215,7 +218,7 @@ public class QuartzManager {
                 return trigger.getNextFireTime();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("getJobNextExecuteTime失败", e);
         }
         return null;
     }
@@ -228,7 +231,7 @@ public class QuartzManager {
                 return trigger.getPreviousFireTime();
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            LOG.error("getJobLastExecuteTime失败", e);
         }
         return null;
     }

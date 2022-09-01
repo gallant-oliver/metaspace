@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 @Configuration
 @EnableCaching
 public class CacheConfig extends CachingConfigurerSupport {
+    private static final Logger logger = LoggerFactory.getLogger(CacheConfig.class);
 
     private static String[] hostName;
     private static int port;
@@ -66,7 +67,7 @@ public class CacheConfig extends CachingConfigurerSupport {
             database = configuration.getInt("metaspace.cache.redis.database", 0);
             mode = configuration.getInt("metaspace.cache.redis.mode", 0);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("初始化获取配置文件失败", e);
         }
     }
 
