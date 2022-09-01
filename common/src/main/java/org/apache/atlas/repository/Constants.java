@@ -169,7 +169,7 @@ public final class Constants {
     private static String getToken(){
         try {
             Configuration configuration = ApplicationProperties.get();
-            return configuration.getString("apisix_create_key");
+            return configuration.getString("apisix.create.key");
         } catch (AtlasException e) {
             throw new AtlasBaseException("获取apiSix头token失败");
         }
