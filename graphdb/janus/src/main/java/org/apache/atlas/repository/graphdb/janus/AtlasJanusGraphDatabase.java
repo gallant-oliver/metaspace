@@ -29,6 +29,7 @@ import org.apache.atlas.runner.LocalSolrRunner;
 import org.apache.atlas.typesystem.types.DataTypes.TypeCategory;
 import org.apache.atlas.utils.AtlasPerfTracer;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationConverter;
 import org.apache.tinkerpop.gremlin.structure.io.graphson.GraphSONMapper;
 import org.janusgraph.core.JanusGraphException;
 import org.janusgraph.graphdb.database.serialize.attribute.SerializableSerializer;
@@ -44,6 +45,7 @@ import org.springframework.scheduling.annotation.Async;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Properties;
 
 /**
  * Default implementation for Graph Provider that doles out JanusGraph.
@@ -105,17 +107,19 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
                         throw new RuntimeException(e);
                     }
 
+                    org.apache.commons.configuration2.Configuration conf2 = createConfiguration2(config);
+
                     try {
                         LOG.info("starting init graphInstance");
                         long startTime = System.currentTimeMillis();
-                        graphInstance = JanusGraphFactory.open(config);
+                        graphInstance = JanusGraphFactory.open(conf2);
                         LOG.info("complete init graphInstance, take time:{}ms", System.currentTimeMillis() - startTime);
                     } catch (JanusGraphException e) {
                         LOG.warn("JanusGraphException: {}", e.getMessage());
                         if (e.getMessage().startsWith(OLDER_STORAGE_EXCEPTION)) {
                             LOG.info("Newer client is being used with older janus storage version. Setting allow-upgrade=true and reattempting connection");
                             config.addProperty("graph.allow-upgrade", true);
-                            graphInstance = JanusGraphFactory.open(config);
+                            graphInstance = JanusGraphFactory.open(conf2);
                         }
                     }
                     atlasGraphInstance = new AtlasJanusGraph();
@@ -130,7 +134,8 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
         try {
             Configuration cfg = getConfiguration();
             cfg.setProperty("storage.batch-loading", true);
-            return JanusGraphFactory.open(cfg);
+            org.apache.commons.configuration2.Configuration conf2 = createConfiguration2(cfg);
+            return JanusGraphFactory.open(conf2);
         } catch (IllegalArgumentException ex) {
             LOG.error("getBulkLoadingGraphInstance: Failed!", ex);
         } catch (AtlasException ex) {
@@ -235,5 +240,11 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
         } catch (AtlasException ignored) { }
 
         return ret;
+    }
+
+    private static org.apache.commons.configuration2.Configuration createConfiguration2(Configuration conf) {
+        Properties properties = ConfigurationConverter.getProperties(conf);
+
+        return org.apache.commons.configuration2.ConfigurationConverter.getConfiguration(properties);
     }
 }

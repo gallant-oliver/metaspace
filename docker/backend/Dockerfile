@@ -4,7 +4,7 @@ LABEL describe="数据管理后端镜像"
 #代码仓库项目名称
 ARG project=metaspace
 #代码分支, 构建时指定--build-arg branch=release-1.5.3
-ARG branch=develop
+ARG branch=release-1.16.0-gdp3
 WORKDIR /usr/local/${project}
 #编译打包
 RUN git fetch && git checkout ${branch} && git pull && \
@@ -32,5 +32,5 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 EXPOSE 21001
 #堆内存
-ENV heap_size=8g
+ENV heap_size=2g
 CMD ["bash", "bin/up.sh"]

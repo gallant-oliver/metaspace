@@ -42,6 +42,9 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.NamespaceDescriptor;
+import org.apache.hadoop.hbase.client.Admin;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
@@ -109,7 +112,7 @@ public class HBaseBridge {
 
     private final String         clusterName;
     private final AtlasClientV2  atlasClientV2;
-    private final HBaseAdmin     hbaseAdmin;
+    private final Admin hbaseAdmin;
 
 
     public static void main(String[] args) {
@@ -199,11 +202,11 @@ public class HBaseBridge {
 
         LOG.info("checking HBase availability..");
 
-        HBaseAdmin.checkHBaseAvailable(conf);
+        HBaseAdmin.available(conf);
 
         LOG.info("HBase is available");
-
-        hbaseAdmin = new HBaseAdmin(conf);
+        Connection connection = ConnectionFactory.createConnection(conf);
+        hbaseAdmin = connection.getAdmin();
     }
 
     private boolean importHBaseEntities(String namespaceToImport, String tableToImport) throws Exception {
