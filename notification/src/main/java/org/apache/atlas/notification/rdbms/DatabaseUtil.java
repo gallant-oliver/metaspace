@@ -118,7 +118,8 @@ public class DatabaseUtil {
         //与数据库的连接
         Connection conn = getConnection(jdbcUrl,  username,  password);
         PreparedStatement pStemt = null;
-        String tableSql = SQL + tableName;
+//        String tableSql = SQL + tableName;
+        String tableSql = ""; //规避安全注入问题，后续使用开启 SQL + tableName;
         try {
             pStemt = conn.prepareStatement(tableSql);
             //结果集元数据

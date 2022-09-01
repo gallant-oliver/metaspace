@@ -1,5 +1,8 @@
 package io.zeta.metaspace.web.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -8,6 +11,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 public class DateUtils {
+    private static final Logger LOG = LoggerFactory.getLogger(DateUtils.class);
     public static String getNow() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         long currentTime = System.currentTimeMillis();
@@ -104,7 +108,7 @@ public class DateUtils {
         try {
             str=sdf.format(tt);
         }catch (Exception e){
-            e.printStackTrace();
+            LOG.error("timestampToString失败", e);
         }
         return str;
     }

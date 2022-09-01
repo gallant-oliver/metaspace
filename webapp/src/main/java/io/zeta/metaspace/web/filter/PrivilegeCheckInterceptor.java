@@ -81,9 +81,7 @@ public class PrivilegeCheckInterceptor implements MethodInterceptor {
 
         HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
         String requestURL = request.getRequestURL().toString();
-        if (FilterUtils.isSkipUrl(requestURL)) {
-            return invocation.proceed();
-        } else if(FilterUtils.isHealthCheck(requestURL)){
+        if(FilterUtils.isHealthCheck(requestURL)){
             return invocation.proceed();
         }else{
             String prefix = requestURL.replaceFirst(".*/api/metaspace/", "").replaceAll("/.*", "");

@@ -5,7 +5,7 @@
   <parent>
     <artifactId>metaspace-adapter</artifactId>
     <groupId>org.apache.atlas</groupId>
-    <version>1.16.0</version>
+    <version>1.17.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -13,7 +13,7 @@
   <packaging>jar</packaging>
 
   <properties>
-    <jdbc.postgresql.version>42.1.4</jdbc.postgresql.version>
+    <jdbc.postgresql.version>42.3.3</jdbc.postgresql.version>
 
     <plugin.id>POSTGRESQL</plugin.id>
 <!--    <plugin.class>io.zeta.metaspace.adapter.oracle.OracleComponent</plugin.class>-->

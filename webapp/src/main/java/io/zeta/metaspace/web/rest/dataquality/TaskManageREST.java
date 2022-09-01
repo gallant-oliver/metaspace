@@ -181,8 +181,8 @@ public class TaskManageREST {
     @Path("/databases")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getDatabaseList(Parameters parameters,@HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
-        return searchService.getDatabasePageResult(true, parameters, tenantId, AdminUtils.getUserData().getAccount());
+    public PageResult getDatabaseList(Parameters parameters, @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return shareService.getHiveDbDataList(parameters, tenantId);
     }
 
     /**
@@ -196,8 +196,9 @@ public class TaskManageREST {
     @Path("/tables/{dbName}")
     @Consumes(Servlets.JSON_MEDIA_TYPE)
     @Produces(Servlets.JSON_MEDIA_TYPE)
-    public PageResult getTableList(@PathParam("dbName")String dbName, Parameters parameters) throws AtlasBaseException {
-        return taskManageService.getTableList(dbName, parameters);
+    public PageResult getTableList(@PathParam("dbName") String dbName, Parameters parameters,
+                                   @HeaderParam("tenantId") String tenantId) throws AtlasBaseException {
+        return taskManageService.getHiveTableList(dbName, parameters);
     }
 
     /**

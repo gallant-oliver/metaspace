@@ -23,7 +23,7 @@
     <parent>
         <artifactId>apache-atlas</artifactId>
         <groupId>org.apache.atlas</groupId>
-        <version>1.16.0</version>
+        <version>1.17.0</version>
     </parent>
     <artifactId>atlas-common</artifactId>
     <description>Apache Atlas Common</description>
@@ -124,7 +124,7 @@
         <dependency>
             <groupId>org.mybatis</groupId>
             <artifactId>mybatis</artifactId>
-            <version>3.4.1</version>
+            <version>3.5.6</version>
         </dependency>
         <dependency>
             <groupId>org.mybatis</groupId>
@@ -150,7 +150,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.1.4</version>
+            <version>42.3.3</version>
         </dependency>
 
         <dependency>

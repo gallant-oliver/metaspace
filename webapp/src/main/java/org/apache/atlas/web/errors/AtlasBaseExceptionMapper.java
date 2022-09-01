@@ -26,6 +26,7 @@ import org.springframework.stereotype.Component;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
+import java.security.SecureRandom;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -39,7 +40,11 @@ public class AtlasBaseExceptionMapper implements ExceptionMapper<AtlasBaseExcept
 
     @Override
     public Response toResponse(AtlasBaseException exception) {
-        final long id = ThreadLocalRandom.current().nextLong();
+        //final long id = ThreadLocalRandom.current().nextLong();
+        SecureRandom random = new SecureRandom();
+        byte bytes[] = new byte[19];
+        random.nextBytes(bytes);
+        final long id = random.nextLong();
 
         // Only log the exception is there's an internal error
         ExceptionMapperUtil.logException(id, exception);

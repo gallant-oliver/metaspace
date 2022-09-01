@@ -40,5 +40,80 @@
           and t.delete = false
     </select>
 
+    <select id="getUserGroupHiveDatabase" resultType="io.zeta.metaspace.model.metadata.Database">
+        SELECT DISTINCT
+        db.database_guid databaseId,
+        db.database_name databaseName
+        FROM
+        database_group_relation dgr
+        INNER JOIN user_group ug ON dgr.group_id = ug.
+        ID INNER JOIN db_info db ON dgr.database_guid = db.database_guid
+        INNER JOIN user_group_relation ugr ON ug.ID = ugr.group_id
+        WHERE
+        ug.tenant = #{ tenantId }
+        AND dgr.source_id = 'hive'
+        AND db.status = 'ACTIVE'
+        AND ugr.user_id =#{ userId }
+    <if test="limit!=-1">
+        limit #{limit} offset #{offset}
+    </if>
+    </select>
+
+    <select id="getUserGroupDatabase" resultType="io.zeta.metaspace.model.usergroup.DBInfo">
+    SELECT DISTINCT
+        db.database_guid,
+        db.database_name
+    FROM
+        database_group_relation dgr
+        INNER JOIN user_group ug ON dgr.group_id = ug.
+        ID INNER JOIN db_info db ON dgr.database_guid = db.database_guid
+        INNER JOIN user_group_relation ugr ON ugr.group_id = ug."id"
+        AND ugr.user_id = #{ userId }
+    WHERE
+        ug.tenant = #{ tenantId }
+        AND dgr.source_id = #{ sourceId }
+        AND db.status = 'ACTIVE'
+    </select>
+    <select id="getUserGroupHiveDatabaseSize" resultType="java.lang.Long">
+    select count(*) from
+    (
+        SELECT DISTINCT
+            db.database_guid databaseId,
+            db.database_name databaseName
+        FROM
+            database_group_relation dgr
+            INNER JOIN user_group ug ON dgr.group_id = ug.
+            ID INNER JOIN db_info db ON dgr.database_guid = db.database_guid
+            INNER JOIN source_info si ON dgr.database_guid = si.database_id
+            INNER JOIN category_group_relation cr ON cr.category_id = si.category_id
+            INNER JOIN user_group_relation ugr ON ugr.group_id = cr.group_id
+        WHERE
+            ug.tenant = #{tenantId}
+            AND dgr.source_id = 'hive'
+            AND db.status = 'ACTIVE'
+            AND ugr.user_id =#{userId}
+            and si.version=0
+            and ug.valid = 't'
+            and si.status = '3'
+            UNION ALL
+        SELECT DISTINCT
+            db.database_guid,
+            db.database_name
+        FROM
+            database_group_relation dgr
+            INNER JOIN user_group ug ON dgr.group_id = ug.
+            ID INNER JOIN db_info db ON dgr.database_guid = db.database_guid
+            INNER JOIN source_info si ON dgr.database_guid = si.database_id
+        WHERE
+            ug.tenant = #{tenantId}
+            AND dgr.source_id =  'hive'
+            AND db.status = 'ACTIVE'
+            and si.version=0
+            and ug.valid = 't'
+            and si.status = '3'
+            AND si.category_id IN ( '1', '2', '3', '4' )
+    ) F
+    </select>
+
 
 </mapper>
