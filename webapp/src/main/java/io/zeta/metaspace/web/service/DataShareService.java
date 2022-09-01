@@ -2287,14 +2287,16 @@ public class DataShareService {
     }
 
     //api详情，审核通过的话，路径是完整的
-    public ApiInfoV2 getApiInfoPath(String id, String version) {
+    public ApiPathInfoVO getApiInfoPath(String id, String version) {
         ApiInfoV2 apiInfoByVersion = getApiInfoByVersion(id, version);
         String status = apiInfoByVersion.getStatus();
+        ApiPathInfoVO apiPathInfoVO = new ApiPathInfoVO();
+        BeanUtils.copyProperties(apiInfoByVersion,apiPathInfoVO);
         if (ApiStatusEnum.UP.getName().equals(status) || ApiStatusEnum.DOWN.getName().equals(status)) {
             String newPath = DataServiceUtil.apiSixUrl + ApiSixCreateInfo.newPath(apiInfoByVersion);
-            apiInfoByVersion.setPath(newPath);
+            apiPathInfoVO.setAccessPath(newPath);
         }
-        return apiInfoByVersion;
+        return apiPathInfoVO;
     }
 
 

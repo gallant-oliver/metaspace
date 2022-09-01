@@ -333,8 +333,8 @@ public class ApiManagerREST {
     @Produces(Servlets.JSON_MEDIA_TYPE)
     public Result getApiInfoByVersionPath(@PathParam("apiId") String apiId, @PathParam("version") String version) throws AtlasBaseException {
         try {
-            ApiInfoV2 apiInfo = shareService.getApiInfoPath(apiId, version);
-            return ReturnUtil.success(apiInfo);
+            ApiPathInfoVO apiInfoPath = shareService.getApiInfoPath(apiId, version);
+            return ReturnUtil.success(apiInfoPath);
         } catch (Exception e) {
             throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "获取详情失败");
         }
