@@ -331,14 +331,14 @@ public class AuditService {
             String res = OKHttpClient.doPost(apiSixUrl, requestBody, headerMap);
             LOG.info(res);
             apiSixCreateVO = analResult(res);
-            if (StringUtils.isEmpty(apiSixCreateVO.getMessage())) {
+            if (StringUtils.isEmpty(apiSixCreateVO.getError_msg())) {
                 createResult = false;
                 break;
             }
             retryCount++;
         }
         if (createResult) {
-            throw new AtlasBaseException(apiSixCreateVO.getMessage(), AtlasErrorCode.BAD_REQUEST, "审核api失败，apiSix创建api失败");
+            throw new AtlasBaseException(apiSixCreateVO.getError_msg(), AtlasErrorCode.BAD_REQUEST, "审核api失败，apiSix创建api失败");
         }
         String apiSixKey = getApiSixKey(apiSixCreateVO.getNode().getKey());
         dataShareDAO.apiNewPath(apiInfoV2.getGuid(), apiInfoV2.getVersion(), apiSixKey);

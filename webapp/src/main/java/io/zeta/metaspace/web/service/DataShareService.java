@@ -2101,14 +2101,14 @@ public class DataShareService {
             String res = OKHttpClient.doDelete(apiSixUrl,headerMap);
             LOG.info(res);
             apiSixDeleteVO = auditService.analResult(res);
-            if (StringUtils.isEmpty(apiSixDeleteVO.getMessage())) {
+            if (StringUtils.isEmpty(apiSixDeleteVO.getError_msg())) {
                 createResult = false;
                 break;
             }
             retryCount++;
         }
         if (createResult) {
-            throw new AtlasBaseException(apiSixDeleteVO.getMessage(),AtlasErrorCode.BAD_REQUEST, "删除api失败，apiSix删除api失败");
+            throw new AtlasBaseException(apiSixDeleteVO.getError_msg(),AtlasErrorCode.BAD_REQUEST, "删除api失败，apiSix删除api失败");
         }
     }
 
