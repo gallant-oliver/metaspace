@@ -935,8 +935,8 @@ public class TaskManageService {
             }
         }).collect(Collectors.toList());
 
-        // 根据当前子任务规则ID分组
-        Map<String, List<SubTaskExecuteRule>> subTaskRuleListMap = ruleList.stream().collect(Collectors.groupingBy(SubTaskExecuteRule::getSubtaskRuleId));
+        // 根据当前子任务规则ID分组(子任务规则ID-子任务objectId)
+        Map<String, List<SubTaskExecuteRule>> subTaskRuleListMap = ruleList.stream().collect(Collectors.groupingBy(r -> r.getSubtaskRuleId() + "-" + r.getSubtaskObjectId()));
         // 子任务序号
         int num = 1;
         // 子任务规则名称
@@ -965,7 +965,7 @@ public class TaskManageService {
                 }
                 subTaskContrastRecord.setSubTaskRuleName(subTaskRuleName);
                 // 子任务规则ID历史列表
-                List<SubTaskExecuteRule> subRuleList = subTaskRuleListMap.get(subTaskRuleId);
+                List<SubTaskExecuteRule> subRuleList = subTaskRuleListMap.get(subTaskRuleId + "-" + taskRuleExecutionRecord.getObjectId());
                 List<SubTaskContrast> subTaskContrast = getSubTaskRuleList(subRuleList);
                 subTaskContrastRecord.setSubTaskContrastList(subTaskContrast);
                 list.add(subTaskContrastRecord);

@@ -33,6 +33,10 @@ public class SubTaskExecuteRule {
      */
     private String subtaskRuleId;
     /**
+     * 所属子任务对象id
+     */
+    private String subtaskObjectId;
+    /**
      * 当前子任务执行结果
      */
     private Float result;
