@@ -505,6 +505,8 @@ public interface DataShareDAO {
     @Select("select * from api where guid=#{id} and version=#{version} and valid=true")
     public ApiInfoV2 getApiInfoByVersion(@Param("id") String id, @Param("version")String version);
 
+    public List<ApiInfoV2> getAllApiInfo();
+
 
     @Select("select guid apiId,name apiName,description,version,status,updateTime,u.username, " +
             "(select count(1) > 0 from api_relation where apiid = a.guid and version = a.version) as used " +

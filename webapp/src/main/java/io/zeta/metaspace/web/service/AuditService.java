@@ -6,6 +6,7 @@ import com.google.gson.reflect.TypeToken;
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.entities.MessageEntity;
 import io.zeta.metaspace.model.enums.MessagePush;
 import io.zeta.metaspace.model.enums.ProcessEnum;
@@ -26,6 +27,7 @@ import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DataServiceUtil;
 import io.zeta.metaspace.web.util.JsonUtils;
+import io.zeta.metaspace.web.util.RedisUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.repository.Constants;
@@ -342,6 +344,16 @@ public class AuditService {
         }
         String apiSixKey = getApiSixKey(apiSixCreateVO.getNode().getKey());
         dataShareDAO.apiNewPath(apiInfoV2.getGuid(), apiInfoV2.getVersion(), apiSixKey);
+    }
+
+    //将云平台部署的api迁移到apiSix平台
+    public Result MigrateApi() {
+        //查询所有上线或下线状态的api
+        List<ApiInfoV2> allApiInfo = dataShareDAO.getAllApiInfo();
+        for (ApiInfoV2 apiInfoV2 : allApiInfo) {
+            apiSixCreate(apiInfoV2);
+        }
+        return new Result("200", "迁移成功");
     }
 
     ApiSixResultVO analResult(String res) {

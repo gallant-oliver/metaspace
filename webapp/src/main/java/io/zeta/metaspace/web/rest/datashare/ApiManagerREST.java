@@ -1113,4 +1113,16 @@ public class ApiManagerREST {
         filename = URLEncoder.encode(filename, "UTF-8");
         return filename;
     }
+
+    @PUT
+    @Path("move/api/apisix")
+    @Consumes(Servlets.JSON_MEDIA_TYPE)
+    @Produces(Servlets.JSON_MEDIA_TYPE)
+    public Result updateAllApiStatus() throws AtlasBaseException {
+        try {
+            return auditService.MigrateApi();
+        } catch (Exception e) {
+            throw new AtlasBaseException(e.getMessage(), AtlasErrorCode.BAD_REQUEST, e, "更新api上下架状态异常");
+        }
+    }
 }
