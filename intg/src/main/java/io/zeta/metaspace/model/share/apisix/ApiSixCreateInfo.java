@@ -34,7 +34,7 @@ public class ApiSixCreateInfo {
     private String getUpstreamId() {
         try {
             Configuration configuration = ApplicationProperties.get();
-            return configuration.getString("apisix_upstream_id");
+            return configuration.getString("apisix.upstream.id");
         } catch (AtlasException e) {
             throw new AtlasBaseException("未配置apiSix的上游地址id");
         }
