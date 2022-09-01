@@ -186,7 +186,6 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
             }
         } catch (Throwable t) {
             LOG.warn("Could not close test JanusGraph", t);
-            t.printStackTrace();
         }
 
         try {
@@ -195,7 +194,6 @@ public class AtlasJanusGraphDatabase implements GraphDatabase<AtlasJanusVertex, 
             }
         } catch (Throwable t) {
             LOG.warn("Could not clear test JanusGraph", t);
-            t.printStackTrace();
         }
 
         try {

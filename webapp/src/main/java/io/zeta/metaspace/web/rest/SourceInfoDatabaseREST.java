@@ -255,7 +255,8 @@ public class SourceInfoDatabaseREST {
     }
 
     /**
-     *  上传文件到 hdfs
+     * 上传文件到 hdfs
+     *
      * @param tenantId 租户id
      * @return
      */
@@ -266,44 +267,45 @@ public class SourceInfoDatabaseREST {
     @OperateType(OperateTypeEnum.INSERT)
     public Result uploadFile(@FormDataParam("file") InputStream fileInputStream,
                              @FormDataParam("file") FormDataContentDisposition contentDispositionHeader,
-                             @HeaderParam("tenantId")String tenantId) throws UnsupportedEncodingException {
+                             @HeaderParam("tenantId") String tenantId) throws UnsupportedEncodingException {
         String fileName = new String(contentDispositionHeader.getFileName().getBytes("ISO8859-1"), StandardCharsets.UTF_8);
         String fileType = FilenameUtils.getExtension(fileName);
-        log.info("上传文件的格式是:{}",fileType);
+        log.info("上传文件的格式是:{}", fileType);
         //判断文件格式是否支持
         List<String> annexCodeList = annexService.findAllAnnexCode("sourceInfo");
 
-        if(CollectionUtils.isEmpty(annexCodeList)){
+        if (CollectionUtils.isEmpty(annexCodeList)) {
             log.error("系统没有配置附件上传格式.");
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"系统没有配置附件上传的文件格式");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "系统没有配置附件上传的文件格式");
         }
-        if(!CollectionUtils.isEmpty(annexCodeList) && !annexCodeList.contains(fileType)){
+        if (!CollectionUtils.isEmpty(annexCodeList) && !annexCodeList.contains(fileType)) {
             log.error("不支持的附件上传格式.");
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST,"支持上传的文件类型有:"+String.join(",",annexCodeList));
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "支持上传的文件类型有:" + String.join(",", annexCodeList));
         }
 
         File file = null;
-        try{
+        try {
             //tenantId 使用租户id作为上传文件子目录
-            String uploadDir = tenantId + "/" + DateTimeUtils.formatTime(System.currentTimeMillis(),"yyyyMMddHHmmss");
+            String uploadDir = tenantId + "/" + DateTimeUtils.formatTime(System.currentTimeMillis(), "yyyyMMddHHmmss");
             file = new File(fileName);
             FileUtils.copyInputStreamToFile(fileInputStream, file);
             long fileSize = file.length();//contentDispositionHeader.getSize();
 
-            String uploadPath = hdfsService.uploadFile(new FileInputStream(file),fileName,uploadDir);
+            String uploadPath = hdfsService.uploadFile(new FileInputStream(file), fileName, uploadDir);
             //组装附件表的字段
             String annexId = UUIDUtils.alphaUUID();
             //保存数据到表 annex
-            Annex annex = new Annex(annexId,fileName,fileType,uploadPath,fileSize);
+            Annex annex = new Annex(annexId, fileName, fileType, uploadPath, fileSize);
             annexService.saveRecord(annex);
-            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"上传附件成功！");
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), "上传附件成功！");
             redisUtil.set(annexId, fileName, CommonConstant.FILE_REDIS_TIME);
-            return ReturnUtil.success("success",annexId);
-        }catch (Exception e){
-            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(),"上传附件失败！");
-            throw new AtlasBaseException("文件上传失败", AtlasErrorCode.INTERNAL_UNKNOWN_ERROR,  "文件上传失败");
-        }finally {
-            if(file != null && file.exists()){
+            return ReturnUtil.success("success", annexId);
+        } catch (Exception e) {
+            HttpRequestContext.get().auditLog(ModuleEnum.DATABASEREGISTER.getAlias(), "上传附件失败！");
+            log.error("uploadFile exception is {}", e);
+            throw new AtlasBaseException("文件上传失败", AtlasErrorCode.INTERNAL_UNKNOWN_ERROR, "文件上传失败");
+        } finally {
+            if (file != null && file.exists()) {
                 file.delete();
             }
         }

@@ -13,6 +13,9 @@
         <result column="api_poly_entity" property="apiPoly" jdbcType="OTHER" javaType="Object"
                 typeHandler="io.zeta.metaspace.web.util.JSONTypeHandlerPg"/>
     </resultMap>
+    <update id="apiNewPath">
+        update api set mobius_id=#{apiSixId} where api.guid = #{guid} and api.version = #{version}
+    </update>
 
     <select id="getApiDisplayInfos" resultMap="apiInfos">
         SELECT a.guid, a.guid apiId, a.name, a.version, a.version ver, a.description, a.status,
@@ -43,4 +46,10 @@
         </foreach>
         and tenantId=#{tenantId}
     </select>
+
+    <select id="getAllApiInfo" resultType="io.zeta.metaspace.model.share.ApiInfoV2">
+        SELECT guid,name,version,requestmode,path,mobius_id from api where (status='up' or status='down')
+        and valid=true and mobius_id similar to '%[a-z]%'
+    </select>
+
 </mapper>

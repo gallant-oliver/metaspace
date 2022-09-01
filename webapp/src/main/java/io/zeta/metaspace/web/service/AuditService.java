@@ -6,6 +6,7 @@ import com.google.gson.reflect.TypeToken;
 import com.gridsum.gdp.library.commons.utils.UUIDUtils;
 import io.zeta.metaspace.HttpRequestContext;
 import io.zeta.metaspace.MetaspaceConfig;
+import io.zeta.metaspace.model.Result;
 import io.zeta.metaspace.model.entities.MessageEntity;
 import io.zeta.metaspace.model.enums.MessagePush;
 import io.zeta.metaspace.model.enums.ProcessEnum;
@@ -16,15 +17,21 @@ import io.zeta.metaspace.model.moebius.MoebiusApiParam;
 import io.zeta.metaspace.model.operatelog.ModuleEnum;
 import io.zeta.metaspace.model.result.PageResult;
 import io.zeta.metaspace.model.share.*;
+import io.zeta.metaspace.model.share.apisix.ApiSixCreateInfo;
+import io.zeta.metaspace.model.share.apisix.ApiSixResultVO;
 import io.zeta.metaspace.model.user.User;
 import io.zeta.metaspace.utils.DateUtils;
 import io.zeta.metaspace.utils.OKHttpClient;
 import io.zeta.metaspace.web.dao.*;
+import io.zeta.metaspace.web.model.CommonConstant;
 import io.zeta.metaspace.web.util.AdminUtils;
 import io.zeta.metaspace.web.util.DataServiceUtil;
+import io.zeta.metaspace.web.util.JsonUtils;
+import io.zeta.metaspace.web.util.RedisUtil;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.repository.Constants;
+import org.apache.commons.lang.StringUtils;
 import org.postgresql.util.PGobject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -192,8 +199,7 @@ public class AuditService {
                     }
                     apiInfoV2.setApiKey(UUID.randomUUID().toString());
                     apiGroupDAO.updateApiRelationByApi(apiInfoV2.getGuid(), updateTime);
-                    String apiId = mobiusCreateApi(apiInfoV2);
-                    dataShareDAO.updateApiMobiusId(apiInfoV2.getGuid(), apiAudit.getApiVersion(), apiInfoV2.getApiKey(), apiId);
+                    apiExternalCreate(apiInfoV2);
                 } else {
                     dataShareDAO.updateApiVersionStatus(apiInfoV2.getGuid(), apiAudit.getApiVersion(), ApiStatusEnum.DRAFT.getName(), updateTime);
                 }
@@ -227,6 +233,15 @@ public class AuditService {
         }
     }
 
+    private void apiExternalCreate(ApiInfoV2 apiInfoV2) {
+        if (Constants.DATA_SHARE_DOCKING_TYPE == CommonConstant.MOBIUS_TYPE) {
+            mobiusCreateApi(apiInfoV2);
+        }
+        if (Constants.DATA_SHARE_DOCKING_TYPE == CommonConstant.API_SIX_TYPE) {
+            apiSixCreate(apiInfoV2);
+        }
+    }
+
     public PageResult<ApiAudit> getApiAuditList(Parameters parameters, String tenantId, List<AuditStatusEnum> statuses, List<AuditStatusEnum> nonStatuses, String applicant) throws AtlasBaseException {
         try {
             if (Objects.nonNull(parameters.getQuery())) {
@@ -252,7 +267,7 @@ public class AuditService {
         }
     }
 
-    public String mobiusCreateApi(ApiInfoV2 apiInfoV2) {
+    private void mobiusCreateApi(ApiInfoV2 apiInfoV2) {
         MoebiusApi api = new MoebiusApi();
         MoebiusApiData data = new MoebiusApiData(apiInfoV2);
         api.setPath(data.getPath());
@@ -301,8 +316,61 @@ public class AuditService {
             detail.append(errorReason);
             throw new AtlasBaseException(detail.toString(), AtlasErrorCode.BAD_REQUEST, "审核api失败，云平台无法创建该api");
         }
-        return apiId;
+        dataShareDAO.updateApiMobiusId(apiInfoV2.getGuid(), apiInfoV2.getVersion(), apiInfoV2.getApiKey(), apiId);
     }
+
+    private void apiSixCreate(ApiInfoV2 apiInfoV2) {
+        ApiSixCreateInfo apiSixCreateInfo = new ApiSixCreateInfo(apiInfoV2);
+        String apiSixUrl = DataServiceUtil.apiSixUrl + CommonConstant.API_SIX_CREATE_PATH;
+        String requestBody = JsonUtils.toJson(apiSixCreateInfo);
+        Map<String, Object> headerMap = Maps.newHashMap();
+        headerMap.put("X-API-KEY", Constants.X_API_KEY);
+        int retryCount = 0;
+        int retries = 3;
+        ApiSixResultVO apiSixCreateVO = new ApiSixResultVO();
+        boolean createResult = true;
+        while (retryCount < retries) {
+            String res = OKHttpClient.doPost(apiSixUrl, requestBody, headerMap);
+            LOG.info(res);
+            apiSixCreateVO = analResult(res);
+            if (StringUtils.isEmpty(apiSixCreateVO.getError_msg())) {
+                createResult = false;
+                break;
+            }
+            retryCount++;
+        }
+        if (createResult) {
+            throw new AtlasBaseException(apiSixCreateVO.getError_msg(), AtlasErrorCode.BAD_REQUEST, "审核api失败，apiSix创建api失败");
+        }
+        String apiSixKey = getApiSixKey(apiSixCreateVO.getNode().getKey());
+        dataShareDAO.apiNewPath(apiInfoV2.getGuid(), apiInfoV2.getVersion(), apiSixKey);
+    }
+
+    //将云平台部署的api迁移到apiSix平台
+    public Result MigrateApi() {
+        //查询所有上线或下线状态的api
+        List<ApiInfoV2> allApiInfo = dataShareDAO.getAllApiInfo();
+        for (ApiInfoV2 apiInfoV2 : allApiInfo) {
+            apiSixCreate(apiInfoV2);
+        }
+        return new Result("200", "迁移成功");
+    }
+
+    ApiSixResultVO analResult(String res) {
+        if (StringUtils.isEmpty(res)) {
+            return null;
+        }
+        return JsonUtils.fromJson(res, ApiSixResultVO.class);
+    }
+
+    private String getApiSixKey(String key) {
+        if (StringUtils.isEmpty(key)) {
+            return null;
+        }
+        String[] split = key.split("/");
+        return split[(split.length - 1)];
+    }
+
 
     public static String getMetaspaceHost() {
         String url = MetaspaceConfig.getMetaspaceUrl();

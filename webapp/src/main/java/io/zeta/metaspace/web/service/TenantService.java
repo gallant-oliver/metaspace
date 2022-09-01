@@ -582,6 +582,10 @@ public class TenantService {
         return databaseDAO.getHiveDataBaseName(tenantId, AdminUtils.getUserData().getUserId());
     }
 
+    public List<String> getDatabaseByTenantId(String tenantId) throws AtlasBaseException {
+        return databaseDAO.getHiveDataBaseNameByTenantId(tenantId);
+    }
+
     public AtlasBaseException getAtlasBaseException(Object status,Object msgDesc,String message){
         StringBuffer detail = new StringBuffer();
         detail.append("安全中心返回错误码:");

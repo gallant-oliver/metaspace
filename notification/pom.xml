@@ -22,7 +22,7 @@
     <parent>
         <artifactId>apache-atlas</artifactId>
         <groupId>org.apache.atlas</groupId>
-        <version>1.16.0</version>
+        <version>1.17.0</version>
     </parent>
     <artifactId>atlas-notification</artifactId>
     <description>Apache Atlas Notification</description>
@@ -104,7 +104,7 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.41</version>
+            <version>8.0.28</version>
         </dependency>
         <dependency>
             <groupId>com.alibaba</groupId>

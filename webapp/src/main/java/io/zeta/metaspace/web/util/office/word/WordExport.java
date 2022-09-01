@@ -739,7 +739,7 @@ public class WordExport {
             try {
                 is.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("关闭输入流失败", e);
             }
         }
     }
@@ -754,7 +754,7 @@ public class WordExport {
             try {
                 os.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("关闭输入流失败", e);
             }
         }
     }

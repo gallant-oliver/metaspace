@@ -16,7 +16,7 @@ public interface RoleDAO {
     @Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid,tableinfo.display_name as displayName " +
             " from tableinfo where  tableinfo.status='ACTIVE' " +
             "     and tableinfo.databaseGuid=#{db} order by tableinfo.tablename</script>")
-    public List<TableInfo> getTableInfosByDBId(@Param("guids") List<String> guids, @Param("db") String db);
+    public List<TableInfo> getTableInfosByDBId(@Param("db") String db);
 
 
     @Select("<script>select distinct tableinfo.tableGuid,tableinfo.tableName,tableinfo.dbName,tableinfo.databaseGuid,tableinfo.status,tableinfo.createtime" +
