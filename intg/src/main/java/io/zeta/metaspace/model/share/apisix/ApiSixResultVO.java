@@ -14,7 +14,7 @@ public class ApiSixResultVO {
     //操作（删除，新增...）
     private String action;
     //返回的报错信息
-    private String message;
+    private String error_msg;
 
     public ApiNode getNode() {
         return node;
