@@ -1038,6 +1038,7 @@ public interface TaskManageDAO {
             "  r.subtask_id AS subtaskId, " +
             "  r.subtask_rule_id AS subtaskRuleId, " +
             "  r.RESULT, " +
+            "  r.subtask_object_id AS subtaskObjectId, " +
             "  T.executeTime AS executeTime  " +
             " FROM " +
             "  data_quality_task_rule_execute AS r " +
