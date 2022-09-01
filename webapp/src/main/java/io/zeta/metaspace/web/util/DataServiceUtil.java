@@ -44,7 +44,7 @@ public class DataServiceUtil {
         try {
             Configuration configuration = ApplicationProperties.get();
             mobiusUrl=configuration.getString("metaspace.mobius.url");
-            apiSixUrl=configuration.getString("apisix_address");
+            apiSixUrl=configuration.getString("apisix.address");
         } catch (AtlasException e) {
             LOG.error("初始化配置失败", e);
         }
