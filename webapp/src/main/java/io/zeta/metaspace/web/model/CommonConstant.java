@@ -173,4 +173,7 @@ public class CommonConstant {
 
     //api返回数据格式参数
     public static final String API_RESULT_FORMAT_PARAM = "format";
+
+    //api展示访问路径时的默认参数
+    public static final String API_DEFAULT_PARAM = "?format=xml&page_size=10&page_num=1";
 }
