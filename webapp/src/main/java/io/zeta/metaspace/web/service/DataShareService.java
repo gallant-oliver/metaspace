@@ -2293,7 +2293,7 @@ public class DataShareService {
         ApiPathInfoVO apiPathInfoVO = new ApiPathInfoVO();
         BeanUtils.copyProperties(apiInfoByVersion,apiPathInfoVO);
         if (ApiStatusEnum.UP.getName().equals(status) || ApiStatusEnum.DOWN.getName().equals(status)) {
-            String newPath = DataServiceUtil.apiSixUrl + ApiSixCreateInfo.newPath(apiInfoByVersion);
+            String newPath = DataServiceUtil.apiSixUrl + ApiSixCreateInfo.newPath(apiInfoByVersion) +CommonConstant.API_DEFAULT_PARAM;
             apiPathInfoVO.setAccessPath(newPath);
         }
         return apiPathInfoVO;
