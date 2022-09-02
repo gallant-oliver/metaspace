@@ -6,11 +6,11 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import java.io.StringWriter;
 
+import org.apache.atlas.exception.AtlasBaseException;
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.XMLWriter;
-
 /**
  * @author huangrongwen
  * @Description: xml工具类
@@ -36,18 +36,16 @@ public class XmlUtil {
         try {
             return formatXml(getXmlMapper().writeValueAsString(value));
         }catch (Exception e) {
-            e.printStackTrace();
+            throw new AtlasBaseException("xml格式转换失败",e);
         }
-        return null;
     }
 
     public static String toXml(Object value) {
         try {
             return getXmlMapper().writeValueAsString(value);
         }catch (Exception e) {
-            e.printStackTrace();
+            throw new AtlasBaseException("xml格式转换失败",e);
         }
-        return null;
     }
 
 
