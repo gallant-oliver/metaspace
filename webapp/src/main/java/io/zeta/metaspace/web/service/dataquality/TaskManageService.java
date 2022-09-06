@@ -759,8 +759,6 @@ public class TaskManageService {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "执行时间段内任务永远不会触发");
                 }
                 quartzManager.addCronJobWithTimeRange(jobName, jobGroupName, triggerName, triggerGroupName, QuartzJob.class, cron, level, startTime, endTime);
-            } else {
-                quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class, Collections.emptyMap());
             }
         } catch (AtlasBaseException e) {
             throw e;
