@@ -61,6 +61,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.tinkerpop.shaded.minlog.Log;
@@ -82,8 +83,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
-import org.apache.commons.lang.StringUtils;
 
 @Service
 public class TaskManageService {
@@ -754,7 +753,7 @@ public class TaskManageService {
             Timestamp startTime = task.getStartTime();
             Timestamp endTime = task.getEndTime();
             Integer level = task.getLevel();
-            if (Objects.nonNull(cron)) {
+            if (StringUtils.isNotBlank(cron) && !"0 0 * * * ? *".equals(cron)) {
                 CronExpression cronExpression = new CronExpression(cron);
                 if (cronExpression.getNextValidTimeAfter(startTime).after(endTime)) {
                     throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "执行时间段内任务永远不会触发");
@@ -763,7 +762,6 @@ public class TaskManageService {
             } else {
                 quartzManager.addSimpleJob(jobName, jobGroupName, QuartzJob.class, Collections.emptyMap());
             }
-
         } catch (AtlasBaseException e) {
             throw e;
         } catch (Exception e) {
