@@ -460,6 +460,7 @@ public class QuartzJob implements Job {
      */
     private long otherRuleCheck(AtomicTaskExecution task, Measure measure) throws Exception {
         Long errorCount = 0L;
+        HdfsUtils hdfsUtils = new HdfsUtils();
         try {
             MeasureLivyResult result = null;
             try {
@@ -484,13 +485,15 @@ public class QuartzJob implements Job {
                 }
             }
             String _MetricFile = LivyTaskSubmitHelper.getHdfsOutPath(task.getId(), task.getTimeStamp(), "_METRICS");
-            HdfsUtils hdfsUtils = new HdfsUtils();
             String metricJson = String.join("\n", hdfsUtils.catFile(_MetricFile, -1));
             MeasureMetrics metrics = GsonUtils.getInstance().fromJson(metricJson, MeasureMetrics.class);
             errorCount = metrics.getValue().getData().stream().findFirst().map(jsonObject -> jsonObject.get("value").getAsLong()).orElse(0L);
             return errorCount;
         } finally {
             checkResult(task, errorCount.floatValue(), 0f);
+            //删除hdfs中的文件，包括目录，实例：/apps/metaspace/project/griffin/0f11a928-37ee-402d-820d-8018acb9958f
+            //如果要调试代码的话，可以注释掉
+            hdfsUtils.deleteOnExit(LivyTaskSubmitHelper.getHdfsOutPathTaskId(task.getId()));
         }
     }
 
