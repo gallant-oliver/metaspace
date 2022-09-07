@@ -121,6 +121,10 @@ public class LivyTaskSubmitHelper {
                 fileName;
     }
 
+    public static String getHdfsOutPathTaskId(String taskId){
+        return hdfsOutBasePath + "/" + taskId;
+    }
+
 
     public static String getOutName(String name) {
         String tmp = null;

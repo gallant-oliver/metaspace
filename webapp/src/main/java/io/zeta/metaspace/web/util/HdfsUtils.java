@@ -122,6 +122,18 @@ public class HdfsUtils {
         }
     }
 
+    /**
+     * 根据文件路径删除文件
+     * @param filePath
+     * @return
+     */
+    public Boolean deleteOnExit(String filePath) throws IOException {
+        if(StringUtils.isBlank(filePath)){
+            return false;
+        }
+        return fs.deleteOnExit(new Path(filePath));
+    }
+
     public int getFileLine(String hdfsFilePath) throws IOException {
         if (!fs.exists(new Path(hdfsFilePath))){
             return 0;
