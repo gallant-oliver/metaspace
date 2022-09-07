@@ -2871,6 +2871,7 @@ public class DataShareService {
             if (apiPolyEntity != null && CollectionUtils.isNotEmpty(apiPolyEntity.getDesensitization())) {
                 result = processSensitiveDataV2(apiInfo, apiPolyEntity.getDesensitization(), result);
             }
+            deleteTotalRows(result);
             apiTestResult.setQueryResult(result);
             apiTestResult.setQueryCount(pageResult.getTotalSize());
             return apiTestResult;
@@ -2878,7 +2879,7 @@ public class DataShareService {
             throw e;
         } catch (Exception e) {
             LOG.error("API接口查询失败", e);
-            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, "API接口查询失败");
+            throw new AtlasBaseException(AtlasErrorCode.BAD_REQUEST, e.getMessage());
         }
     }
 
@@ -3077,12 +3078,24 @@ public class DataShareService {
 
             long count = apiTestResultVO.getQueryCount();
             JsonQueryResult queryResult = new JsonQueryResult();
+            deleteTotalRows(result);
             queryResult.setDatas(result);
             queryResult.setTotalCount(count);
             shareDAO.updateUsedCount(path);
             return queryResult;
         } catch (UnsupportedEncodingException e) {
             throw new AtlasBaseException(e);
+        }
+    }
+
+    //删除count字段，并且如果源表有total_rows__字段则删除total_rows__(1)
+    public void deleteTotalRows(List<LinkedHashMap<String, Object>> result){
+        for (HashMap<String,Object> map:result) {
+            if(map.containsKey("total_rows__(1)")){
+                map.remove("total_rows__(1)");
+                continue;
+            }
+            map.remove("total_rows__");
         }
     }
 
@@ -3201,6 +3214,7 @@ public class DataShareService {
         List<ApiInfoDetailDTO> detailInfos = new ArrayList<>();
 
         for (ApiInfoV2 apiInfo : apiInfos) {
+            setNewPath(apiInfo);
             handleParams(apiInfo);
             ApiInfoDetailDTO detailInfo = new ApiInfoDetailDTO();
             BeanUtils.copyProperties(apiInfo, detailInfo);
@@ -3263,6 +3277,15 @@ public class DataShareService {
         }
 
         return fillHtmlTemplateData(detailInfos);
+    }
+
+    //导出的api，如果审核通过则显示全路径
+    private void setNewPath(ApiInfoV2 apiInfo){
+        String status = apiInfo.getStatus();
+        if (ApiStatusEnum.UP.getName().equals(status) || ApiStatusEnum.DOWN.getName().equals(status)) {
+            String newPath = DataServiceUtil.apiSixUrl + ApiSixCreateInfo.newPath(apiInfo) + CommonConstant.API_DEFAULT_PARAM;
+            apiInfo.setPath(newPath);
+        }
     }
 
     private ApiInfoV2 handleParams(ApiInfoV2 apiInfo) throws AtlasBaseException {

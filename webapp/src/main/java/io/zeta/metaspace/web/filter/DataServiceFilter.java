@@ -63,12 +63,13 @@ public class DataServiceFilter implements Filter {
         QueryResult queryResult= null;
         if (FilterUtils.isDataService(requestURL)) {
             String format = request.getParameter(CommonConstant.API_RESULT_FORMAT_PARAM);
-            request.setCharacterEncoding("utf-8");
+            response.setCharacterEncoding("utf-8");
             try (PrintWriter printWriter = response.getWriter()) {
                 try {
                     queryResult = DataServiceUtil.queryApiData(httpServletRequest);
                 } catch (AtlasBaseException e) {
                     Map<String, String> errorJsonMap = new LinkedHashMap<>();
+                    response.setContentType("application/json");
                     AtlasErrorCode errorCode = e.getAtlasErrorCode();
                     errorJsonMap.put("errorCode", errorCode.getErrorCode());
                     errorJsonMap.put("errorMessage", e.getMessage());
