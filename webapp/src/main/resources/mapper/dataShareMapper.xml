@@ -49,7 +49,7 @@
 
     <select id="getAllApiInfo" resultType="io.zeta.metaspace.model.share.ApiInfoV2">
         SELECT guid,name,version,requestmode,path,mobius_id from api where (status='up' or status='down')
-        and valid=true and mobius_id similar to '%[a-z]%'
+        and valid=true
     </select>
 
 </mapper>
