@@ -131,7 +131,7 @@ public class HdfsUtils {
         if(StringUtils.isBlank(filePath)){
             return false;
         }
-        return fs.deleteOnExit(new Path(filePath));
+        return fs.delete(new Path(filePath),true);
     }
 
     public int getFileLine(String hdfsFilePath) throws IOException {
