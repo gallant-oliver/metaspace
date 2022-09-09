@@ -158,7 +158,7 @@
         <hbase.version>2.2.6</hbase.version>
         <solr.version>8.9.0</solr.version>
         <kafka.version>1.0.0</kafka.version>
-        <elasticsearch.version>7.6.0</elasticsearch.version>
+        <elasticsearch.version>7.6.2</elasticsearch.version>
         <kafka.scala.binary.version>2.11</kafka.scala.binary.version>
         <curator.version>2.11.0</curator.version>
         <zookeeper.version>3.7.1</zookeeper.version>
