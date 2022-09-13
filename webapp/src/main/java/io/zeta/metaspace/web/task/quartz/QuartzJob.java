@@ -491,7 +491,7 @@ public class QuartzJob implements Job {
             return errorCount;
         } finally {
             checkResult(task, errorCount.floatValue(), 0f);
-            if(conf.getBoolean("metaspace.hdfs.file.delete.enable", true)){
+            if(conf.getBoolean("metaspace.hdfs.file.delete.enable", false)){
                 //删除hdfs中的文件，包括目录，实例：/apps/metaspace/project/griffin/0f11a928-37ee-402d-820d-8018acb9958f
                 //如果要调试代码的话，可以注释掉
                 hdfsUtils.deleteOnExit(LivyTaskSubmitHelper.getHdfsOutPathTaskId(task.getId()));
