@@ -166,6 +166,9 @@ public final class Constants {
 
     public static final int DATA_SHARE_DOCKING_TYPE = dockType();
 
+
+    public static final String API_SIX_CREATE_PATH = "/apisix/admin/routes";
+
     private static String getToken(){
         try {
             Configuration configuration = ApplicationProperties.get();
