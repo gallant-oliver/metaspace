@@ -24,7 +24,7 @@ public class ApiSixCreateInfo {
 
     //接口参数为数组，当前需求只需要单个
     public ApiSixCreateInfo(ApiInfoV2 apiInfoV2) {
-        this.uris = new String[]{newPath(apiInfoV2)};
+        this.uris = new String[]{regularNewPath(apiInfoV2)};
         this.upstream_id = getUpstreamId();
         this.methods = new String[]{apiInfoV2.getRequestMode()};
         this.desc = apiInfoV2.getName();
@@ -53,5 +53,10 @@ public class ApiSixCreateInfo {
             url.append(apiInfoV2.getPath());
         }
         return url.toString();
+    }
+
+    //api的id加版本构成唯一性，所以apiSix系统上只需要匹配唯一前缀进行转发(高效，且不用担心path参数匹配问题)
+    private static String regularNewPath(ApiInfoV2 apiInfoV2) {
+        return "/api/metaspace/dataservice/" + apiInfoV2.getGuid() + "/" + apiInfoV2.getVersion() +"*";
     }
 }

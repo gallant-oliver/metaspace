@@ -29,6 +29,7 @@ import org.apache.atlas.ApplicationProperties;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.repository.Constants;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -229,13 +230,17 @@ public class OKHttpClient {
         }
     }
 
-    public static String getResponseStr(InputStream in) throws IOException {
+    //apisix创建接口返回url信息，可能携带%，格式也没有url转码，所以直接返回string格式
+    public static String getResponseStr(InputStream in, boolean apiSixUrl) throws IOException {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             byte[] buffer = new byte[1024];
             int len = 0;
             while ((len = in.read(buffer)) != -1) {
                 baos.write(buffer, 0, len);
+            }
+            if (apiSixUrl) {
+                return baos.toString();
             }
             return URLDecoder.decode(baos.toString(), "UTF-8");
         } catch (Exception e) {
@@ -258,7 +263,8 @@ public class OKHttpClient {
                 Call call = client.newCall(request);
                 Response response = call.execute();
                 InputStream in = response.body().byteStream();
-                return getResponseStr(in);
+                String urlString = request.urlString();
+                return getResponseStr(in, urlString.contains(Constants.API_SIX_CREATE_PATH));
             } catch (Exception e) {
                 if (count<times){
                     LOG.error("第"+count +"次请求失败：", e);
