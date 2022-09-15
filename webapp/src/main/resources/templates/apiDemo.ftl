@@ -225,14 +225,18 @@
 			<table style="border: none; width: 100%;" class="t">
 				<tr>
 					<td class="turn" style='border:none;'>数据源类型: ${item.sourceType}</td>
+				</tr>
+				<tr>
 					<td class="turn" style='border:none;'>参数协议: ${item.protocol}</td>
 				</tr>
 				<tr>
 					<td class="turn" style='border:none;'>请求方式: ${item.requestMode}</td>
-					<td class="turn" style='border:none;'>API路径: ${item.path}</td>
 				</tr>
+					<td class="turn" style='border:none;'>API路径: ${item.path}</td>
 				<tr>
 					<td class="turn" style='border:none;'>数据表: ${item.tableName}</td>
+				</tr>
+				<tr>
 					<td class="turn" style='border:none;'>数据库: ${item.dbName}</td>
 				</tr>
 				<tr>
