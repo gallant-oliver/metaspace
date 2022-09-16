@@ -2289,13 +2289,9 @@ public class DataShareService {
     //api详情，审核通过的话，路径是完整的
     public ApiPathInfoVO getApiInfoPath(String id, String version) {
         ApiInfoV2 apiInfoByVersion = getApiInfoByVersion(id, version);
-        String status = apiInfoByVersion.getStatus();
         ApiPathInfoVO apiPathInfoVO = new ApiPathInfoVO();
         BeanUtils.copyProperties(apiInfoByVersion,apiPathInfoVO);
-        if (ApiStatusEnum.UP.getName().equals(status) || ApiStatusEnum.DOWN.getName().equals(status)) {
-            String newPath = DataServiceUtil.apiSixUrl + ApiSixCreateInfo.newPath(apiInfoByVersion) +CommonConstant.API_DEFAULT_PARAM;
-            apiPathInfoVO.setAccessPath(newPath);
-        }
+        setNewPath(apiInfoByVersion);
         return apiPathInfoVO;
     }
 
@@ -3279,8 +3275,14 @@ public class DataShareService {
         return fillHtmlTemplateData(detailInfos);
     }
 
-    //导出的api，如果审核通过则显示全路径
-    private void setNewPath(ApiInfoV2 apiInfo){
+    //导出的api，如果审核通过且是apiSix部署则显示全路径
+    private void setNewPath(ApiInfoV2 apiInfo) {
+        if (Constants.DATA_SHARE_DOCKING_TYPE == CommonConstant.MOBIUS_TYPE) {
+            return;
+        }
+        if (ApiStatusEnum.UP.getName().equals(apiInfo.getStatus()) || ApiStatusEnum.DOWN.getName().equals(apiInfo.getStatus())){
+            return;
+        }
         String status = apiInfo.getStatus();
         if (ApiStatusEnum.UP.getName().equals(status) || ApiStatusEnum.DOWN.getName().equals(status)) {
             String newPath = DataServiceUtil.apiSixUrl + ApiSixCreateInfo.newPath(apiInfo) + CommonConstant.API_DEFAULT_PARAM;

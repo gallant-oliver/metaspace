@@ -23,9 +23,9 @@
         (SELECT username FROM users WHERE userid=a.updater) updater, a.updatetime,
         (SELECT name FROM api_category where guid=a.categoryguid) categoryName,
         a.sourcetype, a.path,
-        CASE WHEN upper(a.sourcetype)='HIVE' THEN (SELECT tablename FROM tableInfo WHERE tableGuid=a.tableguid) ELSE a.tablename END AS tableName,
-        CASE WHEN upper(a.sourcetype)='HIVE' THEN (SELECT dbname FROM tableInfo WHERE tableGuid=a.tableguid) ELSE a.schemaname END AS dbName,
-        CASE WHEN upper(a.sourcetype)='HIVE' THEN a.pool ELSE (SELECT source_name FROM data_source WHERE source_id=a.sourceid) END AS sourceName,
+        CASE WHEN upper(a.sourcetype) in ('HIVE','IMPALA') THEN (SELECT tablename FROM tableInfo WHERE tableGuid=a.tableguid) ELSE a.tablename END AS tableName,
+        CASE WHEN upper(a.sourcetype) in ('HIVE','IMPALA') THEN (SELECT dbname FROM tableInfo WHERE tableGuid=a.tableguid) ELSE a.schemaname END AS dbName,
+        CASE WHEN upper(a.sourcetype) in ('HIVE','IMPALA') THEN a.pool ELSE (SELECT source_name FROM data_source WHERE source_id=a.sourceid) END AS sourceName,
         a.protocol, a.requestmode,
         a.api_poly_entity, a.param, a.returnparam, a.sortparam
         FROM api a
