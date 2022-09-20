@@ -2292,6 +2292,7 @@ public class DataShareService {
         ApiPathInfoVO apiPathInfoVO = new ApiPathInfoVO();
         BeanUtils.copyProperties(apiInfoByVersion,apiPathInfoVO);
         setNewPath(apiInfoByVersion);
+        apiPathInfoVO.setAccessPath(apiInfoByVersion.getPath());
         return apiPathInfoVO;
     }
 
@@ -3278,9 +3279,6 @@ public class DataShareService {
     //导出的api，如果审核通过且是apiSix部署则显示全路径
     private void setNewPath(ApiInfoV2 apiInfo) {
         if (Constants.DATA_SHARE_DOCKING_TYPE == CommonConstant.MOBIUS_TYPE) {
-            return;
-        }
-        if (ApiStatusEnum.UP.getName().equals(apiInfo.getStatus()) || ApiStatusEnum.DOWN.getName().equals(apiInfo.getStatus())){
             return;
         }
         String status = apiInfo.getStatus();
