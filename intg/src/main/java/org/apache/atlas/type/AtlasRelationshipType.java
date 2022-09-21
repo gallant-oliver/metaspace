@@ -21,12 +21,12 @@ package org.apache.atlas.type;
 import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.exception.AtlasBaseException;
 import org.apache.atlas.model.instance.AtlasRelationship;
-import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasRelationshipDef;
 import org.apache.atlas.model.typedef.AtlasRelationshipDef.RelationshipCategory;
 import org.apache.atlas.model.typedef.AtlasRelationshipEndDef;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef;
 import org.apache.atlas.model.typedef.AtlasStructDef.AtlasAttributeDef.Cardinality;
+import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,9 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static org.apache.atlas.type.AtlasStructType.AtlasAttribute.AtlasRelationshipEdgeDirection;
-import static org.apache.atlas.type.AtlasStructType.AtlasAttribute.AtlasRelationshipEdgeDirection.BOTH;
-import static org.apache.atlas.type.AtlasStructType.AtlasAttribute.AtlasRelationshipEdgeDirection.IN;
-import static org.apache.atlas.type.AtlasStructType.AtlasAttribute.AtlasRelationshipEdgeDirection.OUT;
+import static org.apache.atlas.type.AtlasStructType.AtlasAttribute.AtlasRelationshipEdgeDirection.*;
 
 /**
  * class that implements behaviour of an relationship-type.
@@ -82,22 +80,36 @@ public class AtlasRelationshipType extends AtlasStructType {
 
         String end1TypeName = relationshipDef.getEndDef1() != null ? relationshipDef.getEndDef1().getType() : null;
         String end2TypeName = relationshipDef.getEndDef2() != null ? relationshipDef.getEndDef2().getType() : null;
-
-        BaseAtlasType type1 = typeRegistry.getType(end1TypeName);
-        BaseAtlasType type2 = typeRegistry.getType(end2TypeName);
-
-        if (type1 instanceof AtlasEntityType) {
-            end1Type = (AtlasEntityType) type1;
+        LOG.info("end1TypeName is {},end2TypeName is {}", end1TypeName, end2TypeName);
+        if (StringUtils.isEmpty(end1TypeName)) {
+            throw new AtlasBaseException(AtlasErrorCode.MISSING_MANDATORY_ATTRIBUTE, "endDef1", "type");
         } else {
-            throw new AtlasBaseException(AtlasErrorCode.RELATIONSHIPDEF_INVALID_END_TYPE, getTypeName(), end1TypeName);
+            BaseAtlasType type1 = typeRegistry.getType(end1TypeName);
+            if (type1 instanceof AtlasEntityType) {
+                end1Type = (AtlasEntityType) type1;
+            } else {
+                throw new AtlasBaseException(AtlasErrorCode.RELATIONSHIPDEF_INVALID_END_TYPE, getTypeName(), end1TypeName);
+            }
+        }
+        if (StringUtils.isEmpty(end2TypeName)) {
+            throw new AtlasBaseException(AtlasErrorCode.MISSING_MANDATORY_ATTRIBUTE, "endDef2", "type");
+        } else {
+            BaseAtlasType type2 = typeRegistry.getType(end2TypeName);
+
+            if (type2 instanceof AtlasEntityType) {
+                end2Type = (AtlasEntityType) type2;
+            } else {
+                throw new AtlasBaseException(AtlasErrorCode.RELATIONSHIPDEF_INVALID_END_TYPE, getTypeName(), end2TypeName);
+            }
         }
 
-        if (type2 instanceof AtlasEntityType) {
-            end2Type = (AtlasEntityType) type2;
-        } else {
-            throw new AtlasBaseException(AtlasErrorCode.RELATIONSHIPDEF_INVALID_END_TYPE, getTypeName(), end2TypeName);
+        if (StringUtils.isEmpty(relationshipDef.getEndDef1().getName())) {
+            throw new AtlasBaseException(AtlasErrorCode.MISSING_MANDATORY_ATTRIBUTE, "endDef1", "name");
         }
 
+        if (StringUtils.isEmpty(relationshipDef.getEndDef2().getName())) {
+            throw new AtlasBaseException(AtlasErrorCode.MISSING_MANDATORY_ATTRIBUTE, "endDef2", "name");
+        }
         validateAtlasRelationshipDef(relationshipDef);
     }
 

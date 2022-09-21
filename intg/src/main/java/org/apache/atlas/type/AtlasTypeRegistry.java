@@ -105,6 +105,7 @@ public class AtlasTypeRegistry {
 
                 ret = new AtlasMapType(keyTypeName, valueTypeName, this);
             } else {
+                LOG.warn("无效的typeName{}", typeName);
                 throw new AtlasBaseException(AtlasErrorCode.TYPE_NAME_NOT_FOUND, typeName);
             }
         }

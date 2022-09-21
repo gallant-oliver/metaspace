@@ -448,7 +448,10 @@ public class AtlasStructDefStoreV2 extends BaseAtlasAbstractDefStoreV2<AtlasStru
                 String attrPropertyKey        = AtlasGraphUtilsV2.getTypeDefPropertyKey(ret, attrName);
                 String encodedAttrPropertyKey = AtlasGraphUtilsV2.encodePropertyKey(attrPropertyKey);
                 String attrJson               = vertex.getProperty(encodedAttrPropertyKey, String.class);
-
+                if (StringUtils.isEmpty(attrJson)) {
+                    LOG.warn("attribute not found {}.{}. Ignoring..", structDef.getName(), attrName);
+                    continue;
+                }
                 attributeDefs.add(toAttributeDefFromJson(structDef, BaseAtlasType.fromJson(attrJson, Map.class), typeDefStore));
             }
         }
