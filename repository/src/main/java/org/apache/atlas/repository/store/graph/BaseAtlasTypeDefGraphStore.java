@@ -96,69 +96,12 @@ public abstract class BaseAtlasTypeDefGraphStore implements AtlasTypeDefStore {
             ttr = typeRegistry.lockTypeRegistryForUpdate(typeUpdateLockMaxWaitTimeSeconds);
 
             ttr.clear();
-            AtlasTransientTypeRegistry finalTtr = ttr;
-            long startTime = System.currentTimeMillis();
-            CompletableFuture<List<AtlasEnumDef>> f1 = CompletableFuture.supplyAsync(() -> {
-                try {
-                    return getEnumDefStore(finalTtr).getAll();
-                } catch (AtlasBaseException e) {
-                    LOG.error(e.getMessage());
-                }
-                return null;
-            }, executor);
 
-            CompletableFuture<List<AtlasStructDef>> f2 = CompletableFuture.supplyAsync(() -> {
-                try {
-                    return getStructDefStore(finalTtr).getAll();
-                } catch (AtlasBaseException e) {
-                    LOG.error(e.getMessage());
-                }
-                return null;
-            }, executor);
-            CompletableFuture<List<AtlasClassificationDef>> f3 = CompletableFuture.supplyAsync(() -> {
-                try {
-                    return getClassificationDefStore(finalTtr).getAll();
-                } catch (AtlasBaseException e) {
-                    LOG.error(e.getMessage());
-                }
-                return null;
-            }, executor);
-
-            CompletableFuture<List<AtlasEntityDef>> f4 = CompletableFuture.supplyAsync(() -> {
-                try {
-                    return getEntityDefStore(finalTtr).getAll();
-                } catch (AtlasBaseException e) {
-                    LOG.error(e.getMessage());
-                }
-                return null;
-            }, executor);
-
-            CompletableFuture<List<AtlasRelationshipDef>> f5 = CompletableFuture.supplyAsync(() -> {
-                try {
-                    return getRelationshipDefStore(finalTtr).getAll();
-                } catch (AtlasBaseException e) {
-                    LOG.error(e.getMessage());
-                }
-                return null;
-            }, executor);
-            CompletableFuture<Void> all = CompletableFuture.allOf(f1, f2, f3, f4, f5);
-            all.join();
-
-            AtlasTypesDef typesDef = new AtlasTypesDef();
-            try {
-                typesDef = new AtlasTypesDef(f1.get(), f2.get(), f3.get(), f4.get(), f5.get());
-            } catch (InterruptedException | ExecutionException e) {
-                LOG.error(e.getMessage());
-            }finally {
-                executor.shutdown();
-            }
-
-            /*AtlasTypesDef typesDef = new AtlasTypesDef(getEnumDefStore(ttr).getAll(),
+            AtlasTypesDef typesDef = new AtlasTypesDef(getEnumDefStore(ttr).getAll(),
                     getStructDefStore(ttr).getAll(),
                     getClassificationDefStore(ttr).getAll(),
                     getEntityDefStore(ttr).getAll(),
-                    getRelationshipDefStore(ttr).getAll());*/
-            LOG.info("complete init AtlasTypesDef take time:{}ms", System.currentTimeMillis()- startTime);
+                    getRelationshipDefStore(ttr).getAll());
             rectifyTypeErrorsIfAny(typesDef);
 
             ttr.addTypes(typesDef);
