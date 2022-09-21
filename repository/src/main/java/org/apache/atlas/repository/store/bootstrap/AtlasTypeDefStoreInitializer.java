@@ -26,6 +26,7 @@ import org.apache.atlas.AtlasErrorCode;
 import org.apache.atlas.AtlasException;
 import org.apache.atlas.authorize.AtlasAuthorizerFactory;
 import org.apache.atlas.exception.AtlasBaseException;
+import org.apache.atlas.ha.HAConfiguration;
 import org.apache.atlas.listener.ActiveStateChangeHandler;
 import org.apache.atlas.model.typedef.BaseAtlasBaseTypeDef;
 import org.apache.atlas.model.typedef.AtlasClassificationDef;
@@ -93,9 +94,13 @@ public class AtlasTypeDefStoreInitializer implements ActiveStateChangeHandler {
      */
     public void init() throws AtlasBaseException {
         LOG.info("==> AtlasTypeDefStoreInitializer.init()");
-        atlasTypeDefStore.init();
-        loadBootstrapTypeDefs();
 
+        if (!HAConfiguration.isHAEnabled(conf)) {
+            atlasTypeDefStore.init();
+            loadBootstrapTypeDefs();
+        } else {
+            LOG.info("AtlasTypeDefStoreInitializer.init(): deferring type loading until instance activation");
+        }
         try {
             AtlasAuthorizerFactory.getAtlasAuthorizer();
         } catch (Throwable t) {
