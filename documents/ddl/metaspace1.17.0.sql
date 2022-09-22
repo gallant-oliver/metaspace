@@ -5268,14 +5268,14 @@ ALTER TABLE "public"."source_db" ADD CONSTRAINT "source_db_pkey" PRIMARY KEY ("i
 -- ----------------------------
 -- Indexes structure for table source_info
 -- ----------------------------
-CREATE INDEX "index_database_alias" ON "public"."source_info" USING btree (
+CREATE INDEX "index_source_info_database_alias" ON "public"."source_info" USING btree (
   "database_alias" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
 );
-COMMENT ON INDEX "public"."index_database_alias" IS '中文名索引';
-CREATE INDEX "index_status" ON "public"."source_info" USING btree (
+COMMENT ON INDEX "public"."index_source_info_database_alias" IS '中文名索引';
+CREATE INDEX "index_source_info_status" ON "public"."source_info" USING btree (
   "status" COLLATE "pg_catalog"."default" "pg_catalog"."text_ops" ASC NULLS LAST
 );
-COMMENT ON INDEX "public"."index_status" IS '状态索引';
+COMMENT ON INDEX "public"."index_source_info_status" IS '状态索引';
 
 -- ----------------------------
 -- Primary Key structure for table source_info
