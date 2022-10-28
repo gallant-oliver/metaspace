@@ -75,7 +75,7 @@ public interface GroupDeriveTableRelationDAO {
             " SET ID = excluded.ID, security_privilege = excluded.security_privilege" +
             "</script>")
     void updateDeriveTableSecurityPrivilege(@Param("relations") List<GroupDeriveTableRelation> relationList);
-
+    
     @Delete("<script>" +
             "DELETE  " +
             "FROM " +
@@ -174,7 +174,7 @@ public interface GroupDeriveTableRelationDAO {
             "<if test='tableName != null and tableName !=\"\"'>" +
             " AND (sidti.table_name_zh like '%'||#{tableName}||'%' ESCAPE '/' OR sidti.table_name_en like '%'||#{tableName}||'%' ESCAPE '/' )" +
             "</if>" +
-            "GROUP BY ti.tablename,ti.dbname, ti.tableguid,gtr.\"id\", sidti.table_name_zh,gtr.importance_privilege,gtr.security_privilege " +
+            "GROUP BY ti.tableguid,gtr.\"id\", sidti.table_name_zh,gtr.importance_privilege,gtr.security_privilege " +
             "<if test = 'limit &gt; 0'>"+
             " LIMIT #{limit} OFFSET #{offset} " +
             "</if>"+

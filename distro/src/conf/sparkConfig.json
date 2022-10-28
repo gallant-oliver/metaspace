@@ -6,7 +6,7 @@
   "driverMemory": "3g",
   "executorMemory": "5g",
   "conf": {
-    "spark.sql.hive.real.user": "metaspace",
+    "spark.sql.hive.real.user": "user",
     "spark.driver.extraJavaOptions":"-verbose:class",
     "spark.executor.extraJavaOptions":"-verbose:class"
   },
